@@ -19,7 +19,6 @@ SUBDIRS =	socket \
 
 EXTRA_DIST = 	include \
 		config \
-		templates \
 		INSTALL-FAST
 		
 

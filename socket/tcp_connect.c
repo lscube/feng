@@ -1,5 +1,5 @@
 /* * 
- *  $Id: tcp_connect.c 2 2004-06-08 15:08:53Z federico $
+ *  $Id$
  *  
  *  This file is part of Fenice
  *
