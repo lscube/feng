@@ -1,4 +1,4 @@
-Summary: A GPL Experimental Streaming Server
+Summary: standards-compliant multimedia streaming server
 Name: fenice
 Version: 1.7
 Release: 0
@@ -11,12 +11,19 @@ Source: http://streaming.polito.it/download/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-buildroot
 
 %description
-Fenice is a streaming server of new conception that allows the generation of
-multimedia streams on packet networks based on the IP protocol.
-Fenice is compatible with the IETF protocols for the streaming and for real-time data transport.
-The main characteristic of Fenice is that it is adaptable to the state of the
-network gotten through the technique of the dynamic coding change.
-Fenice is the official streaming server for Open Media Streaming project
+Fenice is a multimedia streaming server compliant with the IETF's standards for
+real-time streaming of multimedia contents over Internet. Fenice implements
+RTSP (Real-Time Streaming Protocol - RFC2326) and RTP/RTCP (Real-Time Transport
+Protocol/RTP Control Protocol - RFC3550) with RTP Profile for Audio and Video
+Conferences with Minimal Control (RFC3551).
+
+Fenice is the official streaming server for the Open Media Streaming Project
+(http://streaming.polito.it) which is is a free/libre project software for the
+development of a platform for the streaming of multimedia contents. The
+platform is based on the full support of the IETF's standards for the real-time
+data transport over IP. The aim of the project is to provide an open solution,
+free and interoperable along with the proprietary streaming applications
+currently dominant on the market.
 
 %prep
 %setup -q -n %{name}-%{version}
