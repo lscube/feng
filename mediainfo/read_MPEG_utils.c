@@ -41,6 +41,10 @@
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 
 int next_start_code(uint8 *buf, uint32 *buf_size,int fin) {  			
 	char buf_aux[3];                                               	
@@ -66,9 +70,37 @@ int next_start_code(uint8 *buf, uint32 *buf_size,int fin) {
      	return count;
 }
 
-int read_seq_head(uint8 *buf,uint32 *buf_size, int fin, char *final_byte, standard std) {  /* reads sequence header */
-        read(fin,&(buf[*buf_size]),8);                       			//reads first 95 bits +1
-        *buf_size+=8;
+int read_seq_head(media_entry *me, uint8 *buf,uint32 *buf_size, int fin, char *final_byte, standard std) {  /* reads sequence header */
+        uint8 tmp;
+	uint32 x=0, bitcnt=0, n = 18,  picture_rate, bufptr;
+	
+	read(fin,&(buf[*buf_size]),4);                       			
+        *buf_size+=4;
+	/*try to calculate  frame rate*/
+	tmp=buf[*buf_size-1];
+	picture_rate=	tmp & 0x0F;
+	/*end calculate frame rate*/
+	
+	/*try to calculate bit_rate*/
+        read(fin,&(buf[*buf_size]),4);                       			
+        *buf_size+=4;
+	bufptr=*buf_size-4;
+	n=18;
+	bitcnt=0;
+	x=0;
+	while(n-->0){
+		if(!bitcnt){
+			tmp=buf[bufptr++];
+			bitcnt=8;
+		}
+		x=(x<<1)|(tmp>>7);tmp<<=1;
+		--bitcnt;
+	}
+	 /*0x3FFFFF means variable bit rate*/
+ 	me->description.bitrate = (x!=0x3FFFF)?(x * 400):0;
+	//fprintf(stderr,"bit_rate b/s: %d frame rate: %d (see the reference table pg143)\n", me->description.bitrate, picture_rate);
+	/*end calculate bit_rate*/
+	
         if (buf[*buf_size-1] & 0x02) {                       			// intra quantizer matrix present
                 read(fin,&(buf[*buf_size]),64);              			// reads intra quantizer matrix +1 bit
                 *buf_size+=64;
@@ -208,14 +240,14 @@ int read_slice(uint8 *buf,uint32 *buf_size, int fin, char *final_byte) {     /* 
         return count;
 }
 
-int probe_standard(uint8 *buf,uint32 *buf_size,int fin, standard *std) {    /* If the sequence_extension occurs immediately */
+int probe_standard(media_entry *me,uint8 *buf,uint32 *buf_size,int fin, standard *std) {    /* If the sequence_extension occurs immediately */
         unsigned char final_byte;                                                      /* after the sequence header, the sequence is an */
         next_start_code(buf,buf_size,fin);                                             /* MPEG-2 video sequence */
         read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
         final_byte=buf[*buf_size-1];
         if (final_byte == 0xb3) {
-                read_seq_head(buf,buf_size,fin,&final_byte,*std);
+                read_seq_head(me,buf,buf_size,fin,&final_byte,*std);
         }
         if (final_byte  == 0xb5){
                 *std=MPEG_2;
@@ -224,6 +256,10 @@ int probe_standard(uint8 *buf,uint32 *buf_size,int fin, standard *std) {    /* I
         }
         return 1;
 }
+
+uint32 random_access(media_entry *me){
+	return me->description.bitrate/8 * me->play_offset/1000;
+} 
 
 int read_picture_coding_ext(uint8 *buf,uint32 *buf_size, int fin, char *final_byte,video_spec_head2* vsh2) {  /* reads picture coding extension */
 	int count=0;

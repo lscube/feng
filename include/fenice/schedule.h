@@ -80,7 +80,7 @@
 	void schedule_start(int id,play_args *args);
 	void schedule_stop(int id);
 	int schedule_remove(int id);
-	int schedule_resume(int id);
+	int schedule_resume(int id, play_args *args);
 	int schedule_semaphore(int id);
 	
 #endif

@@ -54,10 +54,10 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         #ifdef MPEG2VSHE
         char *vsh2_1;
 	#endif
-	int count,flag=0,seq_head_pres=0;
+	uint32 count,flag=0,seq_head_pres=0;
         unsigned char *data_tmp;            				
 	static_MPEG_video *s=NULL;
-	double mtimepre;
+	uint32 wasSeeking=0;
 
         if (!(me->flags & ME_FD)) {
                 if (!(me->flags & ME_FILENAME)) {
@@ -80,17 +80,14 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 
         num_bytes = (me->description).byte_per_pckt;
 
-        *data_size=0;
-        count=0;
-	                                                  /* computing it from the value of mtime */
-        //if((me->description).msource!=live)	
-	//	lseek(me->fd,s->data_total,SEEK_SET);     /* and starting the reading from this; */
-                                                          /* feature not yet implemented, usefull for random access*/
 #if HAVE_ALLOCA
         data_tmp=(unsigned char *)alloca(65000);
 #else
         data_tmp=(unsigned char *)calloc(1,65000);
 #endif
+        if (data_tmp==NULL)
+               return ERR_ALLOC;
+
         if (s->std == MPEG_2)  {/*the first time is TO_PROBE*/
         	#ifdef MPEG2VSHE
                 *data_size = 8;
@@ -100,16 +97,36 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         } else {
                 *data_size = 4;
         }
-        if (data_tmp==NULL)
-               return ERR_ALLOC;
+	
 
-        if (s->std == TO_PROBE) {
-                probe_standard(data_tmp,data_size,me->fd,&s->std);
+	if (s->std == TO_PROBE) {
+                probe_standard(me,data_tmp,data_size,me->fd,&s->std);
 		flag=1;
                	seq_head_pres=1;
         }
 
-	if(num_bytes==0){ /*case 1 slice for pkt*/
+
+	if((me->description).msource!=live && me->play_offset!=s->prev_mstart_offset ){
+		count=random_access(me);
+		if(!me->description.bitrate)
+			fprintf(stderr,"Bit Rate unavaible, access random not permitted\n");	
+		else{
+			fprintf(stderr,"Bit Rate b/s: %d  skipped byte: %d\n",me->description.bitrate, count);	
+			s->fragmented=0;
+			//*recallme=0;
+			wasSeeking=1;
+                	if(!flag){
+				lseek(me->fd,0,SEEK_SET);
+				probe_standard(me,data_tmp,data_size,me->fd,&s->std);
+				seq_head_pres=1;
+			}
+			
+			lseek(me->fd,count,SEEK_SET);
+		}
+		 s->prev_mstart_offset=me->play_offset;
+	}
+
+	if(num_bytes==0){ /*TODO:case 1 slice for pkt*/
 		do{
 			if(!flag){	
         			if ( next_start_code(data_tmp,data_size,me->fd) == -1) {
@@ -127,7 +144,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 			}
 		
         		if (s->final_byte == 0xb3) {
-                		read_seq_head(data_tmp,data_size,me->fd,&s->final_byte,s->std);
+                		read_seq_head(me,data_tmp,data_size,me->fd,&s->final_byte,s->std);
                 		seq_head_pres=1;
         		}
                         if (s->final_byte == 0xb8) {
@@ -140,13 +157,13 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
                                 }
                         }
 		}while(s->final_byte>0xAF);
-		count = read_slice(data_tmp,data_size,me->fd,&s->final_byte);
+		read_slice(data_tmp,data_size,me->fd,&s->final_byte);
         	s->vsh1.b=1;
 	}/*end if(num_bytes==0)*/
 	else if(!s->fragmented)/*num_bytes !=0 and slice was not fragmented*/{
 		char buf_aux[3];	
 		int i;
-		if(flag)
+		if(flag && wasSeeking==0)
 		  	s->final_byte=data_tmp[*data_size-1];
 		else{
                 	data_tmp[*data_size]=0x00;
@@ -159,8 +176,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
                 	*data_size+=1;
 		}
 		if(s->final_byte==0xb7){
-                       	count=next_start_code(data_tmp,data_size,me->fd);              
-			if (count==-1){  /* If there aren't 3 more bytes we are at EOF */
+			if (next_start_code(data_tmp,data_size,me->fd)==-1){  /* If there aren't 3 more bytes we are at EOF */
 				close(me->fd);
 #if !HAVE_ALLOCA
 				free(data_tmp);
@@ -173,7 +189,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 		}
 		while(s->final_byte > 0xAF || s->final_byte==0x00 && *recallme){
 			if (s->final_byte == 0xb3) {
-               			read_seq_head(data_tmp,data_size,me->fd,&s->final_byte,s->std);
+               			read_seq_head(me,data_tmp,data_size,me->fd,&s->final_byte,s->std);
                			seq_head_pres=1;
        			}
 
@@ -192,7 +208,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 				s->fragmented=0;
                 	}
 			while(s->final_byte==0xb2||s->final_byte==0xb5){
-                        	count=next_start_code(data_tmp,data_size,me->fd);              
+                        	next_start_code(data_tmp,data_size,me->fd);              
                        		read(me->fd,&s->final_byte,1);
                        		data_tmp[*data_size]=s->final_byte;
                        		*data_size+=1;
@@ -295,8 +311,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 		
         	s->vsh1.b=0;
 	}
-	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-	//fprintf(stderr,"seq_head_pres=%d\n",seq_head_pres);
+	//*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
 	s->data_total+=*data_size;
         if (s->std==MPEG_2 && !flag) {
         	#ifdef MPEG2VSHE

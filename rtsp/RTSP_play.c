@@ -237,7 +237,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 							if (!ptr2->pause) {
 								printf("PLAY: already playing\n");
 							} else {
-								schedule_resume(ptr2->sched_id);
+								schedule_resume(ptr2->sched_id,&args);
 							}
 						}
 					}
@@ -304,7 +304,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 							if (!ptr2->pause) {
 								printf("PLAY: already playing\n");
 							} else {
-								schedule_resume(ptr2->sched_id);
+								schedule_resume(ptr2->sched_id,&args);
 							}
 						}
 				}

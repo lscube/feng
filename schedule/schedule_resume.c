@@ -41,7 +41,7 @@
 
 extern schedule_list sched[MAX_SESSION];
 
-int schedule_resume(int id)
+int schedule_resume(int id,play_args *args)
 {
 	struct timeval now;
 	double mnow;	
@@ -49,20 +49,13 @@ int schedule_resume(int id)
 	gettimeofday(&now,NULL);
 	
 	mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;		
-	
-				/*printf("mtime e' %lf\n",sched[id].rtp_session->mtime);
-				printf("mstart e' %lf\n",sched[id].rtp_session->mstart);
-				printf("pkt_len e' %lf\n",sched[id].rtp_session->current_media->description.pkt_len);
-				printf("mstart_offset e' %lf\n",sched[id].rtp_session->mstart_offset );*/
 	sched[id].rtp_session->current_media->mstart_offset += sched[id].rtp_session->current_media->mtime - sched[id].rtp_session->current_media->mstart + (double) sched[id].rtp_session->current_media->description.pkt_len;
 	
-//				printf("mstart_offset diventa mtime-mstart+pkt_len = %lf\n",sched[id].rtp_session->mstart_offset);
+	
+	sched[id].rtp_session->current_media->play_offset=args->start_time*1000;/*TODO:Federico. For Random Access*/
+		
 	sched[id].rtp_session->current_media->mstart = mnow;
-//				printf("mstart diventa mnow = %lf\n",mnow);
-	
 	sched[id].rtp_session->current_media->mtime = sched[id].rtp_session->mprev_tx_time = mnow - (double) sched[id].rtp_session->current_media->description.pkt_len;
-//				printf("mtime e mprev_tx_time diventano mnow-pkt_len = %lf\n",sched[id].rtp_session->mtime );
-	
 	sched[id].rtp_session->pause=0;
 	
 	return ERR_NOERROR;

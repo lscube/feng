@@ -161,6 +161,7 @@
 		char minutes;
 		char seconds;
 		char picture;
+		double prev_mstart_offset;/*usefull for random access video*/
 		unsigned long data_total;  
 		standard std;
 		int fragmented;
@@ -200,6 +201,7 @@
 		double mtime;
 		double mstart;
 		double mstart_offset;
+		double play_offset; /*Federico. Usefull for random access*/
 		
 		//started has transferred itself here
 		//unsigned char started;
@@ -275,7 +277,7 @@
 	/* returns number of bytes readen looking for start-codes, */
 	int next_start_code(uint8 *, uint32 *,int fin);
 	/* reads sequence header */
-	int read_seq_head(uint8 *, uint32 *, int fin, char *final_byte, standard std);
+	int read_seq_head(media_entry *me, uint8 *, uint32 *, int fin, char *final_byte, standard std);
 	/* reads GOP header */
 	int read_gop_head(uint8 *, uint32 *, int fin, char *final_byte, char *hours, char *minutes, char *seconds, char *picture, standard std);
 	/* reads picture head */
@@ -283,7 +285,8 @@
 	/* reads a slice */
 	int read_slice(uint8 *, uint32 *, int fin, char *final_byte);
 	/* If the sequence_extension occurs immediately */
-	int probe_standard(uint8 *, uint32 *,int fin, standard *std);
+	int probe_standard(media_entry *me, uint8 *, uint32 *,int fin, standard *std);
+	uint32 random_access(media_entry *me);
 	/* reads picture coding extension */
 	int read_picture_coding_ext(uint8 *, uint32 *, int fin, char *final_byte,video_spec_head2* vsh2);
 	/* reads pack header */
