@@ -1,0 +1,195 @@
+2003-02-05  Stefano Cau  <cau@staff.inrete.it>
+
+	* phy.c
+	  - bugfix: now mp3 files end correctly and an ERR_EOF is returned
+	    when finished
+
+2003-01-18  Stefano Cau  <cau@staff.inrete.it>
+
+        * schedule.h
+          - deleted items "int change_possible", "int previous" in schedule_list
+            structure
+	* rtp.h
+	  - added items "int PreviousCount", "short MinimumReached" and "short MaximumReached"
+	    in RTP_session structure
+	  - added parameter "int value" to function RTP_stream_change
+	  - added function int change_check
+	  - added function RTCP_get_RR_received
+	  - added functions upgrade_MP3, downgrade_MP3, half_MP3, downgrade_L16, half_L16,
+	    upgrade_GSM, downgrade_GSM, half_GSM, priority_decrease, priority_increase
+	* rtcp.h
+	  - added items "unsigned int RR_received" and "unsigned int SR_received"
+	    to RTCP_stats structure
+	* phy.h
+	  - added function validate_stream
+	  - added function load_MPA
+	  - added function load_GSM
+	  - added function load_L16
+	* rtp.c
+	  - added function change_check; each time an RTCP RR packet is received,
+	    this function returns a code for the function stream_change, according
+	    to AVoIP algorithm
+	  - function stream_change now receives in input the parameter "value", that
+	    can be 0, 1, -1, -2: 0 for no action, 1 to increase bitrate, -1 to
+	    decrease bitrate, -2 to reduce by half bitrate 
+	  - added functions upgrade_MP3, downgrade_MP3, half_MP3, downgrade_L16, half_L16,
+	    upgrade_GSM, downgrade_GSM, half_GSM, priority_decrease, priority_increase
+	* rtcp.c
+	  - modified function RTCP_recv_packet, in order to manage the values of
+	    SR_received and RR_received; those variables are increased by 1, each
+	    SR or RR packet received
+	  - added function RTCP_get_RR_received, that returns the number of RR
+	    packets received by the server from the client
+	* schedule.c
+          - function schedule_init
+            * deleted initialization of sched[i].change_possible and sched[i].previous
+          - function schedule_start
+            * added initialization of sched[i].rtp_session->MinimunReached,
+	      sched[i].rtp_session->PreviousCount, sched[id].rtp_session->rtcp_stats[i_client].RR_received,
+	      sched[id].rtp_session->rtcp_stats[i_client].SR_received, sched[i].rtp_session->MaximunReached
+	  - function schedule_do
+	    * replaced controls on RTCP statistics used to call the function stream_change
+	      with new functions stream_change and change_check
+	  - function schedule_add
+	    * correction on the way the function exits: if i < MAX_SCHEDULE,
+	      returns i, otherwise returns ERR_GENERIC
+	* phy.c
+	  - function read_L16 replaced with read_PCM
+	  - function parse_SD_file
+	    * deleted section "file validation" and replaced with the function
+	      "validate_stream", which controls the media entry items, according
+	      to their encoding name
+	    * replaced the "if mpa" section, after "file validation" with function
+	      "load_MPA", which opens the mp3 file, reads all the information from 
+	      the header and loads all the items
+	    * new function "load_GSM": same as above, but for gsm files
+	    * new function "load_L16": calculates only the bitrate for an L16 file
+	      and loads it into the item; not really necessary, but useful
+	* media_entry.c
+	  - function search_media
+	    * added search item MED_ENCODING_NAME
+	    * bug fixed on search item audio_channels
+
+2002-12-15  Stefano Cau  <cau@staff.inrete.it>
+
+        * media_entry.c
+          - function default_selection_criterion
+            * lookup for default file to stream is done on the item "priority 1",
+              instead of "default_presentation"
+          - function search_media
+            * deleted lookup of the item "default_presentation"
+            * replaced lookup of the item "byte_per_sample" with "bit_per_sample"
+            * added lookup of the item "bitrate"
+            * added lookup of the item "priority"
+        * phy.c
+          - function parse_SD_file
+            * deleted variable dparam; all integer values are loaded directly
+              into the destination variable (e.g. p->decritpion.clock_rate)
+            * deleted parsing of the item "default_presentation"
+            * added parsing of the item "bitrate"
+            * added parsing of the item "priority"
+            * replaced parsing of the item "byte_per_sample" with "bit_per_sample"
+            * modified all the process of file validation as follows:
+              if not loaded "filename", "priority" and "payload_type"
+                  exit
+              if payload_type >= 96
+                  if not loaded "encoding_name" and "clock_rate"
+                      exit
+                      if "gsm" and not loaded "pkt_len"
+                          pkt_len = 20
+                      if "l16" and not loaded "channels"
+                          exit
+                      if "l16" and not loaded "pkt_len"
+                          pkt_len = 20
+              if payload_type < 35
+                  load all values into items with function RTP_static_pt_info
+              if "mpa"
+                  open the file and read all the information from the header
+                  use them to load all the items
+          - function get_frame
+            * deleted field "double *mdim"
+            * streaming function is choosen on the basis of "encoding_name" instead of
+              "payload_type"
+          - function read_L16_8k_m replaced with read_L16
+            * rewritten in order to stream pcm raw files
+          - function read_MP3
+            * rewritten
+          - function read_GSM
+            * simplified
+        * rtcp.c
+          - added funcions: RTCP_get_pkt_lost, RTCP_get_fract_lost, RTCP_get_jitter,
+            RTCP_get_total_packet, RTCP_get_total_payload_octet
+        * rtp.c
+          - funcion RTP_static_pt_info
+            * added details on array RTP_payload: "bit_per_sample", "type sample/frame",
+              "pkt_len"
+          - function RTP_send_packet
+            * deleted variable mstep
+            * added recalculation of session->mtime with the value "s_time" updated by
+              function get_frame
+          - added function RTP_stream_change
+        * rtsp.c
+          - function RTSP_setup
+            * added loading of file name to stream in the structure pointed by sp2,
+              near the end
+          - function RTSP_play
+            * replaced all lookup for "defalut_presentation" with "proprity = 1"
+        * schedule.c
+          - function schedule_init
+            * added initialization of sched[i].change_possible and sched[i].previous
+          - function schedule_do
+            * added sched[i].change_possible test
+            * added RTCP_get_pkt_lost test against previous value, in order to cause
+              a stream change
+        * sdp.c
+          - function get_SDP_descr
+            * replaced lookup for "defalut_presentation" with "priority = 1"
+            * corrected "a:med=" with "a=med:"
+            * corrected "a:ctrl=" with "a=ctrl:"
+       * media_entry.h
+          - deleted item ME_DEFAULT_PRESENTATION=2 from me_flags structure
+          - replaced MED_BYTE_PER_SAMPLE with MED_BIT_PER_SAMPLE in me_descr_flags
+            structure
+          - added MED_PRIORITY=4096 in me_descr_flags structure
+          - deleted item default_presentation from media_entry structure
+          - clock_rate, sample_rate, bit_per_sample are now int instead of unsigned in
+            media_entry.description structure
+          - encoding name is now a 11 char array instead of 10 in
+            media_entry.description structure
+          - added variable "int priority" in media_entry.description structure
+        * parse.h
+          - deleted #define SD_DEFAULT_PRESENTATION "DEFAULT_PRESENTATION"
+          - replaced #define SD_BYTE_PER_SAMPLE "BYTE_PER_SAMPLE" with
+            #define SD_BIT_PER_SAMPLE "BIT_PER_SAMPLE"
+          - added #define SD_PRIORITY "PRIORITY"
+        * phy.h
+          - modified declaration of functions
+            get_frame
+            read_L16
+            read_MP3
+            read_GSM
+        * rtcp.h
+          - modified some types in RTCP_stats structure
+            unsigned short pkt_count becomes unsigned int
+            unsigned short octet_count becomes unsigned int
+            unsigned int pkt_lost becomes int
+        * rtp.h
+          - modified RTP_static_payload struct, which now has following items
+            int PldType;
+            char *EncName;
+            int ClockRate;
+            short Channels;
+            int BitPerSample;
+            media_coding Type;
+            float PktLen;
+          - added declaration of functions
+            RTP_stream_change
+            RTCP_get_pkt_lost
+            RTCP_get_fract_lost
+            RTCP_get_jitter
+            RTCP_get_total_packet
+            RTCP_get_total_payload_octet
+        * schedule.h
+          - added items "int change_possible", "int previous" in schedule_list
+            structure
+

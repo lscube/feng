@@ -1,0 +1,15 @@
+If you are in a hurry:
+
+Compile:
+cd fenice0.1
+./configure
+make
+
+Run:
+cd fenice0.1
+cd fenice
+./fenice
+
+Configuration:
+joe fenice0.1/fenice/fenice.conf
+
