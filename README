@@ -1,0 +1,30 @@
+-----------------------------------------
+Sparse notes on A/V Resources management.
+-----------------------------------------
+
+* Default dir for A/V files is /var/fenice/avroot.
+* Default RTSP port is 1554.
+
+* For every A/V resource you need
+  
+  1) two separate files for audio (MP3) and video (MPEG-1,2),
+  2) a Source Description (.sd) file for resource description.
+  
+  Streming clients must be invoked with, e.g:
+  	
+	$ mystreamingclient rtsp://streamingserver:1554/myvideo.sd
+
+  or similar. You can't request plain mpeg or mp3 files, neither for audio-only
+  nor video-only resources.  
+  
+  See test files in avroot dir for examples.
+
+* You can do live mp3-coded streaming using a named-pipe:
+
+  1) Create a named-pipe (e.g., mkfifo live.mp3),
+  2) create an .sd file with the named-pipe as audio content, then
+  3) feed named-pipe with live-encoded mp3 data.
+
+* Suggested encoding tools:
+  Video: mjpegtools' mpeg2enc
+  Audio: lame

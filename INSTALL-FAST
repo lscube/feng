@@ -1,15 +1,15 @@
 If you are in a hurry:
 
 Compile:
-cd fenice0.1
-./configure
-make
+Change to fenice source dir, then:
+
+$ ./configure
+$ make
+# make install
 
 Run:
-cd fenice0.1
-cd fenice
-./fenice
+fenice
 
 Configuration:
-joe fenice0.1/fenice/fenice.conf
+Please, edit /etc/fenice.conf
 
