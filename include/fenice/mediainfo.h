@@ -269,7 +269,7 @@
 	int load_L16 (media_entry *me);
 	int load_MP2T (media_entry *me);
 	int load_MPV (media_entry *me);
-	int load_MP4EV (media_entry *me);
+	int load_MP4ES (media_entry *me);
 	// read specific formats	
 	int read_PCM (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime);
 	int read_MP3 (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime);

@@ -135,7 +135,7 @@
 	int send_options_reply(RTSP_buffer *rtsp,long cseq);
 
 	// messages functions
-	uint32 max_connection();
+	int max_connection();
 	char *get_stat(int err);
 	int send_reply(int err, char *addon ,RTSP_buffer *rtsp);
 	int bwrite(char *buffer,unsigned short len,RTSP_buffer *rtsp);

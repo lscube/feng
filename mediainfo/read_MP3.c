@@ -80,7 +80,7 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
 		if (buff[2] & 0x02) N++;
 	} 
 	else {
-               	// Sync not found, not Mpeg-1/2
+		// Sync not found, not Mpeg-1/2
 		// id3 TAG v1 is suppressed, id3 TAG v2 is not supported and
 		//fprintf(stderr,"ERROR: Sync not found, not Mpeg-1/2\n");
 		N = (int)(me->description.frame_len * (float)me->description.bitrate / (float)me->description.sample_rate / 8);

@@ -43,12 +43,12 @@
 #include <fenice/schedule.h>
 #include <fenice/types.h>
 
-uint32 num_conn;
+int num_conn = 0;
 
 void eventloop(tsocket main_fd)
 {
 	static uint32 child_count=0;
-	static uint32 conn_count;	
+	static int conn_count = 0;
 	tsocket fd = -1;
 	static RTSP_buffer *rtsp_list=NULL;
 	RTSP_buffer *p;

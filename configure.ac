@@ -173,7 +173,7 @@ esac
 ARCH_DEFINES=""
 case "$host" in 
 	i386-*-* | i486-*-* | i586-*-* | i686-*-* | i86pc-*-*)
-		CFLAGS="$CFLAGS -mcpu=i486"
+		CFLAGS="$CFLAGS -march=i386"
 		ARCH_DEFINES="-DI386_ASSEM"
 		arch_type=ix86
 	;;

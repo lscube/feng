@@ -73,7 +73,7 @@
 
 int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme)   /* reads MPEG4 Elementary stream Video */
 {
-	uint32 ret;
+	int ret;
 	uint32 num_bytes;
 	static_MPEG_video *s=NULL;
 	uint32 init=0;

@@ -44,7 +44,7 @@
 #include <fenice/schedule.h>
 #include <fenice/bufferpool.h>
 int stop_schedule = 0;
-extern uint32 num_conn;
+extern int num_conn;
 
 void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
 {
