@@ -49,7 +49,7 @@ int enum_media(char *object,SD_descr **d)
 		if (strcmp(descr_curr->filename,object)==0)
 			matching_descr=descr_curr;
 		else
-			last_descr=descr_curr;
+	last_descr=descr_curr;
 	}
 
 	

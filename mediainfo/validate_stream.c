@@ -66,8 +66,8 @@ int validate_stream(media_entry *p, SD_descr ** sd_descr)
 	 *- validate twin
 	 * */
 	if(!parse_url((*sd_descr)->twin,server, &port, object))
-		return ERR_PARSE;
-		
+		(*sd_descr)->flags &= 0xFFFFFFFE;
+
 	if(!is_valid_multicast_address((*sd_descr)->multicast))
 		strcpy((*sd_descr)->multicast,DEFAULT_MULTICAST_ADDRESS);
 	
