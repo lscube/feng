@@ -56,10 +56,13 @@ int RTP_send_packet(RTP_session *session)
 	double s_time;
 	OMSSlot *slot;
 	
-	//s_time = session->mtime - session->mstart + session->mstart_offset;
+//	s_time = session->mtime - session->mstart + session->mstart_offset;
 	if(!(slot = OMSbuff_read(session->cons))){
 		//This operation runs only if producer writes the slot
 		session->current_media->mtime += session->current_media->description.delta_mtime; //emma  
+		
+		//session->current_media->mtime+=session->current_media->description.pkt_len;     // old scheduler
+		
 		s_time = session->current_media->mtime - session->current_media->mstart + session->current_media->mstart_offset;
 		if ((res=get_frame(session->current_media,&s_time))!=ERR_NOERROR){
 			/* if(res==ERR_EOF)

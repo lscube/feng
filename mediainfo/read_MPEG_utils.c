@@ -50,12 +50,11 @@ int next_start_code(uint8 *buf, uint32 *buf_size,int fin) {  			/* returns numbe
 		return -1;
 	}
 	while ( !((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01))) {
-		//lseek(fin,-2,SEEK_CUR);
     		buf[*buf_size]=buf_aux[0];
     		*buf_size+=1;
 		buf_aux[0]=buf_aux[1];
 		buf_aux[1]=buf_aux[2];
-      		if ( read(fin,&buf_aux[2],1) <1) {
+      		if ( read(fin,&buf_aux[2],1) < 1) {
 			return -1;
         	}
       		count++;
@@ -68,40 +67,33 @@ int next_start_code(uint8 *buf, uint32 *buf_size,int fin) {  			/* returns numbe
 }
 
 int read_seq_head(uint8 *buf,uint32 *buf_size, int fin, char *final_byte, standard std) {  /* reads sequence header */
-	int count=0;
         read(fin,&(buf[*buf_size]),8);                       			//reads first 95 bits +1
         *buf_size+=8;
-	count+=8;
         if (buf[*buf_size-1] & 0x02) {                       			// intra quantizer matrix present
                 read(fin,&(buf[*buf_size]),64);              			// reads intra quantizer matrix +1 bit
                 *buf_size+=64;
-		count+=64;
         }
         if (buf[*buf_size-1] & 0x01) {                       			// non intra quantizer matrix present
                 read(fin,&(buf[*buf_size]),64);              			// reads non intra quantizer matrix
                 *buf_size+=64;
-		count+=64;
         }
-        count+=next_start_code(buf,buf_size,fin);
+        next_start_code(buf,buf_size,fin);
         read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
-	count++;
         if (std == MPEG_1) {
                 if (buf[*buf_size-1] == 0xb5) {              			// reads extension data if present (MPEG-1 only)
-                        count+=next_start_code(buf,buf_size,fin);
+                        next_start_code(buf,buf_size,fin);
                         read(fin,&(buf[*buf_size]),1);
                         *buf_size+=1;
-			count++;
                 }
                 if (buf[*buf_size-1] == 0xb2) {              			// reads user data if present (MPEG-1 only)
-                        count+=next_start_code(buf,buf_size,fin);
+                        next_start_code(buf,buf_size,fin);
                         read(fin,&(buf[*buf_size]),1);
                         *buf_size+=1;
-			count++;
                 }
         }
         *final_byte=buf[*buf_size-1];
-        return count;
+        return 1;
 }
 
 int read_gop_head(uint8 *buf,uint32 *buf_size, int fin, char *final_byte, char *hours, char *minutes, char *seconds, char *picture, standard std) {  /* reads GOP header */
@@ -207,9 +199,9 @@ int read_picture_head(uint8 *buf,uint32 *buf_size, int fin, char *final_byte, ch
 int read_slice(uint8 *buf,uint32 *buf_size, int fin, char *final_byte) {     /* reads a slice */
         int count;                                                                      /* at the end count is the slice size */
         count=next_start_code(buf,buf_size,fin);
-        read(fin,final_byte,1);
+        read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
-        buf[*buf_size]=*final_byte;
+        *final_byte=buf[*buf_size-1];
         //*buf_size-=4;
         //lseek(fin,-4,SEEK_CUR);
         return count;
@@ -217,21 +209,19 @@ int read_slice(uint8 *buf,uint32 *buf_size, int fin, char *final_byte) {     /* 
 
 int probe_standard(uint8 *buf,uint32 *buf_size,int fin, standard *std) {    /* If the sequence_extension occurs immediately */
         unsigned char final_byte;                                                      /* after the sequence header, the sequence is an */
-	int count=0;
-        count=next_start_code(buf,buf_size,fin);                                             /* MPEG-2 video sequence */
+        next_start_code(buf,buf_size,fin);                                             /* MPEG-2 video sequence */
         read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
-	count++;
         final_byte=buf[*buf_size-1];
         if (final_byte == 0xb3) {
-                count+=read_seq_head(buf,buf_size,fin,&final_byte,*std);
+                read_seq_head(buf,buf_size,fin,&final_byte,*std);
         }
         if (final_byte  == 0xb5){
                 *std=MPEG_2;
         } else {
                 *std=MPEG_1;
         }
-        return count;
+        return 1;
 }
 
 int read_picture_coding_ext(uint8 *buf,uint32 *buf_size, int fin, char *final_byte,video_spec_head2* vsh2) {  /* reads picture coding extension */

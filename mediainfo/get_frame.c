@@ -42,7 +42,7 @@ int get_frame(media_entry *me, double *mtime)
 	int recallme=1;	
 	OMSSlot *slot;
 	int res;
-	while(recallme){
+	while(recallme && res!=ERR_EOF){
 		slot=OMSbuff_getslot(me->pkt_buffer);
 		
 	        if (strcmp(me->description.encoding_name,"MPA")==0) {

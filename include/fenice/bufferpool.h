@@ -37,7 +37,7 @@
 
 #include <fenice/types.h>
 
-#define OMSSLOT_DATASIZE 3000
+#define OMSSLOT_DATASIZE 65000
 #define OMSSLOT_COMMON	uint16 refs; \
 			uint64 slot_seq; /* monotone identifier of slot (NOT RTP seq) */ \
 			double timestamp; \

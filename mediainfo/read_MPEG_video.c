@@ -32,6 +32,7 @@
  *  
  * */
 
+#include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
@@ -44,14 +45,6 @@
 #include <alloca.h>
 #endif
 
-// define of th mink
-#define WRITE_SLOT	memcpy(data, data_tmp, *data_size);
-#if HAVE_ALLOCA
-#define FREE_DATA
-#else
-#define FREE_DATA	free(data_tmp);\
-			free(data_aux);
-#endif
 
 int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme)   /* reads MPEG-1,2 Video */
 {
@@ -61,10 +54,8 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         #ifdef MPEG2VSHE
         char *vsh2_1;
 	#endif
-	int count,flag,extra_bytes,seq_head_pres=0;
-        unsigned char *data_aux, *data_tmp;            				/* variables used to read next timestamp */
-        unsigned data_size_aux=0;               				/* using the same reading functions and */
-	double next_timestamp;
+	int count,flag=0,seq_head_pres=0;
+        unsigned char *data_tmp;            				
 	static_MPEG_video *s=NULL;
 
         if (!(me->flags & ME_FD)) {
@@ -90,11 +81,10 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 
         *data_size=0;
         count=0;
-        flag = 1;                                                                 /* At this point it should be right to find the nearest lower frame */
-                                                                                  /* computing it from the value of mtime */
-	if((me->description).msource!=live)
-        	lseek(me->fd,s->data_total,SEEK_SET);                                        /* and starting the reading from this; */
-                                                                                  /* feature not yet implemented, usefull for random access*/
+	                                                  /* computing it from the value of mtime */
+        //if((me->description).msource!=live)	
+	//	lseek(me->fd,s->data_total,SEEK_SET);     /* and starting the reading from this; */
+                                                          /* feature not yet implemented, usefull for random access*/
 #if HAVE_ALLOCA
         data_tmp=(unsigned char *)alloca(65000);
 #else
@@ -103,761 +93,226 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         if (data_tmp==NULL)
                return ERR_ALLOC;
 
-	#if HAVE_ALLOCA
-        data_aux=(unsigned char *)alloca(100);
-#else
-        data_aux=(unsigned char *)calloc(1,100);
-#endif
-        if (data_aux==NULL) {
-#if !HAVE_ALLOCA
-		free(data_tmp);
-#endif
-                return ERR_ALLOC;
-        }
-
-        if (s->data_total == 0) {
+        if (s->std == TO_PROBE) {
                 probe_standard(data_tmp,data_size,me->fd,&s->std);
-               	lseek(me->fd,0,SEEK_SET);
+		flag=1;
         }
 
-        if (s->std == MPEG_2) {
+        if (s->std == MPEG_2 && !flag) {
         	#ifdef MPEG2VSHE
                 *data_size = 8;
                 #else
                 *data_size = 4;
 		#endif                               				/* bytes for the video specific header */
-        } else {
+        } else if(!flag){
                 *data_size = 4;
         }
-
-        if (!s->fragmented) {
-        	if ( next_start_code(data_tmp,data_size,me->fd) == -1) {
-			close(me->fd);
-			
-			FREE_DATA;
-			return ERR_EOF;
-		}
-
-        	read(me->fd,&s->final_byte,1);
-        	data_tmp[*data_size]=s->final_byte;
-        	*data_size+=1;
-                                                        // Start of ES header reading
-
-        	if (s->final_byte == 0xb3) {
-                	read_seq_head(data_tmp,data_size,me->fd,&s->final_byte,s->std);
-                	seq_head_pres=1;
-        	}
-        	while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {          	// read sequence_extension
-                	count=next_start_code(data_tmp,data_size,me->fd);           	// and user_data (MPEG-2 only)
-                	read(me->fd,&s->final_byte,1);
-                	data_tmp[*data_size]=s->final_byte;
-                	*data_size+=1;
-        	}
-         	if ((num_bytes!=0) && (*data_size>num_bytes)) {
-			count+=4;
-			*data_size-=count;
-			*recallme=1;
-                        								// finds subsequent s->picture to read timestamp
-			if (s->final_byte == 0xb8) {
-                		read_gop_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
+	if(num_bytes==0){ /*case 1 slice for pkt*/
+		do{
+			if(!flag){	
+        			if ( next_start_code(data_tmp,data_size,me->fd) == -1) {
+					close(me->fd);
+#if !HAVE_ALLOCA
+					free(data_tmp);
+#endif
+					return ERR_EOF;
+				}
+		        	read(me->fd,&s->final_byte,1);
+	               		data_tmp[*data_size]=s->final_byte;
+        	        	*data_size+=1;
+			}else{
+				s->final_byte=data_tmp[*data_size-1];
+			}
+		
+        		if (s->final_byte == 0xb3) {
+                		read_seq_head(data_tmp,data_size,me->fd,&s->final_byte,s->std);
+                		seq_head_pres=1;
         		}
+                        if (s->final_byte == 0xb8) {
+                                read_gop_head(data_tmp,data_size,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
+                        }
+                        if (s->final_byte == 0x00) {
+                                read_picture_head(data_tmp,data_size,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
+                                if (s->std == MPEG_2) {
+                                        read_picture_coding_ext(data_tmp,data_size,me->fd,&s->final_byte,&s->vsh2);
+                                }
+                        }
+		}while(s->final_byte>0xAF);
+		count = read_slice(data_tmp,data_size,me->fd,&s->final_byte);
+	}/*end if(num_bytes==0)*/
+	else if(!s->fragmented)/*num_bytes !=0 and slice was not fragmented*/{
+		char buf_aux[3];	
+		int i;
+		if(flag)
+		  	s->final_byte=data_tmp[*data_size-1];
+                data_tmp[*data_size]=0x00;
+                *data_size+=1;
+                data_tmp[*data_size]=0x00;
+                *data_size+=1;
+                data_tmp[*data_size]=0x01;
+                *data_size+=1;
+                data_tmp[*data_size]=s->final_byte;
+                *data_size+=1;
+		
+		while(s->final_byte > 0xAF || s->final_byte==0x00 && *recallme){
+			if (s->final_byte == 0xb3) {
+               			read_seq_head(data_tmp,data_size,me->fd,&s->final_byte,s->std);
+               			seq_head_pres=1;
+       			}
 
-        		while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {          // read extension
-                		next_start_code(data_aux,&data_size_aux,me->fd);       // and user_data (MPEG-2 only)
-                		read(me->fd,&s->final_byte,1);
-                		(data_aux)[data_size_aux]=s->final_byte;
-                		data_size_aux+=1;
-        		}
-
-        		if (s->final_byte == 0x00) {
-                		read_picture_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
-                		if (s->std == MPEG_2) {
-                        		read_picture_coding_ext(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2);
-                		}
-        		}
-
-      			s->data_total+=*data_size;
-                 	if (s->std==MPEG_2) {
-			  	#ifdef MPEG2VSHE
-                		s->data_total-=8;
-                  		s->vsh1.t=1;
-                		#else
-                		s->data_total-=4;
-                   		s->vsh1.t=0;
-				#endif
-                	} else {
-                 		s->data_total-=4;
-                   		s->vsh1.t=0;
-                	}
-                	s->vsh1.mbz=0;
-                	s->vsh1.an=0;
-                	s->vsh1.n=0;
-                	if (seq_head_pres) {
-                        	s->vsh1.s=1;
-                	} else {
-                        	s->vsh1.s=0;
-                	}
-                	s->vsh1.b=0;
-                 	s->vsh1.e=0;
-                	vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                	data_tmp[0] = vsh1_1[3];
-                	data_tmp[1] = vsh1_1[2];
-                	data_tmp[2] = vsh1_1[1];
-                	data_tmp[3] = vsh1_1[0];
-                 	#ifdef MPEG2VSHE
-                	if (s->std == MPEG_2) {
-                        vsh2_1 = (char *)(&s->vsh2);
-                        data_tmp[4] = vsh2_1[3];
-                        data_tmp[5] = vsh2_1[2];
-                        data_tmp[6] = vsh2_1[1];
-                        data_tmp[7] = vsh2_1[0];
-                	}
-			#endif
-                	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-			
-			WRITE_SLOT;
-			FREE_DATA;
-                 	return ERR_NOERROR;
-         	}
-
-        	if (s->final_byte == 0xb8) {
-                	count+=read_gop_head(data_tmp,data_size,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
-        	}
-
-                if ((num_bytes!=0) && (*data_size>num_bytes)) {
-			count+=4;
-			*data_size-=count;
-			*recallme=1;
-                        								// finds subsequent s->picture to read timestamp
-
-        		while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {          // read extension
-                		next_start_code(data_aux,&data_size_aux,me->fd);       // and user_data (MPEG-2 only)
-                		read(me->fd,&s->final_byte,1);
-                		(data_aux)[data_size_aux]=s->final_byte;
-                		data_size_aux+=1;
-        		}
-
-        		if (s->final_byte == 0x00) {
-                		read_picture_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
-                		if (s->std == MPEG_2) {
-                        		read_picture_coding_ext(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2);
-                		}
-        		}
-
-      			s->data_total+=*data_size;
-                 	if (s->std==MPEG_2) {
-                  	#ifdef MPEG2VSHE
-                	s->data_total-=8;
-                  	s->vsh1.t=1;
-                	#else
-                	s->data_total-=4;
-                   	s->vsh1.t=0;
-			#endif
-                	} else {
-                 		s->data_total-=4;
-                   		s->vsh1.t=0;
-                	}
-                	s->vsh1.mbz=0;
-                	s->vsh1.an=0;
-                	s->vsh1.n=0;
-                	if (seq_head_pres) {
-                        	s->vsh1.s=1;
-                	} else {
-                        	s->vsh1.s=0;
-                	}
-                	s->vsh1.b=0;
-                 	s->vsh1.e=0;
-                	vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                	data_tmp[0] = vsh1_1[3];
-                	data_tmp[1] = vsh1_1[2];
-                	data_tmp[2] = vsh1_1[1];
-                	data_tmp[3] = vsh1_1[0];
-                	#ifdef MPEG2VSHE
-                	if (s->std == MPEG_2) {
-                        vsh2_1 = (char *)(&s->vsh2);
-                        data_tmp[4] = vsh2_1[3];
-                        data_tmp[5] = vsh2_1[2];
-                        data_tmp[6] = vsh2_1[1];
-                        data_tmp[7] = vsh2_1[0];
-                	}
-			#endif
-                	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-			
-			WRITE_SLOT;
-			FREE_DATA;
-                 	return ERR_NOERROR;
-         	}
-
-        	while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {          	// read extension
-                	next_start_code(data_tmp,data_size,me->fd);                 	// and user_data (MPEG-2 only)
-                	read(me->fd,&s->final_byte,1);
-                	data_tmp[*data_size]=s->final_byte;
-                	*data_size+=1;
-        	}
-
-         	if ((num_bytes!=0) && (*data_size>num_bytes)) {
-			count+=4;
-			*data_size-=count;
-			*recallme=1;
-                        								// finds subsequent s->picture to read timestamp
-
-        		if (s->final_byte == 0x00) {
-                		read_picture_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
-                		if (s->std == MPEG_2) {
-                        		read_picture_coding_ext(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2);
-                		}
-        		}
-
-      			s->data_total+=*data_size;
-                 	if (s->std==MPEG_2) {
-                  		#ifdef MPEG2VSHE
-                		s->data_total-=8;
-                  		s->vsh1.t=1;
-                		#else
-                		s->data_total-=4;
-                 		s->vsh1.t=0;
-				#endif
-                	} else {
-                 		s->data_total-=4;
-                   		s->vsh1.t=0;
-                	}
-                	s->vsh1.mbz=0;
-                	s->vsh1.an=0;
-                	s->vsh1.n=0;
-                	if (seq_head_pres) {
-                        	s->vsh1.s=1;
-                	} else {
-                        	s->vsh1.s=0;
-                	}
-                	s->vsh1.b=0;
-                 	s->vsh1.e=0;
-                	vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                	data_tmp[0] = vsh1_1[3];
-                	data_tmp[1] = vsh1_1[2];
-                	data_tmp[2] = vsh1_1[1];
-                	data_tmp[3] = vsh1_1[0];
-                	#ifdef MPEG2VSHE
-                	if (s->std == MPEG_2) {
-                        	vsh2_1 = (char *)(&s->vsh2);
-                        	data_tmp[4] = vsh2_1[3];
-                        	data_tmp[5] = vsh2_1[2];
-                        	data_tmp[6] = vsh2_1[1];
-                        	data_tmp[7] = vsh2_1[0];
-                	}
-			#endif
-                	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-			WRITE_SLOT;
-			FREE_DATA;
-                 	return ERR_NOERROR;
-         	}
-
-        	if (s->final_byte == 0x00) {
-                	count+=read_picture_head(data_tmp,data_size,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
-                 	if ((num_bytes!=0) && (*data_size>num_bytes)) {
-				count+=4;
-				*data_size-=count;
-				*recallme=1;
-
-      				s->data_total+=*data_size;
-                 		if (s->std==MPEG_2) {
-                  			#ifdef MPEG2VSHE
-                			s->data_total-=8;
-                  			s->vsh1.t=1;
-                			#else
-                			s->data_total-=4;
-                 			s->vsh1.t=0;
-					#endif
-                		} else {
-                 			s->data_total-=4;
-                   			s->vsh1.t=0;
-                		}
-                		s->vsh1.mbz=0;
-                		s->vsh1.an=0;
-                		s->vsh1.n=0;
-                		if (seq_head_pres) {
-                        		s->vsh1.s=1;
-                		} else {
-                        		s->vsh1.s=0;
-                		}
-                		s->vsh1.b=0;
-                 		s->vsh1.e=0;
-                		vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                		data_tmp[0] = vsh1_1[3];
-                		data_tmp[1] = vsh1_1[2];
-                		data_tmp[2] = vsh1_1[1];
-                		data_tmp[3] = vsh1_1[0];
-                		#ifdef MPEG2VSHE
-                		if (s->std == MPEG_2) {
-                        		vsh2_1 = (char *)(&s->vsh2);
-                  			data_tmp[4] = vsh2_1[3];
-                        		data_tmp[5] = vsh2_1[2];
-                        		data_tmp[6] = vsh2_1[1];
-                        		data_tmp[7] = vsh2_1[0];
-                		}
-				#endif
-                		*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-				WRITE_SLOT;
-				FREE_DATA;
-                 		return ERR_NOERROR;
-         		}
-
-                	if (s->std == MPEG_2) {
-                        	count+=read_picture_coding_ext(data_tmp,data_size,me->fd,&s->final_byte,&s->vsh2);
-                	}
-        	}
-
-		if ((num_bytes!=0) && (*data_size>num_bytes)) {
-			count+=4;
-			*data_size-=count;
-			*recallme=1;
-
-      			s->data_total+=*data_size;
-                 	if (s->std==MPEG_2) {
-                  	#ifdef MPEG2VSHE
-                		s->data_total-=8;
-                  		s->vsh1.t=1;
-                		#else
-                		s->data_total-=4;
-                 		s->vsh1.t=0;
-			#endif
-                	} else {
-                 		s->data_total-=4;
-                   		s->vsh1.t=0;
-                	}
-                	s->vsh1.mbz=0;
-                	s->vsh1.an=0;
-                	s->vsh1.n=0;
-                	if (seq_head_pres) {
-                        	s->vsh1.s=1;
-                	} else {
-                        	s->vsh1.s=0;
-                	}
-                	s->vsh1.b=0;
-                 	s->vsh1.e=0;
-                	vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                	data_tmp[0] = vsh1_1[3];
-                	data_tmp[1] = vsh1_1[2];
-                	data_tmp[2] = vsh1_1[1];
-                	data_tmp[3] = vsh1_1[0];
-                	#ifdef MPEG2VSHE
-                	if (s->std == MPEG_2) {
-                        	vsh2_1 = (char *)(&s->vsh2);
-                        	data_tmp[4] = vsh2_1[3];
-                        	data_tmp[5] = vsh2_1[2];
-                        	data_tmp[6] = vsh2_1[1];
-                        	data_tmp[7] = vsh2_1[0];
-                	}
-			#endif
-                	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-			WRITE_SLOT;
-			FREE_DATA;
-                 	return ERR_NOERROR;
-         	}
-
-        	while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {          	// read extension
-                	next_start_code(data_tmp,data_size,me->fd);                    	// and user_data (MPEG-2 only)
-                	read(me->fd,&s->final_byte,1);
-         		data_tmp[*data_size]=s->final_byte;
-                	*data_size+=1;
-        	}
-
-                if ((num_bytes!=0) && (*data_size>num_bytes)) {
-			count+=4;
-			*data_size-=count;
-			*recallme=1;
-
-      			s->data_total+=*data_size;
-                 	if (s->std==MPEG_2) {
-                  	#ifdef MPEG2VSHE
-                		s->data_total-=8;
-                  		s->vsh1.t=1;
-                		#else
-                		s->data_total-=4;
-                 		s->vsh1.t=0;
-			#endif
-                	} else {
-                 		s->data_total-=4;
-                   		s->vsh1.t=0;
-                	}
-                	s->vsh1.mbz=0;
-                	s->vsh1.an=0;
-                	s->vsh1.n=0;
-                	if (seq_head_pres) {
-                        	s->vsh1.s=1;
-                	} else {
-                        	s->vsh1.s=0;
-                	}
-                	s->vsh1.b=0;
-                 	s->vsh1.e=0;
-                	vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                	data_tmp[0] = vsh1_1[3];
-                	data_tmp[1] = vsh1_1[2];
-                	data_tmp[2] = vsh1_1[1];
-                	data_tmp[3] = vsh1_1[0];
-                        #ifdef MPEG2VSHE
-                	if (s->std == MPEG_2) {
-                        	vsh2_1 = (char *)(&s->vsh2);
-                        	data_tmp[4] = vsh2_1[3];
-                        	data_tmp[5] = vsh2_1[2];
-                        	data_tmp[6] = vsh2_1[1];
-                        	data_tmp[7] = vsh2_1[0];
-                	}
-			#endif
-                	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-			
-			WRITE_SLOT;
-			FREE_DATA;
-                 	return ERR_NOERROR;
-         	}
-
-
-        	if (s->final_byte == 0xb7) {
-			*recallme=0;
-			s->data_total+=*data_size;
-			
-			WRITE_SLOT;
-			FREE_DATA;
-			return ERR_NOERROR;
-		}
-
-                					// Start of slice reading
-
-
-
-
-        	if (num_bytes != 0) {                                            	/* there could be more than 1 slice per packet */
-                	while ( (((*data_size-4) <= num_bytes) && (*recallme == 1))) {    	/* reads slices until num_bytes is reached or next frame is starting*/
-                        	count = read_slice(data_tmp,data_size,me->fd,&s->final_byte);
-                        	//next_start_code(data_tmp,data_size,me->fd);
-                        	//read(me->fd,&s->final_byte,1);
-                        	//data_tmp[*data_size]=s->final_byte;
-                        	//*data_size+=1;
-                        	if ( ((s->final_byte > 0xAF)||(s->final_byte==0x00)) && ((*data_size-4) <= num_bytes)) {
-                                	*recallme = 0;
-                                	flag = 0;
+			else if (s->final_byte == 0xb8) {
+                        	read_gop_head(data_tmp,data_size,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
+                 	}
+		
+			else if (s->final_byte == 0x00) {
+                        	read_picture_head(data_tmp,data_size,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
+                        	if (s->std == MPEG_2 && *data_size<num_bytes) {
+                                	read_picture_coding_ext(data_tmp,data_size,me->fd,&s->final_byte,&s->vsh2);
                         	}
                 	}
-                	if (flag) {      						/* if num_bytes has been exceded */
-                        	extra_bytes=*data_size-num_bytes;
-                        	lseek(me->fd,-extra_bytes,SEEK_CUR);     		/* removes extra bytes */
-                        	*data_size-=extra_bytes;
-                        	s->fragmented=1;
-                         	*recallme=1;
-                	} else {                        				/*  next start-code isn't a slice start code */
-                        	lseek(me->fd,-4,SEEK_CUR);
-                        	*data_size-=4;
+			else if (s->final_byte == 0xb7) {/*sequence end code*/
+                        	*recallme=0;
+				s->fragmented=0;
                 	}
-                	s->data_total+=*data_size;
-                 	if (s->std==MPEG_2) {
-                  	#ifdef MPEG2VSHE
-                		s->data_total-=8;
-                  		s->vsh1.t=1;
-                		#else
-                		s->data_total-=4;
-                 		s->vsh1.t=0;
-			#endif
-                	} else {
-                 		s->data_total-=4;
-                   		s->vsh1.t=0;
-                	}
-                	s->vsh1.mbz=0;
-                	s->vsh1.an=0;
-                	s->vsh1.n=0;
-                	if (seq_head_pres) {
-                        	s->vsh1.s=1;
-                	} else {
-                        	s->vsh1.s=0;
-                	}
-                	s->vsh1.b=1;
-                 	if (!s->fragmented) {
-                 		s->vsh1.e=1;
-                   	} else {
-				s->vsh1.e=0;
-                    	}
-                	vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                	data_tmp[0] = vsh1_1[3];
-                	data_tmp[1] = vsh1_1[2];
-                	data_tmp[2] = vsh1_1[1];
-                	data_tmp[3] = vsh1_1[0];
-                	#ifdef MPEG2VSHE
-                	if (s->std == MPEG_2) {
-                        	vsh2_1 = (char *)(&s->vsh2);
-                        	data_tmp[4] = vsh2_1[3];
-                        	data_tmp[5] = vsh2_1[2];
-                        	data_tmp[6] = vsh2_1[1];
-                        	data_tmp[7] = vsh2_1[0];
-                	}
-			#endif
-                	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-                	if (s->final_byte == 0xb7) {
-                        	next_start_code(data_tmp,data_size,me->fd);
-                        	read(me->fd,&s->final_byte,1);
-                        	data_tmp[*data_size]=s->final_byte;
-                        	*data_size+=1;
-                       	 	s->data_total+=4;
-                	}
-
-                	if (*recallme == 0)	{					/* reads next time-stamp to compute the value of delta_mtime */
-
-                 		lseek(me->fd,4,SEEK_CUR);
-
-                		if (s->final_byte == 0xb3) {
-                		read_seq_head(data_aux,&data_size_aux,me->fd,&s->final_byte,s->std);
-        			}
-      		  		while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-         				next_start_code(data_aux,&data_size_aux,me->fd);
-               	 			read(me->fd,&s->final_byte,1);
-                			(data_aux)[data_size_aux]=s->final_byte;
-                			data_size_aux+=1;
-        			}
-        			if (s->final_byte == 0xb8) {
-                			read_gop_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
-        			}
-
-        			while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-                			next_start_code(data_aux,&data_size_aux,me->fd);
-                			read(me->fd,&s->final_byte,1);
-                			(data_aux)[data_size_aux]=s->final_byte;
-                			data_size_aux+=1;
-        			}
-
-        			if (s->final_byte == 0x00) {
-                			read_picture_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1_aux,s->std);
-                			if (s->std == MPEG_2) {
-                        			read_picture_coding_ext(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2_aux);
-                			}
-        			}
-
-        			while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-                			next_start_code(data_aux,&data_size_aux,me->fd);
-                			read(me->fd,&s->final_byte,1);
-                			(data_aux)[data_size_aux]=s->final_byte;
-                			data_size_aux+=1;
-        			}
-           										/* computes delta_mtime */
-         			next_timestamp = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-          			me->description.delta_mtime = next_timestamp - *mtime;
-
-                	}
-
-			
-			WRITE_SLOT;
-			FREE_DATA;
-                	return ERR_NOERROR;
-        	} else {                                            			/* 1 slice per packet */
-         		read_slice(data_tmp,data_size,me->fd,&s->final_byte);
-                	s->data_total+=*data_size;
-                	if (s->std==MPEG_2) {
-                 		#ifdef MPEG2VSHE
-                		s->data_total-=8;
-                  		s->vsh1.t=1;
-                		#else
-                		s->data_total-=4;
-                 		s->vsh1.t=0;
-				#endif
-                	} else {
-                        	s->data_total-=4;
-                        	s->vsh1.t=0;
-                	}
-                	s->vsh1.mbz=0;
-                	s->vsh1.an=0;
-                	s->vsh1.n=0;
-                	if (seq_head_pres) {
-                        	s->vsh1.s=1;
-                	} else {
-                        	s->vsh1.s=0;
-                	}
-                	s->vsh1.b=s->vsh1.e=1;
-                	vsh1_1 = (char *)(&s->vsh1);
-                	data_tmp[0] = vsh1_1[3];
-                	data_tmp[1] = vsh1_1[2];
-                	data_tmp[2] = vsh1_1[1];
-                	data_tmp[3] = vsh1_1[0];
-                	#ifdef MPEG2VSHE
-                	if (s->std == MPEG_2) {
-                        	vsh2_1 = (char *)(&s->vsh2);
-                        	data_tmp[4] = vsh2_1[3];
-                        	data_tmp[5] = vsh2_1[2];
-                        	data_tmp[6] = vsh2_1[1];
-                        	data_tmp[7] = vsh2_1[0];
-                	}
-			#endif
-               	 	if ((s->final_byte > 0xAF)||(s->final_byte==0x00)) {
-                        	*recallme = 0;
-                	} else {
-                        	*recallme = 1;
-                	}
-                	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) +  (s->picture*40);
-                	if (s->final_byte == 0xb7) {
-                        	//next_start_code(data_tmp,data_size,me->fd);
-                        	//read(me->fd,&s->final_byte,1);
-                       	 	//data_tmp[*data_size]=s->final_byte;
-                        	//*data_size+=1;
-                        	s->data_total+=4;
-                	}
-
-                	if (*recallme == 0)	{					/* reads next time-stamp to compute the value of delta_mtime */
-
-                 		lseek(me->fd,4,SEEK_CUR);
-
-                		if (s->final_byte == 0xb3) {
-                		read_seq_head(data_aux,&data_size_aux,me->fd,&s->final_byte,s->std);
-        			}
-      		  		while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-         				next_start_code(data_aux,&data_size_aux,me->fd);
-               	 			read(me->fd,&s->final_byte,1);
-                			(data_aux)[data_size_aux]=s->final_byte;
-                			data_size_aux+=1;
-        			}
-        			if (s->final_byte == 0xb8) {
-                			read_gop_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
-        			}
-
-        			while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-                			next_start_code(data_aux,&data_size_aux,me->fd);
-                			read(me->fd,&s->final_byte,1);
-                			(data_aux)[data_size_aux]=s->final_byte;
-                			data_size_aux+=1;
-        			}
-
-        			if (s->final_byte == 0x00) {
-                			read_picture_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1_aux,s->std);
-                			if (s->std == MPEG_2) {
-                        			read_picture_coding_ext(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2_aux);
-                			}
-        			}
-
-        			while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-                			next_start_code(data_aux,&data_size_aux,me->fd);
-                			read(me->fd,&s->final_byte,1);
-                			(data_aux)[data_size_aux]=s->final_byte;
-                			data_size_aux+=1;
-        			}
-           										/* computes delta_mtime */
-         			next_timestamp = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-          			me->description.delta_mtime = next_timestamp - *mtime;
-
-             		}
-
-			
-			WRITE_SLOT;
-			FREE_DATA;
-                	return ERR_NOERROR;
-        	}
-  	} else {                                   					/* if previous slice had been s->fragmented */
-	        count=read_slice(data_tmp,data_size,me->fd,&s->final_byte);
-	        //next_start_code(data_tmp,data_size,me->fd);
-  		//read(me->fd,&s->final_byte,1);
-    		//data_tmp[*data_size]=s->final_byte;
-      		//*data_size+=1;
-          	if ((s->final_byte > 0xAF)||(s->final_byte==0x00)) {
-           		*recallme = 0;
-           	} else {
-            		*recallme = 1;
-           	}
-
-            	*data_size-=4;
-	   	if(*data_size>num_bytes){
-			extra_bytes=*data_size-num_bytes;
-			lseek(me->fd,-extra_bytes,SEEK_CUR);     			/* removes last slice inserted */
-   			*data_size-=extra_bytes;
-      			s->fragmented=1;
-         		*recallme=1;
-	    	} else {
+			else{
+                        	count=next_start_code(data_tmp,data_size,me->fd);              
+                       		read(me->fd,&s->final_byte,1);
+                       		data_tmp[*data_size]=s->final_byte;
+                       		*data_size+=1;
+			}
+		}
+		*data_size-=4;
+		while(num_bytes > *data_size   && *recallme){
+			*data_size+=4;
+			if ( read(me->fd,&buf_aux,3) <3){  /* If there aren't 3 more bytes we are at EOF */
+				close(me->fd);
+#if !HAVE_ALLOCA
+				free(data_tmp);
+#endif
+				return ERR_EOF;
+			}
+			while ( !((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) && *data_size  <num_bytes) {
+    				data_tmp[*data_size]=buf_aux[0];
+    				*data_size+=1;
+				buf_aux[0]=buf_aux[1];
+				buf_aux[1]=buf_aux[2];
+      				if ( read(me->fd,&buf_aux[2],1) <1){ 
+					close(me->fd);
+#if !HAVE_ALLOCA
+					free(data_tmp);
+#endif
+					return ERR_EOF;
+				}
+ 		   	}
+			for (i=0;i<3;i++) {
+    				data_tmp[*data_size]=buf_aux[i];
+    				*data_size+=1;
+    			}
+			read(me->fd,&s->final_byte,1);
+                	data_tmp[*data_size]=s->final_byte;
+       	        	*data_size+=1;
+                        if ( ((s->final_byte > 0xAF)||(s->final_byte==0x00)) && ((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) ) {
+				*recallme = 0;
+				s->fragmented=0;
+				*data_size-=4;
+			}
+			else{
+				*recallme=1;
+				s->fragmented=1;
+			}
+		}/*end while *data_size < num_bytes && *recallme*/
+	}/*end else num_bytes!=0 and slice was not fragmented*/
+	else{/*num_bytes!=0 and slice was fragmented*/
+		char buf_aux[3];	
+		int i;
+	
+		if ( read(me->fd,&buf_aux,3) <3){  /* If there aren't 3 more bytes we are at EOF */
+			close(me->fd);
+#if !HAVE_ALLOCA
+			free(data_tmp);
+#endif
+			return ERR_EOF;
+		}
+		while ( !((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) && *data_size  <num_bytes) {
+    			data_tmp[*data_size]=buf_aux[0];
+    			*data_size+=1;
+			buf_aux[0]=buf_aux[1];
+			buf_aux[1]=buf_aux[2];
+      			if ( read(me->fd,&buf_aux[2],1) <1){ 
+				close(me->fd);
+#if !HAVE_ALLOCA
+				free(data_tmp);
+#endif
+				return ERR_EOF;
+			}
+	   	}
+    		for (i=0;i<3;i++) {
+    			data_tmp[*data_size]=buf_aux[i];
+    			*data_size+=1;
+    		}
+		read(me->fd,&s->final_byte,1);
+               	data_tmp[*data_size]=s->final_byte;
+        	*data_size+=1;
+                if ( ((s->final_byte > 0xAF)||(s->final_byte==0x00)) && ((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) ) {
+			*recallme = 0;
 			s->fragmented=0;
-	     	}
-		*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-
-             	s->data_total+=*data_size;
-
-             	if (s->std==MPEG_2) {
-              		#ifdef MPEG2VSHE
-                	s->data_total-=8;
-                  	s->vsh1.t=1;
-                	#else
-                	s->data_total-=4;
-                 	s->vsh1.t=0;
-			#endif
-                } else {
-                	s->data_total-=4;
-                 	s->vsh1.t=0;
-                }
-
-              	s->vsh1.mbz=0;
-               	s->vsh1.an=0;
-                s->vsh1.n=0;
-               	if (seq_head_pres) {
-                	s->vsh1.s=1;
-                } else {
-                	s->vsh1.s=0;
-                }
-                s->vsh1.b=0;
-                if (!s->fragmented) {
-                	s->vsh1.e=1;
-                 } else {
-			s->vsh1.e=0;
-   		}
-                vsh1_1 = (char *)(&s->vsh1);
-                data_tmp[0] = vsh1_1[3];
-                data_tmp[1] = vsh1_1[2];
-                data_tmp[2] = vsh1_1[1];
-                data_tmp[3] = vsh1_1[0];
-                #ifdef MPEG2VSHE
-                if (s->std == MPEG_2) {
-                       	vsh2_1 = (char *)(&s->vsh2);
-                       	data_tmp[4] = vsh2_1[3];
-                       	data_tmp[5] = vsh2_1[2];
-                       	data_tmp[6] = vsh2_1[1];
-                       	data_tmp[7] = vsh2_1[0];
-                }
-		#endif
-
-            	if (*recallme == 0)	{						/* reads next time-stamp to compute the value of delta_mtime */
-             		//lseek(me->fd,4,SEEK_CUR);
-               		if (s->final_byte == 0xb3) {
-                		read_seq_head(data_aux,&data_size_aux,me->fd,&s->final_byte,s->std);
-        		}
-      		  	while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-         			next_start_code(data_aux,&data_size_aux,me->fd);
-            			read(me->fd,&s->final_byte,1);
-               			(data_aux)[data_size_aux]=s->final_byte;
-                		data_size_aux+=1;
-        		}
-        		if (s->final_byte == 0xb8) {
-          			read_gop_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
-        		}
-
-        		while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-          			next_start_code(data_aux,&data_size_aux,me->fd);
-             			read(me->fd,&s->final_byte,1);
-                		(data_aux)[data_size_aux]=s->final_byte;
-                		data_size_aux+=1;
-        		}
-
-        		if (s->final_byte == 0x00) {
-          			read_picture_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1_aux,s->std);
-             			if (s->std == MPEG_2) {
-                			read_picture_coding_ext(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2_aux);
-                		}
-        		}
-
-        		while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-          			next_start_code(data_aux,&data_size_aux,me->fd);
-             			read(me->fd,&s->final_byte,1);
-                		(data_aux)[data_size_aux]=s->final_byte;
-                		data_size_aux+=1;
-        		}
-          										/* computes delta_mtime */
-         		next_timestamp = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-          		me->description.delta_mtime = next_timestamp - *mtime;
-            	}
-
-		
-		WRITE_SLOT;
-		FREE_DATA;
-            	return ERR_NOERROR;
-
-  	}
+			*data_size-=4;
+		}
+		else{
+			*recallme=1;
+			s->fragmented=1;
+		}
+	}
+	flag=0; /*so it is just probed*/
+	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
+	s->data_total+=*data_size;
+	if(!flag){
+        if (s->std==MPEG_2) {
+        	#ifdef MPEG2VSHE
+                        s->data_total-=8;
+                        s->vsh1.t=1;
+                        #else
+                        s->data_total-=4;
+                        s->vsh1.t=0;
+                #endif
+	} else {
+                        s->data_total-=4;
+                        s->vsh1.t=0;
+        }
+        s->vsh1.mbz=0;
+        s->vsh1.an=0;
+        s->vsh1.n=0;
+        if (seq_head_pres) {
+                s->vsh1.s=1;
+        } else {
+                s->vsh1.s=0;
+        }
+        s->vsh1.b=1;
+        if (!s->fragmented) {
+                s->vsh1.e=1;
+        } else {
+                s->vsh1.e=0;
+        }
+        vsh1_1 = (char *)(&s->vsh1); /* to see the struct as a set of bytes */
+        data_tmp[0] = vsh1_1[3];
+        data_tmp[1] = vsh1_1[2];
+        data_tmp[2] = vsh1_1[1];
+        data_tmp[3] = vsh1_1[0];
+        #ifdef MPEG2VSHE
+        if (s->std == MPEG_2) {
+                vsh2_1 = (char *)(&s->vsh2);
+		data_tmp[4] = vsh2_1[3];
+                data_tmp[5] = vsh2_1[2];
+                data_tmp[6] = vsh2_1[1];
+                data_tmp[7] = vsh2_1[0];
+        }
+        #endif
+	}
+        memcpy(data, data_tmp, *data_size); 
+#if !HAVE_ALLOCA
+	free(data_tmp);
+#endif
+	return ERR_NOERROR;
 }
 
 
