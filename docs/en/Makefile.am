@@ -1,6 +1,6 @@
 EXTRA_DIST = index.html index-1.html index-2.html index-3.html index-4.html index-5.html index-6.html 
 
-FENICE_DOCS_DIR = $(DESTDIR)$(datadir)/doc/fenice
+FENICE_DOCS_DIR = $(DESTDIR)@fenice_docs_dir@
 
 install-data-local:
 	

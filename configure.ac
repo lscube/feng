@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(src/main.c)
+AC_INIT(fenice, 1.5)
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(fenice, 1.5)
+AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION)
 
 AC_PREFIX_PROGRAM(fenice)
 
@@ -146,10 +146,12 @@ AM_CONDITIONAL(ARCH_X86, test "x$arch_type" = "xix86")
 AM_CONDITIONAL(ARCH_PPC, test "x$arch_type" = "xppc")
 AM_CONDITIONAL(HAVE_SOLARIS, test "x$have_solaris" = xyes)
 
-fenice_avroot_dir=$localstatedir/fenice/avroot
+fenice_avroot_dir=$localstatedir/$PACKAGE_NAME/avroot
 AC_SUBST(fenice_avroot_dir)
 fenice_conf_dir=$sysconfdir
 AC_SUBST(fenice_conf_dir)
+fenice_docs_dir=$datadir/doc/$PACKAGE_NAME-$PACKAGE_VERSION
+AC_SUBST(fenice_docs_dir)
 
 AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT, "$fenice_avroot_dir", [Define default directory for Fenice A/V resources])
 AC_DEFINE(FENICE_AVROOT_DIR_ENV, "FENICE_AVROOT_DIR",[Define the name for the ENV variable for Fenice avroot dir])

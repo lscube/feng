@@ -2,6 +2,8 @@ FENICE_AVROOT_DIR = $(DESTDIR)@fenice_avroot_dir@
 
 FENICE_TEST_FILES = test.sd audio.mp3 video.mpg
 
+EXTRA_DIST = $(FENICE_TEST_FILES)
+
 install-data-local:
 	$(INSTALL) -m 755 -d $(FENICE_AVROOT_DIR)
 	$(INSTALL) $(FENICE_TEST_FILES) $(FENICE_AVROOT_DIR)
