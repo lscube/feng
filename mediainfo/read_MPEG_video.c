@@ -66,7 +66,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
                 }
                 strcpy(thefile,prefs_get_serv_root());
                 strcat(thefile,me->filename);
-                me->fd=open(thefile,O_RDONLY);
+                me->fd=open(thefile,O_RDONLY /*| O_NONBLOCK , 0*/);
                 if (me->fd==-1) {
                         return ERR_NOT_FOUND;
                 }
@@ -107,7 +107,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         }
 
 	/*---- Random Access ----*/
-	if((me->description).msource!=live && me->play_offset!=me->prev_mstart_offset ){
+	if((me->description).msource!=live && me->play_offset!=-1/*me->prev_mstart_offset*/ ){
 		count=random_access(me);
 		if(!me->description.bitrate)
 			fprintf(stderr,"Bit Rate unavaible, access random not permitted\n");	
@@ -124,7 +124,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 			
 			lseek(me->fd,count,SEEK_SET);
 		}
-		 me->prev_mstart_offset=me->play_offset;
+		 /*me->prev_mstart_offset=*/me->play_offset=-1;
 	}
 	/*---- end Random Access ----*/
 #if 0	
@@ -315,7 +315,8 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 		
         	s->vsh1.b=0;
 	}
-	//*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
+	if(me->description.msource==live)
+		*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
 	s->data_total+=*data_size;
         if (s->std==MPEG_2 && !flag) {
         	#ifdef MPEG2VSHE

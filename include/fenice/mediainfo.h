@@ -188,7 +188,6 @@
     		int fd;
 		void *stat;
 		unsigned int data_chunk;
-		double prev_mstart_offset;/*usefull for random access*/
 		
 		/*Buffering with bufferpool module*/
     		unsigned char buff_data[4]; // shawill: needed for audio-mp3 live-by-named-pipe
@@ -202,6 +201,7 @@
 		double mstart;
 		double mstart_offset;
 		double play_offset; /*Federico. Usefull for random access*/
+		//double prev_mstart_offset;/*usefull for random access*/
 		
 		//started has transferred itself here
 		//unsigned char started;

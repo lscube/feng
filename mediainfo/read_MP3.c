@@ -53,7 +53,7 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
                 me->fd=open(thefile,O_RDONLY);
                 if ( me->fd==-1 ) return ERR_NOT_FOUND;
                 me->flags|=ME_FD;
-		me->prev_mstart_offset=0;	
+		//me->prev_mstart_offset=0;	
 		/* TODO support Id3 TAG v2, this doesn't work*/
 		//if ((me->description.flags & MED_ID3) && (me->description).msource!=live)
 		//	lseek(me->fd,(me->description.tag_dim)+10,SEEK_SET);
@@ -61,9 +61,9 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
 
 	
 	
-        if(me->play_offset!=me->prev_mstart_offset && (me->description).msource!=live){                 //random access 
-        	me->prev_mstart_offset=me->play_offset; 						// pkt_len is pkt lenght in milliseconds,
+        if(me->play_offset!=-1/*me->prev_mstart_offset*/ && (me->description).msource!=live){                 //random access 
                 N=(float)me->description.bitrate/8 * me->play_offset/1000;
+        	/*me->prev_mstart_offset=*/me->play_offset=-1; 						// pkt_len is pkt lenght in milliseconds,
 		lseek(me->fd,N,SEEK_SET);
 	}		                                                                		
 
@@ -77,7 +77,7 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
 	else {
                	// Sync not found, not Mpeg-1/2
 		// id3 TAG v1 is suppressed, id3 TAG v2 is not supported and
-		fprintf(stderr,"ERROR: Sync not found, not Mpeg-1/2\n");
+		//fprintf(stderr,"ERROR: Sync not found, not Mpeg-1/2\n");
 		N = (int)(me->description.frame_len * (float)me->description.bitrate / (float)me->description.sample_rate / 8);
 		//return ERR_EOF;
 	}
