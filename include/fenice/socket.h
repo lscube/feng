@@ -60,6 +60,7 @@
 	#ifdef WIN32
 		#include <winsock2.h>
 	#endif
+	#include <sys/types.h>
 	#include <sys/socket.h>
 
 	#ifdef WIN32	

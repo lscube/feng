@@ -37,6 +37,7 @@
 
 	#include <time.h>
 	#include <sys/timeb.h>
+	#include <sys/types.h>
 	#include <sys/socket.h>
 	#include <fenice/socket.h>
 	#include <fenice/mediainfo.h>

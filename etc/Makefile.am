@@ -6,7 +6,7 @@ EXTRA_DIST = $(FENICE_CONF_FILE).in
 all: fenice.conf
 
 fenice.conf: fenice.conf.in
-	cpp -I.. -P $(FENICE_CONF_FILE).in -o $(FENICE_CONF_FILE)
+	cpp -I.. -P $(FENICE_CONF_FILE).in > $(FENICE_CONF_FILE)
 
 clean:
 	rm $(FENICE_CONF_FILE)
