@@ -59,10 +59,10 @@ int get_media_descr(char *object,media_entry *req,media_entry *media,char *descr
 		return ERR_NOT_SD;
     }
     res=enum_media(object,&matching_descr);
-    list=matching_descr->me_list;
     if (res!=ERR_NOERROR) {
     	return res;
     }
+    list=matching_descr->me_list;
     if (list==NULL) {
     	return ERR_GENERIC;
     }	
