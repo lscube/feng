@@ -250,13 +250,13 @@ int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *da
 	out->ref1->var_time_increment=out->ref2->var_time_increment = get_field( data, out->vtir_bitlen, &off );
 
 #if DEBUG
-	/*
+/*	
 	fprintf(stderr," - FRAME: %c \n","IPBS"[out->vop_coding_type]);
 	
 	fprintf(stderr,"\t - REF2: var_time_increment = %d - vop_time_increment= %d - vop_time_increment_resolution = %d - modulo_time_base = %d -\n",out->ref2->var_time_increment, out->ref2->vop_time_increment, out->ref2->vop_time_increment_resolution, out->ref2->modulo_time_base);
 
 	fprintf(stderr,"\t - REF1: var_time_increment = %d - vop_time_increment= %d - vop_time_increment_resolution = %d - modulo_time_base = %d -\n",out->ref1->var_time_increment, out->ref1->vop_time_increment, out->ref1->vop_time_increment_resolution,out->ref1->modulo_time_base);
-	*/
+*/	
 #endif	
 
 	return ERR_NOERROR;

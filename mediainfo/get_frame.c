@@ -32,7 +32,7 @@
  *  
  * */
 
-#include <string.h>
+/*#include <string.h>*/
 #include <stdio.h>
 #include <fenice/utils.h>
 #include <fenice/debug.h>
@@ -43,10 +43,12 @@ int get_frame(media_entry *me, double *mtime)
 {
 	int recallme=0;	
 	OMSSlot *slot;
-	int res = ERR_NOERROR;
+	int res = ERR_EOF;
 	uint8 marker=0;
 
 	do{
+		recallme=0;
+		res=ERR_EOF;
 		slot=OMSbuff_getslot(me->pkt_buffer);
 		res=me->media_handler->read_media(me,slot->data,&slot->data_size,mtime,&recallme,&marker);
 		if (res==ERR_NOERROR) { // commit of buffer slot.

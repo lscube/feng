@@ -190,6 +190,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 		*q = '\0';
 	}
+
 // ------------ START PATCH
 	{
 		char temp[255];
@@ -203,12 +204,12 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		pd = strstr(object, ".sd");	// this part is usefull in order to
 		p = strstr(pd + 1, ".sd");	// have compatibility with
 		if (p != NULL) {	// RealOne
-			strcpy(object, pd + 3);	// CRITIC. 
+			strcpy(object, pd + 4);	// CRITIC. 
 		}		//Note: It's a critic part
 		// END FEDERICO
 	}
 // ------------ END PATCH
-
+	fprintf(stderr,"object: %s\n",object);
 
 	if (enum_media(object, &matching_descr) != ERR_NOERROR) {
 		printf("SETUP request specified an object file which can be damaged.\n");

@@ -135,11 +135,11 @@ int load_MP4ES(media_entry *p) {
 	}
 
 	s->header_data_size=data_size-4;
-/*
+
 	o=s->config;
 	for( i = 0; i < data_size-4; ++i )
 		o+=sprintf( o, "%02X", (s->header_data)[i] ) ;
-*/
+
 	strcat(s->config,"\0");	
 	s->fragmented=0;
 	p->stat = (void *) s;
@@ -147,7 +147,7 @@ int load_MP4ES(media_entry *p) {
 	if ( !S_ISFIFO(fdstat.st_mode) ) 
 		mediaclose(p);
 
-	fprintf(stderr,"load_MP4ES...done, config=%s\n",s->config);
+	fprintf(stderr,"load_MP4ES...done\n");
 
         return ERR_NOERROR;
 }

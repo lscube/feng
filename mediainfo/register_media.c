@@ -34,7 +34,7 @@
 
 #include <string.h> /*strcmp*/
 #include <stdlib.h> /*calloc*/
-#include <stdio.h> /*calloc*/
+#include <stdio.h> /*fprintf*/ 
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/mpeg4es.h>

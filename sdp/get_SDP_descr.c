@@ -45,7 +45,7 @@
 
 int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 {	
-	char s[30],t[80],app[80];
+	char s[30],t[255],app[80];
 	port_pair pair;
 	media_entry *p,*list,req;
 	SD_descr *matching_descr;
@@ -202,7 +202,7 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 			if (strcmp(p->description.encoding_name,"MP4V-ES")==0) {
 				static_MPEG4_video_es *s=(static_MPEG4_video_es *)p->stat;
 				strcat(descr, SDP_EL);
-				sprintf(t, "a=fmtp:96 profile-level-id=%d config="SDP_EL, s->profile_id /*, s->config*/);
+				sprintf(t, "a=fmtp:96 profile-level-id=%d config=%s"/*SDP_EL*/, s->profile_id , s->config);
 				strcat(descr,t);
 			}
 			strcat(descr, SDP_EL);
@@ -230,10 +230,10 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
    			strcat(descr,p->aggregate);
    			strcat(descr, SDP_EL);
    		}   		
-		/*
+		
 		else
    			strcat(descr, SDP_EL);
-		*/
+
 		
    		if (extended!=0) {
    			// We must describe ALL the media
@@ -256,6 +256,7 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 		   	}
 	   	}
    	} while (p!=NULL);
+   	strcat(descr, SDP_EL);
    	return ERR_NOERROR;
 }
 

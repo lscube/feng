@@ -164,7 +164,6 @@ int load_MPA(media_entry *p)
         p->description.flags|=MED_BITRATE;      
 
         if (p->buff_data[1] & 0x08) {     /* Mpeg-1 */
-
                 switch (p->buff_data[2] & 0x0c) {
                         case 0x00: p->description.sample_rate=44100; break;
                         case 0x04: p->description.sample_rate=48000; break;

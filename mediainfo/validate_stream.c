@@ -141,7 +141,6 @@ int validate_stream(media_entry *p, SD_descr ** sd_descr)
 		return p->media_handler->load_media(p);
 	else
 		return res;
-
 }
 
 

@@ -51,8 +51,6 @@ int enum_media(char *object,SD_descr **d)
 		else
 	last_descr=descr_curr;
 	}
-
-	
 	
 	if (!matching_descr) {
 	//.SD not found: update list

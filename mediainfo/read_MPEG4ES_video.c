@@ -136,7 +136,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 	 			*mtime=((double)s->ref2->var_time_increment + (double)s->ref2->modulo_time_base *s->ref2->vop_time_increment_resolution) * ( 1000 / (double)s->ref2->vop_time_increment_resolution);
 		}
 #if DEBUG	
-		/*fprintf(stderr,"*mtime=%f | pkt_len=%f | delta_mtime=%f | vtir =%d\n",*mtime,me->description.pkt_len, me->description.delta_mtime,s->vtir_bitlen);*/
+//		fprintf(stderr,"*mtime=%f | pkt_len=%f | delta_mtime=%f | vtir =%d\n",*mtime,me->description.pkt_len, me->description.delta_mtime,s->vtir_bitlen);
 #endif
 		*marker=!(*recallme);
 		FREE_DATA;
@@ -209,8 +209,9 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 			s->final_byte=data[*data_size - 1];
 	}
 
+	if(s->final_byte!=VOS_END_CODE) *data_size-=4;
+
 	if(*data_size>num_bytes){
-		if(s->final_byte!=VOS_END_CODE) *data_size-=4;
 		memcpy(data_slot,data,num_bytes);
 		memcpy(s->more_data,data,*data_size);
 		s->remained_data_size=*data_size-num_bytes;
@@ -220,7 +221,6 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 		*recallme=1;
 	}
 	else {
-		if(s->final_byte!=VOS_END_CODE) *data_size-=4;
 		memcpy(data_slot, data, *data_size); 
 		*recallme=0;
 		s->fragmented=0;
@@ -238,7 +238,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 	
 	
 #if DEBUG	
-	/*fprintf(stderr,"*mtime=%f | pkt_len=%f | delta_mtime=%f | vtir =%d\n",*mtime,me->description.pkt_len, me->description.delta_mtime,s->vtir_bitlen);*/
+//	fprintf(stderr,"*mtime=%f | pkt_len=%f | delta_mtime=%f | vtir =%d\n",*mtime,me->description.pkt_len, me->description.delta_mtime,s->vtir_bitlen);
 #endif
 	*marker=!(*recallme);
 	FREE_DATA;
