@@ -38,10 +38,10 @@ CLEANFILES = $(man_MANS).ps.gz $(man_MANS).pdf $(man_MANS).html
 FENICE_DOCS_DIR = $(DESTDIR)@fenice_docs_dir@
 
 install-data-local:
-	$(INSTALL) -m 755 -d $(NEMESI_DOCS_DIR)
-	test -f $(man_MANS).ps.gz && $(INSTALL_DATA) $(man_MANS).ps.gz $(NEMESI_DOCS_DIR) || : 
-	test -f $(man_MANS).pdf && $(INSTALL_DATA) $(man_MANS).pdf $(NEMESI_DOCS_DIR) || :
-	test -f $(man_MANS).html && $(INSTALL_DATA) $(man_MANS).html $(NEMESI_DOCS_DIR) || :
+	$(INSTALL) -m 755 -d $(FENICE_DOCS_DIR)
+	test -f $(man_MANS).ps.gz && $(INSTALL_DATA) $(man_MANS).ps.gz $(FENICE_DOCS_DIR) || : 
+	test -f $(man_MANS).pdf && $(INSTALL_DATA) $(man_MANS).pdf $(FENICE_DOCS_DIR) || :
+	test -f $(man_MANS).html && $(INSTALL_DATA) $(man_MANS).html $(FENICE_DOCS_DIR) || :
 
 uninstall-local:
 	rm -rf $(FENICE_DOCS_DIR)
