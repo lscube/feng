@@ -345,8 +345,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 		
         	s->vsh1.b=0;
 	}
-	//if(me->description.msource==live)
-	//	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
+	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
 	s->data_total+=*data_size;
         if (s->std==MPEG_2 && !flag) {
         	#ifdef MPEG2VSHE

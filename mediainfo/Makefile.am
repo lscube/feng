@@ -29,6 +29,7 @@ libmediainfo_la_SOURCES =	enum_media.c \
 				read_MPEG_video.c \
 				read_MPEG4ES_video.c \
 				read_MPEG_utils.c \
+				read_MPEG4ES_utils.c \
 				mediaopen.c \
 				mediaclose.c
 			

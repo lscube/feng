@@ -601,7 +601,7 @@ int read_packet(uint8 *buf,uint32 *buf_size, int fin, unsigned char *final_byte)
 	unsigned char byte1,byte2;
 	do {
 		count+=next_start_code(buf,buf_size,fin);
-		count+=4;
+		//count+=4;
 		read(fin,&(buf[*buf_size]),1);
 		*buf_size+=1;
 		*final_byte=buf[*buf_size-1];
@@ -611,18 +611,18 @@ int read_packet(uint8 *buf,uint32 *buf_size, int fin, unsigned char *final_byte)
 			count+=2;
 			byte1 = buf[*buf_size-1];
 			byte2 = (byte1 >> 3) & 0x07;
-			if (byte2 == 0x01) {
+			/*if (byte2 == 0x01) {
 				printf ("Pictute type: I\n");
 			} else if (byte2 == 0x02) {
 				printf ("Pictute type: P\n");
 			} else {
 				printf ("Pictute type: B\n");
-			}
+			}*/
 		}
-		printf("Final Byte: %x\n", *final_byte);
+		//printf("Final Byte: %x\n", *final_byte);
 	} while ( *final_byte < 0xb9);
-	*buf_size-=4;
-	lseek(fin,-4,SEEK_CUR);
+	//*buf_size-=4;
+	//lseek(fin,-4,SEEK_CUR);
 	return count;
 }
 
