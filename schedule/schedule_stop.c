@@ -36,7 +36,7 @@
 #include <fenice/rtp.h>
 #include <fenice/rtcp.h>
 
-extern schedule_list sched[MAX_SESSION];
+extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 
 void schedule_stop(int id)

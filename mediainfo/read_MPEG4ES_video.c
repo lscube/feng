@@ -88,6 +88,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
                 me->stat = (void *) s;
                 s->final_byte=0x00;
                 s->fragmented=0;
+		*recallme=0;
 		init=1;
 	}
 	else
@@ -96,7 +97,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
 	if(s->fragmented==0){
 		char buf_aux[3];	
 		int i;
-		if(init==0){
+		if(init==0 && s->final_byte!=VOS_END_CODE){
                 	data[*data_size]=0x00;
                 	*data_size+=1;
                 	data[*data_size]=0x00;
@@ -107,7 +108,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
                 	*data_size+=1;
 		}
 		
-		while(s->final_byte !=VOP_START_CODE){
+		/*while(s->final_byte !=VOP_START_CODE){
                         if(next_start_code(data,data_size,me->fd) < 0)
 				return ERR_EOF;              
                        	if(read(me->fd,&s->final_byte,1)<1)
@@ -115,6 +116,18 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
                        	data[*data_size]=s->final_byte;
                        	*data_size+=1;
 			*recallme=0;
+		}*/
+		if(s->final_byte<VOP_START_CODE){
+                        if(next_start_code(data,data_size,me->fd) < 0)
+				return ERR_EOF;              
+                       	if(read(me->fd,&s->final_byte,1)<1)
+				return ERR_EOF;
+                       	data[*data_size]=s->final_byte;
+                       	*data_size+=1;
+			*recallme=1;
+			*data_size-=4;
+			s->fragmented=0;
+			return ERR_NOERROR;
 		}
 		
 		while(num_bytes > *data_size && out_of_while!=1){
@@ -146,9 +159,9 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
 					out_of_while=0;
 				else*/
 					out_of_while=1;
-				*data_size-=4;
-				s->fragmented=0;
 				*recallme=0;
+				if(s->final_byte!=VOS_END_CODE) *data_size-=4;
+				s->fragmented=0;
 			}
 			else{
 				out_of_while=1;
@@ -186,17 +199,16 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
         	*data_size+=1;
 		
                 if (buf_aux[0] == 0x00 && buf_aux[1]==0x00 && buf_aux[2]==0x01) {
-			s->fragmented=0;
-			*data_size-=4;
-			*recallme=0;
+			*recallme=s->fragmented=0;
+			if(s->final_byte!=VOS_END_CODE) *data_size-=4;
 			}
 		else{
-			*recallme=1;
-			s->fragmented=1;
+			*recallme=s->fragmented=1;
 		}
 	}
 	
-	//fprintf(stderr,"data_size=%d\n",*data_size);
+	if(*data_size>num_bytes)
+		fprintf(stderr,"data_size=%d\n",*data_size);
 	return ERR_NOERROR;
 }
 

@@ -46,6 +46,8 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 	char s[30],t[30],app[80];
 	port_pair pair;
 	media_entry *p,*list,req;
+	SD_descr *matching_descr;
+	
 	strcpy(descr, "v=0\n");		
    	strcat(descr, "o=");
    	strcat(descr, get_SDP_user_name(s));
@@ -62,7 +64,8 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
    	strcat(descr, "s=RTSP Session\n");
 	sprintf(descr, "%si=%s %s Streaming Server\n", descr, PACKAGE, VERSION);
 
-	enum_media(url,&list);   	
+	enum_media(url,&matching_descr);
+	list=matching_descr->me_list;
 	memset(&req,0,sizeof(req));
 	req.description.flags|=MED_PRIORITY;
 	req.description.priority=1;

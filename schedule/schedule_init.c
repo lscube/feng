@@ -41,7 +41,7 @@
 #endif
 
 
-schedule_list sched[MAX_SESSION];
+schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 int schedule_init()
 {	
@@ -56,7 +56,7 @@ int schedule_init()
 	pthread_t t;
 	#endif
 	
-	for (i=0; i<MAX_SESSION; ++i) {
+	for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
 		sched[i].rtp_session=NULL;
 		sched[i].play_action=NULL;		
 		sched[i].valid=0;

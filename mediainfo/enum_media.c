@@ -38,7 +38,7 @@
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 
-int enum_media(char *object,media_entry **list)
+int enum_media(char *object,SD_descr **d)
 {
 	static SD_descr *SD_global_list=NULL;
 	SD_descr *matching_descr=NULL,*descr_curr,*last_descr=NULL;
@@ -82,7 +82,8 @@ int enum_media(char *object,media_entry **list)
 		free(matching_descr);
 		return res;
 	}
-	*list=matching_descr->me_list;
+	//*list=matching_descr->me_list;
+	*d=matching_descr;
 	return 0;
 }
 

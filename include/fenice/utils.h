@@ -122,6 +122,7 @@
 	#define SD_FRAME_RATE "FRAME_RATE"
 	#define SD_BYTE_PER_PCKT "BYTE_PER_PCKT"	
 	#define SD_MEDIA_SOURCE "MEDIA_SOURCE"	
+	#define SD_TWIN "TWIN"	
 	
 	/*start CC*/
 	#define SD_LICENSE "LICENSE"

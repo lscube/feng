@@ -36,12 +36,12 @@
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
 
-extern schedule_list sched[MAX_SESSION];
+extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 int schedule_add(RTP_session *rtp_session/*,RTSP_session *rtsp_session*/)
 {
 	int i;
-	for (i=0; i<MAX_SESSION; ++i) {
+	for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
 		if (!sched[i].valid) {
 			sched[i].valid=1;
 			sched[i].rtp_session=rtp_session;

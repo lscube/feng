@@ -76,6 +76,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	int namelen = sizeof(struct sockaddr);
 	unsigned long ssrc;
 	int multicast = NO_MULTICAST;
+	SD_descr *matching_descr;
 
 
 	fprintf(stderr, "SETUP request received.\n");
@@ -214,11 +215,13 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 // ------------ END PATCH
 
 
-	if (enum_media(object, &list) != ERR_NOERROR) {
+	if (enum_media(object, &matching_descr) != ERR_NOERROR) {
 		printf("SETUP request specified an object file which can be damaged.\n");
 		send_reply(500, 0, rtsp);	/* Internal server error */
 		return ERR_NOERROR;
 	}
+	list=matching_descr->me_list;
+
 	if (get_media_entry(&req, list, &matching_me) == ERR_NOT_FOUND) {
 		printf("SETUP request specified an object which can't be found.\n");
 		send_reply(404, 0, rtsp);	/* Not found */

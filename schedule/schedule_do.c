@@ -43,7 +43,7 @@
 #include <fenice/utils.h>
 #include <fenice/debug.h>
 
-extern schedule_list sched[MAX_SESSION];
+extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 extern int stop_schedule;
 
 #ifdef SELECTED	
@@ -84,7 +84,7 @@ do{
 	// See also main.c
 	nanosleep(&ts, NULL);
 	
-	for (i=0; i<MAX_SESSION; ++i) {		
+	for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {		
 		
 		if (sched[i].valid) {
 			sched[i].semaph=red; /* green = 0, red = 1 */

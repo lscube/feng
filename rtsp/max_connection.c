@@ -32,36 +32,23 @@
  *  
  * */
 
-#include <string.h>
-#include <unistd.h>
+#include <stdio.h>
+#include <fenice/rtsp.h>
+#include <fenice/types.h>
+#include <fenice/prefs.h>
+#include <fenice/eventloop.h>
 
-#include <fenice/intnet.h>
-#include <fenice/mediainfo.h>
-#include <fenice/utils.h>
+extern uint32 num_conn;
 
-int priority_decrease(RTP_session *changing_session)
+uint32 max_connection()
 {
-        int priority;
-        media_entry req,*list,*p;
-	SD_descr *matching_descr;
-
-        memset(&req,0,sizeof(req));
-
-        req.description.flags|=MED_PRIORITY;
-        enum_media(changing_session->sd_filename, &matching_descr);
-	list=matching_descr->me_list;
-        priority=changing_session->current_media->description.priority;
-        priority += 1;
-        req.description.priority=priority;
-        p=search_media(&req,list);
-        if (p!=NULL) {
-       	       	close(changing_session->current_media->fd);
-                changing_session->current_media->flags &= ~ME_FD;
-                changing_session->current_media=p;
-                return ERR_NOERROR;
-        } else {
-		changing_session->MinimumReached = 1;
-                return ERR_NOERROR;
-        }
+	int i;
+	uint32 count=0;
+	
+	fprintf(stderr,"max_connection %d\n",num_conn);
+	if(num_conn<=DEFAULT_MAX_SESSION)
+		return ERR_NOERROR;
+	
+	return ERR_GENERIC;
 }
 

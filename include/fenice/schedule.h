@@ -42,7 +42,7 @@
 	#include <fenice/prefs.h>
 	#include <fenice/debug.h>
 	
-	
+
 	typedef enum {		
 		green=0,
 		red=1

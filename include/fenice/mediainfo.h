@@ -85,8 +85,9 @@
 		MED_RDF_PAGE=131072,
 		MED_TITLE=262144,
 		MED_CREATOR=524288,
-		MED_ID3=1048576
+		MED_ID3=1048576,
 		/*end CC*/
+		MED_TWIN=2097152 /*redirect*/
    		/*DYN_PAYLOAD_TOKEN    	
 		PACKETTIZED=
 		PAYLOAD=
@@ -253,6 +254,7 @@
     		media_entry *me_list;
     		time_t last_change;
 		struct _SD_descr *next;
+    		char twin[255];
 	} SD_descr;
 
 	int parse_SD_file (char *object, SD_descr *sd_descr);	
@@ -305,7 +307,7 @@
 	
 	/*********************************************************************************************************************/
 
-	int enum_media(char *object,media_entry **list);
+	int enum_media(char *object, SD_descr **d);
 	// Alloca e restituisce una lista di media disponibili per la URL specificata.
 
 	int media_is_empty(media_entry *me);

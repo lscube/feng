@@ -41,16 +41,18 @@
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
 #include <fenice/schedule.h>
+#include <fenice/types.h>
+
+uint32 num_conn; /*number of connection*/
 
 void eventloop(tsocket main_fd)
 {
-	static int child_count=0;
-	static int conn_count=0;	
+	static uint32 child_count=0;
+	static uint32 conn_count;	
 	tsocket fd = -1;
-	// tsocket fd_command; /*socket for the command environment*/
 	static RTSP_buffer *rtsp_list=NULL;
 	RTSP_buffer *p;
-	int fd_found;
+	uint32 fd_found;
 
 	if (conn_count!=-1)
 	{
@@ -61,17 +63,14 @@ void eventloop(tsocket main_fd)
 	if (fd>=0)
 	{
 		for (fd_found=0,p=rtsp_list; p!=NULL; p=p->next)
-		{
-			
 			if (p->fd==fd)
 			{				
 				fd_found=1;
 				break;
 			}
-		}
 		if (!fd_found)
 		{
-        		if (conn_count<MAX_SESSION)
+        		if (conn_count<ONE_FORK_MAX_CONNECTION)
 			{
         			++conn_count;
         			// ADD A CLIENT
@@ -83,7 +82,7 @@ void eventloop(tsocket main_fd)
 				{
         				// I'm the child
         				++child_count;
-        				RTP_port_pool_init(MAX_SESSION*child_count*2+RTP_DEFAULT_PORT);
+        				RTP_port_pool_init(ONE_FORK_MAX_CONNECTION*child_count*2+RTP_DEFAULT_PORT);
 					if (schedule_init()==ERR_FATAL)
 					{
                   				printf("Fatal: Can't start scheduler. Server is aborting.\n");
@@ -104,4 +103,5 @@ void eventloop(tsocket main_fd)
         	}
     	}
 	schedule_connections(&rtsp_list,&conn_count);
+	num_conn=conn_count;
 }

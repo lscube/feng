@@ -116,7 +116,10 @@
 	
 	// DESCRIBE	
 	int send_describe_reply(RTSP_buffer *rtsp,char *object,description_format descr_format,char *descr);
-
+	
+	// REDIRECT 3xx
+	uint32 send_redirect_3xx(RTSP_buffer *, uint8 *);
+	
 	// SETUP
 	int send_setup_reply(RTSP_buffer *rtsp,RTSP_session *session,char *address,RTP_session *sp2);
 	
@@ -133,6 +136,7 @@
 	int send_options_reply(RTSP_buffer *rtsp,long cseq);
 
 	// messages functions
+	uint32 max_connection();
 	char *get_stat(int err);
 	int send_reply(int err, char *addon ,RTSP_buffer *rtsp);
 	int bwrite(char *buffer,unsigned short len,RTSP_buffer *rtsp);

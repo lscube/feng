@@ -27,6 +27,8 @@ librtsp_la_SOURCES =	RTSP_state_machine.c \
 			send_pause_reply.c \
 			send_teardown_reply.c \
 			send_options_reply.c  \
+			send_redirect_3xx.c  \
+			max_connection.c  \
 			parse_url.c 
 			 
 						

@@ -45,6 +45,7 @@ int get_media_descr(char *object,media_entry *req,media_entry *media,char *descr
 // Returns the media description according to the required format
 {
     media_entry *list,*matching_me;
+    SD_descr *matching_descr;
     int res;
     char *p;
     if (req==NULL || media==NULL) {
@@ -57,7 +58,8 @@ int get_media_descr(char *object,media_entry *req,media_entry *media,char *descr
     if (strcasecmp(p,".SD")!=0) {
 		return ERR_NOT_SD;
     }
-    res=enum_media(object,&list);
+    res=enum_media(object,&matching_descr);
+    list=matching_descr->me_list;
     if (res!=ERR_NOERROR) {
     	return res;
     }

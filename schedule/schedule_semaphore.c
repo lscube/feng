@@ -34,7 +34,7 @@
 
 #include <fenice/schedule.h>
 
-extern schedule_list sched[MAX_SESSION];
+extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 int schedule_semaphore(int id)
 {

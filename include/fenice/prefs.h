@@ -42,8 +42,10 @@
 	/* Please note (2):
 		MAX_CONNECTION must be an integral multiple of MAX_PROCESS
 	*/
-	#define MAX_PROCESS		10
-	#define MAX_CONNECTION	100
+	#define MAX_PROCESS	4/*number of fork*/	
+	#define MAX_CONNECTION	30/*rtsp connection*/	
+	#define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS))/*rtsp connection for one fork*/
+	#define DEFAULT_MAX_SESSION 1/*default max session after which i need to send a redirect*/
 
 	
 	#define DEFAULT_CONF_FILE FENICE_CONF_DIR_DEFAULT "/fenice.conf"
@@ -53,7 +55,6 @@
 
 	#define DEFAULT_ROOT FENICE_AVROOT_DIR_DEFAULT
 	#define DEFAULT_PORT 1554
-	#define DEFAULT_MULTICAST_FILE ""
 	
 	typedef struct _serv_prefs {
 		char hostname[256];

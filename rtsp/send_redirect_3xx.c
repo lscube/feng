@@ -34,25 +34,37 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
-#include <config.h>
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
+#include <fenice/types.h>
 
-int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format descr_format, char *descr)
+uint32 send_redirect_3xx(RTSP_buffer *rtsp, uint8 *object)
 {
-	char *r;		/* get reply message buffer pointer */
-	char *mb;		/* message body buffer pointer */
-	int mb_len;
+	uint8 *r;		/* get reply message buffer pointer */
+	uint8 *mb;		/* message body buffer pointer */
+	uint32 mb_len;
+	SD_descr *matching_descr;
 
-		
+	fprintf(stderr,"send_redirect_3xx\n");
+	if (enum_media(object, &matching_descr) != ERR_NOERROR) {
+		fprintf(stderr,"SETUP request specified an object file which can be damaged.\n");
+		send_reply(500, 0, rtsp);	/* Internal server error */
+		return ERR_NOERROR;
+	}
+
+
+	fprintf(stderr,"%s\n",matching_descr->twin);
+	if(!strcasecmp(matching_descr->twin,"NONE") || !strcasecmp(matching_descr->twin,"")){
+		send_reply(453,0,rtsp);
+		return ERR_NOERROR;
+	}
 	/* allocate buffer */
 	mb_len = 2048;
 	mb = malloc(mb_len);
 	r = malloc(mb_len + 1512);
 	if (!r || !mb) {
-		printf("send_describe_reply(): unable to allocate memory\n");
+		printf("send_redirect(): unable to allocate memory\n");
 		send_reply(500, 0, rtsp);	/* internal server error */
 		if (r) {
 			free(r);
@@ -62,32 +74,18 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format des
 		}
 		return ERR_ALLOC;
 	}
+	/* build a reply message */
+	sprintf(r, "%s %d %s\nCSeq: %d\nServer: %s/%s\n", RTSP_VER, 302, get_stat(302), rtsp->rtsp_cseq, PACKAGE,VERSION);
+	sprintf(r + strlen(r), "Location: %s\r\n\r\n", matching_descr->twin);/*twin of the first media of the aggregate movie*/
+	
 
-/*	if(max_connection(rtsp)==ERR_GENERIC){
-		return send_redirect_3xx(rtsp);
-	}
-	else{*/
-		/*describe*/
-		sprintf(r, "%s %d %s\nCSeq: %d\nServer: %s/%s\n", RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE, VERSION);
-		add_time_stamp(r, 0);
-		switch (descr_format) {
-			// Add new formats here
-			case df_SDP_format:{
-				strcat(r, "Content-Type: application/sdp\n");
-			break;
-			}
-		}
-		sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/\n", prefs_get_hostname(), object);
-		sprintf(r + strlen(r), "Content-Length: %d\r\n\r\n", strlen(descr));
-		strcat(r, descr);
-	//}
-		bwrite(r, (unsigned short) strlen(r), rtsp);
+	bwrite(r, (unsigned short) strlen(r), rtsp);
 
 	free(mb);
 	free(r);
 #ifdef VERBOSE
-	printf("DESCRIBE response sent.\n");
+	printf("REDIRECT response sent.\n");
 #endif
-	
 	return ERR_NOERROR;
+
 }

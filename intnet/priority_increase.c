@@ -43,10 +43,13 @@ int priority_increase(RTP_session *changing_session)
 {
         int priority;
         media_entry req,*list,*p;
+	SD_descr *matching_descr;
+	
         memset(&req,0,sizeof(req));
 
         req.description.flags|=MED_PRIORITY;
-        enum_media(changing_session->sd_filename, &list);
+        enum_media(changing_session->sd_filename, &matching_descr);
+	list=matching_descr->me_list;
 
         priority=changing_session->current_media->description.priority;
 	if (priority != 1) {

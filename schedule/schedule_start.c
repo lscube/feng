@@ -40,7 +40,7 @@
 #include <fenice/schedule.h>
 #include <fenice/rtp.h>
 
-extern schedule_list sched[MAX_SESSION];
+extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 int32 schedule_start(int id,play_args *args)
 {

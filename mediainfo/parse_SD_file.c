@@ -36,6 +36,7 @@
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
+#include <fenice/debug.h>
 #include <stdio.h>
 
 int parse_SD_file(char *object,SD_descr *sd_descr)
@@ -51,8 +52,9 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
         strcpy(thefile,prefs_get_serv_root());
 
         strcat(thefile,object);
-        printf("Requested file is: %s\n", thefile);
-	
+#if DEBUG
+        fprintf(stderr,"Requested file is: %s\n", thefile);
+#endif	
 
         f=fopen(thefile,"r");
         if (f==NULL) {
@@ -72,10 +74,15 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
                 while (strcasecmp(keyword,SD_STREAM)!=0 && !feof(f)) {
                         fgets(line,80,f);
                         sscanf(line,"%s",keyword);
+			if (strcasecmp(keyword,SD_TWIN)==0) {
+                                sscanf(line,"%s%s",trash,sd_descr->twin);
+				fprintf(stderr,"%s\n",sd_descr->twin);
+                	}              
                 }
                 if (feof(f)) {
                         return ERR_NOERROR;
                 }
+
                 // Allocate an element in the list
                 if (p==NULL) {
                         sd_descr->me_list=(media_entry*)calloc(1,sizeof(media_entry));
@@ -151,7 +158,7 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
                                         p->description.coding_type=sample;
                         }
                         if (strcasecmp(keyword,SD_PKT_LEN)==0) {
-                                sscanf(line,"%s%f",trash,&(p->description.pkt_len));
+                                sscanf(line,"%s%f",trash,p->description.pkt_len);
                                 p->description.flags|=MED_PKT_LEN;
                         }
                         if (strcasecmp(keyword,SD_FRAME_RATE)==0) {

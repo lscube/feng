@@ -47,10 +47,6 @@
 	#include <fenice/bufferpool.h>
 	#include <fenice/types.h>
 	#include <fenice/prefs.h>
-	
-	//#define MAX_SESSION ((int)(MAX_CONNECTION/MAX_PROCESS))
-	#define MAX_SESSION 100
-
 	#define RTP_DEFAULT_PORT 5004
 	#define RTCP_BUFFERSIZE	1024
 	

@@ -159,6 +159,12 @@ int RTSP_describe(RTSP_buffer * rtsp)
 		send_reply(500, 0, rtsp);	// Internal server error
 		return ERR_NOERROR;
 	}
+
+	if(max_connection()==ERR_GENERIC){
+		/*redirect*/
+		return send_redirect_3xx(rtsp,object);
+	}
+
 	send_describe_reply(rtsp, object, descr_format, descr);
 	return ERR_NOERROR;
 }

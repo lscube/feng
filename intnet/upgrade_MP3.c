@@ -47,13 +47,16 @@ int upgrade_MP3(RTP_session *changing_session)
 {
         int speed;
         media_entry req,*list,*p;
+	SD_descr *matching_descr;
+	
         memset(&req,0,sizeof(req));
 
         req.description.flags|=MED_BITRATE;
 	req.description.flags|=MED_ENCODING_NAME;
 	strcpy(req.description.encoding_name, "MPA");
 
-        enum_media(changing_session->sd_filename, &list);
+        enum_media(changing_session->sd_filename, &matching_descr);
+	list=matching_descr->me_list;
 
         speed=changing_session->current_media->description.bitrate;
 	p = NULL;
