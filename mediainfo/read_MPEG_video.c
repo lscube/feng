@@ -108,22 +108,21 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 
 	/*---- Random Access ----*/
 	if((me->description).msource!=live && me->play_offset!=-1/*me->prev_mstart_offset*/ ){
-		count=random_access(me);
-		if(!me->description.bitrate)
-			fprintf(stderr,"Bit Rate unavaible, access random not permitted\n");	
-		else{
-			//fprintf(stderr,"Bit Rate b/s: %d  skipped byte: %d\n",me->description.bitrate, count);	
-			s->fragmented=0;
-			//*recallme=0;
-			wasSeeking=1;
-                	if(!flag){
-				lseek(me->fd,0,SEEK_SET);
-				probe_standard(me,data_tmp,data_size,me->fd,&s->std);
-				seq_head_pres=1;
-			}
-			
-			lseek(me->fd,count,SEEK_SET);
+		if(!me->description.bitrate){
+			//Bit Rate unavaible in sequence header, so i calculate it from scratch
+			me->description.bitrate=(int)(s->data_total * 8  / (*mtime))*1000;
 		}
+		count=random_access(me);
+		//fprintf(stderr,"Bit Rate b/s: %d  skipped byte: %d\n",me->description.bitrate, count);	
+		s->fragmented=0;
+		//*recallme=0;
+		wasSeeking=1;
+               	if(!flag){
+			lseek(me->fd,0,SEEK_SET);
+			probe_standard(me,data_tmp,data_size,me->fd,&s->std);
+			seq_head_pres=1;
+		}
+		lseek(me->fd,count,SEEK_SET);
 		 /*me->prev_mstart_offset=*/me->play_offset=-1;
 	}
 	/*---- end Random Access ----*/
