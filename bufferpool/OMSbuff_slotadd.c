@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #include <fenice/bufferpool.h>
+#include <fenice/debug.h>
 
 OMSSlot *OMSbuff_slotadd(OMSBuffer *buffer, OMSSlot *prev)
 {
@@ -49,9 +50,9 @@ OMSSlot *OMSbuff_slotadd(OMSBuffer *buffer, OMSSlot *prev)
 
 	added->next_added = buffer->added_head;
 	buffer->added_head = added;
-
+#if DEBUG
 	fprintf(stderr,"slot added\n");
-
+#endif
 	return (OMSSlot *)added;
 }
 

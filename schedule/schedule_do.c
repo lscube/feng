@@ -41,6 +41,7 @@
 #include <fenice/intnet.h>
 #include <fenice/rtcp.h>
 #include <fenice/utils.h>
+#include <fenice/debug.h>
 
 extern schedule_list sched[MAX_SESSION];
 extern int stop_schedule;
@@ -115,8 +116,8 @@ do{
     								schedule_stop(i);
     							}
     							else {    					
-								#ifdef DEBUG		
-								//	printf("Packet Lost\n");
+								#if DEBUG		
+									printf("Packet Lost\n");
 								#endif
     							}
         						continue;

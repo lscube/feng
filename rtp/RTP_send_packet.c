@@ -46,6 +46,7 @@
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
 #include <fenice/bufferpool.h>
+#include <fenice/debug.h>
 
 int RTP_send_packet(RTP_session *session)
 {
@@ -56,7 +57,6 @@ int RTP_send_packet(RTP_session *session)
 	double s_time;
 	OMSSlot *slot;
 	
-//	s_time = session->mtime - session->mstart + session->mstart_offset;	
 	if(!(slot = OMSbuff_read(session->cons))){
 		//This operation runs only if producer writes the slot
 		session->current_media->mtime += session->current_media->description.delta_mtime; //emma  
@@ -81,8 +81,6 @@ int RTP_send_packet(RTP_session *session)
 			//session->current_media->mtime = slot->timestamp + session->current_media->mstart - session->current_media->mstart_offset;
 		}
 		
-	//	fprintf(stderr,"slot->timestamp=%f play_offset=%f %s \n",slot->timestamp,session->current_media->play_offset,(strcmp(session->current_media->description.encoding_name,"MPA")==0)?"audio":"video");
-		
     		hdr_size=sizeof(r);	
 		r.version = 2;
     		r.padding = 0;
@@ -92,7 +90,6 @@ int RTP_send_packet(RTP_session *session)
     		r.payload = session->current_media->description.payload_type;
 		r.seq_no = htons(session->seq++ + session->start_seq);
    		r.timestamp=htonl(session->start_rtptime+msec2tick(slot->timestamp,session->current_media));
-   		// r.timestamp=htonl(session->start_rtptime+msec2tick(s_time,session->current_media));
 		r.ssrc = htonl(session->ssrc);
 #if HAVE_ALLOCA
 		packet=(unsigned char*)alloca(slot->data_size+hdr_size);
@@ -106,7 +103,7 @@ int RTP_send_packet(RTP_session *session)
 		memcpy(packet+hdr_size,slot->data,slot->data_size);
 	
 		if (sendto(session->rtp_fd,packet,slot->data_size+hdr_size,0,&(session->rtp_peer),sizeof(session->rtp_peer))<0){
-#ifdef DEBUG		
+#if DEBUG		
 			fprintf(stderr,"RTP Packet Lost\n");
 #endif
 		}	
@@ -117,7 +114,6 @@ int RTP_send_packet(RTP_session *session)
 #if !HAVE_ALLOCA
 		free(packet);
 #endif
-		// free(data);
 		slot = OMSbuff_read(session->cons);
 
 	}

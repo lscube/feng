@@ -1,6 +1,12 @@
 #ifndef _COMMAND_ENVIRONMENTH
 #define _COMMAND_ENVIRONMENTH
-#include <fenice/socket.h>
-int init_command(tsocket fd);
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+#include <fenice/prefs.h>
+#include <fenice/types.h>
+
+uint32 command_environment(int , char **);
 #endif
 

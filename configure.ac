@@ -56,7 +56,7 @@ dnl Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/time.h unistd.h strings.h errno.h fcntl.h malloc.h sys/ioctl.h) 
+AC_CHECK_HEADERS(sys/time.h unistd.h strings.h errno.h fcntl.h malloc.h sys/ioctl.h getopt.h) 
 dnl AC_CHECK_HEADERS(ffmpeg/common.h ffmpeg/avcodec.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -93,7 +93,11 @@ if test "$enable_debug" = "yes"; then
 	AC_DEFINE(ENABLE_DEBUG, 1,[Debug enabled])
 	debug_msg="
    Debuging flags enabled: welcome developer!!!"
+else
+	AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
 fi
+
+
 
 case "$enable_warnings" in
 	pedantic)

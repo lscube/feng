@@ -18,6 +18,7 @@ noinst_HEADERS	=	bufferpool.h \
 			types.h \
 			utils.h \
 			xmllexer.h \
-			xmlparser.h 
+			xmlparser.h \ 
+			multicast.h
 
 INCLUDES = $(top_srcdir)

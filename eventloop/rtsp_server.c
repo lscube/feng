@@ -151,27 +151,27 @@ int rtsp_server(RTSP_buffer *rtsp)
 	    			// There are RTCP packets to read in
     				int peer_len=sizeof(p->rtcp_in_peer);
         			if ((p->rtcp_insize=recvfrom(p->rtcp_fd_in,p->rtcp_inbuffer,sizeof(p->rtcp_inbuffer),0,&(p->rtcp_in_peer),&peer_len))<0) {            	
-        				#ifdef DEBUG
+        				#if DEBUG
         				printf("Input RTCP packet Lost\n");
 	        			#endif
         			}
         			else {
             				RTCP_recv_packet(p);
 	            		}
-        	    		#ifdef DEBUG
-        			//printf("IN RTCP\n");
+        	    		#if DEBUG
+        			printf("IN RTCP\n");
         			#endif
 			}
 	    		if (FD_ISSET(p->rtcp_fd_out,&wset)) {
     				// There are RTCP packets to send
         			if (sendto(p->rtcp_fd_out,p->rtcp_outbuffer,p->rtcp_outsize,0,&(p->rtcp_out_peer),sizeof(p->rtcp_out_peer))<0) {
-        				#ifdef DEBUG
+        				#if DEBUG
         				printf("RTCP Packet Lost\n");
 	        			#endif
         			}    		
         			p->rtcp_outsize=0;
-        			#ifdef DEBUG
-	        		//printf("OUT RTCP\n");         	
+        			#if DEBUG
+	        		printf("OUT RTCP\n");         	
         			#endif
 			}
 		}	

@@ -148,7 +148,7 @@ int RTCP_send_packet(RTP_session *session,rtcp_pkt_type type)
 		session->rtcp_outsize+=pkt_size;
 	}
 	else {
-		#ifdef DEBUG
+		#if DEBUG
 		printf("Output RTCP packet lost\n");
 		#endif
 	}

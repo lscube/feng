@@ -1,5 +1,5 @@
 /* * 
- *  $Id$
+ *  $Id:$
  *  
  *  This file is part of Fenice
  *
@@ -31,20 +31,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
+#ifndef _MULTICASTH
+#define _MULTICASTH
 
-#ifndef _EVENTLOOPH
-#define _EVENTLOOPH
+	#define MULTICAST_ADDRESS "224.124.0.1"
 
-	#include <fenice/socket.h>	
-	#include <fenice/rtsp.h>
-
-	#define MAX_FDS 800
-	
-	typedef int (*event_function)(void *data);
-	
-	void eventloop(tsocket main_fd);
-	int rtsp_server(RTSP_buffer *rtsp);
-	void add_client(RTSP_buffer **rtsp_list,tsocket fd);
-	void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count);
-	
 #endif

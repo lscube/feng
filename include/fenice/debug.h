@@ -1,5 +1,5 @@
 /* * 
- *  $Id$
+ *  $Id:$
  *  
  *  This file is part of Fenice
  *
@@ -36,15 +36,16 @@
 #ifndef _DEBUGH
 #define _DEBUGH
 
+#include <config.h>
+
 	void dump_buffer(char *buffer);
 
 //	#define VERBOSE
-	#define DEBUG
+	#define DEBUG ENABLE_DEBUG
 
 //	#define POLLED
 //	#define SIGNALED
 	#define THREADED
 //	#define SELECTED
-	
-        #define MULTICAST_ADDRESS "224.124.0.1"
+
 #endif

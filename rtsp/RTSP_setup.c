@@ -46,7 +46,7 @@
 #include <fenice/socket.h>
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
-
+#include <fenice/multicast.h>
 #include <fenice/debug.h>
 
 /*
@@ -57,7 +57,7 @@
 
 int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
-	char address[15];
+	char address[16];
 	int valid_url;
 	char object[255], server[255], trash[255];
 	char url[255];
@@ -77,19 +77,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	unsigned long ssrc;
 	int multicast=NO_MULTICAST;
 
-	//FEDERICO. The following declarations are used in the part of code where Federico look for
-	// the RTP and RTCP ports 	
-	/* shawill: not used for now
-	struct sockaddr  *tmpfede;
-	int lung = sizeof(struct sockaddr);
-	struct sockaddr  *tmpfede2;
-	int lung2 = sizeof(struct sockaddr);
-	*/
-	//
 	
-
-	
-	printf("SETUP request received.\n");
+	fprintf(stderr,"SETUP request received.\n");
 	
 	memset(&req, 0, sizeof(req));
 	// Parse the input message
@@ -111,7 +100,10 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		p = strchr(p, '=');
 		sscanf(p + 1, "%lu", &ssrc);
 	} else {
-		ssrc = random32(0); //not right. The right way is using md5.
+		ssrc = random32(0); 
+#if DEBUG
+		fprintf(stderr,"%lu",ssrc);
+#endif
 	}
 
 	if ((p = strstr(rtsp->in_buffer, "client_port")) == NULL && (strstr(rtsp->in_buffer, "multicast")) == NULL) {

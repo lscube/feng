@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <config.h>
 #ifdef WIN32
 #include <winsock2.h>
 #endif
@@ -43,31 +44,24 @@
 #include <fenice/prefs.h>
 #include <fenice/schedule.h>
 #include <fenice/utils.h>
-#include <config.h>
-#include <sys/types.h> /*fork*/
-#include <unistd.h>    /*fork*/
+#include <fenice/command_environment.h>
+//#include <sys/types.h> /*fork*/
+//#include <unistd.h>    /*fork*/
 
 
 
 int main(int argc, char **argv)
 {
 	tsocket main_fd;
-	tsocket command_fd;
 	unsigned int port;
 	
 	// Fake timespec for fake nanosleep. See below.
 	struct timespec ts = { 0, 0};
-	
-	
-	if(argc!=2){
-	  printf("\n\nUsage: fenice <fenice.conf>\n\n");
-	}  
-	prefs_init(argv[1]);
-	/* prefs_init() loads root directory, port, hostname and domain name on
-   	a static variable prefs */
-
-	port=prefs_get_port();
+	/*command_environment parses the command line and returns the number of error*/
+	if(command_environment(argc,argv))
+		return 0;
 	/* prefs_get_port() reads the static var prefs and returns the port number */				
+	port=prefs_get_port();
 	printf("%s %s - Open Media Streaming Project - Politecnico di Torino\n\n", PACKAGE, VERSION);	
 	#ifdef WIN32
 	{
@@ -87,7 +81,6 @@ int main(int argc, char **argv)
 	printf("CTRL-C terminate the server.\n");
 	printf("Waiting for RTSP connections on port %d...\n",port);
 	main_fd=tcp_listen(port);
-	//command_fd=tcp_listen(COMMAND_PORT); /*COMMAND_PORT*/
 
 	/* next line: schedule_init() initialises the array of schedule_list sched 
    	and creates the thread schedule_do() -> look at schedule.c */ 
@@ -103,10 +96,10 @@ int main(int argc, char **argv)
 		// Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
 		// See also schedule.c
 		nanosleep(&ts, NULL);
-		eventloop(main_fd,command_fd);
+		eventloop(main_fd);
 	}
-/* eventloop looks for incoming RTSP connections and generates for each
-   all the information in the structures RTSP_list, RTP_list, and so on */
+	/* eventloop looks for incoming RTSP connections and generates for each
+   	all the information in the structures RTSP_list, RTP_list, and so on */
 
 	#ifdef WIN32
 		WSACleanup();
