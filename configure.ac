@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(fenice, 1.6)
+AC_INIT(fenice, 1.7)
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(dist-bzip2 check-news)
@@ -252,7 +252,7 @@ AC_CONFIG_FILES([schedule/Makefile])
 AC_CONFIG_FILES([xmlparser/Makefile])
 AC_CONFIG_FILES([command_environment/Makefile])
 AC_CONFIG_FILES([docs/Makefile])
-AC_CONFIG_FILES([docs/en/Makefile])
+AC_CONFIG_FILES([docs/howto/Makefile])
 AC_CONFIG_FILES([etc/Makefile])
 AC_CONFIG_FILES([avroot/Makefile])
 AC_CONFIG_FILES([bufferpool/Makefile])

@@ -9,3 +9,6 @@ install-data-local:
 
 uninstall-local:
 	rm -rf $(FENICE_DOCS_DIR)
+
+update:
+	wget https://killgates.polito.it/streaming/book/print/31 -O - | tidy -quiet --show-warnings no -indent --indent-spaces 4 > fenice-howto.html

@@ -243,8 +243,16 @@
         creating a config-file like this:</p>
 
         <div class="codeblock">
-            <code>root=/home/chicco/media/<br>
-            port=1554</code>
+            <code>#-----------------------------------------------------------<br>
+            # Define root dir where media are stored<br>
+            root=/path_to/media<br>
+            # Define RTSP port where Fenice listens for new
+            connections<br>
+            port=8554<br>
+            # Define max session (calculate it according to your
+            bandwith)<br>
+            max_session=10<br>
+            #-----------------------------------------------------------</code>
         </div><br>
         where <tt>root</tt> is the path to the multimedia streams
         directory and <tt>port</tt> is the <em>TCP</em> port for
@@ -423,7 +431,29 @@
         <br>
     </div>
 
-    <h1 id="49" name="49" class="book-h2">4.1. MP3 audio
+    <h1 id="58" name="58" class="book-h2">4.1. Global SD Tags</h1>
+
+    <div style="margin-left: 2em">
+        <p>Global tags are referred to the whole session. Allowed
+        global tags are: <em>stream, stream_end, twin</em>;
+        <em>stream\stream_end</em> are the start\end-point of the
+        media description, while <em>twin</em> indicates the twin
+        resource used in redirect message (i.e.for load balancing
+        between two or more servers).</p>
+
+        <p>The general structure of a SD description is:<br></p>
+
+        <div class="codeblock">
+            <code>twin
+            rtsp://twin_server:rtsp_port/twin_resource.sd<br>
+            stream<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;insert here
+            the description (see te following pages)<br>
+            stream_end</code>
+        </div>
+    </div>
+
+    <h1 id="49" name="49" class="book-h2">4.2. MP3 audio
     streams</h1>
 
     <div style="margin-left: 2em">
@@ -464,7 +494,7 @@
         <tt>fenice.conf</tt>.</p>
     </div>
 
-    <h1 id="50" name="50" class="book-h2">4.2. MPEG 1 and 2
+    <h1 id="50" name="50" class="book-h2">4.3. MPEG 1 and 2
     elementary video stream</h1>
 
     <div style="margin-left: 2em">
@@ -495,7 +525,7 @@
         </div>
     </div>
 
-    <h1 id="51" name="51" class="book-h2">4.3. MP3 audio + MPEG
+    <h1 id="51" name="51" class="book-h2">4.4. MP3 audio + MPEG
     videostreams</h1>
 
     <div style="margin-left: 2em">
@@ -545,7 +575,33 @@
         </div>
     </div>
 
-    <h1 id="52" name="52" class="book-h2">4.4. PCM audio
+    <h1 id="53" name="53" class="book-h2">4.5. GSM-AMR voice
+    streams</h1>
+
+    <div style="margin-left: 2em">
+        <p>For a GSM-AMR audio file:<br></p>
+
+        <div class="codeblock">
+            <code>stream<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file_name
+            audio.gsm<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;priority
+            3<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;payload_type
+            108<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock_rate
+            8000<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoding_name
+            GSM<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pkt_len
+            20<br>
+            stream_end</code>
+        </div><br>
+        <strong>Note:</strong> GSM-AMR has not a well know payload
+        type.
+    </div>
+
+    <h1 id="52" name="52" class="book-h2">4.6. PCM audio
     streams</h1>
 
     <div style="margin-left: 2em">
@@ -572,32 +628,6 @@
             20<br>
             stream_end</code>
         </div>
-    </div>
-
-    <h1 id="53" name="53" class="book-h2">4.5. GSM-AMR voice
-    streams</h1>
-
-    <div style="margin-left: 2em">
-        <p>For a GSM-AMR audio file:<br></p>
-
-        <div class="codeblock">
-            <code>stream<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file_name
-            audio.gsm<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;priority
-            3<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;payload_type
-            108<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock_rate
-            8000<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoding_name
-            GSM<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pkt_len
-            20<br>
-            stream_end</code>
-        </div><br>
-        <strong>Note:</strong> GSM-AMR has not a well know payload
-        type.
     </div>
 
     <h1 id="37" name="37" class="book-h1">5. How to add a Creative

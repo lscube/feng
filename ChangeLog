@@ -1,195 +1,363 @@
-2003-02-05  Stefano Cau  <cau@staff.inrete.it>
 
-	* phy.c
-	  - bugfix: now mp3 files end correctly and an ERR_EOF is returned
-	    when finished
+------------------------------------------------------------------------
+r86 | mancho | 2005-01-28 19:27:19 +0100 (Fri, 28 Jan 2005) | 2 lines
+Changed paths:
+   M /trunk/docs/en/Makefile.am
+   A /trunk/docs/en/fenice-howto.html
+   D /trunk/docs/en/index-1.html
+   D /trunk/docs/en/index-2.html
+   D /trunk/docs/en/index-3.html
+   D /trunk/docs/en/index-4.html
+   D /trunk/docs/en/index-5.html
+   D /trunk/docs/en/index-6.html
+   D /trunk/docs/en/index.html
+   D /trunk/docs/en/index.sgml
+   M /trunk/fenice.spec
 
-2003-01-18  Stefano Cau  <cau@staff.inrete.it>
+Documentation updated: new documentation is in docs/en/fenice-howto.html (from the Web site).
 
-        * schedule.h
-          - deleted items "int change_possible", "int previous" in schedule_list
-            structure
-	* rtp.h
-	  - added items "int PreviousCount", "short MinimumReached" and "short MaximumReached"
-	    in RTP_session structure
-	  - added parameter "int value" to function RTP_stream_change
-	  - added function int change_check
-	  - added function RTCP_get_RR_received
-	  - added functions upgrade_MP3, downgrade_MP3, half_MP3, downgrade_L16, half_L16,
-	    upgrade_GSM, downgrade_GSM, half_GSM, priority_decrease, priority_increase
-	* rtcp.h
-	  - added items "unsigned int RR_received" and "unsigned int SR_received"
-	    to RTCP_stats structure
-	* phy.h
-	  - added function validate_stream
-	  - added function load_MPA
-	  - added function load_GSM
-	  - added function load_L16
-	* rtp.c
-	  - added function change_check; each time an RTCP RR packet is received,
-	    this function returns a code for the function stream_change, according
-	    to AVoIP algorithm
-	  - function stream_change now receives in input the parameter "value", that
-	    can be 0, 1, -1, -2: 0 for no action, 1 to increase bitrate, -1 to
-	    decrease bitrate, -2 to reduce by half bitrate 
-	  - added functions upgrade_MP3, downgrade_MP3, half_MP3, downgrade_L16, half_L16,
-	    upgrade_GSM, downgrade_GSM, half_GSM, priority_decrease, priority_increase
-	* rtcp.c
-	  - modified function RTCP_recv_packet, in order to manage the values of
-	    SR_received and RR_received; those variables are increased by 1, each
-	    SR or RR packet received
-	  - added function RTCP_get_RR_received, that returns the number of RR
-	    packets received by the server from the client
-	* schedule.c
-          - function schedule_init
-            * deleted initialization of sched[i].change_possible and sched[i].previous
-          - function schedule_start
-            * added initialization of sched[i].rtp_session->MinimunReached,
-	      sched[i].rtp_session->PreviousCount, sched[id].rtp_session->rtcp_stats[i_client].RR_received,
-	      sched[id].rtp_session->rtcp_stats[i_client].SR_received, sched[i].rtp_session->MaximunReached
-	  - function schedule_do
-	    * replaced controls on RTCP statistics used to call the function stream_change
-	      with new functions stream_change and change_check
-	  - function schedule_add
-	    * correction on the way the function exits: if i < MAX_SCHEDULE,
-	      returns i, otherwise returns ERR_GENERIC
-	* phy.c
-	  - function read_L16 replaced with read_PCM
-	  - function parse_SD_file
-	    * deleted section "file validation" and replaced with the function
-	      "validate_stream", which controls the media entry items, according
-	      to their encoding name
-	    * replaced the "if mpa" section, after "file validation" with function
-	      "load_MPA", which opens the mp3 file, reads all the information from 
-	      the header and loads all the items
-	    * new function "load_GSM": same as above, but for gsm files
-	    * new function "load_L16": calculates only the bitrate for an L16 file
-	      and loads it into the item; not really necessary, but useful
-	* media_entry.c
-	  - function search_media
-	    * added search item MED_ENCODING_NAME
-	    * bug fixed on search item audio_channels
+------------------------------------------------------------------------
+r85 | shawill | 2005-01-28 19:07:33 +0100 (Fri, 28 Jan 2005) | 6 lines
+Changed paths:
+   M /trunk/sdp/get_media_descr.c
 
-2002-12-15  Stefano Cau  <cau@staff.inrete.it>
+Bug fix in sdp/get_media_descr.c line 61:
+    res=enum_media(object,&matching_descr);
+could give an error, so we should control 'res' before do this:
+    list=matching_descr->me_list;
+else -> segfault...
 
-        * media_entry.c
-          - function default_selection_criterion
-            * lookup for default file to stream is done on the item "priority 1",
-              instead of "default_presentation"
-          - function search_media
-            * deleted lookup of the item "default_presentation"
-            * replaced lookup of the item "byte_per_sample" with "bit_per_sample"
-            * added lookup of the item "bitrate"
-            * added lookup of the item "priority"
-        * phy.c
-          - function parse_SD_file
-            * deleted variable dparam; all integer values are loaded directly
-              into the destination variable (e.g. p->decritpion.clock_rate)
-            * deleted parsing of the item "default_presentation"
-            * added parsing of the item "bitrate"
-            * added parsing of the item "priority"
-            * replaced parsing of the item "byte_per_sample" with "bit_per_sample"
-            * modified all the process of file validation as follows:
-              if not loaded "filename", "priority" and "payload_type"
-                  exit
-              if payload_type >= 96
-                  if not loaded "encoding_name" and "clock_rate"
-                      exit
-                      if "gsm" and not loaded "pkt_len"
-                          pkt_len = 20
-                      if "l16" and not loaded "channels"
-                          exit
-                      if "l16" and not loaded "pkt_len"
-                          pkt_len = 20
-              if payload_type < 35
-                  load all values into items with function RTP_static_pt_info
-              if "mpa"
-                  open the file and read all the information from the header
-                  use them to load all the items
-          - function get_frame
-            * deleted field "double *mdim"
-            * streaming function is choosen on the basis of "encoding_name" instead of
-              "payload_type"
-          - function read_L16_8k_m replaced with read_L16
-            * rewritten in order to stream pcm raw files
-          - function read_MP3
-            * rewritten
-          - function read_GSM
-            * simplified
-        * rtcp.c
-          - added funcions: RTCP_get_pkt_lost, RTCP_get_fract_lost, RTCP_get_jitter,
-            RTCP_get_total_packet, RTCP_get_total_payload_octet
-        * rtp.c
-          - funcion RTP_static_pt_info
-            * added details on array RTP_payload: "bit_per_sample", "type sample/frame",
-              "pkt_len"
-          - function RTP_send_packet
-            * deleted variable mstep
-            * added recalculation of session->mtime with the value "s_time" updated by
-              function get_frame
-          - added function RTP_stream_change
-        * rtsp.c
-          - function RTSP_setup
-            * added loading of file name to stream in the structure pointed by sp2,
-              near the end
-          - function RTSP_play
-            * replaced all lookup for "defalut_presentation" with "proprity = 1"
-        * schedule.c
-          - function schedule_init
-            * added initialization of sched[i].change_possible and sched[i].previous
-          - function schedule_do
-            * added sched[i].change_possible test
-            * added RTCP_get_pkt_lost test against previous value, in order to cause
-              a stream change
-        * sdp.c
-          - function get_SDP_descr
-            * replaced lookup for "defalut_presentation" with "priority = 1"
-            * corrected "a:med=" with "a=med:"
-            * corrected "a:ctrl=" with "a=ctrl:"
-       * media_entry.h
-          - deleted item ME_DEFAULT_PRESENTATION=2 from me_flags structure
-          - replaced MED_BYTE_PER_SAMPLE with MED_BIT_PER_SAMPLE in me_descr_flags
-            structure
-          - added MED_PRIORITY=4096 in me_descr_flags structure
-          - deleted item default_presentation from media_entry structure
-          - clock_rate, sample_rate, bit_per_sample are now int instead of unsigned in
-            media_entry.description structure
-          - encoding name is now a 11 char array instead of 10 in
-            media_entry.description structure
-          - added variable "int priority" in media_entry.description structure
-        * parse.h
-          - deleted #define SD_DEFAULT_PRESENTATION "DEFAULT_PRESENTATION"
-          - replaced #define SD_BYTE_PER_SAMPLE "BYTE_PER_SAMPLE" with
-            #define SD_BIT_PER_SAMPLE "BIT_PER_SAMPLE"
-          - added #define SD_PRIORITY "PRIORITY"
-        * phy.h
-          - modified declaration of functions
-            get_frame
-            read_L16
-            read_MP3
-            read_GSM
-        * rtcp.h
-          - modified some types in RTCP_stats structure
-            unsigned short pkt_count becomes unsigned int
-            unsigned short octet_count becomes unsigned int
-            unsigned int pkt_lost becomes int
-        * rtp.h
-          - modified RTP_static_payload struct, which now has following items
-            int PldType;
-            char *EncName;
-            int ClockRate;
-            short Channels;
-            int BitPerSample;
-            media_coding Type;
-            float PktLen;
-          - added declaration of functions
-            RTP_stream_change
-            RTCP_get_pkt_lost
-            RTCP_get_fract_lost
-            RTCP_get_jitter
-            RTCP_get_total_packet
-            RTCP_get_total_payload_octet
-        * schedule.h
-          - added items "int change_possible", "int previous" in schedule_list
-            structure
+------------------------------------------------------------------------
+r84 | mancho | 2005-01-28 11:22:06 +0100 (Fri, 28 Jan 2005) | 12 lines
+Changed paths:
+   M /trunk/INSTALL
+   M /trunk/NEWS
+   M /trunk/avroot/Makefile.am
+   M /trunk/command_environment/command_environment.c
+   M /trunk/configure.ac
+   M /trunk/etc/Makefile.am
+   M /trunk/etc/fenice.conf
+   A /trunk/etc/fenice.conf.in
+   M /trunk/fenice.spec
+   M /trunk/include/fenice/prefs.h
+   M /trunk/include/fenice/rtsp.h
+   M /trunk/rtsp/parse_url.c
+   D /trunk/src/fenice.conf
+   M /trunk/src/prefs_init.c
+   M /trunk/src/prefs_use_default.c
+
+Ehm, a lot of changes in Autotools scripts:
+
+* A/V multimedia files document root will be installed in Filesystem Hierarchy
+  Standard 2.3's brand-new /srv directory (you can change this via ./configure).
+* RTSP default port is now the standard-compliant 554 or the alternative 8554
+  (but you can choose it with ./configure)
+* max_session, rtsp port ande configuration file defaults are now #define-ed in config.h
+* ./configure supports new args
+* Default configuration file is generated at ./configure-time with CPP (take a
+  look in etc directory)
+
+
+------------------------------------------------------------------------
+r83 | federico | 2005-01-27 13:20:36 +0100 (Thu, 27 Jan 2005) | 2 lines
+Changed paths:
+   M /trunk/eventloop/eventloop.c
+   M /trunk/eventloop/schedule_connections.c
+   M /trunk/include/fenice/prefs.h
+   M /trunk/rtsp/RTSP_setup.c
+
+Redirect improvements. 
+
+------------------------------------------------------------------------
+r82 | federico | 2005-01-26 13:19:16 +0100 (Wed, 26 Jan 2005) | 5 lines
+Changed paths:
+   M /trunk/mediainfo/enum_media.c
+   M /trunk/mediainfo/parse_SD_file.c
+
+
+Sorry.... i left a little ( :-) ) bug!!
+But, as an hero, ifixed it!!
+
+
+------------------------------------------------------------------------
+r81 | federico | 2005-01-26 11:49:34 +0100 (Wed, 26 Jan 2005) | 32 lines
+Changed paths:
+   M /trunk/include/fenice/prefs.h
+   M /trunk/rtsp/max_connection.c
+   M /trunk/rtsp/send_describe_reply.c
+   M /trunk/rtsp/send_redirect_3xx.c
+   M /trunk/src/Makefile.am
+   A /trunk/src/prefs_get_max_session.c
+   M /trunk/src/prefs_init.c
+   M /trunk/src/prefs_use_default.c
+
+Now you can use comments (#) in fenice.conf and set max_session.
+Please calculate max_session according to your bandwith.
+Example of a configuration file (fenice.conf):
+
+#-----------------------------------------------------------
+#Define root dir where medias are stored
+root=/home/chicco/media/
+#Define RTSP port where Fenice listen for new connection
+port=1554
+#Define max session (calculate it according to your bandwith)
+max_session=10
+#-----------------------------------------------------------
+
+If max_session is arriched and if you have set a twin in the sd file
+Fenice sends a redirect_3xx message so client switchs to the twin resource.
+
+Example of sd file:
+
+twin rtsp://myserver.mydomain:1554/mytwinresource.sd
+stream
+        file_name myfile.mpg
+	priority 1
+        media_source stored
+        payload_type 32
+        clock_rate 90000
+        encoding_name MPV
+        coding_type frame
+        frame_rate 25
+        byte_per_pckt 1900
+stream_end
+										
+
+------------------------------------------------------------------------
+r80 | federico | 2005-01-25 18:51:15 +0100 (Tue, 25 Jan 2005) | 2 lines
+Changed paths:
+   M /trunk/eventloop/eventloop.c
+   M /trunk/include/fenice/mediainfo.h
+   M /trunk/include/fenice/prefs.h
+   M /trunk/include/fenice/rtp.h
+   M /trunk/include/fenice/rtsp.h
+   M /trunk/include/fenice/schedule.h
+   M /trunk/include/fenice/utils.h
+   M /trunk/intnet/downgrade_GSM.c
+   M /trunk/intnet/downgrade_MP3.c
+   M /trunk/intnet/half_GSM.c
+   M /trunk/intnet/half_MP3.c
+   M /trunk/intnet/priority_decrease.c
+   M /trunk/intnet/priority_increase.c
+   M /trunk/intnet/upgrade_GSM.c
+   M /trunk/intnet/upgrade_MP3.c
+   M /trunk/mediainfo/enum_media.c
+   M /trunk/mediainfo/parse_SD_file.c
+   M /trunk/mediainfo/read_MPEG4ES_video.c
+   M /trunk/rtp/RTP_get_port_pair.c
+   M /trunk/rtp/RTP_port_pool_init.c
+   M /trunk/rtp/RTP_release_port_pair.c
+   M /trunk/rtsp/Makefile.am
+   M /trunk/rtsp/RTSP_describe.c
+   M /trunk/rtsp/RTSP_setup.c
+   A /trunk/rtsp/max_connection.c
+   M /trunk/rtsp/send_describe_reply.c
+   A /trunk/rtsp/send_redirect_3xx.c
+   M /trunk/schedule/schedule_add.c
+   M /trunk/schedule/schedule_do.c
+   M /trunk/schedule/schedule_init.c
+   M /trunk/schedule/schedule_remove.c
+   M /trunk/schedule/schedule_resume.c
+   M /trunk/schedule/schedule_semaphore.c
+   M /trunk/schedule/schedule_start.c
+   M /trunk/schedule/schedule_stop.c
+   M /trunk/sdp/get_SDP_descr.c
+   M /trunk/sdp/get_media_descr.c
+
+Now Fenice is able to redirect the connection to another server!
+
+------------------------------------------------------------------------
+r79 | shawill | 2005-01-18 17:55:45 +0100 (Tue, 18 Jan 2005) | 2 lines
+Changed paths:
+   M /trunk/bufferpool/OMSbuff_isempty.c
+   M /trunk/bufferpool/OMSbuff_new.c
+   M /trunk/bufferpool/OMSbuff_nextts.c
+   M /trunk/include/fenice/bufferpool.h
+   M /trunk/mediainfo/get_frame.c
+   M /trunk/mediainfo/load_MPA.c
+   M /trunk/mediainfo/mediaopen.c
+   M /trunk/mediainfo/read_MPEG_video.c
+   M /trunk/rtsp/send_describe_reply.c
+
+Live bugfixes (pipe reading).
+
+------------------------------------------------------------------------
+r78 | federico | 2005-01-11 09:50:54 +0100 (Tue, 11 Jan 2005) | 4 lines
+Changed paths:
+   M /trunk/INSTALL
+   M /trunk/mediainfo/get_frame.c
+   M /trunk/mediainfo/read_MPEG4ES_video.c
+   M /trunk/mediainfo/read_MPEG_video.c
+
+VOPs fragmentation is now work-in-progress.
+Not usable yet (so just use byte_per_pckt 20000 in sd)
+References: RFC 3016, RFC3640
+
+------------------------------------------------------------------------
+r77 | federico | 2004-12-31 11:48:19 +0100 (Fri, 31 Dec 2004) | 3 lines
+Changed paths:
+   M /trunk/INSTALL
+   M /trunk/include/fenice/mediainfo.h
+   M /trunk/mediainfo/Makefile.am
+   M /trunk/mediainfo/get_frame.c
+   A /trunk/mediainfo/load_MP4ES.c
+   M /trunk/mediainfo/parse_SD_file.c
+   A /trunk/mediainfo/read_MPEG4ES_video.c
+   M /trunk/mediainfo/validate_stream.c
+   M /trunk/schedule/schedule_remove.c
+   M /trunk/sdp/get_SDP_descr.c
+   M /trunk/src/is_supported_url.c
+
+Minimal MPEG4 Visual (xvid) support was added.
+
+
+------------------------------------------------------------------------
+r76 | mancho | 2004-12-15 18:35:32 +0100 (Wed, 15 Dec 2004) | 2 lines
+Changed paths:
+   M /trunk/rtsp/RTSP_setup.c
+
+Code cleaning
+
+------------------------------------------------------------------------
+r75 | mancho | 2004-12-15 18:27:41 +0100 (Wed, 15 Dec 2004) | 2 lines
+Changed paths:
+   M /trunk/rtp/RTP_get_port_pair.c
+   M /trunk/rtsp/RTSP_describe.c
+   M /trunk/rtsp/RTSP_discard_msg.c
+   M /trunk/rtsp/RTSP_full_msg_rcvd.c
+   M /trunk/rtsp/RTSP_handler.c
+   M /trunk/rtsp/RTSP_initserver.c
+   M /trunk/rtsp/RTSP_msg_len.c
+   M /trunk/rtsp/RTSP_options.c
+   M /trunk/rtsp/RTSP_pause.c
+   M /trunk/rtsp/RTSP_play.c
+   M /trunk/rtsp/RTSP_remove_msg.c
+   M /trunk/rtsp/RTSP_setup.c
+   M /trunk/rtsp/RTSP_state_machine.c
+   M /trunk/rtsp/RTSP_teardown.c
+   M /trunk/rtsp/RTSP_valid_response_msg.c
+   M /trunk/rtsp/RTSP_validate_method.c
+   M /trunk/rtsp/add_time_stamp.c
+   M /trunk/rtsp/bwrite.c
+   M /trunk/rtsp/get_stat.c
+   M /trunk/rtsp/parse_url.c
+   M /trunk/rtsp/send_describe_reply.c
+   M /trunk/rtsp/send_options_reply.c
+   M /trunk/rtsp/send_pause_reply.c
+   M /trunk/rtsp/send_play_reply.c
+   M /trunk/rtsp/send_reply.c
+   M /trunk/rtsp/send_setup_reply.c
+   M /trunk/rtsp/send_teardown_reply.c
+
+Bug fixes in RTSP_setup.c
+
+------------------------------------------------------------------------
+r74 | shawill | 2004-12-10 11:36:58 +0100 (Fri, 10 Dec 2004) | 2 lines
+Changed paths:
+   M /trunk/INSTALL
+   M /trunk/bufferpool/Makefile.am
+   A /trunk/bufferpool/OMSbuff_isempty.c
+   A /trunk/bufferpool/OMSbuff_nextts.c
+   M /trunk/bufferpool/OMSbuff_ref.c
+   M /trunk/configure.ac
+   M /trunk/eventloop/eventloop.c
+   M /trunk/include/fenice/bufferpool.h
+   M /trunk/include/fenice/debug.h
+   M /trunk/include/fenice/schedule.h
+   M /trunk/include/fenice/utils.h
+   M /trunk/mediainfo/get_frame.c
+   M /trunk/mediainfo/mediaopen.c
+   M /trunk/mediainfo/read_MP3.c
+   M /trunk/mediainfo/read_MPEG_video.c
+   M /trunk/rtp/RTP_send_packet.c
+   M /trunk/rtsp/RTSP_teardown.c
+   M /trunk/schedule/schedule_do.c
+   M /trunk/schedule/schedule_start.c
+   M /trunk/src/Makefile.am
+   M /trunk/src/main.c
+
+bug-fixes and warning hunting.
+
+------------------------------------------------------------------------
+r73 | shawill | 2004-11-26 19:46:01 +0100 (Fri, 26 Nov 2004) | 2 lines
+Changed paths:
+   M /trunk/bufferpool/OMSbuff_new.c
+   M /trunk/include/fenice/bufferpool.h
+   M /trunk/include/fenice/mediainfo.h
+   M /trunk/include/header.h
+   M /trunk/mediainfo/Makefile.am
+   A /trunk/mediainfo/mediaclose.c
+   A /trunk/mediainfo/mediaopen.c
+   M /trunk/mediainfo/read_H26L.c
+   M /trunk/mediainfo/read_MP3.c
+   M /trunk/mediainfo/read_MPEG_system.c
+   M /trunk/mediainfo/read_MPEG_video.c
+   M /trunk/rtp/RTP_session_destroy.c
+
+we're in the father's hands!!!
+
+------------------------------------------------------------------------
+r72 | federico | 2004-11-26 15:37:44 +0100 (Fri, 26 Nov 2004) | 4 lines
+Changed paths:
+   M /trunk/INSTALL
+   M /trunk/bufferpool/OMSbuff_slotadd.c
+   M /trunk/command_environment/command_environment.c
+   M /trunk/configure.ac
+   M /trunk/eventloop/eventloop.c
+   M /trunk/eventloop/rtsp_server.c
+   M /trunk/include/fenice/Makefile.am
+   M /trunk/include/fenice/command_environment.h
+   M /trunk/include/fenice/debug.h
+   M /trunk/include/fenice/eventloop.h
+   A /trunk/include/fenice/multicast.h
+   M /trunk/rtcp/RTCP_send_packet.c
+   M /trunk/rtp/RTP_send_packet.c
+   M /trunk/rtsp/RTSP_setup.c
+   M /trunk/schedule/schedule_do.c
+   M /trunk/src/main.c
+
+Added Standard command line. See fenice --help.
+Fenice show debugging messages only if DEBUG symbol is enabled (./configure --enable-debug).
+Add header file multicast.h. 
+
+------------------------------------------------------------------------
+r71 | shawill | 2004-11-25 12:23:31 +0100 (Thu, 25 Nov 2004) | 2 lines
+Changed paths:
+   M /trunk/INSTALL
+   M /trunk/bufferpool/OMSbuff_free.c
+   M /trunk/bufferpool/OMSbuff_getslot.c
+   M /trunk/bufferpool/OMSbuff_new.c
+   M /trunk/bufferpool/OMSbuff_read.c
+   M /trunk/bufferpool/OMSbuff_ref.c
+   M /trunk/bufferpool/OMSbuff_slotadd.c
+   M /trunk/bufferpool/OMSbuff_unref.c
+   M /trunk/bufferpool/OMSbuff_write.c
+   M /trunk/eventloop/schedule_connections.c
+   M /trunk/include/fenice/bufferpool.h
+   M /trunk/include/fenice/rtp.h
+   M /trunk/mediainfo/parse_SD_file.c
+   M /trunk/rtp/Makefile.am
+   A /trunk/rtp/RTP_session_destroy.c
+   M /trunk/rtsp/RTSP_teardown.c
+   M /trunk/schedule/schedule_do.c
+   M /trunk/schedule/schedule_remove.c
+
+Concurrency bugfixes
+
+------------------------------------------------------------------------
+r70 | mancho | 2004-11-16 18:28:43 +0100 (Tue, 16 Nov 2004) | 6 lines
+Changed paths:
+   M /trunk/autogen.sh
+   M /trunk/configure.ac
+   M /trunk/fenice.spec
+   M /trunk/include/fenice/utils.h
+   M /trunk/mediainfo/read_GSM.c
+   M /trunk/src/Makefile.am
+   D /trunk/src/round.c
+
+Deleted the ugly round.c, replaced with lround MACRO in utils.h.
+New .NOTPARALLEL: in src/Makefile.am lets you make -j without errors.
+Version number updated.
+Ready to release.
+
 

@@ -1,1 +1,9 @@
-1.6
+1.7:
+	- RTSP Redirect (3xx response): configuration-driven load balancing
+	- Session description: new field "twin"
+	- Configuration file: max_session, comments
+	- Enahanced live support with felice - Fenice LIve CEase
+	- Preliminary MPEG4 support
+	- New documentation
+	- Tons of bug-fixes
+	
