@@ -74,6 +74,7 @@
 	int tcp_read(tsocket fd, void *buffer, int nbytes);
 	int tcp_write(tsocket fd, void *buffer, int nbytes);
 	void tcp_close(tsocket s);	
+	tsocket tcp_connect(unsigned short port,char *addr);
 	int udp_connect(unsigned short to_port,struct sockaddr *s_addr,int addr, tsocket *fd);	
 	int udp_open(unsigned short port,struct sockaddr *s_addr, tsocket *fd);
 	int udp_close(tsocket fd);

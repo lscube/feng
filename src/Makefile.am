@@ -42,13 +42,13 @@ fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/rtcp/librtcp.la \
 		$(top_srcdir)/rtp/librtp.la \
 		$(top_srcdir)/mediainfo/libmediainfo.la \
-		$(top_srcdir)/socket/libsocket.la \
 		$(top_srcdir)/src/libprefs.la \
 		$(top_srcdir)/src/libdebug.la \
 		$(top_srcdir)/src/libutils.la \
 		$(top_srcdir)/md5/libmd5.la \
 		$(top_srcdir)/multicast/libmulticast.la \
 		$(top_srcdir)/xmlparser/libxmlparser.la \
+		$(top_srcdir)/socket/libsocket.la \
 		$(top_srcdir)/command_environment/libcommand.la 
 
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)

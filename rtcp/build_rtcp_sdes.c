@@ -1,5 +1,5 @@
 /* * 
- *  $Id: build_rtcp_sdes.c 53 2004-01-16 17:45:52Z shawill $
+ *  $Id$
  *  
  *  This file is part of NeMeSI
  *

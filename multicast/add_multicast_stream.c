@@ -22,35 +22,48 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <netinet/in.h>
+#include <fenice/socket.h>
 #include <fenice/multicast.h>
 #include <fenice/utils.h>
-#include <fenice/rtp.h>
-#include <fenice/schedule.h>
+#include <fenice/mediainfo.h>
+#include <fenice/prefs.h>
+#include <fenice/rtsp.h>
 
+  extern serv_prefs prefs;
+  
+  //main function
 int add_multicast_stream(char source[20]){
-  media_entry media, req;
-  char descr[MAX_DESCR_LENGTH];
-  int res;      
+  char Ip[256];
+  char port[6];
+  char buffer[RTSP_BUFFERSIZE];
+  RTSP_buffer *rtsp;
+  tsocket fd;
+  unsigned short fd_port=1554;
 
-  //FEDERICO NOTES: 
-  //parse source (is an .sd)
-  //for all media set play_args set rtp_session schedule_add schedule_start
-  //schedule_add return the id of the rtp session that i have to pass to schedule_start
-  //in rtp_session i have to set is_multicast=yes
-  //when a new request arrived i have to see if it is for a multicast session
-  //and manage in a different manner unicast and multicast 
- 	
-	//describe: parse sd and etc.. etc.. 
-	memset(&media, 0, sizeof(media));
-        memset(&req, 0, sizeof(req));
-        req.flags = ME_DESCR_FORMAT;
-        req.descr_format = df_SDP_format;
-        res = get_media_descr(source, &req, &media, descr);
-        if (res == ERR_NOT_FOUND) {
-                printf("\nMulticast request specified an object which can't be found.\n");
-		return ERR_NOT_FOUND;
-        }
-	printf("\n%s\n",descr);
+  	//create an fd socket (only for scheduling)
+  	fd=tcp_connect(fd_port,get_address());
+	rtsp->fd=fd;
+	//describe
+	strcpy(buffer,RTSP_METHOD_DESCRIBE);
+	strcat (buffer," ");
+	strcat(buffer,"rtsp://");
+	strcat(buffer,get_address());
+	strcat(buffer,":");
+	sprintf(port,"%d",prefs_get_port());
+	strcat(buffer,port);
+	strcat(buffer,"/");
+	strcat(buffer,source);
+	strcat(buffer," ");
+	strcat(buffer,RTSP_VER);
+	strcat(buffer,"\nCSeq: 1\nAccept: application/sdp\r\n\r\n");
+	
+	strcpy(rtsp->in_buffer,buffer);
+	rtsp->in_size=strlen(buffer);
+	rtsp->rtsp_cseq=1;
+
+	//RTSP_describe(&rtsp);
+
 	//setup: rtp session (so port, address an so on)
           
   return ERR_NOERROR;

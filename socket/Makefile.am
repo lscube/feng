@@ -4,6 +4,7 @@ feniceincludedir = $(top_srcdir)/include
 noinst_LTLIBRARIES = libsocket.la
 libsocket_la_SOURCES =	tcp_listen.c \
 			tcp_accept.c \
+			tcp_connect.c \
 			tcp_read.c \
 			tcp_write.c \
 			tcp_close.c \
