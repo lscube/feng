@@ -1,3 +1,68 @@
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+FENICE 1.7
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+r91 | mancho | 2005-02-01 12:38:59 +0100 (Tue, 01 Feb 2005) | 3 lines
+Changed paths:
+   M /trunk/docs/Makefile.am
+   M /trunk/docs/fenice.1
+   M /trunk/docs/howto/Makefile.am
+   M /trunk/fenice.spec
+
+Late adjustments to descriptionsi strings.
+Fixed errors in variables names in docs/Makefile.am
+
+------------------------------------------------------------------------
+r90 | shawill | 2005-02-01 12:15:55 +0100 (Tue, 01 Feb 2005) | 2 lines
+Changed paths:
+   M /trunk/configure.ac
+   M /trunk/eventloop/eventloop.c
+   M /trunk/eventloop/schedule_connections.c
+   M /trunk/include/fenice/mediainfo.h
+   M /trunk/include/fenice/rtsp.h
+   M /trunk/mediainfo/read_MP3.c
+   M /trunk/mediainfo/read_MPEG4ES_video.c
+   M /trunk/rtsp/max_connection.c
+
+some warning removed
+
+------------------------------------------------------------------------
+r89 | mancho | 2005-01-31 17:57:28 +0100 (Mon, 31 Jan 2005) | 3 lines
+Changed paths:
+   M /trunk/TODO
+   M /trunk/fenice.spec
+
+Updated fenice.spec (install man page)
+Added TODOs for the next release
+
+------------------------------------------------------------------------
+r88 | mancho | 2005-01-31 17:25:53 +0100 (Mon, 31 Jan 2005) | 2 lines
+Changed paths:
+   D /trunk/docs/en
+   A /trunk/docs/howto (from /trunk/docs/en:86)
+   R /trunk/docs/howto/Makefile.am (from /trunk/docs/en/Makefile.am:87)
+   R /trunk/docs/howto/fenice-howto.html (from /trunk/docs/en/fenice-howto.html:87)
+
+docs/en renamed to docs/howto
+
+------------------------------------------------------------------------
+r87 | mancho | 2005-01-31 17:24:25 +0100 (Mon, 31 Jan 2005) | 6 lines
+Changed paths:
+   M /trunk/00pl
+   M /trunk/ChangeLog
+   M /trunk/NEWS
+   M /trunk/configure.ac
+   M /trunk/docs/Makefile.am
+   M /trunk/docs/en/Makefile.am
+   M /trunk/docs/en/fenice-howto.html
+   A /trunk/docs/fenice.1
+
+Man page added
+How-To updated
+NEWS added
+Version number updated to 1.7
+
 
 ------------------------------------------------------------------------
 r86 | mancho | 2005-01-28 19:27:19 +0100 (Fri, 28 Jan 2005) | 2 lines
@@ -343,21 +408,4 @@ Changed paths:
    M /trunk/schedule/schedule_remove.c
 
 Concurrency bugfixes
-
-------------------------------------------------------------------------
-r70 | mancho | 2004-11-16 18:28:43 +0100 (Tue, 16 Nov 2004) | 6 lines
-Changed paths:
-   M /trunk/autogen.sh
-   M /trunk/configure.ac
-   M /trunk/fenice.spec
-   M /trunk/include/fenice/utils.h
-   M /trunk/mediainfo/read_GSM.c
-   M /trunk/src/Makefile.am
-   D /trunk/src/round.c
-
-Deleted the ugly round.c, replaced with lround MACRO in utils.h.
-New .NOTPARALLEL: in src/Makefile.am lets you make -j without errors.
-Version number updated.
-Ready to release.
-
 
