@@ -72,12 +72,12 @@ int RTP_send_packet(RTP_session *session)
 			session->mtime = slot->timestamp + session->mstart - session->mstart_offset;
 		}
     		hdr_size=sizeof(r);	
- 		//printf("\npacket sizesize=%d",data_size+hdr_size);
+ //		fprintf(stderr,"\nSession number %d, packet size=%d\n",session->rtp_fd,slot->data_size+hdr_size);
 		r.version = 2;
     		r.padding = 0;
 		r.extension = 0;
    		r.csrc_len = 0;
-		r.marker=slot->marker;/*what is slot??*/
+		r.marker=slot->marker;
     		r.payload = session->current_media->description.payload_type;
 		r.seq_no = htons(session->seq++ + session->start_seq);
    		r.timestamp=htonl(session->start_rtptime+msec2tick(slot->timestamp,session->current_media));

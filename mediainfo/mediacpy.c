@@ -64,8 +64,8 @@ uint32 mediacpy(media_entry *media_out, media_entry *media_in) {
 		if ((media_out->pkt_buffer = OMSbuff_new(dim_buff)) == NULL)
 			return ERR_ALLOC;
 	
-	if ((media_out->cons = OMSbuff_ref(media_out->pkt_buffer)) == NULL)
-		return ERR_ALLOC;
+	/*if ((media_out->cons = OMSbuff_ref(media_out->pkt_buffer)) == NULL)
+		return ERR_ALLOC;*/
 	
 	return ERR_NOERROR;
 }

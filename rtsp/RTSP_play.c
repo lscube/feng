@@ -36,6 +36,7 @@
 #include <string.h>
 #include <netinet/in.h>
 
+#include <fenice/bufferpool.h>
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
@@ -223,6 +224,10 @@ int RTSP_play(RTSP_buffer * rtsp)
 				// Search for the RTP session
 				for (ptr2 = ptr->rtp_session; ptr2 != NULL; ptr2 = ptr2->next) {
 					if (ptr2->current_media->description.priority == 1) {
+						if ((ptr2->current_media->cons = OMSbuff_ref(ptr2->current_media->pkt_buffer)) == NULL)
+		return ERR_ALLOC;
+	
+
 						// Start playing all the presentation
 						if (!ptr2->started) {
 							// Start new

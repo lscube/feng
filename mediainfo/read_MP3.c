@@ -34,6 +34,7 @@
 
 #include <unistd.h>
 #include <string.h>
+#include <stdio.h>
 #include <fcntl.h>
 #include <fenice/types.h>
 #include <fenice/utils.h>
@@ -57,8 +58,10 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
                 if ( me->fd==-1 ) return ERR_NOT_FOUND;
                 me->flags|=ME_FD;
                 me->data_chunk = 0;
-		if (me->description.flags & MED_ID3)
-		lseek(me->fd,(me->description.tag_dim)+10,SEEK_SET);
+		
+		/* TODO support Id3 TAG v2, this doesn't work*/
+		//if ((me->description.flags & MED_ID3) && (me->description).msource!=live)
+		//	lseek(me->fd,(me->description.tag_dim)+10,SEEK_SET);
         }
 	
         frame_skip=round((*mtime)/(double)(me->description.pkt_len));   // mtime is play time in milliseconds, starting
@@ -70,7 +73,8 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
         
         for (; me->data_chunk<=frame_skip; ++me->data_chunk) {
 		for (;me->buff_size<4;me->buff_size++)
-                	if ((read(me->fd,&(buff[me->buff_size]),1)) != 1 ) return ERR_EOF;
+                	if ((read(me->fd,&(buff[me->buff_size]),1)) != 1 )
+				return ERR_EOF;
 		me->buff_size = 0;
 		/*
 		if (me->buff_size == 4) {
@@ -91,16 +95,23 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
                         N = (int)(me->description.frame_len * (float)me->description.bitrate / (float)me->description.sample_rate / 8);
                         // if (sync3 & 0x02) N++;
                         if (buff[2] & 0x02) N++;
-                } else {
+                } 
+		else {
                         // Sync not found, not Mpeg-1/2
 			// id3 TAG v1 is suppressed, id3 TAG v2 is not supported and
 			// causes ERR_EOF immediately: id3 TAG v2 is prepended to the
 			// audio content of the file and has variable lenght
 			// To support it, id3 TAG v2 header must be read in order to
 			// get its lenght and skip it
+			fprintf(stderr,"ERROR: Sync not found, not Mpeg-1/2\n");
                         return ERR_EOF;
                 }
-                if ((me->data_chunk) < frame_skip) {
+                if (((me->data_chunk) < frame_skip)) {
+			if ((me->description).msource==live) {
+				fprintf(stderr,"ERROR: Live error, perhaps it's a bug\n");
+				/*TODO live solution about this lseek*/
+				return ERR_EOF;
+			}
                         lseek(me->fd,N-4,SEEK_CUR);
                 }
         }
@@ -124,10 +135,13 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
         data[5]=buff[1];
         data[6]=buff[2];
         data[7]=buff[3];
-        if ((res = read(me->fd,&(data[8]),N-4))<(N-4)) {
-                if ((res <= 0)) return ERR_EOF;
+		
+       if (( res = read ( me->fd, &(data[8]) ,N-4 ) ) < (N-4)) {
+                if ((res <= 0)) 
+			return ERR_EOF;
                 else *data_size = res + 8;
         }
+	
         return ERR_NOERROR;
 }
 
