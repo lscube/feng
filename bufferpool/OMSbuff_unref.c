@@ -36,16 +36,13 @@
 
 void OMSbuff_unref(OMSConsumer *cons)
 {
-	if(cons)
+	if(cons) {
 		if(cons->buffer->refs > 0) {
-			if(!(--(cons->buffer->refs))){
-				OMSbuff_free(cons->buffer);
-			}
-			else {
-				fprintf(stderr, "Buffer ref (%d)\n", cons->buffer->refs);
-				/*Now consumer has to read all unread slots*/
-				while(OMSbuff_read(cons)!=NULL);
-			}
-			free(cons);
+			--(cons->buffer->refs);
+			//Now consumer has to read all unread slots
+			while(OMSbuff_read(cons)!=NULL);
 		}
+			fprintf(stderr, "Buffer ref (%d)\n", cons->buffer->refs);
+			free(cons);
+	}
 }

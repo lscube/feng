@@ -43,10 +43,6 @@ int enum_media(char *object,media_entry **list)
 	static SD_descr *SD_global_list=NULL;
 	SD_descr *matching_descr=NULL,*descr_curr,*last_descr=NULL;
 	int res;
-	char to_remove=0;
-	
-	if (!list)
-		to_remove=1;
 	
 	//test about the loading of current SD (is it done?)
 	for (descr_curr=SD_global_list; descr_curr && !matching_descr; descr_curr=descr_curr->next) {
@@ -61,8 +57,6 @@ int enum_media(char *object,media_entry **list)
 	if (!matching_descr) {
 	//.SD not found: update list
 	//the first time SD_global_list must be initialized
-		if (to_remove)
-			return ERR_GENERIC; 
 		if (!SD_global_list) {
 			SD_global_list=(SD_descr*)calloc(1,sizeof(SD_descr));
 			if (!SD_global_list) {
@@ -78,9 +72,8 @@ int enum_media(char *object,media_entry **list)
 		}	
 		strcpy(matching_descr->filename,object);
 	}
-	if (!to_remove)	
-		res=parse_SD_file(object,matching_descr);
-	if (res!=ERR_NOERROR || to_remove) {
+	res=parse_SD_file(object,matching_descr);
+	if (res!=ERR_NOERROR) {
 		if (!last_descr) //matching is the first
 			SD_global_list=SD_global_list->next;
 		else {

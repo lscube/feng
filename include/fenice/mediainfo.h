@@ -251,7 +251,7 @@
 	typedef struct _SD_descr {
     		char filename[255];
     		media_entry *me_list;
-    		time_t last_modification;
+    		time_t last_change;
 		struct _SD_descr *next;
 	} SD_descr;
 

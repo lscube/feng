@@ -45,24 +45,25 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
         media_entry *p;
         char thefile[255];
         int res;
-	struct stat *data;
+	struct stat data;
                 
         // Save the .SD file name               
         strcpy(thefile,prefs_get_serv_root());
 
         strcat(thefile,object);
         printf("Requested file is: %s\n", thefile);
+	
 
         f=fopen(thefile,"r");
         if (f==NULL) {
                 /* The file doesn't exist */            
                 return ERR_NOT_FOUND;
         }       
-	stat(thefile,data);	
-        if (sd_descr->last_modification==data->st_mtime)
+	stat(thefile,&data);	
+        if (sd_descr->last_change==data.st_ctime) //date of last change
 		return ERR_NOERROR;//.SD file is the same yet
 	else
-		sd_descr->last_modification=data->st_mtime;
+		sd_descr->last_change=data.st_ctime;
         
 	// Start parsing
         p=NULL;
