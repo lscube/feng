@@ -76,8 +76,6 @@ void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
 					{
 						
 						if (r->current_media->pkt_buffer);
-						//Release buffer
-						OMSbuff_unref(r->current_media->pkt_buffer);
         	        			// Release the scheduler entry
         	        			schedule_remove(r->sched_id);
         					// Close connections        		

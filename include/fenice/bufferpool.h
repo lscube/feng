@@ -88,7 +88,7 @@ typedef struct _OMSproducer {
 /*! API definitions*/
 OMSBuffer *OMSbuff_new(uint32 buffer_size);
 OMSConsumer *OMSbuff_ref(OMSBuffer *);
-void OMSbuff_unref(OMSBuffer *);
+void OMSbuff_unref(OMSConsumer *);
 OMSSlot *OMSbuff_read(OMSConsumer *);
 int32 OMSbuff_write(OMSBuffer *, uint32 timestamp, uint8 *data, uint32 data_size);
 OMSSlot *OMSbuff_getslot(OMSBuffer *);

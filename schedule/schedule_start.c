@@ -35,18 +35,22 @@
 // #include <time.h>
 #include <sys/time.h>
 
+#include <fenice/types.h>
+#include <fenice/utils.h>
 #include <fenice/schedule.h>
 #include <fenice/rtp.h>
 
 extern schedule_list sched[MAX_SESSION];
 
-void schedule_start(int id,play_args *args)
+uint32 schedule_start(int id,play_args *args)
 {
 	struct timeval now;
 	double mnow;	
 	gettimeofday(&now,NULL);
 	mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
-	
+	if ((sched[id].rtp_session->cons = OMSbuff_ref(sched[id].rtp_session->current_media->pkt_buffer)) == NULL)
+			return ERR_ALLOC;
+
 	if (sched[id].rtp_session->current_media->pkt_buffer->refs==1) {	
 	/*If and only if this session is the first session related to this media_entry, then it runs here*/	
 		if (!args->playback_time_valid) {	
@@ -70,6 +74,7 @@ void schedule_start(int id,play_args *args)
 	sched[id].rtp_session->PreviousCount=0;
 	sched[id].rtp_session->rtcp_stats[i_client].RR_received=0;
 	sched[id].rtp_session->rtcp_stats[i_client].SR_received=0;
+	return ERR_NOERROR;
 }
 
 

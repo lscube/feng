@@ -35,7 +35,9 @@
 #ifndef _SCHEDULEH
 #define _SCHEDULEH
 
+	
 	#include <time.h>
+	#include <fenice/types.h>
 	#include <fenice/rtp.h>
 	#include <fenice/prefs.h>
 	#include <fenice/debug.h>
@@ -78,7 +80,7 @@
 	#endif
 	
 	int schedule_add(RTP_session *rtp_session/*,RTSP_session *rtsp_session*/);
-	void schedule_start(int id,play_args *args);
+	uint32 schedule_start(int id,play_args *args);
 	void schedule_stop(int id);
 	int schedule_remove(int id);
 	int schedule_resume(int id, play_args *args);

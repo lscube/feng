@@ -34,20 +34,16 @@
 #include <stdio.h>
 #include <fenice/bufferpool.h>
 
-void OMSbuff_unref(OMSBuffer *buffer)
+void OMSbuff_unref(OMSConsumer *cons)
 {
-	OMSSlot *ptr;
-	if((*buffer).refs>0) {
-		if(!(--(*buffer).refs))
-			OMSbuff_free(buffer);
+	if((*(cons->buffer)).refs>0) {
+		if(!(--(*(cons->buffer)).refs))
+			OMSbuff_free(cons->buffer);
 		else {
-			fprintf(stderr, "Buffer ref (%d)\n", buffer->refs);
+			fprintf(stderr, "Buffer ref (%d)\n", cons->buffer->refs);
 			/*Now it need to decrease all slot refs */
-			ptr=buffer->buffer_head;
-			do{
-				ptr->refs=(ptr->refs)?(ptr->refs--):ptr->refs;
-				ptr=ptr->next; 
-			} while(ptr!=buffer->buffer_head && ptr->next!=NULL);	
+			//while OMSbuff_read;
+			while(OMSbuff_read(cons)!=NULL);
 		}
 	}
 }

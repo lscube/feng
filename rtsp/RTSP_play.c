@@ -232,9 +232,9 @@ int RTSP_play(RTSP_buffer * rtsp)
 						// Start playing all the presentation
 						if (!ptr2->started) {
 							// Start new
-							if ((ptr2->cons = OMSbuff_ref(ptr2->current_media->pkt_buffer)) == NULL)
-							return ERR_ALLOC;
-							schedule_start(ptr2->sched_id, &args);
+							if (schedule_start(ptr2->sched_id, &args)  == ERR_ALLOC)
+								return ERR_ALLOC;
+							
 						} else {
 							// Resume existing
 							if (!ptr2->pause) {
@@ -273,9 +273,8 @@ int RTSP_play(RTSP_buffer * rtsp)
 				}
 				if (ptr2 != NULL) {
 					// FOUND. Start Playing
-					if ((ptr2->cons = OMSbuff_ref(ptr2->current_media->pkt_buffer)) == NULL)
+					if (schedule_start(ptr2->sched_id, &args)  == ERR_ALLOC)
 						return ERR_ALLOC;
-					schedule_start(ptr2->sched_id, &args);
 				} else {
 					printf("PLAY request an object which wasn't setup.\n");
 					send_reply(454, 0, rtsp);	// Session not found
@@ -299,9 +298,8 @@ int RTSP_play(RTSP_buffer * rtsp)
 				for (ptr2 = ptr->rtp_session; ptr2 != NULL; ptr2 = ptr2->next) {
 					if (!ptr2->started) {
 							// Start new
-							if ((ptr2->cons = OMSbuff_ref(ptr2->current_media->pkt_buffer)) == NULL)
+							if (schedule_start(ptr2->sched_id, &args)  == ERR_ALLOC)
 								return ERR_ALLOC;
-							schedule_start(ptr2->sched_id, &args);
 						} else {
 							// Resume existing
 							if (!ptr2->pause) {
