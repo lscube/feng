@@ -41,6 +41,10 @@ int schedule_remove(int id)
 {
 	sched[id].valid=0;
 	pthread_mutex_lock(&((sched[id].rtp_session)->cons->mutex));	
+	/*to remove when static list in enum_media will be remove*/
+	if((sched[id].rtp_session)->current_media->pkt_buffer->refs==1)
+		(sched[id].rtp_session)->current_media->pkt_buffer=NULL;
+	/*------------------------------------------------------*/
 	OMSbuff_unref(sched[id].rtp_session->cons);
 	pthread_mutex_unlock(&((sched[id].rtp_session)->cons->mutex));	
 	return ERR_NOERROR;
