@@ -1,6 +1,6 @@
 Summary: A GPL Experimental Streaming Server
 Name: fenice
-Version: 1.6
+Version: 1.7
 Release: 0
 Copyright: GPL
 Group: Applications/Internet
@@ -36,6 +36,7 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root)
 %{_bindir}/%{name}
+%{_mandir}/man1/*
 
 /*/%{name}/avroot/test.sd
 /*/%{name}/avroot/audio.mp3
@@ -43,5 +44,5 @@ rm -rf %{buildroot}
 
 %config %{_sysconfdir}/%{name}.conf
 
-%doc README TODO COPYING ChangeLog INSTALL-FAST AUTHORS
-%doc docs/en/%{name}-howto.html
+%doc NEWS README TODO COPYING ChangeLog INSTALL-FAST AUTHORS
+%doc docs/howto/%{name}-howto.html docs/%{name}.1.{ps.gz,pdf,html}

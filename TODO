@@ -1,1 +1,4 @@
-
+1.8:
+	* daemon mode
+	* system logs
+	* init scripts
