@@ -129,6 +129,13 @@ do{
     			
 				
 			sched[i].semaph=green;
+		}  else if (sched[i].rtp_session) {
+			if(sched[i].rtp_session->is_multicast_dad){/*unicast always is a multicast_dad*/
+				// fprintf(stderr, "rtp session not valid, but still present...\n");
+				RTP_session_destroy(sched[i].rtp_session);
+				sched[i].rtp_session = NULL;
+				fprintf(stderr, "rtp session closed\n");
+			}
 		}
 	}
 #ifdef THREADED

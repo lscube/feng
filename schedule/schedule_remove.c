@@ -42,10 +42,13 @@ extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 int schedule_remove(int id)
 {
 	sched[id].valid=0;
+#if 0
 	while (schedule_semaphore (id) == red);
 	if(sched[id].rtp_session->is_multicast_dad){/*unicast always is a multicast_dad*/
 		RTP_session_destroy(sched[id].rtp_session);
+		sched[id].rtp_session = NULL;
 		fprintf(stderr, "rtp session closed\n");
 	}
+#endif // #if 0
 	return ERR_NOERROR;
 }
