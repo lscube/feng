@@ -72,7 +72,8 @@ int get_frame(media_entry *me, double *mtime)
         	}
 		else if (strcmp(me->description.encoding_name,"MP4V-ES")==0) {
                 	res = read_MPEG4ES_video(me,slot->data,&slot->data_size,mtime,&recallme);
-			slot->marker=1;
+			if(recallme==0)
+				slot->marker=1;
         	}
 		
 		else 

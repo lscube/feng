@@ -76,44 +76,128 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
 	uint32 ret;
 	uint32 num_bytes;
 	static_MPEG_video *s=NULL;
+	uint32 init=0;
+	uint32 out_of_while=0;
 		
-	fprintf(stderr,"read_MPEG4ES\n");
-	
 	*data_size=0;
+	num_bytes = ((me->description).byte_per_pckt>0)?(me->description).byte_per_pckt:DEFAULT_BYTE_X_PKT;
 	if(!(me->flags & ME_FD)){
 		if ( (ret=mediaopen(me)) < 0 )
 			return ret;
                 s = (static_MPEG_video *) calloc (1, sizeof(static_MPEG_video));
                 me->stat = (void *) s;
                 s->final_byte=0x00;
-                /*s->std=TO_PROBE;*/
                 s->fragmented=0;
+		init=1;
 	}
-	else{
+	else
 		s = (static_MPEG_video *) me->stat;
-		data[*data_size]=0x00;
-		*data_size+=1;
-		data[*data_size]=0x00;
-		*data_size+=1;
-		data[*data_size]=0x01;
-		*data_size+=1;
-		data[*data_size]=s->final_byte;
-		*data_size+=1;
-	}	
-	num_bytes = ((me->description).byte_per_pckt>0)?(me->description).byte_per_pckt:DEFAULT_BYTE_X_PKT;
-	do{
-		if (next_start_code(data,data_size,me->fd)==-1){  /* If there aren't 3 more bytes we are at EOF */
-				close(me->fd);
+		
+	if(s->fragmented==0){
+		char buf_aux[3];	
+		int i;
+		if(init==0){
+                	data[*data_size]=0x00;
+                	*data_size+=1;
+                	data[*data_size]=0x00;
+                	*data_size+=1;
+                	data[*data_size]=0x01;
+                	*data_size+=1;
+                	data[*data_size]=s->final_byte;
+                	*data_size+=1;
+		}
+		
+		while(s->final_byte !=VOP_START_CODE){
+                        if(next_start_code(data,data_size,me->fd) < 0)
+				return ERR_EOF;              
+                       	if(read(me->fd,&s->final_byte,1)<1)
+				return ERR_EOF;
+                       	data[*data_size]=s->final_byte;
+                       	*data_size+=1;
+			*recallme=0;
+		}
+		
+		while(num_bytes > *data_size && out_of_while!=1){
+			if ( read(me->fd,&buf_aux,3) <3){  /* If there aren't 3 more bytes we are at EOF */
+				// close(me->fd);
 				return ERR_EOF;
 			}
-                	read(me->fd,&s->final_byte,1);
-			data[*data_size]=s->final_byte;
-               		*data_size+=1;
+			while ( !((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) && *data_size < num_bytes) {
+    				data[*data_size]=buf_aux[0];
+    				*data_size+=1;
+				buf_aux[0]=buf_aux[1];
+				buf_aux[1]=buf_aux[2];
+      				if ( read(me->fd,&buf_aux[2],1) <1){ 
+					// close(me->fd);
+					return ERR_EOF;
+				}
+ 		   	}
+			for (i=0;i<3;i++) {
+    				data[*data_size]=buf_aux[i];
+    				*data_size+=1;
+    			}
+                       	if(read(me->fd,&s->final_byte,1)<1)
+				return ERR_EOF;
+                	data[*data_size]=s->final_byte;
+       	        	*data_size+=1;
+                        if (buf_aux[0] == 0x00 && buf_aux[1]==0x00 && buf_aux[2]==0x01) {
+				/*multiple VOP in a RTP pkt*/
+				/*if(s->final_byte == VOP_START_CODE) 
+					out_of_while=0;
+				else*/
+					out_of_while=1;
+				*data_size-=4;
+				s->fragmented=0;
+				*recallme=0;
+			}
+			else{
+				out_of_while=1;
+				*recallme=1;
+				s->fragmented=1;
+			}
+		}/*end while *data_size < num_bytes*/
+	}
 
-	}while(s->final_byte!=VOP_START_CODE);
-	fprintf(stderr,"data_size=%d\n",*data_size);
-	*data_size-=4;
-	*recallme=0;
+	else{/*fragmented*/
+		char buf_aux[3];	
+		int i;
+	
+		if ( read(me->fd,&buf_aux,3) <3){  /* If there aren't 3 more bytes we are at EOF */
+			// close(me->fd);
+			return ERR_EOF;
+		}
+		while ( !((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) && *data_size <num_bytes) {
+    			data[*data_size]=buf_aux[0];
+    			*data_size+=1;
+			buf_aux[0]=buf_aux[1];
+			buf_aux[1]=buf_aux[2];
+      			if ( read(me->fd,&buf_aux[2],1) <1){ 
+				// close(me->fd);
+				return ERR_EOF;
+			}
+	   	}
+    		for (i=0;i<3;i++) {
+    			data[*data_size]=buf_aux[i];
+    			*data_size+=1;
+    		}
+                if(read(me->fd,&s->final_byte,1)<1)
+			return ERR_EOF;
+               	data[*data_size]=s->final_byte;
+        	*data_size+=1;
+		
+                if (buf_aux[0] == 0x00 && buf_aux[1]==0x00 && buf_aux[2]==0x01) {
+			s->fragmented=0;
+			*data_size-=4;
+			*recallme=0;
+			}
+		else{
+			*recallme=1;
+			s->fragmented=1;
+		}
+	}
+	
+	//fprintf(stderr,"data_size=%d\n",*data_size);
+	return ERR_NOERROR;
 }
 
 
