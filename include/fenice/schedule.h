@@ -50,6 +50,7 @@
     		struct tm playback_time;
     		short playback_time_valid;
     		float start_time;				// In secondi, anche frazionari
+    		short start_time_valid;	
     		float end_time;
     	} play_args;
 

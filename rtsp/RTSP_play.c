@@ -79,6 +79,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 	}
 	// Get the range
 	args.playback_time_valid = 0;
+	args.start_time_valid = 0;
 	if ((p = strstr(rtsp->in_buffer, HDR_RANGE)) != NULL) {
 		q = strstr(p, "npt");
 		if (q == NULL) {
@@ -101,6 +102,8 @@ int RTSP_play(RTSP_buffer * rtsp)
 						q = strstr(q + 1, ":");
 						sscanf(q + 1, "%lf", &t);
 						args.start_time += t;
+						
+						args.start_time_valid = 1;
 					} else {
 						args.start_time = 0;
 						args.end_time = 0;

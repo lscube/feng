@@ -52,7 +52,8 @@ int schedule_resume(int id,play_args *args)
 	sched[id].rtp_session->current_media->mstart_offset += sched[id].rtp_session->current_media->mtime - sched[id].rtp_session->current_media->mstart + (double) sched[id].rtp_session->current_media->description.pkt_len;
 	
 	
-	sched[id].rtp_session->current_media->play_offset=args->start_time*1000;/*TODO:Federico. For Random Access*/
+	if (args->start_time_valid)
+		sched[id].rtp_session->current_media->play_offset=args->start_time*1000;/*TODO:Federico. For Random Access*/
 		
 	sched[id].rtp_session->current_media->mstart = mnow;
 	sched[id].rtp_session->current_media->mtime = sched[id].rtp_session->mprev_tx_time = mnow - (double) sched[id].rtp_session->current_media->description.pkt_len;
