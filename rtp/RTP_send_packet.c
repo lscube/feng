@@ -55,8 +55,9 @@ int RTP_send_packet(RTP_session *session)
 	RTP_header r;      // 12 bytes
 	int res;
 	double s_time;
+	double nextts;
 	OMSSlot *slot;
-	
+
 	if(!(slot = OMSbuff_read(session->cons))){
 		//This operation runs only if producer writes the slot
 		session->current_media->mtime += session->current_media->description.delta_mtime; //emma  
@@ -71,11 +72,12 @@ int RTP_send_packet(RTP_session *session)
 			*/
 			return res;
 		}
+		session->cons->frames++;
 		slot=OMSbuff_read(session->cons);
 	} else /*This runs if the consumer reads slot written in another RTP session*/
 		s_time=slot->timestamp;
 		
-	while ((slot) && (slot->timestamp == s_time)) {
+	while (slot) {
 		//fprintf(stderr,"s_time=%f\n",s_time);
 		if (strcmp(session->current_media->description.encoding_name,"MP2T")!=0) {
 			//session->current_media->mtime = slot->timestamp + session->current_media->mstart - session->current_media->mstart_offset;
@@ -114,7 +116,11 @@ int RTP_send_packet(RTP_session *session)
 #if !HAVE_ALLOCA
 		free(packet);
 #endif
-		slot = OMSbuff_read(session->cons);
+		if ( ((nextts=OMSbuff_nextts(session->cons)) == -1) || (nextts != s_time) ) {
+			slot = NULL;
+			session->cons->frames--;
+		} else
+			slot = OMSbuff_read(session->cons);
 
 	}
 	

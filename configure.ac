@@ -20,6 +20,9 @@ AC_ARG_ENABLE(efence,
 [  --enable-efence         link against Electric Fence library to debug memory usage
                           (this will involve --enable-debug) [[default=no]]],,
 	enable_efence="no")
+AC_ARG_ENABLE(verbose,
+[  --enable-verbose          make fenice verbose [[default=no]]],,
+	enable_verbose="no")
 AC_ARG_ENABLE(warnings,
 [  --enable-warnings       enable/choose gcc warnings level: none, normal, pedantic [[default=none]]],,
 	enable_warnings="none")
@@ -97,6 +100,13 @@ else
 	AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
 fi
 
+AM_CONDITIONAL(FENICE_VERBOSE, /bin/false)
+if test "$enable_verbose" = "yes"; then
+	AM_CONDITIONAL(FENICE_VERBOSE, /bin/true)
+	AC_DEFINE(ENABLE_VERBOSE, 1,[verbosity enabled])
+	enable_verbose=yes
+	verbose_msg="   You chose fenice to be very verbose... who'll stop it talking now!!!"
+fi
 
 
 case "$enable_warnings" in
@@ -208,6 +218,7 @@ Fenice Configuration path .......: $fenice_conf_dir
 Fenice A/V Resources path .......: $fenice_avroot_dir
 $debug_msg
 $efence_msg
+$verbose_msg
 
  'make' will now compile Fenice and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.

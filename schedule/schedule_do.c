@@ -115,11 +115,11 @@ do{
     								printf("Stream Finished\n");
     								schedule_stop(i);
     							}
-    							else {    					
-								#if DEBUG		
+#if DEBUG		
+							else {    					
 									printf("Packet Lost\n");
-								#endif
     							}
+#endif
         						continue;
 						}
 						sched[i].rtp_session->mprev_tx_time += sched[i].rtp_session->current_media->description.pkt_len;   				    				

@@ -49,7 +49,7 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
         int N=0, res;
 
         if (!(me->flags & ME_FD)) {
-#if 0
+#if 0 // all moved in mediaopen
                 strcpy(thefile,prefs_get_serv_root());
                 strcat(thefile,me->filename);    
                 me->fd=open(thefile,O_RDONLY);

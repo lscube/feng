@@ -155,8 +155,9 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	send_teardown_reply(rtsp, session_id, cseq);
 	if(strchr(object, '!')) /*Compatibility with RealOne and RealPlayer*/
 		filename = strchr(object, '!') + 1;
-	else	
-		strcpy(filename,object);
+	else
+		filename = object;
+		// strcpy(filename,object); // AHAHAHAHAHAHAHHAHA
 
 
 	

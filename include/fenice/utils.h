@@ -37,6 +37,7 @@
 	#include <time.h>
 	#include <ctype.h>
 	#include <sys/types.h>
+	#include <math.h>
 	#include <fenice/mediainfo.h>
 	#include <fenice/types.h>
 	#ifdef WIN32

@@ -46,7 +46,7 @@ void eventloop(tsocket main_fd)
 {
 	static int child_count=0;
 	static int conn_count=0;	
-	tsocket fd;
+	tsocket fd = -1;
 	// tsocket fd_command; /*socket for the command environment*/
 	static RTSP_buffer *rtsp_list=NULL;
 	RTSP_buffer *p;

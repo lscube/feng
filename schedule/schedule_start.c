@@ -42,7 +42,7 @@
 
 extern schedule_list sched[MAX_SESSION];
 
-uint32 schedule_start(int id,play_args *args)
+int32 schedule_start(int id,play_args *args)
 {
 	struct timeval now;
 	double mnow;	

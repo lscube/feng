@@ -1,6 +1,10 @@
 feniceincludedir = $(top_srcdir)/include
 
-noinst_LTLIBRARIES = libutils.la libprefs.la libdebug.la
+noinst_LTLIBRARIES = libutils.la libprefs.la
+
+if FENICE_VERBOSE
+noinst_LTLIBRARIES += libdebug.la
+endif
 
 libutils_la_SOURCES =	alloc_path_name.c \
 			NTP_time.c \
@@ -19,9 +23,11 @@ libprefs_la_SOURCES =	prefs_init.c \
 
 libprefs_la_LDFLAGS = -static
 
+if FENICE_VERBOSE
 libdebug_la_SOURCES =	dump_buffer.c
 
 libdebug_la_LDFLAGS = -static
+endif
 
 #libplugins_la_SOURCES = load_plugins.c
 
@@ -47,9 +53,12 @@ fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/socket/libsocket.la \
 		$(top_srcdir)/command_environment/libcommand.la \
 		$(top_srcdir)/src/libprefs.la \
-		$(top_srcdir)/src/libdebug.la \
 		$(top_srcdir)/src/libutils.la \
 		$(top_srcdir)/md5/libmd5.la
+
+if FENICE_VERBOSE
+fenice_LDADD += $(top_srcdir)/src/libdebug.la
+endif
 
 if FENICE_EFENCE
 fenice_LDFLAGS = -lefence

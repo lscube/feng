@@ -38,6 +38,12 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <fenice/debug.h>
+
+#if DEBUG
+#include <stdio.h>
+#endif
+
 #include <fenice/mediainfo.h>
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
@@ -45,7 +51,8 @@
 int mediaopen(media_entry *me)
 {
 	char thefile[256];
-	// struct stat fdstat;
+	struct stat fdstat;
+	int oflag = O_RDONLY;
 
 	if (!(me->flags & ME_FILENAME))
 		return ERR_INPUT_PARAM;
@@ -53,23 +60,29 @@ int mediaopen(media_entry *me)
 	strcpy(thefile,prefs_get_serv_root());
 	strcat(thefile,me->filename);
 
-	me->fd=open(thefile, O_RDONLY /*| O_NONBLOCK , 0*/);
+#if 1
+	if ( me->description.msource == live ) {
+		// fstat(me->fd, &fdstat);
+		stat(thefile, &fdstat);
+		if ( !S_ISFIFO(fdstat.st_mode) ) {
+			// lseek(me->fd, 0, SEEK_END);
+			// fcntl(me->fd, F_SETFD, O_NONBLOCK);
+			oflag |= O_NONBLOCK;
+		}
+	}
+#endif
 
+	// me->fd=open(thefile, O_RDONLY /*| O_NONBLOCK , 0*/);
+	me->fd=open(thefile, oflag);
+
+#if DEBUG
 	printf("%s - %d\n", thefile, me->fd);
+#endif
 
 	if (me->fd==-1)
 		return ERR_NOT_FOUND;
 
 	me->flags|=ME_FD;
-
-#if 0
-	if ( me->description.msource == live ) {
-		fstat(me->fd, &fdstat);
-		if ( !S_ISFIFO(fdstat.st_mode) ) {
-			lseek(me->fd, 0, SEEK_END);
-		}
-	}
-#endif
 
 	return me->fd;
 }

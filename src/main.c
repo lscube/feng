@@ -54,43 +54,45 @@ int main(int argc, char **argv)
 {
 	tsocket main_fd;
 	unsigned int port;
-	
+
 	// Fake timespec for fake nanosleep. See below.
-	struct timespec ts = { 0, 0};
-	/*command_environment parses the command line and returns the number of error*/
-	if(command_environment(argc,argv))
+	struct timespec ts = { 0, 0 };
+
+	printf("\n%s %s - Open Media Streaming Project - Politecnico di Torino\n\n", PACKAGE, VERSION);
+
+	/*command_environment parses the command line and returns the number of error */
+	if (command_environment(argc, argv))
 		return 0;
-	/* prefs_get_port() reads the static var prefs and returns the port number */				
-	port=prefs_get_port();
-	printf("%s %s - Open Media Streaming Project - Politecnico di Torino\n\n", PACKAGE, VERSION);	
-	#ifdef WIN32
+	/* prefs_get_port() reads the static var prefs and returns the port number */
+	port = prefs_get_port();
+#ifdef WIN32
 	{
 		int err;
 		unsigned short wVersionRequested;
 		WSADATA wsaData;
-		wVersionRequested=MAKEWORD(1,1);	
-		err=WSAStartup(wVersionRequested,&wsaData);
-		if (err!=0) {
+		wVersionRequested = MAKEWORD(1, 1);
+		err = WSAStartup(wVersionRequested, &wsaData);
+		if (err != 0) {
 			printf("Could not detect Windows socket support.\n");
 			printf("Make sure WINSOCK.DLL is installed.\n");
 			return 1;
 		}
 	}
-	#endif
+#endif
 
 	printf("CTRL-C terminate the server.\n");
-	printf("Waiting for RTSP connections on port %d...\n",port);
-	main_fd=tcp_listen(port);
+	printf("Waiting for RTSP connections on port %d...\n", port);
+	main_fd = tcp_listen(port);
 
 	/* next line: schedule_init() initialises the array of schedule_list sched 
-   	and creates the thread schedule_do() -> look at schedule.c */ 
-	if (schedule_init()==ERR_FATAL) {
+	   and creates the thread schedule_do() -> look at schedule.c */
+	if (schedule_init() == ERR_FATAL) {
 		printf("Fatal: Can't start scheduler. Server is aborting.\n");
 		return 0;
 	}
-	RTP_port_pool_init(RTP_DEFAULT_PORT);        				
+	RTP_port_pool_init(RTP_DEFAULT_PORT);
 	/* puts in the global variable port_pool[MAX_SESSION] all the RTP usable ports
-   	from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
+	   from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
 
 	while (1) {
 		// Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
@@ -99,10 +101,11 @@ int main(int argc, char **argv)
 		eventloop(main_fd);
 	}
 	/* eventloop looks for incoming RTSP connections and generates for each
-   	all the information in the structures RTSP_list, RTP_list, and so on */
+	   all the information in the structures RTSP_list, RTP_list, and so on */
 
-	#ifdef WIN32
-		WSACleanup();
-	#endif
+#ifdef WIN32
+	WSACleanup();
+#endif
+
 	return 0;
 }

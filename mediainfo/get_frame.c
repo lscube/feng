@@ -41,7 +41,8 @@ int get_frame(media_entry *me, double *mtime)
 {
 	int recallme=1;	
 	OMSSlot *slot;
-	int res;
+	int res = ERR_NOERROR;
+
 	while(recallme && res!=ERR_EOF){
 		slot=OMSbuff_getslot(me->pkt_buffer);
 		

@@ -32,23 +32,36 @@
  *  
  * */
 
+#include <stdio.h>
 
-#ifndef _DEBUGH
-#define _DEBUGH
+#include <fenice/bufferpool.h>
 
-#include <config.h>
+/*! Check if buffer is empty for a given consumer. 
+ *
+ * Checks in this function are taken from <tt>OMSbuff_read()</tt> and not
+ * optimized
+ *
+ * \param Consumer to be checked.
+ * \return 1 if buffer is empty, 0 if not.
+ * \return -1 on error.
+ *
+ * \see OMSbuff_read
+ * */
+int OMSbuff_isempty(OMSConsumer *cons)
+{
+	OMSSlot *last_read = cons->last_read_pos;
+	// OMSSlot *next = cons->read_pos->next;
+	OMSSlot *next = cons->read_pos;
 
-#if ENABLE_VERBOSE
-	void dump_buffer(char *buffer);
+	if ( !next->refs || (next->slot_seq < cons->last_seq) ) {
+		// added some slots?
+		if ( last_read && last_read->next->refs && (last_read->next->slot_seq > cons->last_seq) )
+			return 0;
+		else
+			return 1;
+	} else if (last_read && ( last_read->next->slot_seq < next->slot_seq ) )
+			return 0;
 
-	#define VERBOSE
-#endif // ENABLE_VERBOSE
+	return 0;
+}
 
-	#define DEBUG ENABLE_DEBUG
-
-//	#define POLLED
-//	#define SIGNALED
-	#define THREADED
-//	#define SELECTED
-
-#endif

@@ -78,6 +78,7 @@ typedef struct _OMSconsumer {
 	OMSSlot *last_read_pos; /*! last read position . used for managing the slot addition*/
 	uint64 last_seq;
 	OMSBuffer *buffer;
+	int32 frames;
 	// pthread_mutex_t mutex;
 } OMSConsumer;
 
@@ -97,6 +98,9 @@ int32 OMSbuff_write(OMSBuffer *, uint32 timestamp, uint8 *data, uint32 data_size
 OMSSlot *OMSbuff_getslot(OMSBuffer *);
 OMSSlot *OMSbuff_slotadd(OMSBuffer *, OMSSlot *);
 void OMSbuff_free(OMSBuffer *);
+
+int OMSbuff_isempty(OMSConsumer *);
+double OMSbuff_nextts(OMSConsumer *);
 
 #endif
 

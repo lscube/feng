@@ -62,7 +62,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 	uint32 wasSeeking=0;
 
         if (!(me->flags & ME_FD)) {
-#if 0
+#if 0 // all moved in mediaopen
                 if (!(me->flags & ME_FILENAME)) {
                         return ERR_INPUT_PARAM;
                 }
@@ -196,7 +196,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
                		data_tmp[*data_size]=s->final_byte;
                		*data_size+=1;
 		}
-		while(s->final_byte > 0xAF || s->final_byte==0x00 && *recallme){
+		while((s->final_byte > 0xAF || s->final_byte==0x00) && *recallme){
 			if (s->final_byte == 0xb3) {
                			read_seq_head(me,data_tmp,data_size,me->fd,&s->final_byte,s->std);
                			seq_head_pres=1;
