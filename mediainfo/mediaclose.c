@@ -38,12 +38,16 @@
 
 int mediaclose(media_entry *me)
 {
-	int ret;
-	
-	ret = close(me->fd);
-	me->fd = -1;
-	me->flags&=~ME_FD;
-	me->buff_size=0;
+	int ret=0;
+	struct stat fdstat;
+	// close file if it's not a pipe
+	fstat(me->fd, &fdstat);
+	if ( !S_ISFIFO(fdstat.st_mode) ){
+		ret = close(me->fd);
+		me->fd = -1;
+		me->flags&=~ME_FD;
+		me->buff_size=0;
+	}
 
 	me->media_handler->free_media((void*) me->stat);	
 	/*do not release the media handler, because load_X is recalled only if .sd change*/

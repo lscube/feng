@@ -202,7 +202,8 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 			if (strcmp(p->description.encoding_name,"MP4V-ES")==0) {
 				static_MPEG4_video_es *s=(static_MPEG4_video_es *)p->stat;
 				strcat(descr, SDP_EL);
-				sprintf(t, "a=fmtp:96 profile-level-id=%d config=%s"/*SDP_EL*/, s->profile_id , s->config);
+				sprintf(t, "a=fmtp:96 profile-level-id=%d"/*SDP_EL*/, s->profile_id);
+				//sprintf(t, "a=fmtp:96 profile-level-id=%d config=%s"/*SDP_EL*/, s->profile_id , s->config);
 				strcat(descr,t);
 			}
 			strcat(descr, SDP_EL);

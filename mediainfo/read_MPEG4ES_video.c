@@ -131,13 +131,10 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 		}
 		if(!s->use_clock_system){
 			if(s->vop_coding_type==2)/*B FRAME*/
-	 			*mtime=((double)s->ref1->var_time_increment + (double)s->ref1->modulo_time_base *s->ref1->vop_time_increment_resolution) * ( 1000 / (double)s->ref1->vop_time_increment_resolution);
+	 			*mtime=((double)s->ref2->var_time_increment + (double)s->ref1->modulo_time_base *s->ref1->vop_time_increment_resolution) * ( 1000 / (double)s->ref1->vop_time_increment_resolution);
 			else
 	 			*mtime=((double)s->ref2->var_time_increment + (double)s->ref2->modulo_time_base *s->ref2->vop_time_increment_resolution) * ( 1000 / (double)s->ref2->vop_time_increment_resolution);
 		}
-#if DEBUG	
-//		fprintf(stderr,"*mtime=%f | pkt_len=%f | delta_mtime=%f | vtir =%d\n",*mtime,me->description.pkt_len, me->description.delta_mtime,s->vtir_bitlen);
-#endif
 		*marker=!(*recallme);
 		FREE_DATA;
 		return ERR_NOERROR;
@@ -231,15 +228,11 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 		s->use_clock_system=0;
 	if(!s->use_clock_system){
 		if(s->vop_coding_type==2)/*B FRAME*/
- 			*mtime=((double)s->ref1->var_time_increment + (double)s->ref1->modulo_time_base *s->ref1->vop_time_increment_resolution) * ( 1000 / (double)s->ref1->vop_time_increment_resolution);
+ 			*mtime=((double)s->ref2->var_time_increment + (double)s->ref1->modulo_time_base *s->ref1->vop_time_increment_resolution) * ( 1000 / (double)s->ref1->vop_time_increment_resolution);
 		else
  			*mtime=((double)s->ref2->var_time_increment + (double)s->ref2->modulo_time_base *s->ref2->vop_time_increment_resolution) * ( 1000 / (double)s->ref2->vop_time_increment_resolution);
 	}
 	
-	
-#if DEBUG	
-//	fprintf(stderr,"*mtime=%f | pkt_len=%f | delta_mtime=%f | vtir =%d\n",*mtime,me->description.pkt_len, me->description.delta_mtime,s->vtir_bitlen);
-#endif
 	*marker=!(*recallme);
 	FREE_DATA;
 	return ERR_NOERROR;

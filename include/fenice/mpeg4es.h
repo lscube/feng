@@ -85,15 +85,15 @@
  	*/
 
 	typedef struct {
-		int vop_time_increment_resolution;
-		int vop_time_increment;
-		int var_time_increment;
-		int modulo_time_base;/*cumulative number of whole modulo_time_base*/
+		uint32 vop_time_increment_resolution;
+		uint32 vop_time_increment;
+		uint32 var_time_increment;
+		uint32 modulo_time_base;/*cumulative number of whole modulo_time_base*/
 	} mpeg4_time_ref;
 
 	typedef struct mpeg4 {
 		int profile_id;
-		uint8 config[256]; /*for sdp. TODO. See load_MP4ES and get_SDP_descr*/
+		char config[256]; /*for sdp. TODO. See load_MP4ES and get_SDP_descr*/
 		int vtir_bitlen;
 		mpeg4_time_ref *ref1;
 		mpeg4_time_ref *ref2;

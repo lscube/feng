@@ -56,11 +56,14 @@ int get_frame(media_entry *me, double *mtime)
 				fprintf(stderr, "Error in bufferpool writing\n");
 		}
 		// slot->timestamp=*mtime;
-
-#if DEBUG
-//		dump_payload(slot->data,slot->data_size,"fenice_dump");
+#if 0
+		if(res==ERR_NOERROR)
+			dump_payload(slot->data,slot->data_size,"fenice_dump");
 #endif
 	} while(recallme && res==ERR_NOERROR);
+#if DEBUG
+//	fprintf(stderr,"TYPE: %s *mtime=%f\n",me->description.encoding_name,*mtime);
+#endif
 	return res;
 }
 

@@ -53,7 +53,7 @@ int load_MPA(media_entry *p)
 #endif
 	// unsigned char buffer[4];
 	long int tag_dim;
-	struct stat fdstat;
+	//struct stat fdstat;
         int n,RowIndex, ColIndex;
         int BitrateMatrix[16][5] = {
                 {0,     0,     0,     0,     0     },
@@ -136,12 +136,12 @@ int load_MPA(media_entry *p)
 		if ( (p->buff_size = read(p->fd, p->buff_data, 4)) != 4) return ERR_PARSE;
 	}
         
-	fstat(p->fd, &fdstat);
-	if ( !S_ISFIFO(fdstat.st_mode) ) {
+	//fstat(p->fd, &fdstat);
+	//if ( !S_ISFIFO(fdstat.st_mode) ) {
 		mediaclose(p);
 		// close(p->fd);
 		// p->buff_size = 0;
-	}
+	//}
 #if 0
        else
                 p->flags|=ME_FD;

@@ -51,7 +51,7 @@ int load_MP4ES(media_entry *p) {
 	int data_size=0;
 	int i;
 	char *o;
-	struct stat fdstat;
+	//struct stat fdstat;
 
 	static_MPEG4_video_es *s=NULL;
 
@@ -136,15 +136,15 @@ int load_MP4ES(media_entry *p) {
 
 	s->header_data_size=data_size-4;
 
-	o=s->config;
+	/*o=s->config;
 	for( i = 0; i < data_size-4; ++i )
 		o+=sprintf( o, "%02X", (s->header_data)[i] ) ;
 
-	strcat(s->config,"\0");	
+	strcat(s->config,"\0");*/	
 	s->fragmented=0;
 	p->stat = (void *) s;
-	fstat(p->fd, &fdstat);
-	if ( !S_ISFIFO(fdstat.st_mode) ) 
+	//fstat(p->fd, &fdstat);
+	//if ( !S_ISFIFO(fdstat.st_mode) ) 
 		mediaclose(p);
 
 	fprintf(stderr,"load_MP4ES...done\n");

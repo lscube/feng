@@ -34,9 +34,9 @@
 
 #include <config.h>
 
-#if HAVE_ALLOCA_H
+/*#if HAVE_ALLOCA_H
 #include <alloca.h>
-#endif
+#endif*/
 
 #include <string.h>
 #include <stdlib.h>
@@ -57,7 +57,7 @@ RTP_session *RTP_session_destroy(RTP_session *session)
 {
 	RTP_session *next = session->next;
 	OMSBuffer *buff = session->current_media->pkt_buffer;
-	struct stat fdstat;
+	//struct stat fdstat;
 
 	//Release SD_flag using in multicast and unjoing the multicast group
 	if(session->sd_descr->flags & SD_FL_MULTICAST){
@@ -79,8 +79,8 @@ RTP_session *RTP_session_destroy(RTP_session *session)
 			session->current_media->pkt_buffer=NULL;
 			OMSbuff_free(buff);
 			// close file if it's not a pipe
-			fstat(session->current_media->fd, &fdstat);
-			if ( !S_ISFIFO(fdstat.st_mode) )
+			//fstat(session->current_media->fd, &fdstat);
+			//if ( !S_ISFIFO(fdstat.st_mode) )
 				mediaclose(session->current_media);
 	}
 	// Deallocate memory
