@@ -48,6 +48,7 @@ OMSConsumer *OMSbuff_ref(OMSBuffer *buffer)
 	
 	// cons->read_pos = buffer->write_pos->next;
 	cons->read_pos = buffer->write_pos;
+	cons->last_seq = buffer->write_pos->slot_seq;
 	cons->buffer = buffer;
 	
 	buffer->refs++;	

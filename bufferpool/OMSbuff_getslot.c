@@ -37,6 +37,7 @@
 OMSSlot *OMSbuff_getslot(OMSBuffer *buffer)
 {
 	OMSSlot *slot=buffer->write_pos; 
+	uint64 curr_seq = slot->slot_seq;
 
 	if(slot->next->refs>0)
 		slot=OMSbuff_slotadd(buffer,slot);
@@ -44,6 +45,7 @@ OMSSlot *OMSbuff_getslot(OMSBuffer *buffer)
 		slot=slot->next;
 
 	slot->refs = buffer->refs;
+	slot->slot_seq = curr_seq + 1;
 	buffer->write_pos=slot;	
 
 	return slot; 

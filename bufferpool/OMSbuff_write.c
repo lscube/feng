@@ -39,8 +39,10 @@
 
 /* ! Write a new slot in the buffer using the input parameters and
  	return ERR_NOERROR or ERR_ALLOC*/
-int32 OMSbuff_write(OMSBuffer *buffer, uint32 timestamp, uint8 *data, uint32 data_size) {
+int32 OMSbuff_write(OMSBuffer *buffer, uint32 timestamp, uint8 *data, uint32 data_size)
+{
 	OMSSlot *slot=buffer->write_pos;
+	uint64 curr_seq = slot->slot_seq;
 	
 	if (slot->next->refs > 0) {
 		if ((slot = OMSbuff_slotadd(buffer, slot)) == NULL)
@@ -49,6 +51,7 @@ int32 OMSbuff_write(OMSBuffer *buffer, uint32 timestamp, uint8 *data, uint32 dat
 		slot = slot->next;
 
 	slot->refs = buffer->refs;
+	slot->slot_seq = curr_seq + 1;
 	memcpy(slot->data,data,data_size);
 	slot->timestamp = timestamp;
 	slot->data_size=data_size;

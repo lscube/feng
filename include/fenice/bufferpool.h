@@ -39,6 +39,7 @@
 
 #define OMSSLOT_DATASIZE 3000
 #define OMSSLOT_COMMON	uint16 refs; \
+			uint64 slot_seq; /* monotone identifier of slot (NOT RTP seq) */ \
 			double timestamp; \
 			uint8 data[OMSSLOT_DATASIZE]; \
 			uint32 data_size; \
@@ -72,6 +73,7 @@ typedef struct _OMSbuffer {
 
 typedef struct _OMSconsumer {
 	OMSSlot *read_pos; /*! last read position*/
+	uint64 last_seq;
 	OMSBuffer *buffer;
 } OMSConsumer;
 
