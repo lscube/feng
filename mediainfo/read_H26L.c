@@ -40,11 +40,10 @@
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
-#include <fenice/prefs.h>
+#include <fenice/h26l.h>
 
 int read_H26L (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme)
 {
-        // char thefile[255];
 	int ret;
         unsigned char intime[4];
         unsigned char h26l_header[12];
@@ -52,18 +51,6 @@ int read_H26L (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, i
 									/* At this point it should be right to find the nearest lower frame */
         								/* computing it from the value of mtime */
         if (!(me->flags & ME_FD)) {                                     /* and starting the reading from this */
-#if 0
-                if (!(me->flags & ME_FILENAME)) {                       /* feature not yet implemented */
-                        return ERR_INPUT_PARAM;
-                }
-                strcpy(thefile,prefs_get_serv_root());
-                strcat(thefile,me->filename);
-                me->fd=open(thefile,O_RDONLY);
-                if (me->fd==-1) {
-                        return ERR_NOT_FOUND;
-                }
-                me->flags|=ME_FD;
-#endif
 		if ( (ret=mediaopen(me)) < 0 )
 			return ret;
 		s = (static_H26L *) calloc (1, sizeof(static_H26L));

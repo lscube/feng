@@ -106,95 +106,6 @@
 		SCREEN_HEIGHT=*/
 	} me_descr_flags;
 	
-	typedef struct {                                 /* MPEG video specific headers */
-		unsigned int ffc:3;
-        	unsigned int ffv:1;
-        	unsigned int bfc:3;                      /* |MBZ:5|T:1|TR:10|AN:1|N:1|S:1|B:1|E:1|P:3|FBV:1|BFC:3|FFV:1|FFC:3| */
-        	unsigned int fbv:1;
-        	unsigned int p:3;
-        	unsigned int e:1;
-        	unsigned int b:1;
-        	unsigned int s:1;
-        	unsigned int n:1;
-        	unsigned int an:1;
-        	unsigned int tr:10;
-        	unsigned int t:1;
-        	unsigned int mbz:5;
-	} video_spec_head1;
-
-	typedef struct {
-		unsigned int d:1;                        /* |X:1|E:1|F[0,0]:4|F[0,1]:4|F[1,0]:4|F[1,1]:4|DC:2|PS:2|T:1|P:1|C:1|Q:1|V:1|A:1|R:1|H:1|G:1|D:1| */
-        	unsigned int g:1;
-        	unsigned int h:1;
-        	unsigned int r:1;
-        	unsigned int a:1;
-       	 	unsigned int v:1;
-        	unsigned int q:1;
-        	unsigned int c:1;
-        	unsigned int p:1;
-        	unsigned int t:1;
-        	unsigned int ps:2;
-        	unsigned int dc:2;
-        	unsigned int f11:4;
-        	unsigned int f10:4;
-        	unsigned int f01:4;
-        	unsigned int f00:4;
-        	unsigned int e:1;
-        	unsigned int x:1;
-	} video_spec_head2;
-
-
-	typedef enum {MPEG_1,MPEG_2,TO_PROBE} standard;
-
-	typedef struct {
-		unsigned int msb;
-		unsigned int scr;
-	} SCR;
-
-
-	typedef struct {
-		unsigned int msb;
-		unsigned int pts;
-	} PTS;
-	
-	typedef struct {
-		unsigned int bufsize;
-		long pkt_sent;
-		int current_timestamp; 
-		int next_timestamp;
-	} static_H26L;
-	
-	typedef struct {
-		video_spec_head1 vsh1;
-		video_spec_head2 vsh2;
-		unsigned char final_byte;
-		char temp_ref;
-		char hours;
-		char minutes;
-		char seconds;
-		char picture;
-		unsigned long data_total;  
-		standard std;
-		int fragmented;
-		video_spec_head1 vsh1_aux;       				/* without modifying other variables */
-		video_spec_head2 vsh2_aux;
-	} static_MPEG_video;
-	
-	typedef struct {
-		unsigned char final_byte;
-		PTS pts;
-		PTS next_pts;
-		PTS dts;
-		PTS next_dts;
-		PTS pts_audio;
-		SCR scr;
-		unsigned int data_total;
-		int offset_flag;
-		int offset;
-		int new_dts;
-	} static_MPEG_system;
-	
-	
 	typedef struct _media_entry {
     		me_flags flags;
     		int fd;
@@ -294,31 +205,13 @@
 	int read_MPEG_ts (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme);
 	int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme);
 
-	/*****************************************read MPEG utils*************************************************/
+	/*****************************************read common utils*************************************************/
 	
 	/* returns number of bytes readen looking for start-codes, */
 	int next_start_code(uint8 *, uint32 *,int fin);
-	/* reads sequence header */
-	int read_seq_head(media_entry *me, uint8 *, uint32 *, int fin, char *final_byte, standard std);
-	/* reads GOP header */
-	int read_gop_head(uint8 *, uint32 *, int fin, char *final_byte, char *hours, char *minutes, char *seconds, char *picture, standard std);
-	/* reads picture head */
-	int read_picture_head(uint8 *, uint32 *, int fin, char *final_byte, char *temp_ref, video_spec_head1* vsh1, standard std);
-	/* reads a slice */
-	int read_slice(uint8 *, uint32 *, int fin, char *final_byte);
-	/* If the sequence_extension occurs immediately */
-	int probe_standard(media_entry *me, uint8 *, uint32 *,int fin, standard *std);
 	uint32 random_access(media_entry *me);
-	/* reads picture coding extension */
-	int read_picture_coding_ext(uint8 *, uint32 *, int fin, char *final_byte,video_spec_head2* vsh2);
-	/* reads pack header */
-	int read_pack_head(uint8 *, uint32 *e, int fin, unsigned char *final_byte, SCR *scr);
-	/* reads packet header */
-	int read_packet_head(uint8 *, uint32 *, int fin, unsigned char *final_byte, int *time_set, PTS *pts, PTS *dts, int *dts_present, PTS *pts_audio);
-	/* reads a packet */
-	int read_packet(uint8 *, uint32 *, int fin, unsigned char *final_byte);
 	int changePacketLength(float offset, media_entry *me);
-	
+
 	/*********************************************************************************************************************/
 
 	int enum_media(char *object, SD_descr **d);
@@ -346,6 +239,5 @@
 	// ID3v2
 	int calculate_skip(int byte_value,double *skip,int peso); 
 	int read_dim(int file,long int *dim);
-
 
 #endif

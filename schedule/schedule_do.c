@@ -111,13 +111,21 @@ do{
 						// Send an RTP packet
 						res = sched[i].play_action(sched[i].rtp_session);
 						if (res!=ERR_NOERROR) {
-    							if (res==ERR_EOF && (sched[i].rtp_session)->current_media->description.msource!=live) {
-    								printf("Stream Finished\n");
-    								schedule_stop(i);
+    							if (res==ERR_EOF /*&& (sched[i].rtp_session)->current_media->description.msource!=live*/) {
+								if((sched[i].rtp_session)->current_media->description.msource==live)
+									fprintf(stderr,"Pipe empty!\n");
+								else{
+    									printf("Stream Finished\n");
+    									schedule_stop(i);
+								}
     							}
+							else if(res==ERR_ALLOC){
+								fprintf(stderr,"Upss, FATAL ERROR ALLOC!!\n");
+    								schedule_stop(i);
+							}
 #if DEBUG		
-							else {    					
-									printf("Packet Lost\n");
+							else{    					
+								printf("Packet Lost\n");
     							}
 #endif
         						continue;

@@ -34,8 +34,9 @@
 
 #ifndef _MPEG4ESH
 #define _MPEG4ESH
+
 	#include <fenice/types.h>
-	#include <fenice/mediainfo.h>
+
 	/*Definitions of the start codes*/
 	#define VIDEO_OBJECT_START_CODE 	/*0x00 through 0x1F*/
 	#define VIDEO_OBJECT_LAYER_START_CODE 	/*0x20 through 0x2F*/
@@ -81,27 +82,38 @@
  	*             vop time increment
  	*     end code (0x000001B1)
  	*/
-	typedef struct mpeg4 {
-		int profile_id;
-		uint8 config[256]; /*for sdp. Not used but TODO*/
+
+	typedef struct {
 		int vop_time_increment_resolution;
 		int vop_time_increment;
+		int var_time_increment;
 		int modulo_time_base;/*cumulative number of whole modulo_time_base*/
+	} mpeg4_time_ref;
+
+	typedef struct mpeg4 {
+		int profile_id;
+		uint8 config[256]; /*for sdp. TODO. See load_MP4ES and get_SDP_descr*/
 		int vtir_bitlen;
-		/*double rtp_timestamp;*/
+		mpeg4_time_ref *ref1;
+		mpeg4_time_ref *ref2;
+		uint8 use_clock_system;
 		uint8 final_byte;
-		uint32 init;
 		int fragmented;
 		uint32 data_read;
 		uint32 remained_data_size;
 		char *more_data;
+		char *header_data;
+		uint32 header_data_size;
+		int vop_coding_type;
 	} static_MPEG4_video_es;
+
 
 	int get_field( uint8 *d, uint32 bits, uint32 *offset);
 	int parse_visual_object_sequence(static_MPEG4_video_es *,uint8 *, uint32 *,int fin);
 	int parse_visual_object(uint8 *data, uint32 *data_size,int fin);
 	int parse_video_object(uint8 *data, uint32 *data_size,int fin);
 	int parse_video_object_layer(static_MPEG4_video_es *out, uint8 *data, uint32 *data_size,int fin);
+	int parse_group_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *data_size,int fin);
 	int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *data_size,int fin);
 	
 #endif

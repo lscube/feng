@@ -34,7 +34,8 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <config.h>
+#include <string.h> /*memcpy*/
+#include <fenice/debug.h>
 #include <fenice/mpeg4es.h>
 #include <fenice/mediainfo.h>
 #include <fenice/types.h>
@@ -111,6 +112,8 @@ int parse_video_object(uint8 *data, uint32 *data_size,int fin){
 int parse_video_object_layer(static_MPEG4_video_es *out, uint8 *data, uint32 *data_size,int fin){
 	int off = *data_size*8+9; /*skip 1 bit random_accessible_vol and 8 bits visual_object_type_indication*/
 	int i;
+	int flag=0;
+	int vop_time_increment=0;
 
         if(next_start_code(data,data_size,fin) < 0){
 			return ERR_EOF;              
@@ -132,31 +135,79 @@ int parse_video_object_layer(static_MPEG4_video_es *out, uint8 *data, uint32 *da
 	if( ! get_field( data, 1, &off ) )
 	{
 		/*missing marker*/
-		/*return ERR_GENERIC;*/
+		return ERR_PARSE;
 	}
-	i = out->vop_time_increment_resolution = get_field( data, 16, &off );
+	if(out->ref2==NULL){
+		out->ref2=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
+	}
+	if(out->ref1==NULL){
+		i = out->ref2->vop_time_increment_resolution = get_field( data, 16, &off );
+		out->ref1=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
+		memcpy(out->ref1,out->ref2,sizeof(mpeg4_time_ref));	
+		flag=1;
+	}
+	else{
+		mpeg4_time_ref *tmp;
+		tmp=out->ref2;
+		out->ref2=out->ref1;
+		i = out->ref2->vop_time_increment_resolution = get_field( data, 16, &off );
+		out->ref1=tmp;
+		flag=0;
+	}
 	if( ! get_field( data, 1, &off ) )
 	{
 		/*missing marker*/
-		/*return ERR_GENERIC;*/
+		return ERR_PARSE;
 	}
 	for( out->vtir_bitlen = 0; i != 0; i >>= 1 ) ++out->vtir_bitlen;
-	if( get_field( data, 1, &off ) )
+	if( get_field( data, 1, &off ) )/*fixed VOP time increment*/
 	{
-		out->vop_time_increment = get_field( data, out->vtir_bitlen, &off );
-		if( out->vop_time_increment == 0 )
+		vop_time_increment = get_field( data, out->vtir_bitlen, &off );
+		if( vop_time_increment == 0 )
 		{
 			/*fixed VOP time increment is 0!*/
-			/*return ERR_GENERIC;*/
+			return ERR_PARSE;
 		}
-	} else out->vop_time_increment = 0;
+	} else 
+		vop_time_increment = 0;/*variable vop rate*/
+	if(flag)
+		out->ref2->vop_time_increment=out->ref1->vop_time_increment=vop_time_increment;
+	else{
+		out->ref1->vop_time_increment=out->ref2->vop_time_increment;
+		out->ref2->vop_time_increment=vop_time_increment;
+	}
+	
+	return ERR_NOERROR;
+}
 
+int parse_group_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *data_size,int fin){
+	/*startcode 000001B3*/
+	/*uint32 off = *data_size*8;*/
+
+        if(next_start_code(data,data_size,fin) < 0){
+			return ERR_EOF;              
+	}
+        if(read(fin,&data[*data_size],1)<1){
+		return ERR_EOF;
+	}
+        *data_size+=1;
+	/*TODO*/
+	/*				range		bits
+		time_code_hours 	0 - 23		5
+		time_code_minutes	0 - 59		6
+		marker_bit		1		1
+		time_code_seconds	0 - 59		6
+
+		The parameters correspond to those defined in the IEC standard publication 461 for ???time and control codes for video tape recorders???. 
+		The time code specifies the modulo part (i.e. the full second units) of the time base for the first object plane (in display order) 
+		after the GOV header.
+	*/
 	return ERR_NOERROR;
 }
 
 int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *data_size,int fin){
 	uint32 off = *data_size*8;
-	int vop_coding_type, modulo_time_base, var_time_increment;
+	int modulo_time_base;
 	uint32 len;
 	
         if(next_start_code(data,data_size,fin) < 0){
@@ -166,7 +217,7 @@ int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *da
 		return ERR_EOF;
 	}
         *data_size+=1;
-	len=((*data_size) * 8)-off;/*right!??!*/
+	len=(*data_size)-4;/*right!??! -4 = - next start code read*/
 	/*
 	 * vop_coding_type:
 	 * 00 intra-coded (I)
@@ -175,20 +226,38 @@ int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *da
 	 * 11 sprite (S)
 	 *
 	*/
-	vop_coding_type = get_field( data, 2, &off );
+	out->vop_coding_type = get_field( data, 2, &off );
 	for( modulo_time_base = 0; off / 8 < len; ++modulo_time_base )
 		if( ! get_field( data, 1, &off ) ) break;
+
+	if(out->ref1==NULL)
+		out->ref1=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
+	
+	if(out->ref2==NULL)
+		out->ref2=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
+
+	if(out->vop_coding_type != 2)/*B-FRAME*/
+		out->ref1->modulo_time_base=out->ref2->modulo_time_base;
+	out->ref2->modulo_time_base+=modulo_time_base;/*cumulative number of modulo_time_base*/
+
 	if( ! get_field( data, 1, &off ) )
 	{
 		/* missing marker*/
-		/*return ERR_GENERIC;*/
+		return ERR_PARSE;
 	}
-	out->modulo_time_base+=modulo_time_base;/*cumulative number of modulo_time_base*/
-	var_time_increment = get_field( data, out->vtir_bitlen, &off );
 
-#if ENABLE_DEBUG
-//	fprintf(stderr,"frame type %d, vop time increment %d, modulo time base %d\n",vop_coding_type, var_time_increment, modulo_time_base );
-#endif
+	/*TODO: variable frame rate*/
+	out->ref1->var_time_increment=out->ref2->var_time_increment = get_field( data, out->vtir_bitlen, &off );
+
+#if DEBUG
+	fprintf(stderr," - FRAME: %c \n","IPBS"[out->vop_coding_type]);
+	
+	fprintf(stderr,"\t - REF2: var_time_increment = %d - vop_time_increment= %d - vop_time_increment_resolution = %d - modulo_time_base = %d -\n",out->ref2->var_time_increment, out->ref2->vop_time_increment, out->ref2->vop_time_increment_resolution, out->ref2->modulo_time_base);
+
+	fprintf(stderr,"\t - REF1: var_time_increment = %d - vop_time_increment= %d - vop_time_increment_resolution = %d - modulo_time_base = %d -\n",out->ref1->var_time_increment, out->ref1->vop_time_increment, out->ref1->vop_time_increment_resolution,out->ref1->modulo_time_base);
+
+#endif	
+
 	return ERR_NOERROR;
 }
 

@@ -42,7 +42,7 @@
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
-#include <fenice/prefs.h>
+#include <fenice/mpeg_system.h>
 
 int read_MPEG_ts(media_entry *me, uint8 *data_slot,uint32 *data_size, double *mtime, int *recallme)
 {

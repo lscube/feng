@@ -35,7 +35,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
-#include <config.h>
+
+#include <fenice/debug.h>
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
@@ -59,6 +60,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 	uint8 *data;	
 
 	*data_size=0;
+	*recallme=0;
 	num_bytes = ((me->description).byte_per_pckt>0)?(me->description).byte_per_pckt:DEFAULT_BYTE_X_PKT;
 
 #if HAVE_ALLOCA
@@ -70,16 +72,19 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
                return ERR_ALLOC;
 
 	s = (static_MPEG4_video_es *) me->stat;
-	if(s==NULL)
-		return ERR_ALLOC;
+	if(s->more_data==NULL)
+		s->more_data=(char *)calloc(1,65000);
 	
-	if((me->description).msource==live && s->init){
-		memcpy(data,s->more_data,s->remained_data_size);
-		*data_size=s->remained_data_size;
-		s->init=0;
+	/*clubbing visual object sequence - visual object - video object - video object layer*/
+	if((me->description).msource==live && !s->fragmented && (int)(*mtime)==0){ 
+		memcpy(data,s->header_data,s->header_data_size);
+		*data_size=s->header_data_size;
+                *recallme=0;
+                s->fragmented=0;
 	}
-
+	
 	if (!(me->flags & ME_FD)) {
+		fprintf(stderr,"Open File in read*\n");
 		if ( (ret=mediaopen(me)) < 0 )
 			return ret;
 		if(next_start_code(data,data_size,me->fd) < 0){
@@ -125,6 +130,15 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 			s->fragmented=0;
 			*recallme=0;
 		}
+		if(!s->use_clock_system){
+			if(s->vop_coding_type==2)/*B FRAME*/
+	 			*mtime=((double)s->ref1->var_time_increment + (double)s->ref1->modulo_time_base *s->ref1->vop_time_increment_resolution) * ( 1000 / (double)s->ref1->vop_time_increment_resolution);
+			else
+	 			*mtime=((double)s->ref2->var_time_increment + (double)s->ref2->modulo_time_base *s->ref2->vop_time_increment_resolution) * ( 1000 / (double)s->ref2->vop_time_increment_resolution);
+		}
+#if DEBUG	
+		fprintf(stderr,"*mtime=%f | pkt_len=%f | delta_mtime=%f | vtir =%d\n",*mtime,me->description.pkt_len, me->description.delta_mtime,s->vtir_bitlen);
+#endif
 		FREE_DATA;
 		return ERR_NOERROR;
 	}
@@ -211,15 +225,21 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 		*recallme=0;
 		s->fragmented=0;
 	}
-
-	/**mtime=(s->scr.scr*1000)/(double)me->description.clock_rate;
-
-	*mtime=(double)s->vop_time_increment / (double)s->vop_time_increment_resolution + (double)s->modulo_time_base;
-
-	me->description.delta_mtime =  (*mtime - s->rtp_timestamp)*1000/(float)me->description.clock_rate;
-	 
-	s->rtp_timestamp=*mtime;*/
-        
+	if(s->ref2->var_time_increment == 0 && s->ref2->modulo_time_base==0 && (int)(*mtime) !=0) 
+		s->use_clock_system=1;
+	if(s->vop_coding_type==2)/*B FRAME*/
+		s->use_clock_system=0;
+	if(!s->use_clock_system){
+		if(s->vop_coding_type==2)/*B FRAME*/
+ 			*mtime=((double)s->ref1->var_time_increment + (double)s->ref1->modulo_time_base *s->ref1->vop_time_increment_resolution) * ( 1000 / (double)s->ref1->vop_time_increment_resolution);
+		else
+ 			*mtime=((double)s->ref2->var_time_increment + (double)s->ref2->modulo_time_base *s->ref2->vop_time_increment_resolution) * ( 1000 / (double)s->ref2->vop_time_increment_resolution);
+	}
+	
+	
+#if DEBUG	
+	fprintf(stderr,"*mtime=%f | pkt_len=%f | delta_mtime=%f | vtir =%d\n",*mtime,me->description.pkt_len, me->description.delta_mtime,s->vtir_bitlen);
+#endif
 	FREE_DATA;
 	return ERR_NOERROR;
 }

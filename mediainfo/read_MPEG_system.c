@@ -40,11 +40,10 @@
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
-#include <fenice/prefs.h>
+#include <fenice/mpeg_system.h>
 
 int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mtime, int *recallme)
 {
-	// char thefile[255];
 	int ret;
 	uint32 num_bytes;
 	int count,count1,flag,packet_done=0,not_remove=0,time_set=0,pts_diff,clock,dts_present=0,audio_flag=0;
@@ -52,18 +51,6 @@ int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mti
 	static_MPEG_system *s=NULL;
  	
 	if (!(me->flags & ME_FD)) {
-#if 0
-                if (!(me->flags & ME_FILENAME)) {
-                        return ERR_INPUT_PARAM;
-                }
-                strcpy(thefile,prefs_get_serv_root());
-                strcat(thefile,me->filename);
-                me->fd=open(thefile,O_RDONLY);
-                if (me->fd==-1) {
-                        return ERR_NOT_FOUND;
-                }
-                me->flags|=ME_FD;
-#endif
 		if ( (ret=mediaopen(me)) < 0 )
 			return ret;
 		s = (static_MPEG_system *) calloc (1, sizeof(static_MPEG_system));

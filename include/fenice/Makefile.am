@@ -9,6 +9,9 @@ noinst_HEADERS	=	bufferpool.h \
 			md5.h \
 			mediainfo.h \
 			mpeg4es.h \
+			mpeg.h \
+			mpeg_system.h \
+			h26l.h \
 			socket.h \
 			prefs.h \
 			rtcp.h \

@@ -33,17 +33,19 @@
  * */
 
 #include <string.h>
+#include <stdio.h>
 #include <fenice/utils.h>
+#include <fenice/debug.h>
 #include <fenice/mediainfo.h>
 #include <fenice/types.h>
 
 int get_frame(media_entry *me, double *mtime)
 {
-	int recallme=1;	
+	int recallme=0;	
 	OMSSlot *slot;
 	int res = ERR_NOERROR;
 
-	while(recallme && res!=ERR_EOF){
+	do{
 		slot=OMSbuff_getslot(me->pkt_buffer);
 		
 	        if (strcmp(me->description.encoding_name,"MPA")==0) {
@@ -81,10 +83,11 @@ int get_frame(media_entry *me, double *mtime)
 			res=ERR_UNSUPPORTED_PT;
 
 		slot->timestamp=*mtime;
-#if ENABLE_DEBUG
+
+#if DEBUG
 //		dump_payload(slot->data,slot->data_size,"fenice_dump");
 #endif
-	}
+	}while(recallme && res==ERR_NOERROR);
 	return res;
 }
 

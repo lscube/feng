@@ -39,7 +39,7 @@
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
-// #include <fenice/prefs.h>
+#include <fenice/mpeg.h>
 
 #if HAVE_ALLOCA_H
 #include <alloca.h>
@@ -49,7 +49,6 @@
 
 int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme)   /* reads MPEG-1,2 Video */
 {
-        // char thefile[255];
 	int ret;
         uint32 num_bytes;
         char *vsh1_1;
@@ -62,21 +61,8 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 	uint32 wasSeeking=0;
 
         if (!(me->flags & ME_FD)) {
-#if 0 // all moved in mediaopen
-                if (!(me->flags & ME_FILENAME)) {
-                        return ERR_INPUT_PARAM;
-                }
-                strcpy(thefile,prefs_get_serv_root());
-                strcat(thefile,me->filename);
-                me->fd=open(thefile,O_RDONLY /*| O_NONBLOCK , 0*/);
-                if (me->fd==-1) {
-                        return ERR_NOT_FOUND;
-                }
-                me->flags|=ME_FD;
-#else
                 if ( (ret=mediaopen(me)) < 0 )
 			return ret;
-#endif
 		s = (static_MPEG_video *) calloc (1, sizeof(static_MPEG_video));
 		me->stat = (void *) s;
 		s->final_byte=0x00;
@@ -186,7 +172,6 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 		}
 		if(s->final_byte==0xb7){
 			if (next_start_code(data_tmp,data_size,me->fd)==-1){  /* If there aren't 3 more bytes we are at EOF */
-				// close(me->fd);
 #if !HAVE_ALLOCA
 				free(data_tmp);
 #endif
@@ -201,6 +186,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
                		data_tmp[*data_size]=s->final_byte;
                		*data_size+=1;
 		}
+		*recallme=1;
 		while((s->final_byte > 0xAF || s->final_byte==0x00) && *recallme){
 			if (s->final_byte == 0xb3) {
                			read_seq_head(me,data_tmp,data_size,me->fd,&s->final_byte,s->std);

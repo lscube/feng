@@ -67,9 +67,9 @@ int RTP_send_packet(RTP_session *session)
 		
 		s_time = session->current_media->mtime - session->current_media->mstart + session->current_media->mstart_offset;
 		if ((res=get_frame(session->current_media,&s_time))!=ERR_NOERROR){
-			/* if(res==ERR_EOF)
-				fprintf(stderr,"Just Finished!");
-			*/
+			 if(res!=ERR_NOERROR)
+				//fprintf(stderr,"Some errors occurred\n");
+			
 			return res;
 		}
 		session->cons->frames++;
@@ -79,9 +79,9 @@ int RTP_send_packet(RTP_session *session)
 		
 	while (slot) {
 		//fprintf(stderr,"s_time=%f\n",s_time);
-		if (strcmp(session->current_media->description.encoding_name,"MP2T")!=0) {
+		/*if (strcmp(session->current_media->description.encoding_name,"MP2T")!=0) {
 			//session->current_media->mtime = slot->timestamp + session->current_media->mstart - session->current_media->mstart_offset;
-		}
+		}*/
 		
     		hdr_size=sizeof(r);	
 		r.version = 2;
