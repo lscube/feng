@@ -39,6 +39,7 @@ extern schedule_list sched[MAX_SESSION];
 
 int schedule_remove(int id)
 {
+	OMSbuff_unref(sched[id].rtp_session->current_media->pkt_buffer);
 	sched[id].valid=0;
 	return ERR_NOERROR;
 }
