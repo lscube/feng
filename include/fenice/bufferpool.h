@@ -71,7 +71,7 @@ typedef struct _OMSbuffer {
 } OMSBuffer;
 
 typedef struct _OMSconsumer {
-	OMSSlot *read_pos; /*! read position*/
+	OMSSlot *read_pos; /*! last read position*/
 	OMSBuffer *buffer;
 } OMSConsumer;
 

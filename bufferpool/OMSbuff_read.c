@@ -39,16 +39,28 @@
 /* ! Return the next slot in the buffer and move current read position*/
 OMSSlot *OMSbuff_read(OMSConsumer *cons)
 {
+
+	if ( !cons->read_pos->next->refs )
+		return NULL;
+
+	cons->read_pos = cons->read_pos->next;
+
+	cons->read_pos->refs--;
+	
+	return cons->read_pos;
+
+#if 0 // shawill: old read
 	OMSSlot *read_pos = cons->read_pos;
 
 	if ( !read_pos->refs )
 		return NULL;
 
-	read_pos->refs--;
+	cons->read_pos->refs--;
 	
 	cons->read_pos = read_pos->next;
 
 	return read_pos;
+#endif
 		
 }
 

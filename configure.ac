@@ -14,16 +14,20 @@ test "x$localstatedir" = 'x${prefix}/var' && localstatedir="/var"
 AM_CONFIG_HEADER(config.h)
 
 AC_ARG_ENABLE(debug,
-[  --enable-debug          enable gcc dubugging flags [default=no]],,
+[  --enable-debug          enable gcc dubugging flags [[default=no]]],,
 	enable_debug="no")
+AC_ARG_ENABLE(efence,
+[  --enable-efence         link against Electric Fence library to debug memory usage
+                          (this will involve --enable-debug) [[default=no]]],,
+	enable_efence="no")
 AC_ARG_ENABLE(warnings,
-[  --enable-warnings       enable/choose gcc warnings level: none, normal, pedantic [default=none]],,
+[  --enable-warnings       enable/choose gcc warnings level: none, normal, pedantic [[default=none]]],,
 	enable_warnings="none")
 AC_ARG_ENABLE(errors,
-[  --enable-errors         make gcc warnings behave like errors: none, normal, pedantic [default=none]],,
+[  --enable-errors         make gcc warnings behave like errors: none, normal, pedantic [[default=none]]],,
 	enable_errors="none")
 AC_ARG_ENABLE(optimize,
-[  --enable-optimize       enable/chose optimization level: none, poor, normal, full, super [default=normal]],,
+[  --enable-optimize       enable/chose optimization level: none, poor, normal, full, super [[default=normal]]],,
 	enable_optimize="normal")
 
 AC_PROG_CC
@@ -74,11 +78,21 @@ AC_CHECK_FUNC(getaddrinfo)
 CFLAGS=""
 
 
+AM_CONDITIONAL(FENICE_EFENCE, /bin/false)
+if test "$enable_efence" = "yes"; then
+	AM_CONDITIONAL(FENICE_EFENCE, /bin/true)
+	AC_DEFINE(ENABLE_EFENCE, 1,[Debug enabled])
+	enable_debug=yes
+	efence_msg="   You chose to compile against Electric Fence lib"
+fi
+
 AM_CONDITIONAL(FENICE_DEBUG, /bin/false)
 if test "$enable_debug" = "yes"; then
 	CFLAGS="$CFLAGS -g -ggdb"
 	AM_CONDITIONAL(FENICE_DEBUG, /bin/true)
 	AC_DEFINE(ENABLE_DEBUG, 1,[Debug enabled])
+	debug_msg="
+   Debuging flags enabled: welcome developer!!!"
 fi
 
 case "$enable_warnings" in
@@ -188,8 +202,9 @@ Fenice Install prefix .......... : $prefix
 Fenice Binary path ............. : $exec_prefix/bin/fenice
 Fenice Configuration path .......: $fenice_conf_dir
 Fenice A/V Resources path .......: $fenice_avroot_dir
- 
- 
+$debug_msg
+$efence_msg
+
  'make' will now compile Fenice and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.
 ])

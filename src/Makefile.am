@@ -50,7 +50,7 @@ fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/socket/libsocket.la \
 		$(top_srcdir)/command_environment/libcommand.la 
 
-if FENICE_DEBUG
+if FENICE_EFENCE
 fenice_LDFLAGS = -lefence
 endif
 

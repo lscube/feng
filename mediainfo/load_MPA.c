@@ -69,6 +69,8 @@ int load_MPA(media_entry *p)
                 {0,     0,     0,     0,     0     }
         };
 
+	fprintf(stderr, "loading MPA...\n");
+
         strcpy(thefile,prefs_get_serv_root());
         strcat(thefile,p->filename);            
         p->fd=open(thefile,O_RDONLY);

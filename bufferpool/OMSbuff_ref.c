@@ -46,10 +46,12 @@ OMSConsumer *OMSbuff_ref(OMSBuffer *buffer)
 	if ((cons = (OMSConsumer *)malloc(sizeof(OMSConsumer))) == NULL )
 		return NULL;
 	
-	cons->read_pos = buffer->write_pos->next;
+	// cons->read_pos = buffer->write_pos->next;
+	cons->read_pos = buffer->write_pos;
 	cons->buffer = buffer;
 	
 	buffer->refs++;	
+	fprintf(stderr, "Buffer ref (%d)\n", buffer->refs);
 
 	return cons;
 }
