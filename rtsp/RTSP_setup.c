@@ -342,9 +342,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 		// Now I have to assign the ser_ports.RTCP  
 		close(sp2->rtcp_fd_out);	// why close? Federico: Because I have to bind in order to listen
-	printf("RTP: %d - RTCP: %d\n", sp2->ser_ports.RTP, sp2->ser_ports.RTCP);
 		udp_open(ser_ports.RTCP, &(sp2->rtcp_in_peer), &(sp2->rtcp_fd_in));	//bind 
-	printf("RTP: %d - RTCP: %d\n", sp2->ser_ports.RTP, sp2->ser_ports.RTCP);
 
 	}			//end else unicast
 
