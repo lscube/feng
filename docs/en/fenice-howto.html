@@ -1,0 +1,785 @@
+<html>
+<head>
+    <meta name="generator" content=
+    "HTML Tidy for Linux/x86 (vers 1st December 2004), see www.w3.org">
+
+    <title>Fenice HOWTO</title>
+    <base href="https://killgates.polito.it/streaming/">
+<style type="text/css">
+@import url(misc/print.css);
+</style>
+</head>
+
+<body>
+    <h1 id="31" name="31" class="book-h1">Fenice HOWTO</h1>
+
+    <p>In this document we want to explain how to use the main
+    features of Fenice, the Open Media Streaming server.</p>
+
+    <p><strong>Giampaolo Mancini</strong> &lt;<a href=
+    "mailo:giampaolo.mancini_at_polito.it">giampaolo.mancini_at_polito.it</a>&gt;<br>
+    <strong>Davide Quaglia</strong> &lt;<a href=
+    "mailo:davide.quaglia_at_polito.it">davide.quaglia_at_polito.it</a>&gt;<br>
+    <strong>Federico Ridolfo</strong> &lt;<a href=
+    "mailo:federico.ridolfo_at_polito.it">federico.ridolfo_at_polito.it</a>&gt;<br>
+    <strong>Francesco Varano</strong> &lt;<a href=
+    "mailo:francesco.varano_at_polito.it">francesco.varano_at_polito.it</a>&gt;</p>
+
+    <p><big><strong>This document is a work-in-progress. Please
+    check this pages often.</strong></big></p>
+
+    <h1 id="34" name="34" class="book-h1">1. Introduction</h1>
+
+    <div style="margin-left: 2em">
+        <p>This document was written to assist the reader in
+        setting up and configuring Fenice, the Open Media Streaming
+        Server.</p>
+    </div>
+
+    <h1 id="41" name="41" class="book-h2">1.1. Copyright
+    information</h1>
+
+    <div style="margin-left: 2em">
+        <p>Copyright 2005 - Some Righs Reserved - Giampaolo
+        Mancini, Francesco Varano, Federico Ridolfo, Davide
+        Quaglia</p>
+
+        <p>Creative Commons Attribution-ShareAlike 2.0 Italy</p>
+
+        <p>You are free:</p>
+
+        <ul>
+            <li>to copy, distribute, display, and perform the
+            work</li>
+
+            <li>to make derivative works</li>
+
+            <li>to make commercial use of the work</li>
+        </ul>
+
+        <p>Under the following conditions:<br></p>
+
+        <dl>
+            <dt><strong>BY</strong><br></dt>
+
+            <dd>Attribution. You must give the original author
+            credit.<br></dd>
+
+            <dt><strong>SA</strong><br></dt>
+
+            <dd>Share Alike. If you alter, transform, or build upon
+            this work, you may distribute the resulting work only
+            under a license identical to this one.<br></dd>
+        </dl>
+
+        <ul>
+            <li>For any reuse or distribution, you must make clear
+            to others the license terms of this work.</li>
+
+            <li>Any of these conditions can be waived if you get
+            permission from the copyright holder.</li>
+        </ul>
+
+        <p>Your fair use and other rights are in no way affected by
+        the above.</p>
+
+        <p>This is a human-readable summary of the <a href=
+        "http://creativecommons.org/licenses/by-sa/2.0/it/legalcode">
+        Legal Code (the full license)</a>.</p>
+
+        <p><a href=
+        "http://creativecommons.org/licenses/disclaimer-popup?lang=en">
+        Disclaimer</a></p>
+
+        <p><!-- Creative Commons License --><br>
+        <a rel="license" href=
+        "http://creativecommons.org/licenses/by-sa/2.0/it/"><img alt="Creative Commons License"
+        border="0" src=
+        "http://creativecommons.org/images/public/somerights20.gif"></a><br>
+        This work is licensed under a <a rel="license" href=
+        "http://creativecommons.org/licenses/by-sa/2.0/it/">Creative
+        Commons License</a>.<br>
+        <!-- /Creative Commons License --></p>
+    </div>
+
+    <h1 id="42" name="42" class="book-h2">1.2. Disclaimer</h1>
+
+    <div style="margin-left: 2em">
+        <p>No liability for the contents of this document can be
+        accepted. Use the concepts, examples and other content
+        entirely at your own risk. As this is a new edition, there
+        may be technical or other inaccuracies that may result in
+        the loss of irreplaceable data. In any case, proceed with
+        caution, and realize that although errors are highly
+        unlikely, the author can accept no responsibility for
+        them.</p>
+
+        <p>All copyrights are held by their respective owners,
+        unless specifically noted otherwise. Use of a term in this
+        document should not be regarded as affecting the validity
+        of any trademark or service mark.</p>
+
+        <p>Naming of particular products or brands should not be
+        seen as endorsements.</p>
+    </div>
+
+    <h1 id="43" name="43" class="book-h2">1.3. New versions</h1>
+
+    <div style="margin-left: 2em">
+        <p>The latest version number of this document can be found
+        <a href=
+        "https://killgates.polito.it/streaming/node/31">here</a>.</p>
+    </div>
+
+    <h1 id="44" name="44" class="book-h2">1.4. Credits</h1>
+
+    <div style="margin-left: 2em">
+        <br>
+    </div>
+
+    <h1 id="45" name="45" class="book-h2">1.5. Feedback</h1>
+
+    <div style="margin-left: 2em">
+        <p>Please send any additions or comments pertaining to this
+        document to one of the following email addresses:</p>
+
+        <p><strong>Giampaolo Mancini</strong> &lt;<a href=
+        "mailo:giampaolo.mancini_at_polito.it">giampaolo.mancini_at_polito.it</a>&gt;<br>
+        <strong>Federico Ridolfo</strong> &lt;<a href=
+        "mailo:federico.ridolfo_at_polito.it">federico.ridolfo_at_polito.it</a>&gt;<br>
+        <strong>Francesco Varano</strong> &lt;<a href=
+        "mailo:francesco.varano_at_polito.it">francesco.varano_at_polito.it</a>&gt;</p>
+    </div>
+
+    <h1 id="46" name="46" class="book-h2">1.6 Conventions used in
+    this document</h1>
+
+    <div style="margin-left: 2em">
+        <p>The following conventions are used in this document and
+        are outlined here for those who may not yet have a complete
+        understanding of how to access and control the underlying
+        operating system in Linux, which is usually via the Bash
+        shell.</p>
+
+        <p>First, filenames are referenced in a paragraph like so:
+        <tt>/path/file</tt></p>
+
+        <p>Commands in Linux are executed (or 'called') at the
+        command prompt, otherwise known as the 'command line.' If
+        you are in the non-graphical (text-based) environment, you
+        will usually be presented with the Bash shell prompt which
+        is a dollar sign:<br></p>
+
+        <div class="codeblock">
+            <code>$</code>
+        </div><br>
+        ... or the hash mark:<br>
+
+        <div class="codeblock">
+            <code>#</code>
+        </div><br>
+        ... if you have logged in as root or have otherwise
+        acquired root, or 'superuser' privileges. You can also
+        access the Bash shell in the X window system, otherwise
+        known as X or X11, with an xterm or similar
+        X-terminal-emulator. Commands to be performed at the Bash
+        prompt, but referenced in a paragraph of this document,
+        usually look like this: do this now
+
+        <p>Commands and/or the resulting output of commands may
+        also be outlined with screen output in their own paragraph
+        or heading:<br></p>
+
+        <div class="codeblock">
+            <code>$ date<br>
+            Sun Jul 27 22:37:11 CDT 2003</code>
+        </div><br>
+        When a command is written in front of the Bash prompt
+        (e.g., <code>$ date</code> above), it is assumed the
+        <tt>[Return]</tt> or <tt>[Enter]</tt> key has been pressed
+        after the command, possibly followed by the output on a new
+        line (e.g., as in the date in the above example).
+    </div>
+
+    <h1 id="32" name="32" class="book-h1">2. Installation</h1>
+
+    <div style="margin-left: 2em">
+        <p><strong>Installing from source code</strong></p>
+
+        <p>To install Fenice from source code you need to get the
+        last stable release from:<br>
+        <a href=
+        "http://streaming.polito.it/node/9">http://streaming.polito.it/node/9</a></p>
+
+        <p>Unpack the tarball:<br></p>
+
+        <div class="codeblock">
+            <code>$ tar xvfz fenice-x.x.tar.gz</code>
+        </div><br>
+        where x.x is the current stable version.
+
+        <p>Switch to the source directory:<br></p>
+
+        <div class="codeblock">
+            <code>$ cd fenice-x.x</code>
+        </div><br>
+        Now you are ready to compile: type
+
+        <div class="codeblock">
+            <code>$ ./configure &amp;&amp; make<br>
+            $ su -</code>
+        </div><br>
+        after you entered to password for <tt>root</tt> user, type
+
+        <div class="codeblock">
+            <code># make install</code>
+        </div><br>
+        The installation directory of executable is (by default)
+        <tt>/usr/local/bin</tt>, while default path to media
+        streams is <tt>/var/fenice/avroot</tt>.
+
+        <p>If you don't like default configuration file
+        <tt>/etc/fenice.conf</tt>, try your own configuration
+        creating a config-file like this:</p>
+
+        <div class="codeblock">
+            <code>root=/home/chicco/media/<br>
+            port=1554</code>
+        </div><br>
+        where <tt>root</tt> is the path to the multimedia streams
+        directory and <tt>port</tt> is the <em>TCP</em> port for
+        <em>RTSP</em> <em>incoming</em> connections
+
+        <p>Now you are ready to run Fenice:<br></p>
+
+        <div class="codeblock">
+            <code>$ fenice &#226;&#8364;&#8220;config-file
+            /path/to/fenice.conf</code>
+        </div><br>
+        Please, be sure that the firewall in your network is not
+        blocking incoming connections on RTSP port and incoming UDP
+        (for RTCP Receiver Reports) packets.
+    </div>
+
+    <h1 id="35" name="35" class="book-h1">3. How to create
+    audio/video streams compatible with Fenice</h1>
+
+    <div style="margin-left: 2em">
+        <br>
+    </div>
+
+    <h1 id="47" name="47" class="book-h2">3.1. MP3 audio
+    streams</h1>
+
+    <div style="margin-left: 2em">
+        <p>The next command shows how to create MP3 files
+        compatible with Fenice.<br>
+        In this example the well-know mp3-encoder named lame
+        (<a href=
+        "http://lame.sourceforge.net/">http://lame.sourceforge.net</a>)
+        is used.<br></p>
+
+        <div class="codeblock">
+            <code>$ lame -b 128 --resample 44.1 output.mp3 &lt;
+            inputaudiofile</code>
+        </div>
+    </div>
+
+    <h1 id="48" name="48" class="book-h2">3.2. MPEG 1 and 2
+    elementary video streams</h1>
+
+    <div style="margin-left: 2em">
+        <p>The next commands shows how to create MPEG 1 and 2
+        elementary video streams compatible with Fenice.</p>
+
+        <p>The well-know mpeg-encoder named mpeg2enc (<a href=
+        "http://mjpeg.sourceforge.net/">http://mjpeg.sourceforge.net/</a>)
+        and the multimedia player MPlayer (<a href=
+        "http://mplayerhq.hu">http://mplayerhq.hu</a>) are used in
+        this example.<br></p>
+
+        <div class="codeblock">
+            <code>$ mplayer -noframedrop -vo yuv4mpeg<br>
+            $ cat stream.yuv | mpeg2enc -v 0 -a 2 -b 200 -f 0 -F 25
+            -R 2 -c -s -g -G 10 -o outfile.mpg</code>
+        </div>
+    </div>
+
+    <h1 id="55" name="55" class="book-h2">3.3. Automating the
+    creation of the streams: a script</h1>
+
+    <div style="margin-left: 2em">
+        <p>The following script can be used to split an MPEG-1 or
+        MPEG-2 system stream into an elementary video stream and an
+        audio stream.</p>
+
+        <p>MPlayer is used to split the system stream while
+        mpeg2enc and lame are used to encode the elementary
+        respectively.<br></p>
+
+        <div class="codeblock">
+            <code>#!/bin/bash<br>
+            #<br>
+            # mjpegtools-lame.sh 0.1<br>
+            # A demultiplexing and transcoding script for Fenice,
+            the Open Media Streaming Server<br>
+            #<br>
+            # Copyleft 2005 - Francesco Varano
+            &lt;francesco.varano_at_polito.it&gt;<br>
+            #<br>
+            # This script is free software; you can redistribute it
+            and/or modify<br>
+            # it under the terms of the GNU General Public License
+            as published by<br>
+            # the Free Software Foundation; either version 2 of the
+            License, or<br>
+            # (at your option) any later version.<br>
+            #<br>
+            # This script is distributed in the hope that it will
+            be useful,<br>
+            # but WITHOUT ANY WARRANTY; without even the implied
+            warranty of<br>
+            # MERCHANTABILITY or FITNESS FOR A PARTICULAR
+            PURPOSE.&nbsp;&nbsp;See the<br>
+            # GNU General Public License for more details.<br>
+            #<br>
+            # You should have received a copy of the GNU General
+            Public License<br>
+            # along with this script; if not, write to the Free
+            Software<br>
+            # Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+            MA&nbsp;&nbsp;02111-1307&nbsp;&nbsp;USA<br>
+            # #<br>
+            #--&gt; encoding variables &lt;--#<br>
+            asr="44.1" # audio sample rate<br>
+            abitrate="128" # audio bitrate<br>
+            vbitrate="200" # video bitrate<br>
+            framerate=""<br>
+            aspect="2"<br>
+            if [ -n "$aspect" ]; then<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aspect="-a
+            $aspect"<br>
+            fi<br>
+            if [ -n "$framerate" ]; then<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;framerate="-F
+            $framerate"<br>
+            fi<br>
+            if [ -n "$vbitrate" ]; then<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vbitrate="-b
+            $vbitrate"<br>
+            fi<br>
+            #--&gt; variables &lt;--#<br>
+            AUDIO="audiodump.wav"<br>
+            VIDEO="stream.yuv"<br>
+            # MPLAYER_CMD="mplayer -noframedrop -vo yuv4mpeg
+            -nosound -v -osdlevel 0"<br>
+            MPLAYER_CMD="mplayer -noframedrop -vo yuv4mpeg -ao pcm
+            -waveheader -v -osdlevel 0"<br>
+            MPEG2ENC_CMD="mpeg2enc -v 0 $aspect $vbitrate -f 0
+            $framerate -R 2 -c -s -g 10 -G 10 -o"<br>
+            LAME_CMD="lame -b $abitrate --resample $asr"<br>
+            # DENOISE="cat -" # OR:<br>
+            DENOISE="yuvdenoise"<br>
+            if [ -z $1 ]; then<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;echo<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;echo
+            "$0: You must provide a filename..."<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;echo
+            "Exiting."<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;echo<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exit
+            1<br>
+            fi<br>
+            infile=`basename $1`<br>
+            outfile=${infile%.*}<br>
+            i=0<br>
+            while [ -e $outfile.mpg ] || [ -e $outfile.mp3 ];
+            do<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;outfile=${infile%.*}_$i<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;let
+            i++<br>
+            done<br>
+            echo -ne "Outputting:\n\tVideo to $outfile.mpg\n\tAudio
+            to $outfile.mp3\n"<br>
+            rm -f $VIDEO<br>
+            mkfifo -m 660 $VIDEO<br>
+            echo "launching: $MPLAYER_CMD"<br>
+            $MPLAYER_CMD $1 &amp;<br>
+            $DENOISE &lt; $VIDEO | $MPEG2ENC_CMD $outfile.mpg<br>
+            wait<br>
+            $LAME_CMD - $outfile.mp3 &lt; $AUDIO<br>
+            rm -f $VIDEO<br>
+            rm -f $AUDIO<br>
+            echo -ne "Outputting:\n\tVideo to $outfile.mpg\n\tAudio
+            to $outfile.mp3\n"<br>
+            echo</code>
+        </div>
+    </div>
+
+    <h1 id="36" name="36" class="book-h1">4. How to create the SD
+    description</h1>
+
+    <div style="margin-left: 2em">
+        <br>
+    </div>
+
+    <h1 id="49" name="49" class="book-h2">4.1. MP3 audio
+    streams</h1>
+
+    <div style="margin-left: 2em">
+        <p>The follow text is an SD file audio.sd used to stream
+        the file audio.mp3:</p>
+
+        <div class="codeblock">
+            <code>stream<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default_presentation<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;priority
+            1<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file_name
+            audio.mp3<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;media_source
+            stored<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;payload_type
+            14<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock_rate
+            90000<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;audio_channels
+            2<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoding_name
+            MPA<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sample_rate
+            44100<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;coding_type
+            frame<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;frame_len
+            26.12<br>
+            stream_end</code>
+        </div><br>
+        Now, if a client wants this resource it must use an url as
+        this: <tt>rtsp://server_ip_or_name:port/audio.sd</tt> where
+        port is the RTSP port set in <tt>fenice.conf</tt>.
+
+        <p>Note: you must store <tt>audio.mp3</tt> and
+        <tt>audio.sd</tt> into the root directory set in
+        <tt>fenice.conf</tt>.</p>
+    </div>
+
+    <h1 id="50" name="50" class="book-h2">4.2. MPEG 1 and 2
+    elementary video stream</h1>
+
+    <div style="margin-left: 2em">
+        <p>Otherwise the video.sd file to stream an elementary
+        video stream (MPEG1 or 2) is:<br></p>
+
+        <div class="codeblock">
+            <code>stream<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file_name
+            video.mpg<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;priority
+            1<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;media_source
+            stored<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;payload_type
+            32<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock_rate
+            90000<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoding_name
+            MPV<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;coding_type
+            frame<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;frame_rate
+            25<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;byte_per_pckt
+            1900<br>
+            stream_end</code>
+        </div>
+    </div>
+
+    <h1 id="51" name="51" class="book-h2">4.3. MP3 audio + MPEG
+    videostreams</h1>
+
+    <div style="margin-left: 2em">
+        <p>If you want an audio/video stream (mp3/mpg):<br></p>
+
+        <div class="codeblock">
+            <code>stream<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file_name
+            audio.mp3<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aggregate
+            movie<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;priority
+            1<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;media_source
+            stored<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;payload_type
+            14<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock_rate
+            90000<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoding_name
+            MPA<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pkt_len
+            26.12<br>
+            stream_end<br>
+            stream<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file_name
+            video.mpg<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aggregate
+            movie<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;priority
+            1<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;media_source
+            stored<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;payload_type
+            32<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock_rate
+            90000<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoding_name
+            MPV<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;coding_type
+            frame<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;frame_rate
+            25<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;byte_per_pckt
+            1800<br>
+            stream_end</code>
+        </div>
+    </div>
+
+    <h1 id="52" name="52" class="book-h2">4.4. PCM audio
+    streams</h1>
+
+    <div style="margin-left: 2em">
+        <p>For a PCM L16 audio file the sd description is as like
+        this:<br></p>
+
+        <div class="codeblock">
+            <code>stream<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file_name
+            audio.L16m8k<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;priority
+            2<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;payload_type
+            106<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock_rate
+            8000<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;audio_channels
+            1<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoding_name
+            L16<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bit_per_sample
+            16<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pkt_len
+            20<br>
+            stream_end</code>
+        </div>
+    </div>
+
+    <h1 id="53" name="53" class="book-h2">4.5. GSM-AMR voice
+    streams</h1>
+
+    <div style="margin-left: 2em">
+        <p>For a GSM-AMR audio file:<br></p>
+
+        <div class="codeblock">
+            <code>stream<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file_name
+            audio.gsm<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;priority
+            3<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;payload_type
+            108<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock_rate
+            8000<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoding_name
+            GSM<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pkt_len
+            20<br>
+            stream_end</code>
+        </div><br>
+        <strong>Note:</strong> GSM-AMR has not a well know payload
+        type.
+    </div>
+
+    <h1 id="37" name="37" class="book-h1">5. How to add a Creative
+    Commons license to the distribution of your contents</h1>
+
+    <div style="margin-left: 2em">
+        <p>If you have some multimedia files with Creative Commons
+        licenses you can use the follow key words in th sd
+        description:</p>
+
+        <ul>
+            <li><tt>license</tt></li>
+
+            <li><tt>verify</tt></li>
+
+            <li><tt>title</tt></li>
+
+            <li><tt>creator</tt></li>
+        </ul>
+
+        <p>For the meaning of these keywords please refer to the
+        draft at <a href=
+        "http://streaming.polito.it/files/draft-omsp-ccplem-streaming-01.sxw">
+        http://streaming.polito.it/files/draft-omsp-ccplem-streaming-01.sxw</a></p>
+
+        <p>This is an example:<br></p>
+
+        <div class="codeblock">
+            <code>stream<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file_name
+            cc.mp3<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aggregate
+            movie<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;media_source
+            live<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;priority
+            1<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;license
+            http://creativecommons.org/licenses/by-nc/1.0/<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;verify
+            http://streaming.polito.it/<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;title
+            Building In The Past - Ccc<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;creator
+            OMSP Team<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;payload_type
+            14<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock_rate
+            90000<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoding_name
+            MPA<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pkt_len
+            26.12<br>
+            stream_end<br>
+            stream<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file_name
+            cc.mpg<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aggregate
+            movie<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;media_source
+            live<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;priority
+            1<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;license
+            http://creativecommons.org/licenses/by-nc/1.0/<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;verify
+            http://streaming.polito.it/<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;title
+            Building In The Past - Ccc<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;creator
+            OMSP Team<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;payload_type
+            32<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock_rate
+            90000<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoding_name
+            MPV<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;coding_type
+            frame<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;frame_rate
+            25<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;byte_per_pckt
+            1000<br>
+            stream_end</code>
+        </div>
+    </div>
+
+    <h1 id="38" name="38" class="book-h1">6. How to stream live
+    media</h1>
+
+    <div style="margin-left: 2em">
+        <p>In case of video from a webcam and audio from a dsp, you
+        must use an application that work as producer and redirect
+        its output on two named pipe, the first for audio.mp3 and
+        the last one for video.mpg.</p>
+
+        <p>You can install ffmpeg (compiled with the lame support,
+        see the ffmpeg documentations) and use this script:<br></p>
+
+        <div class="codeblock">
+            <code>#!/bin/bash<br>
+            #<br>
+            #------<br>
+            # Note:<br>
+            #------<br>
+            # modprobe pwc fps=25 size=qcif power_save=0
+            fbufs=5<br>
+            # note: fps&gt;=25 (mpeg 1 or 2)<br>
+            ffmpeg -y -ad /dev/dsp -ar 44100 -ac 2 -vn -ab 128
+            pipeaudio.mp3 &amp;<br>
+            ffmpeg -y -an -vd /dev/video0 -vcodec mpeg1video -f
+            mpeg1video -r 25&nbsp;&nbsp;-s qcif -b 128 -bt
+            1&nbsp;&nbsp;-g 12 -bf 2 pipevideo.mpg<br>
+            # you can use also fame and sox+lame<br>
+            # fame&nbsp;&nbsp;-d /dev/video -f 25 -p QCIF -c IPPPPP
+            -r 10 -b 128000 pipevideo.mpg<br>
+            # sox -t ossdsp -c2 -w -r44100 /dev/dsp -t raw - | lame
+            -r -x -s 44.1 -m j --preset cbr 128 - - &gt;
+            pipeaudio.mp3<br></code>
+        </div><br>
+        In SD file you must change:
+
+        <ul>
+            <li><tt>stored</tt> --&gt; <tt>live</tt></li>
+
+            <li><tt>audio.mp3</tt> --&gt;
+            <tt>pipeaudio.mp3</tt></li>
+
+            <li><tt>video.mpg</tt> --&gt;
+            <tt>pipevido.mpg</tt></li>
+        </ul>
+
+        <p>Finally you must create the named pipes:<br></p>
+
+        <div class="codeblock">
+            <code>$ mkfifo -m 655 pipeaudio.mp3<br>
+            $ mkfifo -m 655 pipevideo.mpg</code>
+        </div>
+    </div>
+
+    <h1 id="39" name="39" class="book-h1">7. Utilities used in the
+    scripts</h1>
+
+    <div style="margin-left: 2em">
+        <ul>
+            <li>MP3 encoder: <strong>lame</strong> (<a href=
+            "http://lame.sourceforge.net">http://lame.sourceforge.net</a>)</li>
+
+            <li>MPEG 1 and 2 encoder: <strong>mpeg2enc</strong>
+            (<a href=
+            "http://mjpeg.sourceforge.nett">http://mjpeg.sourceforge.net</a>)</li>
+
+            <li>Multicodec encoder: <strong>ffmpeg</strong>
+            (<a href=
+            "http://ffmpeg.sourceforge.net">http://ffmpeg.sourceforge.net</a>)</li>
+
+            <li>Audio utility: <strong>sox</strong> (<a href=
+            "http://sox.sourceforge.net">http://sox.sourceforge.net</a>)</li>
+
+            <li>Multimedia player: <strong>MPlayer</strong>
+            (<a href=
+            "http://www.mplayerhq.hu">http://www.mplayerhq.hu</a>)</li>
+        </ul>
+    </div>
+
+    <h1 id="40" name="40" class="book-h1">8. License</h1>
+
+    <div style="margin-left: 2em">
+        <p><strong><big>Creative Commons Legal
+        Code</big></strong></p>
+
+        <p><strong>Attribution-ShareAlike 2.0</strong></p>
+
+        <ul>
+            <li><a href=
+            "http://creativecommons.org/licenses/by-sa/2.0/legalcode">
+            Generic Jurisdiction</a></li>
+
+            <li><a href=
+            "http://creativecommons.org/licenses/by-sa/2.0/it/legalcode">
+            Italian Jurisdiction</a></li>
+        </ul>
+    </div>
+</body>
+</html>

@@ -44,4 +44,4 @@ rm -rf %{buildroot}
 %config %{_sysconfdir}/%{name}.conf
 
 %doc README TODO COPYING ChangeLog INSTALL-FAST AUTHORS
-%doc docs/en/index*.html
+%doc docs/en/%{name}-howto.html
