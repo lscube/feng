@@ -108,7 +108,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
                 	*data_size+=1;
 		}
 		
-		/*while(s->final_byte !=VOP_START_CODE){
+		while(s->final_byte != VOP_START_CODE){
                         if(next_start_code(data,data_size,me->fd) < 0)
 				return ERR_EOF;              
                        	if(read(me->fd,&s->final_byte,1)<1)
@@ -116,23 +116,9 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
                        	data[*data_size]=s->final_byte;
                        	*data_size+=1;
 			*recallme=0;
-		}*/
-		if(s->final_byte<VOP_START_CODE){
-                        if(next_start_code(data,data_size,me->fd) < 0)
-				return ERR_EOF;              
-                       	if(read(me->fd,&s->final_byte,1)<1)
-				return ERR_EOF;
-                       	data[*data_size]=s->final_byte;
-                       	*data_size+=1;
-			*recallme=1;
-			*data_size-=4;
-			s->fragmented=0;
-			return ERR_NOERROR;
 		}
-		
 		while(num_bytes > *data_size && out_of_while!=1){
 			if ( read(me->fd,&buf_aux,3) <3){  /* If there aren't 3 more bytes we are at EOF */
-				// close(me->fd);
 				return ERR_EOF;
 			}
 			while ( !((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) && *data_size < num_bytes) {
@@ -141,7 +127,6 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
 				buf_aux[0]=buf_aux[1];
 				buf_aux[1]=buf_aux[2];
       				if ( read(me->fd,&buf_aux[2],1) <1){ 
-					// close(me->fd);
 					return ERR_EOF;
 				}
  		   	}
@@ -176,7 +161,6 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
 		int i;
 	
 		if ( read(me->fd,&buf_aux,3) <3){  /* If there aren't 3 more bytes we are at EOF */
-			// close(me->fd);
 			return ERR_EOF;
 		}
 		while ( !((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) && *data_size <num_bytes) {
@@ -185,7 +169,6 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
 			buf_aux[0]=buf_aux[1];
 			buf_aux[1]=buf_aux[2];
       			if ( read(me->fd,&buf_aux[2],1) <1){ 
-				// close(me->fd);
 				return ERR_EOF;
 			}
 	   	}
@@ -206,9 +189,9 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double 
 			*recallme=s->fragmented=1;
 		}
 	}
+	if(*data_size>=num_bytes)
+		fprintf(stderr,"%d\n",*data_size);
 	
-	if(*data_size>num_bytes)
-		fprintf(stderr,"data_size=%d\n",*data_size);
 	return ERR_NOERROR;
 }
 
