@@ -1,0 +1,21 @@
+stream
+        file_name audio.mp3
+	aggregate movie
+        priority 1
+        payload_type 14
+        clock_rate 90000
+        encoding_name MPA
+        pkt_len 26.12
+stream_end
+stream
+        file_name video.mpg
+	aggregate movie
+	priority 1
+        payload_type 32
+	clock_rate 90000
+        encoding_name MPV	
+	coding_type frame
+	frame_rate 25
+	byte_per_pckt 1500
+stream_end
+

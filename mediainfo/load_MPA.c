@@ -34,6 +34,7 @@
 
 #include <string.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>

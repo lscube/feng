@@ -145,8 +145,6 @@ AM_CONDITIONAL(ARCH_PPC, test "x$arch_type" = "xppc")
 AM_CONDITIONAL(HAVE_SOLARIS, test "x$have_solaris" = xyes)
 
 AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([docs/Makefile])
-AC_CONFIG_FILES([docs/en/Makefile])
 AC_CONFIG_FILES([eventloop/Makefile])
 AC_CONFIG_FILES([rtp/Makefile])
 AC_CONFIG_FILES([rtcp/Makefile])
@@ -161,6 +159,10 @@ AC_CONFIG_FILES([schedule/Makefile])
 AC_CONFIG_FILES([xmlparser/Makefile])
 AC_CONFIG_FILES([multicast/Makefile])
 AC_CONFIG_FILES([command_environment/Makefile])
+AC_CONFIG_FILES([docs/Makefile])
+AC_CONFIG_FILES([docs/en/Makefile])
+AC_CONFIG_FILES([etc/Makefile])
+AC_CONFIG_FILES([avroot/Makefile])
 AC_OUTPUT
 
 AC_MSG_NOTICE([config files successfully generated!

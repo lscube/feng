@@ -12,7 +12,10 @@ SUBDIRS =	socket \
 		sdp \
 		schedule \
 		src \
-		docs
+		docs \
+		etc \
+		avroot
+		
 
 EXTRA_DIST = 	include \
 		admin \
