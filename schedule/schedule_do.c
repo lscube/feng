@@ -97,7 +97,7 @@ do{
 				if (mnow >= sched[i].rtp_session->current_media->mstart) {
 					
 					if (mnow - sched[i].rtp_session->mprev_tx_time >= sched[i].rtp_session->current_media->description.pkt_len) {
-    					//if (mnow-sched[i].rtp_session->mtime>=sched[i].rtp_session->current_media->description.pkt_len) {   // old scheduler
+    				//	if (mnow-sched[i].rtp_session->mtime>=sched[i].rtp_session->current_media->description.pkt_len) {   // old scheduler
 						
 						stream_change(sched[i].rtp_session, change_check(sched[i].rtp_session));
         					
@@ -108,6 +108,7 @@ do{
 						RTCP_handler(sched[i].rtp_session);
 	        				
 						// Send an RTP packet
+					//	fprintf(stderr,"mnow=%f, diff=%f\n",mnow,mnow - sched[i].rtp_session->mprev_tx_time);
 						res = sched[i].play_action(sched[i].rtp_session);
         					
 						if (res!=ERR_NOERROR) {

@@ -63,6 +63,7 @@ int RTP_send_packet(RTP_session *session)
 		
 		//session->current_media->mtime+=session->current_media->description.pkt_len;     // old scheduler
 		
+		
 		s_time = session->current_media->mtime - session->current_media->mstart + session->current_media->mstart_offset;
 		if ((res=get_frame(session->current_media,&s_time))!=ERR_NOERROR){
 			/* if(res==ERR_EOF)
@@ -75,6 +76,7 @@ int RTP_send_packet(RTP_session *session)
 		s_time=slot->timestamp;
 		
 	while ((slot) && (slot->timestamp == s_time)) {
+		//fprintf(stderr,"s_time=%f\n",s_time);
 		if (strcmp(session->current_media->description.encoding_name,"MP2T")!=0) {
 			//session->mtime = slot->timestamp + session->mstart - session->mstart_offset;
 		}

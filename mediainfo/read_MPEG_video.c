@@ -228,7 +228,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
                 	data_tmp[*data_size]=s->final_byte;
        	        	*data_size+=1;
                         if ( ((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) ) {
-				if(((s->final_byte > 0xAF)||(s->final_byte==0x00)) ){
+				if(((s->final_byte > 0xAF)||(s->final_byte==0x00)) ){/*TODO: 0xb7*/
 					*recallme = 0;
 					*data_size-=4;
 				}
@@ -274,18 +274,26 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 		read(me->fd,&s->final_byte,1);
                	data_tmp[*data_size]=s->final_byte;
         	*data_size+=1;
-                if (((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) ) {
-			*recallme = 0;
+		
+                if ( ((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) ) {
+			if(((s->final_byte > 0xAF)||(s->final_byte==0x00)) ){/*TODO: 0xb7*/
+				*recallme = 0;
+				*data_size-=4;
+			}
+			else
+				*recallme=1;
 			s->fragmented=0;
-			*data_size-=4;
-		}
+			}
 		else{
 			*recallme=1;
 			s->fragmented=1;
 		}
+
+		
         	s->vsh1.b=0;
 	}
 	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
+	//fprintf(stderr,"*mtime=%f\n",*mtime);
 	s->data_total+=*data_size;
         if (s->std==MPEG_2 && !flag) {
         	#ifdef MPEG2VSHE

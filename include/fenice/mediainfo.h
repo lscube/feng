@@ -36,7 +36,7 @@
 #define _MEDIAINFOH
 	#include <fenice/bufferpool.h>
 	#define MAX_DESCR_LENGTH 4096
-	#define DIM_VIDEO_BUFFER 10 
+	#define DIM_VIDEO_BUFFER 65 
 	#define DIM_AUDIO_BUFFER 5
 
 	/* Formati di descrizione supportati */	
