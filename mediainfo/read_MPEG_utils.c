@@ -42,8 +42,8 @@
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
 
-int next_start_code(uint8 *buf, uint32 *buf_size,int fin) {  			/* returns number of bytes readen looking for start-codes, */
-	char buf_aux[3];                                               			/* except the 3 start-code bytes */
+int next_start_code(uint8 *buf, uint32 *buf_size,int fin) {  			
+	char buf_aux[3];                                               	
 	int i;
 	unsigned int count=0;
 	if ( read(fin,&buf_aux,3) <3) {                                			/* If there aren't 3 more bytes we are at EOF */

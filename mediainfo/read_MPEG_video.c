@@ -106,6 +106,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         if (s->std == TO_PROBE) {
                 probe_standard(data_tmp,data_size,me->fd,&s->std);
 		flag=1;
+               	seq_head_pres=1;
         }
 
 	if(num_bytes==0){ /*case 1 slice for pkt*/
@@ -230,7 +231,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
                         if ( ((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) ) {
 				if(((s->final_byte > 0xAF)||(s->final_byte==0x00)) ){/*TODO: 0xb7*/
 					*recallme = 0;
-					*data_size-=4;
+				//	*data_size-=4;
 				}
 				else
 					*recallme=1;
@@ -242,6 +243,8 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 			}
 		}/*end while *data_size < num_bytes && *recallme*/
         	s->vsh1.b=1;
+                if ( ((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) ) 
+			*data_size-=4;
 	}/*end else num_bytes!=0 and slice was not fragmented*/
 	else{/*num_bytes!=0 and slice was fragmented*/
 		char buf_aux[3];	
@@ -278,11 +281,11 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
                 if ( ((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) ) {
 			if(((s->final_byte > 0xAF)||(s->final_byte==0x00)) ){/*TODO: 0xb7*/
 				*recallme = 0;
-				*data_size-=4;
 			}
 			else
 				*recallme=1;
 			s->fragmented=0;
+			*data_size-=4;
 			}
 		else{
 			*recallme=1;
@@ -293,7 +296,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         	s->vsh1.b=0;
 	}
 	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
-	//fprintf(stderr,"*mtime=%f\n",*mtime);
+	//fprintf(stderr,"seq_head_pres=%d\n",seq_head_pres);
 	s->data_total+=*data_size;
         if (s->std==MPEG_2 && !flag) {
         	#ifdef MPEG2VSHE
