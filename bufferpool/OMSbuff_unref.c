@@ -31,12 +31,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
-
+#include <stdio.h>
 #include <fenice/bufferpool.h>
 
 void OMSbuff_unref(OMSBuffer *buffer)
 {
 	if(!(--(*buffer).refs))
 		OMSbuff_free(buffer);
+	fprintf(stderr, "Buffer ref (%d)\n", buffer->refs);
 }
 

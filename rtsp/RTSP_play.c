@@ -224,13 +224,13 @@ int RTSP_play(RTSP_buffer * rtsp)
 				// Search for the RTP session
 				for (ptr2 = ptr->rtp_session; ptr2 != NULL; ptr2 = ptr2->next) {
 					if (ptr2->current_media->description.priority == 1) {
-						if ((ptr2->current_media->cons = OMSbuff_ref(ptr2->current_media->pkt_buffer)) == NULL)
-		return ERR_ALLOC;
 	
 
 						// Start playing all the presentation
 						if (!ptr2->started) {
 							// Start new
+							if ((ptr2->current_media->cons = OMSbuff_ref(ptr2->current_media->pkt_buffer)) == NULL)
+							return ERR_ALLOC;
 							schedule_start(ptr2->sched_id, &args);
 						} else {
 							// Resume existing
