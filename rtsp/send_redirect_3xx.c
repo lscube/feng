@@ -60,7 +60,8 @@ uint32 send_redirect_3xx(RTSP_buffer *rtsp, uint8 *object)
 #if DEBUG
 	fprintf(stderr,"redirection to: %s\n",matching_descr->twin);
 #endif	
-	if(!strcasecmp(matching_descr->twin,"NONE") || !strcasecmp(matching_descr->twin,"")){
+	//if(!strcasecmp(matching_descr->twin,"NONE") || !strcasecmp(matching_descr->twin,"")){
+	if(!(matching_descr->flags & SD_FL_TWIN)){
 		send_reply(453,0,rtsp);
 		return ERR_NOERROR;
 	}

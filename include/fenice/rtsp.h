@@ -45,9 +45,7 @@
 	#include <fenice/schedule.h>
 
 	#define RTSP_BUFFERSIZE 2048
-        #define NO_MULTICAST 0
-        #define YES_MULTICAST 1
-        
+
 	/* Stati della macchina a stati del server rtsp*/
 	#define INIT_STATE      0
 	#define READY_STATE     1
@@ -69,7 +67,7 @@
     		// Buffers    	
     		char in_buffer[RTSP_BUFFERSIZE];
     		int in_size;
-    		char out_buffer[RTSP_BUFFERSIZE];
+    		char out_buffer[RTSP_BUFFERSIZE+MAX_DESCR_LENGTH];
     		int out_size;		
     		// Run-Time
     		unsigned int rtsp_cseq;
@@ -120,7 +118,7 @@
 	uint32 send_redirect_3xx(RTSP_buffer *, uint8 *);
 	
 	// SETUP
-	int send_setup_reply(RTSP_buffer *rtsp,RTSP_session *session,char *address,RTP_session *sp2);
+	int send_setup_reply(RTSP_buffer *rtsp,RTSP_session *session, SD_descr *descr,RTP_session *sp2);
 	
 	// TEARDOWN
 	int send_teardown_reply(RTSP_buffer *rtsp,long session_id,long cseq);
@@ -142,3 +140,4 @@
 	void add_time_stamp(char *b,int crlf);
 
 #endif
+	

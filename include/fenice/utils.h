@@ -123,6 +123,7 @@
 	#define SD_BYTE_PER_PCKT "BYTE_PER_PCKT"	
 	#define SD_MEDIA_SOURCE "MEDIA_SOURCE"	
 	#define SD_TWIN "TWIN"	
+	#define SD_MULTICAST "MULTICAST"	
 	
 	/*start CC*/
 	#define SD_LICENSE "LICENSE"

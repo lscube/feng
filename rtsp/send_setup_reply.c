@@ -38,11 +38,13 @@
 #include <config.h>
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
+#include <fenice/multicast.h>
 
-int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, char *address, RTP_session * sp2)
+int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, SD_descr *descr, RTP_session * sp2)
 {
 	char r[1024];
 	char temp[30];
+	char ttl[4];
 	/* build a reply message */
 	
 	sprintf(r, "%s %d %s\nCSeq: %d\nServer: %s/%s\n", RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
@@ -52,24 +54,23 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, char *address, 
 	sprintf(temp, "%d", session->session_id);
 	strcat(r, temp);
 	strcat(r, "\n");
-	if (sp2->isMulticast == NO_MULTICAST) {
-		strcat(r, "Transport: RTP/AVP/UDP;unicast;client_port=");
+	if (!(descr->flags & SD_FL_MULTICAST)) {
+		strcat(r, "Transport: RTP/AVP;unicast;client_port=");
 		sprintf(temp, "%d", sp2->cli_ports.RTP);
 		strcat(r, temp);
 		strcat(r, "-");
 		sprintf(temp, "%d", sp2->cli_ports.RTCP);
 		strcat(r, temp);
 
-		sprintf(temp, ";source=%s", address);
+		sprintf(temp, ";source=%s", get_address());
 		strcat(r, temp);
 
 		strcat(r, ";server_port=");
-	} else {		//IS MULTICAST
-		strcat(r, "Transport: RTP/AVP/UDP;multicast;");
-		sprintf(temp, ";destination=%s", address);
+	} else {
+		strcat(r, "Transport: RTP/AVP;multicast;");
+		sprintf(temp, "destination=%s;", descr->multicast);
 		strcat(r, temp);
-
-		strcat(r, ";port=");
+		strcat(r, "port=");
 	}
 	sprintf(temp, "%d", sp2->ser_ports.RTP);
 	strcat(r, temp);
@@ -77,9 +78,14 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, char *address, 
 	sprintf(temp, "%d", sp2->ser_ports.RTCP);
 	strcat(r, temp);
 
-	sprintf(temp, ";ssrc=%u", session->rtp_session->ssrc);
+	//sprintf(temp, ";ssrc=%u", session->rtp_session->ssrc);
+	sprintf(temp, ";ssrc=%u", sp2->ssrc);/*xxx*/
 	strcat(r, temp);
-
+	if ((descr->flags & SD_FL_MULTICAST)) {
+		strcat(r,";ttl=");
+		sprintf(ttl,"%d",(int)DEFAULT_TTL);
+		strcat(r,ttl);
+	}
 	strcat(r, "\r\n\r\n");
 
 	

@@ -40,6 +40,7 @@
 #include <fenice/mediainfo.h>
 #include <fenice/utils.h>
 #include <fenice/rtp.h>
+#include <fenice/multicast.h>
 
 int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 {	
@@ -47,6 +48,17 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 	port_pair pair;
 	media_entry *p,*list,req;
 	SD_descr *matching_descr;
+	char ttl[4];
+		
+	int res;
+	
+	if((res=enum_media(url,&matching_descr))!=ERR_NOERROR)
+		return res;
+	list=matching_descr->me_list;
+	memset(&req,0,sizeof(req));
+	req.description.flags|=MED_PRIORITY;
+	req.description.priority=1;
+	p=search_media(&req,list);
 	
 	strcpy(descr, "v=0\n");		
    	strcat(descr, "o=");
@@ -59,17 +71,20 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
    	strcat(descr, "c=");
    	strcat(descr, "IN ");		/* Network type: Internet. */
    	strcat(descr, "IP4 ");		/* Address type: IP4. */
-   	strcat(descr, get_address());
-   	strcat(descr, "\n");
+
+	if(matching_descr->flags & SD_FL_MULTICAST){
+   		strcat(descr, matching_descr->multicast);
+		strcat(descr,"/");
+		sprintf(ttl,"%d",(int)DEFAULT_TTL);
+		strcat(descr,ttl); /*TODO: the possibility to change ttl. See multicast.h, RTSP_setup.c, send_setup_reply.c*/
+	}
+	else
+   		strcat(descr, get_address());
+   	
+	strcat(descr, "\n");
    	strcat(descr, "s=RTSP Session\n");
 	sprintf(descr, "%si=%s %s Streaming Server\n", descr, PACKAGE, VERSION);
 
-	enum_media(url,&matching_descr);
-	list=matching_descr->me_list;
-	memset(&req,0,sizeof(req));
-	req.description.flags|=MED_PRIORITY;
-	req.description.priority=1;
-	p=search_media(&req,list);
 	if (p==NULL) {
 		return ERR_PARSE;
 	}
@@ -126,12 +141,18 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 		   	}	   			   	
 	   	}
 		   	
-		
-	   	pair.RTP=0;
+		if(matching_descr->flags & SD_FL_MULTICAST_PORT)
+			pair.RTP=p->rtp_multicast_port;
+		else
+			pair.RTP=0;
 
 	   	sprintf(t,"%d",pair.RTP);
 	   	strcat(descr,t);
-	   	strcat(descr," RTP/AVP "); // Use UDP
+		
+		if(matching_descr->flags & SD_FL_MULTICAST_PORT)
+	   		pair.RTP+=2;
+
+		strcat(descr," RTP/AVP "); // Use UDP
 	   	sprintf(t,"%d\n",p->description.payload_type);
 	   	strcat(descr,t);
 

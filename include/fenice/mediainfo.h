@@ -34,10 +34,12 @@
 
 #ifndef _MEDIAINFOH
 #define _MEDIAINFOH
+
 	#include <sys/types.h>
 	#include <sys/stat.h>
 	#include <unistd.h>
 	#include <fenice/bufferpool.h>
+
 	#define MAX_DESCR_LENGTH 4096
 	#define DIM_VIDEO_BUFFER 5 
 	#define DIM_AUDIO_BUFFER 5
@@ -64,6 +66,12 @@
 	} me_flags;
 	
 	typedef enum {
+		SD_FL_TWIN=1,
+    		SD_FL_MULTICAST=2,
+    		SD_FL_MULTICAST_PORT=4
+	} sd_descr_flags;
+
+	typedef enum {
     		MED_MTYPE=1,
     		MED_MSOURCE=2,
     		MED_PAYLOAD_TYPE=4,
@@ -85,9 +93,9 @@
 		MED_RDF_PAGE=131072,
 		MED_TITLE=262144,
 		MED_CREATOR=524288,
-		MED_ID3=1048576,
+		MED_ID3=1048576
 		/*end CC*/
-		MED_TWIN=2097152 /*redirect*/
+
    		/*DYN_PAYLOAD_TOKEN    	
 		PACKETTIZED=
 		PAYLOAD=
@@ -206,7 +214,8 @@
 		double mstart_offset;
 		double play_offset; /*Federico. Usefull for random access*/
 		//double prev_mstart_offset;/*usefull for random access*/
-		
+		int rtp_multicast_port; 
+
 		//started has transferred itself here
 		//unsigned char started;
 		int reserved;
@@ -254,12 +263,16 @@
     		media_entry *me_list;
     		time_t last_change;
 		struct _SD_descr *next;
+		sd_descr_flags flags;
+		char multicast[16];
+		char ttl[4];
     		char twin[255];
+				
 	} SD_descr;
 
 	int parse_SD_file (char *object, SD_descr *sd_descr);	
 	int get_frame (media_entry *me, double *mtime);
-	int validate_stream (media_entry *me);
+	int validate_stream (media_entry *me,SD_descr **sd_descr);
 
 	int mediaopen(media_entry *);
 	int mediaclose(media_entry *);

@@ -43,7 +43,8 @@ int schedule_remove(int id)
 {
 	sched[id].valid=0;
 	while (schedule_semaphore (id) == red);
-	RTP_session_destroy(sched[id].rtp_session);
+	if(sched[id].rtp_session->is_multicast_dad)/*unicast always is a multicast_dad*/
+		RTP_session_destroy(sched[id].rtp_session);
 	fprintf(stderr, "rtp session closed\n");
 
 	return ERR_NOERROR;

@@ -40,13 +40,17 @@
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/rtpptdefs.h>
+#include <fenice/rtsp.h>
+#include <fenice/multicast.h>
 
 
-int validate_stream(media_entry *p)
+int validate_stream(media_entry *p, SD_descr ** sd_descr)
 {
 
         RTP_static_payload pt_info;
-
+	char object[255], server[255];
+	unsigned short port;
+	
         if (!(p->flags & ME_FILENAME)) {
                 return ERR_PARSE;
         }       
@@ -56,7 +60,17 @@ int validate_stream(media_entry *p)
         if (!(p->description.flags & MED_PRIORITY)) {
                 return ERR_PARSE;
         }       
-
+	
+	/*
+	 *- validate multicast
+	 *- validate twin
+	 * */
+	if(!parse_url((*sd_descr)->twin,server, &port, object))
+		return ERR_PARSE;
+		
+	if(!is_valid_multicast_address((*sd_descr)->multicast))
+		strcpy((*sd_descr)->multicast,DEFAULT_MULTICAST_ADDRESS);
+	
         if (p->description.payload_type>=96) {
                 // Basic information needed for a dynamic payload type (96-127)
                 if (!(p->description.flags & MED_ENCODING_NAME)) {

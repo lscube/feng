@@ -74,8 +74,15 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
                 while (strcasecmp(keyword,SD_STREAM)!=0 && !feof(f)) {
                         fgets(line,80,f);
                         sscanf(line,"%s",keyword);
-			if (strcasecmp(keyword,SD_TWIN)==0) 
+			if (strcasecmp(keyword,SD_TWIN)==0){ 
                                 sscanf(line,"%s%s",trash,sd_descr->twin);
+				sd_descr->flags|=SD_FL_TWIN;
+			}
+			if (strcasecmp(keyword,SD_MULTICAST)==0){ 
+                                sscanf(line,"%s%s",trash,sd_descr->multicast);
+				sd_descr->flags|=SD_FL_MULTICAST;
+			}
+			
                 }
                 if (feof(f)) {
                         return ERR_NOERROR;
@@ -225,7 +232,7 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
 
 			
                 }
-                if ((res = validate_stream(p)) != ERR_NOERROR) {
+                if ((res = validate_stream(p,&sd_descr)) != ERR_NOERROR) {
                         return res;
                 }
         } while (!feof(f));     

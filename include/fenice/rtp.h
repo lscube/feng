@@ -35,10 +35,6 @@
 #ifndef _RTPH
 #define _RTPH
 
-        #define NO_MULTICAST 0  //FEDERICO
-        #define YES_MULTICAST 1 //FEDERICO
-                	
-		
 	#include <time.h>
 	#include <sys/timeb.h>
 	#include <sys/socket.h>
@@ -109,12 +105,13 @@
 		port_pair cli_ports;
 		char sd_filename[255];
 		media_entry *current_media;
+		SD_descr *sd_descr;
 		
 		//Consumer has transferred itself here
 		OMSConsumer *cons;
 		RTCP_stats rtcp_stats[2]; //client e server
 		struct _RTP_session *next;
-		int isMulticast;  //FEDERICO
+		unsigned char is_multicast_dad;/*if is it an multicast son it cannot do TEARDOWN etc...*/
 	} RTP_session;
 
 	typedef struct _RTP_header {

@@ -46,7 +46,8 @@ int schedule_add(RTP_session *rtp_session/*,RTSP_session *rtsp_session*/)
 			sched[i].valid=1;
 			sched[i].rtp_session=rtp_session;
 			//sched[i].rtsp_session=rtsp_session;
-			sched[i].play_action=RTP_send_packet;
+			if(rtp_session->is_multicast_dad)
+				sched[i].play_action=RTP_send_packet;
 			return i;
 		}
 	}

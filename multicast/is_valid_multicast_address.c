@@ -32,14 +32,31 @@
  *  
  * */
 
-#ifndef _MULTICASTH
-#define _MULTICASTH
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
-	#include <fenice/types.h>
-	#include <fenice/utils.h>
+#include <fenice/multicast.h>
+#include <fenice/types.h>
+#include <fenice/utils.h>
 
-	#define DEFAULT_MULTICAST_ADDRESS "224.124.0.1"
-	#define DEFAULT_TTL 32
+uint32 is_valid_multicast_address(uint8 *ip){
+	 /* This only works on IPv4 for right now */
+	struct in_addr haddr;
+	unsigned int addr;
 
-	uint32 is_valid_multicast_address(uint8 *addr);
-#endif
+	if(!ip)
+		return ERR_PARSE;
+
+	if(!inet_aton(ip, &haddr))
+		return ERR_PARSE;  /* not a valid address */
+
+	addr = htonl( haddr.s_addr );
+
+	if ((addr & 0xF0000000) == 0xE0000000)
+		return ERR_NOERROR;
+
+	return ERR_GENERIC;
+
+}
+

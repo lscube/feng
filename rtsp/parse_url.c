@@ -81,7 +81,7 @@ int parse_url(const char *url, char *server, unsigned short *port, char *file_na
 					*port = FENICE_RTSP_PORT_DEFAULT;
 			} else
 				*port = FENICE_RTSP_PORT_DEFAULT;
-			/* don't requre a file name */
+			/* don't require a file name */
 			valid_url = 1;
 			token = strtok(NULL, " ");
 			if (token)

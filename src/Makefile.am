@@ -51,6 +51,7 @@ fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/mediainfo/libmediainfo.la \
 		$(top_srcdir)/bufferpool/libbufferpool.la \
 		$(top_srcdir)/xmlparser/libxmlparser.la \
+		$(top_srcdir)/multicast/libmulticast.la \
 		$(top_srcdir)/socket/libsocket.la \
 		$(top_srcdir)/command_environment/libcommand.la \
 		$(top_srcdir)/src/libprefs.la \

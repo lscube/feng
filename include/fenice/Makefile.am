@@ -1,6 +1,7 @@
 feniceincludedir =	$(includedir)/fenice
 noinst_HEADERS	=	bufferpool.h \
 			command_environment.h \
+			multicast.h \
 			debug.h
 			evenloop.h \
 			intnet.h \
@@ -18,7 +19,6 @@ noinst_HEADERS	=	bufferpool.h \
 			types.h \
 			utils.h \
 			xmllexer.h \
-			xmlparser.h \ 
-			multicast.h
+			xmlparser.h 
 
 INCLUDES = $(top_srcdir)

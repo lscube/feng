@@ -76,7 +76,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	struct sockaddr rtsp_peer;
 	int namelen = sizeof(struct sockaddr);
 	unsigned long ssrc;
-	int multicast = NO_MULTICAST;
 	SD_descr *matching_descr;
 
 
@@ -104,11 +103,12 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	} else {*/
 		ssrc = random32(0);
 #if DEBUG
-		fprintf(stderr, "%lu", ssrc);
+		fprintf(stderr, "ssrc=%lu\n", ssrc);
 #endif
 	//}
 
-	if ((p = strstr(rtsp->in_buffer, "client_port")) == NULL && (strstr(rtsp->in_buffer, "multicast")) == NULL) {
+	
+	if ((p = strstr(rtsp->in_buffer, "client_port")) == NULL && strstr(rtsp->in_buffer, "multicast") == NULL) {
 		printf("SETUP request didn't specify client ports\n");
 		send_reply(406, "Require: Transport settings of rtp/udp;port=nnnn.\n", rtsp);	/* Not Acceptable */
 		return ERR_NOERROR;
@@ -124,19 +124,14 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_NOERROR;
 	}
-	//BEGIN FEDERICO        
-	if ((strstr(rtsp->in_buffer, "multicast")) != NULL) {
-		multicast = YES_MULTICAST;
-		p = strstr(line, "port");
-	} else
+	
+	if(strstr(line, "client_port") != NULL){
 		p = strstr(line, "client_port");
-
-	p = strstr(p, "=");
-	sscanf(p + 1, "%d", &(cli_ports.RTP));
-	p = strstr(p, "-");
-	sscanf(p + 1, "%d", &(cli_ports.RTCP));
-
-	//END FEDERICO
+		p = strstr(p, "=");
+		sscanf(p + 1, "%d", &(cli_ports.RTP));
+		p = strstr(p, "-");
+		sscanf(p + 1, "%d", &(cli_ports.RTCP));
+	}
 
 	/* Get the URL */
 	if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
@@ -249,20 +244,20 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		}
 	}
 
-
-
-	if (RTP_get_port_pair(&ser_ports) != ERR_NOERROR) {
-		printf("SETUP request can't be served. Maximum connection number reached.\n");
-		send_reply(500, 0, rtsp);	/* Internal server error */
-		return ERR_GENERIC;
-	}
+	if(!(matching_descr->flags & SD_FL_MULTICAST_PORT))
+		if (RTP_get_port_pair(&ser_ports) != ERR_NOERROR) {
+			printf("SETUP request can't be served. Maximum connection number reached.\n");
+			send_reply(500, 0, rtsp);	/* Internal server error */
+			return ERR_GENERIC;
+		}
 
 	// Add an RTSP session if necessary
 	if (rtsp->session_list == NULL) {
 		rtsp->session_list = (RTSP_session *) calloc(1, sizeof(RTSP_session));
 	}
 	sp = rtsp->session_list;
-	// Add an RTP session if necessary
+	
+	// Setup the RTP session
 	if (rtsp->session_list->rtp_session == NULL) {
 		rtsp->session_list->rtp_session = (RTP_session *) calloc(1, sizeof(RTP_session));
 		sp2 = rtsp->session_list->rtp_session;
@@ -273,7 +268,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		sp2_prec->next = (RTP_session *) calloc(1, sizeof(RTP_session));
 		sp2 = sp2_prec->next;
 	}
-	// Setup the RTP session
+
+
 #ifdef WIN32
 	start_seq = rand();
 	start_rtptime = rand();
@@ -289,76 +285,87 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	}
 	sp2->pause = 1;
 	strcpy(sp2->sd_filename, object);
+	/*xxx*/
 	sp2->current_media = (media_entry *) calloc(1, sizeof(media_entry));
-	/*TODO control (if alloc doesn't work) */
-	mediacpy(&sp2->current_media, &matching_me);
+	if(!(matching_descr->flags & SD_FL_MULTICAST_PORT)){
+		/*TODO control (if alloc doesn't work) */
+		mediacpy(&sp2->current_media, &matching_me);
+	}
+
 	gettimeofday(&now_tmp, 0);
 	srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
 	sp2->start_rtptime = start_rtptime;
 	sp2->start_seq = start_seq;
 	sp2->cli_ports.RTP = cli_ports.RTP;
 	sp2->cli_ports.RTCP = cli_ports.RTCP;
-	sp2->ser_ports.RTP = ser_ports.RTP;
-	sp2->ser_ports.RTCP=ser_ports.RTCP;
 
+	/*xxx*/
+	if(!(matching_descr->flags & SD_FL_MULTICAST_PORT)){
+		sp2->ser_ports.RTP =ser_ports.RTP;
+		sp2->ser_ports.RTCP=ser_ports.RTCP;
+	}
+	else{
+		sp2->ser_ports.RTP =matching_me->rtp_multicast_port;
+		sp2->ser_ports.RTCP =matching_me->rtp_multicast_port+1;
+	}
+	
 	if (getpeername(rtsp->fd, &rtsp_peer, &namelen) != 0) {
 		printf("SETUP request can't be served. Getpeername() failed.\n");
 		send_reply(415, 0, rtsp);	// Internal server error
 		return ERR_GENERIC;
 	}
 
+	sp2->is_multicast_dad=1;/*unicast and the first multicast*/
 
-	// View if the client is MwServer        
-	if (multicast == YES_MULTICAST) {	// MULTICAST SESSION
-		struct in_addr inp;
-		unsigned char ttl;
-		ttl = 32;
-		strcpy(address, MULTICAST_ADDRESS);
+	if ((matching_descr->flags & SD_FL_MULTICAST) ) {	/*multicast*/
+		sp2->is_multicast_dad=0;
+		if (!(matching_descr->flags & SD_FL_MULTICAST_PORT) ) {	
+			struct in_addr inp;
+			unsigned char ttl=DEFAULT_TTL;
+			struct ip_mreq mreq;
 
-		sp2->isMulticast = YES_MULTICAST;
-		//RTP
-		inet_aton(MULTICAST_ADDRESS, &inp);
-		udp_connect(ser_ports.RTP, &(sp2->rtp_peer), inp.s_addr, &(sp2->rtp_fd));
+			mreq.imr_multiaddr.s_addr = inet_addr(matching_descr->multicast);
+			mreq.imr_interface.s_addr = INADDR_ANY;
+			setsockopt(sp2->rtp_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
+			setsockopt(sp2->rtp_fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
 
-		//RTCP
-		inet_aton(MULTICAST_ADDRESS, &inp);
-		udp_connect(ser_ports.RTCP, &(sp2->rtcp_out_peer), inp.s_addr, &(sp2->rtcp_fd_out));
-		close(sp2->rtcp_fd_out);	// why close? Federico: Because I have to bind in order to listen
-		udp_open(ser_ports.RTCP, &(sp2->rtcp_in_peer), &(sp2->rtcp_fd_in));	//bind
-
-		setsockopt(sp2->rtp_fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
-
-		printf("\nSet up socket for multicast ok\n");
-	} else {
-		//begin unicast
+			sp2->is_multicast_dad=1;
+			strcpy(address, matching_descr->multicast);
+			//RTP outgoing packets
+			inet_aton(address, &inp);
+			udp_connect(ser_ports.RTP, &(sp2->rtp_peer), inp.s_addr, &(sp2->rtp_fd));
+			//RTCP outgoing packets
+			inet_aton(address, &inp);
+			udp_connect(ser_ports.RTCP, &(sp2->rtcp_out_peer), inp.s_addr, &(sp2->rtcp_fd_out));
+			//udp_open(ser_ports.RTCP, &(sp2->rtcp_in_peer), &(sp2->rtcp_fd_in));	//bind 
+			
+			if(matching_me->next==NULL)
+				matching_descr->flags |= SD_FL_MULTICAST_PORT;
+			
+			matching_me->rtp_multicast_port = ser_ports.RTP;
+			fprintf(stderr,"\nSet up socket for multicast ok\n");
+		}
+	} else {/*unicast*/
 		strcpy(address, get_address());
-		sp2->isMulticast = NO_MULTICAST;
 		//UDP connection for outgoing RTP packets
-		//sp2->rtp_fd=0;
-		udp_open(ser_ports.RTP, &(sp2->rtp_peer), &(sp2->rtp_fd));
-		udp_connect(cli_ports.RTP, &(sp2->rtp_peer), (*((struct sockaddr_in *) (&rtsp_peer))).sin_addr.s_addr,
-			    &(sp2->rtp_fd));
-
-
+		udp_connect(cli_ports.RTP, &(sp2->rtp_peer), (*((struct sockaddr_in *) (&rtsp_peer))).sin_addr.s_addr,&(sp2->rtp_fd));
 		//UDP connection for outgoing RTCP packets
-		udp_connect(cli_ports.RTCP, &(sp2->rtcp_out_peer),
-			    (*((struct sockaddr_in *) (&rtsp_peer))).sin_addr.s_addr, &(sp2->rtcp_fd_out));
-
-		// Now I have to assign the ser_ports.RTCP  
-		close(sp2->rtcp_fd_out);	// why close? Federico: Because I have to bind in order to listen
+		udp_connect(cli_ports.RTCP, &(sp2->rtcp_out_peer),(*((struct sockaddr_in *) (&rtsp_peer))).sin_addr.s_addr, &(sp2->rtcp_fd_out));
 		udp_open(ser_ports.RTCP, &(sp2->rtcp_in_peer), &(sp2->rtcp_fd_in));	//bind 
-
-	}			//end else unicast
-
-	sp2->ssrc = ssrc;
+	}	
+	
+	/*xxx*/
+	sp2->sd_descr=matching_descr;
+	
 	sp2->sched_id = schedule_add(sp2);
 
+
+	sp2->ssrc = ssrc;
 	// Setup the RTSP session       
 	sp->session_id = SessionID;
 	*new_session = sp;
 
-	
-	send_setup_reply(rtsp, sp, address, sp2);	//marcosbiro: in sp c'é il numero incriminato
+	send_setup_reply(rtsp, sp, matching_descr, sp2);	//marcosbiro: in sp c'é il numero incriminato
 
 	return ERR_NOERROR;
 }

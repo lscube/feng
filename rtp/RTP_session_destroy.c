@@ -42,6 +42,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -56,6 +58,16 @@ RTP_session *RTP_session_destroy(RTP_session *session)
 	RTP_session *next = session->next;
 	OMSBuffer *buff = session->current_media->pkt_buffer;
 	struct stat fdstat;
+
+	//Release SD_flag using in multicast and unjoing the multicast group
+	if(session->sd_descr->flags &= SD_FL_MULTICAST){
+		struct ip_mreq mreq;
+		mreq.imr_multiaddr.s_addr = inet_addr(session->sd_descr->multicast);
+		mreq.imr_interface.s_addr = INADDR_ANY;
+		setsockopt(session->rtp_fd, IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
+		session->sd_descr->flags &= 0;
+		session->sd_descr->flags |= SD_FL_MULTICAST;
+	}
 
 	close(session->rtp_fd);
 	close(session->rtcp_fd_in);
