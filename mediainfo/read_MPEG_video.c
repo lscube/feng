@@ -92,7 +92,8 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         count=0;
         flag = 1;                                                                 /* At this point it should be right to find the nearest lower frame */
                                                                                   /* computing it from the value of mtime */
-        lseek(me->fd,s->data_total,SEEK_SET);                                        /* and starting the reading from this; */
+	if((me->description).msource!=live)
+        	lseek(me->fd,s->data_total,SEEK_SET);                                        /* and starting the reading from this; */
                                                                                   /* feature not yet implemented, usefull for random access*/
 #if HAVE_ALLOCA
         data_tmp=(unsigned char *)alloca(65000);
@@ -116,7 +117,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 
         if (s->data_total == 0) {
                 probe_standard(data_tmp,data_size,me->fd,&s->std);
-                lseek(me->fd,0,SEEK_SET);
+               	lseek(me->fd,0,SEEK_SET);
         }
 
         if (s->std == MPEG_2) {
@@ -527,10 +528,10 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         	if (num_bytes != 0) {                                            	/* there could be more than 1 slice per packet */
                 	while ( (((*data_size-4) <= num_bytes) && (*recallme == 1))) {    	/* reads slices until num_bytes is reached or next frame is starting*/
                         	count = read_slice(data_tmp,data_size,me->fd,&s->final_byte);
-                        	next_start_code(data_tmp,data_size,me->fd);
-                        	read(me->fd,&s->final_byte,1);
-                        	data_tmp[*data_size]=s->final_byte;
-                        	*data_size+=1;
+                        	//next_start_code(data_tmp,data_size,me->fd);
+                        	//read(me->fd,&s->final_byte,1);
+                        	//data_tmp[*data_size]=s->final_byte;
+                        	//*data_size+=1;
                         	if ( ((s->final_byte > 0xAF)||(s->final_byte==0x00)) && ((*data_size-4) <= num_bytes)) {
                                 	*recallme = 0;
                                 	flag = 0;
@@ -688,10 +689,10 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
                 	}
                 	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) +  (s->picture*40);
                 	if (s->final_byte == 0xb7) {
-                        	next_start_code(data_tmp,data_size,me->fd);
-                        	read(me->fd,&s->final_byte,1);
-                       	 	data_tmp[*data_size]=s->final_byte;
-                        	*data_size+=1;
+                        	//next_start_code(data_tmp,data_size,me->fd);
+                        	//read(me->fd,&s->final_byte,1);
+                       	 	//data_tmp[*data_size]=s->final_byte;
+                        	//*data_size+=1;
                         	s->data_total+=4;
                 	}
 
@@ -745,10 +746,10 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         	}
   	} else {                                   					/* if previous slice had been s->fragmented */
 	        count=read_slice(data_tmp,data_size,me->fd,&s->final_byte);
-	        next_start_code(data_tmp,data_size,me->fd);
-  		read(me->fd,&s->final_byte,1);
-    		data_tmp[*data_size]=s->final_byte;
-      		*data_size+=1;
+	        //next_start_code(data_tmp,data_size,me->fd);
+  		//read(me->fd,&s->final_byte,1);
+    		//data_tmp[*data_size]=s->final_byte;
+      		//*data_size+=1;
           	if ((s->final_byte > 0xAF)||(s->final_byte==0x00)) {
            		*recallme = 0;
            	} else {
