@@ -120,6 +120,7 @@
 	#define SD_BITRATE "BITRATE"
 	#define SD_FRAME_RATE "FRAME_RATE"
 	#define SD_BYTE_PER_PCKT "BYTE_PER_PCKT"	
+	#define SD_MEDIA_SOURCE "MEDIA_SOURCE"	
 	
 	/*start CC*/
 	#define SD_LICENCE "LICENCE"

@@ -4,6 +4,7 @@ feniceincludedir = $(top_srcdir)/include
 noinst_LTLIBRARIES = libmediainfo.la
 libmediainfo_la_SOURCES =	enum_media.c \
 				media_is_empty.c \
+				mediacpy.c \
 				default_selection_criterion.c \
 				search_media.c \
 				get_media_entry.c \

@@ -36,7 +36,8 @@
 #define _MEDIAINFOH
 	#include <fenice/bufferpool.h>
 	#define MAX_DESCR_LENGTH 4096
-		
+	#define DIM_VIDEO_BUFFER 10 
+	#define DIM_AUDIO_BUFFER 5
 
 	/* Formati di descrizione supportati */	
 	
@@ -190,7 +191,7 @@
 		
 		/*Buffering with bufferpool module*/
     		unsigned char buff_data[4]; // shawill: needed for live-by-named-pipe
-		unsigned int buff_size; // shawill: needed for live-by-named-pipe
+		unsigned int buff_size; // shawill: needed for live-by-named-pipe		
 		OMSBuffer *pkt_buffer; 
 		OMSConsumer *cons;
 
@@ -306,6 +307,7 @@
 	//int get_media_descr(char *url,media_entry *req,media_entry *media,char *descr);
 	// Reperisce la descrizione del media
 	
+	uint32 mediacpy(media_entry *, media_entry *);
 	unsigned long msec2tick(double mtime,media_entry *me);
 	
 	// ID3v2

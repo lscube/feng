@@ -137,14 +137,11 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
                         }                                                       
                         if (strcasecmp(keyword,SD_CODING_TYPE)==0) {
                                 sscanf(line,"%s%10s",trash,sparam);
-                                if (strcasecmp(sparam,"FRAME")==0) {
+                                p->description.flags|=MED_CODING_TYPE;
+                                if (strcasecmp(sparam,"FRAME")==0)
                                         p->description.coding_type=frame;
-                                        p->description.flags|=MED_CODING_TYPE;
-                                }
-                                if (strcasecmp(sparam,"SAMPLE")==0) {
+                                if (strcasecmp(sparam,"SAMPLE")==0)
                                         p->description.coding_type=sample;
-                                        p->description.flags|=MED_CODING_TYPE;
-                                }
                         }
                         if (strcasecmp(keyword,SD_PKT_LEN)==0) {
                                 sscanf(line,"%s%f",trash,&(p->description.pkt_len));
@@ -157,7 +154,16 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
                         if (strcasecmp(keyword,SD_BYTE_PER_PCKT)==0) {
                                 sscanf(line,"%s%d",trash,&(p->description.byte_per_pckt));
                                 p->description.flags|=MED_BYTE_PER_PCKT;
-                        }                                                       
+                        }              
+			                   
+			if (strcasecmp(keyword,SD_MEDIA_SOURCE)==0) {
+                                sscanf(line,"%s%10s",trash,sparam);
+                                p->description.flags|=MED_CODING_TYPE;
+                                if (strcasecmp(sparam,"STORED")==0) 
+                                        p->description.msource=stored;
+                                if (strcasecmp(sparam,"LIVE")==0) 
+                                        p->description.msource=live;
+                        }
 
 
 			/*****START CC****/
