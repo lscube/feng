@@ -124,8 +124,8 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 		
 			memcpy(data_slot,s->more_data + s->data_read,s->remained_data_size);
 			*data_size=s->remained_data_size;
-			s->remained_data_size=0;
 			s->data_read+=s->remained_data_size;
+			s->remained_data_size=0;
 			s->fragmented=0;
 			*recallme=0;
 		}
@@ -193,7 +193,6 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 			}
               		data[*data_size]=s->final_byte;
                		*data_size+=1;
-		
 		}
 	}
 

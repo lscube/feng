@@ -225,11 +225,11 @@ int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *da
 	if(out->ref2==NULL)
 		out->ref2=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
 
-	//if(out->vop_coding_type != 2){/* not B-FRAME*/
-	if(out->ref2->var_time_increment == out->ref2->vop_time_increment_resolution -1){
+	if(out->vop_coding_type != 2){/* not B-FRAME*/
 		out->ref1->modulo_time_base=out->ref2->modulo_time_base;
-		out->ref2->modulo_time_base++;//=modulo_time_base;/*cumulative number of modulo_time_base*/
+		out->ref2->modulo_time_base+=modulo_time_base;/*cumulative number of modulo_time_base*/
 	}
+	
 
 	if( ! get_field( data, 1, &off ) )
 	{
@@ -239,15 +239,16 @@ int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *da
 
 	/*TODO: variable frame rate*/
 	out->ref1->var_time_increment=out->ref2->var_time_increment = get_field( data, out->vtir_bitlen, &off );
+	
+	if(out->vop_coding_type == 0 && modulo_time_base==0 && out->ref2->modulo_time_base!=0 && out->ref2->var_time_increment==0)
+		out->ref2->modulo_time_base++;
 
-#if DEBUG
-/*	
+#if 0 
 	fprintf(stderr," - VOP_CODING_TYPE: %c modulo_time_base=%d \n","IPBS"[out->vop_coding_type],modulo_time_base);
 	
 	fprintf(stderr,"\t - REF2: var_time_increment = %d - vop_time_increment= %d - vop_time_increment_resolution = %d - modulo_time_base = %d -\n",out->ref2->var_time_increment, out->ref2->vop_time_increment, out->ref2->vop_time_increment_resolution, out->ref2->modulo_time_base);
 
 	fprintf(stderr,"\t - REF1: var_time_increment = %d - vop_time_increment= %d - vop_time_increment_resolution = %d - modulo_time_base = %d -\n",out->ref1->var_time_increment, out->ref1->vop_time_increment, out->ref1->vop_time_increment_resolution,out->ref1->modulo_time_base);
-*/	
 #endif	
 
 	return ERR_NOERROR;

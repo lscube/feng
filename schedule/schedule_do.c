@@ -112,8 +112,9 @@ do{
 						res = sched[i].play_action(sched[i].rtp_session);
 						if (res!=ERR_NOERROR) {
     							if (res==ERR_EOF /*&& (sched[i].rtp_session)->current_media->description.msource!=live*/) {
-								if((sched[i].rtp_session)->current_media->description.msource==live)
+								if((sched[i].rtp_session)->current_media->description.msource==live){
 									fprintf(stderr,"Pipe empty!\n");
+								}
 								else{
     									printf("Stream Finished\n");
     									schedule_stop(i);
@@ -124,9 +125,8 @@ do{
     								schedule_stop(i);
 							}
 #if DEBUG		
-							else{    					
+							else    					
 								printf("Packet Lost\n");
-    							}
 #endif
         						continue;
 						}

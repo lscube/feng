@@ -32,7 +32,6 @@
  *  
  * */
 
-/*#include <string.h>*/
 #include <stdio.h>
 #include <fenice/utils.h>
 #include <fenice/debug.h>
@@ -62,8 +61,9 @@ int get_frame(media_entry *me, double *mtime)
 #endif
 	} while(recallme && res==ERR_NOERROR);
 #if DEBUG
-//	fprintf(stderr,"TYPE: %s *mtime=%f\n",me->description.encoding_name,*mtime);
+	fprintf(stderr,"TYPE: %s *mtime=%f\n",me->description.encoding_name,*mtime);
 #endif
+
 	return res;
 }
 
