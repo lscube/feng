@@ -28,6 +28,7 @@ make
 %install
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
+rm -rf %{buildroot}%{_datadir}/doc/%{name}
 
 %clean
 rm -rf %{buildroot}
@@ -36,9 +37,9 @@ rm -rf %{buildroot}
 %defattr(-,root,root)
 %{_bindir}/%{name}
 
-%{_localstatedir}/%{name}/avroot/test.sd
-%{_localstatedir}/%{name}/avroot/audio.mp3
-%{_localstatedir}/%{name}/avroot/video.mpg
+/*/%{name}/avroot/test.sd
+/*/%{name}/avroot/audio.mp3
+/*/%{name}/avroot/video.mpg
 
 %config %{_sysconfdir}/%{name}.conf
 

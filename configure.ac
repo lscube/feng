@@ -2,17 +2,34 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(fenice, 1.6)
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION)
+AM_INIT_AUTOMAKE(dist-bzip2 check-news)
 
 AC_PREFIX_PROGRAM(fenice)
 
-test "$prefix" = . || test "$prefix" = NONE && prefix=/usr/local
-test "$exec_prefix" = NONE && exec_prefix=$prefix
+test "x$prefix" = x. || test "x$prefix" = xNONE && prefix=/usr/local
+test "x$exec_prefix" = xNONE && exec_prefix=$prefix
 test "x$sysconfdir" = 'x${prefix}/etc' && sysconfdir="/etc"
 test "x$localstatedir" = 'x${prefix}/var' && localstatedir="/var"
+test "x$mandir" = 'x${prefix}/man' && mandir="${prefix}/share/man"
 
 AM_CONFIG_HEADER(config.h)
 
+AC_ARG_WITH(rtsp-port,
+[  --with-rtsp-port        default RTSP listening port [[default=554, alternative=8554]]],,
+	with_rtsp_port=554)
+
+AC_ARG_WITH(config-file,
+[  --with-config-file      name for the configuration file in sysconfdir [[default=fenice.conf]]],,
+	with_config_file="fenice.conf")
+
+AC_ARG_WITH(max-session,
+[  --with-max-session      max number of incoming sessions [[default=100]]],,
+	with_max_session=100)
+
+AC_ARG_ENABLE(fhs23,
+[  --enable-fhs23          enable Filesystem Hierarchy Standard 2.3:
+                          document root avroot will be placed under /srv [[default=yes]]],,
+	enable_fhs23="yes")
 AC_ARG_ENABLE(debug,
 [  --enable-debug          enable gcc dubugging flags [[default=no]]],,
 	enable_debug="no")
@@ -43,6 +60,7 @@ AC_PROG_MAKE_SET
 
 dnl Check for LibTool Dynamic Loading
 AC_PROG_LIBTOOL
+LIBTOOL="$LIBTOOL --silent"
 AC_SUBST([LIBTOOL_DEPS])
 
 dnl Check for Endianess
@@ -176,18 +194,48 @@ AM_CONDITIONAL(ARCH_X86, test "x$arch_type" = "xix86")
 AM_CONDITIONAL(ARCH_PPC, test "x$arch_type" = "xppc")
 AM_CONDITIONAL(HAVE_SOLARIS, test "x$have_solaris" = xyes)
 
-fenice_avroot_dir=$localstatedir/$PACKAGE_NAME/avroot
+if ( test "x$enable_fhs23" = "xyes" ) && ( test -d /srv ) then
+	fenice_avroot_dir=/srv/$PACKAGE_NAME/avroot
+else
+	fenice_avroot_dir=$localstatedir/$PACKAGE_NAME/avroot
+fi
 AC_SUBST(fenice_avroot_dir)
+
+fenice_max_session=$with_max_session
+AC_SUBST(fenice_max_session)
+
+fenice_rtsp_port=$with_rtsp_port
+AC_SUBST(fenice_rtsp_port)
+
+fenice_conf_file=$with_config_file
+AC_SUBST(fenice_conf_file)
+
 fenice_conf_dir=$sysconfdir
 AC_SUBST(fenice_conf_dir)
-fenice_docs_dir=$datadir/doc/$PACKAGE_NAME-$PACKAGE_VERSION
+
+fenice_docs_dir=$datadir/doc/$PACKAGE_NAME
 AC_SUBST(fenice_docs_dir)
 
-AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT, "$fenice_avroot_dir", [Define default directory for Fenice A/V resources])
-AC_DEFINE(FENICE_AVROOT_DIR_ENV, "FENICE_AVROOT_DIR",[Define the name for the ENV variable for Fenice avroot dir])
+AC_DEFINE_UNQUOTED(FENICE_MAX_SESSION_DEFAULT, $fenice_max_session, [Define max number of RTSP incoming sessions for Fenice])
 
-AC_DEFINE_UNQUOTED(FENICE_CONF_DIR_DEFAULT, "$fenice_conf_dir", [Define default directory for Fenice configuration])
-AC_DEFINE(FENICE_CONF_DIR_ENV, "FENICE_CONF_DIR",[Define the name for the ENV variable for Fenice configuration dir])
+AC_DEFINE_UNQUOTED(FENICE_RTSP_PORT_DEFAULT, $fenice_rtsp_port, [Define default RTSP listening port])
+dnl AC_DEFINE(FENICE_RTSP_PORT_ENV, "FENICE_RTSP_PORT",[Define the name for the ENV variable for RTSP listening port])
+
+AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT, $fenice_avroot_dir, [Define default directory for Fenice A/V resources])
+dnl AC_DEFINE(FENICE_AVROOT_DIR_ENV, "FENICE_AVROOT_DIR",[Define the name for the ENV variable for Fenice avroot dir])
+
+AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT_STR, "$fenice_avroot_dir", [Define default directory string for Fenice A/V resources])
+dnl AC_DEFINE(FENICE_AVROOT_DIR_STR_ENV, "FENICE_AVROOT_DIR",[Define the name for the ENV variable for Fenice avroot dir string])
+
+AC_DEFINE_UNQUOTED(FENICE_CONF_FILE_DEFAULT, $fenice_conf_file, [Define default file for Fenice configuration])
+dnl AC_DEFINE(FENICE_CONF_FILE_ENV, "FENICE_CONF_FILE",[Define the name for the ENV variable for Fenice configuration file])
+
+AC_DEFINE_UNQUOTED(FENICE_CONF_DIR_DEFAULT, $fenice_conf_dir, [Define default directory for Fenice configuration])
+dnl AC_DEFINE(FENICE_CONF_DIR_ENV, "FENICE_CONF_DIR",[Define the name for the ENV variable for Fenice configuration dir])
+
+AC_DEFINE_UNQUOTED(FENICE_CONF_PATH_DEFAULT_STR, "$fenice_conf_dir/$fenice_conf_file", [Define absolute path string for Fenice configuration file])
+dnl AC_DEFINE(FENICE_CONF_PATH_STR_ENV, "FENICE_CONF_PATH",[Define the name for the ENV variable for Fenice configuration file path string])
+
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([eventloop/Makefile])
@@ -215,7 +263,8 @@ AC_MSG_NOTICE([config files successfully generated!
 Fenice Install prefix .......... : $prefix
 Fenice Binary path ............. : $exec_prefix/bin/fenice
 Fenice Configuration path .......: $fenice_conf_dir
-Fenice A/V Resources path .......: $fenice_avroot_dir
+Fenice Multimedia Files root ....: $fenice_avroot_dir
+Fenice RTSP listening port ......: $fenice_rtsp_port
 $debug_msg
 $efence_msg
 $verbose_msg

@@ -45,18 +45,19 @@
 	#define MAX_PROCESS	1/*number of fork*/	
 	#define MAX_CONNECTION	100/*rtsp connection*/	
 	#define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS))/*rtsp connection for one fork*/
-	#define DEFAULT_MAX_SESSION 100/*default max session after which i need to send a redirect*/
 
-	
-	#define DEFAULT_CONF_FILE FENICE_CONF_DIR_DEFAULT "/fenice.conf"
-	
+/* Moved to config.h. Now in FENICE_MAX_SESSION_DEFAULT
+ * Was:
+ * 
+ * default max session after which i need to send a redirect
+ * #define DEFAULT_MAX_SESSION 100
+ *
+*/
+
 	#define PREFS_ROOT "root"
 	#define PREFS_PORT "port"
 	#define PREFS_MAX_SESSION "max_session"
 
-	#define DEFAULT_ROOT FENICE_AVROOT_DIR_DEFAULT
-	#define DEFAULT_PORT 1554
-	
 	typedef struct _serv_prefs {
 		char hostname[256];
 		char serv_root[256];

@@ -36,6 +36,7 @@
 #define _RTSPH
 
 	#include <time.h>
+	#include <config.h>
 	#include <fenice/utils.h>
 	#include <fenice/socket.h>
 	#include <fenice/rtp.h>
@@ -53,8 +54,6 @@
 	#define PLAY_STATE      2
 
 	#define RTSP_VER "RTSP/1.0"
-	#define RTSP_DEFAULT_PORT 554	
-	
 	
    	 typedef struct _RTSP_session {
     		//tsocket fd;

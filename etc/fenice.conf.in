@@ -1,0 +1,5 @@
+#include <config.h>
+root=FENICE_AVROOT_DIR_DEFAULT
+port=FENICE_RTSP_PORT_DEFAULT
+max_session=FENICE_MAX_SESSION_DEFAULT
+

@@ -49,8 +49,8 @@ void prefs_init(char *fileconf)
 	int l;
 			
 	if ( (f = fopen(fileconf,"rt")) == NULL ) {
-		printf("Error opening file %s, trying default (%s):\n", fileconf, DEFAULT_CONF_FILE);
-		if ( (f = fopen(DEFAULT_CONF_FILE, "rt")) == NULL ) {
+		printf("Error opening file %s, trying default (%s):\n", fileconf, FENICE_CONF_PATH_DEFAULT_STR);
+		if ( (f = fopen(FENICE_CONF_PATH_DEFAULT_STR, "rt")) == NULL ) {
 			printf("Error opening default file, using internal defaults:\n");
 			prefs_use_default(-1);
 		} else opened = 1;

@@ -44,17 +44,19 @@ void prefs_use_default(int index)
 {
 	switch (index) {
 		case -1:
-    			strcpy(prefs.serv_root,DEFAULT_ROOT);
-	    		prefs.port=DEFAULT_PORT;
+    			strcpy(prefs.serv_root, FENICE_AVROOT_DIR_DEFAULT_STR);
+			strcat(prefs.serv_root, "/");
+	    		prefs.port = FENICE_RTSP_PORT_DEFAULT;
     			return;
     		case 0: 
-    			strcpy(prefs.serv_root,DEFAULT_ROOT);
+    			strcpy(prefs.serv_root, FENICE_AVROOT_DIR_DEFAULT_STR);
+			strcat(prefs.serv_root, "/");
 	    		return;
     		case 1: 
-	    		prefs.port=DEFAULT_PORT;
+	    		prefs.port = FENICE_RTSP_PORT_DEFAULT;
     			return;
     		case 2: 
-	    		prefs.max_session=DEFAULT_MAX_SESSION;
+	    		prefs.max_session = FENICE_MAX_SESSION_DEFAULT;
     			return;
 		default:
 			return;
