@@ -36,14 +36,16 @@
 
 void OMSbuff_unref(OMSConsumer *cons)
 {
-	if((*(cons->buffer)).refs>0) {
-		if(!(--(*(cons->buffer)).refs))
+	if(cons->buffer->refs > 0) {
+		if(!(--(cons->buffer->refs))){
 			OMSbuff_free(cons->buffer);
+		}
 		else {
 			fprintf(stderr, "Buffer ref (%d)\n", cons->buffer->refs);
 			/*Now it need to decrease all slot refs */
 			//while OMSbuff_read;
 			while(OMSbuff_read(cons)!=NULL);
 		}
+		free(cons);
 	}
 }

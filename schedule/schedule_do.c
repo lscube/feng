@@ -36,6 +36,7 @@
 // #include <time.h>
 #include <sys/time.h>
 
+#include <pthread.h>
 #include <fenice/schedule.h>
 #include <fenice/intnet.h>
 #include <fenice/rtcp.h>
@@ -85,7 +86,6 @@ do{
 	for (i=0; i<MAX_SESSION; ++i) {		
 		
 		if (sched[i].valid) {
-			
 			sched[i].semaph=red; /* green = 0, red = 1 */
 			
 			if (!sched[i].rtp_session->pause) {
@@ -106,11 +106,11 @@ do{
 						//sched[i].rtp_session->mtime+=sched[i].rtp_session->current_media->description.pkt_len;     // old scheduler
         					
 						RTCP_handler(sched[i].rtp_session);
-	        				
+						
+	        				pthread_mutex_lock(&((sched[i].rtp_session)->cons->mutex));	
 						// Send an RTP packet
-					//	fprintf(stderr,"mnow=%f, diff=%f\n",mnow,mnow - sched[i].rtp_session->mprev_tx_time);
 						res = sched[i].play_action(sched[i].rtp_session);
-        					
+	        				pthread_mutex_unlock(&((sched[i].rtp_session)->cons->mutex));	
 						if (res!=ERR_NOERROR) {
     							if (res==ERR_EOF) {    						
     								printf("Stream Finished\n");

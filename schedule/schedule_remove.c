@@ -39,7 +39,9 @@ extern schedule_list sched[MAX_SESSION];
 
 int schedule_remove(int id)
 {
-	OMSbuff_unref(sched[id].rtp_session->cons);
 	sched[id].valid=0;
+	pthread_mutex_lock(&((sched[id].rtp_session)->cons->mutex));	
+	OMSbuff_unref(sched[id].rtp_session->cons);
+	pthread_mutex_unlock(&((sched[id].rtp_session)->cons->mutex));	
 	return ERR_NOERROR;
 }
