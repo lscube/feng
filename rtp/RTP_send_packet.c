@@ -32,6 +32,12 @@
  *  
  * */
 
+#include <config.h>
+
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
 
@@ -67,7 +73,11 @@ int RTP_send_packet(RTP_session *session)
     		r.seq_no = htons(session->seq++ + session->start_seq);
     		r.timestamp=htonl(session->start_rtptime+msec2tick(s_time,session->current_media));
     		r.ssrc = htonl(session->ssrc);
+#if HAVE_ALLOCA
+    		packet=(unsigned char*)alloca(data_size+hdr_size);
+#else
     		packet=(unsigned char*)calloc(1,data_size+hdr_size);
+#endif
     		if (packet==NULL) {
     			return ERR_ALLOC;    	
     		}
@@ -83,7 +93,9 @@ int RTP_send_packet(RTP_session *session)
 			session->rtcp_stats[i_server].pkt_count++;
 			session->rtcp_stats[i_server].octet_count+=data_size;
 		}
+#if !HAVE_ALLOCA
 		free(packet);
+#endif
 		free(data);
 	}
 	return ERR_NOERROR;

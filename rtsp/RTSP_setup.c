@@ -307,7 +307,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
      	if (multicast==YES_MULTICAST) { // MULTICAST SESSION
         	struct in_addr inp;
 		unsigned char ttl;
-		ttl='32';
+		ttl=32;
 		strcpy(address,MULTICAST_ADDRESS);
 		
 		sp2->isMulticast=YES_MULTICAST;

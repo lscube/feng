@@ -36,7 +36,7 @@
 
 int send_reply(int err,char *addon,RTSP_buffer *rtsp)
 {
-	unsigned short  len;
+	unsigned int  len;
 	char     *b;
 	int res;
 
@@ -47,7 +47,7 @@ int send_reply(int err,char *addon,RTSP_buffer *rtsp)
     	len = 256;
     }
 
-   	b = malloc( len );
+   	b = (char *)malloc( len );
 	if (b==NULL) {
 		printf( "send_reply(): memory allocation error.\n" );
     	return -1;

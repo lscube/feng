@@ -32,10 +32,23 @@
  *  
  * */
 
+#include <stdio.h>
+
 #include <fenice/bufferpool.h>
 
-uint32 OMSbuff_unref(OMSBuffer *buffer){
-	if(!(--(*buffer).refs))
-		OMSbuff_free(buffer);
+OMSSlot *OMSbuff_slotadd(OMSBuffer *buffer, OMSSlot *prev)
+{
+	OMSSlotAdded *added;
+
+	if (!(added = (OMSSlotAdded *)calloc(1,sizeof(OMSSlotAdded))))
+		return NULL;
+
+	added->next = prev->next;
+	prev->next = (OMSSlot *)added;
+
+	added->next_added = buffer->added_head;
+	buffer->added_head = added;
+
+	return (OMSSlot *)added;
 }
 

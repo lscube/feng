@@ -1,4 +1,5 @@
-SUBDIRS =	socket \
+SUBDIRS =	bufferpool \
+		socket \
 		md5 \
 		xmlparser \
 		command_environment \
@@ -31,7 +32,7 @@ distclean-local:
 		rm -rf autom4te.cache; \
 	fi
 
-MAINTAINER_FILES = acinclude.m4 aclocal.m4 config.h.in* configure Makefile.in mkinstalldirs error.log
+MAINTAINER_FILES = acinclude.m4 aclocal.m4 config.h.in* configure Makefile.in mkinstalldirs error.log stamp-h.in
 MAINTAINER_DIRS = config
 
 maintainer-clean-local:

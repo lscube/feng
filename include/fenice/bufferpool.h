@@ -38,17 +38,35 @@
 #include <fenice/mediainfo.h>
 #include <fenice/types.h>
 
+#define OMSSLOT_COMMON	uint16 refs; \
+			uint32 timestamp; \
+			uint8 *data; \
+			struct _OMSslot *next;
+
+#define OMSSLOT_DATASIZE 1500
+
 typedef struct  _OMSslot {
+#if 0
 	uint16 refs; /*!  n.Consumers that must read slot*/
 	uint32 timestamp;
 	uint8 *data;
 	struct _OMSslot *next;
+#endif
+	OMSSLOT_COMMON
 } OMSSlot;
+
+typedef struct _OMSslot_added {
+	OMSSLOT_COMMON
+	struct _OMSslot_added *next_added;
+} OMSSlotAdded;
 	
 typedef struct _OMSbuffer {
 	uint16 refs;  /*! n.Consumers that share the buffer*/
 	OMSSlot *buffer_head; /*! Buffer head*/
+	uint32 min_size;
+	OMSSlot *write_pos; /*! last write position*/
 	int fd; /*! File descriptor of incoming data*/
+	OMSSlotAdded *added_head; /* internal queue: not to be handled */
 } OMSBuffer;
 
 typedef struct _OMSconsumer {
@@ -56,10 +74,12 @@ typedef struct _OMSconsumer {
 	OMSBuffer *buffer;
 } OMSConsumer;
 
+#if 0
 typedef struct _OMSproducer {
 	OMSSlot *write_pos; /*! write position*/
 	OMSBuffer *buffer;
 } OMSProducer;
+#endif
 
 /*! API definitions*/
 OMSBuffer *OMSbuff_new(uint32 buffer_size);
@@ -67,6 +87,9 @@ OMSConsumer *OMSbuff_ref(OMSBuffer *);
 uint32 OMSbuff_unref(OMSBuffer *);
 OMSSlot *OMSbuff_read(OMSConsumer *);
 uint32 *OMSbuff_write(OMSBuffer *, uint32 timestamp, uint8 *data);
+OMSSlot *OMSbuff_getslot(OMSBuffer *);
+OMSSlot *OMSbuff_slotadd(OMSBuffer *, OMSSlot *);
+void OMSbuff_free(OMSBuffer *);
 
 #endif
 

@@ -31,11 +31,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
-
 #include <fenice/bufferpool.h>
 
-uint32 OMSbuff_unref(OMSBuffer *buffer){
-	if(!(--(*buffer).refs))
-		OMSbuff_free(buffer);
-}
+
+OMSSlot *OMSbuff_getslot(OMSBuffer *buffer)
+{	OMSSlot *tmp_slot=buffer->write_pos; 
+	if(tmp_slot->next->refs>0)
+		tmp_slot=OMSbuff_slotadd(buffer,tmp_slot);
+	else
+		tmp_slot=tmp_slot->next;
+	buffer->write_pos=tmp_slot;	
+	return tmp_slot; 
+}	
 

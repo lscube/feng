@@ -1,0 +1,3 @@
+#!/bin/bash
+
+make 2> error.log ; [ -s error.log ] && less error.log

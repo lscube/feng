@@ -177,6 +177,7 @@ AC_CONFIG_FILES([docs/Makefile])
 AC_CONFIG_FILES([docs/en/Makefile])
 AC_CONFIG_FILES([etc/Makefile])
 AC_CONFIG_FILES([avroot/Makefile])
+AC_CONFIG_FILES([bufferpool/Makefile])
 AC_OUTPUT
 
 AC_MSG_NOTICE([config files successfully generated!
