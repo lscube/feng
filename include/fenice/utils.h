@@ -34,10 +34,11 @@
 
 #ifndef _UTILSH
 #define _UTILSH
-
 	#include <time.h>
+	#include <ctype.h>
+	#include <sys/types.h>
 	#include <fenice/mediainfo.h>
-	
+	#include <fenice/types.h>
 	#ifdef WIN32
 		#define strncasecmp(s1,s2,len)  _strnicmp(s1,s2,len)
 		#define strcasecmp(s1,s2)       _stricmp(s1,s2)
@@ -120,7 +121,10 @@
 	#define SD_FRAME_RATE "FRAME_RATE"
 	#define SD_BYTE_PER_PCKT "BYTE_PER_PCKT"	
 	
-	
+  	/* COMMAND KEYWORDS AND PORT */
+	#define COMMAND_PORT 3000
+ 	uint32 random32(int);
+	static uint32 md_32(char *string, int length);
 	int parse_url(const char *url,char *server, unsigned short *port, char *file_name);
 	char *alloc_path_name(char *base_path, char *file_path);
 	float NTP_time(time_t t);

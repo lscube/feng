@@ -37,20 +37,28 @@
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
 #include <fenice/schedule.h>
+#include <fenice/command_environment.h>
 
-void eventloop(tsocket main_fd)
+void eventloop(tsocket main_fd, tsocket command_fd)
 {
 	static int child_count=0;
 	static int conn_count=0;	
 	tsocket fd;
+	tsocket fd_command; /*socket for the command environment*/
 	static RTSP_buffer *rtsp_list=NULL;
 	RTSP_buffer *p;
 	int fd_found;
-	
 	if (conn_count!=-1)
 	{
 		fd=tcp_accept(main_fd);
+		fd_command=tcp_accept(command_fd);
 	}
+
+	//Handle command environment
+	if(fd_command>=0)
+		init_command(fd_command);
+	
+	
 	// Handle a new connection
 	if (fd>=0)
 	{

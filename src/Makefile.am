@@ -4,6 +4,7 @@ noinst_LTLIBRARIES = libutils.la libprefs.la libdebug.la
 
 libutils_la_SOURCES =	alloc_path_name.c \
 			NTP_time.c \
+			random32.c \
 			get_UTC_time.c \
 			is_supported_url.c \
 			round.c
@@ -12,6 +13,7 @@ libutils_la_LDFLAGS = -static
 
 libprefs_la_SOURCES =	prefs_init.c \
 			prefs_get_serv_root.c \
+			prefs_get_multicast_file.c \
 			prefs_get_hostname.c \
 			prefs_get_port.c \
 			prefs_use_default.c
@@ -43,6 +45,10 @@ fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/socket/libsocket.la \
 		$(top_srcdir)/src/libprefs.la \
 		$(top_srcdir)/src/libdebug.la \
-		$(top_srcdir)/src/libutils.la
+		$(top_srcdir)/src/libutils.la \
+		$(top_srcdir)/md5/libmd5.la \
+		$(top_srcdir)/multicast/libmulticast.la \
+		$(top_srcdir)/xmlparser/libxmlparser.la \
+		$(top_srcdir)/command_environment/libcommand.la 
 
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)

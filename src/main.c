@@ -43,12 +43,19 @@
 #include <fenice/prefs.h>
 #include <fenice/schedule.h>
 #include <fenice/utils.h>
+#include <fenice/multicast.h> /*for multicast*/
 #include <config.h>
+#include <sys/types.h> /*fork*/
+#include <unistd.h>    /*fork*/
+
+
 
 int main(int argc, char **argv)
 {
 	tsocket main_fd;
+	tsocket command_fd;
 	unsigned int port;
+	char multicast_file[256];
 	
 	// Fake timespec for fake nanosleep. See below.
 	struct timespec ts = { 0, 0};
@@ -62,6 +69,15 @@ int main(int argc, char **argv)
    a static variable prefs */
 
 	port=prefs_get_port();
+	strcpy(multicast_file,prefs_get_multicast_file());
+	if(strcmp(multicast_file,DEFAULT_MULTICAST_FILE)!=0){
+		printf("\nThere is some multicast sessions in :%s\n",multicast_file);
+	 /*i have an xml file for multicast to process*/
+		   if(fork()==0){
+    		   	multicast(multicast_file); /*return an int but  don't use it for now*/
+		   }
+
+	}
 /* prefs_get_port() reads the static var prefs and returns the port number */				
 	printf("%s %s - Open Media Streaming Project - Politecnico di Torino\n\n", PACKAGE, VERSION);	
 	#ifdef WIN32
@@ -82,6 +98,7 @@ int main(int argc, char **argv)
 	printf("CTRL-C terminate the server.\n");
 	printf("Waiting for RTSP connections on port %d...\n",port);
 	main_fd=tcp_listen(port);
+	command_fd=tcp_listen(COMMAND_PORT); /*COMMAND_PORT is the port of command environment defined in ../include/fenice/utils.h*/
 /* tcp_listen(port) open a read socket on the given port */
 
 /* next line: schedule_init() initialises the array of schedule_list sched 
@@ -98,7 +115,7 @@ int main(int argc, char **argv)
 		// Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
 		// See also schedule.c
 		nanosleep(&ts, NULL);
-		eventloop(main_fd);
+		eventloop(main_fd,command_fd);
 	}
 /* eventloop looks for incoming RTSP connections and generates for each
    all the information in the structures RTSP_list, RTP_list, and so on */

@@ -100,7 +100,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		p = strchr(p, '=');
 		sscanf(p + 1, "%lu", &ssrc);
 	} else {
-		ssrc = rand(); //not right. The right way is using md5.
+		ssrc = random32(0); //not right. The right way is using md5.
 	}
 
 	if ((p = strstr(rtsp->in_buffer, "client_port")) == NULL && (strstr(rtsp->in_buffer, "multicast")) == NULL) {

@@ -32,19 +32,18 @@
  *  
  * */
 
-#ifndef _EVENTLOOPH
-#define _EVENTLOOPH
+#include <fenice/command_environment.h>
+#include <string.h>
+#include <stdio.h>
+#include <fenice/socket.h>
 
-	#include <fenice/socket.h>	
-	#include <fenice/rtsp.h>
+int init_command(tsocket fd){
+	char char_out_buffer[256];
+	printf("\n---New connection to command environment arrived---\n");
+	/*remember: define command words in ../include/fenice/utils.h*/
+	strcpy(char_out_buffer,"Welcome to fenice command environment\ncommand>");
+	strcat(char_out_buffer,"\0");
+	tcp_write(fd,char_out_buffer,strlen(char_out_buffer));
+	return 1;//i have to choose a set of return values
+}
 
-	#define MAX_FDS 800
-	
-	typedef int (*event_function)(void *data);
-	
-	void eventloop(tsocket main_fd, tsocket command_fd);
-	int rtsp_server(RTSP_buffer *rtsp);
-	void add_client(RTSP_buffer **rtsp_list,tsocket fd);
-	void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count);
-	
-#endif

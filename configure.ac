@@ -155,8 +155,12 @@ AC_CONFIG_FILES([rtsp/Makefile])
 AC_CONFIG_FILES([mediainfo/Makefile])
 AC_CONFIG_FILES([sdp/Makefile])
 AC_CONFIG_FILES([src/Makefile])
+AC_CONFIG_FILES([md5/Makefile])
 AC_CONFIG_FILES([socket/Makefile])
 AC_CONFIG_FILES([schedule/Makefile])
+AC_CONFIG_FILES([xmlparser/Makefile])
+AC_CONFIG_FILES([multicast/Makefile])
+AC_CONFIG_FILES([command_environment/Makefile])
 AC_OUTPUT
 
 AC_MSG_NOTICE([config files successfully generated!

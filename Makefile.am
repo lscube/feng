@@ -1,4 +1,8 @@
 SUBDIRS =	socket \
+		md5 \
+		xmlparser \
+		multicast \
+		command_environment \
 		eventloop \
 		rtp \
 		rtcp \
