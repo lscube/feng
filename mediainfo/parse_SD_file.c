@@ -202,7 +202,7 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
 			 }  
 			 
 			 if (strcasecmp(keyword,SD_CREATOR)==0){
-			  int i=8;
+			  int i=9;
 			  int j=0;
 			  while(line[i]!='\n')
 			  {

@@ -32,26 +32,40 @@
  *  
  * */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <config.h>
 
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <netinet/in.h>
+
+#include <fenice/rtp.h>
+#include <fenice/utils.h>
 #include <fenice/bufferpool.h>
 
-OMSSlot *OMSbuff_slotadd(OMSBuffer *buffer, OMSSlot *prev)
+RTP_session *RTP_session_destroy(RTP_session *session)
 {
-	OMSSlotAdded *added;
+	RTP_session *next = session->next;
+	OMSBuffer *buff = session->current_media->pkt_buffer;
 
-	if (!(added = (OMSSlotAdded *)calloc(1,sizeof(OMSSlotAdded))))
-		return NULL;
+	close(session->rtp_fd);
+	close(session->rtcp_fd_in);
+	close(session->rtcp_fd_out);
+	// Release ports
+	RTP_release_port_pair(&(session->ser_ports));
+	// destroy consumer
+	OMSbuff_unref(session->cons);
+	if (session->current_media->pkt_buffer->refs==0) {
+			session->current_media->pkt_buffer=NULL;
+			OMSbuff_free(buff);
+	}
+	// Deallocate memory
+	free(session);
 
-	added->next = prev->next;
-	prev->next = (OMSSlot *)added;
-
-	added->next_added = buffer->added_head;
-	buffer->added_head = added;
-
-	fprintf(stderr,"slot added\n");
-
-	return (OMSSlot *)added;
+	return next;
 }
 

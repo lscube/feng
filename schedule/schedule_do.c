@@ -107,12 +107,10 @@ do{
         					
 						RTCP_handler(sched[i].rtp_session);
 						
-	        				pthread_mutex_lock(&((sched[i].rtp_session)->cons->mutex));	
 						// Send an RTP packet
 						res = sched[i].play_action(sched[i].rtp_session);
-	        				pthread_mutex_unlock(&((sched[i].rtp_session)->cons->mutex));	
 						if (res!=ERR_NOERROR) {
-    							if (res==ERR_EOF && (sched[i].rtp_session)->current_media->description.msource!=live) {    						
+    							if (res==ERR_EOF && (sched[i].rtp_session)->current_media->description.msource!=live) {
     								printf("Stream Finished\n");
     								schedule_stop(i);
     							}

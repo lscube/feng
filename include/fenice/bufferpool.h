@@ -1,5 +1,5 @@
 /* * 
- *  $Id:$
+ *  $Id$
  *  
  *  This file is part of Fenice
  *
@@ -36,7 +36,7 @@
 #define _BUFFERPOOLH
 
 #include <fenice/types.h>
-#include <pthread.h>
+// #include <pthread.h>
 #include <stdlib.h>
 
 #define OMSSLOT_DATASIZE 65000
@@ -78,7 +78,7 @@ typedef struct _OMSconsumer {
 	OMSSlot *last_read_pos; /*! last read position . used for managing the slot addition*/
 	uint64 last_seq;
 	OMSBuffer *buffer;
-	pthread_mutex_t mutex;
+	// pthread_mutex_t mutex;
 } OMSConsumer;
 
 #if 0

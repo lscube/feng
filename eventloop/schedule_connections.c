@@ -49,7 +49,7 @@ void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
 {
 	int res;
 	RTSP_buffer *p,*pp;
-	RTP_session *r,*t;
+	RTP_session *r, *t;
 	
 	pp=NULL;
 	p=*rtsp_list;
@@ -75,20 +75,11 @@ void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
                 			while (r!=NULL)
 					{
 						
-						if (r->current_media->pkt_buffer);
+						// if (r->current_media->pkt_buffer);
         	        			// Release the scheduler entry
-        	        			schedule_remove(r->sched_id);
-        					// Close connections        		
-                				close(r->rtp_fd);
-            					close(r->rtcp_fd_in);
-            					close(r->rtcp_fd_out);        		
-            					// Release ports
-        	        			RTP_release_port_pair(&(r->ser_ports));
         	        			t=r->next;
-        	        			// Deallocate memory
-        					while (schedule_semaphore (r->sched_id) == red);
-        	        			free(r);
-        	        			r=t;
+        	        			schedule_remove(r->sched_id);
+						r=t;
                 			}
         				// Close connection        		
 					//close(p->session_list->fd);

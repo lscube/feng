@@ -170,20 +170,9 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 				else 
 					s->rtp_session = rtp_curr->next;
 				rtp_curr = rtp_curr->next;
-				//if (rtp_temp->current_media->pkt_buffer)
-				//Release buffer
-				//	OMSbuff_unref(rtp_temp->current_media->pkt_buffer);
 				// Release the scheduler entry
 				schedule_remove(rtp_temp->sched_id);
 				// Close connections
-				close(rtp_temp->rtp_fd);
-				close(rtp_temp->rtcp_fd_in);
-				close(rtp_temp->rtcp_fd_out);
-				// Release ports
-				RTP_release_port_pair(&(rtp_temp->ser_ports));
-				// Deallocate memory
-				while (schedule_semaphore(rtp_temp->sched_id)==red);
-				free(rtp_temp);
 		} else {
 			rtp_prev = rtp_curr;
 			rtp_curr = rtp_curr->next;

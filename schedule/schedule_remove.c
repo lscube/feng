@@ -32,6 +32,8 @@
  *  
  * */
 
+#include <stdio.h>
+
 #include <fenice/schedule.h>
 #include <fenice/utils.h>
 
@@ -40,14 +42,9 @@ extern schedule_list sched[MAX_SESSION];
 int schedule_remove(int id)
 {
 	sched[id].valid=0;
-	if((sched[id].rtp_session)->cons){
-		pthread_mutex_lock(&((sched[id].rtp_session)->cons->mutex));	
-		OMSbuff_unref(sched[id].rtp_session->cons);
-		if ((sched[id].rtp_session)->current_media->pkt_buffer->refs==0){
-			OMSbuff_free((sched[id].rtp_session)->current_media->pkt_buffer);
-			(sched[id].rtp_session)->current_media->pkt_buffer=NULL;
-		}
-		pthread_mutex_unlock(&((sched[id].rtp_session)->cons->mutex));	
-	}
+	while (schedule_semaphore (id) == red);
+	RTP_session_destroy(sched[id].rtp_session);
+	fprintf(stderr, "rtp sesion closed\n");
+
 	return ERR_NOERROR;
 }

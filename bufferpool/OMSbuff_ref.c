@@ -1,5 +1,5 @@
 /* * 
- *  $Id:$
+ *  $Id$
  *  
  *  This file is part of Fenice
  *
@@ -51,7 +51,7 @@ OMSConsumer *OMSbuff_ref(OMSBuffer *buffer)
 	cons->last_read_pos = NULL;
 	cons->last_seq = buffer->write_pos->slot_seq;
 	cons->buffer = buffer;
-	pthread_mutex_init(&(cons->mutex),NULL);	
+	// pthread_mutex_init(&(cons->mutex),NULL);	
 	buffer->refs++;	
 	fprintf(stderr, "Buffer ref (%d)\n", buffer->refs);
 

@@ -159,5 +159,6 @@
 	int RTP_release_port_pair(port_pair *pair);
 
 	int RTP_send_packet(RTP_session *session);
+	RTP_session *RTP_session_destroy(RTP_session *);
 
 #endif
