@@ -179,6 +179,8 @@
     		int fd;
 		void *stat;
 		unsigned int data_chunk;
+    		unsigned char buff_data[4]; // shawill: needed for live-by-named-pipe
+		unsigned int buff_size; // shawill: needed for live-by-named-pipe
 		int reserved;
     		char filename[255];
     		char aggregate[50];
