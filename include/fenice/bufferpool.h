@@ -37,6 +37,7 @@
 
 #include <fenice/types.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 #define OMSSLOT_DATASIZE 65000
 #define OMSSLOT_COMMON	uint16 refs; \
