@@ -42,7 +42,7 @@
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
 #include <fenice/schedule.h>
-
+#include <fenice/bufferpool.h>
 int stop_schedule = 0;
 
 void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
@@ -74,6 +74,8 @@ void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
                 			// Release all RTP sessions
                 			while (r!=NULL)
 					{
+						//Release buffer
+						OMSbuff_unref(r->current_media->pkt_buffer);
         	        			// Release the scheduler entry
         	        			schedule_remove(r->sched_id);
         					// Close connections        		
