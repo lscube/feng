@@ -194,7 +194,7 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
 			  p->description.flags|=MED_TITLE;
 			 }  
 			 
-			 if (strcasecmp(keyword,SD_AUTHOR)==0){
+			 if (strcasecmp(keyword,SD_CREATOR)==0){
 			  int i=8;
 			  int j=0;
 			  while(line[i]!='\n')
@@ -206,7 +206,7 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
 			  p->description.author[j]='\0';  
 			
 			 
-			  p->description.flags|=MED_AUTHOR;
+			  p->description.flags|=MED_CREATOR;
 			 }                         
 
 			/********END CC*********/

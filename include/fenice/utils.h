@@ -126,7 +126,7 @@
 	#define SD_LICENCE "LICENCE"
 	#define SD_RDF "VERIFY"  
 	#define SD_TITLE "TITLE"
-        #define SD_AUTHOR "AUTHOR"
+        #define SD_CREATOR "CREATOR"
 	/*end CC*/
 
   	/* COMMAND KEYWORDS AND PORT */

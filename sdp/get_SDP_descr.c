@@ -134,12 +134,12 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 
 		/*start CC*/
 		if(p->description.flags & MED_LICENCE){
-		     strcat(descr,"a=uriLicence:");
+		     strcat(descr,"a=uriLicense:");
 		     strcat(descr,p->description.commons_dead);
 		     strcat(descr,"\n");
 		 }
 		 if(p->description.flags & MED_RDF_PAGE){
-		     strcat(descr,"a=uriRdf:");
+		     strcat(descr,"a=uriMetadata:");
 		     strcat(descr,p->description.rdf_page);
 		     strcat(descr,"\n");
 		 } 
@@ -149,8 +149,8 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 		     strcat(descr,app);
 		     strcat(descr,"\n");		 
 		     } 
-		 if(p->description.flags & MED_AUTHOR){
-		     strcat(descr,"a=author:");
+		 if(p->description.flags & MED_CREATOR){
+		     strcat(descr,"a=creator:");
 		     sprintf(app,"%s",p->description.author);
 		     strcat(descr,app);
 		     strcat(descr,"\n");
