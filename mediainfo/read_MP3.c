@@ -42,8 +42,10 @@
 int read_MP3(media_entry *me,unsigned char **data,unsigned int *data_size,double *mtime)
 {
         char thefile[255];
-        unsigned char sync1,sync2,sync3,sync4;
+        // unsigned char sync1,sync2,sync3,sync4;
+	unsigned char *buff = me->buff_data;
         int N, res;
+	int i; // index
         unsigned int frame_skip;
 
         if (!(me->flags & ME_FD)) {
@@ -51,25 +53,43 @@ int read_MP3(media_entry *me,unsigned char **data,unsigned int *data_size,double
                 strcat(thefile,me->filename);    
 // printf("Playing: %s - bitrate: %d\n", thefile, me->description.bitrate);
                 me->fd=open(thefile,O_RDONLY);
-                if (me->fd==-1) return ERR_NOT_FOUND;
+                if ( me->fd==-1 ) return ERR_NOT_FOUND;
                 me->flags|=ME_FD;
                 me->data_chunk = 0;
+		if (me->description.flags & MED_ID3)
+		 lseek(me->fd,(me->description.tag_dim)+10,SEEK_SET);
         }
+	
         frame_skip=round((*mtime)/(double)(me->description.pkt_len));   // mtime is play time in milliseconds, starting
                                                                         // from zero and incremented by one each time
                                                                         // this function is called (see schedule_do);
                                                                         // pkt_len is pkt lenght in milliseconds,
                                                                         // frame_skip is the number of current frame
         *mtime = (double)frame_skip * (double)(me->description.pkt_len);
-
+        
         for (; me->data_chunk<=frame_skip; ++me->data_chunk) {
-                if ((read(me->fd,&sync1,1)) != 1) return ERR_EOF;
-                if ((read(me->fd,&sync2,1)) != 1) return ERR_EOF;
-                if ((read(me->fd,&sync3,1)) != 1) return ERR_EOF;
-                if ((read(me->fd,&sync4,1)) != 1) return ERR_EOF;
-                if ((sync1==0xff) && ((sync2 & 0xe0)==0xe0)) {
+		for (;me->buff_size<4;me->buff_size++)
+                	if ((read(me->fd,&(buff[me->buff_size]),1)) != 1 ) return ERR_EOF;
+		me->buff_size = 0;
+		/*
+		if (me->buff_size == 4) {
+			sync1 = me->buff_data[0];
+			sync2 = me->buff_data[1];
+			sync3 = me->buff_data[2];
+			sync4 = me->buff_data[3];
+			me->buff_size = 0;
+		} else {
+                	if ((read(me->fd,&sync1,1)) != 1 ) return ERR_EOF;
+                	if ((read(me->fd,&sync2,1)) != 1 ) return ERR_EOF;
+                	if ((read(me->fd,&sync3,1)) != 1 ) return ERR_EOF;
+                	if ((read(me->fd,&sync4,1)) != 1 ) return ERR_EOF;
+		}
+		*/
+                // if ((sync1==0xff) && ((sync2 & 0xe0)==0xe0)) {
+                if ((buff[0]==0xff) && ((buff[1] & 0xe0)==0xe0)) {
                         N = (int)(me->description.frame_len * (float)me->description.bitrate / (float)me->description.sample_rate / 8);
-                        if (sync3 & 0x02) N++;
+                        // if (sync3 & 0x02) N++;
+                        if (buff[2] & 0x02) N++;
                 } else {
                         // Sync not found, not Mpeg-1/2
 			// id3 TAG v1 is suppressed, id3 TAG v2 is not supported and
@@ -93,14 +113,21 @@ int read_MP3(media_entry *me,unsigned char **data,unsigned int *data_size,double
         (*data)[2]=0;
         (*data)[3]=0;
         // These first 4 bytes are for mp3 in RTP encapsulation
+	/*
         (*data)[4]=sync1;
         (*data)[5]=sync2;
         (*data)[6]=sync3;
         (*data)[7]=sync4;
+	*/
+        (*data)[4]=buff[0];
+        (*data)[5]=buff[1];
+        (*data)[6]=buff[2];
+        (*data)[7]=buff[3];
         if ((res = read(me->fd,&((*data)[8]),N-4))<(N-4)) {
-                if (res <= 0) return ERR_EOF;
+                if ((res <= 0)) return ERR_EOF;
                 else *data_size = res + 8;
         }
         return ERR_NOERROR;
 }
+
 

@@ -121,6 +121,13 @@
 	#define SD_FRAME_RATE "FRAME_RATE"
 	#define SD_BYTE_PER_PCKT "BYTE_PER_PCKT"	
 	
+	/*start CC*/
+	#define SD_LICENCE "LICENCE"
+	#define SD_RDF "VERIFY"  
+	#define SD_TITLE "TITLE"
+        #define SD_AUTHOR "AUTHOR"
+	/*end CC*/
+
   	/* COMMAND KEYWORDS AND PORT */
 	#define COMMAND_PORT 3000
  	uint32 random32(int);

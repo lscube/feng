@@ -10,6 +10,8 @@ libmediainfo_la_SOURCES =	enum_media.c \
 				msec2tick.c \
 				parse_SD_file.c \
 				validate_stream.c \
+				calculate_skip.c \
+				read_dim.c \
 				load_MPA.c \
 				load_GSM.c \
 				load_L16.c \

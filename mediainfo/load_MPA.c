@@ -35,6 +35,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
@@ -42,8 +43,11 @@
 int load_MPA(media_entry *p) {
 
         char thefile[255];
+	unsigned char *buffer;
+	long int tag_dim;
 	struct stat fdstat;
-        int RowIndex, ColIndex;
+        int n,RowIndex, ColIndex;
+	
         // unsigned char sync1,sync2,sync3,sync4;
         int BitrateMatrix[16][5] = {
                 {0,     0,     0,     0,     0     },
@@ -67,14 +71,50 @@ int load_MPA(media_entry *p) {
         strcat(thefile,p->filename);            
         p->fd=open(thefile,O_RDONLY);
         if (p->fd==-1) return ERR_NOT_FOUND;
-
+	/*
+	else
+                p->flags|=ME_FD;
+	*/
+	
+	
+//	fstat(p->fd, &fdstat);
+        
 	/*
 	if (read(p->fd,&sync1,1) != 1) return ERR_PARSE;
         if (read(p->fd,&sync2,1) != 1) return ERR_PARSE;
         if (read(p->fd,&sync3,1) != 1) return ERR_PARSE;
         if (read(p->fd,&sync4,1) != 1) return ERR_PARSE;
 	*/
-
+	
+	/*
+	In questa parte eseguo il controllo per verificare
+	la presenza del tag ID3v2
+	*/
+	
+  buffer=(unsigned char *)calloc(1,4);   /* I primi tre bytes devono assumemere il valore "ID3" */
+  if (buffer==NULL) {
+                printf("errore calloc in load_MPA\n");
+                return ERR_ALLOC;
+        }
+  if ((n=read(p->fd,buffer,3))!=3)
+  {
+    printf("Errore durante la lettura del brano! in load_MPA\n");
+    return ERR_PARSE;
+  }
+  buffer[3]='\0';  
+  if (strcmp(buffer,"ID3")!=0)  
+    lseek(p->fd,0,SEEK_SET);
+  else{
+       lseek(p->fd,3, SEEK_CUR);
+       n=read_dim(p->fd,&tag_dim); 
+       printf("%ld\n",tag_dim);
+       p->description.flags|=MED_ID3;
+       p->description.tag_dim=tag_dim;
+       lseek(p->fd,tag_dim,SEEK_CUR);
+   } 
+  
+	
+	
 	p->buff_size=0;
 	for (;p->buff_size<4;p->buff_size++)
 		if (read(p->fd,&(p->buff_data[p->buff_size]),1) != 1) return ERR_PARSE;

@@ -74,7 +74,14 @@
     		MED_PRIORITY=4096,
     		MED_TYPE=8192,
     		MED_FRAME_RATE=16384,
-    		MED_BYTE_PER_PCKT=32768
+    		MED_BYTE_PER_PCKT=32768,
+		/*start CC*/
+		MED_LICENCE=65536,
+		MED_RDF_PAGE=131072,
+		MED_TITLE=262144,
+		MED_AUTHOR=524288,
+		MED_ID3=1048576
+		/*end CC*/
    		/*DYN_PAYLOAD_TOKEN    	
 		PACKETTIZED=
 		PAYLOAD=
@@ -152,7 +159,7 @@
 		char minutes;
 		char seconds;
 		char picture;
-		unsigned long data_total;
+		unsigned long data_total;  
 		standard std;
 		int fragmented;
 		video_spec_head1 vsh1_aux;       				/* without modifying other variables */
@@ -187,9 +194,13 @@
     		description_format descr_format;		
     	
 		struct {
-        		unsigned int rtp_port; //FEDERICO
-        		unsigned int rtcp_port;//FEDERICO
-    
+			/*start CC*/
+			char commons_dead[255]; 
+              		char rdf_page[255];
+			char title[80];
+			char author[80];	
+			int tag_dim;    
+			/*end CC*/
         		me_descr_flags flags;	    	    	    		
         		media_source msource;
         		media_type mtype;
@@ -243,7 +254,7 @@
 	int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size, double *mtime, int *recallme);
 	int read_MPEG_system (media_entry *me, unsigned char **data, unsigned *data_size, double *mtime, int *recallme);
 
-	/*************************************************read MPEG utils******************************************************/
+	/*****************************************read MPEG utils*************************************************/
 	
 	/* returns number of bytes readen looking for start-codes, */
 	int next_start_code(unsigned char **buf,unsigned *buf_size,int fin);
@@ -290,4 +301,9 @@
 	
 	unsigned long msec2tick(double mtime,media_entry *me);
 	
+	// ID3v2
+	int calculate_skip(int byte_value,double *skip,int peso); 
+	int read_dim(int file,long int *dim);
+
+
 #endif

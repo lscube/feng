@@ -157,6 +157,54 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
                                 sscanf(line,"%s%d",trash,&(p->description.byte_per_pckt));
                                 p->description.flags|=MED_BYTE_PER_PCKT;
                         }                                                       
+
+
+			/*****START CC****/
+			if (strcasecmp(keyword,SD_LICENCE)==0) {
+			sscanf(line,"%s%s",trash,(p->description.commons_dead));
+			
+			p->description.flags|=MED_LICENCE;
+		        }
+			if (strcasecmp(keyword,SD_RDF)==0) {
+			sscanf(line,"%s%s",trash,(p->description.rdf_page));
+			
+			p->description.flags|=MED_RDF_PAGE;
+		        }                     
+			
+			if (strcasecmp(keyword,SD_TITLE)==0){
+			  
+			  int i=7;
+			  int j=0;
+			  while(line[i]!='\n')
+			  {
+			    p->description.title[j]=line[i];
+			    i++;
+			    j++;
+			   }
+			  p->description.title[j]='\0';  
+			
+			  
+			  p->description.flags|=MED_TITLE;
+			 }  
+			 
+			 if (strcasecmp(keyword,SD_AUTHOR)==0){
+			  int i=8;
+			  int j=0;
+			  while(line[i]!='\n')
+			  {
+			    p->description.author[j]=line[i];
+			    i++;
+			    j++;
+			   }
+			  p->description.author[j]='\0';  
+			
+			 
+			  p->description.flags|=MED_AUTHOR;
+			 }                         
+
+			/********END CC*********/
+
+			
                 }
                 if ((res = validate_stream(p)) != ERR_NOERROR) {
                         return res;

@@ -41,7 +41,7 @@
 
 int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 {	
-	char s[30],t[30];
+	char s[30],t[30],app[80];
 	port_pair pair;
 	media_entry *p,*list,req;
 	strcpy(descr, "v=0\n");		
@@ -126,10 +126,35 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 
 	   	sprintf(t,"%d",pair.RTP);
 	   	strcat(descr,t);
-	   	//strcat(descr,"/2 RTP/AVP "); // Use 2 ports. Use udp
 	   	strcat(descr," RTP/AVP "); // Use UDP
 	   	sprintf(t,"%d\n",p->description.payload_type);
 	   	strcat(descr,t);
+
+		/*start CC*/
+		if(p->description.flags & MED_LICENCE){
+		     strcat(descr,"a=uriLicence:");
+		     strcat(descr,p->description.commons_dead);
+		     strcat(descr,"\n");
+		 }
+		 if(p->description.flags & MED_RDF_PAGE){
+		     strcat(descr,"a=uriRdf:");
+		     strcat(descr,p->description.rdf_page);
+		     strcat(descr,"\n");
+		 } 
+		if(p->description.flags & MED_TITLE){
+		     strcat(descr,"a=title:");
+		     sprintf(app,"%s",p->description.title);
+		     strcat(descr,app);
+		     strcat(descr,"\n");		 
+		     } 
+		 if(p->description.flags & MED_AUTHOR){
+		     strcat(descr,"a=author:");
+		     sprintf(app,"%s",p->description.author);
+		     strcat(descr,app);
+		     strcat(descr,"\n");
+		 } 
+		/*end CC*/
+
 	   	if (p->description.payload_type>=96) {
 	   		// Dynamically defined payload
 			strcat(descr,"a=rtpmap:");
