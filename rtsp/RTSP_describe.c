@@ -53,7 +53,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
 	unsigned short port;
 	char url[255];
 	media_entry media, req;
-	description_format descr_format = df_SDP_format; // shawill put to some default
+	description_format descr_format = df_SDP_format;	// shawill put to some default
 	char descr[MAX_DESCR_LENGTH];
 
 	printf("DESCRIBE request received.\n");
@@ -78,7 +78,8 @@ int RTSP_describe(RTSP_buffer * rtsp)
 	}
 	if (strstr(object, "../")) {
 		/* disallow relative paths outside of current directory. */
-		printf("DESCRIBE request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
+		printf
+		    ("DESCRIBE request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
@@ -134,7 +135,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
 		}
 	}
 
-        
+
 	memset(&media, 0, sizeof(media));
 	memset(&req, 0, sizeof(req));
 	req.flags = ME_DESCR_FORMAT;
@@ -148,17 +149,16 @@ int RTSP_describe(RTSP_buffer * rtsp)
 	if (res == ERR_PARSE || res == ERR_GENERIC || res == ERR_ALLOC) {
 		if (res == ERR_PARSE)
 			printf("DESCRIBE request specified an object file which can be damaged.\n");
-			
+
 		if (res == ERR_GENERIC)
 			printf("DESCRIBE request generated a generic server error.\n");
-			
+
 		if (res == ERR_ALLOC)
 			printf("DESCRIBE request generated a memory allocation server error.\n");
-			
+
 		send_reply(500, 0, rtsp);	// Internal server error
 		return ERR_NOERROR;
 	}
 	send_describe_reply(rtsp, object, descr_format, descr);
 	return ERR_NOERROR;
 }
-

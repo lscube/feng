@@ -39,21 +39,20 @@
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 
-int send_teardown_reply(RTSP_buffer *rtsp,long session_id,long cseq)
+int send_teardown_reply(RTSP_buffer * rtsp, long session_id, long cseq)
 {
-    char r[1024];
-    char temp[30];
+	char r[1024];
+	char temp[30];
 	/* build a reply message */
-	sprintf(r, "%s %d %s\nCSeq: %ld\nServer: %s/%s\n", RTSP_VER, 200, get_stat(200),cseq,PACKAGE,VERSION);
+	sprintf(r, "%s %d %s\nCSeq: %ld\nServer: %s/%s\n", RTSP_VER, 200, get_stat(200), cseq, PACKAGE, VERSION);
 	add_time_stamp(r, 0);
-	strcat(r,"Session: ");
-	sprintf(temp,"%ld",session_id);
-	strcat(r,temp);
-	strcat(r,"\r\n\r\n");
-	bwrite(r, (unsigned short) strlen(r),rtsp);
-	#ifdef VERBOSE
-	printf("TEARDOWN response sent.\n");	
-	#endif
+	strcat(r, "Session: ");
+	sprintf(temp, "%ld", session_id);
+	strcat(r, temp);
+	strcat(r, "\r\n\r\n");
+	bwrite(r, (unsigned short) strlen(r), rtsp);
+#ifdef VERBOSE
+	printf("TEARDOWN response sent.\n");
+#endif
 	return ERR_NOERROR;
 }
-

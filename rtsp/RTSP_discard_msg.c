@@ -40,4 +40,3 @@ void RTSP_discard_msg(RTSP_buffer * rtsp)
 	RTSP_msg_len(&hlen, &blen, rtsp);
 	RTSP_remove_msg(hlen + blen, rtsp);
 }
-

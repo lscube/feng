@@ -102,7 +102,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 						q = strstr(q + 1, ":");
 						sscanf(q + 1, "%lf", &t);
 						args.start_time += t;
-						
+
 						args.start_time_valid = 1;
 					} else {
 						args.start_time = 0;
@@ -227,20 +227,20 @@ int RTSP_play(RTSP_buffer * rtsp)
 				// Search for the RTP session
 				for (ptr2 = ptr->rtp_session; ptr2 != NULL; ptr2 = ptr2->next) {
 					if (ptr2->current_media->description.priority == 1) {
-	
+
 
 						// Start playing all the presentation
 						if (!ptr2->started) {
 							// Start new
-							if (schedule_start(ptr2->sched_id, &args)  == ERR_ALLOC)
+							if (schedule_start(ptr2->sched_id, &args) == ERR_ALLOC)
 								return ERR_ALLOC;
-							
+
 						} else {
 							// Resume existing
 							if (!ptr2->pause) {
 								printf("PLAY: already playing\n");
 							} else {
-								schedule_resume(ptr2->sched_id,&args);
+								schedule_resume(ptr2->sched_id, &args);
 							}
 						}
 					}
@@ -273,7 +273,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 				}
 				if (ptr2 != NULL) {
 					// FOUND. Start Playing
-					if (schedule_start(ptr2->sched_id, &args)  == ERR_ALLOC)
+					if (schedule_start(ptr2->sched_id, &args) == ERR_ALLOC)
 						return ERR_ALLOC;
 				} else {
 					printf("PLAY request an object which wasn't setup.\n");
@@ -297,17 +297,17 @@ int RTSP_play(RTSP_buffer * rtsp)
 				// It's an aggregate control. Play all the RTPs
 				for (ptr2 = ptr->rtp_session; ptr2 != NULL; ptr2 = ptr2->next) {
 					if (!ptr2->started) {
-							// Start new
-							if (schedule_start(ptr2->sched_id, &args)  == ERR_ALLOC)
-								return ERR_ALLOC;
+						// Start new
+						if (schedule_start(ptr2->sched_id, &args) == ERR_ALLOC)
+							return ERR_ALLOC;
+					} else {
+						// Resume existing
+						if (!ptr2->pause) {
+							printf("PLAY: already playing\n");
 						} else {
-							// Resume existing
-							if (!ptr2->pause) {
-								printf("PLAY: already playing\n");
-							} else {
-								schedule_resume(ptr2->sched_id,&args);
-							}
+							schedule_resume(ptr2->sched_id, &args);
 						}
+					}
 				}
 			} else {
 				printf("Memory allocation error in RTSP session.\n");
@@ -319,4 +319,3 @@ int RTSP_play(RTSP_buffer * rtsp)
 	send_play_reply(rtsp, object, ptr);
 	return ERR_NOERROR;
 }
-

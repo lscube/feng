@@ -36,18 +36,18 @@
 #include <time.h>
 #include <fenice/rtsp.h>
 
-void add_time_stamp(char *b,int crlf)
+void add_time_stamp(char *b, int crlf)
 {
-   struct tm   *t;
-   time_t      now;
+	struct tm *t;
+	time_t now;
 
-   /*
-    * concatenates a null terminated string with a
-    * time stamp in the format of "Date: 23 Jan 1997 15:35:06 GMT"
-    */
-   now = time(NULL);
-   t = gmtime(&now);
-   strftime( b + strlen( b ), 38, "Date: %a, %d %b %Y %H:%M:%S GMT\n", t );
-   if ( crlf )
-      strcat( b, "\r\n" );   /* add a message header terminator (CRLF) */
+	/*
+	 * concatenates a null terminated string with a
+	 * time stamp in the format of "Date: 23 Jan 1997 15:35:06 GMT"
+	 */
+	now = time(NULL);
+	t = gmtime(&now);
+	strftime(b + strlen(b), 38, "Date: %a, %d %b %Y %H:%M:%S GMT\n", t);
+	if (crlf)
+		strcat(b, "\r\n");	/* add a message header terminator (CRLF) */
 }

@@ -34,9 +34,9 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <sys/time.h> // shawill: for gettimeofday
-#include <stdlib.h> // shawill: for rand, srand
-#include <unistd.h> // shawill: for close
+#include <sys/time.h>		// shawill: for gettimeofday
+#include <stdlib.h>		// shawill: for rand, srand
+#include <unistd.h>		// shawill: for close
 // shawill: for inet_aton
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -75,11 +75,11 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	struct sockaddr rtsp_peer;
 	int namelen = sizeof(struct sockaddr);
 	unsigned long ssrc;
-	int multicast=NO_MULTICAST;
+	int multicast = NO_MULTICAST;
 
-	
-	fprintf(stderr,"SETUP request received.\n");
-	
+
+	fprintf(stderr, "SETUP request received.\n");
+
 	memset(&req, 0, sizeof(req));
 	// Parse the input message
 	// Get the CSeq 
@@ -100,9 +100,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		p = strchr(p, '=');
 		sscanf(p + 1, "%lu", &ssrc);
 	} else {
-		ssrc = random32(0); 
+		ssrc = random32(0);
 #if DEBUG
-		fprintf(stderr,"%lu",ssrc);
+		fprintf(stderr, "%lu", ssrc);
 #endif
 	}
 
@@ -122,21 +122,20 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_NOERROR;
 	}
-
-      	//BEGIN FEDERICO	
-     	if ((strstr(rtsp->in_buffer, "multicast")) != NULL){ 
-		multicast=YES_MULTICAST;
+	//BEGIN FEDERICO        
+	if ((strstr(rtsp->in_buffer, "multicast")) != NULL) {
+		multicast = YES_MULTICAST;
 		p = strstr(line, "port");
-      	} else 
+	} else
 		p = strstr(line, "client_port");
-	
-		p = strstr(p, "=");
-		sscanf(p + 1, "%d", &(cli_ports.RTP));
-		p = strstr(p, "-");
-		sscanf(p + 1, "%d", &(cli_ports.RTCP));
-	 
-       	//END FEDERICO
-       
+
+	p = strstr(p, "=");
+	sscanf(p + 1, "%d", &(cli_ports.RTP));
+	p = strstr(p, "-");
+	sscanf(p + 1, "%d", &(cli_ports.RTCP));
+
+	//END FEDERICO
+
 	/* Get the URL */
 	if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
 		printf("SETUP request is missing object (path/file) parameter.\n");
@@ -144,7 +143,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		return ERR_NOERROR;
 	}
 	/* Validate the URL */
-	if (!parse_url(url, server, &port, object)) { //object é il nome del file richiesto
+	if (!parse_url(url, server, &port, object)) {	//object é il nome del file richiesto
 		printf("Mangled URL in SETUP.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
@@ -171,20 +170,20 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	}
 	p = strrchr(object, '.');
 	valid_url = 0;
-	if (p == NULL) { //se file senza estensione
+	if (p == NULL) {	//se file senza estensione
 		printf("SETUP request specified an object (path/file) parameter that is not valid.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	} else {
-		valid_url = is_supported_url(p); 
+		valid_url = is_supported_url(p);
 	}
-	if (!valid_url) {//se l'estensione non é valida
+	if (!valid_url) {	//se l'estensione non é valida
 		printf("SETUP request specified an unsupported media type.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	}
 	q = strchr(object, '!');
-	if (q == NULL) { //se non c'é "!" non é stato specificato il file che si vuole in streaming (mp3,mpg...)
+	if (q == NULL) {	//se non c'é "!" non é stato specificato il file che si vuole in streaming (mp3,mpg...)
 		printf("SETUP request specified an object that can't be understood.\n");
 		send_reply(500, 0, rtsp);	/* Internal server error */
 		return ERR_NOERROR;
@@ -192,7 +191,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		// SETUP name.sd!stream
 		strcpy(req.filename, q + 1);
 		req.flags |= ME_FILENAME;
-		
+
 		*q = '\0';
 	}
 // ------------ START PATCH
@@ -205,15 +204,15 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		if (p != NULL) {
 			strcpy(object, p + 1);	// CRITIC. 
 		}
-		pd=strstr(object,".sd"); // this part is usefull in order to
-		p=strstr(pd+1,".sd");    // have compatibility with
-		if (p != NULL) {         // RealOne
+		pd = strstr(object, ".sd");	// this part is usefull in order to
+		p = strstr(pd + 1, ".sd");	// have compatibility with
+		if (p != NULL) {	// RealOne
 			strcpy(object, pd + 3);	// CRITIC. 
-		}                     //Note: It's a critic part
+		}		//Note: It's a critic part
 		// END FEDERICO
 	}
 // ------------ END PATCH
-	
+
 
 	if (enum_media(object, &list) != ERR_NOERROR) {
 		printf("SETUP request specified an object file which can be damaged.\n");
@@ -225,7 +224,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		send_reply(404, 0, rtsp);	/* Not found */
 		return ERR_NOERROR;
 	}
-
 	// If there's a Session header we have an aggregate control
 	if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
 		if (sscanf(p, "%254s %d", trash, &SessionID) != 2) {
@@ -248,14 +246,13 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	}
 
 
-         
-	if (RTP_get_port_pair(&ser_ports)!=ERR_NOERROR) {
+
+	if (RTP_get_port_pair(&ser_ports) != ERR_NOERROR) {
 		printf("SETUP request can't be served. Maximum connection number reached.\n");
 		send_reply(500, 0, rtsp);	/* Internal server error */
-        	return ERR_GENERIC;
+		return ERR_GENERIC;
 	}
-	
-	
+
 	// Add an RTSP session if necessary
 	if (rtsp->session_list == NULL) {
 		rtsp->session_list = (RTSP_session *) calloc(1, sizeof(RTSP_session));
@@ -288,9 +285,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	}
 	sp2->pause = 1;
 	strcpy(sp2->sd_filename, object);
-	sp2->current_media = (media_entry *) calloc (1, sizeof(media_entry));
-	/*TODO control (if alloc doesn't work)*/
-	mediacpy(&sp2->current_media,&matching_me);
+	sp2->current_media = (media_entry *) calloc(1, sizeof(media_entry));
+	/*TODO control (if alloc doesn't work) */
+	mediacpy(&sp2->current_media, &matching_me);
 	gettimeofday(&now_tmp, 0);
 	srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
 	sp2->start_rtptime = start_rtptime;
@@ -298,55 +295,58 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	sp2->cli_ports.RTP = cli_ports.RTP;
 	sp2->cli_ports.RTCP = cli_ports.RTCP;
 	sp2->ser_ports.RTP = ser_ports.RTP;
-	
+	sp2->ser_ports.RTCP=ser_ports.RTCP;
+
 	if (getpeername(rtsp->fd, &rtsp_peer, &namelen) != 0) {
 		printf("SETUP request can't be served. Getpeername() failed.\n");
 		send_reply(415, 0, rtsp);	// Internal server error
 		return ERR_GENERIC;
 	}
 
-	
-	
+
 	// View if the client is MwServer        
-     	if (multicast==YES_MULTICAST) { // MULTICAST SESSION
-        	struct in_addr inp;
+	if (multicast == YES_MULTICAST) {	// MULTICAST SESSION
+		struct in_addr inp;
 		unsigned char ttl;
-		ttl=32;
-		strcpy(address,MULTICAST_ADDRESS);
-		
-		sp2->isMulticast=YES_MULTICAST;
+		ttl = 32;
+		strcpy(address, MULTICAST_ADDRESS);
+
+		sp2->isMulticast = YES_MULTICAST;
 		//RTP
-		inet_aton(MULTICAST_ADDRESS,&inp);
-		udp_connect(ser_ports.RTP,&(sp2->rtp_peer),inp.s_addr, &(sp2->rtp_fd));
+		inet_aton(MULTICAST_ADDRESS, &inp);
+		udp_connect(ser_ports.RTP, &(sp2->rtp_peer), inp.s_addr, &(sp2->rtp_fd));
 
 		//RTCP
-		inet_aton(MULTICAST_ADDRESS,&inp);
-	        udp_connect(ser_ports.RTCP,&(sp2->rtcp_out_peer),inp.s_addr, &(sp2->rtcp_fd_out));	
-                close(sp2->rtcp_fd_out); // why close? Federico: Because I have to bind in order to listen
-	        udp_open(ser_ports.RTCP,&(sp2->rtcp_in_peer),&(sp2->rtcp_fd_in));  //bind
-		
-	        setsockopt(sp2->rtp_fd,IPPROTO_IP,IP_MULTICAST_TTL,&ttl,sizeof(ttl));	
-	        
+		inet_aton(MULTICAST_ADDRESS, &inp);
+		udp_connect(ser_ports.RTCP, &(sp2->rtcp_out_peer), inp.s_addr, &(sp2->rtcp_fd_out));
+		close(sp2->rtcp_fd_out);	// why close? Federico: Because I have to bind in order to listen
+		udp_open(ser_ports.RTCP, &(sp2->rtcp_in_peer), &(sp2->rtcp_fd_in));	//bind
+
+		setsockopt(sp2->rtp_fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
+
 		printf("\nSet up socket for multicast ok\n");
-      	} else {
+	} else {
 		//begin unicast
-		strcpy(address,get_address());
-		sp2->isMulticast=NO_MULTICAST;
+		strcpy(address, get_address());
+		sp2->isMulticast = NO_MULTICAST;
 		//UDP connection for outgoing RTP packets
 		//sp2->rtp_fd=0;
-		udp_open(ser_ports.RTP,&(sp2->rtp_peer), &(sp2->rtp_fd));
-    		udp_connect(cli_ports.RTP, &(sp2->rtp_peer), (*((struct sockaddr_in *) (&rtsp_peer))).sin_addr.s_addr, &(sp2->rtp_fd));
-	        		
-		
+		udp_open(ser_ports.RTP, &(sp2->rtp_peer), &(sp2->rtp_fd));
+		udp_connect(cli_ports.RTP, &(sp2->rtp_peer), (*((struct sockaddr_in *) (&rtsp_peer))).sin_addr.s_addr,
+			    &(sp2->rtp_fd));
+
+
 		//UDP connection for outgoing RTCP packets
-		udp_connect(cli_ports.RTCP,&(sp2->rtcp_out_peer),(*((struct sockaddr_in*)(&rtsp_peer))).sin_addr.s_addr, &(sp2->rtcp_fd_out));	
-	
-	    	// Now I have to assign the ser_ports.RTCP  
-	      	close(sp2->rtcp_fd_out); // why close? Federico: Because I have to bind in order to listen
-		//sp2->ser_ports.RTCP=ser_ports.RTCP;
-		udp_open(ser_ports.RTCP,&(sp2->rtcp_in_peer), &(sp2->rtcp_fd_in));  //bind 
-	        
-	    }//end else unicast
+		udp_connect(cli_ports.RTCP, &(sp2->rtcp_out_peer),
+			    (*((struct sockaddr_in *) (&rtsp_peer))).sin_addr.s_addr, &(sp2->rtcp_fd_out));
+
+		// Now I have to assign the ser_ports.RTCP  
+		close(sp2->rtcp_fd_out);	// why close? Federico: Because I have to bind in order to listen
+	printf("RTP: %d - RTCP: %d\n", sp2->ser_ports.RTP, sp2->ser_ports.RTCP);
+		udp_open(ser_ports.RTCP, &(sp2->rtcp_in_peer), &(sp2->rtcp_fd_in));	//bind 
+	printf("RTP: %d - RTCP: %d\n", sp2->ser_ports.RTP, sp2->ser_ports.RTCP);
+
+	}			//end else unicast
 
 	sp2->ssrc = ssrc;
 	sp2->sched_id = schedule_add(sp2);
@@ -354,9 +354,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	// Setup the RTSP session       
 	sp->session_id = SessionID;
 	*new_session = sp;
+
 	
-	send_setup_reply(rtsp, sp, address,sp2); //marcosbiro: in sp c'é il numero incriminato
+	send_setup_reply(rtsp, sp, address, sp2);	//marcosbiro: in sp c'é il numero incriminato
 
 	return ERR_NOERROR;
 }
-

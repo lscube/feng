@@ -44,14 +44,15 @@
  	****************************************************************
 */
 
-int RTSP_options(RTSP_buffer * rtsp){
+int RTSP_options(RTSP_buffer * rtsp)
+{
 
 	char *p;
 	char trash[255];
 	unsigned int cseq;
 
 
-   printf("OPTIONS request received.\n");
+	printf("OPTIONS request received.\n");
 	// CSeq
 	if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
 		printf("OPTIONS request didn't specify a CSeq header.\n");
@@ -65,5 +66,5 @@ int RTSP_options(RTSP_buffer * rtsp){
 		}
 	}
 	cseq = rtsp->rtsp_cseq;
-   return send_options_reply(rtsp,cseq);
+	return send_options_reply(rtsp, cseq);
 }

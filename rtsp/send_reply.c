@@ -38,31 +38,29 @@
 
 #include <fenice/rtsp.h>
 
-int send_reply(int err,char *addon,RTSP_buffer *rtsp)
+int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 {
-	unsigned int  len;
-	char     *b;
+	unsigned int len;
+	char *b;
 	int res;
 
-	if (addon!=NULL) {
-    	len = 256 + strlen(addon);
+	if (addon != NULL) {
+		len = 256 + strlen(addon);
+	} else {
+		len = 256;
 	}
-   	else {
-    	len = 256;
-    }
 
-   	b = (char *)malloc( len );
-	if (b==NULL) {
-		printf( "send_reply(): memory allocation error.\n" );
-    	return -1;
-	}   	
-	memset(b,0,sizeof(b));
-	sprintf(b,"%s %d %s\nCSeq: %d\n",RTSP_VER,err,get_stat(err),rtsp->rtsp_cseq);
+	b = (char *) malloc(len);
+	if (b == NULL) {
+		printf("send_reply(): memory allocation error.\n");
+		return -1;
+	}
+	memset(b, 0, sizeof(b));
+	sprintf(b, "%s %d %s\nCSeq: %d\n", RTSP_VER, err, get_stat(err), rtsp->rtsp_cseq);
 	//---patch coerenza con rfc in caso di errore
-	strcat(b,"\r\n");
-		
-	res=bwrite(b,(unsigned short)strlen(b),rtsp);
+	strcat(b, "\r\n");
+
+	res = bwrite(b, (unsigned short) strlen(b), rtsp);
 	free(b);
 	return res;
 }
-

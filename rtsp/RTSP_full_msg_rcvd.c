@@ -122,4 +122,3 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp)
 	}
 	return 1;
 }
-

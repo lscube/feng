@@ -38,15 +38,14 @@
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 
-int bwrite(char *buffer,unsigned short len,RTSP_buffer *rtsp)
+int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
 {
-	if ( (rtsp->out_size + len) > (int) sizeof(rtsp->out_buffer) ) {
-    	printf( "bwrite(): not enough free space in out message buffer.\n" );
+	if ((rtsp->out_size + len) > (int) sizeof(rtsp->out_buffer)) {
+		printf("bwrite(): not enough free space in out message buffer.\n");
 		return ERR_ALLOC;
 	}
-	memcpy (&(rtsp->out_buffer[rtsp->out_size]), buffer, len);
-	rtsp->out_buffer[rtsp->out_size+len]='\0';
+	memcpy(&(rtsp->out_buffer[rtsp->out_size]), buffer, len);
+	rtsp->out_buffer[rtsp->out_size + len] = '\0';
 	rtsp->out_size += len;
 	return ERR_NOERROR;
 }
-

@@ -44,7 +44,7 @@ int RTP_get_port_pair(port_pair *pair)
 	
 	for (i=0; i<MAX_SESSION; ++i) {
 		if (port_pool[i]!=0) {
-			pair->RTP=(port_pool[i]-start_port)*2+start_port;					
+			pair->RTP=(port_pool[i]-start_port)*2+start_port;	
 			pair->RTCP=pair->RTP+1;
 			port_pool[i]=0;
 			return ERR_NOERROR;

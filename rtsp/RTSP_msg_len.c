@@ -128,4 +128,3 @@ void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 	for (tc = rtsp->in_size - ml, p = &(rtsp->in_buffer[ml]); tc && (*p == '\0'); p++, bl++, tc--);
 	*body_len = bl;
 }
-

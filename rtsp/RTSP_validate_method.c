@@ -98,4 +98,3 @@ int RTSP_validate_method(RTSP_buffer * rtsp)
 	rtsp->rtsp_cseq = seq;	/* set the current method request seq. number. */
 	return mid;
 }
-

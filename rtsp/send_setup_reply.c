@@ -39,53 +39,54 @@
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 
-int send_setup_reply(RTSP_buffer *rtsp,RTSP_session *session,char *address,RTP_session *sp2)
+int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, char *address, RTP_session * sp2)
 {
 	char r[1024];
 	char temp[30];
 	/* build a reply message */
-	sprintf(r, "%s %d %s\nCSeq: %d\nServer: %s/%s\n", RTSP_VER, 200, get_stat(200),rtsp->rtsp_cseq,PACKAGE,VERSION);
+	
+	sprintf(r, "%s %d %s\nCSeq: %d\nServer: %s/%s\n", RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
+		VERSION);
 	add_time_stamp(r, 0);
-	strcat(r,"Session: ");
-	sprintf(temp,"%d",session->session_id);
-	strcat(r,temp);
-	strcat(r,"\n");
-   if(sp2->isMulticast==NO_MULTICAST){	
-	strcat(r,"Transport: RTP/AVP/UDP;unicast;client_port=");
-	sprintf(temp,"%d",sp2->cli_ports.RTP);
-	strcat(r,temp);
-	strcat(r,"-");
-	sprintf(temp,"%d",sp2->cli_ports.RTCP);
-	strcat(r,temp);
+	strcat(r, "Session: ");
+	sprintf(temp, "%d", session->session_id);
+	strcat(r, temp);
+	strcat(r, "\n");
+	if (sp2->isMulticast == NO_MULTICAST) {
+		strcat(r, "Transport: RTP/AVP/UDP;unicast;client_port=");
+		sprintf(temp, "%d", sp2->cli_ports.RTP);
+		strcat(r, temp);
+		strcat(r, "-");
+		sprintf(temp, "%d", sp2->cli_ports.RTCP);
+		strcat(r, temp);
 
-	sprintf(temp,";source=%s",address);
-	strcat(r,temp);
+		sprintf(temp, ";source=%s", address);
+		strcat(r, temp);
+
+		strcat(r, ";server_port=");
+	} else {		//IS MULTICAST
+		strcat(r, "Transport: RTP/AVP/UDP;multicast;");
+		sprintf(temp, ";destination=%s", address);
+		strcat(r, temp);
+
+		strcat(r, ";port=");
+	}
+	sprintf(temp, "%d", sp2->ser_ports.RTP);
+	strcat(r, temp);
+	strcat(r, "-");
+	sprintf(temp, "%d", sp2->ser_ports.RTCP);
+	strcat(r, temp);
+
+	sprintf(temp, ";ssrc=%u", session->rtp_session->ssrc);
+	strcat(r, temp);
+
+	strcat(r, "\r\n\r\n");
+
 	
-	strcat(r,";server_port=");
-    }
-    else{//IS MULTICAST
-	strcat(r,"Transport: RTP/AVP/UDP;multicast;");
-	sprintf(temp,";destination=%s",address);
-	strcat(r,temp);
-	
-	strcat(r,";port=");    
-    }	
-	sprintf(temp,"%d",sp2->ser_ports.RTP);
-	strcat(r,temp);
-	strcat(r,"-");
-	sprintf(temp,"%d",sp2->ser_ports.RTCP);
-	strcat(r,temp);
+	bwrite(r, (unsigned short) strlen(r), rtsp);
 
-	sprintf(temp,";ssrc=%d",session->rtp_session->ssrc);
-	strcat(r,temp);
-
-	strcat(r,"\r\n\r\n");
-
-	bwrite(r, (unsigned short) strlen(r),rtsp);
-
-	#ifdef VERBOSE
+#ifdef VERBOSE
 	printf("SETUP response sent.\n");
-	#endif
+#endif
 	return ERR_NOERROR;
 }
-

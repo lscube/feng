@@ -50,7 +50,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
 			if (m < 0) {
 				// Bad request: non-existing method
 				send_reply(400, NULL, rtsp);
-			} else 
+			} else
 				RTSP_state_machine(rtsp, m);
 		} else {
 			// There's a RTSP answer in input.
@@ -65,4 +65,3 @@ int RTSP_handler(RTSP_buffer * rtsp)
 	}
 	return ERR_NOERROR;
 }
-

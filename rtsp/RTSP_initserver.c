@@ -43,4 +43,3 @@ void RTSP_initserver(RTSP_buffer * rtsp, tsocket fd)
 	rtsp->session_list = (RTSP_session *) calloc(1, sizeof(RTSP_session));
 	rtsp->session_list->session_id = -1;
 }
-

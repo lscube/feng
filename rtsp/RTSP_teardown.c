@@ -54,7 +54,7 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	long int session_id;
 	char *p;
 	RTSP_session *s;
-	RTP_session *rtp_curr, *rtp_prev=NULL, *rtp_temp;
+	RTP_session *rtp_curr, *rtp_prev = NULL, *rtp_temp;
 	int valid_url;
 	char object[255], server[255], trash[255], *filename;
 	unsigned short port;
@@ -95,19 +95,21 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 		/* wrong server name */
 		//      printf("TEARDOWN request specified an unknown server name.\n");
 		//      send_reply(404, 0 , rtsp); /* Not Found */
-		//	return ERR_PARSE;
+		//      return ERR_PARSE;
 		//      return ERR_NOERROR;
 	}
 	if (strstr(object, "../")) {
 		/* disallow relative paths outside of current directory. */
-		printf ("TEARDOWN request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
+		printf
+		    ("TEARDOWN request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_PARSE;
 		// return ERR_NOERROR;
 	}
 	if (strstr(object, "./")) {
 		/* Disallow ./ */
-		printf ("TEARDOWN request specified an object parameter with a path that is not allowed. './' not permitted in path.\n");
+		printf
+		    ("TEARDOWN request specified an object parameter with a path that is not allowed. './' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_PARSE;
 		// return ERR_NOERROR;
@@ -151,34 +153,35 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 		return ERR_PARSE;
 		// return ERR_NOERROR;
 	}
-	
+
 	send_teardown_reply(rtsp, session_id, cseq);
-	if(strchr(object, '!')) /*Compatibility with RealOne and RealPlayer*/
+	if (strchr(object, '!'))	/*Compatibility with RealOne and RealPlayer */
 		filename = strchr(object, '!') + 1;
 	else
 		filename = object;
-		// strcpy(filename,object); // AHAHAHAHAHAHAHHAHA
+	// strcpy(filename,object); // AHAHAHAHAHAHAHHAHA
 
 
-	
-        // Release all URI RTP session
+
+	// Release all URI RTP session
 	rtp_curr = s->rtp_session;
-	while ( rtp_curr != NULL ) {
-		if ( strcmp(rtp_curr->current_media->filename, filename) ==0 || strcmp(rtp_curr->current_media->aggregate, filename) ==0 ) {
-				rtp_temp = rtp_curr;
-				if (rtp_prev != NULL) 
-					rtp_prev->next = rtp_curr->next;
-				else 
-					s->rtp_session = rtp_curr->next;
-				rtp_curr = rtp_curr->next;
-				// Release the scheduler entry
-				schedule_remove(rtp_temp->sched_id);
-				// Close connections
+	while (rtp_curr != NULL) {
+		if (strcmp(rtp_curr->current_media->filename, filename) == 0
+		    || strcmp(rtp_curr->current_media->aggregate, filename) == 0) {
+			rtp_temp = rtp_curr;
+			if (rtp_prev != NULL)
+				rtp_prev->next = rtp_curr->next;
+			else
+				s->rtp_session = rtp_curr->next;
+			rtp_curr = rtp_curr->next;
+			// Release the scheduler entry
+			schedule_remove(rtp_temp->sched_id);
+			// Close connections
 		} else {
 			rtp_prev = rtp_curr;
 			rtp_curr = rtp_curr->next;
 		}
-	}		
+	}
 
 	if (s->rtp_session == NULL) {
 		// Close connection
@@ -190,4 +193,3 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 
 	return ERR_NOERROR;
 }
-

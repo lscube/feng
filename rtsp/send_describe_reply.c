@@ -40,19 +40,19 @@
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 
-int send_describe_reply(RTSP_buffer *rtsp,char *object,description_format descr_format,char *descr)
+int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format descr_format, char *descr)
 {
-    char           *r;		/* get reply message buffer pointer */
-    char           *mb;		/* message body buffer pointer */
-    int             mb_len;
+	char *r;		/* get reply message buffer pointer */
+	char *mb;		/* message body buffer pointer */
+	int mb_len;
 
-    /* allocate buffer */
+	/* allocate buffer */
 	mb_len = 2048;
 	mb = malloc(mb_len);
 	r = malloc(mb_len + 1512);
 	if (!r || !mb) {
 		printf("send_describe_reply(): unable to allocate memory\n");
-		send_reply(500, 0, rtsp);		/* internal server error */
+		send_reply(500, 0, rtsp);	/* internal server error */
 		if (r) {
 			free(r);
 		}
@@ -62,28 +62,28 @@ int send_describe_reply(RTSP_buffer *rtsp,char *object,description_format descr_
 		return ERR_ALLOC;
 	}
 	/* build a reply message */
-	sprintf(r, "%s %d %s\nCSeq: %d\nServer: %s/%s\n", RTSP_VER, 200, get_stat(200),rtsp->rtsp_cseq,PACKAGE,VERSION);
+	sprintf(r, "%s %d %s\nCSeq: %d\nServer: %s/%s\n", RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
+		VERSION);
 	add_time_stamp(r, 0);
 	//switch (rtsp->descr_format) {
 	switch (descr_format) {
 		// Add new formats here
-		case df_SDP_format: {
+	case df_SDP_format:{
 			strcat(r, "Content-Type: application/sdp\n");
 			break;
 		}
 	}
-	sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s\n",prefs_get_hostname(),object);
+	sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s\n", prefs_get_hostname(), object);
 	sprintf(r + strlen(r), "Content-Length: %d\r\n\r\n", strlen(descr));
 	strcat(r, descr);
 
-	bwrite(r, (unsigned short) strlen(r),rtsp);
+	bwrite(r, (unsigned short) strlen(r), rtsp);
 
 	free(mb);
 	free(r);
-	#ifdef VERBOSE
+#ifdef VERBOSE
 	printf("DESCRIBE response sent.\n");
-	#endif
-	
+#endif
+
 	return ERR_NOERROR;
 }
-

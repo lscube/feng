@@ -101,15 +101,15 @@ int RTSP_pause(RTSP_buffer * rtsp)
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
-	
-	p = strrchr (strtok(object,"!") , '.');
+
+	p = strrchr(strtok(object, "!"), '.');
 	valid_url = 0;
 	if (p == NULL) {
 		printf("PAUSE request specified an object (path/file) parameter that is not valid.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	} else {
-		
+
 		valid_url = is_supported_url(p);
 	}
 	if (!valid_url) {
@@ -145,4 +145,3 @@ int RTSP_pause(RTSP_buffer * rtsp)
 
 	return ERR_NOERROR;
 }
-

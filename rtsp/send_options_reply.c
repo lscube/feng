@@ -38,11 +38,12 @@
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 
-int send_options_reply(RTSP_buffer *rtsp,long cseq){
-    char r[1024];
-    sprintf(r, "%s %d %s\nCSeq: %ld\n", RTSP_VER, 200, get_stat(200),cseq);
-    strcat(r,"Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN\r\n\r\n");
-    bwrite(r, (unsigned short) strlen(r),rtsp);
-    
-  return ERR_NOERROR;
+int send_options_reply(RTSP_buffer * rtsp, long cseq)
+{
+	char r[1024];
+	sprintf(r, "%s %d %s\nCSeq: %ld\n", RTSP_VER, 200, get_stat(200), cseq);
+	strcat(r, "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN\r\n\r\n");
+	bwrite(r, (unsigned short) strlen(r), rtsp);
+
+	return ERR_NOERROR;
 }

@@ -44,4 +44,3 @@ void RTSP_remove_msg(int len, RTSP_buffer * rtsp)
 		memset(&(rtsp->in_buffer[len]), 0, RTSP_BUFFERSIZE - len);
 	}
 }
-
