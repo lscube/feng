@@ -32,54 +32,25 @@
  *  
  * */
 
-#include <fenice/utils.h>
-#include <string.h>
+#include <stdio.h>
 
-int is_supported_url(char *p)
-// Add supported format extensions here
-{
-	if (strcasecmp(p,".SD")==0) {	
-		return 1;
-	}	
-	if (strcasecmp(p,".WAV")==0) {					
-		return 1;
-	}
-	if (strcasecmp(p,".MP3")==0) {	
-		return 1;
-	}	
-	if (strcasecmp(p,".GSM")==0) {	
-		return 1;
-	}		
-	if (strcasecmp(p,".GSM-FLO")==0) {	
-		return 1;
-	}			
-	if (strcasecmp(p,".L16M8K")==0) {	
-		return 1;
-	}
-	if (strcasecmp(p,".26l")==0) {
-		return 1;
-	}
-	if (strcasecmp(p,".mpg")==0) {
-		return 1;
-	}
-	if (strcasecmp(p,".mpeg")==0) {
-		return 1;
-	}
-	if (strcasecmp(p,".m1v")==0) {
-		return 1;
-	}
-	if (strcasecmp(p,".m2v")==0) {
-		return 1;
-	}				
-	if (strcasecmp(p,".m4v")==0) {
-		return 1;
-	}				
-	if (strcasecmp(p,".mp4")==0) {
-		return 1;
-	}				
-	if (strcasecmp(p,".xvid")==0) {
-		return 1;
-	}				
-	return 0;
+#include <fenice/utils.h>
+#include <fenice/mediainfo.h>
+#include <fenice/prefs.h>
+
+int load_MP4ES(media_entry *p) {
+	
+	if (!(p->description.flags & MED_FRAME_RATE)) {
+			return ERR_PARSE;
+                }
+                p->description.pkt_len=1/(double)p->description.frame_rate*1000;
+                p->description.flags|=MED_PKT_LEN;
+        	p->description.delta_mtime=p->description.pkt_len;
+		if ((p->description.byte_per_pckt!=0) && (p->description.byte_per_pckt<261)) {
+			printf("Warning: the max size for MPEG Video packet is smaller than 261 bytes and if a video header\n");
+			printf("is greater the max size would be ignored \n");
+		}
+        return ERR_NOERROR;
+
 }
 

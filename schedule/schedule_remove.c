@@ -44,7 +44,7 @@ int schedule_remove(int id)
 	sched[id].valid=0;
 	while (schedule_semaphore (id) == red);
 	RTP_session_destroy(sched[id].rtp_session);
-	fprintf(stderr, "rtp sesion closed\n");
+	fprintf(stderr, "rtp session closed\n");
 
 	return ERR_NOERROR;
 }

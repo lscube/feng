@@ -173,6 +173,11 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 				sprintf(t,"%d",p->description.audio_channels);
 				strcat(descr,t);
 			}
+			if (strcpy(p->description.encoding_name,"MP4V-ES")==0) {
+				strcat(descr,"\n");
+				sprintf(t,"a=fmtp:96 profile-level-id=148;config=000001B094000001B50900000100000001200086C403F7198582120A31");
+				strcat(descr,t);
+			}
 			strcat(descr,"\n");
    		}
 
@@ -198,6 +203,9 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
    			strcat(descr,p->aggregate);
    			strcat(descr,"\n");
    		}   		
+		else
+   			strcat(descr,"\n");
+		
    		if (extended!=0) {
    			// We must describe ALL the media
 	   		p=p->next;

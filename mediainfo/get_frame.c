@@ -70,6 +70,10 @@ int get_frame(media_entry *me, double *mtime)
 		else if (strcmp(me->description.encoding_name,"MP2T")==0) {
                 	res = read_MPEG_system(me,slot->data,&slot->data_size,mtime,&recallme);
         	}
+		else if (strcmp(me->description.encoding_name,"MP4V-ES")==0) {
+                	res = read_MPEG4ES_video(me,slot->data,&slot->data_size,mtime,&recallme);
+			slot->marker=1;
+        	}
 		
 		else 
 			res=ERR_UNSUPPORTED_PT;

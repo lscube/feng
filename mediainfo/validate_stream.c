@@ -85,7 +85,7 @@ int validate_stream(media_entry *p)
                         }
                         p->description.bit_per_sample=16;
                         p->description.flags|=MED_BIT_PER_SAMPLE;
-                } else if ( (strcmp(p->description.encoding_name,"H26L")==0) || (strcmp(p->description.encoding_name,"MPV")==0) || (strcmp(p->description.encoding_name,"MP2T")==0)) {
+                } else if ( (strcmp(p->description.encoding_name,"H26L")==0) || (strcmp(p->description.encoding_name,"MPV")==0) || (strcmp(p->description.encoding_name,"MP2T")==0) || (strcmp(p->description.encoding_name,"MP4V-ES")==0) ) {
                                 if (!(p->description.flags & MED_PKT_LEN)) {
                                         if (!(p->description.flags & MED_FRAME_RATE)) {
                                                 return ERR_PARSE;
@@ -94,7 +94,7 @@ int validate_stream(media_entry *p)
                                         p->description.flags|=MED_PKT_LEN;
                                 }
                                 p->description.delta_mtime=p->description.pkt_len;
-                                if (strcmp(p->description.encoding_name,"MPV")==0) {
+                                if (strcmp(p->description.encoding_name,"MPV")==0 || (strcmp(p->description.encoding_name,"MP4V-ES")==0) ) {
 					if ((p->description.byte_per_pckt!=0) && (p->description.byte_per_pckt<261)) {
 						printf("Warning: the max size for MPEG Video packet is smaller than 261 bytes and if a video header\n");
 						printf("is greater the max size would be ignored \n");
@@ -130,6 +130,8 @@ int validate_stream(media_entry *p)
                 return load_L16(p);
         } else if (strcmp(p->description.encoding_name,"MPV")==0) {
                 return load_MPV(p);
+        } else if (strcmp(p->description.encoding_name,"MP4V-ES")==0) {
+                return load_MP4ES(p);
         } else if (strcmp(p->description.encoding_name,"MP2T")==0) {
                 return load_MP2T(p);
         } else {

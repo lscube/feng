@@ -118,7 +118,7 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
                         if (strcasecmp(keyword,SD_ENCODING_NAME)==0) {
                                 sscanf(line,"%s%10s",trash,p->description.encoding_name);
                                 p->description.flags|=MED_ENCODING_NAME;
-                                if ( (strstr(p->description.encoding_name,"H26L")!=0) || (strstr(p->description.encoding_name,"MPV")!=0) || (strstr(p->description.encoding_name,"MP2T")!=0) ){
+                                if ( (strstr(p->description.encoding_name,"H26L")!=0) || (strstr(p->description.encoding_name,"MPV")!=0) || (strstr(p->description.encoding_name,"MP2T")!=0) || (strstr(p->description.encoding_name,"MP4V-ES")!=0) ){
                                         p->description.mtype=video;
                                 }
                         }       
