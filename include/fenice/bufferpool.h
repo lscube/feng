@@ -69,7 +69,7 @@ typedef struct _OMSbuffer {
 	OMSSlot *buffer_head; /*! Buffer head*/
 	uint32 min_size;
 	OMSSlot *write_pos; /*! last write position*/
-	int *fd; /*! pointer to File descriptor of incoming data*/
+	// int *fd; /*! pointer to File descriptor of incoming data*/ // XXX: currently not used
 	OMSSlotAdded *added_head; /* internal queue: not to be handled */
 } OMSBuffer;
 
@@ -94,6 +94,7 @@ OMSBuffer *OMSbuff_new(uint32 buffer_size);
 OMSConsumer *OMSbuff_ref(OMSBuffer *);
 void OMSbuff_unref(OMSConsumer *);
 OMSSlot *OMSbuff_read(OMSConsumer *);
+//TODO: OMSbuff_write needs to be upgraded to be compliant with new OMSBuffer and OMSSlot structs.
 int32 OMSbuff_write(OMSBuffer *, uint32 timestamp, uint8 *data, uint32 data_size);
 OMSSlot *OMSbuff_getslot(OMSBuffer *);
 OMSSlot *OMSbuff_slotadd(OMSBuffer *, OMSSlot *);

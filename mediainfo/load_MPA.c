@@ -45,7 +45,11 @@
 int load_MPA(media_entry *p)
 {
 
+#if 0
         char thefile[255];
+#else
+	int ret;
+#endif
 	// unsigned char buffer[4];
 	long int tag_dim;
 	struct stat fdstat;
@@ -71,6 +75,7 @@ int load_MPA(media_entry *p)
 
 	fprintf(stderr, "loading MPA...\n");
 
+#if 0
         strcpy(thefile,prefs_get_serv_root());
         strcat(thefile,p->filename);            
         p->fd=open(thefile,O_RDONLY);
@@ -82,11 +87,15 @@ int load_MPA(media_entry *p)
 	
 	
 //	fstat(p->fd, &fdstat);
+#else
+	if ( (ret=mediaopen(p)) < 0)
+		return ret;
+#endif // if 0
         
 	
 #if 0 // below you'll find the human written version of this part of code...
 
-	// shawill ma porc... ma perchè la calloc... e poi nenche la free...!!!
+	// shawill ma porc... ma perchè la calloc... e poi neanche la free...!!!
   // buffer=(unsigned char *)calloc(1,4);   /* I primi tre bytes devono assumemere il valore "ID3" */
 /*
   if (buffer==NULL) {
@@ -128,10 +137,14 @@ int load_MPA(media_entry *p)
         
 	fstat(p->fd, &fdstat);
 	if ( !S_ISFIFO(fdstat.st_mode) ) {
-		close(p->fd);
-		p->buff_size = 0;
-	} else
+		mediaclose(p);
+		// close(p->fd);
+		// p->buff_size = 0;
+	}
+#if 0
+       else
                 p->flags|=ME_FD;
+#endif
         
 	if (! ((p->buff_data[0]==0xff) && ((p->buff_data[1] & 0xe0)==0xe0))) return ERR_PARSE;
 

@@ -192,8 +192,12 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 #endif
 				return ERR_EOF;
 			}
-                	if(read(me->fd,&s->final_byte,1)<1)
+                	if(read(me->fd,&s->final_byte,1)<1) {
+#if !HAVE_ALLOCA
+				free(data_tmp);
+#endif
 				return ERR_EOF;
+			}
                		data_tmp[*data_size]=s->final_byte;
                		*data_size+=1;
 		}
@@ -218,10 +222,18 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 				s->fragmented=0;
                 	}
 			while(s->final_byte==0xb2||s->final_byte==0xb5){
-                        	if(next_start_code(data_tmp,data_size,me->fd)<0)
-					return ERR_EOF;              
-                		if(read(me->fd,&s->final_byte,1)<1)
+                        	if(next_start_code(data_tmp,data_size,me->fd)<0) {
+#if !HAVE_ALLOCA
+					free(data_tmp);
+#endif
 					return ERR_EOF;
+				}
+                		if(read(me->fd,&s->final_byte,1)<1) {
+#if !HAVE_ALLOCA
+					free(data_tmp);
+#endif
+					return ERR_EOF;
+				}
                        		data_tmp[*data_size]=s->final_byte;
                        		*data_size+=1;
 			}
@@ -253,8 +265,12 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
     				data_tmp[*data_size]=buf_aux[i];
     				*data_size+=1;
     			}
-			if(read(me->fd,&s->final_byte,1)<1)
+			if(read(me->fd,&s->final_byte,1)<1) {
+#if !HAVE_ALLOCA
+				free(data_tmp);
+#endif
 				return ERR_EOF;
+			}
                 	data_tmp[*data_size]=s->final_byte;
        	        	*data_size+=1;
                         if ( ((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01)) ) {
@@ -303,8 +319,12 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
     			data_tmp[*data_size]=buf_aux[i];
     			*data_size+=1;
     		}
-		if(read(me->fd,&s->final_byte,1)<1)
+		if(read(me->fd,&s->final_byte,1)<1) {
+#if !HAVE_ALLOCA
+			free(data_tmp);
+#endif
 			return ERR_EOF;
+		}
                	data_tmp[*data_size]=s->final_byte;
         	*data_size+=1;
 		

@@ -55,7 +55,7 @@ OMSBuffer *OMSbuff_new(uint32 buffer_size)
 	buffer->added_head = NULL;
 	buffer->refs = 0;
 	// buffer->fd = -1;
-	buffer->fd = NULL;
+	// buffer->fd = NULL;
 	buffer->min_size = buffer_size-1;
 
 	return buffer;

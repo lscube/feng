@@ -40,9 +40,9 @@
 
 #include <fenice/debug.h>
 
-#if DEBUG
+// #if DEBUG
 #include <stdio.h>
-#endif
+// #endif
 
 #include <fenice/mediainfo.h>
 #include <fenice/utils.h>
@@ -51,7 +51,7 @@
 int mediaopen(media_entry *me)
 {
 	char thefile[256];
-	struct stat fdstat;
+	struct stat filestat;
 	int oflag = O_RDONLY;
 
 	if (!(me->flags & ME_FILENAME))
@@ -60,29 +60,31 @@ int mediaopen(media_entry *me)
 	strcpy(thefile,prefs_get_serv_root());
 	strcat(thefile,me->filename);
 
-#if 1
+	fprintf(stderr, "opening file %s...", thefile);
+
 	if ( me->description.msource == live ) {
-		// fstat(me->fd, &fdstat);
-		stat(thefile, &fdstat);
-		if ( !S_ISFIFO(fdstat.st_mode) ) {
-			// lseek(me->fd, 0, SEEK_END);
-			// fcntl(me->fd, F_SETFD, O_NONBLOCK);
+		fprintf(stderr, " Live stream... ");
+		stat(thefile, &filestat);
+		if ( S_ISFIFO(filestat.st_mode) ) {
+			fprintf(stderr, " IS_FIFO... ");
 			oflag |= O_NONBLOCK;
 		}
 	}
-#endif
 
-	// me->fd=open(thefile, O_RDONLY /*| O_NONBLOCK , 0*/);
 	me->fd=open(thefile, oflag);
 
-#if DEBUG
-	printf("%s - %d\n", thefile, me->fd);
+#if 0
+	if ( (me->description.msource == live) && (!S_ISFIFO(filestat.st_mode)) ) {
+		fprintf(stderr, "illusion of live... ");
+		lseek(me->fd, 4, SEEK_END);
+	}
 #endif
 
 	if (me->fd==-1)
 		return ERR_NOT_FOUND;
 
 	me->flags|=ME_FD;
+	fprintf(stderr, "done\n");
 
 	return me->fd;
 }
