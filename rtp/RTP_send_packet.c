@@ -66,9 +66,8 @@ int RTP_send_packet(RTP_session *session)
 		
 		
 		s_time = session->current_media->mtime - session->current_media->mstart + session->current_media->mstart_offset;
-		if ((res=get_frame(session->current_media,&s_time))!=ERR_NOERROR){
-			 if(res!=ERR_NOERROR)
-				//fprintf(stderr,"Some errors occurred\n");
+		if ( (res=get_frame(session->current_media,&s_time))!=ERR_NOERROR ){
+			//fprintf(stderr,"Some errors occurred\n");
 			
 			return res;
 		}

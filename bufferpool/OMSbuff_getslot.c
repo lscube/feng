@@ -34,19 +34,30 @@
 #include <fenice/bufferpool.h>
 
 
+/*! \brief get a new empty slot from bufferpool.
+ *
+ * It do NOT mark the slot as busy, this action will be performed by
+ * OMSbuff_write that MUST be called at the end of operations with the obtained
+ * slot.
+ *
+ * \return empty slot.
+ */
 OMSSlot *OMSbuff_getslot(OMSBuffer *buffer)
 {
 	OMSSlot *slot=buffer->write_pos; 
-	uint64 curr_seq = slot->slot_seq;
+	// uint64 curr_seq = slot->slot_seq;
 
-	if(slot->next->refs>0)
-		slot=OMSbuff_slotadd(buffer,slot);
-	else
+	if(slot->next->refs > 0) {
+		// printf("must add slot\n");
+		if ( !(slot=OMSbuff_slotadd(buffer,slot)) )
+			return NULL;
+	} else
 		slot=slot->next;
 
-	slot->refs = buffer->refs;
-	slot->slot_seq = curr_seq + 1;
-	buffer->write_pos=slot;	
+	// slot->refs = buffer->refs;
+	// slot->slot_seq = curr_seq + 1;
+
+	// buffer->write_pos=slot;	
 
 	return slot; 
 }	

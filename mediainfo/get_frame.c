@@ -82,12 +82,16 @@ int get_frame(media_entry *me, double *mtime)
 		else 
 			res=ERR_UNSUPPORTED_PT;
 
-		slot->timestamp=*mtime;
+		if (res==ERR_NOERROR) { // commit of buffer slot.
+			if (OMSbuff_write(me->pkt_buffer, *mtime, slot->marker, slot->data, slot->data_size))
+				fprintf(stderr, "Error in bufferpool writing\n");
+		}
+		// slot->timestamp=*mtime;
 
 #if DEBUG
 //		dump_payload(slot->data,slot->data_size,"fenice_dump");
 #endif
-	}while(recallme && res==ERR_NOERROR);
+	} while(recallme && res==ERR_NOERROR);
 	return res;
 }
 

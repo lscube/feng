@@ -94,8 +94,7 @@ OMSBuffer *OMSbuff_new(uint32 buffer_size);
 OMSConsumer *OMSbuff_ref(OMSBuffer *);
 void OMSbuff_unref(OMSConsumer *);
 OMSSlot *OMSbuff_read(OMSConsumer *);
-//TODO: OMSbuff_write needs to be upgraded to be compliant with new OMSBuffer and OMSSlot structs.
-int32 OMSbuff_write(OMSBuffer *, uint32 timestamp, uint8 *data, uint32 data_size);
+int32 OMSbuff_write(OMSBuffer *, uint32 timestamp, uint8 marker, uint8 *data, uint32 data_size);
 OMSSlot *OMSbuff_getslot(OMSBuffer *);
 OMSSlot *OMSbuff_slotadd(OMSBuffer *, OMSSlot *);
 void OMSbuff_free(OMSBuffer *);

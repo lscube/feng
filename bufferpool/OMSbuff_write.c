@@ -37,24 +37,38 @@
 #include <fenice/utils.h>
 #include <fenice/bufferpool.h>
 
-/* ! Write a new slot in the buffer using the input parameters and
- 	return ERR_NOERROR or ERR_ALLOC*/
-int32 OMSbuff_write(OMSBuffer *buffer, uint32 timestamp, uint8 *data, uint32 data_size)
+/*! \brief Write a new slot in the buffer using the input parameters.
+ *  
+ *  The function writes a new slot according with input parameters. If the
+ *  <tt>data</tt> belongs to a slot that was prevoiusly requested with
+ *  <tt>OMSbuff_getslot</tt> then there is not the copy of data, just the
+ *  parameter setting like a commit of changes done.
+ *  \return ERR_NOERROR or ERR_ALLOC
+ *  */
+int32 OMSbuff_write(OMSBuffer *buffer, uint32 timestamp, uint8 marker, uint8 *data, uint32 data_size)
 {
 	OMSSlot *slot=buffer->write_pos;
 	uint64 curr_seq = slot->slot_seq;
 	
-	if (slot->next->refs > 0) {
-		if ((slot = OMSbuff_slotadd(buffer, slot)) == NULL)
-			return ERR_ALLOC;
-	} else 
+	if (slot->next->data == data) {
+		// fprintf(stderr, "buffer commit\n");
 		slot = slot->next;
+	} else {
+		if (slot->next->refs > 0) {
+			if ((slot = OMSbuff_slotadd(buffer, slot)) == NULL)
+				return ERR_ALLOC;
+		} else 
+			slot = slot->next;
 
+		memcpy(slot->data,data,data_size);
+	}
+
+	slot->timestamp = timestamp;
+	slot->marker = marker;
+	slot->data_size=data_size;
+	
 	slot->refs = buffer->refs;
 	slot->slot_seq = curr_seq + 1;
-	memcpy(slot->data,data,data_size);
-	slot->timestamp = timestamp;
-	slot->data_size=data_size;
 	
 	buffer->write_pos = slot;
 
