@@ -167,10 +167,10 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
 
 
 			/*****START CC****/
-			if (strcasecmp(keyword,SD_LICENCE)==0) {
+			if (strcasecmp(keyword,SD_LICENSE)==0) {
 			sscanf(line,"%s%s",trash,(p->description.commons_dead));
 			
-			p->description.flags|=MED_LICENCE;
+			p->description.flags|=MED_LICENSE;
 		        }
 			if (strcasecmp(keyword,SD_RDF)==0) {
 			sscanf(line,"%s%s",trash,(p->description.rdf_page));

@@ -133,7 +133,7 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 	   	strcat(descr,t);
 
 		/*start CC*/
-		if(p->description.flags & MED_LICENCE){
+		if(p->description.flags & MED_LICENSE){
 		     strcat(descr,"a=uriLicense:");
 		     strcat(descr,p->description.commons_dead);
 		     strcat(descr,"\n");

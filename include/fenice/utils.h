@@ -123,7 +123,7 @@
 	#define SD_MEDIA_SOURCE "MEDIA_SOURCE"	
 	
 	/*start CC*/
-	#define SD_LICENCE "LICENCE"
+	#define SD_LICENSE "LICENSE"
 	#define SD_RDF "VERIFY"  
 	#define SD_TITLE "TITLE"
         #define SD_CREATOR "CREATOR"
