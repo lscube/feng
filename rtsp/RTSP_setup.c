@@ -106,7 +106,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		fprintf(stderr, "ssrc=%lu\n", ssrc);
 #endif
 	//}
-
 	
 	if ((p = strstr(rtsp->in_buffer, "client_port")) == NULL && strstr(rtsp->in_buffer, "multicast") == NULL) {
 		printf("SETUP request didn't specify client ports\n");
@@ -223,6 +222,13 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		send_reply(404, 0, rtsp);	/* Not found */
 		return ERR_NOERROR;
 	}
+	
+	if((matching_descr->flags & SD_FL_MULTICAST) && strstr(rtsp->in_buffer, "multicast") == NULL ){
+		printf("SETUP multicast request didn't specify multicast word\n");
+		send_reply(461, "Require: Transport settings of multicast.\n", rtsp);	/* Not Acceptable */
+		return ERR_NOERROR;
+	}
+
 	// If there's a Session header we have an aggregate control
 	if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
 		if (sscanf(p, "%254s %d", trash, &SessionID) != 2) {
