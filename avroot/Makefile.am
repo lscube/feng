@@ -1,4 +1,4 @@
-FENICE_AVROOT_DIR = $(DESTDIR)/var/fenice/avroot/
+FENICE_AVROOT_DIR = $(DESTDIR)@fenice_avroot_dir@
 
 FENICE_TEST_FILES = test.sd audio.mp3 video.mpg
 

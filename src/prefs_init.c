@@ -41,16 +41,19 @@ serv_prefs prefs;
 void prefs_init(char *fileconf)
 {
 	FILE *f;
+	char opened = 0;
 	char line[256];
 	char *p,*cont;
 	int l;
 			
-	f=fopen(fileconf,"rt");	
-	if (f==NULL) {		
-		printf("Error opening file %s, using defaults\n",fileconf);
-		prefs_use_default(-1);
-	}
-	else {		
+	if ( (f = fopen(fileconf,"rt")) == NULL ) {
+		printf("Error opening file %s, trying default (%s):\n", fileconf, DEFAULT_CONF_FILE);
+		if ( (f = fopen(DEFAULT_CONF_FILE, "rt")) == NULL ) {
+			printf("Error opening default file, using internal defaults:\n");
+			prefs_use_default(-1);
+		} else opened = 1;
+	} else opened = 1;
+	if (opened) {		
 		// SERVER ROOT
 		do {
 			cont=fgets(line,80,f);
@@ -63,7 +66,6 @@ void prefs_init(char *fileconf)
 				p=strstr(prefs.serv_root,"\n");
 				if (p!=NULL) {
 					*p='\0';
-					printf("Root directory is %s\n", prefs.serv_root);
 				}
 				else {
 					prefs_use_default(0);
@@ -131,4 +133,9 @@ void prefs_init(char *fileconf)
 	if (getdomainname(prefs.hostname+l+1,sizeof(prefs.hostname)-l)!=0) {
 		prefs.hostname[l]='.';
 	}
+	printf("\n");
+	printf("\tavroot directory is: %s\n", prefs.serv_root);
+	printf("\thostname is: %s\n", prefs.hostname);
+	printf("\trtsp listening port is: %d\n", prefs.port);
+	printf("\n");
 }

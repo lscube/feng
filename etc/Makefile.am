@@ -1,5 +1,5 @@
 FENICE_CONF_FILE = fenice.conf
-FENICE_CONF_DIR = /etc
+FENICE_CONF_DIR = $(DESTDIR)@fenice_conf_dir@
 
 install-data-local:
 	@if test -f $(FENICE_CONF_DIR)/$(FENICE_CONF_FILE); then \

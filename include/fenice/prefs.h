@@ -35,6 +35,8 @@
 #ifndef _SERV_PREFSH	
 #define _SERV_PREFSH
 
+#include <config.h>
+
 	/* Please note (1): PROCESS_COUNT must be >=1
 	*/
 	/* Please note (2):
@@ -42,12 +44,15 @@
 	*/
 	#define MAX_PROCESS		10
 	#define MAX_CONNECTION	100
+
+	
+	#define DEFAULT_CONF_FILE FENICE_CONF_DIR_DEFAULT"/fenice.conf"
 	
 	#define PREFS_ROOT "root"
 	#define PREFS_PORT "port"
 	#define PREFS_MULTICAST_FILE "multicast"
 
-	#define DEFAULT_ROOT "/home/federico/tesi/media/"
+	#define DEFAULT_ROOT FENICE_AVROOT_DIR_DEFAULT
 	#define DEFAULT_PORT 1554
 	#define DEFAULT_MULTICAST_FILE ""
 	

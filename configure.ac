@@ -8,6 +8,8 @@ AC_PREFIX_PROGRAM(fenice)
 
 test "$prefix" = . || test "$prefix" = NONE && prefix=/usr/local
 test "$exec_prefix" = NONE && exec_prefix=$prefix
+test "x$sysconfdir" = 'x${prefix}/etc' && sysconfdir="/etc"
+test "x$localstatedir" = 'x${prefix}/var' && localstatedir="/var"
 
 AM_CONFIG_HEADER(config.h)
 
@@ -144,6 +146,17 @@ AM_CONDITIONAL(ARCH_X86, test "x$arch_type" = "xix86")
 AM_CONDITIONAL(ARCH_PPC, test "x$arch_type" = "xppc")
 AM_CONDITIONAL(HAVE_SOLARIS, test "x$have_solaris" = xyes)
 
+fenice_avroot_dir=$localstatedir/fenice/avroot
+AC_SUBST(fenice_avroot_dir)
+fenice_conf_dir=$sysconfdir
+AC_SUBST(fenice_conf_dir)
+
+AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT, "$fenice_avroot_dir", [Define default directory for Fenice A/V resources])
+AC_DEFINE(FENICE_AVROOT_DIR_ENV, "FENICE_AVROOT_DIR",[Define the name for the ENV variable for Fenice avroot dir])
+
+AC_DEFINE_UNQUOTED(FENICE_CONF_DIR_DEFAULT, "$fenice_conf_dir", [Define default directory for Fenice configuration])
+AC_DEFINE(FENICE_CONF_DIR_ENV, "FENICE_CONF_DIR",[Define the name for the ENV variable for Fenice configuration dir])
+
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([eventloop/Makefile])
 AC_CONFIG_FILES([rtp/Makefile])
@@ -169,6 +182,8 @@ AC_MSG_NOTICE([config files successfully generated!
  
 Fenice Install prefix .......... : $prefix
 Fenice Binary path ............. : $exec_prefix/bin/fenice
+Fenice Configuration path .......: $fenice_conf_dir
+Fenice A/V Resources path .......: $fenice_avroot_dir
  
  
  'make' will now compile Fenice and 'su -c make install' will install it.

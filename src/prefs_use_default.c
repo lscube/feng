@@ -43,23 +43,21 @@ extern serv_prefs prefs;
 void prefs_use_default(int index)
 {
 	switch (index) {
-		case -1: {
-    		strcpy(prefs.serv_root,DEFAULT_ROOT);
-    		prefs.port=1554;
-    		return;
-    	}
-    	case 0: {
-    		strcpy(prefs.serv_root,DEFAULT_ROOT);
-    		return;
-    	}
-    	case 1: {
-    		prefs.port=DEFAULT_PORT;
-    		return;
-    	}
-	case 2:{
-	        strcpy(prefs.multicast_file,DEFAULT_MULTICAST_FILE);
-		return;
-	}	
+		case -1:
+    			strcpy(prefs.serv_root,DEFAULT_ROOT);
+	    		prefs.port=DEFAULT_PORT;
+    			return;
+    		case 0: 
+    			strcpy(prefs.serv_root,DEFAULT_ROOT);
+	    		return;
+    		case 1: 
+	    		prefs.port=DEFAULT_PORT;
+    			return;
+		case 2:
+		        strcpy(prefs.multicast_file,DEFAULT_MULTICAST_FILE);
+			return;
+		default:
+			return;
 	}
 }
 
