@@ -73,6 +73,7 @@ int enum_media(char *object,SD_descr **d)
 		strcpy(matching_descr->filename,object);
 	}
 	res=parse_SD_file(object,matching_descr);
+	(*d)=matching_descr;
 	if (res!=ERR_NOERROR) {
 		if (!last_descr) //matching is the first
 			SD_global_list=SD_global_list->next;
@@ -82,8 +83,6 @@ int enum_media(char *object,SD_descr **d)
 		free(matching_descr);
 		return res;
 	}
-	//*list=matching_descr->me_list;
-	*d=matching_descr;
 	return 0;
 }
 
