@@ -7,7 +7,6 @@ noinst_HEADERS	=	command_environment.h \
 			md5.h \
 			mediainfo.h \
 			socket.h \
-			multicast.h \
 			prefs.h \
 			rtcp.h \
 			rtp.h \

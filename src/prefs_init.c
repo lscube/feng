@@ -98,34 +98,6 @@ void prefs_init(char *fileconf)
 		else {
 			prefs_use_default(1);
 		}
-	       //MULTICAST
-		fseek(f,0,SEEK_SET);
-
-		do {
-			cont=fgets(line,80,f);
-			p=strstr(line,PREFS_MULTICAST_FILE);
-		} while (p==NULL && cont);
-		if (p!=NULL) {
-			p=strstr(p,"=");
-			if (p!=NULL) {
-				strcpy(prefs.multicast_file,p+1);
-				p=strstr(prefs.multicast_file,"\n");
-				if (p!=NULL) {
-					*p='\0';
-				//	printf("Multicast file is %s\n", prefs.multicast_file);
-				}
-				else {
-					prefs_use_default(2);
-				}
-			}
-			else {
-				prefs_use_default(2);
-			}
-		}
-		else {
-			prefs_use_default(2);
-		}
-
 		
 	}
 	gethostname(prefs.hostname,sizeof(prefs.hostname));

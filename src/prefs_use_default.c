@@ -53,9 +53,6 @@ void prefs_use_default(int index)
     		case 1: 
 	    		prefs.port=DEFAULT_PORT;
     			return;
-		case 2:
-		        strcpy(prefs.multicast_file,DEFAULT_MULTICAST_FILE);
-			return;
 		default:
 			return;
 	}

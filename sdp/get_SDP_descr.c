@@ -121,18 +121,9 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 		   	}	   			   	
 	   	}
 		   	
-		if (p->description.priority == 1) { 
-	   		if (RTP_get_port_pair(&pair)!=ERR_NOERROR) 
-	   			return ERR_GENERIC;
-	   	}
-		//else non implementato supponendo che gli stream con priority > 1 seguano 
-		//nella descrizione sd il file con priority = 0 (da modificare con concetto di sessione)
 		
-		
-	   	//pair.RTP=0;
-	   	p->description.rtp_port=pair.RTP;
-	   	p->description.rtcp_port=pair.RTCP;
-		//printf("Il media é %s",media->filename);
+	   	pair.RTP=0;
+
 	   	sprintf(t,"%d",pair.RTP);
 	   	strcat(descr,t);
 	   	//strcat(descr,"/2 RTP/AVP "); // Use 2 ports. Use udp

@@ -51,12 +51,12 @@ void eventloop(tsocket main_fd, tsocket command_fd)
 	if (conn_count!=-1)
 	{
 		fd=tcp_accept(main_fd);
-		fd_command=tcp_accept(command_fd);
+		//fd_command=tcp_accept(command_fd);
 	}
 
 	//Handle command environment
-	if(fd_command>=0)
-		init_command(fd_command);
+	//if(fd_command>=0)
+	//	init_command(fd_command);
 	
 	
 	// Handle a new connection

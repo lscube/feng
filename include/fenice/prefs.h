@@ -46,11 +46,10 @@
 	#define MAX_CONNECTION	100
 
 	
-	#define DEFAULT_CONF_FILE FENICE_CONF_DIR_DEFAULT"/fenice.conf"
+	#define DEFAULT_CONF_FILE FENICE_CONF_DIR_DEFAULT "/fenice.conf"
 	
 	#define PREFS_ROOT "root"
 	#define PREFS_PORT "port"
-	#define PREFS_MULTICAST_FILE "multicast"
 
 	#define DEFAULT_ROOT FENICE_AVROOT_DIR_DEFAULT
 	#define DEFAULT_PORT 1554
@@ -59,13 +58,11 @@
 	typedef struct _serv_prefs {
 		char hostname[256];
 		char serv_root[256];
-		char multicast_file[256]; /*it is the xml file for multicast*/
 		unsigned int port;			
 	} serv_prefs;
 
 	void prefs_init(char *fileconf);
 	char *prefs_get_serv_root();
-	char *prefs_get_multicast_file();
 	char *prefs_get_hostname();
 	int prefs_get_port();		
 	void prefs_use_default(int index);

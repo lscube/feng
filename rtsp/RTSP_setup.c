@@ -121,16 +121,17 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	}
 
       	//BEGIN FEDERICO	
-     	if ((strstr(rtsp->in_buffer, "multicast")) != NULL) { // MULTICAST SESSION
-       		printf("Multicast request.\n");
+     	if ((strstr(rtsp->in_buffer, "multicast")) != NULL){ 
 		multicast=YES_MULTICAST;
-      	} else {
+		p = strstr(line, "port");
+      	} else 
 		p = strstr(line, "client_port");
+	
 		p = strstr(p, "=");
 		sscanf(p + 1, "%d", &(cli_ports.RTP));
 		p = strstr(p, "-");
 		sscanf(p + 1, "%d", &(cli_ports.RTCP));
-	} 
+	 
        	//END FEDERICO
        
 	/* Get the URL */
@@ -245,16 +246,12 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 
          
-	//if (RTP_get_port_pair(&ser_ports)!=ERR_NOERROR) {
-	//	printf("SETUP request can't be served. Maximum connection number reached.\n");
-	//	send_reply(500, 0, rtsp);	/* Internal server error */
-        //	return ERR_GENERIC;
-	//}
+	if (RTP_get_port_pair(&ser_ports)!=ERR_NOERROR) {
+		printf("SETUP request can't be served. Maximum connection number reached.\n");
+		send_reply(500, 0, rtsp);	/* Internal server error */
+        	return ERR_GENERIC;
+	}
 	
-	 // Modified by Federico to adjust the sdp
-    	 ser_ports.RTP=matching_me->description.rtp_port;
-    	 ser_ports.RTCP=matching_me->description.rtcp_port;
-    	
 	
 	// Add an RTSP session if necessary
 	if (rtsp->session_list == NULL) {
@@ -296,14 +293,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	sp2->start_seq = start_seq;
 	sp2->cli_ports.RTP = cli_ports.RTP;
 	sp2->cli_ports.RTCP = cli_ports.RTCP;
-	sp2->ser_ports.RTP = ser_ports.RTP; //not changed only if multicast. FEDERICO
-	sp2->ser_ports.RTCP = ser_ports.RTCP; //not changed only if multicast FEDERICO
-
-        /*+++++++++++++++++++++++++++++BEGIN FEDERICO+++++++++++++++++++++++++++++++++++++++*/
-        /*   I need this part of code in order to look for the RTP                          *
-         *   and RTCP ports                                                                 *
-         *   SETUP message needs these ports                                                *
-         ************************************************************************************/ 
+	sp2->ser_ports.RTP = ser_ports.RTP;
+	
 	if (getpeername(rtsp->fd, &rtsp_peer, &namelen) != 0) {
 		printf("SETUP request can't be served. Getpeername() failed.\n");
 		send_reply(415, 0, rtsp);	// Internal server error
@@ -352,7 +343,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		udp_open(ser_ports.RTCP,&(sp2->rtcp_in_peer), &(sp2->rtcp_fd_in));  //bind 
 	        
 	    }//end else unicast
-	/*+++++++++++++++++++++++++++++END FEDERICO++++++++++++++++++++++++++++++++++++++++++*/	
 
 	sp2->ssrc = ssrc;
 	sp2->sched_id = schedule_add(sp2);
