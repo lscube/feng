@@ -270,7 +270,8 @@ int RTSP_play(RTSP_buffer * rtsp)
 				}
 				if (ptr2 != NULL) {
 					// FOUND. Start Playing
-
+					if ((ptr2->current_media->cons = OMSbuff_ref(ptr2->current_media->pkt_buffer)) == NULL)
+						return ERR_ALLOC;
 					schedule_start(ptr2->sched_id, &args);
 				} else {
 					printf("PLAY request an object which wasn't setup.\n");
@@ -295,6 +296,8 @@ int RTSP_play(RTSP_buffer * rtsp)
 				for (ptr2 = ptr->rtp_session; ptr2 != NULL; ptr2 = ptr2->next) {
 					if (!ptr2->started) {
 							// Start new
+							if ((ptr2->current_media->cons = OMSbuff_ref(ptr2->current_media->pkt_buffer)) == NULL)
+								return ERR_ALLOC;
 							schedule_start(ptr2->sched_id, &args);
 						} else {
 							// Resume existing

@@ -49,7 +49,7 @@ void OMSbuff_free(OMSBuffer *buffer)
 	}
 	free(buffer->buffer_head);
 	free(buffer);
-	fprintf(stderr, "Buffer is free \n");
+	fprintf(stderr, "Buffer is freed \n");
 		
 }
 
