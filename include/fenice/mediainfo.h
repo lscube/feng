@@ -161,7 +161,6 @@
 		char minutes;
 		char seconds;
 		char picture;
-		double prev_mstart_offset;/*usefull for random access video*/
 		unsigned long data_total;  
 		standard std;
 		int fragmented;
@@ -189,10 +188,11 @@
     		int fd;
 		void *stat;
 		unsigned int data_chunk;
+		double prev_mstart_offset;/*usefull for random access*/
 		
 		/*Buffering with bufferpool module*/
-    		unsigned char buff_data[4]; // shawill: needed for live-by-named-pipe
-		unsigned int buff_size; // shawill: needed for live-by-named-pipe		
+    		unsigned char buff_data[4]; // shawill: needed for audio-mp3 live-by-named-pipe
+		unsigned int buff_size; // shawill: needed for audio-mp3 live-by-named-pipe		
 		OMSBuffer *pkt_buffer; 
 		//Consumer now is in RTP_session structure
 		//OMSConsumer *cons;

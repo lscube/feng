@@ -81,7 +81,7 @@ int RTP_send_packet(RTP_session *session)
 			//session->current_media->mtime = slot->timestamp + session->current_media->mstart - session->current_media->mstart_offset;
 		}
 		
-		//fprintf(stderr,"slot->timestamp=%f play_offset=%f %s \n",slot->timestamp,session->current_media->play_offset,(strcmp(session->current_media->description.encoding_name,"MPA")==0)?"audio":"video");
+		fprintf(stderr,"slot->timestamp=%f play_offset=%f %s \n",slot->timestamp,session->current_media->play_offset,(strcmp(session->current_media->description.encoding_name,"MPA")==0)?"audio":"video");
 		
     		hdr_size=sizeof(r);	
 		r.version = 2;
@@ -91,7 +91,7 @@ int RTP_send_packet(RTP_session *session)
 		r.marker=slot->marker;
     		r.payload = session->current_media->description.payload_type;
 		r.seq_no = htons(session->seq++ + session->start_seq);
-   		r.timestamp=htonl(session->start_rtptime+msec2tick(slot->timestamp-session->current_media->mstart_offset,session->current_media));
+   		r.timestamp=htonl(session->start_rtptime+msec2tick(slot->timestamp,session->current_media));
    		// r.timestamp=htonl(session->start_rtptime+msec2tick(s_time,session->current_media));
 		r.ssrc = htonl(session->ssrc);
 #if HAVE_ALLOCA

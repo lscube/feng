@@ -44,93 +44,50 @@
 int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
 {
         char thefile[255];
-        // unsigned char sync1,sync2,sync3,sync4;
 	unsigned char *buff = me->buff_data;
         int N=0, res;
-	// int i; // index
-        unsigned int frame_skip;
 
         if (!(me->flags & ME_FD)) {
                 strcpy(thefile,prefs_get_serv_root());
                 strcat(thefile,me->filename);    
-		// printf("Playing: %s - bitrate: %d\n", thefile, me->description.bitrate);
                 me->fd=open(thefile,O_RDONLY);
                 if ( me->fd==-1 ) return ERR_NOT_FOUND;
                 me->flags|=ME_FD;
-                me->data_chunk = 0;
-		
+		me->prev_mstart_offset=0;	
 		/* TODO support Id3 TAG v2, this doesn't work*/
 		//if ((me->description.flags & MED_ID3) && (me->description).msource!=live)
 		//	lseek(me->fd,(me->description.tag_dim)+10,SEEK_SET);
         }
+
 	
-        frame_skip=round((*mtime)/(double)(me->description.pkt_len));   // mtime is play time in milliseconds, starting
-                                                                        // from zero and incremented by one each time
-                                                                        // this function is called (see schedule_do);
-                                                                        // pkt_len is pkt lenght in milliseconds,
-                                                                        // frame_skip is the number of current frame
-        *mtime = (double)frame_skip * (double)(me->description.pkt_len);
-        
-        for (; me->data_chunk<=frame_skip; ++me->data_chunk) {
-		for (;me->buff_size<4;me->buff_size++)
-                	if ((read(me->fd,&(buff[me->buff_size]),1)) != 1 )
-				return ERR_EOF;
-		me->buff_size = 0;
-		/*
-		if (me->buff_size == 4) {
-			sync1 = me->buff_data[0];
-			sync2 = me->buff_data[1];
-			sync3 = me->buff_data[2];
-			sync4 = me->buff_data[3];
-			me->buff_size = 0;
-		} else {
-                	if ((read(me->fd,&sync1,1)) != 1 ) return ERR_EOF;
-                	if ((read(me->fd,&sync2,1)) != 1 ) return ERR_EOF;
-                	if ((read(me->fd,&sync3,1)) != 1 ) return ERR_EOF;
-                	if ((read(me->fd,&sync4,1)) != 1 ) return ERR_EOF;
-		}
-		*/
-                // if ((sync1==0xff) && ((sync2 & 0xe0)==0xe0)) {
-                if ((buff[0]==0xff) && ((buff[1] & 0xe0)==0xe0)) {
-                        N = (int)(me->description.frame_len * (float)me->description.bitrate / (float)me->description.sample_rate / 8);
-                        // if (sync3 & 0x02) N++;
-                        if (buff[2] & 0x02) N++;
-                } 
-		else {
-                        // Sync not found, not Mpeg-1/2
-			// id3 TAG v1 is suppressed, id3 TAG v2 is not supported and
-			// causes ERR_EOF immediately: id3 TAG v2 is prepended to the
-			// audio content of the file and has variable lenght
-			// To support it, id3 TAG v2 header must be read in order to
-			// get its lenght and skip it
-			fprintf(stderr,"ERROR: Sync not found, not Mpeg-1/2\n");
-                        return ERR_EOF;
-                }
-                if (((me->data_chunk) < frame_skip)) {
-			if ((me->description).msource==live) {
-				fprintf(stderr,"ERROR: Live error, perhaps it's a bug\n");
-				/*TODO live solution about this lseek*/
-				return ERR_EOF;
-			}
-                        lseek(me->fd,N-4,SEEK_CUR);
-                }
-        }
+	
+        if(me->play_offset!=me->prev_mstart_offset && (me->description).msource!=live){                 //random access 
+        	me->prev_mstart_offset=me->play_offset; 						// pkt_len is pkt lenght in milliseconds,
+                N=(float)me->description.bitrate/8 * me->play_offset/1000;
+		lseek(me->fd,N,SEEK_SET);
+	}		                                                                		
+
+	if ((read(me->fd,&(buff[me->buff_size]),4)) != 4 )
+		return ERR_EOF;
+	me->buff_size = 0;
+	if ((buff[0]==0xff) && ((buff[1] & 0xe0)==0xe0)) {
+		N = (int)(me->description.frame_len * (float)me->description.bitrate / (float)me->description.sample_rate / 8);
+		if (buff[2] & 0x02) N++;
+	} 
+	else {
+               	// Sync not found, not Mpeg-1/2
+		// id3 TAG v1 is suppressed, id3 TAG v2 is not supported and
+		fprintf(stderr,"ERROR: Sync not found, not Mpeg-1/2\n");
+		N = (int)(me->description.frame_len * (float)me->description.bitrate / (float)me->description.sample_rate / 8);
+		//return ERR_EOF;
+	}
         *data_size = N + 4; // 4 bytes are needed for mp3 in RTP encapsulation
-        //*data=(unsigned char *)calloc(1,*data_size);
-        //if (*data==NULL) {
-        //        return ERR_ALLOC;
-        //}
         data[0]=0;
         data[1]=0;
         data[2]=0;
         data[3]=0;
         // These first 4 bytes are for mp3 in RTP encapsulation
-	/*
-        (*data)[4]=sync1;
-        (*data)[5]=sync2;
-        (*data)[6]=sync3;
-        (*data)[7]=sync4;
-	*/
+	
         data[4]=buff[0];
         data[5]=buff[1];
         data[6]=buff[2];

@@ -130,7 +130,7 @@
 	/*end CC*/
 
   	/* COMMAND KEYWORDS AND PORT */
-	#define COMMAND_PORT 3000
+	//#define COMMAND_PORT 3000
  	uint32 random32(int);
 	// static uint32 md_32(char *string, int length); // shawill: what?
 	int parse_url(const char *url,char *server, unsigned short *port, char *file_name);

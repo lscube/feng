@@ -44,6 +44,7 @@
 #if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
+#define DEFAULT_BYTE_X_PKT 1400
 
 
 int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme)   /* reads MPEG-1,2 Video */
@@ -78,7 +79,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         } else 
 		s = (static_MPEG_video *) me->stat;
 
-        num_bytes = (me->description).byte_per_pckt;
+        num_bytes = ((me->description).byte_per_pckt>0)?(me->description).byte_per_pckt:DEFAULT_BYTE_X_PKT;
 
 #if HAVE_ALLOCA
         data_tmp=(unsigned char *)alloca(65000);
@@ -105,13 +106,13 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
                	seq_head_pres=1;
         }
 
-
-	if((me->description).msource!=live && me->play_offset!=s->prev_mstart_offset ){
+	/*---- Random Access ----*/
+	if((me->description).msource!=live && me->play_offset!=me->prev_mstart_offset ){
 		count=random_access(me);
 		if(!me->description.bitrate)
 			fprintf(stderr,"Bit Rate unavaible, access random not permitted\n");	
 		else{
-			fprintf(stderr,"Bit Rate b/s: %d  skipped byte: %d\n",me->description.bitrate, count);	
+			//fprintf(stderr,"Bit Rate b/s: %d  skipped byte: %d\n",me->description.bitrate, count);	
 			s->fragmented=0;
 			//*recallme=0;
 			wasSeeking=1;
@@ -123,9 +124,10 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 			
 			lseek(me->fd,count,SEEK_SET);
 		}
-		 s->prev_mstart_offset=me->play_offset;
+		 me->prev_mstart_offset=me->play_offset;
 	}
-
+	/*---- end Random Access ----*/
+#if 0	
 	if(num_bytes==0){ /*TODO:case 1 slice for pkt*/
 		do{
 			if(!flag){	
@@ -160,7 +162,9 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 		read_slice(data_tmp,data_size,me->fd,&s->final_byte);
         	s->vsh1.b=1;
 	}/*end if(num_bytes==0)*/
-	else if(!s->fragmented)/*num_bytes !=0 and slice was not fragmented*/{
+	else 
+#endif	
+	if(!s->fragmented)/*num_bytes !=0 and slice was not fragmented*/{
 		char buf_aux[3];	
 		int i;
 		if(flag && wasSeeking==0)
@@ -345,7 +349,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         data_tmp[2] = vsh1_1[1];
         data_tmp[3] = vsh1_1[0];
         #ifdef MPEG2VSHE
-        if (s->std == MPEG_2) {
+        if (s->std == MPEG_2 && !flag) {
                 vsh2_1 = (char *)(&s->vsh2);
 		data_tmp[4] = vsh2_1[3];
                 data_tmp[5] = vsh2_1[2];
