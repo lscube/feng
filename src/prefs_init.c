@@ -60,7 +60,7 @@ void prefs_init(char *fileconf)
 		do {
 			cont=fgets(line,80,f);
 			p=strstr(line,PREFS_ROOT);
-		} while (p==NULL && cont);
+		} while ((p==NULL && cont) || line[0]=='#');
 		if (p!=NULL) {
 			p=strstr(p,"=");
 			if (p!=NULL) {
@@ -85,7 +85,7 @@ void prefs_init(char *fileconf)
 		do {
 			cont=fgets(line,80,f);
 			p=strstr(line,PREFS_PORT);
-		} while (p==NULL && cont);
+		} while ((p==NULL && cont) || line[0]=='#');
 		if (p!=NULL) {
 			p=strstr(p,"=")+1;
 			if (p!=NULL) {
@@ -99,6 +99,26 @@ void prefs_init(char *fileconf)
 		}
 		else {
 			prefs_use_default(1);
+		}
+		//MAX SESSION 
+		fseek(f,0,SEEK_SET);
+		do {
+			cont=fgets(line,80,f);
+			p=strstr(line,PREFS_MAX_SESSION);
+		} while ((p==NULL && cont) || line[0]=='#');
+		if (p!=NULL) {
+			p=strstr(p,"=")+1;
+			if (p!=NULL) {
+				if (sscanf(p,"%i",&(prefs.max_session))!=1) {
+					prefs_use_default(2);
+				}
+			}
+			else {
+				prefs_use_default(2);
+			}
+		}
+		else {
+			prefs_use_default(2);
 		}
 		
 	}

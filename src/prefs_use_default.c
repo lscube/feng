@@ -53,6 +53,9 @@ void prefs_use_default(int index)
     		case 1: 
 	    		prefs.port=DEFAULT_PORT;
     			return;
+    		case 2: 
+	    		prefs.max_session=DEFAULT_MAX_SESSION;
+    			return;
 		default:
 			return;
 	}

@@ -19,6 +19,7 @@ libprefs_la_SOURCES =	prefs_init.c \
 			prefs_get_serv_root.c \
 			prefs_get_hostname.c \
 			prefs_get_port.c \
+			prefs_get_max_session.c \
 			prefs_use_default.c
 
 libprefs_la_LDFLAGS = -static

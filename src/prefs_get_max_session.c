@@ -32,43 +32,13 @@
  *  
  * */
 
-#ifndef _SERV_PREFSH	
-#define _SERV_PREFSH
+#include <fenice/prefs.h>
+#include <stdio.h>
 
-#include <config.h>
+extern serv_prefs prefs;
 
-	/* Please note (1): PROCESS_COUNT must be >=1
-	*/
-	/* Please note (2):
-		MAX_CONNECTION must be an integral multiple of MAX_PROCESS
-	*/
-	#define MAX_PROCESS	4/*number of fork*/	
-	#define MAX_CONNECTION	100/*rtsp connection*/	
-	#define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS))/*rtsp connection for one fork*/
-	#define DEFAULT_MAX_SESSION 102/*default max session after which i need to send a redirect*/
+int prefs_get_max_session()
+{
+	return prefs.max_session;
+}
 
-	
-	#define DEFAULT_CONF_FILE FENICE_CONF_DIR_DEFAULT "/fenice.conf"
-	
-	#define PREFS_ROOT "root"
-	#define PREFS_PORT "port"
-	#define PREFS_MAX_SESSION "max_session"
-
-	#define DEFAULT_ROOT FENICE_AVROOT_DIR_DEFAULT
-	#define DEFAULT_PORT 1554
-	
-	typedef struct _serv_prefs {
-		char hostname[256];
-		char serv_root[256];
-		unsigned int port;			
-		unsigned int max_session;			
-	} serv_prefs;
-
-	void prefs_init(char *fileconf);
-	char *prefs_get_serv_root();
-	char *prefs_get_hostname();
-	int prefs_get_port();		
-	int prefs_get_max_session();
-	void prefs_use_default(int index);
-		
-#endif

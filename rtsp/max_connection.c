@@ -37,6 +37,7 @@
 #include <fenice/types.h>
 #include <fenice/prefs.h>
 #include <fenice/eventloop.h>
+#include <fenice/debug.h>
 
 extern uint32 num_conn;
 
@@ -44,9 +45,10 @@ uint32 max_connection()
 {
 	int i;
 	uint32 count=0;
-	
+#if DEBUG
 	fprintf(stderr,"max_connection %d\n",num_conn);
-	if(num_conn<=DEFAULT_MAX_SESSION)
+#endif	
+	if(num_conn<=prefs_get_max_session())
 		return ERR_NOERROR;
 	
 	return ERR_GENERIC;

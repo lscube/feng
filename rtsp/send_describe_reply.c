@@ -63,25 +63,20 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format des
 		return ERR_ALLOC;
 	}
 
-/*	if(max_connection(rtsp)==ERR_GENERIC){
-		return send_redirect_3xx(rtsp);
-	}
-	else{*/
-		/*describe*/
-		sprintf(r, "%s %d %s\nCSeq: %d\nServer: %s/%s\n", RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE, VERSION);
-		add_time_stamp(r, 0);
-		switch (descr_format) {
-			// Add new formats here
-			case df_SDP_format:{
-				strcat(r, "Content-Type: application/sdp\n");
-			break;
-			}
+	/*describe*/
+	sprintf(r, "%s %d %s\nCSeq: %d\nServer: %s/%s\n", RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE, VERSION);
+	add_time_stamp(r, 0);
+	switch (descr_format) {
+		// Add new formats here
+		case df_SDP_format:{
+			strcat(r, "Content-Type: application/sdp\n");
+		break;
 		}
-		sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/\n", prefs_get_hostname(), object);
-		sprintf(r + strlen(r), "Content-Length: %d\r\n\r\n", strlen(descr));
-		strcat(r, descr);
-	//}
-		bwrite(r, (unsigned short) strlen(r), rtsp);
+	}
+	sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/\n", prefs_get_hostname(), object);
+	sprintf(r + strlen(r), "Content-Length: %d\r\n\r\n", strlen(descr));
+	strcat(r, descr);
+	bwrite(r, (unsigned short) strlen(r), rtsp);
 
 	free(mb);
 	free(r);
