@@ -164,6 +164,7 @@ int read_picture_head(uint8 *buf,uint32 *buf_size, int fin, char *final_byte, ch
                 byte5 = (((byte3 & 0x03) *2) + ((byte4 >> 7) & 0x01));
                 vsh1->ffc = byte5;
                 if (vsh1->p == 3) {                            				/* If B picture */
+			fprintf(stderr,"B Frame occurred\n");
                         byte3 = (byte1>>6) & 0x01;
                         vsh1->fbv = byte3;
                         byte4 = (byte2>>3) & 0x07;
