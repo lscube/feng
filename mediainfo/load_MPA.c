@@ -46,12 +46,10 @@ int load_MPA(media_entry *p)
 {
 
         char thefile[255];
-	unsigned char *buffer;
+	// unsigned char buffer[4];
 	long int tag_dim;
 	struct stat fdstat;
         int n,RowIndex, ColIndex;
-	
-        // unsigned char sync1,sync2,sync3,sync4;
         int BitrateMatrix[16][5] = {
                 {0,     0,     0,     0,     0     },
                 {32000, 32000, 32000, 32000, 8000  },
@@ -70,6 +68,7 @@ int load_MPA(media_entry *p)
                 {448000,384000,320000,256000,160000},
                 {0,     0,     0,     0,     0     }
         };
+
         strcpy(thefile,prefs_get_serv_root());
         strcat(thefile,p->filename);            
         p->fd=open(thefile,O_RDONLY);
@@ -82,23 +81,17 @@ int load_MPA(media_entry *p)
 	
 //	fstat(p->fd, &fdstat);
         
-	/*
-	if (read(p->fd,&sync1,1) != 1) return ERR_PARSE;
-        if (read(p->fd,&sync2,1) != 1) return ERR_PARSE;
-        if (read(p->fd,&sync3,1) != 1) return ERR_PARSE;
-        if (read(p->fd,&sync4,1) != 1) return ERR_PARSE;
-	*/
 	
-	/*
-	In questa parte eseguo il controllo per verificare
-	la presenza del tag ID3v2
-	*/
-	
-  buffer=(unsigned char *)calloc(1,4);   /* I primi tre bytes devono assumemere il valore "ID3" */
+#if 0 // below you'll find the human written version of this part of code...
+
+	// shawill ma porc... ma perchè la calloc... e poi nenche la free...!!!
+  // buffer=(unsigned char *)calloc(1,4);   /* I primi tre bytes devono assumemere il valore "ID3" */
+/*
   if (buffer==NULL) {
                 printf("errore calloc in load_MPA\n");
                 return ERR_ALLOC;
         }
+*/
   if ((n=read(p->fd,buffer,3))!=3)
   {
     printf("Errore durante la lettura del brano! in load_MPA\n");
@@ -114,13 +107,22 @@ int load_MPA(media_entry *p)
        p->description.flags|=MED_ID3;
        p->description.tag_dim=tag_dim;
        lseek(p->fd,tag_dim,SEEK_CUR);
-   } 
-  
-	
+   }
+
+#endif
 	
 	p->buff_size=0;
-	for (;p->buff_size<4;p->buff_size++)
-		if (read(p->fd,&(p->buff_data[p->buff_size]),1) != 1) return ERR_PARSE;
+	if ( (p->buff_size = read(p->fd, p->buff_data, 4)) != 4) return ERR_PARSE;
+
+	// shawill: look if ID3 tag is present
+	if (!memcmp(p->buff_data, "ID3", 3)) { // ID3 tag present
+		n = read_dim(p->fd, &tag_dim); // shawill: one day we will look also at this function
+		printf("%ld\n",tag_dim);
+		p->description.flags|=MED_ID3;
+		p->description.tag_dim=tag_dim;
+		lseek(p->fd,tag_dim,SEEK_CUR);
+		if ( (p->buff_size = read(p->fd, p->buff_data, 4)) != 4) return ERR_PARSE;
+	}
         
 	fstat(p->fd, &fdstat);
 	if ( !S_ISFIFO(fdstat.st_mode) ) {
@@ -128,17 +130,9 @@ int load_MPA(media_entry *p)
 		p->buff_size = 0;
 	} else
                 p->flags|=ME_FD;
-	/*
-	p->buff_data[0] = sync1;
-	p->buff_data[1] = sync2;
-	p->buff_data[2] = sync3;
-	p->buff_data[3] = sync4;
-	p->buff_size = 4;
-	*/
         
-	// if (! ((sync1==0xff) && ((sync2 & 0xe0)==0xe0))) return ERR_PARSE;
 	if (! ((p->buff_data[0]==0xff) && ((p->buff_data[1] & 0xe0)==0xe0))) return ERR_PARSE;
-        // switch (sync2 & 0x1e) {                /* Mpeg version and Level */
+
         switch (p->buff_data[1] & 0x1e) {                /* Mpeg version and Level */
                 case 18: ColIndex = 4; break;  /* Mpeg-2 L3 */
                 case 20: ColIndex = 4; break;  /* Mpeg-2 L2 */
@@ -148,13 +142,13 @@ int load_MPA(media_entry *p)
                 case 30: ColIndex = 0; break;  /* Mpeg-1 L1 */
                 default: return ERR_PARSE;
         }
-        // RowIndex = (sync3 & 0xf0) / 16;
+
         RowIndex = (p->buff_data[2] & 0xf0) / 16;
         p->description.bitrate = BitrateMatrix[RowIndex][ColIndex];
         p->description.flags|=MED_BITRATE;      
-        // if (sync2 & 0x08) {     /* Mpeg-1 */
+
         if (p->buff_data[1] & 0x08) {     /* Mpeg-1 */
-                // switch (sync3 & 0x0c) {
+
                 switch (p->buff_data[2] & 0x0c) {
                         case 0x00: p->description.sample_rate=44100; break;
                         case 0x04: p->description.sample_rate=48000; break;
@@ -171,9 +165,12 @@ int load_MPA(media_entry *p)
                 }
         }
         p->description.flags|=MED_SAMPLE_RATE;          
-        // if ((sync2 & 0x06) == 6) p->description.frame_len = 384;
-        if ((p->buff_data[1] & 0x06) == 6) p->description.frame_len = 384;
-        else p->description.frame_len = 1152;
+
+        if ((p->buff_data[1] & 0x06) == 6)
+		p->description.frame_len = 384;
+        else
+		p->description.frame_len = 1152;
+
         p->description.flags|=MED_FRAME_LEN;
         p->description.pkt_len=(double)p->description.frame_len/(double)p->description.sample_rate*1000;
         p->description.delta_mtime=p->description.pkt_len;
