@@ -69,7 +69,9 @@ int get_frame(media_entry *me, double *mtime)
 			slot->marker = !recallme;
         	}
 		else if (strcmp(me->description.encoding_name,"MP2T")==0) {
-                	res = read_MPEG_system(me,slot->data,&slot->data_size,mtime,&recallme);
+                	//res = read_MPEG_system(me,slot->data,&slot->data_size,mtime,&recallme);
+                	res = read_MPEG_ts(me,slot->data,&slot->data_size,mtime,&recallme);
+			slot->marker=0; /*Set to 1 whenever the timestamp is discontinous. See rfc2250 page 4*/
         	}
 		else if (strcmp(me->description.encoding_name,"MP4V-ES")==0) {
                 	res = read_MPEG4ES_video(me,slot->data,&slot->data_size,mtime,&recallme);

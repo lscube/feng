@@ -291,6 +291,7 @@
 	int read_H26L (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme);
 	int read_MPEG_video (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme);
 	int read_MPEG_system (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme);
+	int read_MPEG_ts (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme);
 	int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme);
 
 	/*****************************************read MPEG utils*************************************************/

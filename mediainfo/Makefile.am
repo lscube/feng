@@ -25,6 +25,7 @@ libmediainfo_la_SOURCES =	enum_media.c \
 				read_GSM.c \
 				read_H26L.c \
 				read_MPEG_system.c \
+				read_MPEG_ts.c \
 				read_MPEG_video.c \
 				read_MPEG4ES_video.c \
 				read_MPEG_utils.c \
