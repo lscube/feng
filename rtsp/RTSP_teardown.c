@@ -153,7 +153,13 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	}
 	
 	send_teardown_reply(rtsp, session_id, cseq);
-	filename = strchr (object, '!') + 1;
+	if(strchr(object, '!')) /*Compatibility with RealOne and RealPlayer*/
+		filename = strchr(object, '!') + 1;
+	else	
+		strcpy(filename,object);
+
+
+	
         // Release all URI RTP session
 	rtp_curr = s->rtp_session;
 	while ( rtp_curr != NULL ) {
