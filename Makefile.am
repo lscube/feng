@@ -20,6 +20,7 @@ SUBDIRS =	bufferpool \
 
 EXTRA_DIST = 	include \
 		config \
+		debian \
 		INSTALL-FAST
 		
 

@@ -4,7 +4,7 @@
     "HTML Tidy for Linux/x86 (vers 1st December 2004), see www.w3.org">
 
     <title>Fenice HOWTO</title>
-    <base href="https://killgates.polito.it/streaming/">
+    <base href="http://streaming.polito.it/">
 <style type="text/css">
 @import url(misc/print.css);
 </style>
@@ -261,7 +261,7 @@
         <p>Now you are ready to run Fenice:<br></p>
 
         <div class="codeblock">
-            <code>$ fenice &#226;&#8364;&#8220;config-file
+            <code>$ fenice --config-file
             /path/to/fenice.conf</code>
         </div><br>
         Please, be sure that the firewall in your network is not
@@ -720,9 +720,9 @@
 
     <div style="margin-left: 2em">
         <p>In case of video from a webcam and audio from a dsp, you
-        must use an application that work as producer and redirect
-        its output on two named pipe, the first for audio.mp3 and
-        the last one for video.mpg.</p>
+        must use an application which works to encode its inputs
+        and redirect its outputs on two named pipe, the first one
+        for audio.mp3 and the last one for video.mpg.</p>
 
         <p>You can install ffmpeg (compiled with the lame support,
         see the ffmpeg documentations) and use this script:<br></p>

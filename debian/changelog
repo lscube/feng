@@ -3,5 +3,5 @@ fenice (1.7-1) unstable; urgency=low
   * Initial Release.
   * Adjusted the docs/Makefile.am to fix problems with man-to-html rendering.
 
- -- OMSP Team <streaming@multimedia.polito.it>  Tue,  1 Feb 2005 10:32:44 +0100
+ -- OMSP Team <team@streaming.polito.it>  Tue,  1 Feb 2005 10:32:44 +0100
 

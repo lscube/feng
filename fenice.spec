@@ -1,6 +1,6 @@
 Summary: standards-compliant multimedia streaming server
 Name: fenice
-Version: 1.7
+Version: 1.8
 Release: 0
 Copyright: GPL
 Group: Applications/Internet

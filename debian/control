@@ -1,7 +1,7 @@
 Source: fenice
 Section: net
 Priority: optional
-Maintainer: OMSP Team <streaming@multimedia.polito.it>
+Maintainer: OMSP Team <team@streaming.polito.it>
 Build-Depends: debhelper (>= 4.0.0), automake1.8, autoconf
 Standards-Version: 3.6.1
 

@@ -1,3 +1,10 @@
+1.8:
+	- RealOne Player Audio/Video compatibility
+	- Mac OS X compatibility (Thanks to Sébastien Pierre)
+	- Improvements in session management.
+	- SDP multicast description is now distributed via RTSP.
+	- Bug fixes.
+	
 1.7:
 	- RTSP Redirect (3xx response): configuration-driven load balancing
 	- Session description: new field "twin"
