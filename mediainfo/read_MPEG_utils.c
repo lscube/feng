@@ -35,11 +35,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
 
-int next_start_code(unsigned char **buf,unsigned *buf_size,int fin) {  			/* returns number of bytes readen looking for start-codes, */
+int next_start_code(uint8 *buf, uint32 *buf_size,int fin) {  			/* returns number of bytes readen looking for start-codes, */
 	char buf_aux[3];                                               			/* except the 3 start-code bytes */
 	int i;
 	unsigned int count=0;
@@ -48,7 +49,7 @@ int next_start_code(unsigned char **buf,unsigned *buf_size,int fin) {  			/* ret
 	}
 	while ( !((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01))) {
 		lseek(fin,-2,SEEK_CUR);
-    		(*buf)[*buf_size]=buf_aux[0];
+    		buf[*buf_size]=buf_aux[0];
     		*buf_size+=1;
       		if ( read(fin,&buf_aux,3) <3) {
 			return -1;
@@ -56,52 +57,52 @@ int next_start_code(unsigned char **buf,unsigned *buf_size,int fin) {  			/* ret
       		count++;
     	}
     	for (i=0;i<3;i++) {
-    		(*buf)[*buf_size]=buf_aux[i];
+    		buf[*buf_size]=buf_aux[i];
     		*buf_size+=1;
     	}
      	return count;
 }
 
-int read_seq_head(unsigned char **buf,unsigned *buf_size, int fin, char *final_byte, standard std) {  /* reads sequence header */
-        read(fin,&((*buf)[*buf_size]),8);                       			//reads first 95 bits +1
+int read_seq_head(uint8 *buf,uint32 *buf_size, int fin, char *final_byte, standard std) {  /* reads sequence header */
+        read(fin,&(buf[*buf_size]),8);                       			//reads first 95 bits +1
         *buf_size+=8;
-        if ((*buf)[*buf_size-1] & 0x02) {                       			// intra quantizer matrix present
-                read(fin,&((*buf)[*buf_size]),64);              			// reads intra quantizer matrix +1 bit
+        if (buf[*buf_size-1] & 0x02) {                       			// intra quantizer matrix present
+                read(fin,&(buf[*buf_size]),64);              			// reads intra quantizer matrix +1 bit
                 *buf_size+=64;
         }
-        if ((*buf)[*buf_size-1] & 0x01) {                       			// non intra quantizer matrix present
-                read(fin,&((*buf)[*buf_size]),64);              			// reads non intra quantizer matrix
+        if (buf[*buf_size-1] & 0x01) {                       			// non intra quantizer matrix present
+                read(fin,&(buf[*buf_size]),64);              			// reads non intra quantizer matrix
                 *buf_size+=64;
         }
         next_start_code(buf,buf_size,fin);
-        read(fin,&((*buf)[*buf_size]),1);
+        read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
         if (std == MPEG_1) {
-                if ((*buf)[*buf_size-1] == 0xb5) {              			// reads extension data if present (MPEG-1 only)
+                if (buf[*buf_size-1] == 0xb5) {              			// reads extension data if present (MPEG-1 only)
                         next_start_code(buf,buf_size,fin);
-                        read(fin,&((*buf)[*buf_size]),1);
+                        read(fin,&(buf[*buf_size]),1);
                         *buf_size+=1;
                 }
-                if ((*buf)[*buf_size-1] == 0xb2) {              			// reads user data if present (MPEG-1 only)
+                if (buf[*buf_size-1] == 0xb2) {              			// reads user data if present (MPEG-1 only)
                         next_start_code(buf,buf_size,fin);
-                        read(fin,&((*buf)[*buf_size]),1);
+                        read(fin,&(buf[*buf_size]),1);
                         *buf_size+=1;
                 }
         }
-        *final_byte=(*buf)[*buf_size-1];
+        *final_byte=buf[*buf_size-1];
         return 1;
 }
 
-int read_gop_head(unsigned char **buf,unsigned *buf_size, int fin, char *final_byte, char *hours, char *minutes, char *seconds, char *picture, standard std) {  /* reads GOP header */
+int read_gop_head(uint8 *buf,uint32 *buf_size, int fin, char *final_byte, char *hours, char *minutes, char *seconds, char *picture, standard std) {  /* reads GOP header */
 	int count=0;
         unsigned char byte1, byte2, byte3, byte4, byte5, byte6, byte7;
-        read(fin,&((*buf)[*buf_size]),4);                       			/* reads GOP hours, minutes, seconds and picture number */
+        read(fin,&(buf[*buf_size]),4);                       			/* reads GOP hours, minutes, seconds and picture number */
         *buf_size+=4;
         count+=4;
-        byte1 = (*buf)[*buf_size-4];
-        byte2 = (*buf)[*buf_size-3];
-        byte3 = (*buf)[*buf_size-2];
-        byte4 = (*buf)[*buf_size-1];
+        byte1 = buf[*buf_size-4];
+        byte2 = buf[*buf_size-3];
+        byte3 = buf[*buf_size-2];
+        byte4 = buf[*buf_size-1];
         *hours = ((byte1>>2) & 0x1f);
         byte5 = ((byte2>>4) & 0x0f);
         *minutes = ((byte1*16) & 0x30) + byte5;
@@ -111,35 +112,35 @@ int read_gop_head(unsigned char **buf,unsigned *buf_size, int fin, char *final_b
         *picture = ((byte3*2) & 0x3e) + byte7;
 
         count+=next_start_code(buf,buf_size,fin);
-        read(fin,&((*buf)[*buf_size]),1);
+        read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
         count+=4;
         if (std == MPEG_1)      {
-                if ((*buf)[*buf_size-1] == 0xb5) {                      		// reads extension data if present (MPEG-1 only)
+                if (buf[*buf_size-1] == 0xb5) {                      		// reads extension data if present (MPEG-1 only)
                         count+=next_start_code(buf,buf_size,fin);
-                        read(fin,&((*buf)[*buf_size]),1);
+                        read(fin,&(buf[*buf_size]),1);
                         *buf_size+=1;
                         count+=4;
                 }
-                if ((*buf)[*buf_size-1] == 0xb2) {                      		// reads user data if present (MPEG-1 only)
+                if (buf[*buf_size-1] == 0xb2) {                      		// reads user data if present (MPEG-1 only)
                         count+=next_start_code(buf,buf_size,fin);
-                        read(fin,&((*buf)[*buf_size]),1);
+                        read(fin,&(buf[*buf_size]),1);
                         *buf_size+=1;
                         count+=4;
                 }
         }
-        *final_byte=(*buf)[*buf_size-1];
+        *final_byte=buf[*buf_size-1];
         return count;
 }
 
-int read_picture_head(unsigned char **buf,unsigned *buf_size, int fin, char *final_byte, char *temp_ref, video_spec_head1* vsh1, standard std) { /* reads picture head */
+int read_picture_head(uint8 *buf,uint32 *buf_size, int fin, char *final_byte, char *temp_ref, video_spec_head1* vsh1, standard std) { /* reads picture head */
 	int count=0;
         unsigned char byte1,byte2,byte3,byte4,byte5,byte6;
-        read(fin,&((*buf)[*buf_size]),2);            					/* reads picture temporal reference */
+        read(fin,&(buf[*buf_size]),2);            					/* reads picture temporal reference */
         *buf_size+=2;
         count+=2;
-        byte1 = (*buf)[*buf_size-2];
-        byte2 = byte5 = (*buf)[*buf_size-1];
+        byte1 = buf[*buf_size-2];
+        byte2 = byte5 = buf[*buf_size-1];
         byte3 = ((byte2>>6) & 0x03);
         byte4 = byte1*4 + byte3;
         byte6 = (byte5>>3) & 0x07;
@@ -147,16 +148,16 @@ int read_picture_head(unsigned char **buf,unsigned *buf_size, int fin, char *fin
         vsh1->p = byte6;
         vsh1->tr = *temp_ref;
         if ((vsh1->p == 2) || (vsh1->p == 3)) {       					/* If P or B picture */
-                read(fin,&((*buf)[*buf_size]),2);
+                read(fin,&(buf[*buf_size]),2);
                 *buf_size+=2;
                 count+=2;
-                byte1 = byte3= (*buf)[*buf_size-1];
+                byte1 = byte3= buf[*buf_size-1];
                 byte2 = (byte1>>2) & 0x01;
                 vsh1->ffv = byte2;
-                read(fin,&((*buf)[*buf_size]),1);
+                read(fin,&(buf[*buf_size]),1);
                 *buf_size+=1;
                 count+=1;
-                byte4 = byte1 = byte2 = (*buf)[*buf_size-1];
+                byte4 = byte1 = byte2 = buf[*buf_size-1];
                 byte5 = (((byte3 & 0x03) *2) + ((byte4 >> 7) & 0x01));
                 vsh1->ffc = byte5;
                 if (vsh1->p == 3) {                            				/* If B picture */
@@ -172,43 +173,43 @@ int read_picture_head(unsigned char **buf,unsigned *buf_size, int fin, char *fin
         }
         count+=next_start_code(buf,buf_size,fin);
         count+=4;
-        read(fin,&((*buf)[*buf_size]),1);
+        read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
         if (std == MPEG_1){
-                if ((*buf)[*buf_size-1] == 0xb5) {                      		// reads extension data if present (MPEG-1 only )
+                if (buf[*buf_size-1] == 0xb5) {                      		// reads extension data if present (MPEG-1 only )
                         count+=next_start_code(buf,buf_size,fin);
                         count+=4;
-                        read(fin,&((*buf)[*buf_size]),1);
+                        read(fin,&(buf[*buf_size]),1);
                         *buf_size+=1;
                 }
-                if ((*buf)[*buf_size-1] == 0xb2) {                      		// reads user data if present (MPEG-1 only )
+                if (buf[*buf_size-1] == 0xb2) {                      		// reads user data if present (MPEG-1 only )
                         count+=next_start_code(buf,buf_size,fin);
                         count+=4;
-                        read(fin,&((*buf)[*buf_size]),1);
+                        read(fin,&(buf[*buf_size]),1);
                         *buf_size+=1;
                 }
         }
-        *final_byte=(*buf)[*buf_size-1];
+        *final_byte=buf[*buf_size-1];
         return count;
 }
 
-int read_slice(unsigned char **buf,unsigned *buf_size, int fin, char *final_byte) {     /* reads a slice */
+int read_slice(uint8 *buf,uint32 *buf_size, int fin, char *final_byte) {     /* reads a slice */
         int count;                                                                      /* at the end count is the slice size */
         count=next_start_code(buf,buf_size,fin);
-        read(fin,&((*buf)[*buf_size]),1);
+        read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
-        *final_byte=(*buf)[*buf_size-1];
+        *final_byte=buf[*buf_size-1];
         *buf_size-=4;
         lseek(fin,-4,SEEK_CUR);
         return count;
 }
 
-int probe_standard(unsigned char **buf,unsigned *buf_size,int fin, standard *std) {    /* If the sequence_extension occurs immediately */
+int probe_standard(uint8 *buf,uint32 *buf_size,int fin, standard *std) {    /* If the sequence_extension occurs immediately */
         unsigned char final_byte;                                                      /* after the sequence header, the sequence is an */
         next_start_code(buf,buf_size,fin);                                             /* MPEG-2 video sequence */
-        read(fin,&((*buf)[*buf_size]),1);
+        read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
-        final_byte=(*buf)[*buf_size-1];
+        final_byte=buf[*buf_size-1];
         if (final_byte == 0xb3) {
                 read_seq_head(buf,buf_size,fin,&final_byte,*std);
         }
@@ -220,27 +221,27 @@ int probe_standard(unsigned char **buf,unsigned *buf_size,int fin, standard *std
         return 1;
 }
 
-int read_picture_coding_ext(unsigned char **buf,unsigned *buf_size, int fin, char *final_byte,video_spec_head2* vsh2) {  /* reads picture coding extension */
+int read_picture_coding_ext(uint8 *buf,uint32 *buf_size, int fin, char *final_byte,video_spec_head2* vsh2) {  /* reads picture coding extension */
 	int count=0;
         unsigned char byte1,byte2,byte3,byte4,byte5,byte6;
         vsh2->x=0;
         vsh2->e=0;
-        read(fin,&((*buf)[*buf_size]),3);
+        read(fin,&(buf[*buf_size]),3);
         *buf_size+=3;
         count+=3;
-        byte1 = (*buf)[*buf_size-3];
-        byte2 = byte4 = (*buf)[*buf_size-2];
-        byte3 = byte5 = byte6 = (*buf)[*buf_size-1];
+        byte1 = buf[*buf_size-3];
+        byte2 = byte4 = buf[*buf_size-2];
+        byte3 = byte5 = byte6 = buf[*buf_size-1];
         vsh2->f00 = byte1 & 0x0f;
         vsh2->f01 = (byte2>>4) & 0x0f;
         vsh2->f10 = byte4 & 0x0f;
         vsh2->f11 = (byte3>>4) & 0x0f;
         vsh2->dc = (byte5>>2) & 0x03;
         vsh2->ps = byte6 & 0x03;
-        read(fin,&((*buf)[*buf_size]),1);
+        read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
         count+=1;
-        byte1 = (*buf)[*buf_size-1];
+        byte1 = buf[*buf_size-1];
         if (byte1 & 0x80) {
              vsh2->t=1;
         } else vsh2->t=0;
@@ -253,36 +254,36 @@ int read_picture_coding_ext(unsigned char **buf,unsigned *buf_size, int fin, cha
         if (byte1 & 0x04) vsh2->a=1;
         if (byte1 & 0x02) vsh2->r=1;
         if (byte1 & 0x01) vsh2->h=1;
-        read(fin,&((*buf)[*buf_size]),1);
+        read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
         count+=1;
-        byte1 = (*buf)[*buf_size-1];
+        byte1 = buf[*buf_size-1];
         if (byte1 & 0x80) vsh2->g=1;
         vsh2->d=0;
         count+=next_start_code(buf,buf_size,fin);
         count+=4;
-        read(fin,&((*buf)[*buf_size]),1);
+        read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
         //count+=1;
-        *final_byte=(*buf)[*buf_size-1];
+        *final_byte=buf[*buf_size-1];
         return count;
 }
 
-int read_pack_head(unsigned char **buf, unsigned *buf_size, int fin, unsigned char *final_byte, SCR *scr) {  /* reads pack header */
+int read_pack_head(uint8 *buf, uint32 *buf_size, int fin, unsigned char *final_byte, SCR *scr) {  /* reads pack header */
 	unsigned char byte1;
         unsigned char vett_scr[32];
 	int i,count=0;
-	read(fin,&((*buf)[*buf_size]),1);
+	read(fin,&(buf[*buf_size]),1);
 	count+=1;
 	*buf_size+=1;
-	byte1 = (*buf)[*buf_size-1];
+	byte1 = buf[*buf_size-1];
 	scr->msb = ((byte1 & 0x08)!=0);
 	vett_scr[0] = ((byte1 & 0x04)!=0);
 	vett_scr[1] = ((byte1 & 0x02)!=0);
-	read(fin,&((*buf)[*buf_size]),1);
+	read(fin,&(buf[*buf_size]),1);
 	*buf_size+=1;
 	count+=1;
-	byte1 = (*buf)[*buf_size-1];
+	byte1 = buf[*buf_size-1];
 	vett_scr[2] = ((byte1 & 0x80)!=0);
 	vett_scr[3] = ((byte1 & 0x40)!=0);
 	vett_scr[4] = ((byte1 & 0x20)!=0);
@@ -291,10 +292,10 @@ int read_pack_head(unsigned char **buf, unsigned *buf_size, int fin, unsigned ch
 	vett_scr[7] = ((byte1 & 0x04)!=0);
 	vett_scr[8] = ((byte1 & 0x02)!=0);
 	vett_scr[9] = ((byte1 & 0x01)!=0);
-	read(fin,&((*buf)[*buf_size]),1);
+	read(fin,&(buf[*buf_size]),1);
 	*buf_size+=1;
 	count+=1;
-	byte1 = (*buf)[*buf_size-1];
+	byte1 = buf[*buf_size-1];
 	vett_scr[10] = ((byte1 & 0x80)!=0);
 	vett_scr[11] = ((byte1 & 0x40)!=0);
 	vett_scr[12] = ((byte1 & 0x20)!=0);
@@ -302,10 +303,10 @@ int read_pack_head(unsigned char **buf, unsigned *buf_size, int fin, unsigned ch
 	vett_scr[14] = ((byte1 & 0x08)!=0);
 	vett_scr[15] = ((byte1 & 0x04)!=0);
 	vett_scr[16] = ((byte1 & 0x02)!=0);
-	read(fin,&((*buf)[*buf_size]),1);
+	read(fin,&(buf[*buf_size]),1);
 	*buf_size+=1;
 	count+=1;
-	byte1 = (*buf)[*buf_size-1];
+	byte1 = buf[*buf_size-1];
 	vett_scr[17] = ((byte1 & 0x80)!=0);
 	vett_scr[18] = ((byte1 & 0x40)!=0);
 	vett_scr[19] = ((byte1 & 0x20)!=0);
@@ -314,10 +315,10 @@ int read_pack_head(unsigned char **buf, unsigned *buf_size, int fin, unsigned ch
 	vett_scr[22] = ((byte1 & 0x04)!=0);
 	vett_scr[23] = ((byte1 & 0x02)!=0);
 	vett_scr[24] = ((byte1 & 0x01)!=0);
-	read(fin,&((*buf)[*buf_size]),1);
+	read(fin,&(buf[*buf_size]),1);
 	*buf_size+=1;
 	count+=1;
-	byte1 = (*buf)[*buf_size-1];
+	byte1 = buf[*buf_size-1];
 	vett_scr[25] = ((byte1 & 0x80)!=0);
 	vett_scr[26] = ((byte1 & 0x40)!=0);
 	vett_scr[27] = ((byte1 & 0x20)!=0);
@@ -326,15 +327,15 @@ int read_pack_head(unsigned char **buf, unsigned *buf_size, int fin, unsigned ch
 	vett_scr[30] = ((byte1 & 0x04)!=0);
 	vett_scr[31] = ((byte1 & 0x02)!=0);
 	count+=next_start_code(buf,buf_size,fin);
-	read(fin,&((*buf)[*buf_size]),1);
+	read(fin,&(buf[*buf_size]),1);
 	*buf_size+=1;
 	count+=1;
-	*final_byte=(*buf)[*buf_size-1];
+	*final_byte=buf[*buf_size-1];
 	if (*final_byte == 0xbb) {                             				// read system_header if present
 		count+=next_start_code(buf,buf_size,fin);
-		read(fin,&((*buf)[*buf_size]),1);
+		read(fin,&(buf[*buf_size]),1);
 		*buf_size+=1;
-		*final_byte=(*buf)[*buf_size-1];
+		*final_byte=buf[*buf_size-1];
 	}
 	for (i=0;i<32;i++) {
 		scr->scr = (scr->scr)*2 + vett_scr[i];
@@ -343,27 +344,27 @@ int read_pack_head(unsigned char **buf, unsigned *buf_size, int fin, unsigned ch
 	return count;
 }
 
-int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned char *final_byte, int *time_set, PTS *pts, PTS *dts, int *dts_present, PTS *pts_audio) { /* reads packet header */
+int read_packet_head(uint8 *buf,uint32 *buf_size, int fin, unsigned char *final_byte, int *time_set, PTS *pts, PTS *dts, int *dts_present, PTS *pts_audio) { /* reads packet header */
         unsigned char byte1;
         unsigned char vett_pts[32];
         unsigned char vett_dts[32];
         int i, pts_present=0, count=0;
-	read(fin,&((*buf)[*buf_size]),2);						// read packet_length
+	read(fin,&(buf[*buf_size]),2);						// read packet_length
 	*buf_size+=2;
 	count+=2;
 	*dts_present = 0;
 	if (*final_byte != 0xbf) {
 		do {                                            			// read stuffing bytes
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-		} while ((*buf)[*buf_size-1] == 0xff);
-  		byte1 = (*buf)[*buf_size-1];
+		} while (buf[*buf_size-1] == 0xff);
+  		byte1 = buf[*buf_size-1];
     		if ((byte1 & 0xc0) == 0x40) {                   			// read buffer scale and buffer size
-	     		read(fin,&((*buf)[*buf_size]),2);
+	     		read(fin,&(buf[*buf_size]),2);
 			*buf_size+=2;
 			count+=2;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
       		}
         	if ((byte1 & 0xf0) == 0x20) {                   			// read presentation time stamp
 		 	pts_present = 1;
@@ -375,10 +376,10 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 			}
 			vett_pts[0] = ((byte1 & 0x04)!=0);
 			vett_pts[1] = ((byte1 & 0x02)!=0);
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			vett_pts[2] = ((byte1 & 0x80)!=0);
 			vett_pts[3] = ((byte1 & 0x40)!=0);
 			vett_pts[4] = ((byte1 & 0x20)!=0);
@@ -387,10 +388,10 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 			vett_pts[7] = ((byte1 & 0x04)!=0);
 			vett_pts[8] = ((byte1 & 0x02)!=0);
 			vett_pts[9] = ((byte1 & 0x01)!=0);
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			vett_pts[10] = ((byte1 & 0x80)!=0);
 			vett_pts[11] = ((byte1 & 0x40)!=0);
 			vett_pts[12] = ((byte1 & 0x20)!=0);
@@ -398,10 +399,10 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 			vett_pts[14] = ((byte1 & 0x08)!=0);
 			vett_pts[15] = ((byte1 & 0x04)!=0);
 			vett_pts[16] = ((byte1 & 0x02)!=0);
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			vett_pts[17] = ((byte1 & 0x80)!=0);
 			vett_pts[18] = ((byte1 & 0x40)!=0);
 			vett_pts[19] = ((byte1 & 0x20)!=0);
@@ -410,10 +411,10 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 			vett_pts[22] = ((byte1 & 0x04)!=0);
 			vett_pts[23] = ((byte1 & 0x02)!=0);
 			vett_pts[24] = ((byte1 & 0x01)!=0);
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			vett_pts[25] = ((byte1 & 0x80)!=0);
 			vett_pts[26] = ((byte1 & 0x40)!=0);
 			vett_pts[27] = ((byte1 & 0x20)!=0);
@@ -431,10 +432,10 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 			}
 			vett_pts[0] = ((byte1 & 0x04)!=0);
 			vett_pts[1] = ((byte1 & 0x02)!=0);
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			vett_pts[2] = ((byte1 & 0x80)!=0);
 			vett_pts[3] = ((byte1 & 0x40)!=0);
 			vett_pts[4] = ((byte1 & 0x20)!=0);
@@ -443,10 +444,10 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 			vett_pts[7] = ((byte1 & 0x04)!=0);
 			vett_pts[8] = ((byte1 & 0x02)!=0);
 			vett_pts[9] = ((byte1 & 0x01)!=0);
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			vett_pts[10] = ((byte1 & 0x80)!=0);
 			vett_pts[11] = ((byte1 & 0x40)!=0);
 			vett_pts[12] = ((byte1 & 0x20)!=0);
@@ -454,10 +455,10 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 			vett_pts[14] = ((byte1 & 0x08)!=0);
 			vett_pts[15] = ((byte1 & 0x04)!=0);
 			vett_pts[16] = ((byte1 & 0x02)!=0);
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			vett_pts[17] = ((byte1 & 0x80)!=0);
 			vett_pts[18] = ((byte1 & 0x40)!=0);
 			vett_pts[19] = ((byte1 & 0x20)!=0);
@@ -466,10 +467,10 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 			vett_pts[22] = ((byte1 & 0x04)!=0);
 			vett_pts[23] = ((byte1 & 0x02)!=0);
 			vett_pts[24] = ((byte1 & 0x01)!=0);
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			vett_pts[25] = ((byte1 & 0x80)!=0);
 			vett_pts[26] = ((byte1 & 0x40)!=0);
 			vett_pts[27] = ((byte1 & 0x20)!=0);
@@ -478,17 +479,17 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 			vett_pts[30] = ((byte1 & 0x04)!=0);
 			vett_pts[31] = ((byte1 & 0x02)!=0);
 
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 =buf[*buf_size-1];
                         dts->msb = ((byte1 & 0x08)!=0); 				// read decoding time stamp
 			vett_dts[0] = ((byte1 & 0x04)!=0);
 			vett_dts[1] = ((byte1 & 0x02)!=0);
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			vett_dts[2] = ((byte1 & 0x80)!=0);
 			vett_dts[3] = ((byte1 & 0x40)!=0);
 			vett_dts[4] = ((byte1 & 0x20)!=0);
@@ -497,10 +498,10 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 			vett_dts[7] = ((byte1 & 0x04)!=0);
 			vett_dts[8] = ((byte1 & 0x02)!=0);
 			vett_dts[9] = ((byte1 & 0x01)!=0);
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			vett_dts[10] = ((byte1 & 0x80)!=0);
 			vett_dts[11] = ((byte1 & 0x40)!=0);
 			vett_dts[12] = ((byte1 & 0x20)!=0);
@@ -508,10 +509,10 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 			vett_dts[14] = ((byte1 & 0x08)!=0);
 			vett_dts[15] = ((byte1 & 0x04)!=0);
 			vett_dts[16] = ((byte1 & 0x02)!=0);
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			vett_dts[17] = ((byte1 & 0x80)!=0);
 			vett_dts[18] = ((byte1 & 0x40)!=0);
 			vett_dts[19] = ((byte1 & 0x20)!=0);
@@ -520,10 +521,10 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 			vett_dts[22] = ((byte1 & 0x04)!=0);
 			vett_dts[23] = ((byte1 & 0x02)!=0);
 			vett_dts[24] = ((byte1 & 0x01)!=0);
-			read(fin,&((*buf)[*buf_size]),1);
+			read(fin,&(buf[*buf_size]),1);
 			*buf_size+=1;
 			count+=1;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			vett_dts[25] = ((byte1 & 0x80)!=0);
 			vett_dts[26] = ((byte1 & 0x40)!=0);
 			vett_dts[27] = ((byte1 & 0x20)!=0);
@@ -555,20 +556,20 @@ int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned c
 	return count;
 }
 
-int read_packet(unsigned char **buf,unsigned *buf_size, int fin, unsigned char *final_byte) {     /* reads a packet */
+int read_packet(uint8 *buf,uint32 *buf_size, int fin, unsigned char *final_byte) {     /* reads a packet */
 	int count=0;                                                                              /* at the end count is the size of the packet */
 	unsigned char byte1,byte2;
 	do {
 		count+=next_start_code(buf,buf_size,fin);
 		count+=4;
-		read(fin,&((*buf)[*buf_size]),1);
+		read(fin,&(buf[*buf_size]),1);
 		*buf_size+=1;
-		*final_byte=(*buf)[*buf_size-1];
+		*final_byte=buf[*buf_size-1];
 		if (*final_byte == 0x00)	{
-			read(fin,&((*buf)[*buf_size]),2);
+			read(fin,&(buf[*buf_size]),2);
 			*buf_size+=2;
 			count+=2;
-			byte1 = (*buf)[*buf_size-1];
+			byte1 = buf[*buf_size-1];
 			byte2 = (byte1 >> 3) & 0x07;
 			if (byte2 == 0x01) {
 				printf ("Pictute type: I\n");

@@ -33,13 +33,13 @@
  * */
 
 #include <stdio.h>
-
+#include <string.h>
 #include <fenice/utils.h>
 #include <fenice/bufferpool.h>
 
 /* ! Write a new slot in the buffer using the input parameters and
  	return ERR_NOERROR or ERR_ALLOC*/
-int32 OMSbuff_write(OMSBuffer *buffer, uint32 timestamp, uint8 *data) {
+int32 OMSbuff_write(OMSBuffer *buffer, uint32 timestamp, uint8 *data, uint32 data_size) {
 	OMSSlot *slot=buffer->write_pos;
 	
 	if (slot->next->refs > 0) {
@@ -49,8 +49,9 @@ int32 OMSbuff_write(OMSBuffer *buffer, uint32 timestamp, uint8 *data) {
 		slot = slot->next;
 
 	slot->refs = buffer->refs;
-	slot->data = data;
+	memcpy(slot->data,data,data_size);
 	slot->timestamp = timestamp;
+	slot->data_size=data_size;
 	
 	buffer->write_pos = slot;
 	return ERR_NOERROR;

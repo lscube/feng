@@ -38,17 +38,20 @@
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
+#include <fenice/types.h>
+#include <fenice/bufferpool.h>
 
-int read_PCM(media_entry *me,unsigned char **buffer,unsigned int *buf_size,double *mtime)
+int read_PCM(media_entry *me, uint8 *buffer, uint32 *buf_size, double *mtime)
 {
         char thefile[255];
         int i;
         unsigned start_sample, samples;
-                
+       
+	
         if (!(me->flags & ME_FD)) {
                 strcpy(thefile,prefs_get_serv_root());
                 strcat(thefile,me->filename);           
-// printf("Playing: %s - bitrate: %d\n", thefile, me->description.bitrate);
+		// printf("Playing: %s - bitrate: %d\n", thefile, me->description.bitrate);
                 me->fd=open(thefile,O_RDONLY);
                 if (me->fd==-1) return ERR_NOT_FOUND;
                 me->flags|=ME_FD;
@@ -58,22 +61,29 @@ int read_PCM(media_entry *me,unsigned char **buffer,unsigned int *buf_size,doubl
                 // samples is the number of samples to be reproduced each pkt_len time slot
         start_sample=(unsigned int)(*mtime*me->description.clock_rate/1000);
                 // Current sample to be reproduced
-        *buf_size=samples*me->description.bit_per_sample/8*me->description.audio_channels;
-        *buffer=(unsigned char*)calloc(1,*buf_size);
-        if (*buffer==NULL) {
-                return ERR_ALLOC;
-        }
+        
+	*buf_size=samples*me->description.bit_per_sample/8*me->description.audio_channels;
+        //buffer=(unsigned char*)calloc(1,buf_size);
+        
+	//if (buffer==NULL) {
+        //        return ERR_ALLOC;
+        //}
+	
         for (; me->data_chunk<start_sample; me->data_chunk+=samples) {
                 if ((me->data_chunk + samples) < start_sample) {    // Some chunks have been lost, so skip them
                         lseek(me->fd,samples*me->description.bit_per_sample/8*me->description.audio_channels,SEEK_CUR);
                 }
         }
         *mtime = (double)me->data_chunk / (double)(me->description.clock_rate) * 1000;
-        for (i = 0; i < *buf_size; i += 2) {
-                if (read(me->fd, &(*buffer)[i + 1], 1) <= 0 ) break;
-                if (read(me->fd, &(*buffer)[i], 1) <= 0 ) break;
+        
+	for (i = 0; i < *buf_size; i += 2) {
+                if (read(me->fd, &(buffer[i + 1]), 1) <= 0 ) break;
+                if (read(me->fd, &(buffer[i]), 1) <= 0 ) break;
         }
         *buf_size = i;
+	
+
+	
         if (i == 0) return ERR_EOF;
         return ERR_NOERROR;     
 }

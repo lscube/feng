@@ -96,7 +96,7 @@ do{
 						stream_change(sched[i].rtp_session, change_check(sched[i].rtp_session));
         					
 						// Send an RTP packet
-             					sched[i].rtp_session->mtime += sched[i].rtp_session->current_media->description.delta_mtime;  
+             					sched[i].rtp_session->mtime += sched[i].rtp_session->current_media->description.delta_mtime; //emma  
 						//sched[i].rtp_session->mtime+=sched[i].rtp_session->current_media->description.pkt_len;     // old scheduler
         					
 						RTCP_handler(sched[i].rtp_session);

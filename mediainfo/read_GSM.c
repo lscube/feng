@@ -35,11 +35,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
 
-int read_GSM(media_entry *me,unsigned char **data,unsigned *data_size,double *mtime)
+int read_GSM(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
 {       
         char thefile[255];
         unsigned char byte1;
@@ -74,12 +75,12 @@ int read_GSM(media_entry *me,unsigned char **data,unsigned *data_size,double *mt
                 }
         }
         *data_size=N+1;
-        *data=(unsigned char *)calloc(1,*data_size);
-        if (*data==NULL) {
-                return ERR_ALLOC;
-        }
-        (*data)[0]=byte1;
-        if ((res = read(me->fd, &((*data)[1]), *data_size - 1)) <= *data_size - 1) {
+        //*data=(unsigned char *)calloc(1,*data_size);
+        //if (*data==NULL) {
+         //       return ERR_ALLOC;
+        //}
+        data[0]=byte1;
+        if ((res = read(me->fd, &(data[1]), *data_size - 1)) <= *data_size - 1) {
                 if (res <= 0) return ERR_EOF;
                 else *data_size = res + 1;
         }

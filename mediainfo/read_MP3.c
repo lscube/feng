@@ -35,11 +35,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
 
-int read_MP3(media_entry *me,unsigned char **data,unsigned int *data_size,double *mtime)
+int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
 {
         char thefile[255];
         // unsigned char sync1,sync2,sync3,sync4;
@@ -51,7 +52,7 @@ int read_MP3(media_entry *me,unsigned char **data,unsigned int *data_size,double
         if (!(me->flags & ME_FD)) {
                 strcpy(thefile,prefs_get_serv_root());
                 strcat(thefile,me->filename);    
-// printf("Playing: %s - bitrate: %d\n", thefile, me->description.bitrate);
+		// printf("Playing: %s - bitrate: %d\n", thefile, me->description.bitrate);
                 me->fd=open(thefile,O_RDONLY);
                 if ( me->fd==-1 ) return ERR_NOT_FOUND;
                 me->flags|=ME_FD;
@@ -104,14 +105,14 @@ int read_MP3(media_entry *me,unsigned char **data,unsigned int *data_size,double
                 }
         }
         *data_size = N + 4; // 4 bytes are needed for mp3 in RTP encapsulation
-        *data=(unsigned char *)calloc(1,*data_size);
-        if (*data==NULL) {
-                return ERR_ALLOC;
-        }
-        (*data)[0]=0;
-        (*data)[1]=0;
-        (*data)[2]=0;
-        (*data)[3]=0;
+        //*data=(unsigned char *)calloc(1,*data_size);
+        //if (*data==NULL) {
+        //        return ERR_ALLOC;
+        //}
+        data[0]=0;
+        data[1]=0;
+        data[2]=0;
+        data[3]=0;
         // These first 4 bytes are for mp3 in RTP encapsulation
 	/*
         (*data)[4]=sync1;
@@ -119,11 +120,11 @@ int read_MP3(media_entry *me,unsigned char **data,unsigned int *data_size,double
         (*data)[6]=sync3;
         (*data)[7]=sync4;
 	*/
-        (*data)[4]=buff[0];
-        (*data)[5]=buff[1];
-        (*data)[6]=buff[2];
-        (*data)[7]=buff[3];
-        if ((res = read(me->fd,&((*data)[8]),N-4))<(N-4)) {
+        data[4]=buff[0];
+        data[5]=buff[1];
+        data[6]=buff[2];
+        data[7]=buff[3];
+        if ((res = read(me->fd,&(data[8]),N-4))<(N-4)) {
                 if ((res <= 0)) return ERR_EOF;
                 else *data_size = res + 8;
         }

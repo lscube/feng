@@ -33,7 +33,8 @@
  * */
 
 #ifndef _MEDIAINFOH
-	#define _MEDIAINFOH
+#define _MEDIAINFOH
+	#include <fenice/bufferpool.h>
 	#define MAX_DESCR_LENGTH 4096
 		
 
@@ -186,8 +187,13 @@
     		int fd;
 		void *stat;
 		unsigned int data_chunk;
+		
+		/*Buffering with bufferpool module*/
     		unsigned char buff_data[4]; // shawill: needed for live-by-named-pipe
 		unsigned int buff_size; // shawill: needed for live-by-named-pipe
+		OMSBuffer *pkt_buffer; 
+		OMSConsumer *cons;
+
 		int reserved;
     		char filename[255];
     		char aggregate[50];
@@ -214,11 +220,12 @@
         		int frame_len;
         		int bitrate;
         		int priority;
-        		float pkt_len; // Lunghezza del pacchetto in msec
+        		float pkt_len; /*packet length*/
         		float delta_mtime;
         		int frame_rate;
         		int byte_per_pckt;
-        		// Per ora, da qui in poi non servono
+			
+        		/* Not used yet*/
 			/*	int encoding;    	
 				int color_depth;
 				int screen_width;
@@ -237,7 +244,7 @@
 	} SD_descr;
 
 	int parse_SD_file (char *object, SD_descr *sd_descr);	
-	int get_frame (media_entry *me, unsigned char **data, unsigned int *data_size, double *mtime, int *recallme);
+	int get_frame (media_entry *me, double *mtime);
 	int validate_stream (media_entry *me);
 
 	int load_MPA (media_entry *me);
@@ -246,36 +253,36 @@
 	int load_MP2T (media_entry *me);
 	int load_MPV (media_entry *me);
 	// read specific formats	
-	int read_PCM (media_entry *me, unsigned char **buffer, unsigned int *buf_size, double *mtime);
-	int read_MP3 (media_entry *me, unsigned char **data, unsigned int *data_size, double *mtime);
-	int read_GSM (media_entry *me, unsigned char **data, unsigned int *data_size, double *mtime);
+	int read_PCM (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime);
+	int read_MP3 (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime);
+	int read_GSM (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime);
 	
-	int read_H26L (media_entry *me,unsigned char **data, unsigned *data_size, double *mtime, int *recallme);
-	int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size, double *mtime, int *recallme);
-	int read_MPEG_system (media_entry *me, unsigned char **data, unsigned *data_size, double *mtime, int *recallme);
+	int read_H26L (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme);
+	int read_MPEG_video (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme);
+	int read_MPEG_system (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme);
 
 	/*****************************************read MPEG utils*************************************************/
 	
 	/* returns number of bytes readen looking for start-codes, */
-	int next_start_code(unsigned char **buf,unsigned *buf_size,int fin);
+	int next_start_code(uint8 *, uint32 *,int fin);
 	/* reads sequence header */
-	int read_seq_head(unsigned char **buf,unsigned *buf_size, int fin, char *final_byte, standard std);
+	int read_seq_head(uint8 *, uint32 *, int fin, char *final_byte, standard std);
 	/* reads GOP header */
-	int read_gop_head(unsigned char **buf,unsigned *buf_size, int fin, char *final_byte, char *hours, char *minutes, char *seconds, char *picture, standard std);
+	int read_gop_head(uint8 *, uint32 *, int fin, char *final_byte, char *hours, char *minutes, char *seconds, char *picture, standard std);
 	/* reads picture head */
-	int read_picture_head(unsigned char **buf,unsigned *buf_size, int fin, char *final_byte, char *temp_ref, video_spec_head1* vsh1, standard std);
+	int read_picture_head(uint8 *, uint32 *, int fin, char *final_byte, char *temp_ref, video_spec_head1* vsh1, standard std);
 	/* reads a slice */
-	int read_slice(unsigned char **buf,unsigned *buf_size, int fin, char *final_byte);
+	int read_slice(uint8 *, uint32 *, int fin, char *final_byte);
 	/* If the sequence_extension occurs immediately */
-	int probe_standard(unsigned char **buf,unsigned *buf_size,int fin, standard *std);
+	int probe_standard(uint8 *, uint32 *,int fin, standard *std);
 	/* reads picture coding extension */
-	int read_picture_coding_ext(unsigned char **buf,unsigned *buf_size, int fin, char *final_byte,video_spec_head2* vsh2);
+	int read_picture_coding_ext(uint8 *, uint32 *, int fin, char *final_byte,video_spec_head2* vsh2);
 	/* reads pack header */
-	int read_pack_head(unsigned char **buf, unsigned *buf_size, int fin, unsigned char *final_byte, SCR *scr);
+	int read_pack_head(uint8 *, uint32 *e, int fin, unsigned char *final_byte, SCR *scr);
 	/* reads packet header */
-	int read_packet_head(unsigned char **buf,unsigned *buf_size, int fin, unsigned char *final_byte, int *time_set, PTS *pts, PTS *dts, int *dts_present, PTS *pts_audio);
+	int read_packet_head(uint8 *, uint32 *, int fin, unsigned char *final_byte, int *time_set, PTS *pts, PTS *dts, int *dts_present, PTS *pts_audio);
 	/* reads a packet */
-	int read_packet(unsigned char **buf,unsigned *buf_size, int fin, unsigned char *final_byte);
+	int read_packet(uint8 *, uint32 *, int fin, unsigned char *final_byte);
 	int changePacketLength(float offset, media_entry *me);
 	
 	/*********************************************************************************************************************/

@@ -35,33 +35,45 @@
 #include <string.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
+#include <fenice/types.h>
 
-int get_frame(media_entry *me,unsigned char **data,unsigned int *data_size,double *mtime, int *recallme)
+int get_frame(media_entry *me, double *mtime)
 {
-        if (strcmp(me->description.encoding_name,"MPA")==0) {
-                *recallme = 0;
-                me->description.delta_mtime=me->description.pkt_len;                 /* For MPA, L16 and GSM delta_mtime is fixed to pkt_len */
-                return read_MP3(me,data,data_size,mtime);
-        }
-        if (strcmp(me->description.encoding_name,"L16")==0) {
-                *recallme = 0;
-                me->description.delta_mtime=me->description.pkt_len;
-                return read_PCM(me,data,data_size,mtime);
-        }
-        if (strcmp(me->description.encoding_name,"GSM")==0) {
-                *recallme = 0;
-                me->description.delta_mtime=me->description.pkt_len;
-                return read_GSM(me,data,data_size,mtime);
-        }
-        if (strcmp(me->description.encoding_name,"H26L")==0) {
-                return read_H26L(me,data,data_size,mtime,recallme);
-        }
-        if (strcmp(me->description.encoding_name,"MPV")==0) {
-                return read_MPEG_video(me,data,data_size,mtime,recallme);
-        }
-        if (strcmp(me->description.encoding_name,"MP2T")==0) {
-                return read_MPEG_system(me,data,data_size,mtime,recallme);
-        }
-        return ERR_UNSUPPORTED_PT;
+	int recallme=1;	
+	OMSSlot *slot;
+	int res;
+	while(recallme){
+		slot=OMSbuff_getslot(me->pkt_buffer);
+		
+	        if (strcmp(me->description.encoding_name,"MPA")==0) {
+        	        recallme = 0;
+                	me->description.delta_mtime=me->description.pkt_len;/* For MPA, L16 and GSM delta_mtime is fixed to pkt_len */
+			res = read_MP3(me,slot->data,&slot->data_size,mtime);
+        	}	
+		else if (strcmp(me->description.encoding_name,"L16")==0) {
+                	recallme = 0;
+                	me->description.delta_mtime=me->description.pkt_len;
+                	res = read_PCM(me,slot->data,&slot->data_size,mtime);
+        	}
+		else if (strcmp(me->description.encoding_name,"GSM")==0) {
+                	recallme = 0;
+                	me->description.delta_mtime=me->description.pkt_len;
+                	res = read_GSM(me,slot->data,&slot->data_size,mtime);
+        	}
+		else if (strcmp(me->description.encoding_name,"H26L")==0) {
+                	res = read_H26L(me,slot->data,&slot->data_size,mtime,&recallme);
+        	}
+		else if (strcmp(me->description.encoding_name,"MPV")==0) {
+                	res = read_MPEG_video(me,slot->data,&slot->data_size,mtime,&recallme);
+        	}
+		else if (strcmp(me->description.encoding_name,"MP2T")==0) {
+                	res = read_MPEG_system(me,slot->data,&slot->data_size,mtime,&recallme);
+        	}
+		
+		else 
+			res=ERR_UNSUPPORTED_PT;
+		slot->timestamp=*mtime;
+		return res;
+	}
 }
 

@@ -35,15 +35,16 @@
 #ifndef _BUFFERPOOLH
 #define _BUFFERPOOLH
 
-#include <fenice/mediainfo.h>
 #include <fenice/types.h>
 
+#define OMSSLOT_DATASIZE 1500
 #define OMSSLOT_COMMON	uint16 refs; \
-			uint32 timestamp; \
-			uint8 *data; \
+			double timestamp; \
+			uint8 data[OMSSLOT_DATASIZE]; \
+			uint32 data_size; \
+			uint8 marker; \
 			struct _OMSslot *next;
 
-#define OMSSLOT_DATASIZE 1500
 
 typedef struct  _OMSslot {
 #if 0
@@ -86,7 +87,7 @@ OMSBuffer *OMSbuff_new(uint32 buffer_size);
 OMSConsumer *OMSbuff_ref(OMSBuffer *);
 void OMSbuff_unref(OMSBuffer *);
 OMSSlot *OMSbuff_read(OMSConsumer *);
-int32 OMSbuff_write(OMSBuffer *, uint32 timestamp, uint8 *data);
+int32 OMSbuff_write(OMSBuffer *, uint32 timestamp, uint8 *data, uint32 data_size);
 OMSSlot *OMSbuff_getslot(OMSBuffer *);
 OMSSlot *OMSbuff_slotadd(OMSBuffer *, OMSSlot *);
 void OMSbuff_free(OMSBuffer *);

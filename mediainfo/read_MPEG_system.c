@@ -35,11 +35,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
 
-int read_MPEG_system(media_entry *me, unsigned char **data,unsigned *data_size, double *mtime, int *recallme)
+int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mtime, int *recallme)
 {
 	char thefile[255];
 	int num_bytes;
@@ -78,10 +79,10 @@ int read_MPEG_system(media_entry *me, unsigned char **data,unsigned *data_size, 
 
 	lseek(me->fd,s->data_total,SEEK_SET);                             	/* At this point it should be right to find the nearest lower frame */
  									/* computing it from the value of mtime */
-	*data=(unsigned char *)calloc(1,65000);                        	/* and starting the reading from this */
-        if (*data==NULL) {                                             	/* feature not yet implemented */
-		return ERR_ALLOC;
-        }
+	//*data=(unsigned char *)calloc(1,65000);                        	/* and starting the reading from this */
+        //if (*data==NULL) {                                             	/* feature not yet implemented */
+	//	return ERR_ALLOC;
+        //}
 
 	if ( next_start_code(data,data_size,me->fd) == -1) {
 		close(me->fd);
@@ -89,7 +90,7 @@ int read_MPEG_system(media_entry *me, unsigned char **data,unsigned *data_size, 
 	}
 
  	read(me->fd,&s->final_byte,1);
-	(*data)[*data_size]=s->final_byte;
+	data[*data_size]=s->final_byte;
 	*data_size+=1;
 
   	if (s->final_byte == 0xba) {
@@ -124,7 +125,7 @@ int read_MPEG_system(media_entry *me, unsigned char **data,unsigned *data_size, 
      			packet_done = 1;
      			next_start_code(data,data_size,me->fd);
 			read(me->fd,&s->final_byte,1);
-			(*data)[*data_size]=s->final_byte;
+			data[*data_size]=s->final_byte;
 			*data_size+=1;
 			if ( (s->final_byte < 0xbc) && (*data_size <= num_bytes) ) {
 				*recallme = 0;
@@ -153,7 +154,7 @@ int read_MPEG_system(media_entry *me, unsigned char **data,unsigned *data_size, 
 			count+=count1;
 			count+=3;
 			read(me->fd,&s->final_byte,1);
-			(*data)[*data_size]=s->final_byte;
+			data[*data_size]=s->final_byte;
 			*data_size+=1;
 			count+=1;
 		} while ((s->final_byte < 0xbc) && (s->final_byte != 0xb9) );
@@ -203,7 +204,7 @@ int read_MPEG_system(media_entry *me, unsigned char **data,unsigned *data_size, 
 			count+=count1;
 			count+=3;
 			read(me->fd,&s->final_byte,1);
-			(*data)[*data_size]=s->final_byte;
+			data[*data_size]=s->final_byte;
 			*data_size+=1;
 			count+=1;
 		} while ((s->final_byte < 0xbc) && (s->final_byte != 0xb9) );

@@ -35,11 +35,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
 
-int read_H26L (media_entry *me, unsigned char **data, unsigned *data_size, double *mtime, int *recallme)
+int read_H26L (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme)
 {
         char thefile[255];
         unsigned char intime[4];
@@ -74,11 +75,11 @@ int read_H26L (media_entry *me, unsigned char **data, unsigned *data_size, doubl
         }
 
         *data_size=s->bufsize-12;
-        *data=(unsigned char *)calloc(1,*data_size);
-        if (*data==NULL) {
-                return ERR_ALLOC;
-        }
-        if (read(me->fd,&((*data)[0]),*data_size)<=0) {
+        //*data=(unsigned char *)calloc(1,*data_size);
+        //if (*data==NULL) {
+        //        return ERR_ALLOC;
+        //}
+        if (read(me->fd,&(data[0]),*data_size)<=0) {
                 s->pkt_sent=0;
                 return ERR_EOF;
         }

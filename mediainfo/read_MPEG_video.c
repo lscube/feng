@@ -35,12 +35,13 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
 
 
-int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size, double *mtime, int *recallme)   /* reads MPEG-1,2 Video */
+int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme)   /* reads MPEG-1,2 Video */
 {
         char thefile[255];
         int num_bytes;
@@ -81,11 +82,11 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                                                                                   /* computing it from the value of mtime */
         lseek(me->fd,s->data_total,SEEK_SET);                                        /* and starting the reading from this; */
                                                                                   /* feature not yet implemented, usefull for random access*/
-        *data=(unsigned char *)calloc(1,65000);
-        if (*data==NULL) {
-		
-                return ERR_ALLOC;
-        }
+        //*data=(unsigned char *)calloc(1,65000);
+        //if (*data==NULL) {
+	//	
+        //       return ERR_ALLOC;
+        //}
 
         data_aux=(unsigned char *)calloc(1,100);
         if (data_aux==NULL) {
@@ -116,7 +117,7 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
 		}
 
         	read(me->fd,&s->final_byte,1);
-        	(*data)[*data_size]=s->final_byte;
+        	data[*data_size]=s->final_byte;
         	*data_size+=1;
                                                         // Start of ES header reading
 
@@ -127,7 +128,7 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
         	while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {          	// read sequence_extension
                 	count=next_start_code(data,data_size,me->fd);           	// and user_data (MPEG-2 only)
                 	read(me->fd,&s->final_byte,1);
-                	(*data)[*data_size]=s->final_byte;
+                	data[*data_size]=s->final_byte;
                 	*data_size+=1;
         	}
          	if ((num_bytes!=0) && (*data_size>num_bytes)) {
@@ -136,20 +137,20 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
 			*recallme=1;
                         								// finds subsequent s->picture to read timestamp
 			if (s->final_byte == 0xb8) {
-                		read_gop_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
+                		read_gop_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
         		}
 
         		while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {          // read extension
-                		next_start_code(&data_aux,&data_size_aux,me->fd);       // and user_data (MPEG-2 only)
+                		next_start_code(data_aux,&data_size_aux,me->fd);       // and user_data (MPEG-2 only)
                 		read(me->fd,&s->final_byte,1);
                 		(data_aux)[data_size_aux]=s->final_byte;
                 		data_size_aux+=1;
         		}
 
         		if (s->final_byte == 0x00) {
-                		read_picture_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
+                		read_picture_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
                 		if (s->std == MPEG_2) {
-                        		read_picture_coding_ext(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2);
+                        		read_picture_coding_ext(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2);
                 		}
         		}
 
@@ -177,17 +178,17 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                 	s->vsh1.b=0;
                  	s->vsh1.e=0;
                 	vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                	(*data)[0] = vsh1_1[3];
-                	(*data)[1] = vsh1_1[2];
-                	(*data)[2] = vsh1_1[1];
-                	(*data)[3] = vsh1_1[0];
+                	data[0] = vsh1_1[3];
+                	data[1] = vsh1_1[2];
+                	data[2] = vsh1_1[1];
+                	data[3] = vsh1_1[0];
                  	#ifdef MPEG2VSHE
                 	if (s->std == MPEG_2) {
                         vsh2_1 = (char *)(&s->vsh2);
-                        (*data)[4] = vsh2_1[3];
-                        (*data)[5] = vsh2_1[2];
-                        (*data)[6] = vsh2_1[1];
-                        (*data)[7] = vsh2_1[0];
+                        data[4] = vsh2_1[3];
+                        data[5] = vsh2_1[2];
+                        data[6] = vsh2_1[1];
+                        data[7] = vsh2_1[0];
                 	}
 			#endif
                 	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
@@ -206,16 +207,16 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                         								// finds subsequent s->picture to read timestamp
 
         		while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {          // read extension
-                		next_start_code(&data_aux,&data_size_aux,me->fd);       // and user_data (MPEG-2 only)
+                		next_start_code(data_aux,&data_size_aux,me->fd);       // and user_data (MPEG-2 only)
                 		read(me->fd,&s->final_byte,1);
                 		(data_aux)[data_size_aux]=s->final_byte;
                 		data_size_aux+=1;
         		}
 
         		if (s->final_byte == 0x00) {
-                		read_picture_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
+                		read_picture_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
                 		if (s->std == MPEG_2) {
-                        		read_picture_coding_ext(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2);
+                        		read_picture_coding_ext(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2);
                 		}
         		}
 
@@ -243,17 +244,17 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                 	s->vsh1.b=0;
                  	s->vsh1.e=0;
                 	vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                	(*data)[0] = vsh1_1[3];
-                	(*data)[1] = vsh1_1[2];
-                	(*data)[2] = vsh1_1[1];
-                	(*data)[3] = vsh1_1[0];
+                	data[0] = vsh1_1[3];
+                	data[1] = vsh1_1[2];
+                	data[2] = vsh1_1[1];
+                	data[3] = vsh1_1[0];
                 	#ifdef MPEG2VSHE
                 	if (s->std == MPEG_2) {
                         vsh2_1 = (char *)(&s->vsh2);
-                        (*data)[4] = vsh2_1[3];
-                        (*data)[5] = vsh2_1[2];
-                        (*data)[6] = vsh2_1[1];
-                        (*data)[7] = vsh2_1[0];
+                        data[4] = vsh2_1[3];
+                        data[5] = vsh2_1[2];
+                        data[6] = vsh2_1[1];
+                        data[7] = vsh2_1[0];
                 	}
 			#endif
                 	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
@@ -264,7 +265,7 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
         	while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {          	// read extension
                 	next_start_code(data,data_size,me->fd);                 	// and user_data (MPEG-2 only)
                 	read(me->fd,&s->final_byte,1);
-                	(*data)[*data_size]=s->final_byte;
+                	data[*data_size]=s->final_byte;
                 	*data_size+=1;
         	}
 
@@ -275,9 +276,9 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                         								// finds subsequent s->picture to read timestamp
 
         		if (s->final_byte == 0x00) {
-                		read_picture_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
+                		read_picture_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
                 		if (s->std == MPEG_2) {
-                        		read_picture_coding_ext(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2);
+                        		read_picture_coding_ext(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2);
                 		}
         		}
 
@@ -305,17 +306,17 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                 	s->vsh1.b=0;
                  	s->vsh1.e=0;
                 	vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                	(*data)[0] = vsh1_1[3];
-                	(*data)[1] = vsh1_1[2];
-                	(*data)[2] = vsh1_1[1];
-                	(*data)[3] = vsh1_1[0];
+                	data[0] = vsh1_1[3];
+                	data[1] = vsh1_1[2];
+                	data[2] = vsh1_1[1];
+                	data[3] = vsh1_1[0];
                 	#ifdef MPEG2VSHE
                 	if (s->std == MPEG_2) {
                         	vsh2_1 = (char *)(&s->vsh2);
-                        	(*data)[4] = vsh2_1[3];
-                        	(*data)[5] = vsh2_1[2];
-                        	(*data)[6] = vsh2_1[1];
-                        	(*data)[7] = vsh2_1[0];
+                        	data[4] = vsh2_1[3];
+                        	data[5] = vsh2_1[2];
+                        	data[6] = vsh2_1[1];
+                        	data[7] = vsh2_1[0];
                 	}
 			#endif
                 	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
@@ -354,17 +355,17 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                 		s->vsh1.b=0;
                  		s->vsh1.e=0;
                 		vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                		(*data)[0] = vsh1_1[3];
-                		(*data)[1] = vsh1_1[2];
-                		(*data)[2] = vsh1_1[1];
-                		(*data)[3] = vsh1_1[0];
+                		data[0] = vsh1_1[3];
+                		data[1] = vsh1_1[2];
+                		data[2] = vsh1_1[1];
+                		data[3] = vsh1_1[0];
                 		#ifdef MPEG2VSHE
                 		if (s->std == MPEG_2) {
                         		vsh2_1 = (char *)(&s->vsh2);
-                  			(*data)[4] = vsh2_1[3];
-                        		(*data)[5] = vsh2_1[2];
-                        		(*data)[6] = vsh2_1[1];
-                        		(*data)[7] = vsh2_1[0];
+                  			data[4] = vsh2_1[3];
+                        		data[5] = vsh2_1[2];
+                        		data[6] = vsh2_1[1];
+                        		data[7] = vsh2_1[0];
                 		}
 				#endif
                 		*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
@@ -406,17 +407,17 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                 	s->vsh1.b=0;
                  	s->vsh1.e=0;
                 	vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                	(*data)[0] = vsh1_1[3];
-                	(*data)[1] = vsh1_1[2];
-                	(*data)[2] = vsh1_1[1];
-                	(*data)[3] = vsh1_1[0];
+                	data[0] = vsh1_1[3];
+                	data[1] = vsh1_1[2];
+                	data[2] = vsh1_1[1];
+                	data[3] = vsh1_1[0];
                 	#ifdef MPEG2VSHE
                 	if (s->std == MPEG_2) {
                         	vsh2_1 = (char *)(&s->vsh2);
-                        	(*data)[4] = vsh2_1[3];
-                        	(*data)[5] = vsh2_1[2];
-                        	(*data)[6] = vsh2_1[1];
-                        	(*data)[7] = vsh2_1[0];
+                        	data[4] = vsh2_1[3];
+                        	data[5] = vsh2_1[2];
+                        	data[6] = vsh2_1[1];
+                        	data[7] = vsh2_1[0];
                 	}
 			#endif
                 	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
@@ -427,7 +428,7 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
         	while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {          	// read extension
                 	next_start_code(data,data_size,me->fd);                    	// and user_data (MPEG-2 only)
                 	read(me->fd,&s->final_byte,1);
-         		(*data)[*data_size]=s->final_byte;
+         		data[*data_size]=s->final_byte;
                 	*data_size+=1;
         	}
 
@@ -460,17 +461,17 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                 	s->vsh1.b=0;
                  	s->vsh1.e=0;
                 	vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                	(*data)[0] = vsh1_1[3];
-                	(*data)[1] = vsh1_1[2];
-                	(*data)[2] = vsh1_1[1];
-                	(*data)[3] = vsh1_1[0];
+                	data[0] = vsh1_1[3];
+                	data[1] = vsh1_1[2];
+                	data[2] = vsh1_1[1];
+                	data[3] = vsh1_1[0];
                         #ifdef MPEG2VSHE
                 	if (s->std == MPEG_2) {
                         	vsh2_1 = (char *)(&s->vsh2);
-                        	(*data)[4] = vsh2_1[3];
-                        	(*data)[5] = vsh2_1[2];
-                        	(*data)[6] = vsh2_1[1];
-                        	(*data)[7] = vsh2_1[0];
+                        	data[4] = vsh2_1[3];
+                        	data[5] = vsh2_1[2];
+                        	data[6] = vsh2_1[1];
+                        	data[7] = vsh2_1[0];
                 	}
 			#endif
                 	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
@@ -496,7 +497,7 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                         	count = read_slice(data,data_size,me->fd,&s->final_byte);
                         	next_start_code(data,data_size,me->fd);
                         	read(me->fd,&s->final_byte,1);
-                        	(*data)[*data_size]=s->final_byte;
+                        	data[*data_size]=s->final_byte;
                         	*data_size+=1;
                         	if ( ((s->final_byte > 0xAF)||(s->final_byte==0x00)) && ((*data_size-4) <= num_bytes)) {
                                 	*recallme = 0;
@@ -541,24 +542,24 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
 				s->vsh1.e=0;
                     	}
                 	vsh1_1 = (char *)(&s->vsh1);  					/* to see the struct as a set of bytes */
-                	(*data)[0] = vsh1_1[3];
-                	(*data)[1] = vsh1_1[2];
-                	(*data)[2] = vsh1_1[1];
-                	(*data)[3] = vsh1_1[0];
+                	data[0] = vsh1_1[3];
+                	data[1] = vsh1_1[2];
+                	data[2] = vsh1_1[1];
+                	data[3] = vsh1_1[0];
                 	#ifdef MPEG2VSHE
                 	if (s->std == MPEG_2) {
                         	vsh2_1 = (char *)(&s->vsh2);
-                        	(*data)[4] = vsh2_1[3];
-                        	(*data)[5] = vsh2_1[2];
-                        	(*data)[6] = vsh2_1[1];
-                        	(*data)[7] = vsh2_1[0];
+                        	data[4] = vsh2_1[3];
+                        	data[5] = vsh2_1[2];
+                        	data[6] = vsh2_1[1];
+                        	data[7] = vsh2_1[0];
                 	}
 			#endif
                 	*mtime = (s->hours * 3.6e6) + (s->minutes * 6e4) + (s->seconds * 1000) +  (s->temp_ref*40) + (s->picture*40);
                 	if (s->final_byte == 0xb7) {
                         	next_start_code(data,data_size,me->fd);
                         	read(me->fd,&s->final_byte,1);
-                        	(*data)[*data_size]=s->final_byte;
+                        	data[*data_size]=s->final_byte;
                         	*data_size+=1;
                        	 	s->data_total+=4;
                 	}
@@ -568,34 +569,34 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                  		lseek(me->fd,4,SEEK_CUR);
 
                 		if (s->final_byte == 0xb3) {
-                		read_seq_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,s->std);
+                		read_seq_head(data_aux,&data_size_aux,me->fd,&s->final_byte,s->std);
         			}
       		  		while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-         				next_start_code(&data_aux,&data_size_aux,me->fd);
+         				next_start_code(data_aux,&data_size_aux,me->fd);
                	 			read(me->fd,&s->final_byte,1);
                 			(data_aux)[data_size_aux]=s->final_byte;
                 			data_size_aux+=1;
         			}
         			if (s->final_byte == 0xb8) {
-                			read_gop_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
+                			read_gop_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
         			}
 
         			while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-                			next_start_code(&data_aux,&data_size_aux,me->fd);
+                			next_start_code(data_aux,&data_size_aux,me->fd);
                 			read(me->fd,&s->final_byte,1);
                 			(data_aux)[data_size_aux]=s->final_byte;
                 			data_size_aux+=1;
         			}
 
         			if (s->final_byte == 0x00) {
-                			read_picture_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1_aux,s->std);
+                			read_picture_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1_aux,s->std);
                 			if (s->std == MPEG_2) {
-                        			read_picture_coding_ext(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2_aux);
+                        			read_picture_coding_ext(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2_aux);
                 			}
         			}
 
         			while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-                			next_start_code(&data_aux,&data_size_aux,me->fd);
+                			next_start_code(data_aux,&data_size_aux,me->fd);
                 			read(me->fd,&s->final_byte,1);
                 			(data_aux)[data_size_aux]=s->final_byte;
                 			data_size_aux+=1;
@@ -633,17 +634,17 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                 	}
                 	s->vsh1.b=s->vsh1.e=1;
                 	vsh1_1 = (char *)(&s->vsh1);
-                	(*data)[0] = vsh1_1[3];
-                	(*data)[1] = vsh1_1[2];
-                	(*data)[2] = vsh1_1[1];
-                	(*data)[3] = vsh1_1[0];
+                	data[0] = vsh1_1[3];
+                	data[1] = vsh1_1[2];
+                	data[2] = vsh1_1[1];
+                	data[3] = vsh1_1[0];
                 	#ifdef MPEG2VSHE
                 	if (s->std == MPEG_2) {
                         	vsh2_1 = (char *)(&s->vsh2);
-                        	(*data)[4] = vsh2_1[3];
-                        	(*data)[5] = vsh2_1[2];
-                        	(*data)[6] = vsh2_1[1];
-                        	(*data)[7] = vsh2_1[0];
+                        	data[4] = vsh2_1[3];
+                        	data[5] = vsh2_1[2];
+                        	data[6] = vsh2_1[1];
+                        	data[7] = vsh2_1[0];
                 	}
 			#endif
                	 	if ((s->final_byte > 0xAF)||(s->final_byte==0x00)) {
@@ -655,7 +656,7 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                 	if (s->final_byte == 0xb7) {
                         	next_start_code(data,data_size,me->fd);
                         	read(me->fd,&s->final_byte,1);
-                       	 	(*data)[*data_size]=s->final_byte;
+                       	 	data[*data_size]=s->final_byte;
                         	*data_size+=1;
                         	s->data_total+=4;
                 	}
@@ -665,34 +666,34 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
                  		lseek(me->fd,4,SEEK_CUR);
 
                 		if (s->final_byte == 0xb3) {
-                		read_seq_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,s->std);
+                		read_seq_head(data_aux,&data_size_aux,me->fd,&s->final_byte,s->std);
         			}
       		  		while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-         				next_start_code(&data_aux,&data_size_aux,me->fd);
+         				next_start_code(data_aux,&data_size_aux,me->fd);
                	 			read(me->fd,&s->final_byte,1);
                 			(data_aux)[data_size_aux]=s->final_byte;
                 			data_size_aux+=1;
         			}
         			if (s->final_byte == 0xb8) {
-                			read_gop_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
+                			read_gop_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
         			}
 
         			while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-                			next_start_code(&data_aux,&data_size_aux,me->fd);
+                			next_start_code(data_aux,&data_size_aux,me->fd);
                 			read(me->fd,&s->final_byte,1);
                 			(data_aux)[data_size_aux]=s->final_byte;
                 			data_size_aux+=1;
         			}
 
         			if (s->final_byte == 0x00) {
-                			read_picture_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1_aux,s->std);
+                			read_picture_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1_aux,s->std);
                 			if (s->std == MPEG_2) {
-                        			read_picture_coding_ext(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2_aux);
+                        			read_picture_coding_ext(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2_aux);
                 			}
         			}
 
         			while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-                			next_start_code(&data_aux,&data_size_aux,me->fd);
+                			next_start_code(data_aux,&data_size_aux,me->fd);
                 			read(me->fd,&s->final_byte,1);
                 			(data_aux)[data_size_aux]=s->final_byte;
                 			data_size_aux+=1;
@@ -710,7 +711,7 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
 	        count=read_slice(data,data_size,me->fd,&s->final_byte);
 	        next_start_code(data,data_size,me->fd);
   		read(me->fd,&s->final_byte,1);
-    		(*data)[*data_size]=s->final_byte;
+    		data[*data_size]=s->final_byte;
       		*data_size+=1;
           	if ((s->final_byte > 0xAF)||(s->final_byte==0x00)) {
            		*recallme = 0;
@@ -760,51 +761,51 @@ int read_MPEG_video (media_entry *me, unsigned char **data, unsigned *data_size,
 			s->vsh1.e=0;
    		}
                 vsh1_1 = (char *)(&s->vsh1);
-                (*data)[0] = vsh1_1[3];
-                (*data)[1] = vsh1_1[2];
-                (*data)[2] = vsh1_1[1];
-                (*data)[3] = vsh1_1[0];
+                data[0] = vsh1_1[3];
+                data[1] = vsh1_1[2];
+                data[2] = vsh1_1[1];
+                data[3] = vsh1_1[0];
                 #ifdef MPEG2VSHE
                 if (s->std == MPEG_2) {
                        	vsh2_1 = (char *)(&s->vsh2);
-                       	(*data)[4] = vsh2_1[3];
-                       	(*data)[5] = vsh2_1[2];
-                       	(*data)[6] = vsh2_1[1];
-                       	(*data)[7] = vsh2_1[0];
+                       	data[4] = vsh2_1[3];
+                       	data[5] = vsh2_1[2];
+                       	data[6] = vsh2_1[1];
+                       	data[7] = vsh2_1[0];
                 }
 		#endif
 
             	if (*recallme == 0)	{						/* reads next time-stamp to compute the value of delta_mtime */
              		//lseek(me->fd,4,SEEK_CUR);
                		if (s->final_byte == 0xb3) {
-                		read_seq_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,s->std);
+                		read_seq_head(data_aux,&data_size_aux,me->fd,&s->final_byte,s->std);
         		}
       		  	while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-         			next_start_code(&data_aux,&data_size_aux,me->fd);
+         			next_start_code(data_aux,&data_size_aux,me->fd);
             			read(me->fd,&s->final_byte,1);
                			(data_aux)[data_size_aux]=s->final_byte;
                 		data_size_aux+=1;
         		}
         		if (s->final_byte == 0xb8) {
-          			read_gop_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
+          			read_gop_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
         		}
 
         		while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-          			next_start_code(&data_aux,&data_size_aux,me->fd);
+          			next_start_code(data_aux,&data_size_aux,me->fd);
              			read(me->fd,&s->final_byte,1);
                 		(data_aux)[data_size_aux]=s->final_byte;
                 		data_size_aux+=1;
         		}
 
         		if (s->final_byte == 0x00) {
-          			read_picture_head(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1_aux,s->std);
+          			read_picture_head(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1_aux,s->std);
              			if (s->std == MPEG_2) {
-                			read_picture_coding_ext(&data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2_aux);
+                			read_picture_coding_ext(data_aux,&data_size_aux,me->fd,&s->final_byte,&s->vsh2_aux);
                 		}
         		}
 
         		while ((s->final_byte == 0xb5) || (s->final_byte == 0xb2)) {
-          			next_start_code(&data_aux,&data_size_aux,me->fd);
+          			next_start_code(data_aux,&data_size_aux,me->fd);
              			read(me->fd,&s->final_byte,1);
                 		(data_aux)[data_size_aux]=s->final_byte;
                 		data_size_aux+=1;
