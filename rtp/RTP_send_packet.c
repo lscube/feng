@@ -90,6 +90,7 @@ int RTP_send_packet(RTP_session *session)
    		r.csrc_len = 0;
 		r.marker=slot->marker;
     		r.payload = session->current_media->description.payload_type;
+		// printf("media:%s - cseq=%d - random start=%d\n",session->current_media->filename, session->seq, session->start_seq);
 		r.seq_no = htons(session->seq++ + session->start_seq);
    		r.timestamp=htonl(session->start_rtptime+msec2tick(slot->timestamp,session->current_media));
 		r.ssrc = htonl(session->ssrc);

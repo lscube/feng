@@ -64,19 +64,22 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format des
 	}
 
 	/*describe*/
-	sprintf(r, "%s %d %s\nCSeq: %d\nServer: %s/%s\n", RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE, VERSION);
+	sprintf(r, "%s %d %s"RTSP_EL"CSeq: %d"RTSP_EL"Server: %s/%s"RTSP_EL, RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE, VERSION);
 	add_time_stamp(r, 0);
 	switch (descr_format) {
 		// Add new formats here
 		case df_SDP_format:{
-			strcat(r, "Content-Type: application/sdp\n");
+			strcat(r, "Content-Type: application/sdp"RTSP_EL);
 		break;
 		}
 	}
-	sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/\n", prefs_get_hostname(), object);
-	sprintf(r + strlen(r), "Content-Length: %d\r\n\r\n", strlen(descr));
+	sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/"RTSP_EL, prefs_get_hostname(), object);
+	sprintf(r + strlen(r), "Content-Length: %d"RTSP_EL, strlen(descr));
+	// end of message
+	strcat(r, RTSP_EL);
+
+	// concatenate description
 	strcat(r, descr);
-	strcat(r, "\n");
 	bwrite(r, (unsigned short) strlen(r), rtsp);
 
 	free(mb);

@@ -81,8 +81,10 @@ uint32 send_redirect_3xx(RTSP_buffer *rtsp, uint8 *object)
 		return ERR_ALLOC;
 	}
 	/* build a reply message */
-	sprintf(r, "%s %d %s\nCSeq: %d\nServer: %s/%s\n", RTSP_VER, 302, get_stat(302), rtsp->rtsp_cseq, PACKAGE,VERSION);
-	sprintf(r + strlen(r), "Location: %s\r\n\r\n", matching_descr->twin);/*twin of the first media of the aggregate movie*/
+	sprintf(r, "%s %d %s"RTSP_EL"CSeq: %d"RTSP_EL"Server: %s/%s"RTSP_EL, RTSP_VER, 302, get_stat(302), rtsp->rtsp_cseq, PACKAGE,VERSION);
+	sprintf(r + strlen(r), "Location: %s"RTSP_EL, matching_descr->twin);/*twin of the first media of the aggregate movie*/
+
+	strcat(r, RTSP_EL);
 	
 
 	bwrite(r, (unsigned short) strlen(r), rtsp);

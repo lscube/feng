@@ -56,9 +56,10 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 		return -1;
 	}
 	memset(b, 0, sizeof(b));
-	sprintf(b, "%s %d %s\nCSeq: %d\n", RTSP_VER, err, get_stat(err), rtsp->rtsp_cseq);
+	sprintf(b, "%s %d %s"RTSP_EL"CSeq: %d"RTSP_EL, RTSP_VER, err, get_stat(err), rtsp->rtsp_cseq);
 	//---patch coerenza con rfc in caso di errore
-	strcat(b, "\r\n");
+	// strcat(b, "\r\n");
+	strcat(b, RTSP_EL);
 
 	res = bwrite(b, (unsigned short) strlen(b), rtsp);
 	free(b);

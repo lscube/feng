@@ -36,6 +36,8 @@
 #define _SDPH
 
 	#include <fenice/mediainfo.h>
+
+#define SDP_EL "\r\n"
 	
 	char *get_SDP_user_name();
 	char *get_SDP_session_id();

@@ -70,7 +70,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	port_pair ser_ports;
 	struct timeval now_tmp;
 	char *p = NULL, *q = NULL;
-	int start_seq, start_rtptime;
+	unsigned int start_seq, start_rtptime;
 	char line[255];
 	media_entry *list, *matching_me, req;
 	struct sockaddr rtsp_peer;
@@ -280,8 +280,15 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	start_seq = rand();
 	start_rtptime = rand();
 #else
-	start_seq = 1 + (int) (10.0 * rand() / (100000 + 1.0));
-	start_rtptime = 1 + (int) (10.0 * rand() / (100000 + 1.0));
+	// start_seq = 1 + (int) (10.0 * rand() / (100000 + 1.0));
+	// start_rtptime = 1 + (int) (10.0 * rand() / (100000 + 1.0));
+#if 0
+	start_seq = 1 + (unsigned int) ((float)(0xFFFF) * ((float)rand() / (float)RAND_MAX));
+	start_rtptime = 1 + (unsigned int) ((float)(0xFFFFFFFF) * ((float)rand() / (float)RAND_MAX));
+#else
+	start_seq = 1 + (unsigned int) (rand()%(0xFFFF));
+	start_rtptime = 1 + (unsigned int) (rand()%(0xFFFFFFFF));
+#endif
 #endif
 	if (start_seq == 0) {
 		start_seq++;

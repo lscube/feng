@@ -47,13 +47,13 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, SD_descr *descr
 	char ttl[4];
 	/* build a reply message */
 	
-	sprintf(r, "%s %d %s\nCSeq: %d\nServer: %s/%s\n", RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
+	sprintf(r, "%s %d %s"RTSP_EL"CSeq: %d"RTSP_EL"Server: %s/%s"RTSP_EL, RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
 		VERSION);
 	add_time_stamp(r, 0);
 	strcat(r, "Session: ");
 	sprintf(temp, "%d", session->session_id);
 	strcat(r, temp);
-	strcat(r, "\n");
+	strcat(r, RTSP_EL);
 	if (!(descr->flags & SD_FL_MULTICAST)) {
 		strcat(r, "Transport: RTP/AVP;unicast;client_port=");
 		sprintf(temp, "%d", sp2->cli_ports.RTP);
@@ -86,8 +86,8 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, SD_descr *descr
 		sprintf(ttl,"%d",(int)DEFAULT_TTL);
 		strcat(r,ttl);
 	}
-	strcat(r, "\r\n\r\n");
-
+	// strcat(r, "\r\n\r\n");
+	strcat(r, RTSP_EL RTSP_EL);
 	
 	bwrite(r, (unsigned short) strlen(r), rtsp);
 

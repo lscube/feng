@@ -52,6 +52,8 @@
 	#define PLAY_STATE      2
 
 	#define RTSP_VER "RTSP/1.0"
+
+#define RTSP_EL "\r\n"
 	
    	 typedef struct _RTSP_session {
     		//tsocket fd;
