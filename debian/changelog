@@ -1,3 +1,10 @@
+fenice (1.8-1) unstable; urgency=low
+
+  * Man pages rendering fixed. No changes needed.
+  * OMSP Team's email address changed.
+
+ -- OMSP Team <team@streaming.polito.it>  Tue,  1 Mar 2005 13:42:37 +0100
+
 fenice (1.7-1) unstable; urgency=low
 
   * Initial Release.
