@@ -39,11 +39,11 @@
 #include <fenice/bufferpool.h>
 #include <fenice/prefs.h>
 
-uint32 mediacpy(media_entry *media_out, media_entry *media_in) {
+uint32 mediacpy(media_entry **media_out, media_entry **media_in) {
 	
 	uint32 dim_buff;
 
-	switch (media_in->description.mtype) {
+	switch ((*media_in)->description.mtype) {
 		case audio:
 			dim_buff = DIM_AUDIO_BUFFER;
 			break;
@@ -54,17 +54,16 @@ uint32 mediacpy(media_entry *media_out, media_entry *media_in) {
 			return ERR_GENERIC;
 	}
 		
-	if ((media_in->description.msource == live) && (media_in->pkt_buffer == NULL))
-		if ((media_in->pkt_buffer = OMSbuff_new(dim_buff)) == NULL)
-			return ERR_ALLOC;
-
-	memcpy(media_out,media_in,sizeof(media_entry));
-
-	if (media_in->description.msource == stored)
-		if ((media_out->pkt_buffer = OMSbuff_new(dim_buff)) == NULL)
+	if ((*media_in)->description.msource == live)
+		*media_out=*media_in;
+	else
+		memcpy((*media_out),(*media_in),sizeof(media_entry));
+	
+	if ((*media_out)->pkt_buffer == NULL)
+		if (((*media_out)->pkt_buffer = OMSbuff_new(dim_buff)) == NULL)
 			return ERR_ALLOC;
 	
-	/*if ((media_out->cons = OMSbuff_ref(media_out->pkt_buffer)) == NULL)
+	/*if (((*media_out)->cons = OMSbuff_ref((*media_out)->pkt_buffer)) == NULL)
 		return ERR_ALLOC;*/
 	
 	return ERR_NOERROR;

@@ -193,8 +193,16 @@
     		unsigned char buff_data[4]; // shawill: needed for live-by-named-pipe
 		unsigned int buff_size; // shawill: needed for live-by-named-pipe		
 		OMSBuffer *pkt_buffer; 
-		OMSConsumer *cons;
-
+		//Consumer now is in RTP_session structure
+		//OMSConsumer *cons;
+		
+		//these time vars have transferred here
+		double mtime;
+		double mstart;
+		double mstart_offset;
+		
+		//started has transferred itself here
+		//unsigned char started;
 		int reserved;
     		char filename[255];
     		char aggregate[50];
@@ -307,7 +315,7 @@
 	//int get_media_descr(char *url,media_entry *req,media_entry *media,char *descr);
 	// Reperisce la descrizione del media; shawill: moved in sdp.h
 	
-	uint32 mediacpy(media_entry *, media_entry *);
+	uint32 mediacpy(media_entry **, media_entry **);
 	unsigned long msec2tick(double mtime,media_entry *me);
 	
 	// ID3v2

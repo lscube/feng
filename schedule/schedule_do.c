@@ -94,19 +94,20 @@ do{
 				
 				mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
 				
-				if (mnow >= sched[i].rtp_session->mstart) {
+				if (mnow >= sched[i].rtp_session->current_media->mstart) {
 					
 					if (mnow - sched[i].rtp_session->mprev_tx_time >= sched[i].rtp_session->current_media->description.pkt_len) {
     					//if (mnow-sched[i].rtp_session->mtime>=sched[i].rtp_session->current_media->description.pkt_len) {   // old scheduler
 						
 						stream_change(sched[i].rtp_session, change_check(sched[i].rtp_session));
         					
-						// Send an RTP packet
-             					sched[i].rtp_session->mtime += sched[i].rtp_session->current_media->description.delta_mtime; //emma  
+						/*This operation is in RTP_send_packet function because it runs only if producer writes the slot*/
+						//sched[i].rtp_session->mtime += sched[i].rtp_session->current_media->description.delta_mtime; //emma  
 						//sched[i].rtp_session->mtime+=sched[i].rtp_session->current_media->description.pkt_len;     // old scheduler
         					
 						RTCP_handler(sched[i].rtp_session);
 	        				
+						// Send an RTP packet
 						res = sched[i].play_action(sched[i].rtp_session);
         					
 						if (res!=ERR_NOERROR) {

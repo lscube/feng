@@ -298,7 +298,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	strcpy(sp2->sd_filename, object);
 	sp2->current_media = (media_entry *) calloc (1, sizeof(media_entry));
 	/*TODO control (if alloc doesn't work)*/
-	mediacpy(sp2->current_media,matching_me);
+	mediacpy(&sp2->current_media,&matching_me);
 	gettimeofday(&now_tmp, 0);
 	srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
 	sp2->start_rtptime = start_rtptime;

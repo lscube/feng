@@ -44,6 +44,7 @@
 	#include <sys/socket.h>
 	#include <fenice/socket.h>
 	#include <fenice/mediainfo.h>
+	#include <fenice/bufferpool.h>
 	#include <fenice/types.h>
 	#include <fenice/prefs.h>
 	
@@ -86,12 +87,13 @@
 		unsigned char rtcp_outbuffer[RTCP_BUFFERSIZE];
 		uint32 rtcp_outsize;
 		struct sockaddr rtp_peer;
-	
+		/*	
+		//these time vars now are in media_entry structure
 		double mtime;
 		double mstart;
-		double mstart_offset;
+		double mstart_offset;*/
+		
 		double mprev_tx_time;
-	
 		unsigned int PreviousCount;
 		short MinimumReached;
 		short MaximumReached;
@@ -102,13 +104,18 @@
 		unsigned int start_rtptime;    	
 		
 		unsigned char pause;
+		//this var is in media_entry structure
 		unsigned char started;
+
 		unsigned int seq;
 		unsigned int ssrc;
 		port_pair ser_ports;
 		port_pair cli_ports;
 		char sd_filename[255];
 		media_entry *current_media;
+		
+		//Consumer has transferred itself here
+		OMSConsumer *cons;
 		RTCP_stats rtcp_stats[2]; //client e server
 		struct _RTP_session *next;
 		int isMulticast;  //FEDERICO

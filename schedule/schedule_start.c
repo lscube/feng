@@ -46,16 +46,21 @@ void schedule_start(int id,play_args *args)
 	double mnow;	
 	gettimeofday(&now,NULL);
 	mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
-	if (!args->playback_time_valid) {
-		sched[id].rtp_session->mstart=mnow;
-	}
-	else {
-		sched[id].rtp_session->mstart=mktime(&(args->playback_time));
-	}
-	sched[id].rtp_session->mtime = mnow - sched[id].rtp_session->current_media->description.pkt_len;
-	sched[id].rtp_session->mprev_tx_time = mnow - sched[id].rtp_session->current_media->description.pkt_len;
-	sched[id].rtp_session->mstart_offset = args->start_time*1000;
 	
+	if (sched[id].rtp_session->current_media->pkt_buffer->refs==1) {	
+	/*If and only if this session is the first session related to this media_entry, then it runs here*/	
+		if (!args->playback_time_valid) {	
+			sched[id].rtp_session->current_media->mstart=mnow;
+		}
+		else {
+			sched[id].rtp_session->current_media->mstart=mktime(&(args->playback_time));
+		}
+	
+		sched[id].rtp_session->current_media->mtime = mnow - sched[id].rtp_session->current_media->description.pkt_len;
+		sched[id].rtp_session->current_media->mstart_offset = args->start_time*1000;
+		//sched[id].rtp_session->current_media->data_chunk = 0;
+	}
+	sched[id].rtp_session->mprev_tx_time = mnow - sched[id].rtp_session->current_media->description.pkt_len;
 	sched[id].rtp_session->pause=0;
 	sched[id].rtp_session->started=1;
 	sched[id].rtp_session->MinimumReached=0;
@@ -64,4 +69,5 @@ void schedule_start(int id,play_args *args)
 	sched[id].rtp_session->rtcp_stats[i_client].RR_received=0;
 	sched[id].rtp_session->rtcp_stats[i_client].SR_received=0;
 }
+
 

@@ -54,13 +54,13 @@ int schedule_resume(int id)
 				printf("mstart e' %lf\n",sched[id].rtp_session->mstart);
 				printf("pkt_len e' %lf\n",sched[id].rtp_session->current_media->description.pkt_len);
 				printf("mstart_offset e' %lf\n",sched[id].rtp_session->mstart_offset );*/
-	sched[id].rtp_session->mstart_offset += sched[id].rtp_session->mtime - sched[id].rtp_session->mstart + (double) sched[id].rtp_session->current_media->description.pkt_len;
+	sched[id].rtp_session->current_media->mstart_offset += sched[id].rtp_session->current_media->mtime - sched[id].rtp_session->current_media->mstart + (double) sched[id].rtp_session->current_media->description.pkt_len;
 	
 //				printf("mstart_offset diventa mtime-mstart+pkt_len = %lf\n",sched[id].rtp_session->mstart_offset);
-	sched[id].rtp_session->mstart = mnow;
+	sched[id].rtp_session->current_media->mstart = mnow;
 //				printf("mstart diventa mnow = %lf\n",mnow);
 	
-	sched[id].rtp_session->mtime = sched[id].rtp_session->mprev_tx_time = mnow - (double) sched[id].rtp_session->current_media->description.pkt_len;
+	sched[id].rtp_session->current_media->mtime = sched[id].rtp_session->mprev_tx_time = mnow - (double) sched[id].rtp_session->current_media->description.pkt_len;
 //				printf("mtime e mprev_tx_time diventano mnow-pkt_len = %lf\n",sched[id].rtp_session->mtime );
 	
 	sched[id].rtp_session->pause=0;
