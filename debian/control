@@ -1,0 +1,25 @@
+Source: fenice
+Section: net
+Priority: optional
+Maintainer: OMSP Team <streaming@multimedia.polito.it>
+Build-Depends: debhelper (>= 4.0.0), automake1.8, autoconf
+Standards-Version: 3.6.1
+
+Package: fenice
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: standards-compliant multimedia streaming server
+ Fenice is a multimedia streaming server compliant with the IETF's standards for
+ real-time streaming of multimedia contents over Internet. Fenice implements
+ RTSP (Real-Time Streaming Protocol - RFC2326) and RTP/RTCP (Real-Time Transport
+ Protocol/RTP Control Protocol - RFC3550) with RTP Profile for Audio and Video
+ Conferences with Minimal Control (RFC3551).
+ .
+ Fenice is the official streaming server for the Open Media Streaming Project
+ (http://streaming.polito.it) which is is a free/libre project software for the
+ development of a platform for the streaming of multimedia contents. The
+ platform is based on the full support of the IETF's standards for the real-time
+ data transport over IP. The aim of the project is to provide an open solution,
+ free and interoperable along with the proprietary streaming applications
+ currently dominant on the market.
+	
