@@ -1,5 +1,6 @@
 feniceincludedir =	$(includedir)/fenice
-noinst_HEADERS	=	command_environment.h \
+noinst_HEADERS	=	bufferpool.h \
+			command_environment.h \
 			debug.h
 			evenloop.h \
 			intnet.h \
