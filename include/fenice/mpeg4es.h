@@ -90,6 +90,7 @@
 		int vtir_bitlen;
 		/*double rtp_timestamp;*/
 		uint8 final_byte;
+		uint32 init;
 		int fragmented;
 		uint32 data_read;
 		uint32 remained_data_size;

@@ -38,6 +38,7 @@
 #include <config.h>
 #include <fenice/sdp.h>
 #include <fenice/mediainfo.h>
+#include <fenice/mpeg4es.h>
 #include <fenice/utils.h>
 #include <fenice/rtp.h>
 #include <fenice/multicast.h>
@@ -198,9 +199,9 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 				strcat(descr,t);
 			}
 			if (strcmp(p->description.encoding_name,"MP4V-ES")==0) {
+				static_MPEG4_video_es *s=(static_MPEG4_video_es *)p->stat;
 				strcat(descr,"\n");
-				sprintf(t,"a=fmtp:96 profile-level-id=148 config=000001B094000001B50900000100000001200086C403F7198582120A31");
-				//sprintf(t,"a=fmtp:96 profile-level-id=243 config=000001B0F3000001B50EE040C0CF0000010000000120008440FA28782168A21F");
+				sprintf(t,"a=fmtp:96 profile-level-id=%d config=\n",s->profile_id/*,s->config*/);
 				strcat(descr,t);
 			}
 			strcat(descr,"\n");

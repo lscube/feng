@@ -33,13 +33,27 @@
  * */
 
 #include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
+#define FREE_DATA free(s->more_data); \
+		  free(s);
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
+#include <fenice/mpeg4es.h>
 #include <fenice/prefs.h>
 
 int load_MP4ES(media_entry *p) {
-	
+	int ret;
+	int data_size=0;
+	int i;
+	char *o;
+	struct stat fdstat;
+
+	static_MPEG4_video_es *s=NULL;
+
 	if (!(p->description.flags & MED_FRAME_RATE)) {
 			return ERR_PARSE;
                 }
@@ -50,7 +64,90 @@ int load_MP4ES(media_entry *p) {
 			printf("Warning: the max size for MPEG Video packet is smaller than 261 bytes and if a video header\n");
 			printf("is greater the max size would be ignored \n");
 		}
-        return ERR_NOERROR;
+	
+	if ( (ret=mediaopen(p)) < 0 ){
+		return ret;
+	}
+	s = (static_MPEG4_video_es *) calloc (1, sizeof(static_MPEG4_video_es));
+	s->more_data=(char *)calloc(1,65000);
+        if (s==NULL || s->more_data==NULL)
+               return ERR_ALLOC;
 
+	if(next_start_code(s->more_data,&data_size,p->fd) < 0){
+		FREE_DATA;
+		return ERR_EOF;              
+	}
+	if(read(p->fd,&s->final_byte,1)<1){
+		FREE_DATA;
+		return ERR_EOF;
+	}
+        (s->more_data)[data_size]=s->final_byte;
+        data_size+=1;
+	
+	if( s->final_byte == VOS_START_CODE){
+		ret=parse_visual_object_sequence(s,s->more_data,&data_size,p->fd);
+		if(ret!=ERR_NOERROR){
+			FREE_DATA;
+			return ret;
+		}
+	        if(next_start_code(s->more_data,&data_size,p->fd) < 0){
+			FREE_DATA;
+			return ERR_EOF;              
+		}
+               	if(read(p->fd,&s->final_byte,1)<1){
+			FREE_DATA;
+			return ERR_EOF;
+		}
+        	(s->more_data)[data_size]=s->final_byte;
+               	data_size+=1;
+	}
+	else
+		return ERR_PARSE;
+	
+	if(s->final_byte == VO_START_CODE){
+		ret=parse_visual_object(s->more_data,&data_size,p->fd);
+		if(ret!=ERR_NOERROR){
+			FREE_DATA;
+			return ret;
+		}
+		s->final_byte=(s->more_data)[data_size - 1];
+	}
+	else
+		return ERR_PARSE;
+	
+	if(/*(s->final_byte >= 0x00) &&*/ (s->final_byte <= 0x1F)) {
+		ret=parse_video_object(s->more_data,&data_size,p->fd);
+		if(ret!=ERR_NOERROR){
+			FREE_DATA;
+			return ret;
+		}
+		s->final_byte=(s->more_data)[data_size - 1];
+	}
+	
+	if((s->final_byte >= 0x20) && (s->final_byte <= 0x2F)){
+		ret=parse_video_object_layer(s,s->more_data,&data_size,p->fd);
+		if(ret!=ERR_NOERROR){
+			FREE_DATA;
+			return ret;
+		}
+		s->final_byte=(s->more_data)[data_size - 1];
+	}
+
+	s->remained_data_size=data_size;
+
+	o=s->config;
+	for( i = 0; i < data_size-4; ++i )
+		o+=sprintf( o, "%02X", (s->more_data)[i] ) ;
+	strcat(s->config,"\0");	
+	s->fragmented=0;
+	s->init=1;
+	p->stat = (void *) s;
+	fstat(p->fd, &fdstat);
+	if ( !S_ISFIFO(fdstat.st_mode) ) 
+		mediaclose(p);
+
+	fprintf(stderr,"load_MP4ES...done, config=%s\n",s->config);
+
+        return ERR_NOERROR;
 }
 
