@@ -1,3 +1,8 @@
+1.9:
+	- Full support of MPEG-4 encoding for stored contents (experimental code for live sessions).
+	- Improved RealOne Player compatibility.
+	- Minor RTSP bug-fixes.
+	
 1.8:
 	- RealOne Player Audio/Video compatibility
 	- Mac OS X compatibility (Thanks to Sébastien Pierre)

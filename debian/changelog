@@ -1,3 +1,9 @@
+fenice (1.9) unstable; urgency=low
+
+  * ChangeLog updated. 
+
+ -- OMSP Team <team@streaming.polito.it>  Tue, 22 Mar 2005 16:08:21 +0100
+
 fenice (1.8-1) unstable; urgency=low
 
   * Man pages rendering fixed. No changes needed.
