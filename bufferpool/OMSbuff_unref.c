@@ -36,7 +36,8 @@
 
 void OMSbuff_unref(OMSBuffer *buffer)
 {
-	if(!(--(*buffer).refs))
+	if((*buffer).refs>0)
+		if(!(--(*buffer).refs))
 		OMSbuff_free(buffer);
 	else
 		fprintf(stderr, "Buffer ref (%d)\n", buffer->refs);

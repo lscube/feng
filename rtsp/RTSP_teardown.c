@@ -170,8 +170,9 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 				else 
 					s->rtp_session = rtp_curr->next;
 				rtp_curr = rtp_curr->next;
+				if (rtp_temp->current_media->pkt_buffer)
 				//Release buffer
-				OMSbuff_unref(rtp_temp->current_media->pkt_buffer);
+					OMSbuff_unref(rtp_temp->current_media->pkt_buffer);
 				// Release the scheduler entry
 				schedule_remove(rtp_temp->sched_id);
 				// Close connections
