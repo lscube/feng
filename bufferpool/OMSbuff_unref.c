@@ -43,11 +43,11 @@ void OMSbuff_unref(OMSBuffer *buffer)
 		else {
 			fprintf(stderr, "Buffer ref (%d)\n", buffer->refs);
 			/*Now it need to decrease all slot refs */
-			ptr!=buffer->buffer_head;
+			ptr=buffer->buffer_head;
 			do{
 				ptr->refs=(ptr->refs)?(ptr->refs--):ptr->refs;
 				ptr=ptr->next; 
-			} while(ptr!=buffer->buffer_head);	
+			} while(ptr!=buffer->buffer_head && ptr->next!=NULL);	
 		}
 	}
 }
