@@ -213,7 +213,7 @@
 		double mstart;
 		double mstart_offset;
 		double play_offset; /*Federico. Usefull for random access*/
-		//double prev_mstart_offset;/*usefull for random access*/
+		double prev_mstart_offset;/*usefull for random access*/
 		int rtp_multicast_port; 
 
 		//started has transferred itself here
