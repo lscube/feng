@@ -29,9 +29,10 @@
 #include <fenice/xmlparser.h>
 #include <fenice/xmllexer.h>
 #include <fenice/multicast.h>
+#include <fenice/utils.h>
 /* Global usage: xmlaction(char *xmlfile) that returns an int (EXIT_SUCCESS OR EXIT_FAILURE)*/
 
-static void xml_parser_verify_and_start (xml_node_t *node,char now[35],char source[50]) {
+static void xml_parser_verify_and_start (xml_node_t *node,char now[35],char source[20]) {
 
   xml_property_t *p;
   xml_node_t     *n;
@@ -62,11 +63,11 @@ static void xml_parser_verify_and_start (xml_node_t *node,char now[35],char sour
   
   if(strcmp(time,now)==0 /*&& not started yet*/){ 
     /* it's the right time to start*/
-    printf("\nStartin multicast session: time=%s now=%s source=%s\n",time,now,source);
+    printf("\nStarting multicast session: time=%s  source=%s\n",time,source);
+    if(add_multicast_stream(source)!=ERR_NOERROR){
+	printf("\nThere is a problem to start %s multicast session\n",source);
+	}
     sleep(60);   
-    /* i have to start the rtp streams*/ 
-    //if(fork()==0){
-    //}
   }
   
   while (n) {
