@@ -32,3 +32,23 @@
  *  
  * */
 
+#include <stdio.h>
+
+#include <fenice/bufferpool.h>
+
+/* ! Return the next slot in the buffer and move current read position*/
+OMSSlot *OMSbuff_read(OMSConsumer *cons)
+{
+	OMSSlot *read_pos = cons->read_pos;
+
+	if ( !read_pos->refs )
+		return NULL;
+
+	read_pos->refs--;
+	
+	cons->read_pos = read_pos->next;
+
+	return read_pos;
+		
+}
+

@@ -50,12 +50,12 @@
 
 	#define ERR_NOERROR			 0
 	#define ERR_GENERIC			-1	
-	#define ERR_NOT_FOUND		-2
+	#define ERR_NOT_FOUND			-2
 	#define ERR_PARSE			-3
 	#define ERR_ALLOC			-4
-	#define ERR_INPUT_PARAM		-5
+	#define ERR_INPUT_PARAM			-5
 	#define ERR_NOT_SD			-6
-	#define ERR_UNSUPPORTED_PT	-7
+	#define ERR_UNSUPPORTED_PT		-7
 	#define ERR_EOF				-8
 	#define ERR_FATAL			-9
 	#define ERR_CONNECTION_CLOSE		-10

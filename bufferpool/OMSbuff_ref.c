@@ -32,3 +32,23 @@
  *  
  * */
 
+#include <stdio.h>
+
+#include <fenice/bufferpool.h>
+
+/* ! Add and return a new consumer reference to the buffer,
+ 	return NULL if an error occurs*/
+OMSConsumer *OMSbuff_ref(OMSBuffer *buffer)
+{
+	OMSConsumer *cons;
+	
+	if ((cons = (OMSConsumer *)malloc(sizeof(OMSConsumer))) == NULL )
+		return NULL;
+	
+	cons->read_pos = buffer->write_pos;
+	cons->buffer = buffer;
+	
+	buffer->refs++;	
+
+	return cons;
+}

@@ -34,7 +34,7 @@
 
 #include <fenice/bufferpool.h>
 
-uint32 OMSbuff_unref(OMSBuffer *buffer){
+void OMSbuff_unref(OMSBuffer *buffer){
 	if(!(--(*buffer).refs))
 		OMSbuff_free(buffer);
 }
