@@ -1,5 +1,4 @@
-SUBDIRS =	bufferpool \
-		socket \
+SUBDIRS =	socket \
 		md5 \
 		xmlparser \
 		command_environment \
