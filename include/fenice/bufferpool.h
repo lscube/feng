@@ -37,7 +37,7 @@
 
 #include <fenice/types.h>
 
-#define OMSSLOT_DATASIZE 1500
+#define OMSSLOT_DATASIZE 3000
 #define OMSSLOT_COMMON	uint16 refs; \
 			double timestamp; \
 			uint8 data[OMSSLOT_DATASIZE]; \

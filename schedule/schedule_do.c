@@ -121,7 +121,7 @@ do{
     							}
         						continue;
 						}
-					sched[i].rtp_session->mprev_tx_time += sched[i].rtp_session->current_media->description.pkt_len;   				    				
+						sched[i].rtp_session->mprev_tx_time += sched[i].rtp_session->current_media->description.pkt_len;   				    				
         				}
         			}
     			}

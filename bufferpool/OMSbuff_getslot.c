@@ -35,12 +35,17 @@
 
 
 OMSSlot *OMSbuff_getslot(OMSBuffer *buffer)
-{	OMSSlot *tmp_slot=buffer->write_pos; 
-	if(tmp_slot->next->refs>0)
-		tmp_slot=OMSbuff_slotadd(buffer,tmp_slot);
+{
+	OMSSlot *slot=buffer->write_pos; 
+
+	if(slot->next->refs>0)
+		slot=OMSbuff_slotadd(buffer,slot);
 	else
-		tmp_slot=tmp_slot->next;
-	buffer->write_pos=tmp_slot;	
-	return tmp_slot; 
+		slot=slot->next;
+
+	slot->refs = buffer->refs;
+	buffer->write_pos=slot;	
+
+	return slot; 
 }	
 

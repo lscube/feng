@@ -74,8 +74,10 @@ AC_CHECK_FUNC(getaddrinfo)
 CFLAGS=""
 
 
+AM_CONDITIONAL(FENICE_DEBUG, /bin/false)
 if test "$enable_debug" = "yes"; then
 	CFLAGS="$CFLAGS -g -ggdb"
+	AM_CONDITIONAL(FENICE_DEBUG, /bin/true)
 	AC_DEFINE(ENABLE_DEBUG, 1,[Debug enabled])
 fi
 

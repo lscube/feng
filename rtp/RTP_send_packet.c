@@ -55,52 +55,56 @@ int RTP_send_packet(RTP_session *session)
 	double s_time;
 	OMSSlot *slot;
 	
+	s_time = session->mtime - session->mstart + session->mstart_offset;
 	if(!(slot = OMSbuff_read(session->current_media->cons))){
-
-		s_time = session->mtime - session->mstart + session->mstart_offset;
 		if ((res=get_frame(session->current_media,&s_time))!=ERR_NOERROR) 
 			return res;
 		slot=OMSbuff_read(session->current_media->cons);
 	}
 		
-	if (strcmp(session->current_media->description.encoding_name,"MP2T")!=0) {
-		session->mtime = slot->timestamp + session->mstart - session->mstart_offset;
-	}
-    	hdr_size=sizeof(r);	
- 	//printf("\npacket sizesize=%d",data_size+hdr_size);
-	r.version = 2;
-    	r.padding = 0;
-	r.extension = 0;
-   	r.csrc_len = 0;
-	r.marker=slot->marker;/*what is slot??*/
-    	r.payload = session->current_media->description.payload_type;
-	r.seq_no = htons(session->seq++ + session->start_seq);
-   	r.timestamp=htonl(session->start_rtptime+msec2tick(slot->timestamp,session->current_media));
-	r.ssrc = htonl(session->ssrc);
+	while ((slot) && (slot->timestamp == s_time)) {
+		if (strcmp(session->current_media->description.encoding_name,"MP2T")!=0) {
+			session->mtime = slot->timestamp + session->mstart - session->mstart_offset;
+		}
+    		hdr_size=sizeof(r);	
+ 		//printf("\npacket sizesize=%d",data_size+hdr_size);
+		r.version = 2;
+    		r.padding = 0;
+		r.extension = 0;
+   		r.csrc_len = 0;
+		r.marker=slot->marker;/*what is slot??*/
+    		r.payload = session->current_media->description.payload_type;
+		r.seq_no = htons(session->seq++ + session->start_seq);
+   		r.timestamp=htonl(session->start_rtptime+msec2tick(slot->timestamp,session->current_media));
+   		// r.timestamp=htonl(session->start_rtptime+msec2tick(s_time,session->current_media));
+		r.ssrc = htonl(session->ssrc);
 #if HAVE_ALLOCA
-	packet=(unsigned char*)alloca(slot->data_size+hdr_size);
+		packet=(unsigned char*)alloca(slot->data_size+hdr_size);
 #else
-    	packet=(unsigned char*)calloc(1,slot->data_size+hdr_size);
+    		packet=(unsigned char*)calloc(1,slot->data_size+hdr_size);
 #endif
-    	if (packet==NULL) {
-    		return ERR_ALLOC;    	
-    	}
-	memcpy(packet,&r,hdr_size);
-	memcpy(packet+hdr_size,slot->data,slot->data_size);
-
-	if (sendto(session->rtp_fd,packet,slot->data_size+hdr_size,0,&(session->rtp_peer),sizeof(session->rtp_peer))<0){
+    		if (packet==NULL) {
+    			return ERR_ALLOC;    	
+    		}
+		memcpy(packet,&r,hdr_size);
+		memcpy(packet+hdr_size,slot->data,slot->data_size);
+	
+		if (sendto(session->rtp_fd,packet,slot->data_size+hdr_size,0,&(session->rtp_peer),sizeof(session->rtp_peer))<0){
 #ifdef DEBUG		
-		printf("RTP Packet Lost\n");
+			printf("RTP Packet Lost\n");
 #endif
-	}	
-	else {
-		session->rtcp_stats[i_server].pkt_count++;
-		session->rtcp_stats[i_server].octet_count+=slot->data_size;
-	}
+		}	
+		else {
+			session->rtcp_stats[i_server].pkt_count++;
+			session->rtcp_stats[i_server].octet_count+=slot->data_size;
+		}
 #if !HAVE_ALLOCA
-	free(packet);
+		free(packet);
 #endif
-	// free(data);
+		// free(data);
+		slot = OMSbuff_read(session->current_media->cons);
+
+	}
 	
 	return ERR_NOERROR;
 }

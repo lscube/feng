@@ -54,5 +54,6 @@ int32 OMSbuff_write(OMSBuffer *buffer, uint32 timestamp, uint8 *data, uint32 dat
 	slot->data_size=data_size;
 	
 	buffer->write_pos = slot;
+
 	return ERR_NOERROR;
 }

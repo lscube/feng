@@ -73,9 +73,10 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 				}
 				break;
 			case RTSP_ID_TEARDOWN:
-				if (RTSP_teardown(rtsp) == ERR_NOERROR) {
-					p->cur_state = INIT_STATE;
-				}
+				// if (RTSP_teardown(rtsp) == ERR_NOERROR) { // shawill
+					// p->cur_state = INIT_STATE;
+				// }
+				RTSP_teardown(rtsp);
 				break;
 			case RTSP_ID_OPTIONS:
 			        if (RTSP_options(rtsp) == ERR_NOERROR) {
@@ -105,9 +106,10 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 				}
 				break;
 			case RTSP_ID_TEARDOWN:
-				if (RTSP_teardown(rtsp) == ERR_NOERROR) {
-					p->cur_state = INIT_STATE;
-				}
+				// if (RTSP_teardown(rtsp) == ERR_NOERROR) { // shawill
+					// p->cur_state = INIT_STATE;
+				// }
+				RTSP_teardown(rtsp);
 				break;
 			case RTSP_ID_OPTIONS:
 				break;
@@ -136,9 +138,10 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 				}
 				break;
 			case RTSP_ID_TEARDOWN:
-				if (RTSP_teardown(rtsp) == ERR_NOERROR) {
-					p->cur_state = INIT_STATE;
-				}
+				// if (RTSP_teardown(rtsp) == ERR_NOERROR) { // shawill
+					// p->cur_state = INIT_STATE;
+				// }
+				RTSP_teardown(rtsp);
 				break;
 			case RTSP_ID_OPTIONS:
 				break;
