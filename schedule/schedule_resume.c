@@ -32,10 +32,12 @@
  *  
  * */
 
+// #include <time.h>
+#include <sys/time.h>
+
 #include <fenice/schedule.h>
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
-#include <time.h>
 
 extern schedule_list sched[MAX_SESSION];
 

@@ -34,6 +34,7 @@
 
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
+#include <fenice/intnet.h>
 #include <string.h>
 
 int stream_change(RTP_session *changing_session, int value)

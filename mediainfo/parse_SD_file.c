@@ -116,7 +116,7 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
                                 }
                         }       
                         if (strcasecmp(keyword,SD_AUDIO_CHANNELS)==0) {
-                                sscanf(line,"%s %d\n",trash,&(p->description.audio_channels));
+                                sscanf(line,"%s %hd\n",trash,&(p->description.audio_channels));
                                 p->description.flags|=MED_AUDIO_CHANNELS;
                         }       
                         if (strcasecmp(keyword,SD_AGGREGATE)==0) {

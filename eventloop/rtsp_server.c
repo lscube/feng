@@ -32,6 +32,9 @@
  *  
  * */
 
+#include <stdio.h>
+#include <string.h>
+
 #include <fenice/eventloop.h>
 #include <fenice/debug.h>
 #include <fenice/utils.h>

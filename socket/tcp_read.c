@@ -32,6 +32,8 @@
  *  
  * */
 
+#include <unistd.h>
+
 #include <fenice/socket.h>
 
 int tcp_read(tsocket fd, void *buffer, int nbytes)

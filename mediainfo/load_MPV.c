@@ -32,6 +32,8 @@
  *  
  * */
 
+#include <stdio.h>
+
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>

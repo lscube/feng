@@ -33,6 +33,10 @@
  * */
 
 #include <fenice/socket.h>
+
+#ifndef WIN32
+#include <unistd.h>
+#endif
               
 int tcp_write(tsocket fd, void *buffer, int nbytes)
 {

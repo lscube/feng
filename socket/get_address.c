@@ -32,6 +32,8 @@
  *  
  * */
 
+#include <stdio.h>
+
 #include <fenice/socket.h>
 #ifndef WIN32
 	#include <unistd.h>

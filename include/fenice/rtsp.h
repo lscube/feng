@@ -82,7 +82,7 @@
     	
     	// Interfacce
 
-    	void RSTP_state_machine(RTSP_buffer *rtsp,int method_code);
+    	void RTSP_state_machine(RTSP_buffer *rtsp,int method_code);
     	//Commuta di stato sulla base di rtsp->current_state e gestisce lo stato stesso.
 
     	int RTSP_describe(RTSP_buffer *rtsp);

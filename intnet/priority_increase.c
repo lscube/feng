@@ -32,6 +32,9 @@
  *  
  * */
 
+#include <string.h>
+#include <unistd.h>
+
 #include <fenice/intnet.h>
 #include <fenice/mediainfo.h>
 #include <fenice/utils.h>
@@ -60,5 +63,7 @@ int priority_increase(RTP_session *changing_session)
 		changing_session->MaximumReached = 1;
                 return ERR_NOERROR;
         }
+
+	return ERR_GENERIC; // shawill; ERROR or NOERROR? this is the question
 }
 

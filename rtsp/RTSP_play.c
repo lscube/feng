@@ -32,11 +32,13 @@
  *  
  * */
 
+#include <stdio.h>
+#include <string.h>
+#include <netinet/in.h>
+
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
-#include <string.h>
 #include <fenice/prefs.h>
-#include <netinet/in.h>
 
 /*
  	****************************************************************

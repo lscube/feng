@@ -32,8 +32,11 @@
  *  
  * */
 
-#include <fenice/utils.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#include <fenice/utils.h>
 
 char *alloc_path_name(char *base_path, char *file_path)
 {

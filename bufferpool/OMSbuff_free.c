@@ -31,9 +31,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
+#include <stdlib.h>
+
 #include <fenice/bufferpool.h>
 
-void OMSbuff_free(OMSBuffer *buffer){
+void OMSbuff_free(OMSBuffer *buffer)
+{
 	OMSSlotAdded *added, *tmp;	
 
 	added=buffer->added_head;

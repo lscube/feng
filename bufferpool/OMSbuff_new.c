@@ -33,16 +33,20 @@
  * */
 
 #include <stdio.h>
+#include <stdlib.h>
+
 #include <fenice/bufferpool.h>
 
-OMSBuffer *OMSbuff_new(uint32 buffer_size){
-	OMSSlot *head, *tmp, *tmpnext;
+OMSBuffer *OMSbuff_new(uint32 buffer_size)
+{
+	OMSSlot *head;
 	OMSBuffer *buffer;
 	uint32 index;
 	
 	if(!(head = (OMSSlot *)calloc(buffer_size, sizeof(OMSSlot))))
 		return NULL;
-	for(index=0; index<buffer_size-1,(head[index]).next = &(head[index+1]); index++);
+	for(index=0; index<buffer_size-1; index++)
+		(head[index]).next = &(head[index+1]);
 	
 	(head[index]).next=head; /*end of the list back to the head*/
 	buffer = (OMSBuffer *)malloc(sizeof(OMSBuffer));

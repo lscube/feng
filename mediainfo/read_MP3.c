@@ -45,8 +45,8 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
         char thefile[255];
         // unsigned char sync1,sync2,sync3,sync4;
 	unsigned char *buff = me->buff_data;
-        int N, res;
-	int i; // index
+        int N=0, res;
+	// int i; // index
         unsigned int frame_skip;
 
         if (!(me->flags & ME_FD)) {
@@ -58,7 +58,7 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
                 me->flags|=ME_FD;
                 me->data_chunk = 0;
 		if (me->description.flags & MED_ID3)
-		 lseek(me->fd,(me->description.tag_dim)+10,SEEK_SET);
+		lseek(me->fd,(me->description.tag_dim)+10,SEEK_SET);
         }
 	
         frame_skip=round((*mtime)/(double)(me->description.pkt_len));   // mtime is play time in milliseconds, starting

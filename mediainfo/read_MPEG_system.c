@@ -32,9 +32,11 @@
  *  
  * */
 
+#include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
@@ -43,7 +45,7 @@
 int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mtime, int *recallme)
 {
 	char thefile[255];
-	int num_bytes;
+	uint32 num_bytes;
 	int count,count1,flag,packet_done=0,not_remove=0,time_set=0,pts_diff,clock,dts_present=0,audio_flag=0;
 	float pkt_len;
 	static_MPEG_system *s=NULL;

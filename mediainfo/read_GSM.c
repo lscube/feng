@@ -44,8 +44,9 @@ int read_GSM(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
 {       
         char thefile[255];
         unsigned char byte1;
-        int N, res;
-        long frame_skip;
+        unsigned int N=0, res;
+        // long frame_skip;
+        unsigned int frame_skip;
         
         if (!(me->flags & ME_FD)) {             
                 strcpy(thefile,prefs_get_serv_root());

@@ -32,12 +32,14 @@
  *  
  * */
 
+#include <stdio.h>
+#include <string.h>
+
+#include <config.h>
 #include <fenice/sdp.h>
 #include <fenice/mediainfo.h>
 #include <fenice/utils.h>
 #include <fenice/rtp.h>
-#include <config.h>
-#include <string.h>
 
 int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 {	

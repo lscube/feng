@@ -32,9 +32,11 @@
  *  
  * */
 
-#include <fenice/prefs.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <fenice/prefs.h>
 
 serv_prefs prefs;
 

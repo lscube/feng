@@ -34,13 +34,16 @@
 
 #define GLOBAL_RTP_DEFS
 
+#include <stdio.h>
 #include <string.h>
+
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/rtpptdefs.h>
 
 
-int validate_stream(media_entry *p) {
+int validate_stream(media_entry *p)
+{
 
         RTP_static_payload pt_info;
 

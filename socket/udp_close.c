@@ -32,6 +32,7 @@
  *  
  * */
 
+#include <unistd.h>
 #include <fenice/socket.h>
               
 int udp_close(tsocket fd)

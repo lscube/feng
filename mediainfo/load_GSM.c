@@ -33,7 +33,9 @@
  * */
 
 #include <string.h>
+#include <unistd.h>
 #include <fcntl.h>
+
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>

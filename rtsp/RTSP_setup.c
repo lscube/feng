@@ -32,12 +32,21 @@
  *  
  * */
 
+#include <stdio.h>
+#include <string.h>
+#include <sys/time.h> // shawill: for gettimeofday
+#include <stdlib.h> // shawill: for rand, srand
+#include <unistd.h> // shawill: for close
+// shawill: for inet_aton
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include <fenice/rtsp.h>
 #include <fenice/socket.h>
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
-#include <string.h>
-#include <netinet/in.h>
+
 #include <fenice/debug.h>
 
 /*
@@ -70,10 +79,12 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 	//FEDERICO. The following declarations are used in the part of code where Federico look for
 	// the RTP and RTCP ports 	
+	/* shawill: not used for now
 	struct sockaddr  *tmpfede;
 	int lung = sizeof(struct sockaddr);
 	struct sockaddr  *tmpfede2;
 	int lung2 = sizeof(struct sockaddr);
+	*/
 	//
 	
 

@@ -38,6 +38,10 @@
 #include <alloca.h>
 #endif
 
+#include <string.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
 #include <fenice/bufferpool.h>
@@ -96,7 +100,7 @@ int RTP_send_packet(RTP_session *session)
 #if !HAVE_ALLOCA
 	free(packet);
 #endif
-	free(data);
+	// free(data);
 	
 	return ERR_NOERROR;
 }

@@ -32,12 +32,11 @@
  *  
  * */
 
+#include <string.h>
+#include <stdlib.h>
+
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
-#include <string.h>
-/*#include <stdlib.h>
-#include <stdio.h>
-#include <fenice/utils.h>*/
 
 // return 1 if the URL is valid, 0 otherwise
 int parse_url(const char *url, char *server,unsigned short *port, char *file_name)

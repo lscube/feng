@@ -32,6 +32,8 @@
  *  
  * */
 
+#include <string.h>
+
 #include <fenice/socket.h>
               
 tsocket tcp_accept(tsocket fd)

@@ -32,6 +32,8 @@
  *  
  * */
 
+#include <stdio.h>
+
 #include <fenice/sdp.h>
 #include <fenice/utils.h>
 

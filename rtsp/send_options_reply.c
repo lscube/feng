@@ -32,10 +32,11 @@
  *  
  * */
 
+#include <stdio.h>
+#include <string.h>
 
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
-#include <string.h>
 
 int send_options_reply(RTSP_buffer *rtsp,long cseq){
     char r[1024];

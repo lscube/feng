@@ -50,8 +50,8 @@ int schedule_add(RTP_session *rtp_session/*,RTSP_session *rtsp_session*/)
 			return i;
 		}
 	}
-	if (i >= MAX_SESSION) {
+	// if (i >= MAX_SESSION) {
 		return ERR_GENERIC;
-	}
+	// }
 }
 

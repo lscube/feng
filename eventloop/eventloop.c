@@ -32,6 +32,10 @@
  *  
  * */
 
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include <fenice/socket.h>
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
@@ -44,15 +48,16 @@ void eventloop(tsocket main_fd, tsocket command_fd)
 	static int child_count=0;
 	static int conn_count=0;	
 	tsocket fd;
-	tsocket fd_command; /*socket for the command environment*/
+	// tsocket fd_command; /*socket for the command environment*/
 	static RTSP_buffer *rtsp_list=NULL;
 	RTSP_buffer *p;
 	int fd_found;
+
 	if (conn_count!=-1)
 	{
 		fd=tcp_accept(main_fd);
 		//fd_command=tcp_accept(command_fd);
-	}
+	} // shawill: and... if not?
 
 	//Handle command environment
 	//if(fd_command>=0)

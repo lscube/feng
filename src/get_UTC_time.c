@@ -32,8 +32,10 @@
  *  
  * */
 
-#include <fenice/utils.h>
+#include <stdio.h>
 #include <string.h>
+
+#include <fenice/utils.h>
 
 int get_UTC_time(struct tm *t,char *b)
 {

@@ -44,7 +44,7 @@
 int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme)   /* reads MPEG-1,2 Video */
 {
         char thefile[255];
-        int num_bytes;
+        uint32 num_bytes;
         char *vsh1_1;
         #ifdef MPEG2VSHE
         char *vsh2_1;

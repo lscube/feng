@@ -32,6 +32,8 @@
  *  
  * */
 
+#include <stdio.h>
+
 #include <fenice/rtcp.h>
 #include <fenice/rtp.h>
 #include <fenice/utils.h>

@@ -32,9 +32,13 @@
  *  
  * */
 
+#include <stdlib.h>
+#include <string.h>
+
 #include <fenice/rtcp.h>
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
+#include <fenice/types.h>
 #include <netinet/in.h>
 #include <sys/time.h>
 
@@ -42,7 +46,7 @@ int RTCP_send_packet(RTP_session *session,rtcp_pkt_type type)
 {
 	unsigned char *pkt;	
 	RTCP_header hdr;			
-	int pkt_size,hdr_s;
+	uint32 pkt_size,hdr_s;
 	
 	hdr.version=2;
 	hdr.padding=0;	

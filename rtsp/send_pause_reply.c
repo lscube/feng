@@ -32,11 +32,12 @@
  *  
  * */
 
+#include <stdio.h>
+#include <string.h>
 
+#include <config.h>
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
-#include <string.h>
-#include <config.h>
 
 int send_pause_reply(RTSP_buffer *rtsp,RTSP_session *rtsp_session)
 {	

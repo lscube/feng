@@ -32,10 +32,13 @@
  *  
  * */
 
+#include <stdio.h>
+#include <string.h>
+
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
-#include <string.h>
+#include <fenice/sdp.h>
 
 /*
  	****************************************************************
@@ -50,7 +53,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
 	unsigned short port;
 	char url[255];
 	media_entry media, req;
-	description_format descr_format;
+	description_format descr_format = df_SDP_format; // shawill put to some default
 	char descr[MAX_DESCR_LENGTH];
 
 	printf("DESCRIBE request received.\n");

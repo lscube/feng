@@ -32,11 +32,12 @@
  *  
  * */
 
+#include <stdio.h>
+#include <string.h>
 
+#include <config.h>
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
-#include <config.h>
-#include <string.h>
 
 int send_teardown_reply(RTSP_buffer *rtsp,long session_id,long cseq)
 {

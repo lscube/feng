@@ -44,7 +44,7 @@
 int read_PCM(media_entry *me, uint8 *buffer, uint32 *buf_size, double *mtime)
 {
         char thefile[255];
-        int i;
+        uint32 i;
         unsigned start_sample, samples;
        
 	
@@ -81,8 +81,6 @@ int read_PCM(media_entry *me, uint8 *buffer, uint32 *buf_size, double *mtime)
                 if (read(me->fd, &(buffer[i]), 1) <= 0 ) break;
         }
         *buf_size = i;
-	
-
 	
         if (i == 0) return ERR_EOF;
         return ERR_NOERROR;     

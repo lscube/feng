@@ -32,6 +32,9 @@
  *  
  * */
 
+#include <stdio.h>
+#include <string.h>
+
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 

@@ -73,7 +73,7 @@ int get_frame(media_entry *me, double *mtime)
 		else 
 			res=ERR_UNSUPPORTED_PT;
 		slot->timestamp=*mtime;
-		return res;
 	}
+	return res;
 }
 

@@ -305,7 +305,7 @@
 	// req==NULL oppure req->flags==0 indica che non c'e' una preferenza sul media, ma va scelto quello di default.
 	
 	//int get_media_descr(char *url,media_entry *req,media_entry *media,char *descr);
-	// Reperisce la descrizione del media
+	// Reperisce la descrizione del media; shawill: moved in sdp.h
 	
 	uint32 mediacpy(media_entry *, media_entry *);
 	unsigned long msec2tick(double mtime,media_entry *me);

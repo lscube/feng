@@ -32,6 +32,9 @@
  *  
  * */
 
+#include <string.h>
+#include <unistd.h>
+
 #include <fenice/intnet.h>
 #include <fenice/mediainfo.h>
 #include <fenice/utils.h>

@@ -32,6 +32,8 @@
  *  
  * */
 
+#include <string.h>
+
 #include <fenice/rtsp.h>
 #include <fenice/socket.h>
 

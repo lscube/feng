@@ -36,6 +36,9 @@
 #include <stdio.h>
 #include <netinet/in.h>
 #include <stdlib.h>
+#include <unistd.h>
+
+#include <fenice/intnet.h>
 #include <fenice/mediainfo.h>
 #include <fenice/rtp.h>
 #include <fenice/utils.h>

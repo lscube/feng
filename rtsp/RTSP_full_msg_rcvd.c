@@ -32,9 +32,11 @@
  *  
  * */
 
+#include <stdio.h>
+#include <string.h>
+
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
-#include <string.h>
 
 int RTSP_full_msg_rcvd(RTSP_buffer * rtsp)
 // This routine is from OMS.

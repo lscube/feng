@@ -44,6 +44,7 @@
 	#include <sys/socket.h>
 	#include <fenice/socket.h>
 	#include <fenice/mediainfo.h>
+	#include <fenice/types.h>
 	#include <fenice/prefs.h>
 	
 	//#define MAX_SESSION ((int)(MAX_CONNECTION/MAX_PROCESS))
@@ -83,7 +84,7 @@
 		unsigned char rtcp_inbuffer[RTCP_BUFFERSIZE];
 		int rtcp_insize;
 		unsigned char rtcp_outbuffer[RTCP_BUFFERSIZE];
-		int rtcp_outsize;
+		uint32 rtcp_outsize;
 		struct sockaddr rtp_peer;
 	
 		double mtime;

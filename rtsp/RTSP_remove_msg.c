@@ -32,6 +32,8 @@
  *  
  * */
 
+#include <string.h>
+
 #include <fenice/rtsp.h>
 
 void RTSP_remove_msg(int len, RTSP_buffer * rtsp)

@@ -32,6 +32,8 @@
  *  
  * */
 
+#include <stdio.h>
+
 #include <fenice/socket.h>
 #include <fenice/utils.h>
 #ifndef WIN32
@@ -49,7 +51,7 @@
 int udp_connect(unsigned short to_port, struct sockaddr *s_addr, int addr, tsocket *fd)
 {
 	struct sockaddr_in s;
-	int on = 1,v=1;
+	int on = 1; //,v=1;
 	if (!*fd) {
 		
 		if ((*fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -70,5 +72,7 @@ int udp_connect(unsigned short to_port, struct sockaddr *s_addr, int addr, tsock
     		return ERR_GENERIC;
     	}
     	*s_addr=*((struct sockaddr*)&s);
+
+	return ERR_NOERROR;
 }
 

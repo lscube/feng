@@ -32,10 +32,12 @@
  *  
  * */
 
+#include <string.h>
+#include <unistd.h>
+
 #include <fenice/intnet.h>
 #include <fenice/mediainfo.h>
 #include <fenice/utils.h>
-#include <string.h>
 
 int half_MP3(RTP_session *changing_session)
 {

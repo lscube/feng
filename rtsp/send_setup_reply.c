@@ -32,11 +32,12 @@
  *  
  * */
 
+#include <stdio.h>
+#include <string.h>
 
+#include <config.h>
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
-#include <config.h>
-#include <string.h>
 
 int send_setup_reply(RTSP_buffer *rtsp,RTSP_session *session,char *address,RTP_session *sp2)
 {

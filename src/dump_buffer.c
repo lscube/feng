@@ -32,6 +32,8 @@
  *  
  * */
 
+#include <stdio.h>
+
 #include <fenice/debug.h>
 
 void dump_buffer(char *buffer)

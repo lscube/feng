@@ -32,15 +32,18 @@
  *  
  * */
 
+#include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
 
-int load_MPA(media_entry *p) {
+int load_MPA(media_entry *p)
+{
 
         char thefile[255];
 	unsigned char *buffer;
