@@ -40,6 +40,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <netinet/in.h>
 
 #include <fenice/rtp.h>
@@ -57,8 +58,12 @@ int RTP_send_packet(RTP_session *session)
 	
 	s_time = session->mtime - session->mstart + session->mstart_offset;
 	if(!(slot = OMSbuff_read(session->current_media->cons))){
-		if ((res=get_frame(session->current_media,&s_time))!=ERR_NOERROR) 
+		if ((res=get_frame(session->current_media,&s_time))!=ERR_NOERROR){
+			/* if(res==ERR_EOF)
+				fprintf(stderr,"Just Finished!");
+			*/
 			return res;
+		}
 		slot=OMSbuff_read(session->current_media->cons);
 	}
 		

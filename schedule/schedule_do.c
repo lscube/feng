@@ -111,7 +111,7 @@ do{
         					
 						if (res!=ERR_NOERROR) {
     							if (res==ERR_EOF) {    						
-    								printf("Finito\n");
+    								printf("Stream Finished\n");
     								schedule_stop(i);
     							}
     							else {    					

@@ -50,6 +50,8 @@ OMSSlot *OMSbuff_slotadd(OMSBuffer *buffer, OMSSlot *prev)
 	added->next_added = buffer->added_head;
 	buffer->added_head = added;
 
+	fprintf(stderr,"slot added\n");
+
 	return (OMSSlot *)added;
 }
 
