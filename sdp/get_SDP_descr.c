@@ -227,8 +227,10 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
    			strcat(descr,p->aggregate);
    			strcat(descr,"\n");
    		}   		
+		/*
 		else
    			strcat(descr,"\n");
+		*/
 		
    		if (extended!=0) {
    			// We must describe ALL the media

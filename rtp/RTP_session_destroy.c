@@ -60,12 +60,12 @@ RTP_session *RTP_session_destroy(RTP_session *session)
 	struct stat fdstat;
 
 	//Release SD_flag using in multicast and unjoing the multicast group
-	if(session->sd_descr->flags &= SD_FL_MULTICAST){
+	if(session->sd_descr->flags & SD_FL_MULTICAST){
 		struct ip_mreq mreq;
 		mreq.imr_multiaddr.s_addr = inet_addr(session->sd_descr->multicast);
 		mreq.imr_interface.s_addr = INADDR_ANY;
 		setsockopt(session->rtp_fd, IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
-		session->sd_descr->flags &= 0xFFFFFFFB; /*Release SD_FL_MULTICAST_PORT*/
+		session->sd_descr->flags &= ~SD_FL_MULTICAST_PORT; /*Release SD_FL_MULTICAST_PORT*/
 	}
 
 	close(session->rtp_fd);

@@ -76,6 +76,7 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format des
 	sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/\n", prefs_get_hostname(), object);
 	sprintf(r + strlen(r), "Content-Length: %d\r\n\r\n", strlen(descr));
 	strcat(r, descr);
+	strcat(r, "\n");
 	bwrite(r, (unsigned short) strlen(r), rtsp);
 
 	free(mb);
