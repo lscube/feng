@@ -31,11 +31,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
-
+#include <stdlib.h>
+#include <string.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
-#include <string.h>
 #include <stdio.h>
 
 int parse_SD_file(char *object,SD_descr *sd_descr)
@@ -45,6 +45,7 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
         media_entry *p;
         char thefile[255];
         int res;
+	struct stat *data;
                 
         // Save the .SD file name               
         strcpy(thefile,prefs_get_serv_root());
@@ -57,8 +58,13 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
                 /* The file doesn't exist */            
                 return ERR_NOT_FOUND;
         }       
+	stat(thefile,data);	
+        if (sd_descr->last_modification==data->st_mtime)
+		return ERR_NOERROR;//.SD file is the same yet
+	else
+		sd_descr->last_modification=data->st_mtime;
         
-        // Start parsing
+	// Start parsing
         p=NULL;
         do {
                 memset(keyword,0,sizeof(keyword));

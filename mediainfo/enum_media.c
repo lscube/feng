@@ -33,6 +33,7 @@
  * */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
@@ -40,61 +41,55 @@
 int enum_media(char *object,media_entry **list)
 {
 	static SD_descr *SD_global_list=NULL;
-	SD_descr *descr_curr,*descr_next;
+	SD_descr *matching_descr=NULL,*descr_curr,*last_descr=NULL;
 	int res;
-	for (descr_curr=SD_global_list; descr_curr!=NULL; descr_curr=descr_curr->next) {
-		if (strcmp(descr_curr->filename,object)==0) {
-			break;
-		}
+	char to_remove=0;
+	
+	if (!list)
+		to_remove=1;
+	
+	//test about the loading of current SD (is it done?)
+	for (descr_curr=SD_global_list; descr_curr && !matching_descr; descr_curr=descr_curr->next) {
+		if (strcmp(descr_curr->filename,object)==0)
+			matching_descr=descr_curr;
+		else
+			last_descr=descr_curr;
 	}
-	if (descr_curr!=NULL) {
-		// .SD Found
-		*list=descr_curr->me_list;
-		return ERR_NOERROR;
-	}
-	else {	
-		// .SD not found
-		if (SD_global_list==NULL) {
+
+	
+	
+	if (!matching_descr) {
+	//.SD not found: update list
+	//the first time SD_global_list must be initialized
+		if (to_remove)
+			return ERR_GENERIC; 
+		if (!SD_global_list) {
 			SD_global_list=(SD_descr*)calloc(1,sizeof(SD_descr));
-			if (SD_global_list==NULL) {
-				*list=NULL;
+			if (!SD_global_list) {
 				return ERR_ALLOC;
-			}			
-			strcpy(SD_global_list->filename,object);
-			res=parse_SD_file(object,SD_global_list);
-			if (res==ERR_NOERROR) {
-				*list=SD_global_list->me_list;
-				return ERR_NOERROR;
 			}
-			else {
-				*list=NULL;
-				SD_global_list=NULL;
-				return res;
-			}
+			matching_descr=SD_global_list;			
 		}
 		else {
-			for (descr_curr=SD_global_list; descr_curr!=NULL; descr_curr=descr_curr->next) {
-				descr_next=descr_curr;
-			}
-			descr_curr=descr_next;
-			descr_next->next=(SD_descr*)calloc(1,sizeof(SD_descr));			
-			if ((descr_next=descr_next->next) == NULL) {
-				*list=NULL;
+			last_descr->next=(SD_descr*)calloc(1,sizeof(SD_descr));			
+			if(!(matching_descr=last_descr->next))
 				return ERR_ALLOC;
-			}
-			strcpy(descr_next->filename,object);
-			res=parse_SD_file(object,descr_next);
-			if (res==ERR_NOERROR) {
-				*list=descr_next->me_list;
-				return ERR_NOERROR;
-			}
-			else {
-				free(descr_curr->next);
-				*list=NULL;
-				return res;
-			}		
-		}
+			
+		}	
+		strcpy(matching_descr->filename,object);
 	}
+	if (!to_remove)	
+		res=parse_SD_file(object,matching_descr);
+	if (res!=ERR_NOERROR || to_remove) {
+		if (!last_descr) //matching is the first
+			SD_global_list=SD_global_list->next;
+		else {
+			last_descr->next=matching_descr->next;
+		}	
+		free(matching_descr);
+		return res;
+	}
+	*list=matching_descr->me_list;
 	return 0;
 }
 

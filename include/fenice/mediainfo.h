@@ -34,6 +34,9 @@
 
 #ifndef _MEDIAINFOH
 #define _MEDIAINFOH
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <unistd.h>
 	#include <fenice/bufferpool.h>
 	#define MAX_DESCR_LENGTH 4096
 	#define DIM_VIDEO_BUFFER 5 
@@ -247,11 +250,9 @@
 	
 	typedef struct _SD_descr {
     		char filename[255];
-    		int is_described;
-    		description_format descr_format;
-    		char descr[MAX_DESCR_LENGTH];
     		media_entry *me_list;
-    		struct _SD_descr *next;
+    		time_t last_modification;
+		struct _SD_descr *next;
 	} SD_descr;
 
 	int parse_SD_file (char *object, SD_descr *sd_descr);	
