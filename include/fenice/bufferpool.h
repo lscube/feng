@@ -69,7 +69,7 @@ typedef struct _OMSbuffer {
 	OMSSlot *buffer_head; /*! Buffer head*/
 	uint32 min_size;
 	OMSSlot *write_pos; /*! last write position*/
-	int fd; /*! File descriptor of incoming data*/
+	int *fd; /*! pointer to File descriptor of incoming data*/
 	OMSSlotAdded *added_head; /* internal queue: not to be handled */
 } OMSBuffer;
 

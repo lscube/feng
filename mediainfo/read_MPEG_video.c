@@ -39,7 +39,7 @@
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
-#include <fenice/prefs.h>
+// #include <fenice/prefs.h>
 
 #if HAVE_ALLOCA_H
 #include <alloca.h>
@@ -49,7 +49,8 @@
 
 int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme)   /* reads MPEG-1,2 Video */
 {
-        char thefile[255];
+        // char thefile[255];
+	int ret;
         uint32 num_bytes;
         char *vsh1_1;
         #ifdef MPEG2VSHE
@@ -61,6 +62,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 	uint32 wasSeeking=0;
 
         if (!(me->flags & ME_FD)) {
+#if 0
                 if (!(me->flags & ME_FILENAME)) {
                         return ERR_INPUT_PARAM;
                 }
@@ -71,12 +73,16 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
                         return ERR_NOT_FOUND;
                 }
                 me->flags|=ME_FD;
+#else
+                if ( (ret=mediaopen(me)) < 0 )
+			return ret;
+#endif
 		s = (static_MPEG_video *) calloc (1, sizeof(static_MPEG_video));
 		me->stat = (void *) s;
 		s->final_byte=0x00;
 		s->std=TO_PROBE;
 		s->fragmented=0;
-        } else 
+        } else
 		s = (static_MPEG_video *) me->stat;
 
         num_bytes = ((me->description).byte_per_pckt>0)?(me->description).byte_per_pckt:DEFAULT_BYTE_X_PKT;
@@ -180,7 +186,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 		}
 		if(s->final_byte==0xb7){
 			if (next_start_code(data_tmp,data_size,me->fd)==-1){  /* If there aren't 3 more bytes we are at EOF */
-				close(me->fd);
+				// close(me->fd);
 #if !HAVE_ALLOCA
 				free(data_tmp);
 #endif
@@ -221,7 +227,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 		while(num_bytes > *data_size   && *recallme){
 	//		*data_size+=4;
 			if ( read(me->fd,&buf_aux,3) <3){  /* If there aren't 3 more bytes we are at EOF */
-				close(me->fd);
+				// close(me->fd);
 #if !HAVE_ALLOCA
 				free(data_tmp);
 #endif
@@ -233,7 +239,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 				buf_aux[0]=buf_aux[1];
 				buf_aux[1]=buf_aux[2];
       				if ( read(me->fd,&buf_aux[2],1) <1){ 
-					close(me->fd);
+					// close(me->fd);
 #if !HAVE_ALLOCA
 					free(data_tmp);
 #endif
@@ -270,7 +276,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 		int i;
 	
 		if ( read(me->fd,&buf_aux,3) <3){  /* If there aren't 3 more bytes we are at EOF */
-			close(me->fd);
+			// close(me->fd);
 #if !HAVE_ALLOCA
 			free(data_tmp);
 #endif
@@ -282,7 +288,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 			buf_aux[0]=buf_aux[1];
 			buf_aux[1]=buf_aux[2];
       			if ( read(me->fd,&buf_aux[2],1) <1){ 
-				close(me->fd);
+				// close(me->fd);
 #if !HAVE_ALLOCA
 				free(data_tmp);
 #endif

@@ -259,6 +259,9 @@
 	int get_frame (media_entry *me, double *mtime);
 	int validate_stream (media_entry *me);
 
+	int mediaopen(media_entry *);
+	int mediaclose(media_entry *);
+
 	int load_MPA (media_entry *me);
 	int load_GSM (media_entry *me);
 	int load_L16 (media_entry *me);

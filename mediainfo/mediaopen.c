@@ -32,32 +32,45 @@
  *  
  * */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
-#include <fenice/bufferpool.h>
+#include <fenice/mediainfo.h>
+#include <fenice/utils.h>
+#include <fenice/prefs.h>
 
-OMSBuffer *OMSbuff_new(uint32 buffer_size)
+int mediaopen(media_entry *me)
 {
-	OMSSlot *head;
-	OMSBuffer *buffer;
-	uint32 index;
-	
-	if(!(head = (OMSSlot *)calloc(buffer_size, sizeof(OMSSlot))))
-		return NULL;
-	for(index=0; index<buffer_size-1; index++)
-		(head[index]).next = &(head[index+1]);
-	
-	(head[index]).next=head; /*end of the list back to the head*/
-	buffer = (OMSBuffer *)malloc(sizeof(OMSBuffer));
-	buffer->write_pos = &(head[index]);
-	buffer->buffer_head = head;
-	buffer->added_head = NULL;
-	buffer->refs = 0;
-	// buffer->fd = -1;
-	buffer->fd = NULL;
-	buffer->min_size = buffer_size-1;
+	char thefile[256];
+	// struct stat fdstat;
 
-	return buffer;
+	if (!(me->flags & ME_FILENAME))
+		return ERR_INPUT_PARAM;
+	
+	strcpy(thefile,prefs_get_serv_root());
+	strcat(thefile,me->filename);
+
+	me->fd=open(thefile, O_RDONLY /*| O_NONBLOCK , 0*/);
+
+	printf("%s - %d\n", thefile, me->fd);
+
+	if (me->fd==-1)
+		return ERR_NOT_FOUND;
+
+	me->flags|=ME_FD;
+
+#if 0
+	if ( me->description.msource == live ) {
+		fstat(me->fd, &fdstat);
+		if ( !S_ISFIFO(fdstat.st_mode) ) {
+			lseek(me->fd, 0, SEEK_END);
+		}
+	}
+#endif
+
+	return me->fd;
 }
 

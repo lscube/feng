@@ -43,16 +43,21 @@
 
 int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
 {
-        char thefile[255];
+        // char thefile[255];
+	int ret;
 	unsigned char *buff = me->buff_data;
         int N=0, res;
 
         if (!(me->flags & ME_FD)) {
+#if 0
                 strcpy(thefile,prefs_get_serv_root());
                 strcat(thefile,me->filename);    
                 me->fd=open(thefile,O_RDONLY);
                 if ( me->fd==-1 ) return ERR_NOT_FOUND;
                 me->flags|=ME_FD;
+#endif
+		if ( (ret=mediaopen(me)) < 0 )
+			return ret;
 		//me->prev_mstart_offset=0;	
 		/* TODO support Id3 TAG v2, this doesn't work*/
 		//if ((me->description.flags & MED_ID3) && (me->description).msource!=live)

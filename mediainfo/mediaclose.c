@@ -32,32 +32,19 @@
  *  
  * */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <unistd.h>
 
-#include <fenice/bufferpool.h>
+#include <fenice/mediainfo.h>
 
-OMSBuffer *OMSbuff_new(uint32 buffer_size)
+int mediaclose(media_entry *me)
 {
-	OMSSlot *head;
-	OMSBuffer *buffer;
-	uint32 index;
+	int ret;
 	
-	if(!(head = (OMSSlot *)calloc(buffer_size, sizeof(OMSSlot))))
-		return NULL;
-	for(index=0; index<buffer_size-1; index++)
-		(head[index]).next = &(head[index+1]);
-	
-	(head[index]).next=head; /*end of the list back to the head*/
-	buffer = (OMSBuffer *)malloc(sizeof(OMSBuffer));
-	buffer->write_pos = &(head[index]);
-	buffer->buffer_head = head;
-	buffer->added_head = NULL;
-	buffer->refs = 0;
-	// buffer->fd = -1;
-	buffer->fd = NULL;
-	buffer->min_size = buffer_size-1;
+	ret = close(me->fd);
+	me->fd = -1;
+	me->flags&=~ME_FD;
+	me->buff_size=0;
 
-	return buffer;
+	return ret;
 }
 

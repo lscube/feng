@@ -25,7 +25,9 @@ libmediainfo_la_SOURCES =	enum_media.c \
 				read_H26L.c \
 				read_MPEG_system.c \
 				read_MPEG_video.c \
-				read_MPEG_utils.c
+				read_MPEG_utils.c \
+				mediaopen.c \
+				mediaclose.c
 			
 			
 libmediainfo_la_LDFLAGS = -static

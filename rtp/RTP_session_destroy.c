@@ -43,6 +43,10 @@
 #include <stdio.h>
 #include <netinet/in.h>
 
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
 #include <fenice/bufferpool.h>
@@ -51,6 +55,7 @@ RTP_session *RTP_session_destroy(RTP_session *session)
 {
 	RTP_session *next = session->next;
 	OMSBuffer *buff = session->current_media->pkt_buffer;
+	struct stat fdstat;
 
 	close(session->rtp_fd);
 	close(session->rtcp_fd_in);
@@ -62,6 +67,10 @@ RTP_session *RTP_session_destroy(RTP_session *session)
 	if (session->current_media->pkt_buffer->refs==0) {
 			session->current_media->pkt_buffer=NULL;
 			OMSbuff_free(buff);
+			// close file if it's not a pipe
+			fstat(session->current_media->fd, &fdstat);
+			if ( !S_ISFIFO(fdstat.st_mode) )
+				mediaclose(session->current_media);
 	}
 	// Deallocate memory
 	free(session);

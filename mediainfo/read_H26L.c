@@ -44,13 +44,15 @@
 
 int read_H26L (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme)
 {
-        char thefile[255];
+        // char thefile[255];
+	int ret;
         unsigned char intime[4];
         unsigned char h26l_header[12];
 	static_H26L *s=NULL;
 									/* At this point it should be right to find the nearest lower frame */
         								/* computing it from the value of mtime */
         if (!(me->flags & ME_FD)) {                                     /* and starting the reading from this */
+#if 0
                 if (!(me->flags & ME_FILENAME)) {                       /* feature not yet implemented */
                         return ERR_INPUT_PARAM;
                 }
@@ -61,6 +63,9 @@ int read_H26L (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, i
                         return ERR_NOT_FOUND;
                 }
                 me->flags|=ME_FD;
+#endif
+		if ( (ret=mediaopen(me)) < 0 )
+			return ret;
 		s = (static_H26L *) calloc (1, sizeof(static_H26L));
 		me->stat = (void *) s;
 		s->pkt_sent=0;
