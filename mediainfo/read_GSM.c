@@ -57,7 +57,7 @@ int read_GSM(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
                 me->flags |= ME_FD;
                 me->data_chunk = 0;
         }               
-        frame_skip=(long)round(*mtime/(double)me->description.pkt_len);
+        frame_skip=(long)lround(*mtime/(double)me->description.pkt_len);
         *mtime = (double)frame_skip * (double)(me->description.pkt_len);
         for (; me->data_chunk<frame_skip; ++me->data_chunk) {
                 if ((read(me->fd,&byte1,1)) != 1) return ERR_EOF;

@@ -1,5 +1,11 @@
 #!/bin/bash
 
+WANT_AUTOCONF=2.59
+WANT_AUTOMAKE=1.8.3
+WANT_LIBTOOL=1.5.6
+
+export WANT_AUTOCONF WANT_AUTOMAKE WANT_LIBTOOL
+
 function dots ()
 {
 	while ps h $1 >/dev/null; do

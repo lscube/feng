@@ -1,6 +1,6 @@
 Summary: A GPL Experimental Streaming Server
 Name: fenice
-Version: 1.5
+Version: 1.6
 Release: 0
 Copyright: GPL
 Group: Applications/Internet
