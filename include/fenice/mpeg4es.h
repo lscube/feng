@@ -36,6 +36,7 @@
 #define _MPEG4ESH
 
 	#include <fenice/types.h>
+	#include <fenice/mediainfo.h>
 
 	/*Definitions of the start codes*/
 	#define VIDEO_OBJECT_START_CODE 	/*0x00 through 0x1F*/
@@ -116,4 +117,8 @@
 	int parse_group_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *data_size,int fin);
 	int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *data_size,int fin);
 	
+	int load_MP4ES (media_entry *me);
+	int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme, uint8 *marker);
+	int free_MP4ES (void *);
+
 #endif

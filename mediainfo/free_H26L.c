@@ -32,23 +32,16 @@
  *  
  * */
 
-#include <unistd.h>
-/*#include <stdlib.h>*//*free*/
-#include <fenice/mediainfo.h>
+#include <stdlib.h>
+#include <fenice/h26l.h>
+#include <fenice/utils.h>
 
-int mediaclose(media_entry *me)
-{
-	int ret;
-	
-	ret = close(me->fd);
-	me->fd = -1;
-	me->flags&=~ME_FD;
-	me->buff_size=0;
+int free_H26L (void * stat){
+	static_H26L *s;
 
-	me->media_handler->free_media((void*) me->stat);	
-	/*do not release the media handler, because load_X is recalled only if .sd change*/
-	/*free(me->media_handler);*/
-
-	return ret;
+	s=(static_H26L *) stat;
+	if(s==NULL)
+		return ERR_ALLOC;
+	free(s);
+	return ERR_NOERROR;
 }
-

@@ -34,6 +34,7 @@
 
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
+#include <fenice/pcm.h>
 #include <fenice/prefs.h>
 
 int load_L16(media_entry *p) {

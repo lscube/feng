@@ -32,23 +32,31 @@
  *  
  * */
 
-#include <unistd.h>
-/*#include <stdlib.h>*//*free*/
-#include <fenice/mediainfo.h>
+#include <stdlib.h>/*free*/
 
-int mediaclose(media_entry *me)
-{
-	int ret;
+#include <fenice/mpeg4es.h>
+#include <fenice/utils.h>
+
+int free_MP4ES (void *stat){
+	static_MPEG4_video_es *s;	
+
+	if(stat==NULL)
+		return ERR_ALLOC;
+	s=(static_MPEG4_video_es *) stat;
+
+	free(s->more_data);
+	s->more_data=NULL;
+	free(s->ref1);
+	s->ref1=NULL;
+	free(s->ref2);
+	s->ref2=NULL;
+	s->use_clock_system=0;
+	s->fragmented=0;
+	s->final_byte=0x00;
+	s->data_read=0;
+	s->remained_data_size=0;
+	s->vop_coding_type=0;
+	s->vtir_bitlen=0;
 	
-	ret = close(me->fd);
-	me->fd = -1;
-	me->flags&=~ME_FD;
-	me->buff_size=0;
-
-	me->media_handler->free_media((void*) me->stat);	
-	/*do not release the media handler, because load_X is recalled only if .sd change*/
-	/*free(me->media_handler);*/
-
-	return ret;
+	return ERR_NOERROR;
 }
-

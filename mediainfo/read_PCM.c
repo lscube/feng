@@ -37,17 +37,18 @@
 #include <fcntl.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
+#include <fenice/pcm.h>
 #include <fenice/prefs.h>
 #include <fenice/types.h>
 #include <fenice/bufferpool.h>
 
-int read_PCM(media_entry *me, uint8 *buffer, uint32 *buf_size, double *mtime)
+int read_PCM(media_entry *me, uint8 *buffer, uint32 *buf_size, double *mtime, int *recallme, uint8 *marker)
 {
         char thefile[255];
         uint32 i;
         unsigned start_sample, samples;
        
-	
+	*marker=0;
         if (!(me->flags & ME_FD)) {
                 strcpy(thefile,prefs_get_serv_root());
                 strcat(thefile,me->filename);           

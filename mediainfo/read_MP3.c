@@ -39,15 +39,17 @@
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
+#include <fenice/mp3.h>
 #include <fenice/prefs.h>
 
-int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
+int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *recallme, uint8 *marker)
 {
         // char thefile[255];
 	int ret;
 	unsigned char *buff = me->buff_data;
         int N=0, res;
 
+	*marker=0;
         if (!(me->flags & ME_FD)) {
 #if 0 // all moved in mediaopen
                 strcpy(thefile,prefs_get_serv_root());

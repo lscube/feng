@@ -50,6 +50,7 @@ int validate_stream(media_entry *p, SD_descr ** sd_descr)
         RTP_static_payload pt_info;
 	char object[255], server[255];
 	unsigned short port;
+	int res;
 	
         if (!(p->flags & ME_FILENAME)) {
                 return ERR_PARSE;
@@ -135,22 +136,12 @@ int validate_stream(media_entry *p, SD_descr ** sd_descr)
                 p->description.flags|=MED_CODING_TYPE;
                 p->description.flags|=MED_PKT_LEN;
         }
+	res=register_media(p);
+	if(res==ERR_NOERROR)
+		return p->media_handler->load_media(p);
+	else
+		return res;
 
-        if (strcmp(p->description.encoding_name,"MPA")==0) {
-                return load_MPA(p);
-        } else if (strcmp(p->description.encoding_name,"GSM")==0) {
-                return load_GSM(p);
-        } else if (strcmp(p->description.encoding_name,"L16")==0) {
-                return load_L16(p);
-        } else if (strcmp(p->description.encoding_name,"MPV")==0) {
-                return load_MPV(p);
-        } else if (strcmp(p->description.encoding_name,"MP4V-ES")==0) {
-                return load_MP4ES(p);
-        } else if (strcmp(p->description.encoding_name,"MP2T")==0) {
-                return load_MP2T(p);
-        } else {
-                return ERR_NOERROR;
-        }
 }
 
 

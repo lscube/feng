@@ -105,16 +105,17 @@
 		SCREEN_WIDTH=
 		SCREEN_HEIGHT=*/
 	} me_descr_flags;
-	
+
 	typedef struct _media_entry {
     		me_flags flags;
     		int fd;
 		void *stat;
+		struct _media_fn *media_handler;
 		unsigned int data_chunk;
 		
 		/*Buffering with bufferpool module*/
-    		unsigned char buff_data[4]; // shawill: needed for audio-mp3 live-by-named-pipe
-		unsigned int buff_size; // shawill: needed for audio-mp3 live-by-named-pipe		
+    		unsigned char buff_data[4]; // shawill: needed for audio-mp3 live-by-named-pipe /*TODO: to move in mp3.h*/
+		unsigned int buff_size; // shawill: needed for audio-mp3 live-by-named-pipe	/*TODO: to move in mp3.h*/	
 		OMSBuffer *pkt_buffer; 
 		//Consumer now is in RTP_session structure
 		//OMSConsumer *cons;
@@ -123,7 +124,7 @@
 		double mtime;
 		double mstart;
 		double mstart_offset;
-		double play_offset; /*Federico. Usefull for random access*/
+		double play_offset; /*chicco. Usefull for random access*/
 		double prev_mstart_offset;/*usefull for random access*/
 		int rtp_multicast_port; 
 
@@ -169,6 +170,42 @@
     		struct _media_entry *next;
 	} media_entry;
 	
+	/* 
+	 * \struct media_fn
+	 */
+	typedef struct _media_fn{
+		
+		/*
+		 * \fn load_media
+		 *	\brief Function pointer to load media.
+		 *	\param media_entry *me .
+		 *
+		 */
+		int (*load_media)(media_entry *);
+
+		/*
+		 * \fn read_media
+		 * 	\brief Function pointer to read bitstream.
+		 * 	\param media_entry *me .
+		 * 	\param uint8 *buffer .
+		 * 	\param uint32 *buffer_size .
+		 * 	\param double *mtime .
+		 * 	\param int *recallme .
+		 * 	\param uint8 *marker; 
+		 *
+		 */	
+		int (*read_media)(media_entry *, uint8 *, uint32 *, double *, int *, uint8 *);
+
+		/*
+		 * \fn free_media
+		 * 	\brief Function pointer to free static_X structure used in read_X.
+		 *	\param void *stat .
+		 *	\warnings Don't free structures allocated by load_X because it is recalled only if .sd changes.
+		 */
+		int (*free_media)(void *);
+	
+	} media_fn;
+
 	typedef struct _SD_descr {
     		char filename[255];
     		media_entry *me_list;
@@ -185,25 +222,9 @@
 	int get_frame (media_entry *me, double *mtime);
 	int validate_stream (media_entry *me,SD_descr **sd_descr);
 
+	int register_media(media_entry *);
 	int mediaopen(media_entry *);
 	int mediaclose(media_entry *);
-
-	int load_MPA (media_entry *me);
-	int load_GSM (media_entry *me);
-	int load_L16 (media_entry *me);
-	int load_MP2T (media_entry *me);
-	int load_MPV (media_entry *me);
-	int load_MP4ES (media_entry *me);
-	// read specific formats	
-	int read_PCM (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime);
-	int read_MP3 (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime);
-	int read_GSM (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime);
-	
-	int read_H26L (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme);
-	int read_MPEG_video (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme);
-	int read_MPEG_system (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme);
-	int read_MPEG_ts (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme);
-	int read_MPEG4ES_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme);
 
 	/*****************************************read common utils*************************************************/
 	

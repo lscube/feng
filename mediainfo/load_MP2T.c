@@ -34,6 +34,7 @@
 
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
+#include <fenice/mpeg_ts.h>
 
 int load_MP2T(media_entry *p) {
 		if (!(p->description.flags & MED_FRAME_RATE)) {

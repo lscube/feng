@@ -38,9 +38,10 @@
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
+#include <fenice/gsm.h>
 #include <fenice/prefs.h>
 
-int read_GSM(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
+int read_GSM(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *recallme, uint8 *marker)
 {       
         char thefile[255];
         unsigned char byte1;
@@ -48,6 +49,7 @@ int read_GSM(media_entry *me,uint8 *data,uint32 *data_size,double *mtime)
         // long frame_skip;
         unsigned int frame_skip;
         
+	*marker=0;
         if (!(me->flags & ME_FD)) {             
                 strcpy(thefile,prefs_get_serv_root());
                 strcat(thefile,me->filename);           

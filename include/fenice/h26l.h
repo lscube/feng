@@ -35,11 +35,18 @@
 #ifndef _H26LH
 #define _H26LH
 
+	#include <fenice/mediainfo.h>
+	#include <fenice/types.h>
+
 	typedef struct {
 		unsigned int bufsize;
 		long pkt_sent;
 		int current_timestamp; 
 		int next_timestamp;
 	} static_H26L;
+
+	int load_H26L (media_entry *me);
+	int read_H26L (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme, uint8 *marker);
+	int free_H26L (void * stat);
 
 #endif

@@ -38,6 +38,7 @@
 
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
+#include <fenice/gsm.h>
 #include <fenice/prefs.h>
 
 int load_GSM(media_entry *p) {

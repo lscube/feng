@@ -42,17 +42,15 @@
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
-#include <fenice/mpeg_system.h>
+#include <fenice/mpeg_ts.h>
 
-int read_MPEG_ts(media_entry *me, uint8 *data_slot,uint32 *data_size, double *mtime, int *recallme)
+int read_MPEG_ts(media_entry *me, uint8 *data_slot,uint32 *data_size, double *mtime, int *recallme, uint8 *marker)
 {
 	int ret;
 	uint32 num_bytes;
-	float pkt_len;
-	static_MPEG_system *s;
 	uint8 *data;
 	
-	*recallme=0;
+	*marker=*recallme=0;
 	num_bytes = ((me->description).byte_per_pckt/188)*188;
 #if HAVE_ALLOCA
         data=(unsigned char *)alloca(num_bytes+4);
@@ -69,32 +67,8 @@ int read_MPEG_ts(media_entry *me, uint8 *data_slot,uint32 *data_size, double *mt
 #endif	
 			return ret;
 		}
-		s = (static_MPEG_system *) calloc (1, sizeof(static_MPEG_system));
-		me->stat = (void *) s;
-		s->final_byte=0x00; 
 		*data_size=0;
-        } else{ 
-		s = (static_MPEG_system *) me->stat;
-		/*data[0]=0x00;
-		data[1]=0x00;
-		data[2]=0x00;
-		data[3]=s->final_byte;
-		*data_size=4;*/
-	}
-
- 	/*do{
-		if ( next_start_code(data,data_size,me->fd) == -1) {
-#if !HAVE_ALLOCA
-			free(data);
-#endif	
-			return ERR_EOF;
-		}
-	 	read(me->fd,&s->final_byte,1);
-		data[*data_size]=s->final_byte;
-		*data_size+=1;
-		
-	}while(*data_size<num_bytes);
-	*data_size-=4;*/
+        }  
 	
 	*data_size=read(me->fd,data,num_bytes);
 	if(*data_size<=0){

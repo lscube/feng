@@ -71,5 +71,9 @@
 	/* reads a packet */
 	int read_packet(uint8 *, uint32 *, int fin, unsigned char *final_byte);
 
+	/*TODO: load_MPEGSYSTEM*/
+	int read_MPEG_system (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme, uint8 *marker);
+	
+
 #endif
 

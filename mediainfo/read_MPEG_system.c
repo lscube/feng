@@ -42,7 +42,7 @@
 #include <fenice/mediainfo.h>
 #include <fenice/mpeg_system.h>
 
-int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mtime, int *recallme)
+int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mtime, int *recallme, uint8 *marker)
 {
 	int ret;
 	uint32 num_bytes;
@@ -181,6 +181,7 @@ int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mti
 			*mtime=(s->scr.scr*1000)/(double)me->description.clock_rate;	/* adjust SRC value to be passed as argument to the msec2tick and do not */
 			printf("Dimensione pacchetto: %d\n", *data_size);       	/* change value */
 		}
+		*marker=!(*recallme);
 		return ERR_NOERROR;
 	} else {
 		read_packet(data,data_size,me->fd,&s->final_byte);
@@ -252,6 +253,7 @@ int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mti
 			printf("Dimensione pacchetto: %d\n", *data_size);
 			printf("Packet length: %f\n", (me->description).pkt_len);
 		}
+		*marker=!(*recallme);
 		return ERR_NOERROR;
 	}
 }

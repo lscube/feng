@@ -42,12 +42,14 @@
 #include <fenice/mediainfo.h>
 #include <fenice/h26l.h>
 
-int read_H26L (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme)
+int read_H26L (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme, uint8 *marker)
 {
 	int ret;
         unsigned char intime[4];
         unsigned char h26l_header[12];
 	static_H26L *s=NULL;
+
+	*marker=0;
 									/* At this point it should be right to find the nearest lower frame */
         								/* computing it from the value of mtime */
         if (!(me->flags & ME_FD)) {                                     /* and starting the reading from this */

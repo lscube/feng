@@ -52,7 +52,7 @@
 #define DEFAULT_BYTE_X_PKT 1400
 
 
-int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, double *mtime, int *recallme)   /* reads MPEG4 Elementary stream Video */
+int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, double *mtime, int *recallme, uint8 *marker)   /* reads MPEG4 Elementary stream Video */
 {
 	int ret;
 	uint32 num_bytes;
@@ -84,7 +84,6 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 	}
 	
 	if (!(me->flags & ME_FD)) {
-		fprintf(stderr,"Open File in read*\n");
 		if ( (ret=mediaopen(me)) < 0 )
 			return ret;
 		if(next_start_code(data,data_size,me->fd) < 0){
@@ -137,8 +136,9 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 	 			*mtime=((double)s->ref2->var_time_increment + (double)s->ref2->modulo_time_base *s->ref2->vop_time_increment_resolution) * ( 1000 / (double)s->ref2->vop_time_increment_resolution);
 		}
 #if DEBUG	
-		fprintf(stderr,"*mtime=%f | pkt_len=%f | delta_mtime=%f | vtir =%d\n",*mtime,me->description.pkt_len, me->description.delta_mtime,s->vtir_bitlen);
+		/*fprintf(stderr,"*mtime=%f | pkt_len=%f | delta_mtime=%f | vtir =%d\n",*mtime,me->description.pkt_len, me->description.delta_mtime,s->vtir_bitlen);*/
 #endif
+		*marker=!(*recallme);
 		FREE_DATA;
 		return ERR_NOERROR;
 	}
@@ -238,8 +238,9 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 	
 	
 #if DEBUG	
-	fprintf(stderr,"*mtime=%f | pkt_len=%f | delta_mtime=%f | vtir =%d\n",*mtime,me->description.pkt_len, me->description.delta_mtime,s->vtir_bitlen);
+	/*fprintf(stderr,"*mtime=%f | pkt_len=%f | delta_mtime=%f | vtir =%d\n",*mtime,me->description.pkt_len, me->description.delta_mtime,s->vtir_bitlen);*/
 #endif
+	*marker=!(*recallme);
 	FREE_DATA;
 	return ERR_NOERROR;
 }

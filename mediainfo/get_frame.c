@@ -44,46 +44,13 @@ int get_frame(media_entry *me, double *mtime)
 	int recallme=0;	
 	OMSSlot *slot;
 	int res = ERR_NOERROR;
+	uint8 marker=0;
 
 	do{
 		slot=OMSbuff_getslot(me->pkt_buffer);
-		
-	        if (strcmp(me->description.encoding_name,"MPA")==0) {
-        	        recallme = 0;
-                	me->description.delta_mtime=me->description.pkt_len;/* For MPA, L16 and GSM delta_mtime is fixed to pkt_len */
-			res = read_MP3(me,slot->data,&slot->data_size,mtime);
-        	}	
-		else if (strcmp(me->description.encoding_name,"L16")==0) {
-                	recallme = 0;
-                	me->description.delta_mtime=me->description.pkt_len;
-                	res = read_PCM(me,slot->data,&slot->data_size,mtime);
-        	}
-		else if (strcmp(me->description.encoding_name,"GSM")==0) {
-                	recallme = 0;
-                	me->description.delta_mtime=me->description.pkt_len;
-                	res = read_GSM(me,slot->data,&slot->data_size,mtime);
-        	}
-		else if (strcmp(me->description.encoding_name,"H26L")==0) {
-                	res = read_H26L(me,slot->data,&slot->data_size,mtime,&recallme);
-        	}
-		else if (strcmp(me->description.encoding_name,"MPV")==0) {
-                	res = read_MPEG_video(me,slot->data,&slot->data_size,mtime,&recallme);
-			slot->marker = !recallme;
-        	}
-		else if (strcmp(me->description.encoding_name,"MP2T")==0) {
-                	//res = read_MPEG_system(me,slot->data,&slot->data_size,mtime,&recallme);
-                	res = read_MPEG_ts(me,slot->data,&slot->data_size,mtime,&recallme);
-			slot->marker=0; /*Set to 1 whenever the timestamp is discontinous. See rfc2250 page 4*/
-        	}
-		else if (strcmp(me->description.encoding_name,"MP4V-ES")==0) {
-                	res = read_MPEG4ES_video(me,slot->data,&slot->data_size,mtime,&recallme);
-			slot->marker = !recallme;
-        	}
-		else 
-			res=ERR_UNSUPPORTED_PT;
-
+		res=me->media_handler->read_media(me,slot->data,&slot->data_size,mtime,&recallme,&marker);
 		if (res==ERR_NOERROR) { // commit of buffer slot.
-			if (OMSbuff_write(me->pkt_buffer, *mtime, slot->marker, slot->data, slot->data_size))
+			if (OMSbuff_write(me->pkt_buffer, *mtime, marker, slot->data, slot->data_size))
 				fprintf(stderr, "Error in bufferpool writing\n");
 		}
 		// slot->timestamp=*mtime;

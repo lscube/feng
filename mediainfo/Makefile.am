@@ -17,6 +17,7 @@ libmediainfo_la_SOURCES =	enum_media.c \
 				load_GSM.c \
 				load_L16.c \
 				load_MPV.c \
+				load_H26L.c \
 				load_MP4ES.c \
 				load_MP2T.c \
 				get_frame.c \
@@ -31,7 +32,15 @@ libmediainfo_la_SOURCES =	enum_media.c \
 				read_MPEG_utils.c \
 				read_MPEG4ES_utils.c \
 				read_MPEGSYSTEM_utils.c \
+				free_MP4ES.c \
+				free_MPV.c \
+				free_MPA.c \
+				free_H26L.c \
+				free_L16.c \
+				free_GSM.c \
+				free_MP2T.c \
 				common_utils.c \
+				register_media.c \
 				mediaopen.c \
 				mediaclose.c
 			

@@ -36,6 +36,7 @@
 
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
+#include <fenice/mpeg.h>
 #include <fenice/prefs.h>
 
 int load_MPV(media_entry *p) {

@@ -32,23 +32,15 @@
  *  
  * */
 
-#include <unistd.h>
-/*#include <stdlib.h>*//*free*/
-#include <fenice/mediainfo.h>
 
-int mediaclose(media_entry *me)
-{
-	int ret;
-	
-	ret = close(me->fd);
-	me->fd = -1;
-	me->flags&=~ME_FD;
-	me->buff_size=0;
+#ifndef _MPEG_TSH
+#define _MPEG_TSH
 
-	me->media_handler->free_media((void*) me->stat);	
-	/*do not release the media handler, because load_X is recalled only if .sd change*/
-	/*free(me->media_handler);*/
+	#include <fenice/types.h>
+	#include <fenice/mediainfo.h>
 
-	return ret;
-}
+	int load_MP2T (media_entry *me);
+	int read_MPEG_ts (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme, uint8 *marker);
+	int free_MP2T (void * stat);
 
+#endif

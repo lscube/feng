@@ -47,7 +47,7 @@
 #define DEFAULT_BYTE_X_PKT 1400
 
 
-int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme)   /* reads MPEG-1,2 Video */
+int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, int *recallme, uint8 *marker)   /* reads MPEG-1,2 Video */
 {
 	int ret;
         uint32 num_bytes;
@@ -379,6 +379,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 #if !HAVE_ALLOCA
 	free(data_tmp);
 #endif
+	*marker=!(*recallme);
 	return ERR_NOERROR;
 }
 

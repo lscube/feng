@@ -32,23 +32,15 @@
  *  
  * */
 
-#include <unistd.h>
-/*#include <stdlib.h>*//*free*/
-#include <fenice/mediainfo.h>
+#ifndef _MP3H
+#define _MP3H
 
-int mediaclose(media_entry *me)
-{
-	int ret;
+	#include <fenice/types.h>
+	#include <fenice/mediainfo.h>
 	
-	ret = close(me->fd);
-	me->fd = -1;
-	me->flags&=~ME_FD;
-	me->buff_size=0;
+	int load_MPA (media_entry *me);
+	int read_MP3 (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme, uint8 *marker);
+	int free_MPA (void * stat);
 
-	me->media_handler->free_media((void*) me->stat);	
-	/*do not release the media handler, because load_X is recalled only if .sd change*/
-	/*free(me->media_handler);*/
-
-	return ret;
-}
+#endif
 

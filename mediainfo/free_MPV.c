@@ -32,23 +32,16 @@
  *  
  * */
 
-#include <unistd.h>
-/*#include <stdlib.h>*//*free*/
-#include <fenice/mediainfo.h>
+#include <stdlib.h>
+#include <fenice/mpeg.h>
+#include <fenice/utils.h>
 
-int mediaclose(media_entry *me)
-{
-	int ret;
+int free_MPV (void * stat){
+	static_MPEG_video *s;
 	
-	ret = close(me->fd);
-	me->fd = -1;
-	me->flags&=~ME_FD;
-	me->buff_size=0;
-
-	me->media_handler->free_media((void*) me->stat);	
-	/*do not release the media handler, because load_X is recalled only if .sd change*/
-	/*free(me->media_handler);*/
-
-	return ret;
+	s=(static_MPEG_video *) stat;
+	if(s==NULL)
+		return ERR_ALLOC;
+	free(s);
+	return ERR_NOERROR;
 }
-

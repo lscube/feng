@@ -40,6 +40,7 @@
 
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
+#include <fenice/mp3.h>
 #include <fenice/prefs.h>
 
 int load_MPA(media_entry *p)
