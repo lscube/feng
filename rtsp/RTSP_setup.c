@@ -55,6 +55,7 @@
  	****************************************************************
 */
 
+
 int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
 	char address[16];
@@ -97,15 +98,15 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 			return ERR_NOERROR;
 		}
 	}
-	if ((p = strstr(rtsp->in_buffer, "ssrc")) != NULL) {
+	/*if ((p = strstr(rtsp->in_buffer, "ssrc")) != NULL) {
 		p = strchr(p, '=');
 		sscanf(p + 1, "%lu", &ssrc);
-	} else {
+	} else {*/
 		ssrc = random32(0);
 #if DEBUG
 		fprintf(stderr, "%lu", ssrc);
 #endif
-	}
+	//}
 
 	if ((p = strstr(rtsp->in_buffer, "client_port")) == NULL && (strstr(rtsp->in_buffer, "multicast")) == NULL) {
 		printf("SETUP request didn't specify client ports\n");

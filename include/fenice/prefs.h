@@ -42,10 +42,10 @@
 	/* Please note (2):
 		MAX_CONNECTION must be an integral multiple of MAX_PROCESS
 	*/
-	#define MAX_PROCESS	4/*number of fork*/	
+	#define MAX_PROCESS	1/*number of fork*/	
 	#define MAX_CONNECTION	100/*rtsp connection*/	
 	#define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS))/*rtsp connection for one fork*/
-	#define DEFAULT_MAX_SESSION 102/*default max session after which i need to send a redirect*/
+	#define DEFAULT_MAX_SESSION 100/*default max session after which i need to send a redirect*/
 
 	
 	#define DEFAULT_CONF_FILE FENICE_CONF_DIR_DEFAULT "/fenice.conf"

@@ -44,6 +44,7 @@
 #include <fenice/schedule.h>
 #include <fenice/bufferpool.h>
 int stop_schedule = 0;
+extern uint32 num_conn;
 
 void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
 {
@@ -66,7 +67,8 @@ void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
 					printf("RTSP connection closed by server.\n");
 
 				close(p->fd);
-            			--*conn_count;        	
+            			--*conn_count;
+				num_conn--;
             			if (p->session_list!=NULL) //if client truncated RTSP connection before sending TEARDOWN: error
 				{
 					printf("WARNING! RTSP connection truncated before ending operations.\n");

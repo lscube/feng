@@ -43,7 +43,7 @@
 #include <fenice/schedule.h>
 #include <fenice/types.h>
 
-uint32 num_conn; /*number of connection*/
+uint32 num_conn;
 
 void eventloop(tsocket main_fd)
 {
@@ -100,8 +100,8 @@ void eventloop(tsocket main_fd)
         				tcp_close(main_fd);				
         			}					
         		}
+			num_conn++;	
         	}
     	}
 	schedule_connections(&rtsp_list,&conn_count);
-	num_conn=conn_count;
 }
