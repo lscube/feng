@@ -1,5 +1,181 @@
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
+FENICE 1.8
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+r106 | mancho | 2005-03-01 15:36:57 +0100 (Tue, 01 Mar 2005) | 2 lines
+Changed paths:
+   M /trunk/debian/changelog
+
+Updating to 1.8
+
+------------------------------------------------------------------------
+r105 | mancho | 2005-03-01 15:23:40 +0100 (Tue, 01 Mar 2005) | 2 lines
+Changed paths:
+   M /trunk/docs/Makefile.am
+
+- Fixing the mess made with :diffput. Sorry.
+
+------------------------------------------------------------------------
+r104 | mancho | 2005-03-01 13:40:50 +0100 (Tue, 01 Mar 2005) | 7 lines
+Changed paths:
+   M /trunk/00pl
+   M /trunk/INSTALL
+   M /trunk/Makefile.am
+   M /trunk/NEWS
+   M /trunk/configure.ac
+   M /trunk/debian/README.Debian
+   M /trunk/debian/changelog
+   M /trunk/debian/control
+   M /trunk/debian/copyright
+   D /trunk/debian/files
+   M /trunk/docs/Makefile.am
+   M /trunk/docs/fenice.1
+   M /trunk/docs/howto/Makefile.am
+   M /trunk/docs/howto/fenice-howto.html
+   M /trunk/fenice.spec
+
+- Changed email address in various files.
+- Documentation build stage improved: now it should build cleanly both in Debian and Gentoo.
+- Updated the Fenice HOWTO.
+- Updated version number.
+- Pre-release (1.8).
+
+
+------------------------------------------------------------------------
+r103 | mancho | 2005-02-28 15:48:30 +0100 (Mon, 28 Feb 2005) | 2 lines
+Changed paths:
+   A /trunk/debian
+   A /trunk/debian/README.Debian
+   A /trunk/debian/changelog
+   A /trunk/debian/compat
+   A /trunk/debian/control
+   A /trunk/debian/copyright
+   A /trunk/debian/docs
+   A /trunk/debian/files
+   A /trunk/debian/init.d.ex
+   A /trunk/debian/rules
+
+Merging Debian-package build directory in the official source tree.
+
+------------------------------------------------------------------------
+r102 | federico | 2005-02-24 18:31:30 +0100 (Thu, 24 Feb 2005) | 6 lines
+Changed paths:
+   M /trunk/INSTALL
+   M /trunk/include/fenice/mediainfo.h
+   M /trunk/mediainfo/read_MPEG_video.c
+
+Video compatibility to RealOne10Gold5.
+TODO: 
+	- Audio + Video compatibility to RealOne/Player: i think it is a session number problem
+	- Random Access doesn't work fine. Really, i think it is impossible to do a good random access without a special fileformat support.
+	
+
+------------------------------------------------------------------------
+r101 | shawill | 2005-02-23 10:08:23 +0100 (Wed, 23 Feb 2005) | 2 lines
+Changed paths:
+   M /trunk/etc/Makefile.am
+   M /trunk/include/fenice/rtp.h
+   M /trunk/include/fenice/socket.h
+
+OSX compatibility issues (thanx to Sébastien Pierre).
+
+------------------------------------------------------------------------
+r100 | shawill | 2005-02-16 15:00:57 +0100 (Wed, 16 Feb 2005) | 2 lines
+Changed paths:
+   M /trunk
+   M /trunk/INSTALL
+   M /trunk/schedule/schedule_do.c
+
+Traffic managing...
+
+------------------------------------------------------------------------
+r99 | shawill | 2005-02-16 12:59:47 +0100 (Wed, 16 Feb 2005) | 2 lines
+Changed paths:
+   M /trunk/COPYING
+   M /trunk/multicast
+   M /trunk/schedule/schedule_do.c
+   M /trunk/schedule/schedule_remove.c
+
+trying to fix the 100% bug.
+
+------------------------------------------------------------------------
+r98 | shawill | 2005-02-11 16:46:41 +0100 (Fri, 11 Feb 2005) | 3 lines
+Changed paths:
+   M /trunk/mediainfo/validate_stream.c
+   M /trunk/rtp/RTP_session_destroy.c
+   M /trunk/rtsp/send_describe_reply.c
+   M /trunk/sdp/get_SDP_descr.c
+
+Bugfixes in SD_FL_TWIN & SD_FL_MULTICAST flags settings and releasing.
+'\n' added at the end of sdp description.
+
+------------------------------------------------------------------------
+r97 | federico | 2005-02-09 16:57:40 +0100 (Wed, 09 Feb 2005) | 2 lines
+Changed paths:
+   M /trunk/mediainfo/read_MPEG4ES_video.c
+
+MPEG4: working in progress
+
+------------------------------------------------------------------------
+r96 | federico | 2005-02-07 09:56:52 +0100 (Mon, 07 Feb 2005) | 2 lines
+Changed paths:
+   M /trunk/mediainfo/enum_media.c
+   M /trunk/mediainfo/validate_stream.c
+   M /trunk/rtp/RTP_session_destroy.c
+   M /trunk/schedule/schedule_remove.c
+
+Release multicast flags
+
+------------------------------------------------------------------------
+r95 | federico | 2005-02-04 16:00:34 +0100 (Fri, 04 Feb 2005) | 2 lines
+Changed paths:
+   M /trunk/rtsp/RTSP_setup.c
+
+Setting up multicast handling
+
+------------------------------------------------------------------------
+r94 | federico | 2005-02-04 14:53:15 +0100 (Fri, 04 Feb 2005) | 3 lines
+Changed paths:
+   M /trunk/INSTALL
+   M /trunk/Makefile.am
+   M /trunk/configure.ac
+   M /trunk/etc/fenice.conf
+   M /trunk/include/fenice/Makefile.am
+   M /trunk/include/fenice/mediainfo.h
+   M /trunk/include/fenice/multicast.h
+   M /trunk/include/fenice/rtp.h
+   M /trunk/include/fenice/rtsp.h
+   M /trunk/include/fenice/utils.h
+   M /trunk/mediainfo/parse_SD_file.c
+   M /trunk/mediainfo/validate_stream.c
+   A /trunk/multicast
+   A /trunk/multicast/Makefile.am
+   A /trunk/multicast/is_valid_multicast_address.c
+   M /trunk/rtp/RTP_session_destroy.c
+   M /trunk/rtsp/RTSP_play.c
+   M /trunk/rtsp/RTSP_setup.c
+   M /trunk/rtsp/parse_url.c
+   M /trunk/rtsp/send_redirect_3xx.c
+   M /trunk/rtsp/send_setup_reply.c
+   M /trunk/schedule/schedule_add.c
+   M /trunk/schedule/schedule_remove.c
+   M /trunk/sdp/get_SDP_descr.c
+   M /trunk/src/Makefile.am
+
+Handling multicast session. SDP is now fetched using RTSP.
+
+
+------------------------------------------------------------------------
+r92 | mancho | 2005-02-01 12:51:39 +0100 (Tue, 01 Feb 2005) | 3 lines
+Changed paths:
+   M /trunk/ChangeLog
+
+ChangeLog updated
+Ready to release
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
 FENICE 1.7
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
