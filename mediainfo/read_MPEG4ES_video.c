@@ -61,7 +61,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 
 	*data_size=0;
 	*recallme=0;
-	num_bytes = ((me->description).byte_per_pckt>0)?(me->description).byte_per_pckt:DEFAULT_BYTE_X_PKT;
+	num_bytes = ((me->description).byte_per_pckt>261)?(me->description).byte_per_pckt:DEFAULT_BYTE_X_PKT;
 
 #if HAVE_ALLOCA
         data=(unsigned char *)alloca(65000); 
@@ -71,10 +71,20 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
         if (data==NULL)
                return ERR_ALLOC;
 
-	s = (static_MPEG4_video_es *) me->stat;
+	if (!(me->flags & ME_FD)) {
+                if ( (ret=mediaopen(me)) < 0 )
+			return ret;
+		s = (static_MPEG4_video_es *) calloc (1, sizeof(static_MPEG4_video_es));
+		me->stat = (void *) s;
+		s->final_byte=0x00;
+		s->fragmented=0;
+        } else
+		s = (static_MPEG4_video_es *) me->stat;
+
+
 	if(s->more_data==NULL)
 		s->more_data=(char *)calloc(1,65000);
-	
+#if 0
 	/*clubbing visual object sequence - visual object - video object - video object layer*/
 	if((me->description).msource==live && !s->fragmented && (int)(*mtime)==0){ 
 		memcpy(data,s->header_data,s->header_data_size);
@@ -82,7 +92,8 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
                 *recallme=0;
                 s->fragmented=0;
 	}
-	
+#endif	
+
 	if (!(me->flags & ME_FD)) {
 		if ( (ret=mediaopen(me)) < 0 )
 			return ret;

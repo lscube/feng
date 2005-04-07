@@ -71,7 +71,7 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
         } else
 		s = (static_MPEG_video *) me->stat;
 
-        num_bytes = ((me->description).byte_per_pckt>0)?(me->description).byte_per_pckt:DEFAULT_BYTE_X_PKT;
+        num_bytes = ((me->description).byte_per_pckt>261)?(me->description).byte_per_pckt:DEFAULT_BYTE_X_PKT;
 
 #if HAVE_ALLOCA
         data_tmp=(unsigned char *)alloca(65000);

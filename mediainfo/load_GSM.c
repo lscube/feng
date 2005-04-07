@@ -39,18 +39,17 @@
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/gsm.h>
-#include <fenice/prefs.h>
 
 int load_GSM(media_entry *p) {
 
-        char thefile[255];
-        unsigned char byte1;
-        strcpy(thefile,prefs_get_serv_root());
-        strcat(thefile,p->filename);            
-        p->fd=open(thefile,O_RDONLY);
-        if (p->fd==-1) return ERR_NOT_FOUND;
+	unsigned char byte1;
+	int ret;
+	
+	if ( (ret=mediaopen(p)) < 0)
+		return ret;
         if (read(p->fd,&byte1,1) != 1) return ERR_PARSE;
-        close(p->fd);
+        mediaclose(p);
+
         switch (byte1 & 0x07) {
                 case 0: p->description.bitrate = 4750; break;
                 case 1: p->description.bitrate = 5150; break;
@@ -62,6 +61,11 @@ int load_GSM(media_entry *p) {
                 case 7: p->description.bitrate = 12200; break;
         }       
         p->description.flags|=MED_BITRATE;      
+	if (!(p->description.flags & MED_PKT_LEN)) {
+                                p->description.pkt_len=20; /* By default for GSM */
+                                p->description.delta_mtime=p->description.pkt_len;
+                                p->description.flags|=MED_PKT_LEN;
+	}
 
         return ERR_NOERROR;
 }

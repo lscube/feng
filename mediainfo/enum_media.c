@@ -81,6 +81,6 @@ int enum_media(char *object,SD_descr **d)
 		free(matching_descr);
 		return res;
 	}
-	return 0;
+	return ERR_NOERROR;
 }
 

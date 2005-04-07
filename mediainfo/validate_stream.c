@@ -80,48 +80,10 @@ int validate_stream(media_entry *p, SD_descr ** sd_descr)
                 if (!(p->description.flags & MED_CLOCK_RATE)) {
                         return ERR_PARSE;
                 }
-                // Supported Encodings are GSM, MPA and L16
-                if (strcmp(p->description.encoding_name,"GSM")==0) {
-                        if (!(p->description.flags & MED_PKT_LEN)) {
-                                p->description.pkt_len=20; /* By default for GSM */
-                                p->description.delta_mtime=p->description.pkt_len;
-                                p->description.flags|=MED_PKT_LEN;
-                        }
-                } else if (strcmp(p->description.encoding_name,"MPA")==0) {
-                        // Nothing to do
-                } else if (strcmp(p->description.encoding_name,"L16")==0) {
-                        if (!(p->description.flags & MED_AUDIO_CHANNELS)) {
-                                return ERR_PARSE;
-                        }
-                        if (!(p->description.flags & MED_PKT_LEN)) {
-                                p->description.pkt_len=20; /* By default for L16 */
-                                p->description.delta_mtime=p->description.pkt_len;
-                                p->description.flags|=MED_PKT_LEN;
-                        }
-                        p->description.bit_per_sample=16;
-                        p->description.flags|=MED_BIT_PER_SAMPLE;
-                } else if ( (strcmp(p->description.encoding_name,"H26L")==0) || (strcmp(p->description.encoding_name,"MPV")==0) || (strcmp(p->description.encoding_name,"MP2T")==0) || (strcmp(p->description.encoding_name,"MP4V-ES")==0) ) {
-                                if (!(p->description.flags & MED_PKT_LEN)) {
-                                        if (!(p->description.flags & MED_FRAME_RATE)) {
-                                                return ERR_PARSE;
-                                        }
-                                        p->description.pkt_len=1/(double)p->description.frame_rate*1000;
-                                        p->description.flags|=MED_PKT_LEN;
-                                }
-                                p->description.delta_mtime=p->description.pkt_len;
-                                if (strcmp(p->description.encoding_name,"MPV")==0 || (strcmp(p->description.encoding_name,"MP4V-ES")==0) ) {
-					if ((p->description.byte_per_pckt!=0) && (p->description.byte_per_pckt<261)) {
-						printf("Warning: the max size for MPEG Video packet is smaller than 261 bytes and if a video header\n");
-						printf("is greater the max size would be ignored \n");
-					}
-                                }
-		} else {
-                        printf("Encoding type not supported\n");
-                        return ERR_UNSUPPORTED_PT;
-                }
         }
         else {
-                // Set payload type for well-kwnown encodings
+                // Set payload type for well-kwnown encodings and some default configurations if i know them
+		// see include/fenice/rtpptdefs.h
                 pt_info=RTP_payload[p->description.payload_type];
                 strcpy(p->description.encoding_name,pt_info.EncName);
                 p->description.clock_rate=pt_info.ClockRate;
@@ -134,7 +96,7 @@ int validate_stream(media_entry *p, SD_descr ** sd_descr)
                 p->description.flags|=MED_AUDIO_CHANNELS;
                 p->description.flags|=MED_BIT_PER_SAMPLE;
                 p->description.flags|=MED_CODING_TYPE;
-                p->description.flags|=MED_PKT_LEN;
+                //p->description.flags|=MED_PKT_LEN;
         }
 	res=register_media(p);
 	if(res==ERR_NOERROR)

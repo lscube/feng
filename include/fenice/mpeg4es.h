@@ -103,7 +103,7 @@
 		uint32 data_read;
 		uint32 remained_data_size;
 		char *more_data;
-		char *header_data;
+		//char *header_data;
 		uint32 header_data_size;
 		int vop_coding_type;
 	} static_MPEG4_video_es;

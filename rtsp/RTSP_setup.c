@@ -209,7 +209,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		// END FEDERICO
 	}
 // ------------ END PATCH
+#if DEBUG
 	fprintf(stderr,"object: %s\n",object);
+#endif
 
 	if (enum_media(object, &matching_descr) != ERR_NOERROR) {
 		printf("SETUP request specified an object file which can be damaged.\n");

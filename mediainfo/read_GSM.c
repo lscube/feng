@@ -39,11 +39,9 @@
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/gsm.h>
-#include <fenice/prefs.h>
 
 int read_GSM(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *recallme, uint8 *marker)
 {       
-        char thefile[255];
         unsigned char byte1;
         unsigned int N=0, res;
         // long frame_skip;
@@ -51,12 +49,8 @@ int read_GSM(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *r
         
 	*marker=0;
         if (!(me->flags & ME_FD)) {             
-                strcpy(thefile,prefs_get_serv_root());
-                strcat(thefile,me->filename);           
-// printf("Playing: %s - bitrate: %d\n", thefile, me->description.bitrate);
-                me->fd=open(thefile,O_RDONLY);
-                if (me->fd==-1) return ERR_NOT_FOUND;
-                me->flags |= ME_FD;
+		if ( (res=mediaopen(me)) < 0 )
+			return res;
                 me->data_chunk = 0;
         }               
         frame_skip=(long)lround(*mtime/(double)me->description.pkt_len);

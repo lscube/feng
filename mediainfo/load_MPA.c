@@ -39,6 +39,7 @@
 #include <unistd.h>
 
 #include <fenice/utils.h>
+#include <fenice/debug.h>
 #include <fenice/mediainfo.h>
 #include <fenice/mp3.h>
 #include <fenice/prefs.h>
@@ -46,14 +47,8 @@
 int load_MPA(media_entry *p)
 {
 
-#if 0
-        char thefile[255];
-#else
 	int ret;
-#endif
-	// unsigned char buffer[4];
 	long int tag_dim;
-	//struct stat fdstat;
         int n,RowIndex, ColIndex;
         int BitrateMatrix[16][5] = {
                 {0,     0,     0,     0,     0     },
@@ -76,52 +71,9 @@ int load_MPA(media_entry *p)
 
 	fprintf(stderr, "loading MPA...\n");
 
-#if 0
-        strcpy(thefile,prefs_get_serv_root());
-        strcat(thefile,p->filename);            
-        p->fd=open(thefile,O_RDONLY);
-        if (p->fd==-1) return ERR_NOT_FOUND;
-	/*
-	else
-                p->flags|=ME_FD;
-	*/
-	
-	
-//	fstat(p->fd, &fdstat);
-#else
 	if ( (ret=mediaopen(p)) < 0)
 		return ret;
-#endif // if 0
         
-	
-#if 0 // below you'll find the human written version of this part of code...
-
-	// shawill ma porc... ma perchè la calloc... e poi neanche la free...!!!
-  // buffer=(unsigned char *)calloc(1,4);   /* I primi tre bytes devono assumemere il valore "ID3" */
-/*
-  if (buffer==NULL) {
-                printf("errore calloc in load_MPA\n");
-                return ERR_ALLOC;
-        }
-*/
-  if ((n=read(p->fd,buffer,3))!=3)
-  {
-    printf("Errore durante la lettura del brano! in load_MPA\n");
-    return ERR_PARSE;
-  }
-  buffer[3]='\0';  
-  if (strcmp(buffer,"ID3")!=0)  
-    lseek(p->fd,0,SEEK_SET);
-  else{
-       lseek(p->fd,3, SEEK_CUR);
-       n=read_dim(p->fd,&tag_dim); 
-       printf("%ld\n",tag_dim);
-       p->description.flags|=MED_ID3;
-       p->description.tag_dim=tag_dim;
-       lseek(p->fd,tag_dim,SEEK_CUR);
-   }
-
-#endif
 	
 	p->buff_size=0;
 	if ( (p->buff_size = read(p->fd, p->buff_data, 4)) != 4) return ERR_PARSE;
@@ -142,10 +94,6 @@ int load_MPA(media_entry *p)
 		// close(p->fd);
 		// p->buff_size = 0;
 	//}
-#if 0
-       else
-                p->flags|=ME_FD;
-#endif
         
 	if (! ((p->buff_data[0]==0xff) && ((p->buff_data[1] & 0xe0)==0xe0))) return ERR_PARSE;
 
@@ -156,7 +104,12 @@ int load_MPA(media_entry *p)
                 case 26: ColIndex = 2; break;  /* Mpeg-1 L3 */
                 case 28: ColIndex = 1; break;  /* Mpeg-1 L2 */
                 case 30: ColIndex = 0; break;  /* Mpeg-1 L1 */
-                default: return ERR_PARSE;
+                default: {
+#if DEBUG	 
+				 fprintf(stderr,"load_MPA return ERR_PARSE at line 164\n");
+#endif
+				 return ERR_PARSE;
+			 }
         }
 
         RowIndex = (p->buff_data[2] & 0xf0) / 16;
@@ -168,7 +121,12 @@ int load_MPA(media_entry *p)
                         case 0x00: p->description.sample_rate=44100; break;
                         case 0x04: p->description.sample_rate=48000; break;
                         case 0x08: p->description.sample_rate=32000; break;
-                        default: return ERR_PARSE;
+                	default: {
+#if DEBUG	 
+				 fprintf(stderr,"load_MPA return ERR_PARSE at line 181\n");
+#endif
+				 return ERR_PARSE;
+			 }
                 }
         } else {                /* Mpeg-2 */
                 // switch (sync3 & 0x0c) {
@@ -176,7 +134,12 @@ int load_MPA(media_entry *p)
                         case 0x00: p->description.sample_rate=22050; break;
                         case 0x04: p->description.sample_rate=24000; break;
                         case 0x08: p->description.sample_rate=16000; break;
-                        default: return ERR_PARSE;
+                	default: {
+#if DEBUG	 
+				 fprintf(stderr,"load_MPA return ERR_PARSE at line 194\n");
+#endif
+				 return ERR_PARSE;
+			 }
                 }
         }
         p->description.flags|=MED_SAMPLE_RATE;          

@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <config.h>
+#include <fenice/debug.h>
 #include <fenice/sdp.h>
 #include <fenice/mediainfo.h>
 #include <fenice/mpeg4es.h>
@@ -88,6 +89,9 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 	sprintf(descr + strlen(descr), "i=%s %s Streaming Server"SDP_EL, PACKAGE, VERSION);
 
 	if (p==NULL) {
+#if DEBUG
+		fprintf(stderr,"ERR_PARSE in get_SDP_descr at line 94\n");
+#endif
 		return ERR_PARSE;
 	}
    	if (p->flags & ME_AGGREGATE) {
@@ -200,15 +204,15 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 				strcat(descr,t);
 			}
 			if (strcmp(p->description.encoding_name,"MP4V-ES")==0) {
-				static_MPEG4_video_es *s=(static_MPEG4_video_es *)p->stat;
+				//static_MPEG4_video_es *s=(static_MPEG4_video_es *)p->stat;
 				strcat(descr, SDP_EL);
-				sprintf(t, "a=fmtp:96 profile-level-id=%d"/*SDP_EL*/, s->profile_id);
+				sprintf(t, "a=fmtp:96");
 				//sprintf(t, "a=fmtp:96 profile-level-id=%d config=%s"/*SDP_EL*/, s->profile_id , s->config);
 				strcat(descr,t);
 			}
 			strcat(descr, SDP_EL);
    		}
-
+	
    		if (p->description.priority == 1) {
 		   	strcat(descr,"a=control:");
 		}
@@ -220,7 +224,7 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 				strcat(descr,"a=control:");
 			}
 		}   		
-		strcat(descr,url); // VF: era commentata, ma a NeMeSI era necessaria
+		strcat(descr,url); 
 		strcat(descr,"!");
    		strcat(descr,p->filename);
    		strcat(descr, SDP_EL);
@@ -231,10 +235,10 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
    			strcat(descr,p->aggregate);
    			strcat(descr, SDP_EL);
    		}   		
-		
+	/*	
 		else
    			strcat(descr, SDP_EL);
-
+	*/
 		
    		if (extended!=0) {
    			// We must describe ALL the media
@@ -257,7 +261,6 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 		   	}
 	   	}
    	} while (p!=NULL);
-   	strcat(descr, SDP_EL);
    	return ERR_NOERROR;
 }
 
