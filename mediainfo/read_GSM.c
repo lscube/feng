@@ -53,10 +53,11 @@ int read_GSM(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *r
 			return res;
                 me->data_chunk = 0;
         }               
+
         frame_skip=(long)lround(*mtime/(double)me->description.pkt_len);
         *mtime = (double)frame_skip * (double)(me->description.pkt_len);
         for (; me->data_chunk<frame_skip; ++me->data_chunk) {
-                if ((read(me->fd,&byte1,1)) != 1) return ERR_EOF;
+                if ((read(me->fd,&byte1,1)) != 1)	return ERR_EOF;
                 switch (byte1 & 0x07) {
                         case 0: N=12; break;
                         case 1: N=13; break;

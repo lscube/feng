@@ -52,7 +52,7 @@ int load_L16(media_entry *p) {
 
         p->description.bitrate = p->description.clock_rate * p->description.bit_per_sample * p->description.audio_channels;
         p->description.flags|=MED_BITRATE;
-
+	
         return ERR_NOERROR;
 }
 
