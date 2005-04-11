@@ -40,7 +40,7 @@
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/mp3.h>
-#include <fenice/prefs.h>
+#include <fenice/debug.h>
 
 int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *recallme, uint8 *marker)
 {
@@ -50,14 +50,8 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *r
         int N=0, res;
 
 	*marker=0;
+	*recallme=0;
         if (!(me->flags & ME_FD)) {
-#if 0 // all moved in mediaopen
-                strcpy(thefile,prefs_get_serv_root());
-                strcat(thefile,me->filename);    
-                me->fd=open(thefile,O_RDONLY);
-                if ( me->fd==-1 ) return ERR_NOT_FOUND;
-                me->flags|=ME_FD;
-#endif
 		if ( (ret=mediaopen(me)) < 0 )
 			return ret;
 		//me->prev_mstart_offset=0;	
@@ -74,8 +68,12 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *r
 		lseek(me->fd,N,SEEK_SET);
 	}		                                                                		
 
-	if ((read(me->fd,&(buff[me->buff_size]),4)) != 4 )
+	if ((read(me->fd,&(buff[me->buff_size]),4)) != 4 ){
+#if DEBUG 
+		fprintf(stderr,"read_MP3: return ERR_EOF at line 81\n");
+#endif	
 		return ERR_EOF;
+	}
 	me->buff_size = 0;
 	if ((buff[0]==0xff) && ((buff[1] & 0xe0)==0xe0)) {
 		N = (int)(me->description.frame_len * (float)me->description.bitrate / (float)me->description.sample_rate / 8);
@@ -101,8 +99,12 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *r
         data[7]=buff[3];
 		
        if (( res = read ( me->fd, &(data[8]) ,N-4 ) ) < (N-4)) {
-                if ((res <= 0)) 
+                if ((res <= 0)){ 
+#if DEBUG 
+		fprintf(stderr,"read_MP3: return ERR_EOF at line 112\n");
+#endif	
 			return ERR_EOF;
+		}
                 else *data_size = res + 8;
         }
 	

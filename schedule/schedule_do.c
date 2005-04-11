@@ -98,7 +98,7 @@ do{
 				if (mnow >= sched[i].rtp_session->current_media->mstart) {
 					
 					if (mnow - sched[i].rtp_session->mprev_tx_time >= sched[i].rtp_session->current_media->description.pkt_len) {
-    				//	if (mnow-sched[i].rtp_session->mtime>=sched[i].rtp_session->current_media->description.pkt_len) {   // old scheduler
+    					/*if (mnow-sched[i].rtp_session->mtime>=sched[i].rtp_session->current_media->description.pkt_len) {    old scheduler*/
 						
 						stream_change(sched[i].rtp_session, change_check(sched[i].rtp_session));
         					
@@ -128,7 +128,7 @@ do{
 							else    					
 								printf("Packet Lost\n");
 #endif
-        						continue;
+        						/*continue;*/
 						}
 						sched[i].rtp_session->mprev_tx_time += sched[i].rtp_session->current_media->description.pkt_len;   				    				
         				}

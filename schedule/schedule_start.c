@@ -60,12 +60,12 @@ int32 schedule_start(int id,play_args *args)
 			sched[id].rtp_session->current_media->mstart=mktime(&(args->playback_time));
 		}
 	
-		sched[id].rtp_session->current_media->mtime = mnow - sched[id].rtp_session->current_media->description.pkt_len;
+		sched[id].rtp_session->current_media->mtime = mnow /*- sched[id].rtp_session->current_media->description.pkt_len*/;
 		sched[id].rtp_session->current_media->mstart_offset = args->start_time*1000;
-		sched[id].rtp_session->current_media->play_offset=args->start_time*1000;/*TODO:Federico. For Random Access*/
+		sched[id].rtp_session->current_media->play_offset=args->start_time*1000;/*TODO:chicco. For Random Access*/
 		//sched[id].rtp_session->current_media->data_chunk = 0;
 	}
-	sched[id].rtp_session->mprev_tx_time = mnow - sched[id].rtp_session->current_media->description.pkt_len;
+	sched[id].rtp_session->mprev_tx_time = mnow /*- sched[id].rtp_session->current_media->description.pkt_len*/;
 	sched[id].rtp_session->pause=0;
 	sched[id].rtp_session->started=1;
 	sched[id].rtp_session->MinimumReached=0;

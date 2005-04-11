@@ -122,6 +122,9 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
                	*data_size+=1;
 	}
 
+	if(me->description.msource==live)
+		s->use_clock_system=1;
+
 	if(s->fragmented){
 		if(s->remained_data_size>num_bytes){
 			memcpy(data_slot,s->more_data + s->data_read,num_bytes);
@@ -234,7 +237,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 	}
 	if(s->ref2->var_time_increment == 0 && s->ref2->modulo_time_base==0 && (int)(*mtime) !=0) 
 		s->use_clock_system=1;
-	if(s->vop_coding_type==2)/*B FRAME*/
+	if(s->vop_coding_type==2 && me->description.msource!=live)/*B FRAME*/
 		s->use_clock_system=0;
 	if(!s->use_clock_system){
 		if(s->vop_coding_type==2)/*B FRAME*/

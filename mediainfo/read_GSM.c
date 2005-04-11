@@ -44,13 +44,15 @@ int read_GSM(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *r
 {       
         unsigned char byte1;
         unsigned int N=0, res;
+	int ret;
         // long frame_skip;
         unsigned int frame_skip;
         
 	*marker=0;
+	*recallme=0;
         if (!(me->flags & ME_FD)) {             
-		if ( (res=mediaopen(me)) < 0 )
-			return res;
+		if ( (ret=mediaopen(me)) < 0 )
+			return ret;
                 me->data_chunk = 0;
         }               
 

@@ -49,6 +49,7 @@ int read_PCM(media_entry *me, uint8 *buffer, uint32 *buf_size, double *mtime, in
         unsigned start_sample, samples;
        
 	*marker=0;
+	*recallme=0;
         if (!(me->flags & ME_FD)) {
                 strcpy(thefile,prefs_get_serv_root());
                 strcat(thefile,me->filename);           
