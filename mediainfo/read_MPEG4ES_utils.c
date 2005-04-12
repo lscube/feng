@@ -195,7 +195,7 @@ int parse_group_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint
 
 int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *data_size,int fin){
 	uint32 off = *data_size*8;
-	uint32 modulo_time_base;
+	uint32 modulo_time_base=0;
 	uint32 len;
 
 	
@@ -218,18 +218,8 @@ int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *da
 	out->vop_coding_type = get_field( data, 2, &off );
 	for( modulo_time_base = 0; off / 8 < len; ++modulo_time_base )
 		if( ! get_field( data, 1, &off ) ) break;
+//	while(  get_field( data, 1, &off )!=0 ) modulo_time_base++;
 
-	if(out->ref1==NULL)
-		out->ref1=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
-	
-	if(out->ref2==NULL)
-		out->ref2=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
-
-	if(out->vop_coding_type != 2){/* not B-FRAME*/
-		out->ref1->modulo_time_base=out->ref2->modulo_time_base;
-		out->ref2->modulo_time_base+=modulo_time_base;/*cumulative number of modulo_time_base*/
-	}
-	
 
 	if( ! get_field( data, 1, &off ) )
 	{
@@ -237,11 +227,31 @@ int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *da
 		return ERR_PARSE;
 	}
 
-	/*TODO: variable frame rate*/
-	out->ref1->var_time_increment=out->ref2->var_time_increment = get_field( data, out->vtir_bitlen, &off );
+	if(out->ref1==NULL)
+		out->ref1=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
 	
-	if(out->vop_coding_type == 0 && modulo_time_base==0 && out->ref2->modulo_time_base!=0 && out->ref2->var_time_increment==0)
-		out->ref2->modulo_time_base++;
+	if(out->ref2==NULL)
+		out->ref2=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
+
+	out->ref1->var_time_increment=out->ref2->var_time_increment = get_field( data, out->vtir_bitlen, &off );
+	if(out->time_resolution==0)
+		out->time_resolution=out->ref2->var_time_increment;
+
+	if(out->vop_coding_type != 2){/* not B-FRAME*/
+		out->ref1->modulo_time_base=out->ref2->modulo_time_base;
+		out->ref2->modulo_time_base+=modulo_time_base;/*cumulative number of modulo_time_base*/
+		out->timestamp=((double)out->ref2->modulo_time_base*out->ref2->vop_time_increment_resolution + (double)out->ref2->var_time_increment)* ( 1000 /(double)out->ref2->vop_time_increment_resolution); 
+		if(out->timestamp < out->last_non_b_timestamp ){
+			out->ref2->modulo_time_base++;
+			//out->timestamp+=out->time_resolution;
+			out->timestamp=out->last_non_b_timestamp+out->time_resolution;
+		}
+		out->last_non_b_timestamp=out->timestamp;
+	}
+	else{
+		out->timestamp=((double)out->ref1->modulo_time_base*out->ref1->vop_time_increment_resolution + (double)out->ref1->var_time_increment) * ( 1000 / (double)out->ref1->vop_time_increment_resolution); 
+	}
+	
 
 #if 0 
 	fprintf(stderr," - VOP_CODING_TYPE: %c modulo_time_base=%d \n","IPBS"[out->vop_coding_type],modulo_time_base);

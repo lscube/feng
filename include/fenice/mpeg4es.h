@@ -97,7 +97,9 @@
 		int vtir_bitlen;
 		mpeg4_time_ref *ref1;
 		mpeg4_time_ref *ref2;
-		uint8 use_clock_system;
+		double last_non_b_timestamp;
+		double timestamp;
+		uint32 time_resolution;
 		uint8 final_byte;
 		int fragmented;
 		uint32 data_read;

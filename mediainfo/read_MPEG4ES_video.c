@@ -122,8 +122,6 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
                	*data_size+=1;
 	}
 
-	if(me->description.msource==live)
-		s->use_clock_system=1;
 
 	if(s->fragmented){
 		if(s->remained_data_size>num_bytes){
@@ -143,12 +141,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 			s->fragmented=0;
 			*recallme=0;
 		}
-		if(!s->use_clock_system){
-			if(s->vop_coding_type==2)/*B FRAME*/
-	 			*mtime=((double)s->ref2->var_time_increment + (double)s->ref1->modulo_time_base *s->ref1->vop_time_increment_resolution) * ( 1000 / (double)s->ref1->vop_time_increment_resolution);
-			else
-	 			*mtime=((double)s->ref2->var_time_increment + (double)s->ref2->modulo_time_base *s->ref2->vop_time_increment_resolution) * ( 1000 / (double)s->ref2->vop_time_increment_resolution);
-		}
+	 	*mtime=s->timestamp;
 		*marker=!(*recallme);
 		FREE_DATA;
 		return ERR_NOERROR;
@@ -235,17 +228,9 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 		*recallme=0;
 		s->fragmented=0;
 	}
-	if(s->ref2->var_time_increment == 0 && s->ref2->modulo_time_base==0 && (int)(*mtime) !=0) 
-		s->use_clock_system=1;
-	if(s->vop_coding_type==2 && me->description.msource!=live)/*B FRAME*/
-		s->use_clock_system=0;
-	if(!s->use_clock_system){
-		if(s->vop_coding_type==2)/*B FRAME*/
- 			*mtime=((double)s->ref2->var_time_increment + (double)s->ref1->modulo_time_base *s->ref1->vop_time_increment_resolution) * ( 1000 / (double)s->ref1->vop_time_increment_resolution);
-		else
- 			*mtime=((double)s->ref2->var_time_increment + (double)s->ref2->modulo_time_base *s->ref2->vop_time_increment_resolution) * ( 1000 / (double)s->ref2->vop_time_increment_resolution);
-	}
 	
+
+	*mtime=s->timestamp;
 	*marker=!(*recallme);
 	FREE_DATA;
 	return ERR_NOERROR;

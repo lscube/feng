@@ -50,7 +50,6 @@ int free_MP4ES (void *stat){
 	s->ref1=NULL;
 	free(s->ref2);
 	s->ref2=NULL;
-	s->use_clock_system=0;
 	s->fragmented=0;
 	s->final_byte=0x00;
 	s->data_read=0;
