@@ -47,9 +47,10 @@ int mediaclose(media_entry *me)
 		me->fd = -1;
 		me->flags&=~ME_FD;
 		me->buff_size=0;
+		me->media_handler->free_media((void*) me->stat);	
 	}
 
-	me->media_handler->free_media((void*) me->stat);	
+	// me->media_handler->free_media((void*) me->stat);	
 	/*do not release the media handler, because load_X is recalled only if .sd change*/
 	/*free(me->media_handler);*/
 
