@@ -98,6 +98,7 @@
 		mpeg4_time_ref *ref1;
 		mpeg4_time_ref *ref2;
 		double last_non_b_timestamp;
+		double last_b_timestamp;
 		double timestamp;
 		uint32 time_resolution;
 		uint8 final_byte;

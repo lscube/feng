@@ -226,16 +226,14 @@ int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *da
 		/* missing marker*/
 		return ERR_PARSE;
 	}
-
 	if(out->ref1==NULL)
 		out->ref1=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
 	
 	if(out->ref2==NULL)
 		out->ref2=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
-
 	out->ref1->var_time_increment=out->ref2->var_time_increment = get_field( data, out->vtir_bitlen, &off );
-	if(out->time_resolution==0)
-		out->time_resolution=out->ref2->var_time_increment;
+	if(out->time_resolution==0 && out->ref2->var_time_increment!=0)
+		out->time_resolution=((double)out->ref2->var_time_increment/(double)out->ref2->vop_time_increment_resolution)*1000;
 
 	if(out->vop_coding_type != 2){/* not B-FRAME*/
 		out->ref1->modulo_time_base=out->ref2->modulo_time_base;
@@ -246,10 +244,16 @@ int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *da
 			//out->timestamp+=out->time_resolution;
 			out->timestamp=out->last_non_b_timestamp+out->time_resolution;
 		}
+		if(out->timestamp > (out->last_non_b_timestamp + 6*out->time_resolution))
+			out->timestamp=out->last_non_b_timestamp+out->time_resolution;
+		/*if(out->timestamp < (out->last_b_timestamp - (2*out->time_resolution)))
+			out->timestamp=out->last_b_timestamp+(2*out->time_resolution);*/ /*i hope -bf 2*/
+
 		out->last_non_b_timestamp=out->timestamp;
 	}
 	else{
 		out->timestamp=((double)out->ref1->modulo_time_base*out->ref1->vop_time_increment_resolution + (double)out->ref1->var_time_increment) * ( 1000 / (double)out->ref1->vop_time_increment_resolution); 
+		out->last_b_timestamp=out->timestamp;
 	}
 	
 

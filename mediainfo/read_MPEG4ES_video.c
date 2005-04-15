@@ -84,6 +84,18 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 
 	if(s->more_data==NULL)
 		s->more_data=(char *)calloc(1,65000);
+
+	if(s->ref1==NULL)
+		s->ref1=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
+	
+	if(s->ref2==NULL){
+		s->ref2=(mpeg4_time_ref *)calloc(1,sizeof(mpeg4_time_ref));
+	}
+	if(s->ref2->vop_time_increment_resolution==0){
+		/*init*/
+		s->ref1->vop_time_increment_resolution=s->ref2->vop_time_increment_resolution=me->description.frame_rate;
+	}
+
 #if 0
 	/*clubbing visual object sequence - visual object - video object - video object layer*/
 	if((me->description).msource==live && !s->fragmented && (int)(*mtime)==0){ 
@@ -141,7 +153,9 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 			s->fragmented=0;
 			*recallme=0;
 		}
-	 	*mtime=s->timestamp;
+
+		if( me->description.msource!=live )
+	 		*mtime=s->timestamp;
 		*marker=!(*recallme);
 		FREE_DATA;
 		return ERR_NOERROR;
@@ -229,9 +243,17 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 		s->fragmented=0;
 	}
 	
+	if(s->time_resolution!=0 && me->description.msource!=live)
+		me->description.pkt_len=s->time_resolution;
+	else if(me->description.msource==live)
+		s->time_resolution=me->description.pkt_len;
 
-	*mtime=s->timestamp;
+	if( me->description.msource!=live )
+		*mtime=s->timestamp;
 	*marker=!(*recallme);
+#if 0
+	fprintf(stderr,"pkt_len=%f\n",me->description.pkt_len);
+#endif
 	FREE_DATA;
 	return ERR_NOERROR;
 }
