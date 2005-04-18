@@ -154,7 +154,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 			*recallme=0;
 		}
 
-		if( me->description.msource!=live )
+		//if( me->description.msource!=live )
 	 		*mtime=s->timestamp;
 		*marker=!(*recallme);
 		FREE_DATA;
@@ -248,7 +248,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 	else if(me->description.msource==live)
 		s->time_resolution=me->description.pkt_len;
 
-	if( me->description.msource!=live )
+	//if( me->description.msource!=live )
 		*mtime=s->timestamp;
 	*marker=!(*recallme);
 #if 0

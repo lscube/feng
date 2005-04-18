@@ -258,7 +258,7 @@ int parse_video_object_plane(static_MPEG4_video_es *out, uint8 *data, uint32 *da
 	
 
 #if 0 
-	fprintf(stderr," - VOP_CODING_TYPE: %c modulo_time_base=%d \n","IPBS"[out->vop_coding_type],modulo_time_base);
+	fprintf(stderr," - VOP_CODING_TYPE: %c modulo_time_base=%d  timestamp=%f\n","IPBS"[out->vop_coding_type],modulo_time_base,out->timestamp);
 	
 	fprintf(stderr,"\t - REF2: var_time_increment = %d - vop_time_increment= %d - vop_time_increment_resolution = %d - modulo_time_base = %d -\n",out->ref2->var_time_increment, out->ref2->vop_time_increment, out->ref2->vop_time_increment_resolution, out->ref2->modulo_time_base);
 
