@@ -52,6 +52,7 @@ int mediaclose(media_entry *me)
 		me->flags&=~ME_FD;
 		me->buff_size=0;
 		me->media_handler->free_media((void*) me->stat);	
+		me->stat=NULL;
 #ifndef CLOSE_PIPE
 	}
 #endif

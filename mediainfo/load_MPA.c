@@ -92,7 +92,7 @@ int load_MPA(media_entry *p)
 	//if ( !S_ISFIFO(fdstat.st_mode) ) {
 		mediaclose(p);
 		// close(p->fd);
-		// p->buff_size = 0;
+		p->buff_size = 4;
 	//}
         
 	if (! ((p->buff_data[0]==0xff) && ((p->buff_data[1] & 0xe0)==0xe0))) return ERR_PARSE;
