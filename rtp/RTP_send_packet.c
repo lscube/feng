@@ -58,7 +58,7 @@ int RTP_send_packet(RTP_session *session)
 	double nextts;
 	OMSSlot *slot;
 
-	if(!(slot = OMSbuff_read(session->cons))){
+	if(!(slot = OMSbuff_getreader(session->cons))){
 		//This operation runs only if producer writes the slot
 		//session->current_media->mtime += session->current_media->description.delta_mtime; //emma  
 		//session->current_media->mtime+=session->current_media->description.pkt_len;     // old scheduler
@@ -69,7 +69,7 @@ int RTP_send_packet(RTP_session *session)
 		}
 		session->current_media->mtime += session->current_media->description.delta_mtime; //emma  
 		session->cons->frames++;
-		slot=OMSbuff_read(session->cons);
+		slot=OMSbuff_getreader(session->cons);
 	} else /*This runs if the consumer reads slot written in another RTP session*/
 		s_time=slot->timestamp;
 		
@@ -111,11 +111,12 @@ int RTP_send_packet(RTP_session *session)
 #if !HAVE_ALLOCA
 		free(packet);
 #endif
+		OMSbuff_gotreader(session->cons);
 		if ( ((nextts=OMSbuff_nextts(session->cons)) == -1) || (nextts != s_time) ) {
 			slot = NULL;
 			session->cons->frames--;
 		} else
-			slot = OMSbuff_read(session->cons);
+			slot = OMSbuff_getreader(session->cons);
 
 	}
 	

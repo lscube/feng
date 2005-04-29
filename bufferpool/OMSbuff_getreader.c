@@ -31,18 +31,27 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
+
 #include <stdio.h>
+
 #include <fenice/bufferpool.h>
 
-void OMSbuff_unref(OMSConsumer *cons)
+/* ! Return the next slot in the buffer and do NOT move current read position*/
+OMSSlot *OMSbuff_getreader(OMSConsumer *cons)
 {
-	if(cons) {
-		if(cons->buffer->refs > 0) {
-			--(cons->buffer->refs);
-			//Now consumer has to read all unread slots
-			while(!OMSbuff_gotreader(cons));
-		}
-			fprintf(stderr, "Buffer ref (%d)\n", cons->buffer->refs);
-			free(cons);
-	}
+	OMSSlot *last_read = cons->last_read_pos;
+	// OMSSlot *next = cons->read_pos->next;
+	OMSSlot *next = cons->read_pos;
+
+	if ( !next->refs || (next->slot_seq < cons->last_seq) ) {
+		// added some slots?
+		if ( last_read && last_read->next->refs && (last_read->next->slot_seq > cons->last_seq) )
+			next = last_read->next;
+		else
+			return NULL;
+	} else if (last_read && ( last_read->next->slot_seq < next->slot_seq ) )
+			next = last_read->next;
+
+	return next;
 }
+

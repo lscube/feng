@@ -12,7 +12,9 @@ libbufferpool_la_SOURCES = 	\
 				OMSbuff_unref.c \
 				OMSbuff_write.c \
 				OMSbuff_isempty.c \
-				OMSbuff_nextts.c 
+				OMSbuff_nextts.c \
+				OMSbuff_getreader.c \
+				OMSbuff_gotreader.c
 
 libbufferpool_la_LDFLAGS = -static
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)

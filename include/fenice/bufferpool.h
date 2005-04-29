@@ -39,6 +39,8 @@
 // #include <pthread.h>
 #include <stdlib.h>
 
+#define omsbuff_min(x,y) ((x) < (y) ? (x) : (y))
+
 #define OMSSLOT_DATASIZE 65000
 #define OMSSLOT_COMMON	uint16 refs; \
 			uint64 slot_seq; /* monotone identifier of slot (NOT RTP seq) */ \
@@ -90,11 +92,13 @@ typedef struct _OMSproducer {
 #endif
 
 /*! API definitions*/
-OMSBuffer *OMSbuff_new(uint32 buffer_size);
+OMSBuffer *OMSbuff_new(uint32);
 OMSConsumer *OMSbuff_ref(OMSBuffer *);
 void OMSbuff_unref(OMSConsumer *);
-OMSSlot *OMSbuff_read(OMSConsumer *);
-int32 OMSbuff_write(OMSBuffer *, uint32 timestamp, uint8 marker, uint8 *data, uint32 data_size);
+int32 OMSbuff_read(OMSConsumer *, uint32 *, uint8 *, uint8 *, uint32 *);
+OMSSlot *OMSbuff_getreader(OMSConsumer *);
+int32 OMSbuff_gotreader(OMSConsumer *);
+int32 OMSbuff_write(OMSBuffer *, uint32, uint8, uint8 *, uint32);
 OMSSlot *OMSbuff_getslot(OMSBuffer *);
 OMSSlot *OMSbuff_slotadd(OMSBuffer *, OMSSlot *);
 void OMSbuff_free(OMSBuffer *);
