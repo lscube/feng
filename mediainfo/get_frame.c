@@ -50,7 +50,7 @@ int get_frame(media_entry *me, double *mtime)
 		res=ERR_EOF;
 		slot=OMSbuff_getslot(me->pkt_buffer);
 		res=me->media_handler->read_media(me,slot->data,&slot->data_size,mtime,&recallme,&marker);
-		if (res==ERR_NOERROR) { // commit of buffer slot.
+		if (res==ERR_NOERROR && slot->data_size!=0) { // commit of buffer slot.
 			if (OMSbuff_write(me->pkt_buffer, *mtime, marker, slot->data, slot->data_size))
 				fprintf(stderr, "Error in bufferpool writing\n");
 		}

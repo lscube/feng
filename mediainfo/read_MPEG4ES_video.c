@@ -226,6 +226,19 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 			s->final_byte=data[*data_size - 1];
 	}
 
+	if( me->description.msource==live && (int)(*mtime)==0 && s->ref2->modulo_time_base!=1){/*if live, skip until new keyframe with modulo_time_base=1*/
+		FREE_DATA;
+		*data_size=0;
+		s->fragmented=0;
+		*recallme=1;
+		return ERR_NOERROR;
+	}
+	if( me->description.msource==live && (int)(*mtime)==0){
+		s->ref2->modulo_time_base=0;
+		s->ref1->modulo_time_base=0;
+		s->timestamp=0;
+	}
+
 	if(s->final_byte!=VOS_END_CODE) *data_size-=4;
 
 	if(*data_size>num_bytes){
