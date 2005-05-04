@@ -80,10 +80,8 @@ void prefs_init(char *fileconf)
 		else {
 			prefs_use_default(0);
 		}
-		if (prefs.serv_root[strlen(prefs.serv_root)-1] != '/') {
-			fprintf(stderr, "adding trailing slash\n");
+		if (prefs.serv_root[strlen(prefs.serv_root)-1] != '/')
 			strcat(prefs.serv_root, "/");
-		}
 		// PORT
 		fseek(f,0,SEEK_SET);
 		do {
