@@ -88,12 +88,9 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 	// sprintf(descr, "%si=%s %s Streaming Server"SDP_EL, descr, PACKAGE, VERSION);
 	sprintf(descr + strlen(descr), "i=%s %s Streaming Server"SDP_EL, PACKAGE, VERSION);
 
-	if (p==NULL) {
-#if DEBUG
-		fprintf(stderr,"ERR_PARSE in get_SDP_descr at line 94\n");
-#endif
+	if (p==NULL) 
 		return ERR_PARSE;
-	}
+	
    	if (p->flags & ME_AGGREGATE) {
    		sprintf(descr + strlen(descr), "a=control:%s!%s"SDP_EL, url, p->aggregate);
    	}

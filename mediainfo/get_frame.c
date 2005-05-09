@@ -32,11 +32,10 @@
  *  
  * */
 
-#include <stdio.h>
 #include <fenice/utils.h>
-#include <fenice/debug.h>
 #include <fenice/mediainfo.h>
 #include <fenice/types.h>
+#include <fenice/fnc_log.h>
 
 int get_frame(media_entry *me, double *mtime)
 {
@@ -52,7 +51,7 @@ int get_frame(media_entry *me, double *mtime)
 		res=me->media_handler->read_media(me,slot->data,&slot->data_size,mtime,&recallme,&marker);
 		if (res==ERR_NOERROR && slot->data_size!=0) { // commit of buffer slot.
 			if (OMSbuff_write(me->pkt_buffer, *mtime, marker, slot->data, slot->data_size))
-				fprintf(stderr, "Error in bufferpool writing\n");
+				fnc_log(FNC_LOG_ERR, "Error in bufferpool writing\n");
 		}
 		// slot->timestamp=*mtime;
 #if 0
@@ -61,9 +60,7 @@ int get_frame(media_entry *me, double *mtime)
 #endif
 	} while(recallme && res==ERR_NOERROR);
 
-#ifdef VERBOSE  
-	printf("TYPE: %s *mtime=%f\n",me->description.encoding_name,*mtime);
-#endif
+	fnc_log(FNC_LOG_VERBOSE,"TYPE: %s *mtime=%f\n",me->description.encoding_name,*mtime);
 
 	return res;
 }

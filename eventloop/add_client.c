@@ -38,6 +38,7 @@
 #include <fenice/eventloop.h>
 #include <fenice/socket.h>
 #include <fenice/rtsp.h>
+#include <fenice/fnc_log.h>
 
 void add_client(RTSP_buffer **rtsp_list,tsocket fd)
 {
@@ -46,7 +47,7 @@ void add_client(RTSP_buffer **rtsp_list,tsocket fd)
 	if (*rtsp_list==NULL) {
 		*rtsp_list=(RTSP_buffer*)calloc(1,sizeof(RTSP_buffer));
 		if (*rtsp_list==NULL) {
-			printf("Fatal: calloc failed\n");
+			fnc_log(FNC_LOG_ERR_FATAL,"Fatal: calloc failed\n");
 			return;
 		}
 		p=*rtsp_list;
@@ -58,13 +59,13 @@ void add_client(RTSP_buffer **rtsp_list,tsocket fd)
 		if (pp!=NULL) {
 			pp->next=(RTSP_buffer *)calloc(1,sizeof(RTSP_buffer));
 			if (pp->next==NULL) {
-				printf("Fatal: calloc failed\n");
+				fnc_log(FNC_LOG_ERR_FATAL,"Fatal: calloc failed\n");
 				return;
 			}
 			p=pp->next;
 		}
 	}
 	RTSP_initserver(p,fd);
-	printf("Incoming RTSP connection accepted on socket: %d\n",p->fd);
+	fnc_log(FNC_LOG_INFO,"Incoming RTSP connection accepted on socket: %d\n",p->fd);
 }
 

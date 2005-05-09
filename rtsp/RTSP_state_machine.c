@@ -37,6 +37,7 @@
 
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 /* macchina a stati dell'rtsp */
 void RTSP_state_machine(RTSP_buffer * rtsp, int method)
@@ -52,7 +53,7 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 
 	if ((s = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
 		if (sscanf(s, "%254s %ld", trash, &session_id) != 2) {
-			printf("Invalid Session number in Session header\n");
+			fnc_log(FNC_LOG_INFO,"Invalid Session number in Session header\n");
 			send_reply(454, 0, rtsp);	/* Session Not Found */
 			return;
 		}
@@ -129,7 +130,7 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 			switch (method) {
 			case RTSP_ID_PLAY:
 				// Feature not supported
-				printf("UNSUPPORTED: Play while playing.\n");
+				fnc_log(FNC_LOG_INFO,"UNSUPPORTED: Play while playing.\n");
 				send_reply(551, 0, rtsp);	/* Option not supported */
 				break;
 			case RTSP_ID_PAUSE:
@@ -154,7 +155,7 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 			break;
 		}		/* PLAY state */
 	default:{		/* invalid/unexpected current state. */
-			printf("State error: unknown state=%d, method code=%d\n", p->cur_state, method);
+			fnc_log(FNC_LOG_ERR,"State error: unknown state=%d, method code=%d\n", p->cur_state, method);
 		}
 		break;
 	}			/* end of current state switch */

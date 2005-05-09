@@ -34,11 +34,12 @@
 
 #include <stdio.h>
 #include <string.h>
-
 #include <config.h>
+
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 #include <fenice/multicast.h>
+#include <fenice/fnc_log.h>
 
 int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, SD_descr *descr, RTP_session * sp2)
 {
@@ -91,8 +92,6 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, SD_descr *descr
 	
 	bwrite(r, (unsigned short) strlen(r), rtsp);
 
-#ifdef VERBOSE
-	printf("SETUP response sent.\n");
-#endif
+	fnc_log(FNC_LOG_VERBOSE,"SETUP response sent.\n");
 	return ERR_NOERROR;
 }

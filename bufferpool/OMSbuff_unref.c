@@ -31,8 +31,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
-#include <stdio.h>
 #include <fenice/bufferpool.h>
+#include <fenice/fnc_log.h>
 
 void OMSbuff_unref(OMSConsumer *cons)
 {
@@ -42,7 +42,7 @@ void OMSbuff_unref(OMSConsumer *cons)
 			//Now consumer has to read all unread slots
 			while(!OMSbuff_gotreader(cons));
 		}
-			fprintf(stderr, "Buffer ref (%d)\n", cons->buffer->refs);
+			fnc_log(FNC_LOG_DEBUG, "Buffer ref (%d)\n", cons->buffer->refs);
 			free(cons);
 	}
 }

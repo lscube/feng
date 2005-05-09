@@ -34,7 +34,6 @@
 
 #include <string.h> /*strcmp*/
 #include <stdlib.h> /*calloc*/
-#include <stdio.h> /*fprintf*/ 
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/mpeg4es.h>
@@ -45,6 +44,7 @@
 #include <fenice/mpeg_system.h>
 #include <fenice/mpeg_ts.h>
 #include <fenice/mpeg.h>
+#include <fenice/fnc_log.h>
 
 /*
  * \fn register_media
@@ -95,7 +95,7 @@ int register_media(media_entry *me){
 		me->media_handler->read_media=read_MPEG_ts;		
 	}
 	else{
-		fprintf(stderr,"Encoding type not supported\n");
+		fnc_log(FNC_LOG_ERR,"Encoding type not supported\n");
 		return ERR_UNSUPPORTED_PT;
 	}
 	return ERR_NOERROR;

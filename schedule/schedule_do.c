@@ -42,6 +42,7 @@
 #include <fenice/rtcp.h>
 #include <fenice/utils.h>
 #include <fenice/debug.h>
+#include <fenice/fnc_log.h>
 
 extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 extern int stop_schedule;
@@ -113,20 +114,20 @@ do{
 						if (res!=ERR_NOERROR) {
     							if (res==ERR_EOF /*&& (sched[i].rtp_session)->current_media->description.msource!=live*/) {
 								if((sched[i].rtp_session)->current_media->description.msource==live){
-									fprintf(stderr,"Pipe empty!\n");
+									fnc_log(FNC_LOG_WARN,"Pipe empty!\n");
 								}
 								else{
-    									printf("Stream Finished\n");
+    									fnc_log(FNC_LOG_INFO,"Stream Finished\n");
     									schedule_stop(i);
 								}
     							}
 							else if(res==ERR_ALLOC){
-								fprintf(stderr,"Upss, FATAL ERROR ALLOC!!\n");
+								fnc_log(FNC_LOG_ERR_FATAL,"Upss, FATAL ERROR ALLOC!!\n");
     								schedule_stop(i);
 							}
 #if DEBUG		
 							else    					
-								printf("Packet Lost\n");
+								fnc_log(FNC_LOG_WARN,"Packet Lost\n");
 #endif
         						/*continue;*/
 						}
@@ -143,7 +144,7 @@ do{
 				// fprintf(stderr, "rtp session not valid, but still present...\n");
 				RTP_session_destroy(sched[i].rtp_session);
 				sched[i].rtp_session = NULL;
-				fprintf(stderr, "rtp session closed\n");
+				fnc_log(FNC_LOG_INFO, "rtp session closed\n");
 			}
 			sched[i].semaph=green;
 		}

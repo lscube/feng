@@ -38,6 +38,7 @@
 #include <config.h>
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp_session)
 {
@@ -76,8 +77,6 @@ int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp_sessio
 	
 	bwrite(r, (unsigned short) strlen(r), rtsp);
 
-#ifdef VERBOSE
-	printf("PLAY response sent.\n");
-#endif
+	fnc_log(FNC_LOG_VERBOSE,"PLAY response sent.\n");
 	return ERR_NOERROR;
 }

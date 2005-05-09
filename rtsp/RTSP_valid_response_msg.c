@@ -37,6 +37,7 @@
 
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rtsp)
 // This routine is from OMS.
@@ -67,8 +68,8 @@ int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rts
 
 	/* check if the sequence number is valid in this response message. */
 	if (rtsp->rtsp_cseq != seq + 1) {
-		printf("Invalid sequence number returned in response.\n");
-		return (ERR_GENERIC);
+		fnc_log(FNC_LOG_ERR,"Invalid sequence number returned in response.\n");
+		return ERR_GENERIC;
 	}
 
 	*status = stat;

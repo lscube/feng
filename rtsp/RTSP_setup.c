@@ -47,7 +47,7 @@
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include <fenice/multicast.h>
-#include <fenice/debug.h>
+#include <fenice/fnc_log.h>
 
 /*
  	****************************************************************
@@ -79,7 +79,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	SD_descr *matching_descr;
 
 
-	fprintf(stderr, "SETUP request received.\n");
+	fnc_log(FNC_LOG_INFO, "SETUP request received.\n");
 
 	memset(&req, 0, sizeof(req));
 	// Parse the input message
@@ -87,12 +87,12 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 
 	if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-		printf("SETUP request didn't specify a CSeq header.\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request didn't specify a CSeq header.\n");
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_NOERROR;
 	} else {
 		if (sscanf(p, "%254s %d", trash, &(rtsp->rtsp_cseq)) != 2) {
-			printf("SETUP request didn't specify a CSeq number.\n");
+			fnc_log(FNC_LOG_ERR,"SETUP request didn't specify a CSeq number.\n");
 			send_reply(400, 0, rtsp);	/* Bad Request */
 			return ERR_NOERROR;
 		}
@@ -102,24 +102,21 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		sscanf(p + 1, "%lu", &ssrc);
 	} else {*/
 		ssrc = random32(0);
-#if DEBUG
-		fprintf(stderr, "ssrc=%lu\n", ssrc);
-#endif
 	//}
 	
 	if ((p = strstr(rtsp->in_buffer, "client_port")) == NULL && strstr(rtsp->in_buffer, "multicast") == NULL) {
-		printf("SETUP request didn't specify client ports\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request didn't specify client ports\n");
 		send_reply(406, "Require: Transport settings of rtp/udp;port=nnnn.\n", rtsp);	/* Not Acceptable */
 		return ERR_NOERROR;
 	}
 	// Start parsing the Transport header
 	if ((p = strstr(rtsp->in_buffer, HDR_TRANSPORT)) == NULL) {
-		printf("SETUP request didn't specify Transport header.\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request didn't specify Transport header.\n");
 		send_reply(406, "Require: Transport settings of rtp/udp;port=nnnn.\n", rtsp);	/* Not Acceptable */
 		return ERR_NOERROR;
 	}
 	if (sscanf(p, "%10s%255s", trash, line) != 2) {
-		printf("SETUP request malformed\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request malformed\n");
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_NOERROR;
 	}
@@ -134,53 +131,51 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 	/* Get the URL */
 	if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
-		printf("SETUP request is missing object (path/file) parameter.\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request is missing object (path/file) parameter.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
 	/* Validate the URL */
 	if (!parse_url(url, server, &port, object)) {	//object é il nome del file richiesto
-		printf("Mangled URL in SETUP.\n");
+		fnc_log(FNC_LOG_ERR,"Mangled URL in SETUP.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
 	if (strcmp(server, prefs_get_hostname()) != 0) {	/* Currently this feature is disabled. */
 		/* wrong server name */
-		//      printf("SETUP request specified an unknown server name.\n");
+		//      fnc_log(FNC_LOG_ERR,"SETUP request specified an unknown server name.\n");
 		//      send_reply(404, 0 , rtsp); /* Not Found */
 		//      return ERR_NOERROR;
 	}
 	if (strstr(object, "../")) {
 		/* disallow relative paths outside of current directory. */
-		printf
-		    ("SETUP request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
 	if (strstr(object, "./")) {
 		/* Disallow the ./ */
-		printf
-		    ("SETUP request specified an object parameter with a path that is not allowed. './' not permitted in path.\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request specified an object parameter with a path that is not allowed. './' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
 	p = strrchr(object, '.');
 	valid_url = 0;
 	if (p == NULL) {	//se file senza estensione
-		printf("SETUP request specified an object (path/file) parameter that is not valid.\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request specified an object (path/file) parameter that is not valid.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	} else {
 		valid_url = is_supported_url(p);
 	}
 	if (!valid_url) {	//se l'estensione non é valida
-		printf("SETUP request specified an unsupported media type.\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request specified an unsupported media type.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	}
 	q = strchr(object, '!');
 	if (q == NULL) {	//se non c'é "!" non é stato specificato il file che si vuole in streaming (mp3,mpg...)
-		printf("SETUP request specified an object that can't be understood.\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request specified an object that can't be understood.\n");
 		send_reply(500, 0, rtsp);	/* Internal server error */
 		return ERR_NOERROR;
 	} else {
@@ -209,25 +204,22 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		// END FEDERICO
 	}
 // ------------ END PATCH
-#if DEBUG
-	fprintf(stderr,"object: %s\n",object);
-#endif
 
 	if (enum_media(object, &matching_descr) != ERR_NOERROR) {
-		printf("SETUP request specified an object file which can be damaged.\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request specified an object file which can be damaged.\n");
 		send_reply(500, 0, rtsp);	/* Internal server error */
 		return ERR_NOERROR;
 	}
 	list=matching_descr->me_list;
 
 	if (get_media_entry(&req, list, &matching_me) == ERR_NOT_FOUND) {
-		printf("SETUP request specified an object which can't be found.\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request specified an object which can't be found.\n");
 		send_reply(404, 0, rtsp);	/* Not found */
 		return ERR_NOERROR;
 	}
 	
 	if((matching_descr->flags & SD_FL_MULTICAST) && strstr(rtsp->in_buffer, "multicast") == NULL ){
-		printf("SETUP multicast request didn't specify multicast word\n");
+		fnc_log(FNC_LOG_ERR,"SETUP multicast request didn't specify multicast word\n");
 		send_reply(461, "Require: Transport settings of multicast.\n", rtsp);	/* Not Acceptable */
 		return ERR_NOERROR;
 	}
@@ -235,7 +227,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	// If there's a Session header we have an aggregate control
 	if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
 		if (sscanf(p, "%254s %d", trash, &SessionID) != 2) {
-			printf("SETUP request didn't specify a valid Session number in Session header\n");
+			fnc_log(FNC_LOG_ERR,"SETUP request didn't specify a valid Session number in Session header\n");
 			send_reply(454, 0, rtsp);	/* Session Not Found */
 			return ERR_NOERROR;
 		}
@@ -255,7 +247,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 	if(!(matching_descr->flags & SD_FL_MULTICAST_PORT))
 		if (RTP_get_port_pair(&ser_ports) != ERR_NOERROR) {
-			printf("SETUP request can't be served. Maximum connection number reached.\n");
+			fnc_log(FNC_LOG_ERR,"SETUP request can't be served. Maximum connection number reached.\n");
 			send_reply(500, 0, rtsp);	/* Internal server error */
 			return ERR_GENERIC;
 		}
@@ -326,7 +318,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	}
 	
 	if (getpeername(rtsp->fd, &rtsp_peer, &namelen) != 0) {
-		printf("SETUP request can't be served. Getpeername() failed.\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request can't be served. Getpeername() failed.\n");
 		send_reply(415, 0, rtsp);	// Internal server error
 		return ERR_GENERIC;
 	}
@@ -359,7 +351,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 				matching_descr->flags |= SD_FL_MULTICAST_PORT;
 			
 			matching_me->rtp_multicast_port = ser_ports.RTP;
-			fprintf(stderr,"\nSet up socket for multicast ok\n");
+			fnc_log(FNC_LOG_DEBUG,"\nSet up socket for multicast ok\n");
 		}
 	} else {/*unicast*/
 		strcpy(address, get_address());

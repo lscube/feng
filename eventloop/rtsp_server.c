@@ -36,9 +36,9 @@
 #include <string.h>
 
 #include <fenice/eventloop.h>
-#include <fenice/debug.h>
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
+#include <fenice/fnc_log.h>
 
 int rtsp_server(RTSP_buffer *rtsp)
 {	
@@ -65,7 +65,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 		FD_SET(rtsp->fd,&wset);  // idem for wset
 	}
 	if (select(MAX_FDS,&rset,&wset,0,&t)<0) {
-		fprintf(stderr,"select error\n");			
+		fnc_log(FNC_LOG_ERR,"select error\n");			
 		send_reply(500, NULL, rtsp);
 		return ERR_GENERIC; //errore interno al server
 	}
@@ -79,26 +79,26 @@ int rtsp_server(RTSP_buffer *rtsp)
 		}
 		
 		if (n<0) {
-			fprintf(stderr,"read() error in rtsp_server()\n");			
+			fnc_log(FNC_LOG_ERR,"read() error in rtsp_server()\n");			
 			send_reply(500, NULL, rtsp);
 			return ERR_GENERIC;//errore interno al server    			
 		}			
 		
 		if (rtsp->in_size+n>RTSP_BUFFERSIZE) {
-			fprintf(stderr,"RTSP buffer overflow (input RTSP message is most likely invalid).\n");
+			fnc_log(FNC_LOG_ERR,"RTSP buffer overflow (input RTSP message is most likely invalid).\n");
 			send_reply(500, NULL, rtsp);
 			return ERR_GENERIC;//errore da comunicare
 		}
 		
-		#ifdef VERBOSE
-		printf("INPUT_BUFFER was:\n");				
+		fnc_log(FNC_LOG_VERBOSE,"INPUT_BUFFER was:\n");				
+#ifdef VERBOSE
 		dump_buffer(buffer);
-		#endif
+#endif
 		
 		memcpy(&(rtsp->in_buffer[rtsp->in_size]),buffer,n);
 		rtsp->in_size+=n;
 		if ((res=RTSP_handler(rtsp))==ERR_GENERIC) {				
-			printf("Invalid input message.\n");
+			fnc_log(FNC_LOG_ERR,"Invalid input message.\n");
 			return ERR_NOERROR;
 		}
 	}	
@@ -107,15 +107,15 @@ int rtsp_server(RTSP_buffer *rtsp)
 		if (rtsp->out_size>0) {
 			n=tcp_write(rtsp->fd,rtsp->out_buffer,rtsp->out_size);
 			if (n<0) {
-				fprintf(stderr,"tcp_write() error in rtsp_server()\n");        			
+				fnc_log(FNC_LOG_ERR,"tcp_write() error in rtsp_server()\n");        			
 				send_reply(500, NULL, rtsp);
        				return ERR_GENERIC; //errore interno al server
 			}				
 			rtsp->out_size-=n;
-			#ifdef VERBOSE
-			printf("OUTPUT_BUFFER was:\n");
+			fnc_log(FNC_LOG_VERBOSE,"OUTPUT_BUFFER was:\n");
+#ifdef VERBOSE
 			dump_buffer(rtsp->out_buffer);				
-			#endif
+#endif
 		}
 	}
 	#ifdef POLLED
@@ -143,7 +143,7 @@ int rtsp_server(RTSP_buffer *rtsp)
     				FD_SET(p->rtcp_fd_out,&wset);
 	    		}
     			if (select(MAX_FDS,&rset,&wset,0,&t)<0) {		
-    				fprintf(stderr,"select error\n");
+    				fnc_log(FNC_LOG_ERR,"select error\n");
 				send_reply(500, NULL, rtsp);
 	    			return ERR_GENERIC; //errore interno al server
     			}
@@ -151,28 +151,20 @@ int rtsp_server(RTSP_buffer *rtsp)
 	    			// There are RTCP packets to read in
     				int peer_len=sizeof(p->rtcp_in_peer);
         			if ((p->rtcp_insize=recvfrom(p->rtcp_fd_in,p->rtcp_inbuffer,sizeof(p->rtcp_inbuffer),0,&(p->rtcp_in_peer),&peer_len))<0) {            	
-        				#ifdef VERBOSE
-        				fprintf(stderr,"Input RTCP packet Lost\n");
-	        			#endif
+        				fnc_log(FNC_LOG_VERBOSE,"Input RTCP packet Lost\n");
         			}
         			else {
             				RTCP_recv_packet(p);
 	            		}
-        	    		#ifdef VERBOSE
-        			printf("IN RTCP\n");
-        			#endif
+        			fnc_log(FNC_LOG_VERBOSE,"IN RTCP\n");
 			}
 	    		if (FD_ISSET(p->rtcp_fd_out,&wset)) {
     				// There are RTCP packets to send
         			if (sendto(p->rtcp_fd_out,p->rtcp_outbuffer,p->rtcp_outsize,0,&(p->rtcp_out_peer),sizeof(p->rtcp_out_peer))<0) {
-        				#ifdef VERBOSE
-        				fprintf(stderr,"RTCP Packet Lost\n");
-	        			#endif
+        				fnc_log(FNC_LOG_VERBOSE,"RTCP Packet Lost\n");
         			}    		
         			p->rtcp_outsize=0;
-        			#ifdef VERBOSE
-	        		printf("OUT RTCP\n");         	
-        			#endif
+	        		fnc_log(FNC_LOG_VERBOSE,"OUT RTCP\n");         	
 			}
 		}	
 	}

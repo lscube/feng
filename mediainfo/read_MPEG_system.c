@@ -68,8 +68,6 @@ int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mti
 	count=count1=0;
 	flag = 1;
 
-        printf("--------------------\n");
-        printf("Data Total: %d\n", s->data_total);
 
 	lseek(me->fd,s->data_total,SEEK_SET);                             	/* At this point it should be right to find the nearest lower frame */
  									/* computing it from the value of mtime */
@@ -88,12 +86,10 @@ int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mti
 	*data_size+=1;
 
   	if (s->final_byte == 0xba) {
-	   	printf("Final Byte: %x\n", s->final_byte);
 		read_pack_head(data,data_size,me->fd,&s->final_byte,&s->scr);
 	}
 
 	if (s->final_byte >= 0xbc) {
-		printf("Final Byte: %x\n", s->final_byte);
 		if (s->final_byte == 0xc0) {
 			audio_flag = 1;
 		}
@@ -179,7 +175,6 @@ int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mti
 
 			me->description.delta_mtime =  (s->next_pts.pts - s->pts.pts)*1000/(float)clock;
 			*mtime=(s->scr.scr*1000)/(double)me->description.clock_rate;	/* adjust SRC value to be passed as argument to the msec2tick and do not */
-			printf("Dimensione pacchetto: %d\n", *data_size);       	/* change value */
 		}
 		*marker=!(*recallme);
 		return ERR_NOERROR;
@@ -210,23 +205,6 @@ int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mti
 			count1=read_packet_head(data,data_size,me->fd,&s->final_byte,&time_set,&s->next_pts,&s->next_dts,&dts_present,&s->pts_audio);
 			count += count1;
 			*data_size-=count;
-			if (!audio_flag){
-				printf("Current PTS: %d\n", s->pts.pts);
-			} else {
-				printf("Current PTS: %d\n", s->pts_audio.pts);
-			}
-			if (!s->new_dts) {
-				printf("Current DTS: not present\n");
-			} else {
-				printf("Current DTS: %d\n", s->dts.pts);
-			}
-			printf("mtime: %f\n", *mtime);
-			printf("Next PTS: %d\n", s->next_pts.pts);
-			if (!dts_present) {
-				printf("Next DTS: not present\n");
-			} else {
-				printf("Next DTS: %d\n", s->next_dts.pts);
-			}
 
 			if ( (s->pts.pts == s->next_pts.pts) || (s->final_byte == 0xbe) || (s->final_byte == 0xc0) || (s->offset==0))	{
 				*recallme=1;
@@ -249,9 +227,6 @@ int read_MPEG_system(media_entry *me, uint8 *data,uint32 *data_size, double *mti
 
                         me->description.delta_mtime =  (s->next_pts.pts - s->pts.pts)*1000/(float)clock;
                         *mtime=(s->scr.scr*1000)/(double)me->description.clock_rate;	/* adjust SRC value to be passed as argument to the msec2tick and do not */
-			printf("Recallme: %d\n", *recallme);				/* change value */
-			printf("Dimensione pacchetto: %d\n", *data_size);
-			printf("Packet length: %f\n", (me->description).pkt_len);
 		}
 		*marker=!(*recallme);
 		return ERR_NOERROR;

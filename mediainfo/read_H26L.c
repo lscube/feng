@@ -85,9 +85,6 @@ int read_H26L (media_entry *me, uint8 *data, uint32 *data_size, double *mtime, i
         read(me->fd,&h26l_header,12);
         s->next_timestamp = h26l_header[4] | (h26l_header[5] <<8) | (h26l_header[6] <<16) | (h26l_header[7] <<24);
 
-        printf("Current timestamp: %d\n", s->current_timestamp);
-        printf("Next timestamp: %d\n", s->next_timestamp);
-
         if (s->current_timestamp == s->next_timestamp)        {               /* If the time-stamps are the same then next-packet belongs to the same */
                 *recallme = 1;                                          /* frame and the scheduler hasn't to wait to send it */
         } else  {

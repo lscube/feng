@@ -36,7 +36,6 @@
 #include <string.h>
 #include <fcntl.h>
 
-#include <fenice/debug.h>
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
@@ -264,9 +263,7 @@ int read_MPEG4ES_video (media_entry *me, uint8 *data_slot, uint32 *data_size, do
 	//if( me->description.msource!=live )
 		*mtime=s->timestamp;
 	*marker=!(*recallme);
-#if 0
-	fprintf(stderr,"pkt_len=%f\n",me->description.pkt_len);
-#endif
+
 	FREE_DATA;
 	return ERR_NOERROR;
 }

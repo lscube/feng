@@ -54,8 +54,5 @@ int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
 	strcat(r, RTSP_EL RTSP_EL);
 	bwrite(r, (unsigned short) strlen(r), rtsp);
 
-#ifdef VERBOSE
-	printf("PAUSE response sent.\n");
-#endif
 	return ERR_NOERROR;
 }

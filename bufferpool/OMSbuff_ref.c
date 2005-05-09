@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #include <fenice/bufferpool.h>
+#include <fenice/fnc_log.h>
 
 /* ! Add and return a new consumer reference to the buffer,
  	return NULL if an error occurs*/
@@ -54,7 +55,7 @@ OMSConsumer *OMSbuff_ref(OMSBuffer *buffer)
 	cons->frames=0;
 	// pthread_mutex_init(&(cons->mutex),NULL);	
 	buffer->refs++;	
-	fprintf(stderr, "Buffer ref (%d)\n", buffer->refs);
+	fnc_log(FNC_LOG_DEBUG, "Buffer ref (%d)\n", buffer->refs);
 
 	return cons;
 }

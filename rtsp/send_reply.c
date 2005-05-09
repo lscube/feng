@@ -37,6 +37,8 @@
 #include <stdlib.h>
 
 #include <fenice/rtsp.h>
+#include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 {
@@ -52,8 +54,8 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 
 	b = (char *) malloc(len);
 	if (b == NULL) {
-		printf("send_reply(): memory allocation error.\n");
-		return -1;
+		fnc_log(FNC_LOG_ERR,"send_reply(): memory allocation error.\n");
+		return ERR_ALLOC;
 	}
 	memset(b, 0, sizeof(b));
 	sprintf(b, "%s %d %s"RTSP_EL"CSeq: %d"RTSP_EL, RTSP_VER, err, get_stat(err), rtsp->rtsp_cseq);

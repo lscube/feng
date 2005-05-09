@@ -34,9 +34,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <fenice/rtsp.h>
-#include <string.h>
+#include <fenice/fnc_log.h>
 
 void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 // This routine is from OMS.
@@ -105,7 +106,7 @@ void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 				}
 
 				if (sscanf(&(rtsp->in_buffer[ml]), "%d", &bl) != 1) {
-					printf("ALERT: invalid ContentLength encountered in message.");
+					fnc_log(FNC_LOG_ERR_FATAL,"ALERT: invalid ContentLength encountered in message.");
 					exit(-1);
 				}
 			}
@@ -114,7 +115,7 @@ void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 	}
 
 	if (ml > rtsp->in_size) {
-		printf("PANIC: buffer did not contain the entire RTSP message.");
+		fnc_log(FNC_LOG_ERR_FATAL,"PANIC: buffer did not contain the entire RTSP message.");
 		exit(-1);
 	}
 

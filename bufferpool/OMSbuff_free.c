@@ -32,10 +32,10 @@
  *  
  * */
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <fenice/bufferpool.h>
+#include <fenice/fnc_log.h>
 
 void OMSbuff_free(OMSBuffer *buffer)
 {
@@ -48,7 +48,7 @@ void OMSbuff_free(OMSBuffer *buffer)
 		added=tmp;
 	}
 	free(buffer);
-	fprintf(stderr, "Buffer is freed \n");
+	fnc_log(FNC_LOG_DEBUG, "Buffer is freed \n");
 		
 }
 

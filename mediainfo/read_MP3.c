@@ -34,13 +34,11 @@
 
 #include <unistd.h>
 #include <string.h>
-#include <stdio.h>
 #include <fcntl.h>
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/mp3.h>
-#include <fenice/debug.h>
 
 int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *recallme, uint8 *marker)
 {
@@ -69,9 +67,6 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *r
 	}		                                                                		
 
 	if ((read(me->fd,&(buff[me->buff_size]),4)) != 4 ){
-#if DEBUG 
-		fprintf(stderr,"read_MP3: return ERR_EOF at line 81\n");
-#endif	
 		return ERR_EOF;
 	}
 	me->buff_size = 0;
@@ -100,9 +95,6 @@ int read_MP3(media_entry *me,uint8 *data,uint32 *data_size,double *mtime, int *r
 		
        if (( res = read ( me->fd, &(data[8]) ,N-4 ) ) < (N-4)) {
                 if ((res <= 0)){ 
-#if DEBUG 
-		fprintf(stderr,"read_MP3: return ERR_EOF at line 112\n");
-#endif	
 			return ERR_EOF;
 		}
                 else *data_size = res + 8;

@@ -33,10 +33,8 @@
  * */
 
 #include <unistd.h>
-#include <stdio.h>
 
 #include <fenice/utils.h>
-#include <fenice/debug.h>
 #include <fenice/mediainfo.h>
 #include <fenice/gsm.h>
 
@@ -66,9 +64,6 @@ int load_GSM(media_entry *p) {
                 case 7: p->description.bitrate = 12200; break;
         }       
         p->description.flags|=MED_BITRATE;      
-#if DEBUG
-	fprintf(stderr,"Loading GSM... done.\n");
-#endif
 
         return ERR_NOERROR;
 }

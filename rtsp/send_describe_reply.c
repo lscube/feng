@@ -39,6 +39,7 @@
 #include <config.h>
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format descr_format, char *descr)
 {
@@ -52,7 +53,7 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format des
 	mb = malloc(mb_len);
 	r = malloc(mb_len + 1512);
 	if (!r || !mb) {
-		printf("send_describe_reply(): unable to allocate memory\n");
+		fnc_log(FNC_LOG_ERR,"send_describe_reply(): unable to allocate memory\n");
 		send_reply(500, 0, rtsp);	/* internal server error */
 		if (r) {
 			free(r);
@@ -84,9 +85,6 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format des
 
 	free(mb);
 	free(r);
-#ifdef VERBOSE
-	printf("DESCRIBE response sent.\n");
-#endif
 	
 	return ERR_NOERROR;
 }

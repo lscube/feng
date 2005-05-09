@@ -40,6 +40,8 @@
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
+#include <fenice/fnc_log.h>
+
 
 /*
  	****************************************************************
@@ -59,7 +61,8 @@ int RTSP_play(RTSP_buffer * rtsp)
 	RTP_session *ptr2;
 	play_args args;
 	int time_taken = 0;
-	printf("PLAY request received.\n");
+	
+	fnc_log(FNC_LOG_INFO,"PLAY request received.\n");
 
 	// Parse the input message
 	// Get the CSeq 
@@ -67,12 +70,12 @@ int RTSP_play(RTSP_buffer * rtsp)
 
 
 	if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-		printf("PLAY request didn't specify a CSeq header.\n");
+		fnc_log(FNC_LOG_ERR,"PLAY request didn't specify a CSeq header.\n");
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_NOERROR;
 	} else {
 		if (sscanf(p, "%254s %d", trash, &(rtsp->rtsp_cseq)) != 2) {
-			printf("PLAY request didn't specify a CSeq number.\n");
+			fnc_log(FNC_LOG_ERR,"PLAY request didn't specify a CSeq number.\n");
 			send_reply(400, 0, rtsp);	/* Bad Request */
 			return ERR_NOERROR;
 		}
@@ -124,13 +127,13 @@ int RTSP_play(RTSP_buffer * rtsp)
 		} else {
 			// FORMATO: npt
 			if ((q = strchr(q, '=')) == NULL) {
-				printf("PLAY request specified an invalid Range specification.\n");
+				fnc_log(FNC_LOG_ERR,"PLAY request specified an invalid Range specification.\n");
 				send_reply(400, 0, rtsp);	/* Bad Request */
 				return ERR_NOERROR;
 			}
 			sscanf(q + 1, "%f", &(args.start_time));
 			if ((q = strchr(q, '-')) == NULL) {
-				printf("PLAY request specified an invalid Range specification.\n");
+				fnc_log(FNC_LOG_ERR,"PLAY request specified an invalid Range specification.\n");
 				send_reply(400, 0, rtsp);	/* Bad Request */
 				return ERR_NOERROR;
 			}
@@ -158,25 +161,25 @@ int RTSP_play(RTSP_buffer * rtsp)
 	}
 	// CSeq
 	if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-		printf("PLAY request didn't specify a CSeq header.\n");
+		fnc_log(FNC_LOG_ERR,"PLAY request didn't specify a CSeq header.\n");
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_NOERROR;
 	}
 	// If we get a Session hdr, then we have an aggregate control
 	if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
 		if (sscanf(p, "%254s %ld", trash, &session_id) != 2) {
-			printf("PLAY request didn't specify a valid Session number in Session header\n");
+			fnc_log(FNC_LOG_ERR,"PLAY request didn't specify a valid Session number in Session header\n");
 			send_reply(454, 0, rtsp);	/* Session Not Found */
 			return ERR_NOERROR;
 		}
 	} else {
-		printf("PLAY request is missing session number.\n");
+		fnc_log(FNC_LOG_ERR,"PLAY request is missing session number.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
 	/* Extract the URL */
 	if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
-		printf("PLAY request is missing object (path/file) parameter.\n");
+		fnc_log(FNC_LOG_ERR,"PLAY request is missing object (path/file) parameter.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
@@ -185,34 +188,32 @@ int RTSP_play(RTSP_buffer * rtsp)
 
 
 	if (!parse_url(url, server, &port, object)) {
-		printf("Mangled URL in PLAY.\n");
+		fnc_log(FNC_LOG_ERR,"Mangled URL in PLAY.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
 	if (strcmp(server, prefs_get_hostname()) != 0) {	/* Currently this feature is disabled. */
 		/* wrong server name */
-		//      printf("PLAY request specified an unknown server name.\n");
+		//      fnc_log(FNC_LOG_ERR,"PLAY request specified an unknown server name.\n");
 		//      send_reply(404, 0 , rtsp); /* Not Found */
 		//      return ERR_NOERROR;
 	}
 	if (strstr(object, "../")) {
 		/* disallow relative paths outside of current directory. */
-		printf
-		    ("PLAY request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
+		fnc_log(FNC_LOG_ERR,"PLAY request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
 	if (strstr(object, "./")) {
 		/* Disallow ./ */
-		printf
-		    ("PLAY request specified an object parameter with a path that is not allowed. './' not permitted in path.\n");
+		fnc_log(FNC_LOG_ERR,"PLAY request specified an object parameter with a path that is not allowed. './' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
 	p = strrchr(object, '.');
 	url_is_file = 0;
 	if (p == NULL) {
-		printf("PLAY request specified an object (path/file) parameter that is not valid.\n");
+		fnc_log(FNC_LOG_ERR,"PLAY request specified an object (path/file) parameter that is not valid.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	} else {
@@ -236,7 +237,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 						} else {
 							// Resume existing
 							if (!ptr2->pause) {
-								printf("PLAY: already playing\n");
+								fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
 							} else {
 								schedule_resume(ptr2->sched_id, &args);
 							}
@@ -244,12 +245,12 @@ int RTSP_play(RTSP_buffer * rtsp)
 					}
 				}
 			} else {
-				printf("PLAY request specified an invalid session number.\n");
+				fnc_log(FNC_LOG_ERR,"PLAY request specified an invalid session number.\n");
 				send_reply(454, 0, rtsp);	// Session not found
 				return ERR_NOERROR;
 			}
 		} else {
-			printf("Memory allocation error in RTSP session.\n");
+			fnc_log(FNC_LOG_ERR,"Memory allocation error in RTSP session.\n");
 			send_reply(415, 0, rtsp);	// Internal server error
 			return ERR_GENERIC;
 		}
@@ -259,7 +260,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 			ptr = rtsp->session_list;
 			if (ptr != NULL) {
 				if (ptr->session_id != session_id) {
-					printf("PLAY request specified an invalid session number.\n");
+					fnc_log(FNC_LOG_ERR,"PLAY request specified an invalid session number.\n");
 					send_reply(454, 0, rtsp);	// Session not found
 					return ERR_NOERROR;
 				}
@@ -274,12 +275,12 @@ int RTSP_play(RTSP_buffer * rtsp)
 					if (schedule_start(ptr2->sched_id, &args) == ERR_ALLOC)
 						return ERR_ALLOC;
 				} else {
-					printf("PLAY request an object which wasn't setup.\n");
+					fnc_log(FNC_LOG_ERR,"PLAY request an object which wasn't setup.\n");
 					send_reply(454, 0, rtsp);	// Session not found
 					return ERR_NOERROR;
 				}
 			} else {
-				printf("Memory allocation error in RTSP session.\n");
+				fnc_log(FNC_LOG_ERR,"Memory allocation error in RTSP session.\n");
 				send_reply(415, 0, rtsp);	// Internal server error
 				return ERR_GENERIC;
 			}
@@ -288,7 +289,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 			ptr = rtsp->session_list;
 			if (ptr != NULL) {
 				if (ptr->session_id != session_id) {
-					printf("PLAY request specified an invalid session number.\n");
+					fnc_log(FNC_LOG_ERR,"PLAY request specified an invalid session number.\n");
 					send_reply(454, 0, rtsp);	// Session not found
 					return ERR_NOERROR;
 				}
@@ -301,14 +302,14 @@ int RTSP_play(RTSP_buffer * rtsp)
 					} else {
 						// Resume existing
 						if (!ptr2->pause) {
-							printf("PLAY: already playing\n");
+							fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
 						} else {
 							schedule_resume(ptr2->sched_id, &args);
 						}
 					}
 				}
 			} else {
-				printf("Memory allocation error in RTSP session.\n");
+				fnc_log(FNC_LOG_ERR,"Memory allocation error in RTSP session.\n");
 				send_reply(415, 0, rtsp);	// Internal server error
 				return ERR_GENERIC;
 			}

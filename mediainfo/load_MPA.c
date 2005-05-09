@@ -39,7 +39,7 @@
 #include <unistd.h>
 
 #include <fenice/utils.h>
-#include <fenice/debug.h>
+#include <fenice/fnc_log.h>
 #include <fenice/mediainfo.h>
 #include <fenice/mp3.h>
 #include <fenice/prefs.h>
@@ -69,7 +69,7 @@ int load_MPA(media_entry *p)
                 {0,     0,     0,     0,     0     }
         };
 
-	fprintf(stderr, "loading MPA...\n");
+	fnc_log(FNC_LOG_INFO, "loading MPA...\n");
 
 	if ( (ret=mediaopen(p)) < 0)
 		return ret;
@@ -105,9 +105,6 @@ int load_MPA(media_entry *p)
                 case 28: ColIndex = 1; break;  /* Mpeg-1 L2 */
                 case 30: ColIndex = 0; break;  /* Mpeg-1 L1 */
                 default: {
-#if DEBUG	 
-				 fprintf(stderr,"load_MPA return ERR_PARSE at line 164\n");
-#endif
 				 return ERR_PARSE;
 			 }
         }
@@ -122,9 +119,6 @@ int load_MPA(media_entry *p)
                         case 0x04: p->description.sample_rate=48000; break;
                         case 0x08: p->description.sample_rate=32000; break;
                 	default: {
-#if DEBUG	 
-				 fprintf(stderr,"load_MPA return ERR_PARSE at line 181\n");
-#endif
 				 return ERR_PARSE;
 			 }
                 }
@@ -135,9 +129,6 @@ int load_MPA(media_entry *p)
                         case 0x04: p->description.sample_rate=24000; break;
                         case 0x08: p->description.sample_rate=16000; break;
                 	default: {
-#if DEBUG	 
-				 fprintf(stderr,"load_MPA return ERR_PARSE at line 194\n");
-#endif
 				 return ERR_PARSE;
 			 }
                 }

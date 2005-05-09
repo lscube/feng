@@ -32,11 +32,11 @@
  *  
  * */
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <fenice/bufferpool.h>
-#include <fenice/debug.h>
+#include <fenice/fnc_log.h>
 
 OMSSlot *OMSbuff_slotadd(OMSBuffer *buffer, OMSSlot *prev)
 {
@@ -50,9 +50,7 @@ OMSSlot *OMSbuff_slotadd(OMSBuffer *buffer, OMSSlot *prev)
 
 	added->next_added = buffer->added_head;
 	buffer->added_head = added;
-#if DEBUG
-	fprintf(stderr,"slot added\n");
-#endif
+	fnc_log(FNC_LOG_DEBUG,"slot added\n");
 	return (OMSSlot *)added;
 }
 

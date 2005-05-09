@@ -43,6 +43,8 @@
 #include <fenice/prefs.h>
 #include <fenice/schedule.h>
 #include <fenice/bufferpool.h>
+#include <fenice/fnc_log.h>
+
 /*
  	****************************************************************
  	*			TEARDOWN METHOD HANDLING
@@ -61,16 +63,16 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	char url[255];
 	unsigned int cseq;
 
-	printf("TEARDOWN request received.\n");
+	fnc_log(FNC_LOG_INFO,"TEARDOWN request received.\n");
 	// CSeq
 	if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-		printf("TEARDOWN request didn't specify a CSeq header.\n");
+		fnc_log(FNC_LOG_ERR,"TEARDOWN request didn't specify a CSeq header.\n");
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_PARSE;
 		// return ERR_NOERROR;
 	} else {
 		if (sscanf(p, "%254s %d", trash, &(rtsp->rtsp_cseq)) != 2) {
-			printf("TEARDOWN request didn't specify a CSeq number.\n");
+			fnc_log(FNC_LOG_ERR,"TEARDOWN request didn't specify a CSeq number.\n");
 			send_reply(400, 0, rtsp);	/* Bad Request */
 			return ERR_PARSE;
 			// return ERR_NOERROR;
@@ -79,37 +81,35 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	cseq = rtsp->rtsp_cseq;
 	/* Extract the URL */
 	if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
-		printf("TEARDOWN request is missing object (path/file) parameter.\n");
+		fnc_log(FNC_LOG_ERR,"TEARDOWN request is missing object (path/file) parameter.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_PARSE;
 		// return ERR_NOERROR;
 	}
 	/* Validate the URL */
 	if (!parse_url(url, server, &port, object)) {
-		printf("Mangled URL in TEARDOWN.\n");
+		fnc_log(FNC_LOG_ERR,"Mangled URL in TEARDOWN.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_PARSE;
 		// return ERR_NOERROR;
 	}
 	if (strcmp(server, prefs_get_hostname()) != 0) {	/* Currently this feature is disabled. */
 		/* wrong server name */
-		//      printf("TEARDOWN request specified an unknown server name.\n");
+		//      fnc_log(FNC_LOG_ERR,"TEARDOWN request specified an unknown server name.\n");
 		//      send_reply(404, 0 , rtsp); /* Not Found */
 		//      return ERR_PARSE;
 		//      return ERR_NOERROR;
 	}
 	if (strstr(object, "../")) {
 		/* disallow relative paths outside of current directory. */
-		printf
-		    ("TEARDOWN request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
+		fnc_log(FNC_LOG_ERR,"TEARDOWN request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_PARSE;
 		// return ERR_NOERROR;
 	}
 	if (strstr(object, "./")) {
 		/* Disallow ./ */
-		printf
-		    ("TEARDOWN request specified an object parameter with a path that is not allowed. './' not permitted in path.\n");
+		fnc_log(FNC_LOG_ERR,"TEARDOWN request specified an object parameter with a path that is not allowed. './' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_PARSE;
 		// return ERR_NOERROR;
@@ -117,7 +117,7 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	p = strrchr(object, '.');
 	valid_url = 0;
 	if (p == NULL) {
-		printf("TEARDOWN request specified an object (path/file) parameter that is not valid.\n");
+		fnc_log(FNC_LOG_ERR,"TEARDOWN request specified an object (path/file) parameter that is not valid.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_PARSE;
 		// return ERR_NOERROR;
@@ -125,7 +125,7 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 		valid_url = is_supported_url(p);
 	}
 	if (!valid_url) {
-		printf("TEARDOWN request specified an unsupported media type.\n");
+		fnc_log(FNC_LOG_ERR,"TEARDOWN request specified an unsupported media type.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_PARSE;
 		// return ERR_NOERROR;
@@ -133,7 +133,7 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	// Session
 	if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
 		if (sscanf(p, "%254s %ld", trash, &session_id) != 2) {
-			printf("Invalid Session number in TEARDOWN Session header\n");
+			fnc_log(FNC_LOG_ERR,"Invalid Session number in TEARDOWN Session header\n");
 			send_reply(454, 0, rtsp);	/* Session Not Found */
 			return ERR_PARSE;
 			// return ERR_NOERROR;
@@ -143,12 +143,12 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	}
 	s = rtsp->session_list;
 	if (s == NULL) {
-		printf("Memory allocation error in RTSP session.\n");
+		fnc_log(FNC_LOG_ERR,"Memory allocation error in RTSP session.\n");
 		send_reply(415, 0, rtsp);	// Internal server error
 		return ERR_GENERIC;
 	}
 	if (s->session_id != session_id) {
-		printf("TEARDOWN request specified an Invalid Session Number\n");
+		fnc_log(FNC_LOG_ERR,"TEARDOWN request specified an Invalid Session Number\n");
 		send_reply(454, 0, rtsp);	/* Session Not Found */
 		return ERR_PARSE;
 		// return ERR_NOERROR;

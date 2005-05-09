@@ -32,20 +32,15 @@
  *  
  * */
 
-#include <stdio.h>
 #include <fenice/rtsp.h>
 #include <fenice/types.h>
 #include <fenice/prefs.h>
 #include <fenice/eventloop.h>
-#include <fenice/debug.h>
 
 extern int num_conn;
 
 int max_connection()
 {
-#if DEBUG
-	fprintf(stderr,"max_connection %d\n",num_conn);
-#endif	
 	if(num_conn<=prefs_get_max_session())
 		return ERR_NOERROR;
 	

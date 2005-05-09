@@ -42,6 +42,7 @@
 #include <fenice/rtsp.h>
 #include <fenice/schedule.h>
 #include <fenice/types.h>
+#include <fenice/fnc_log.h>
 
 int num_conn = 0;
 
@@ -85,7 +86,7 @@ void eventloop(tsocket main_fd)
         				RTP_port_pool_init(ONE_FORK_MAX_CONNECTION*child_count*2+RTP_DEFAULT_PORT);
 					if (schedule_init()==ERR_FATAL)
 					{
-                  				printf("Fatal: Can't start scheduler. Server is aborting.\n");
+                  				fnc_log(FNC_LOG_ERR_FATAL,"Fatal: Can't start scheduler. Server is aborting.\n");
                   				return;
                   			}        			
         				conn_count=1;

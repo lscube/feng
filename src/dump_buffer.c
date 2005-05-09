@@ -32,12 +32,10 @@
  *  
  * */
 
-#include <stdio.h>
-
-#include <fenice/debug.h>
+#include <fenice/fnc_log.h>
 
 void dump_buffer(char *buffer)
 {
-	printf("-BUFFER_START-\r\n%s-BUFFER_END-\r\n",buffer);
+	fnc_log(FNC_LOG_VERBOSE,"-BUFFER_START-\r\n%s-BUFFER_END-\r\n",buffer);
 }
 

@@ -38,15 +38,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <fenice/debug.h>
-
-// #if DEBUG
-#include <stdio.h>
-// #endif
-
 #include <fenice/mediainfo.h>
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
+#include <fenice/fnc_log.h>
 
 int mediaopen(media_entry *me)
 {
@@ -60,13 +55,13 @@ int mediaopen(media_entry *me)
 	strcpy(thefile,prefs_get_serv_root());
 	strcat(thefile,me->filename);
 
-	fprintf(stderr, "opening file %s...", thefile);
+	fnc_log(FNC_LOG_INFO, "opening file %s...", thefile);
 
 	if ( me->description.msource == live ) {
-		fprintf(stderr, " Live stream... ");
+		fnc_log(FNC_LOG_INFO, " Live stream... ");
 		stat(thefile, &filestat);
 		if ( S_ISFIFO(filestat.st_mode) ) {
-			fprintf(stderr, " IS_FIFO... ");
+			fnc_log(FNC_LOG_INFO, " IS_FIFO... ");
 			oflag |= O_NONBLOCK;
 		}
 	}
@@ -84,7 +79,7 @@ int mediaopen(media_entry *me)
 		return ERR_NOT_FOUND;
 
 	me->flags|=ME_FD;
-	fprintf(stderr, "done\n");
+	fnc_log(FNC_LOG_INFO, "done\n");
 
 	return me->fd;
 }

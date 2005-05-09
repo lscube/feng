@@ -37,6 +37,7 @@
 
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 int RTSP_full_msg_rcvd(RTSP_buffer * rtsp)
 // This routine is from OMS.
@@ -114,7 +115,7 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp)
 				}
 
 				if (sscanf(&(rtsp->in_buffer[ml]), "%d", &bl) != 1) {
-					printf("RTSP_full_msg_rcvd(): Invalid ContentLength encountered in message.\n");
+					fnc_log(FNC_LOG_ERR,"RTSP_full_msg_rcvd(): Invalid ContentLength encountered in message.\n");
 					return ERR_GENERIC;
 				}
 			}

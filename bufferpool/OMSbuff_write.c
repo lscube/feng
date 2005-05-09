@@ -51,7 +51,6 @@ int32 OMSbuff_write(OMSBuffer *buffer, uint32 timestamp, uint8 marker, uint8 *da
 	uint64 curr_seq = slot->slot_seq;
 	
 	if (slot->next->data == data) {
-		// fprintf(stderr, "buffer commit\n");
 		slot = slot->next;
 	} else {
 		if (slot->next->refs > 0) {

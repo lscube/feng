@@ -75,21 +75,21 @@ int main(int argc, char **argv)
 		wVersionRequested = MAKEWORD(1, 1);
 		err = WSAStartup(wVersionRequested, &wsaData);
 		if (err != 0) {
-			printf("Could not detect Windows socket support.\n");
-			printf("Make sure WINSOCK.DLL is installed.\n");
+			fnc_log(FNC_LOG_ERR,"Could not detect Windows socket support.\n");
+			fnc_log(FNC_LOG_ERR,"Make sure WINSOCK.DLL is installed.\n");
 			return 1;
 		}
 	}
 #endif
 
 	printf("CTRL-C terminate the server.\n");
-	printf("Waiting for RTSP connections on port %d...\n", port);
+	fnc_log(FNC_LOG_INFO,"Waiting for RTSP connections on port %d...\n", port);
 	main_fd = tcp_listen(port);
 
 	/* next line: schedule_init() initialises the array of schedule_list sched 
 	   and creates the thread schedule_do() -> look at schedule.c */
 	if (schedule_init() == ERR_FATAL) {
-		printf("Fatal: Can't start scheduler. Server is aborting.\n");
+		fnc_log(FNC_LOG_ERR_FATAL,"Fatal: Can't start scheduler. Server is aborting.\n");
 		return 0;
 	}
 	RTP_port_pool_init(RTP_DEFAULT_PORT);

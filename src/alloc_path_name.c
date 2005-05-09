@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 char *alloc_path_name(char *base_path, char *file_path)
 {
@@ -48,7 +49,7 @@ char *alloc_path_name(char *base_path, char *file_path)
 
   PathName = malloc(len + strlen(file_path) + 2);
   if (PathName==NULL) {
-	  printf("Out of memory in alloc_path_name()\n");
+	  fnc_log(FNC_LOG_ERR_FATAL,"Out of memory in alloc_path_name()\n");
 	  exit(-1);
   }
 

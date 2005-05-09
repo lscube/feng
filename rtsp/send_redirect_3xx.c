@@ -34,11 +34,12 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <config.h>
 
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 #include <fenice/types.h>
-#include <fenice/debug.h>
+#include <fenice/fnc_log.h>
 
 uint32 send_redirect_3xx(RTSP_buffer *rtsp, uint8 *object)
 {
@@ -47,19 +48,13 @@ uint32 send_redirect_3xx(RTSP_buffer *rtsp, uint8 *object)
 	uint32 mb_len;
 	SD_descr *matching_descr;
 
-#if DEBUG
-	fprintf(stderr,"send_redirect_3xx\n");
-#endif	
 	if (enum_media(object, &matching_descr) != ERR_NOERROR) {
-		fprintf(stderr,"SETUP request specified an object file which can be damaged.\n");
+		fnc_log(FNC_LOG_ERR,"SETUP request specified an object file which can be damaged.\n");
 		send_reply(500, 0, rtsp);	/* Internal server error */
 		return ERR_NOERROR;
 	}
 
 
-#if DEBUG
-	fprintf(stderr,"redirection to: %s\n",matching_descr->twin);
-#endif	
 	//if(!strcasecmp(matching_descr->twin,"NONE") || !strcasecmp(matching_descr->twin,"")){
 	if(!(matching_descr->flags & SD_FL_TWIN)){
 		send_reply(453,0,rtsp);
@@ -70,7 +65,7 @@ uint32 send_redirect_3xx(RTSP_buffer *rtsp, uint8 *object)
 	mb = malloc(mb_len);
 	r = malloc(mb_len + 1512);
 	if (!r || !mb) {
-		printf("send_redirect(): unable to allocate memory\n");
+		fnc_log(FNC_LOG_ERR,"send_redirect(): unable to allocate memory\n");
 		send_reply(500, 0, rtsp);	/* internal server error */
 		if (r) {
 			free(r);
@@ -91,9 +86,8 @@ uint32 send_redirect_3xx(RTSP_buffer *rtsp, uint8 *object)
 
 	free(mb);
 	free(r);
-#ifdef VERBOSE
-	printf("REDIRECT response sent.\n");
-#endif
+	
+	fnc_log(FNC_LOG_VERBOSE,"REDIRECT response sent.\n");
 	return ERR_NOERROR;
 
 }

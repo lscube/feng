@@ -37,6 +37,7 @@
 
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 /*
  	****************************************************************
@@ -52,15 +53,15 @@ int RTSP_options(RTSP_buffer * rtsp)
 	unsigned int cseq;
 
 
-	printf("OPTIONS request received.\n");
+	fnc_log(FNC_LOG_INFO,"OPTIONS request received.\n");
 	// CSeq
 	if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-		printf("OPTIONS request didn't specify a CSeq header.\n");
+		fnc_log(FNC_LOG_ERR,"OPTIONS request didn't specify a CSeq header.\n");
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_NOERROR;
 	} else {
 		if (sscanf(p, "%254s %d", trash, &(rtsp->rtsp_cseq)) != 2) {
-			printf("OPTIONS request didn't specify a CSeq number.\n");
+			fnc_log(FNC_LOG_ERR,"OPTIONS request didn't specify a CSeq number.\n");
 			send_reply(400, 0, rtsp);	/* Bad Request */
 			return ERR_NOERROR;
 		}
