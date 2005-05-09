@@ -45,6 +45,7 @@
 #include <fenice/schedule.h>
 #include <fenice/utils.h>
 #include <fenice/command_environment.h>
+#include <fenice/fnc_log.h>
 //#include <sys/types.h> /*fork*/
 //#include <unistd.h>    /*fork*/
 
@@ -65,6 +66,7 @@ int main(int argc, char **argv)
 		return 0;
 	/* prefs_get_port() reads the static var prefs and returns the port number */
 	port = prefs_get_port();
+
 #ifdef WIN32
 	{
 		int err;

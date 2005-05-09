@@ -122,7 +122,32 @@ void prefs_init(char *fileconf)
 		else {
 			prefs_use_default(2);
 		}
-		
+
+		//Log_File
+		fseek(f,0,SEEK_SET);
+		do {
+			cont=fgets(line,80,f);
+			p=strstr(line,PREFS_LOG);
+		} while ((p==NULL && cont) || line[0]=='#');
+		if (p!=NULL) {
+			p=strstr(p,"=");
+			if (p!=NULL) {
+				strcpy(prefs.log,p+1);
+				p=strstr(prefs.log,"\n");
+				if (p!=NULL) {
+					*p='\0';
+				}
+				else {
+					prefs_use_default(3);
+				}
+			}
+			else {
+				prefs_use_default(3);
+			}
+		}
+		else {
+			prefs_use_default(3);
+		}
 	}
 	gethostname(prefs.hostname,sizeof(prefs.hostname));
 	l=strlen(prefs.hostname);
@@ -133,5 +158,6 @@ void prefs_init(char *fileconf)
 	printf("\tavroot directory is: %s\n", prefs.serv_root);
 	printf("\thostname is: %s\n", prefs.hostname);
 	printf("\trtsp listening port is: %d\n", prefs.port);
+	printf("\tlog file is: %s\n", prefs.log);
 	printf("\n");
 }

@@ -38,23 +38,26 @@
 
 void usage()
 {
-	fprintf(stderr, "fenice [--config-file | -c <config_file>]\n\n");
+	fprintf(stderr, "fenice [--config-file | -c <config_file>] [ --view-err | -v ]\n \
+			 --view-err enables stderr output\n\n");
 	return;
 }
 
 uint32 command_environment(int argc, char **argv)
 {
 
-	static const char short_options[] = "r:p:c:";
+	static const char short_options[] = "r:p:c:v";
 	//"m:a:f:n:b:z:T:B:q:o:S:I:r:M:4:2:Q:X:D:g:G:v:V:F:N:tpdsZHOcCPK:E:R:";
 
 	int n;
 	uint32 nerr = 0;	/*number of error */
 	uint32 config_file_not_present = 1;
+	uint32 view_log = 0;
 	uint32 flag = 0;	/*0 to show help */
 //#ifdef HAVE_GETOPT_LONG
 	static struct option long_options[] = {
 		{"config-file", 1, 0, 'c'},
+		{"view-err", 0, 0, 'v'},
 		{"rtsp-port", 1, 0, 'p'},
 		{"avroot-dir", 1, 0, 'r'},
 		{"help", 0, 0, '?'},
@@ -79,6 +82,9 @@ uint32 command_environment(int argc, char **argv)
 			/* prefs_init() loads root directory, port, hostname and domain name on
 			   a static variable prefs */
 			break;
+		case 'v':
+			view_log=1;			
+			break;
 		case 'p':
 
 			break;
@@ -101,5 +107,11 @@ uint32 command_environment(int argc, char **argv)
 		usage();
 	} else if (config_file_not_present)
 		prefs_init(NULL);
+
+	if(view_log)
+		fnc_log_init(prefs_get_log(), FNC_LOG_OUT);
+	else 
+		fnc_log_init(prefs_get_log(), FNC_LOG_SYS);
+
 	return nerr;
 }

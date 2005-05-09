@@ -57,10 +57,12 @@
 	#define PREFS_ROOT "root"
 	#define PREFS_PORT "port"
 	#define PREFS_MAX_SESSION "max_session"
+	#define PREFS_LOG "log_file"
 
 	typedef struct _serv_prefs {
 		char hostname[256];
 		char serv_root[256];
+		char log[256];
 		unsigned int port;			
 		unsigned int max_session;			
 	} serv_prefs;
@@ -70,6 +72,7 @@
 	char *prefs_get_hostname();
 	int prefs_get_port();		
 	int prefs_get_max_session();
+	char *prefs_get_log();
 	void prefs_use_default(int index);
 		
 #endif

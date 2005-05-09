@@ -34,7 +34,7 @@
 
 #include <stdio.h>
 #include <fenice/utils.h>
-//#include <fenice/debug.h>
+#include <fenice/debug.h>
 #include <fenice/mediainfo.h>
 #include <fenice/types.h>
 
@@ -60,8 +60,9 @@ int get_frame(media_entry *me, double *mtime)
 			dump_payload(slot->data,slot->data_size,"fenice_dump");
 #endif
 	} while(recallme && res==ERR_NOERROR);
-#if 0 
-	fprintf(stderr,"TYPE: %s *mtime=%f\n",me->description.encoding_name,*mtime);
+
+#ifdef VERBOSE  
+	printf("TYPE: %s *mtime=%f\n",me->description.encoding_name,*mtime);
 #endif
 
 	return res;

@@ -65,7 +65,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 		FD_SET(rtsp->fd,&wset);  // idem for wset
 	}
 	if (select(MAX_FDS,&rset,&wset,0,&t)<0) {
-		printf("select error\n");			
+		fprintf(stderr,"select error\n");			
 		send_reply(500, NULL, rtsp);
 		return ERR_GENERIC; //errore interno al server
 	}
@@ -79,13 +79,13 @@ int rtsp_server(RTSP_buffer *rtsp)
 		}
 		
 		if (n<0) {
-			printf("read() error in rtsp_server()\n");			
+			fprintf(stderr,"read() error in rtsp_server()\n");			
 			send_reply(500, NULL, rtsp);
 			return ERR_GENERIC;//errore interno al server    			
 		}			
 		
 		if (rtsp->in_size+n>RTSP_BUFFERSIZE) {
-			printf("RTSP buffer overflow (input RTSP message is most likely invalid).\n");
+			fprintf(stderr,"RTSP buffer overflow (input RTSP message is most likely invalid).\n");
 			send_reply(500, NULL, rtsp);
 			return ERR_GENERIC;//errore da comunicare
 		}
@@ -107,7 +107,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 		if (rtsp->out_size>0) {
 			n=tcp_write(rtsp->fd,rtsp->out_buffer,rtsp->out_size);
 			if (n<0) {
-				printf("tcp_write() error in rtsp_server()\n");        			
+				fprintf(stderr,"tcp_write() error in rtsp_server()\n");        			
 				send_reply(500, NULL, rtsp);
        				return ERR_GENERIC; //errore interno al server
 			}				
@@ -143,7 +143,7 @@ int rtsp_server(RTSP_buffer *rtsp)
     				FD_SET(p->rtcp_fd_out,&wset);
 	    		}
     			if (select(MAX_FDS,&rset,&wset,0,&t)<0) {		
-    				printf("select error\n");
+    				fprintf(stderr,"select error\n");
 				send_reply(500, NULL, rtsp);
 	    			return ERR_GENERIC; //errore interno al server
     			}
@@ -151,26 +151,26 @@ int rtsp_server(RTSP_buffer *rtsp)
 	    			// There are RTCP packets to read in
     				int peer_len=sizeof(p->rtcp_in_peer);
         			if ((p->rtcp_insize=recvfrom(p->rtcp_fd_in,p->rtcp_inbuffer,sizeof(p->rtcp_inbuffer),0,&(p->rtcp_in_peer),&peer_len))<0) {            	
-        				#if DEBUG
-        				printf("Input RTCP packet Lost\n");
+        				#ifdef VERBOSE
+        				fprintf(stderr,"Input RTCP packet Lost\n");
 	        			#endif
         			}
         			else {
             				RTCP_recv_packet(p);
 	            		}
-        	    		#if DEBUG
+        	    		#ifdef VERBOSE
         			printf("IN RTCP\n");
         			#endif
 			}
 	    		if (FD_ISSET(p->rtcp_fd_out,&wset)) {
     				// There are RTCP packets to send
         			if (sendto(p->rtcp_fd_out,p->rtcp_outbuffer,p->rtcp_outsize,0,&(p->rtcp_out_peer),sizeof(p->rtcp_out_peer))<0) {
-        				#if DEBUG
-        				printf("RTCP Packet Lost\n");
+        				#ifdef VERBOSE
+        				fprintf(stderr,"RTCP Packet Lost\n");
 	        			#endif
         			}    		
         			p->rtcp_outsize=0;
-        			#if DEBUG
+        			#ifdef VERBOSE
 	        		printf("OUT RTCP\n");         	
         			#endif
 			}

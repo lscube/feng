@@ -33,23 +33,24 @@
  * */
 
 
-#ifndef _DEBUGH
-#define _DEBUGH
+#ifndef FNC_LOGH
+#define FNC_LOGH
 
-#include <config.h>
+	#include <config.h>
+	#include <stdarg.h>
+
+	#define FNC_LOG_OUT 0 
+	#define FNC_LOG_SYS 1
+
+	//level
+	#define FNC_LOG_ERR 0
+	#define FNC_LOG_INFO 1 
+	#define FNC_LOG_WARN 2
+	#define FNC_LOG_DEBUG 3
 
 
-	
-#if ENABLE_VERBOSE
-	void dump_buffer(char *buffer);
-	int dump_payload(uint8 *data_slot, uint32 data_size, uint8 fname[255]);
-	#define VERBOSE
-#endif
-	#define DEBUG ENABLE_DEBUG
+	extern void (*fnc_log)(int level, const char *fmt, ...);
 
-//	#define POLLED 
-//	#define SIGNALED 
-	#define THREADED 
-//	#define SELECTED 
+	void fnc_log_init(char* name, int out);
 
 #endif

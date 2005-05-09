@@ -47,6 +47,8 @@ void prefs_use_default(int index)
     			strcpy(prefs.serv_root, FENICE_AVROOT_DIR_DEFAULT_STR);
 			strcat(prefs.serv_root, "/");
 	    		prefs.port = FENICE_RTSP_PORT_DEFAULT;
+	    		prefs.max_session = FENICE_MAX_SESSION_DEFAULT;
+	    		strcpy(prefs.log,FENICE_LOG_FILE_DEFAULT_STR);
     			return;
     		case 0: 
     			strcpy(prefs.serv_root, FENICE_AVROOT_DIR_DEFAULT_STR);
@@ -57,6 +59,9 @@ void prefs_use_default(int index)
     			return;
     		case 2: 
 	    		prefs.max_session = FENICE_MAX_SESSION_DEFAULT;
+    			return;
+    		case 3: 
+	    		strcpy(prefs.log,FENICE_LOG_FILE_DEFAULT_STR);
     			return;
 		default:
 			return;

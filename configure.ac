@@ -22,6 +22,10 @@ AC_ARG_WITH(config-file,
 [  --with-config-file      name for the configuration file in sysconfdir [[default=fenice.conf]]],,
 	with_config_file="fenice.conf")
 
+AC_ARG_WITH(log-file,
+[  --with-log-file	   name for the log file [[default=/var/log/fenice.log]]],,
+	with_log_file="/var/log/fenice.log")
+
 AC_ARG_WITH(max-session,
 [  --with-max-session      max number of incoming sessions [[default=100]]],,
 	with_max_session=100)
@@ -77,8 +81,7 @@ dnl Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/time.h unistd.h strings.h errno.h fcntl.h malloc.h sys/ioctl.h getopt.h) 
-dnl AC_CHECK_HEADERS(ffmpeg/common.h ffmpeg/avcodec.h)
+AC_CHECK_HEADERS(sys/time.h unistd.h strings.h errno.h fcntl.h malloc.h sys/ioctl.h getopt.h syslog.h) 
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -210,6 +213,9 @@ AC_SUBST(fenice_rtsp_port)
 fenice_conf_file=$with_config_file
 AC_SUBST(fenice_conf_file)
 
+fenice_log_file=$with_log_file
+AC_SUBST(fenice_log_file)
+
 fenice_conf_dir=$sysconfdir
 AC_SUBST(fenice_conf_dir)
 
@@ -229,6 +235,10 @@ dnl AC_DEFINE(FENICE_AVROOT_DIR_STR_ENV, "FENICE_AVROOT_DIR",[Define the name fo
 
 AC_DEFINE_UNQUOTED(FENICE_CONF_FILE_DEFAULT, $fenice_conf_file, [Define default file for Fenice configuration])
 dnl AC_DEFINE(FENICE_CONF_FILE_ENV, "FENICE_CONF_FILE",[Define the name for the ENV variable for Fenice configuration file])
+
+AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT, $fenice_log_file, [Define default file for Fenice logger])
+
+AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT_STR, "$fenice_log_file", [Define default string for Fenice log file])
 
 AC_DEFINE_UNQUOTED(FENICE_CONF_DIR_DEFAULT, $fenice_conf_dir, [Define default directory for Fenice configuration])
 dnl AC_DEFINE(FENICE_CONF_DIR_ENV, "FENICE_CONF_DIR",[Define the name for the ENV variable for Fenice configuration dir])
@@ -264,6 +274,7 @@ AC_MSG_NOTICE([config files successfully generated!
 Fenice Install prefix .......... : $prefix
 Fenice Binary path ............. : $exec_prefix/bin/fenice
 Fenice Configuration path .......: $fenice_conf_dir
+Fenice Log File .................: $fenice_log_file
 Fenice Multimedia Files root ....: $fenice_avroot_dir
 Fenice RTSP listening port ......: $fenice_rtsp_port
 $debug_msg

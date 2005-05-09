@@ -32,24 +32,13 @@
  *  
  * */
 
+#include <fenice/prefs.h>
+#include <stdio.h>
 
-#ifndef _DEBUGH
-#define _DEBUGH
+extern serv_prefs prefs;
 
-#include <config.h>
+char *prefs_get_log()
+{
+	return prefs.log;
+}
 
-
-	
-#if ENABLE_VERBOSE
-	void dump_buffer(char *buffer);
-	int dump_payload(uint8 *data_slot, uint32 data_size, uint8 fname[255]);
-	#define VERBOSE
-#endif
-	#define DEBUG ENABLE_DEBUG
-
-//	#define POLLED 
-//	#define SIGNALED 
-	#define THREADED 
-//	#define SELECTED 
-
-#endif

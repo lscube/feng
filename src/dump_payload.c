@@ -38,8 +38,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <fenice/utils.h>
 #include <fenice/types.h>
+#include <fenice/debug.h>
 
 int dump_payload(uint8 *data_slot, uint32 data_size, uint8 fname[255]){
 	static int fin;	

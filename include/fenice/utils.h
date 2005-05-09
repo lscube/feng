@@ -141,7 +141,6 @@
 	float NTP_time(time_t t);
 	int get_UTC_time(struct tm *t,char *b);
 	int is_supported_url(char *p);
-	int dump_payload(uint8 *data_slot, uint32 data_size, uint8 fname[255]);
 
 #define lround(x) (x - 	floor(x) < 0.5) ? floor(x): ceil(x)
 

@@ -1,6 +1,6 @@
 feniceincludedir = $(top_srcdir)/include
 
-noinst_LTLIBRARIES = libutils.la libprefs.la
+noinst_LTLIBRARIES = liblog.la libutils.la libprefs.la
 
 if FENICE_VERBOSE
 noinst_LTLIBRARIES += libdebug.la
@@ -10,10 +10,14 @@ libutils_la_SOURCES =	alloc_path_name.c \
 			NTP_time.c \
 			random32.c \
 			get_UTC_time.c \
-			dump_payload.c \
 			is_supported_url.c
 
 libutils_la_LDFLAGS = -static -lm
+
+
+liblog_la_SOURCES =	fnc_log.c 
+
+liblog_la_LDFLAGS = -static -lm
 
 
 libprefs_la_SOURCES =	prefs_init.c \
@@ -21,12 +25,14 @@ libprefs_la_SOURCES =	prefs_init.c \
 			prefs_get_hostname.c \
 			prefs_get_port.c \
 			prefs_get_max_session.c \
+			prefs_get_log.c \
 			prefs_use_default.c
 
 libprefs_la_LDFLAGS = -static
 
 if FENICE_VERBOSE
-libdebug_la_SOURCES =	dump_buffer.c
+libdebug_la_SOURCES =	dump_buffer.c \
+			dump_payload.c 
 
 libdebug_la_LDFLAGS = -static
 endif
@@ -57,6 +63,7 @@ fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/command_environment/libcommand.la \
 		$(top_srcdir)/src/libprefs.la \
 		$(top_srcdir)/src/libutils.la \
+		$(top_srcdir)/src/liblog.la \
 		$(top_srcdir)/md5/libmd5.la
 
 if FENICE_VERBOSE
