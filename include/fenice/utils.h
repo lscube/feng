@@ -76,6 +76,7 @@
 	#define HDR_SESSION "Session"
 	#define HDR_TRANSPORT "Transport"
 	#define HDR_RANGE "Range"	
+	#define HDR_USER_AGENT "User-Agent"	
 	
 	/* rtsp methods */
 	#define RTSP_METHOD_MAXLEN 15

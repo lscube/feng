@@ -110,6 +110,11 @@ int RTSP_describe(RTSP_buffer * rtsp)
 		return ERR_NOERROR;
 	}
 
+	// See User-Agent 
+	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
+		fnc_log(FNC_LOG_INFO,"%s\n",p);
+	}
+
 	/* Get the description format. SDP is recomended */
 	if (strstr(rtsp->in_buffer, HDR_ACCEPT) != NULL) {
 		if (strstr(rtsp->in_buffer, "application/sdp") != NULL) {

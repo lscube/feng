@@ -33,12 +33,17 @@
  * */
 
 #include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <fenice/socket.h>
+#include <fenice/fnc_log.h>
 
 int tcp_read(tsocket fd, void *buffer, int nbytes)
 {
 	int n;
+	struct sockaddr_in name;
+	int namelen = sizeof(struct sockaddr_in);
 
 	#ifndef WIN32
 		n=read(fd,buffer,nbytes);
@@ -46,6 +51,11 @@ int tcp_read(tsocket fd, void *buffer, int nbytes)
 		n=recv(fd,buffer,nbytes,0);
 	#endif
 	
+	if(getpeername(fd,(struct sockaddr*)&name,&namelen)<0)
+		fnc_log(FNC_LOG_INFO,"Message receive from: could not resolve hostname.\n");
+	else
+		fnc_log(FNC_LOG_INFO,"Message received from: %s - ",inet_ntoa(name.sin_addr));
+
 	return n;
 }
 
