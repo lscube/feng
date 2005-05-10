@@ -34,8 +34,6 @@
 
 #include <stdio.h>
 
-#include <fenice/socket.h>
-#include <fenice/utils.h>
 #ifndef WIN32
 	#include <unistd.h>
 	#include <sys/time.h>
@@ -48,6 +46,10 @@
 	#include <io.h>	
 #endif
 
+#include <fenice/socket.h>
+#include <fenice/utils.h>
+#include <fenice/fnc_log.h>
+
 tsocket tcp_listen(unsigned short port)
 {
 	tsocket f;
@@ -57,7 +59,7 @@ tsocket tcp_listen(unsigned short port)
     int v = 1;
 
     if ((f = socket(AF_INET, SOCK_STREAM, 0))<0) {
-		perror( "socket() error in tcp_listen.\n" );
+		fnc_log(FNC_LOG_ERR,"socket() error in tcp_listen.\n" );
 		return ERR_GENERIC;
     }
 
@@ -68,18 +70,18 @@ tsocket tcp_listen(unsigned short port)
     s.sin_port = htons(port);
 
     if (bind (f, (struct sockaddr *)&s, sizeof (s))) {
-		perror( "bind() error in tcp_listen" );
+		fnc_log(FNC_LOG_ERR,"bind() error in tcp_listen" );
 		return ERR_GENERIC;
     }
 
     // set to non-blocking
     if (ioctl(f, FIONBIO, &on) < 0) {
-		printf( "ioctl() error in tcp_listen.\n" );
+		fnc_log(FNC_LOG_ERR,"ioctl() error in tcp_listen.\n" );
       	return ERR_GENERIC;
     }	
 
     if (listen(f, SOMAXCONN) < 0) {
-		perror( "listen() error in tcp_listen.\n" );
+		fnc_log(FNC_LOG_ERR,"listen() error in tcp_listen.\n" );
 		return ERR_GENERIC;
     }
 

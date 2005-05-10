@@ -33,11 +33,12 @@
  * */
 
 #include <stdio.h>
+#include <netinet/in.h>
 
 #include <fenice/rtcp.h>
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
-#include <netinet/in.h>
+#include <fenice/fnc_log.h>
 
 int RTCP_recv_packet(RTP_session *session)
 {
@@ -126,7 +127,7 @@ int RTCP_recv_packet(RTP_session *session)
     			break;
     		}
     		default: {
-    			printf("Unknown RTCP received and ignored.\n");
+    			fnc_log(FNC_LOG_DEBUG,"Unknown RTCP received and ignored.\n");
     			return ERR_NOERROR;
     		}
     	}

@@ -46,7 +46,7 @@
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
 #include <fenice/bufferpool.h>
-#include <fenice/debug.h>
+#include <fenice/fnc_log.h>
 
 int RTP_send_packet(RTP_session *session)
 {
@@ -100,9 +100,8 @@ int RTP_send_packet(RTP_session *session)
 		memcpy(packet+hdr_size,slot->data,slot->data_size);
 	
 		if (sendto(session->rtp_fd,packet,slot->data_size+hdr_size,0,&(session->rtp_peer),sizeof(session->rtp_peer))<0){
-#if DEBUG		
-			fprintf(stderr,"RTP Packet Lost\n");
-#endif
+			
+			fnc_log(FNC_LOG_DEBUG,"RTP Packet Lost\n");
 		}	
 		else {
 			session->rtcp_stats[i_server].pkt_count++;

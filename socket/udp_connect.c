@@ -34,8 +34,6 @@
 
 #include <stdio.h>
 
-#include <fenice/socket.h>
-#include <fenice/utils.h>
 #ifndef WIN32
 	#include <unistd.h>
 	#include <sys/time.h>
@@ -47,6 +45,10 @@
 #else
 	#include <io.h>	
 #endif
+
+#include <fenice/socket.h>
+#include <fenice/utils.h>
+#include <fenice/fnc_log.h>
               
 int udp_connect(unsigned short to_port, struct sockaddr *s_addr, int addr, tsocket *fd)
 {
@@ -55,12 +57,12 @@ int udp_connect(unsigned short to_port, struct sockaddr *s_addr, int addr, tsock
 	if (!*fd) {
 		
 		if ((*fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-			printf( "socket() error in udp_connect.\n" );
+			fnc_log(FNC_LOG_ERR,"socket() error in udp_connect.\n" );
 		    	return ERR_GENERIC;
     		}
     		// set to non-blocking
     		if (ioctl(*fd, FIONBIO, &on) < 0) {
-			printf( "ioctl() error in udp_connect.\n" );
+			fnc_log(FNC_LOG_ERR,"ioctl() error in udp_connect.\n" );
     	  		return ERR_GENERIC;
     		}
 	}
@@ -68,7 +70,7 @@ int udp_connect(unsigned short to_port, struct sockaddr *s_addr, int addr, tsock
     	s.sin_addr.s_addr = addr;
     	s.sin_port = htons(to_port);
     	if (connect(*fd,(struct sockaddr*)&s,sizeof(s))<0) {
-		printf( "connect() error in udp_connect.\n" );
+		fnc_log(FNC_LOG_ERR,"connect() error in udp_connect.\n" );
     		return ERR_GENERIC;
     	}
     	*s_addr=*((struct sockaddr*)&s);

@@ -37,8 +37,7 @@
 #define _DEBUGH
 
 #include <config.h>
-
-
+#include <fenice/types.h>
 	
 #if ENABLE_VERBOSE
 	void dump_buffer(char *buffer);

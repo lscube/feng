@@ -78,7 +78,7 @@ do{
 	t.tv_usec=26122;
 	FD_ZERO(&rs);
 	if (select(0,&rs,&rs,&rs,&t)<0) {
-		printf("failed!\n");
+		fnc_log(FNC_LOG_ERR_FATAL,"failed!\n");
 	}
 #endif
 	// Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.

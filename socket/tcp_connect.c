@@ -34,9 +34,6 @@
 
 #include <stdio.h>
 
-#include <fenice/utils.h>
-#include <fenice/socket.h>
-
 #ifndef WIN32
 	#include <unistd.h>
 	#include <sys/time.h>
@@ -49,6 +46,10 @@
 	#include <io.h>	
 #endif
 
+#include <fenice/utils.h>
+#include <fenice/socket.h>
+#include <fenice/fnc_log.h>
+
 tsocket tcp_connect(unsigned short port, char *addr)
 {
 	tsocket f;
@@ -58,7 +59,7 @@ tsocket tcp_connect(unsigned short port, char *addr)
 	struct sockaddr_in s;
 	int v = 1;
 	if ((f = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))<0) {
-		perror( "socket() error in tcp_connect.\n" );
+		fnc_log(FNC_LOG_ERR,"socket() error in tcp_connect.\n" );
 		return ERR_GENERIC;
 	}
 	setsockopt(f, SOL_SOCKET, SO_REUSEADDR, (char *) &v, sizeof(int));
@@ -67,15 +68,15 @@ tsocket tcp_connect(unsigned short port, char *addr)
 	s.sin_port = htons(port);
 	// set to non-blocking
 	if (ioctl(f, FIONBIO, &on) < 0) {
-		perror("ioctl() error in tcp_connect.\n" );
+		fnc_log(FNC_LOG_ERR,"ioctl() error in tcp_connect.\n" );
 		return ERR_GENERIC;
 	}	
 	if (connect(f,(struct sockaddr*)&s, sizeof(s)) < 0) {
-		perror( "connect() error in tcp_connect.\n" );
+		fnc_log(FNC_LOG_ERR,"connect() error in tcp_connect.\n" );
 		return ERR_GENERIC;
 	}        
 	if(setsockopt(f, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one))<0){
-		perror( "setsockopt() SO_KEEPALIVE error in tcp_connect.\n" );
+		fnc_log(FNC_LOG_ERR,"setsockopt() SO_KEEPALIVE error in tcp_connect.\n" );
 		return ERR_GENERIC;
 	}
 	return f;

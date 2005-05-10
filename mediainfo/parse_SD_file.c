@@ -36,7 +36,7 @@
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/prefs.h>
-#include <fenice/debug.h>
+#include <fenice/fnc_log.h>
 #include <stdio.h>
 
 int parse_SD_file(char *object,SD_descr *sd_descr)
@@ -52,9 +52,7 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
         strcpy(thefile,prefs_get_serv_root());
 
         strcat(thefile,object);
-#if DEBUG
-        fprintf(stderr,"Requested file is: %s\n", thefile);
-#endif	
+        fnc_log(FNC_LOG_DEBUG,"Requested file is: %s\n", thefile);
 
         f=fopen(thefile,"r");
         if (f==NULL) {
