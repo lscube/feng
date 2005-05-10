@@ -42,6 +42,7 @@
 #include <fenice/mediainfo.h>
 #include <fenice/mpeg4es.h>
 #include <fenice/prefs.h>
+#include <fenice/fnc_log.h>
 
 #define FREE_DATA free(s->header_data); \
 		  free(s);
@@ -54,6 +55,7 @@ int load_MP4ES(media_entry *p) {
 	char *o;
 	static_MPEG4_video_es *s=NULL;
 	*/
+	fnc_log(FNC_LOG_INFO,"loading MPEG4ES...\n");
 
 	if (!(p->description.flags & MED_PKT_LEN)) {
         	if (!(p->description.flags & MED_FRAME_RATE)) {
@@ -152,7 +154,6 @@ int load_MP4ES(media_entry *p) {
 		mediaclose(p);
 
 #endif
-	fprintf(stderr,"load_MP4ES...done\n");
 
         return ERR_NOERROR;
 }
