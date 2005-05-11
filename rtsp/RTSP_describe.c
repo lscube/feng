@@ -112,7 +112,10 @@ int RTSP_describe(RTSP_buffer * rtsp)
 
 	// See User-Agent 
 	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
-		fnc_log(FNC_LOG_INFO,"%s\n",p);
+		char cut[strlen(p)];
+		strcpy(cut,p);
+		cut[strlen(cut)-1]='\0';
+		fnc_log(FNC_LOG_INFO,"%s",cut);
 	}
 
 	/* Get the description format. SDP is recomended */

@@ -69,7 +69,7 @@ int load_MPA(media_entry *p)
                 {0,     0,     0,     0,     0     }
         };
 
-	fnc_log(FNC_LOG_INFO, "loading MPA...\n");
+	fnc_log(FNC_LOG_DEBUG, "loading MPA...\n");
 
 	if ( (ret=mediaopen(p)) < 0)
 		return ret;

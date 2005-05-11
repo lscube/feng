@@ -49,6 +49,7 @@
 	#define FNC_LOG_INFO 3 
 	#define FNC_LOG_DEBUG 4 
 	#define FNC_LOG_VERBOSE 5 
+	#define FNC_LOG_CLIENT 6 
 
 
 	extern void (*fnc_log)(int level, const char *fmt, ...);

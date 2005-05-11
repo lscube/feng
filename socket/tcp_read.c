@@ -51,11 +51,13 @@ int tcp_read(tsocket fd, void *buffer, int nbytes)
 		n=recv(fd,buffer,nbytes,0);
 	#endif
 	
-	if(getpeername(fd,(struct sockaddr*)&name,&namelen)<0)
-		fnc_log(FNC_LOG_INFO,"Message receive from: could not resolve hostname.\n");
-	else
-		fnc_log(FNC_LOG_INFO,"Message received from: %s - ",inet_ntoa(name.sin_addr));
-
+	if(n>0){
+		if(getpeername(fd,(struct sockaddr*)&name,&namelen)<0)
+			fnc_log(FNC_LOG_CLIENT,"unknown - - ");
+		else
+			fnc_log(FNC_LOG_CLIENT,"%s - - ",inet_ntoa(name.sin_addr));
+	}
+	
 	return n;
 }
 

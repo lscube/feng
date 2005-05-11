@@ -42,6 +42,10 @@
 #include <fenice/fnc_log.h>
 #include <fenice/debug.h>
 
+#define LOG_FORMAT "%d/%b/%Y:%H:%M:%S %z"
+#define ERR_FORMAT "%a %b %d %H:%M:%S %Y"
+#define MAX_LEN_DATE 30 
+
 //static char* fnc_name;
 static FILE *fd;
 
@@ -75,41 +79,46 @@ void fnc_log_init(char* name, int out){/*if out == FNC_LOG_OUT => stderr*/
 static void fnc_errlog(int level, const char *fmt, ...){
 	va_list args;
 	time_t now;
-	char *date;
+	char date[MAX_LEN_DATE];
 	int no_print=0;
+	const struct tm *tm;
 
 	time(&now);
-	date=ctime(&now);
-
-	date[strlen(date) -1]='\0';
-
+	tm=localtime(&now);
+	
 	switch (level) {
 		case FNC_LOG_ERR:
-			fprintf(fd, "%s Error: ",date);
+			strftime(date, MAX_LEN_DATE, ERR_FORMAT ,tm);
+			fprintf(fd, "[%s] [error] [client -] ",date);
 			break;
 		case FNC_LOG_ERR_FATAL:
-			fprintf(fd, "%s Fatal Error: ",date);
+			strftime(date, MAX_LEN_DATE, ERR_FORMAT ,tm);
+			fprintf(fd, "[%s] [fatal error] [client -] ",date);
 			break;
 		case FNC_LOG_WARN:
-			fprintf(fd, "%s Warning: ",date);
+			strftime(date, MAX_LEN_DATE, ERR_FORMAT ,tm);
+			fprintf(fd, "[%s] [warning] [client -] ",date);
 			break;
 		case FNC_LOG_DEBUG:
 #if DEBUG
-			fprintf(fd, "Debug: ");
+			fprintf(fd, "[debug] ");
 #else
 			no_print=1;	 
 #endif
 			break;
 		case FNC_LOG_VERBOSE:
 #ifdef VERBOSE
-			fprintf(fd, "Verbose Debug: ");
+			fprintf(fd, "[verbose debug] ");
 #else
 			no_print=1;	 
 #endif
 			break;
+		case FNC_LOG_CLIENT:
+			break;
 		default:
 			/*FNC_LOG_INFO*/
-			fprintf(fd, "%s : ",date);
+			strftime(date, MAX_LEN_DATE, LOG_FORMAT ,tm);
+			fprintf(fd, "[%s] ",date);
 			break;
 	}
 
@@ -133,7 +142,7 @@ static void fnc_syslog(int level, const char *fmt, ...){
 			l=LOG_ERR;
 			break;
 		case FNC_LOG_ERR_FATAL:
-			l=LOG_ERR;
+			l=LOG_CRIT;
 			break;
 		case FNC_LOG_WARN:
 			l=LOG_WARNING;
@@ -151,6 +160,10 @@ static void fnc_syslog(int level, const char *fmt, ...){
 #else
 			no_print=1;	 
 #endif
+			break;
+		case FNC_LOG_CLIENT:
+			l=LOG_INFO;
+			no_print=1;
 			break;
 		default:
 			l=LOG_INFO;

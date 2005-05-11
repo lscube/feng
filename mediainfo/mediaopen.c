@@ -55,13 +55,13 @@ int mediaopen(media_entry *me)
 	strcpy(thefile,prefs_get_serv_root());
 	strcat(thefile,me->filename);
 
-	fnc_log(FNC_LOG_INFO, "opening file %s...", thefile);
+	fnc_log(FNC_LOG_DEBUG, "opening file %s...\n", thefile);
 
 	if ( me->description.msource == live ) {
-		fnc_log(FNC_LOG_INFO, " Live stream... ");
+		fnc_log(FNC_LOG_DEBUG, " Live stream... ");
 		stat(thefile, &filestat);
 		if ( S_ISFIFO(filestat.st_mode) ) {
-			fnc_log(FNC_LOG_INFO, " IS_FIFO... ");
+			fnc_log(FNC_LOG_DEBUG, " IS_FIFO... ");
 			oflag |= O_NONBLOCK;
 		}
 	}
@@ -79,7 +79,6 @@ int mediaopen(media_entry *me)
 		return ERR_NOT_FOUND;
 
 	me->flags|=ME_FD;
-	fnc_log(FNC_LOG_INFO, "done\n");
 
 	return me->fd;
 }

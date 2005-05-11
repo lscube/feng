@@ -36,11 +36,13 @@
 #include <fenice/types.h>
 #include <fenice/prefs.h>
 #include <fenice/eventloop.h>
+#include <fenice/fnc_log.h>
 
 extern int num_conn;
 
 int max_connection()
 {
+	fnc_log(FNC_LOG_INFO,"%d connections arriched\n",num_conn);
 	if(num_conn<=prefs_get_max_session())
 		return ERR_NOERROR;
 	
