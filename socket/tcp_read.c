@@ -51,9 +51,9 @@ int tcp_read(tsocket fd, void *buffer, int nbytes)
 		n=recv(fd,buffer,nbytes,0);
 	#endif
 	
-	if(n>0){
+	if(n>1){
 		if(getpeername(fd,(struct sockaddr*)&name,&namelen)<0)
-			fnc_log(FNC_LOG_CLIENT,"unknown - - ");
+			fnc_log(FNC_LOG_CLIENT,"- - - ");
 		else
 			fnc_log(FNC_LOG_CLIENT,"%s - - ",inet_ntoa(name.sin_addr));
 	}

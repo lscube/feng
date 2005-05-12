@@ -77,6 +77,8 @@ int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp_sessio
 	
 	bwrite(r, (unsigned short) strlen(r), rtsp);
 
-	fnc_log(FNC_LOG_VERBOSE,"PLAY response sent.\n");
+
+	fnc_log(FNC_LOG_CLIENT,"200 - %s ",object);
+
 	return ERR_NOERROR;
 }

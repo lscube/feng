@@ -79,20 +79,16 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	SD_descr *matching_descr;
 
 
-	fnc_log(FNC_LOG_INFO, "SETUP request received.\n");
-
 	memset(&req, 0, sizeof(req));
 	// Parse the input message
 	// Get the CSeq 
 
 
 	if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-		fnc_log(FNC_LOG_ERR,"SETUP request didn't specify a CSeq header.\n");
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_NOERROR;
 	} else {
 		if (sscanf(p, "%254s %d", trash, &(rtsp->rtsp_cseq)) != 2) {
-			fnc_log(FNC_LOG_ERR,"SETUP request didn't specify a CSeq number.\n");
 			send_reply(400, 0, rtsp);	/* Bad Request */
 			return ERR_NOERROR;
 		}
@@ -105,14 +101,12 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	//}
 	
 	if ((p = strstr(rtsp->in_buffer, "client_port")) == NULL && strstr(rtsp->in_buffer, "multicast") == NULL) {
-		fnc_log(FNC_LOG_ERR,"SETUP request didn't specify client ports\n");
-		send_reply(406, "Require: Transport settings of rtp/udp;port=nnnn.\n", rtsp);	/* Not Acceptable */
+		send_reply(406, "Require: Transport settings of rtp/udp;port=nnnn. ", rtsp);	/* Not Acceptable */
 		return ERR_NOERROR;
 	}
 	// Start parsing the Transport header
 	if ((p = strstr(rtsp->in_buffer, HDR_TRANSPORT)) == NULL) {
-		fnc_log(FNC_LOG_ERR,"SETUP request didn't specify Transport header.\n");
-		send_reply(406, "Require: Transport settings of rtp/udp;port=nnnn.\n", rtsp);	/* Not Acceptable */
+		send_reply(406, "Require: Transport settings of rtp/udp;port=nnnn. ", rtsp);	/* Not Acceptable */
 		return ERR_NOERROR;
 	}
 	if (sscanf(p, "%10s%255s", trash, line) != 2) {
@@ -131,51 +125,43 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 	/* Get the URL */
 	if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
-		fnc_log(FNC_LOG_ERR,"SETUP request is missing object (path/file) parameter.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
 	/* Validate the URL */
 	if (!parse_url(url, server, &port, object)) {	//object é il nome del file richiesto
-		fnc_log(FNC_LOG_ERR,"Mangled URL in SETUP.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
 	if (strcmp(server, prefs_get_hostname()) != 0) {	/* Currently this feature is disabled. */
 		/* wrong server name */
-		//      fnc_log(FNC_LOG_ERR,"SETUP request specified an unknown server name.\n");
 		//      send_reply(404, 0 , rtsp); /* Not Found */
 		//      return ERR_NOERROR;
 	}
 	if (strstr(object, "../")) {
 		/* disallow relative paths outside of current directory. */
-		fnc_log(FNC_LOG_ERR,"SETUP request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
 	if (strstr(object, "./")) {
 		/* Disallow the ./ */
-		fnc_log(FNC_LOG_ERR,"SETUP request specified an object parameter with a path that is not allowed. './' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
 	p = strrchr(object, '.');
 	valid_url = 0;
 	if (p == NULL) {	//se file senza estensione
-		fnc_log(FNC_LOG_ERR,"SETUP request specified an object (path/file) parameter that is not valid.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	} else {
 		valid_url = is_supported_url(p);
 	}
 	if (!valid_url) {	//se l'estensione non é valida
-		fnc_log(FNC_LOG_ERR,"SETUP request specified an unsupported media type.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	}
 	q = strchr(object, '!');
 	if (q == NULL) {	//se non c'é "!" non é stato specificato il file che si vuole in streaming (mp3,mpg...)
-		fnc_log(FNC_LOG_ERR,"SETUP request specified an object that can't be understood.\n");
 		send_reply(500, 0, rtsp);	/* Internal server error */
 		return ERR_NOERROR;
 	} else {
@@ -206,20 +192,17 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 // ------------ END PATCH
 
 	if (enum_media(object, &matching_descr) != ERR_NOERROR) {
-		fnc_log(FNC_LOG_ERR,"SETUP request specified an object file which can be damaged.\n");
 		send_reply(500, 0, rtsp);	/* Internal server error */
 		return ERR_NOERROR;
 	}
 	list=matching_descr->me_list;
 
 	if (get_media_entry(&req, list, &matching_me) == ERR_NOT_FOUND) {
-		fnc_log(FNC_LOG_ERR,"SETUP request specified an object which can't be found.\n");
 		send_reply(404, 0, rtsp);	/* Not found */
 		return ERR_NOERROR;
 	}
 	
 	if((matching_descr->flags & SD_FL_MULTICAST) && strstr(rtsp->in_buffer, "multicast") == NULL ){
-		fnc_log(FNC_LOG_ERR,"SETUP multicast request didn't specify multicast word\n");
 		send_reply(461, "Require: Transport settings of multicast.\n", rtsp);	/* Not Acceptable */
 		return ERR_NOERROR;
 	}
@@ -227,7 +210,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	// If there's a Session header we have an aggregate control
 	if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
 		if (sscanf(p, "%254s %d", trash, &SessionID) != 2) {
-			fnc_log(FNC_LOG_ERR,"SETUP request didn't specify a valid Session number in Session header\n");
 			send_reply(454, 0, rtsp);	/* Session Not Found */
 			return ERR_NOERROR;
 		}
@@ -247,7 +229,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 	if(!(matching_descr->flags & SD_FL_MULTICAST_PORT))
 		if (RTP_get_port_pair(&ser_ports) != ERR_NOERROR) {
-			fnc_log(FNC_LOG_ERR,"SETUP request can't be served. Maximum connection number reached.\n");
 			send_reply(500, 0, rtsp);	/* Internal server error */
 			return ERR_GENERIC;
 		}
@@ -318,7 +299,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	}
 	
 	if (getpeername(rtsp->fd, &rtsp_peer, &namelen) != 0) {
-		fnc_log(FNC_LOG_ERR,"SETUP request can't be served. Getpeername() failed.\n");
 		send_reply(415, 0, rtsp);	// Internal server error
 		return ERR_GENERIC;
 	}
@@ -373,7 +353,17 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	sp->session_id = SessionID;
 	*new_session = sp;
 
-	send_setup_reply(rtsp, sp, matching_descr, sp2);	//marcosbiro: in sp c'é il numero incriminato
+	fnc_log(FNC_LOG_INFO,"SETUP %s RTSP/1.0 ",url);
+	send_setup_reply(rtsp, sp, matching_descr, sp2);	
+	// See User-Agent 
+	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
+		char cut[strlen(p)];
+		strcpy(cut,p);
+		p=strstr(cut, "\n");
+		cut[strlen(cut)-strlen(p)-1]='\0';
+		fnc_log(FNC_LOG_CLIENT,"%s\n",cut);
+	}
+
 
 	return ERR_NOERROR;
 }

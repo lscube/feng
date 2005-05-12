@@ -86,5 +86,7 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format des
 	free(mb);
 	free(r);
 	
+	fnc_log(FNC_LOG_CLIENT,"200 %d %s ",strlen(descr),object);
+	
 	return ERR_NOERROR;
 }

@@ -57,66 +57,50 @@ int RTSP_describe(RTSP_buffer * rtsp)
 	description_format descr_format = df_SDP_format;	// shawill put to some default
 	char descr[MAX_DESCR_LENGTH];
 
-	fnc_log(FNC_LOG_INFO,"DESCRIBE request received.\n");
 
 	/* Extract la URL */
 	if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
-		fnc_log(FNC_LOG_ERR,"DESCRIBE request is missing object (path/file) parameter.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
 	/* Validate the URL */
 	if (!parse_url(url, server, &port, object)) {
-		fnc_log(FNC_LOG_ERR,"Mangled URL in DESCRIBE.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
 	if (strcmp(server, prefs_get_hostname()) != 0) {	/* Currently this feature is disabled. */
 		/* wrong server name */
-		//      fnc_log(FNC_LOG_ERR,"DESCRIBE request specified an unknown server name.\n");
 		//      send_reply(404, 0 , rtsp);  /* Not Found */
 		//      return ERR_NOERROR;
 	}
 	if (strstr(object, "../")) {
 		/* disallow relative paths outside of current directory. */
-		fnc_log(FNC_LOG_ERR,"DESCRIBE request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
 	if (strstr(object, "./")) {
 		/* Disallow ./ */
-		fnc_log(FNC_LOG_ERR,"DESCRIBE request specified an object parameter with a path that is not allowed. './' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
 	p = strrchr(object, '.');
 	valid_url = 0;
 	if (p == NULL) {
-		fnc_log(FNC_LOG_ERR,"DESCRIBE request specified an object (path/file) parameter that is not valid.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	} else {
 		valid_url = is_supported_url(p);
 	}
 	if (!valid_url) {
-		fnc_log(FNC_LOG_ERR,"DESCRIBE request specified an unsupported media type.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	}
 	// Disallow Header REQUIRE
 	if (strstr(rtsp->in_buffer, HDR_REQUIRE)) {
-		fnc_log(FNC_LOG_ERR,"DESCRIBE request specified an unsupported 'require' header.\n");
 		send_reply(551, 0, rtsp);	/* Option not supported */
 		return ERR_NOERROR;
 	}
 
-	// See User-Agent 
-	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
-		char cut[strlen(p)];
-		strcpy(cut,p);
-		cut[strlen(cut)-1]='\0';
-		fnc_log(FNC_LOG_INFO,"%s",cut);
-	}
 
 	/* Get the description format. SDP is recomended */
 	if (strstr(rtsp->in_buffer, HDR_ACCEPT) != NULL) {
@@ -124,19 +108,16 @@ int RTSP_describe(RTSP_buffer * rtsp)
 			descr_format = df_SDP_format;
 		} else {
 			// Add here new description formats
-			fnc_log(FNC_LOG_ERR,"DESCRIBE request specified an unsupported description format.\n");
 			send_reply(551, 0, rtsp);	/* Option not supported */
 			return ERR_NOERROR;
 		}
 	}
 	// Get the CSeq 
 	if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-		fnc_log(FNC_LOG_ERR,"DESCRIBE request didn't specify a CSeq header.\n");
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_NOERROR;
 	} else {
 		if (sscanf(p, "%254s %d", trash, &(rtsp->rtsp_cseq)) != 2) {
-			fnc_log(FNC_LOG_ERR,"DESCRIBE request didn't specify a CSeq number.\n");
 			send_reply(400, 0, rtsp);	/* Bad Request */
 			return ERR_NOERROR;
 		}
@@ -149,20 +130,10 @@ int RTSP_describe(RTSP_buffer * rtsp)
 	req.descr_format = descr_format;
 	res = get_media_descr(object, &req, &media, descr);
 	if (res == ERR_NOT_FOUND) {
-		fnc_log(FNC_LOG_ERR,"DESCRIBE request specified an object which can't be found.\n");
 		send_reply(404, 0, rtsp);	// Not found
 		return ERR_NOERROR;
 	}
 	if (res == ERR_PARSE || res == ERR_GENERIC || res == ERR_ALLOC) {
-		if (res == ERR_PARSE)
-			fnc_log(FNC_LOG_ERR,"DESCRIBE request specified an object file which can be damaged.\n");
-
-		if (res == ERR_GENERIC)
-			fnc_log(FNC_LOG_ERR,"DESCRIBE request generated a generic server error.\n");
-
-		if (res == ERR_ALLOC)
-			fnc_log(FNC_LOG_ERR,"DESCRIBE request generated a memory allocation server error.\n");
-
 		send_reply(500, 0, rtsp);	// Internal server error
 		return ERR_NOERROR;
 	}
@@ -172,6 +143,18 @@ int RTSP_describe(RTSP_buffer * rtsp)
 		return send_redirect_3xx(rtsp,object);
 	}
 
+
+	fnc_log(FNC_LOG_INFO,"DESCRIBE %s RTSP/1.0 ",url);
 	send_describe_reply(rtsp, object, descr_format, descr);
+	
+	// See User-Agent 
+	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
+		char cut[strlen(p)];
+		strcpy(cut,p);
+		p=strstr(cut, "\n");
+		cut[strlen(cut)-strlen(p)-1]='\0';
+		fnc_log(FNC_LOG_CLIENT,"%s\n",cut);
+	}
+
 	return ERR_NOERROR;
 }

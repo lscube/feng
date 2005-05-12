@@ -53,8 +53,8 @@ int send_teardown_reply(RTSP_buffer * rtsp, long session_id, long cseq)
 	// strcat(r, "\r\n\r\n");
 	strcat(r, RTSP_EL RTSP_EL);
 	bwrite(r, (unsigned short) strlen(r), rtsp);
-	
-	fnc_log(FNC_LOG_VERBOSE,"TEARDOWN response sent.\n");
+
+	fnc_log(FNC_LOG_CLIENT,"200 - - ");
 
 	return ERR_NOERROR;
 }

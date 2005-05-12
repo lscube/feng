@@ -52,7 +52,7 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
         strcpy(thefile,prefs_get_serv_root());
 
         strcat(thefile,object);
-        fnc_log(FNC_LOG_INFO,"Requested file is: %s\n", thefile);
+        fnc_log(FNC_LOG_DEBUG,"Requested file is: %s\n", thefile);
 
         f=fopen(thefile,"r");
         if (f==NULL) {

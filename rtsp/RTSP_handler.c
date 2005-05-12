@@ -34,6 +34,7 @@
 
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 int RTSP_handler(RTSP_buffer * rtsp)
 {
@@ -49,6 +50,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
 			m = RTSP_validate_method(rtsp);
 			if (m < 0) {
 				// Bad request: non-existing method
+				fnc_log(FNC_LOG_INFO,"Bad Request ");
 				send_reply(400, NULL, rtsp);
 			} else
 				RTSP_state_machine(rtsp, m);

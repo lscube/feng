@@ -50,22 +50,36 @@ int RTSP_options(RTSP_buffer * rtsp)
 
 	char *p;
 	char trash[255];
+	char url[255];
+	char method[255];
+	char ver[255];
 	unsigned int cseq;
 
 
-	fnc_log(FNC_LOG_INFO,"OPTIONS request received.\n");
 	// CSeq
 	if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-		fnc_log(FNC_LOG_ERR,"OPTIONS request didn't specify a CSeq header.\n");
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_NOERROR;
 	} else {
 		if (sscanf(p, "%254s %d", trash, &(rtsp->rtsp_cseq)) != 2) {
-			fnc_log(FNC_LOG_ERR,"OPTIONS request didn't specify a CSeq number.\n");
 			send_reply(400, 0, rtsp);	/* Bad Request */
 			return ERR_NOERROR;
 		}
 	}
 	cseq = rtsp->rtsp_cseq;
-	return send_options_reply(rtsp, cseq);
+	
+	sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, url, ver);
+
+	fnc_log(FNC_LOG_INFO,"%s %s %s ",method,url,ver);
+	send_options_reply(rtsp, cseq);
+	// See User-Agent 
+	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
+		char cut[strlen(p)];
+		strcpy(cut,p);
+		p=strstr(cut, "\n");
+		cut[strlen(cut)-strlen(p)-1]='\0';
+		fnc_log(FNC_LOG_CLIENT,"%s\n",cut);
+	}
+
+	return ERR_NOERROR;
 }

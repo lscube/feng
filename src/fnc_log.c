@@ -89,15 +89,15 @@ static void fnc_errlog(int level, const char *fmt, ...){
 	switch (level) {
 		case FNC_LOG_ERR:
 			strftime(date, MAX_LEN_DATE, ERR_FORMAT ,tm);
-			fprintf(fd, "[%s] [error] [client -] ",date);
+			fprintf(fd, "[%s] [error] ",date);
 			break;
 		case FNC_LOG_ERR_FATAL:
 			strftime(date, MAX_LEN_DATE, ERR_FORMAT ,tm);
-			fprintf(fd, "[%s] [fatal error] [client -] ",date);
+			fprintf(fd, "[%s] [fatal error] ",date);
 			break;
 		case FNC_LOG_WARN:
 			strftime(date, MAX_LEN_DATE, ERR_FORMAT ,tm);
-			fprintf(fd, "[%s] [warning] [client -] ",date);
+			fprintf(fd, "[%s] [warning] ",date);
 			break;
 		case FNC_LOG_DEBUG:
 #if DEBUG

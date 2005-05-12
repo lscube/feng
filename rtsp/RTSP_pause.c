@@ -57,28 +57,23 @@ int RTSP_pause(RTSP_buffer * rtsp)
 	unsigned short port;
 	char url[255];
 
-	fnc_log(FNC_LOG_INFO,"PAUSE request received.\n");
 	// CSeq
 	if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-		fnc_log(FNC_LOG_ERR,"PAUSE request didn't specify a CSeq header.\n");
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_NOERROR;
 	} else {
 		if (sscanf(p, "%254s %d", trash, &(rtsp->rtsp_cseq)) != 2) {
-			fnc_log(FNC_LOG_ERR,"PAUSE request didn't specify a CSeq number.\n");
 			send_reply(400, 0, rtsp);	/* Bad Request */
 			return ERR_NOERROR;
 		}
 	}
 	/* Extract the URL */
 	if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
-		fnc_log(FNC_LOG_ERR,"PAUSE request is missing object (path/file) parameter.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
 	/* Validate the URL */
 	if (!parse_url(url, server, &port, object)) {
-		fnc_log(FNC_LOG_ERR,"Mangled URL in PAUSE.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
@@ -90,13 +85,11 @@ int RTSP_pause(RTSP_buffer * rtsp)
 	}
 	if (strstr(object, "../")) {
 		/* disallow relative paths outside of current directory. */
-		fnc_log(FNC_LOG_ERR,"PAUSE request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
 	if (strstr(object, "./")) {
 		/* Disallow ./ */
-		fnc_log(FNC_LOG_ERR,"PAUSE request specified an object parameter with a path that is not allowed. './' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
@@ -104,7 +97,6 @@ int RTSP_pause(RTSP_buffer * rtsp)
 	p = strrchr(strtok(object, "!"), '.');
 	valid_url = 0;
 	if (p == NULL) {
-		fnc_log(FNC_LOG_ERR,"PAUSE request specified an object (path/file) parameter that is not valid.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	} else {
@@ -112,14 +104,12 @@ int RTSP_pause(RTSP_buffer * rtsp)
 		valid_url = is_supported_url(p);
 	}
 	if (!valid_url) {
-		fnc_log(FNC_LOG_ERR,"PAUSE request specified an unsupported media type.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	}
 	// Session
 	if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
 		if (sscanf(p, "%254s %ld", trash, &session_id) != 2) {
-			fnc_log(FNC_LOG_ERR,"Invalid Session number in PAUSE Session header\n");
 			send_reply(454, 0, rtsp);	/* Session Not Found */
 			return ERR_NOERROR;
 		}
@@ -128,19 +118,28 @@ int RTSP_pause(RTSP_buffer * rtsp)
 	}
 	s = rtsp->session_list;
 	if (s == NULL) {
-		fnc_log(FNC_LOG_ERR,"Memory allocation error in RTSP session.\n");
 		send_reply(415, 0, rtsp);	// Internal server error
 		return ERR_GENERIC;
 	}
 	if (s->session_id != session_id) {
-		fnc_log(FNC_LOG_ERR,"PAUSE request specified an Invalid Session Number\n");
 		send_reply(454, 0, rtsp);	/* Session Not Found */
 		return ERR_NOERROR;
 	}
 	for (r = s->rtp_session; r != NULL; r = r->next) {
 		r->pause = 1;
 	}
+	
+	fnc_log(FNC_LOG_INFO,"PAUSE %s RTSP/1.0 ",url);
 	send_pause_reply(rtsp, s);
+	// See User-Agent 
+	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
+		char cut[strlen(p)];
+		strcpy(cut,p);
+		p=strstr(cut, "\n");
+		cut[strlen(cut)-strlen(p)-1]='\0';
+		fnc_log(FNC_LOG_CLIENT,"%s\n",cut);
+	}
+
 
 	return ERR_NOERROR;
 }

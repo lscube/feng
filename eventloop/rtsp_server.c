@@ -45,7 +45,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 	fd_set rset,wset;  // read set and write set - set of i/o file descriptor
 	struct timeval t;
 	int size;
-	char buffer[RTSP_BUFFERSIZE];
+	char buffer[RTSP_BUFFERSIZE+1]; /* +1 to control the final '\0'*/
 	int n;
 	int res;
 	RTSP_session *q;
@@ -72,20 +72,20 @@ int rtsp_server(RTSP_buffer *rtsp)
 	if (FD_ISSET(rtsp->fd,&rset)) {		
 		// There are RTSP packets to read in
 		memset(buffer,0,sizeof(buffer));
-		size=sizeof(buffer);
+		size=sizeof(buffer)-1;
 		n=tcp_read(rtsp->fd,buffer,size);			
 		if (n==0) {
 			return ERR_CONNECTION_CLOSE;
 		}
 		
 		if (n<0) {
-			fnc_log(FNC_LOG_ERR,"read() error in rtsp_server()\n");			
+			fnc_log(FNC_LOG_DEBUG,"read() error in rtsp_server()\n");			
 			send_reply(500, NULL, rtsp);
 			return ERR_GENERIC;//errore interno al server    			
 		}			
 		
 		if (rtsp->in_size+n>RTSP_BUFFERSIZE) {
-			fnc_log(FNC_LOG_ERR,"RTSP buffer overflow (input RTSP message is most likely invalid).\n");
+			fnc_log(FNC_LOG_DEBUG,"RTSP buffer overflow (input RTSP message is most likely invalid).\n");
 			send_reply(500, NULL, rtsp);
 			return ERR_GENERIC;//errore da comunicare
 		}

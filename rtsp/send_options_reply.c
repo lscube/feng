@@ -37,6 +37,7 @@
 
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 int send_options_reply(RTSP_buffer * rtsp, long cseq)
 {
@@ -45,6 +46,8 @@ int send_options_reply(RTSP_buffer * rtsp, long cseq)
 	strcat(r, "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN"RTSP_EL);
 	strcat(r, RTSP_EL);
 	bwrite(r, (unsigned short) strlen(r), rtsp);
+	
+	fnc_log(FNC_LOG_CLIENT,"200 - - ");
 
 	return ERR_NOERROR;
 }

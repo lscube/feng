@@ -63,77 +63,57 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	char url[255];
 	unsigned int cseq;
 
-	fnc_log(FNC_LOG_INFO,"TEARDOWN request received.\n");
 	// CSeq
 	if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-		fnc_log(FNC_LOG_ERR,"TEARDOWN request didn't specify a CSeq header.\n");
 		send_reply(400, 0, rtsp);	/* Bad Request */
 		return ERR_PARSE;
-		// return ERR_NOERROR;
 	} else {
 		if (sscanf(p, "%254s %d", trash, &(rtsp->rtsp_cseq)) != 2) {
-			fnc_log(FNC_LOG_ERR,"TEARDOWN request didn't specify a CSeq number.\n");
 			send_reply(400, 0, rtsp);	/* Bad Request */
 			return ERR_PARSE;
-			// return ERR_NOERROR;
 		}
 	}
 	cseq = rtsp->rtsp_cseq;
 	/* Extract the URL */
 	if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
-		fnc_log(FNC_LOG_ERR,"TEARDOWN request is missing object (path/file) parameter.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_PARSE;
-		// return ERR_NOERROR;
 	}
 	/* Validate the URL */
 	if (!parse_url(url, server, &port, object)) {
-		fnc_log(FNC_LOG_ERR,"Mangled URL in TEARDOWN.\n");
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_PARSE;
-		// return ERR_NOERROR;
 	}
 	if (strcmp(server, prefs_get_hostname()) != 0) {	/* Currently this feature is disabled. */
 		/* wrong server name */
-		//      fnc_log(FNC_LOG_ERR,"TEARDOWN request specified an unknown server name.\n");
 		//      send_reply(404, 0 , rtsp); /* Not Found */
 		//      return ERR_PARSE;
-		//      return ERR_NOERROR;
 	}
 	if (strstr(object, "../")) {
 		/* disallow relative paths outside of current directory. */
-		fnc_log(FNC_LOG_ERR,"TEARDOWN request specified an object parameter with a path that is not allowed. '../' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_PARSE;
-		// return ERR_NOERROR;
 	}
 	if (strstr(object, "./")) {
 		/* Disallow ./ */
-		fnc_log(FNC_LOG_ERR,"TEARDOWN request specified an object parameter with a path that is not allowed. './' not permitted in path.\n");
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_PARSE;
-		// return ERR_NOERROR;
 	}
 	p = strrchr(object, '.');
 	valid_url = 0;
 	if (p == NULL) {
-		fnc_log(FNC_LOG_ERR,"TEARDOWN request specified an object (path/file) parameter that is not valid.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_PARSE;
-		// return ERR_NOERROR;
 	} else {
 		valid_url = is_supported_url(p);
 	}
 	if (!valid_url) {
-		fnc_log(FNC_LOG_ERR,"TEARDOWN request specified an unsupported media type.\n");
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_PARSE;
-		// return ERR_NOERROR;
 	}
 	// Session
 	if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
 		if (sscanf(p, "%254s %ld", trash, &session_id) != 2) {
-			fnc_log(FNC_LOG_ERR,"Invalid Session number in TEARDOWN Session header\n");
 			send_reply(454, 0, rtsp);	/* Session Not Found */
 			return ERR_PARSE;
 			// return ERR_NOERROR;
@@ -143,23 +123,30 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	}
 	s = rtsp->session_list;
 	if (s == NULL) {
-		fnc_log(FNC_LOG_ERR,"Memory allocation error in RTSP session.\n");
 		send_reply(415, 0, rtsp);	// Internal server error
 		return ERR_GENERIC;
 	}
 	if (s->session_id != session_id) {
-		fnc_log(FNC_LOG_ERR,"TEARDOWN request specified an Invalid Session Number\n");
 		send_reply(454, 0, rtsp);	/* Session Not Found */
 		return ERR_PARSE;
-		// return ERR_NOERROR;
 	}
 
+	fnc_log(FNC_LOG_INFO,"TEARDOWN %s RTSP/1.0 ",url);
 	send_teardown_reply(rtsp, session_id, cseq);
+	// See User-Agent 
+	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
+		char cut[strlen(p)];
+		strcpy(cut,p);
+		p=strstr(cut, "\n");
+		cut[strlen(cut)-strlen(p)-1]='\0';
+		fnc_log(FNC_LOG_CLIENT,"%s\n",cut);
+	}
+
+	
 	if (strchr(object, '!'))	/*Compatibility with RealOne and RealPlayer */
 		filename = strchr(object, '!') + 1;
 	else
 		filename = object;
-	// strcpy(filename,object); // AHAHAHAHAHAHAHHAHA
 
 
 

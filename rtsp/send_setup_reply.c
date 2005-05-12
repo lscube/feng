@@ -91,7 +91,8 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, SD_descr *descr
 	strcat(r, RTSP_EL RTSP_EL);
 	
 	bwrite(r, (unsigned short) strlen(r), rtsp);
+	
+	fnc_log(FNC_LOG_CLIENT,"200 - %s ",descr->filename);
 
-	fnc_log(FNC_LOG_VERBOSE,"SETUP response sent.\n");
 	return ERR_NOERROR;
 }

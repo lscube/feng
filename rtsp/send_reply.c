@@ -44,7 +44,12 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 {
 	unsigned int len;
 	char *b;
+	char *p;
 	int res;
+	char method[32];
+	char object[256];
+	char ver[32];
+
 
 	if (addon != NULL) {
 		len = 256 + strlen(addon);
@@ -65,5 +70,15 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 
 	res = bwrite(b, (unsigned short) strlen(b), rtsp);
 	free(b);
+	
+	sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, object, ver);
+	fnc_log(FNC_LOG_ERR,"%s %s %s %d - - ", method, object, ver, err);
+	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
+		char cut[strlen(p)];
+		strcpy(cut,p);
+		cut[strlen(cut)-1]='\0';
+		fnc_log(FNC_LOG_CLIENT,"%s",cut);
+	}
+	
 	return res;
 }
