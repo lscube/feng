@@ -139,7 +139,8 @@ int RTSP_pause(RTSP_buffer * rtsp)
 		cut[strlen(cut)-strlen(p)-1]='\0';
 		fnc_log(FNC_LOG_CLIENT,"%s\n",cut);
 	}
-
+	else
+		fnc_log(FNC_LOG_CLIENT,"- \n");
 
 	return ERR_NOERROR;
 }

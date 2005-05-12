@@ -141,6 +141,8 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 		cut[strlen(cut)-strlen(p)-1]='\0';
 		fnc_log(FNC_LOG_CLIENT,"%s\n",cut);
 	}
+	else
+		fnc_log(FNC_LOG_CLIENT,"- \n");
 
 	
 	if (strchr(object, '!'))	/*Compatibility with RealOne and RealPlayer */
@@ -177,6 +179,6 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 		free(rtsp->session_list);
 		rtsp->session_list = NULL;
 	}
-
+	
 	return ERR_NOERROR;
 }
