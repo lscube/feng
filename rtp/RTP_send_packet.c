@@ -61,7 +61,7 @@ int RTP_send_packet(RTP_session *session)
 	double s_time;
 	double nextts;
 	OMSSlot *slot;
-	size_t psize_sent=0;
+	ssize_t psize_sent=0;
 
 	if(!(slot = OMSbuff_getreader(session->cons))){
 		//This operation runs only if producer writes the slot
