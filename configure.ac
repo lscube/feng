@@ -34,16 +34,26 @@ AC_ARG_ENABLE(fhs23,
 [  --enable-fhs23          enable Filesystem Hierarchy Standard 2.3:
                           document root avroot will be placed under /srv [[default=yes]]],,
 	enable_fhs23="yes")
+
 AC_ARG_ENABLE(debug,
 [  --enable-debug          enable gcc dubugging flags [[default=no]]],,
-	enable_debug="no")
+	enable-debug="no")
+
 AC_ARG_ENABLE(efence,
 [  --enable-efence         link against Electric Fence library to debug memory usage
                           (this will involve --enable-debug) [[default=no]]],,
 	enable_efence="no")
+
+
 AC_ARG_ENABLE(verbose,
 [  --enable-verbose          make fenice verbose [[default=no]]],,
 	enable_verbose="no")
+
+AC_ARG_ENABLE(dump,
+[  --enable-dump          enable dump 
+			  (this will involve --enable-verbose) [[default=no]]],,
+	enable_dump="no")
+
 AC_ARG_ENABLE(warnings,
 [  --enable-warnings       enable/choose gcc warnings level: none, normal, pedantic [[default=none]]],,
 	enable_warnings="none")
@@ -121,6 +131,17 @@ else
 	AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
 fi
 
+AM_CONDITIONAL(FENICE_DUMP, /bin/false)
+if test "$enable_dump" = "yes"; then
+	AM_CONDITIONAL(FENICE_DUMP, /bin/true)
+	AC_DEFINE(ENABLE_DUMP, 1,[Dump enabled])
+	enable_verbose=yes
+	dump_msg="
+   Dump to dump_fenice.ENCODING_TYPE.rtpsock enabled!!!"
+else
+	AC_DEFINE(ENABLE_DUMP, 0,[Dump disabled])
+fi
+
 AM_CONDITIONAL(FENICE_VERBOSE, /bin/false)
 if test "$enable_verbose" = "yes"; then
 	AM_CONDITIONAL(FENICE_VERBOSE, /bin/true)
@@ -128,6 +149,8 @@ if test "$enable_verbose" = "yes"; then
 	enable_verbose=yes
 	verbose_msg="   You chose fenice to be very verbose... who'll stop it talking now!!!"
 fi
+
+
 
 
 case "$enable_warnings" in
@@ -280,6 +303,7 @@ Fenice RTSP listening port ......: $fenice_rtsp_port
 $debug_msg
 $efence_msg
 $verbose_msg
+$dump_msg
 
  'make' will now compile Fenice and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.

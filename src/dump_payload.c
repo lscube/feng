@@ -33,24 +33,55 @@
  * */
 
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
 #include <fenice/types.h>
-#include <fenice/debug.h>
+#include <fenice/fnc_log.h>
+
+#define MAX_FILE_DUMP 6
 
 int dump_payload(uint8 *data_slot, uint32 data_size, uint8 fname[255]){
-	static int fin;	
-	int oflag = O_RDWR;
+	static int fin[MAX_FILE_DUMP];	
+	static char filename[MAX_FILE_DUMP][255];
+	static int idx=0;
+	int i=0, found=0;
 
-	oflag|=O_CREAT;
+	if(idx>=MAX_FILE_DUMP)
+		return -1;
 	
-	if(fin<=0)
-		fin=open(fname,oflag);
-	else
-		write(fin,(void *)data_slot,data_size);
+	if(idx==0){
+		for(i=0;i<MAX_FILE_DUMP;i++)
+			memset(filename[i],0,sizeof(filename[i]));
+	}
 
-	return fin;
+	for(i=0;i<idx;i++){
+		if((strcmp(fname,filename[i]))==0){
+			found=1;
+			break;
+		}
+	}
+
+	if(!found){
+		strcpy(filename[idx],fname);
+		i=idx;
+		idx++;
+	}
+	
+	if(fin[i]<=0){
+		int oflag = O_RDWR;
+
+		oflag|=O_CREAT;
+		oflag|=O_TRUNC;
+		fin[i]=open(fname,oflag,644);
+	}
+	if(fin[i]<0)
+		fnc_log(FNC_LOG_VERBOSE,"Error in opening file for dump.\n");
+	else
+		write(fin[i],(void *)data_slot,data_size);
+
+	return fin[i];
 }

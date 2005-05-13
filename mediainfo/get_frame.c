@@ -36,7 +36,7 @@
 #include <fenice/mediainfo.h>
 #include <fenice/types.h>
 #include <fenice/fnc_log.h>
-#include <fenice/debug.h>
+/*#include <fenice/debug.h>*/
 
 int get_frame(media_entry *me, double *mtime)
 {
@@ -55,10 +55,12 @@ int get_frame(media_entry *me, double *mtime)
 				fnc_log(FNC_LOG_ERR, "Error in bufferpool writing\n");
 		}
 		// slot->timestamp=*mtime;
+/*
 #ifdef VERBOSE 
 		if(res==ERR_NOERROR)
-			dump_payload(slot->data,slot->data_size,"fenice_dump");
+			dump_payload(slot->data+4,slot->data_size-4,"fenice_dump");
 #endif
+*/
 	} while(recallme && res==ERR_NOERROR);
 
 	fnc_log(FNC_LOG_VERBOSE,"TYPE: %s *mtime=%f\n",me->description.encoding_name,*mtime);

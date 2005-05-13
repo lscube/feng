@@ -55,7 +55,6 @@ int load_MP4ES(media_entry *p) {
 	char *o;
 	static_MPEG4_video_es *s=NULL;
 	*/
-	fnc_log(FNC_LOG_INFO,"loading MPEG4ES...\n");
 
 	if (!(p->description.flags & MED_PKT_LEN)) {
         	if (!(p->description.flags & MED_FRAME_RATE)) {

@@ -48,6 +48,10 @@
 #include <fenice/bufferpool.h>
 #include <fenice/fnc_log.h>
 
+#if ENABLE_DUMP
+#include <fenice/debug.h>
+#endif
+
 int RTP_send_packet(RTP_session *session)
 {
 	unsigned char *packet;
@@ -57,6 +61,7 @@ int RTP_send_packet(RTP_session *session)
 	double s_time;
 	double nextts;
 	OMSSlot *slot;
+	size_t psize_sent=0;
 
 	if(!(slot = OMSbuff_getreader(session->cons))){
 		//This operation runs only if producer writes the slot
@@ -99,11 +104,25 @@ int RTP_send_packet(RTP_session *session)
 		memcpy(packet,&r,hdr_size);
 		memcpy(packet+hdr_size,slot->data,slot->data_size);
 	
-		if (sendto(session->rtp_fd,packet,slot->data_size+hdr_size,0,&(session->rtp_peer),sizeof(session->rtp_peer))<0){
+		if ((psize_sent=sendto(session->rtp_fd,packet,slot->data_size+hdr_size,0,&(session->rtp_peer),sizeof(session->rtp_peer)))<0){
 			
 			fnc_log(FNC_LOG_DEBUG,"RTP Packet Lost\n");
 		}	
 		else {
+#if ENABLE_DUMP 
+			char fname[255];
+			char crtp[255];
+			memset(fname,0,sizeof(fname));
+			strcpy(fname,"dump_fenice.");
+			strcat(fname,session->current_media->description.encoding_name);
+			strcat(fname,".");
+			sprintf(crtp,"%d",session->rtp_fd);
+			strcat(fname,crtp);
+			if(strcmp(session->current_media->description.encoding_name,"MPV")==0 || strcmp(session->current_media->description.encoding_name,"MPA")==0)
+				dump_payload(packet+16,psize_sent-16,fname);
+			else
+				dump_payload(packet+12,psize_sent-12,fname);
+#endif
 			session->rtcp_stats[i_server].pkt_count++;
 			session->rtcp_stats[i_server].octet_count+=slot->data_size;
 		}
