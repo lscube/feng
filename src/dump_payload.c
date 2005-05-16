@@ -50,8 +50,6 @@ int dump_payload(uint8 *data_slot, uint32 data_size, uint8 fname[255]){
 	static int idx=0;
 	int i=0, found=0;
 
-	if(idx>=MAX_FILE_DUMP)
-		return -1;
 	
 	if(idx==0){
 		for(i=0;i<MAX_FILE_DUMP;i++)
@@ -66,6 +64,8 @@ int dump_payload(uint8 *data_slot, uint32 data_size, uint8 fname[255]){
 	}
 
 	if(!found){
+		if(idx>=MAX_FILE_DUMP)
+			return -1
 		strcpy(filename[idx],fname);
 		i=idx;
 		idx++;
@@ -79,7 +79,7 @@ int dump_payload(uint8 *data_slot, uint32 data_size, uint8 fname[255]){
 		fin[i]=open(fname,oflag,644);
 	}
 	if(fin[i]<0)
-		fnc_log(FNC_LOG_VERBOSE,"Error in opening file for dump.\n");
+		fnc_log(FNC_LOG_VERBOSE,"Error to open file for dumping.\n");
 	else
 		write(fin[i],(void *)data_slot,data_size);
 

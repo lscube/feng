@@ -60,7 +60,7 @@ void schedule_do(int sig)
 void schedule_do(int sig)
 #endif
 {
-	int i,res;
+	int i=0,res=ERR_GENERIC;
 	struct timeval now;
 	double mnow;
 	// Fake timespec for fake nanosleep. See below.

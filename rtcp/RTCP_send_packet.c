@@ -52,7 +52,6 @@ int RTCP_send_packet(RTP_session *session,rtcp_pkt_type type)
 	hdr.padding=0;	
 	hdr.pt=type;
 	hdr_s=sizeof(hdr);
-			//	printf("sizeof e': %d\n",hdr_s);
 	switch (type) {
 		case SR: {
 			struct timeval ntp_time;
@@ -61,7 +60,6 @@ int RTCP_send_packet(RTP_session *session,rtcp_pkt_type type)
 			hdr_sr_s=sizeof(hdr_sr);
 			pkt_size=hdr_s+hdr_sr_s;
 			hdr.length=htons(pkt_size/4-1);
-			//printf("la lunghezza e': %d\n",hdr.length);
 			hdr.count=0;
 			hdr_sr.ssrc=htonl(session->ssrc);
 

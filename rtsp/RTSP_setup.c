@@ -175,19 +175,19 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 // ------------ START PATCH
 	{
 		char temp[255];
-		char *pd;
+		char *pd=NULL;
 		strcpy(temp, object);
 		p = strstr(temp, "/");
-		// BEGIN FEDERICO
+		// BEGIN 
 		if (p != NULL) {
 			strcpy(object, p + 1);	// CRITIC. 
 		}
-		pd = strstr(object, ".sd");	// this part is usefull in order to
+		pd = strstr(p, ".sd");	// this part is usefull in order to
 		p = strstr(pd + 1, ".sd");	// have compatibility with
 		if (p != NULL) {	// RealOne
 			strcpy(object, pd + 4);	// CRITIC. 
 		}		//Note: It's a critic part
-		// END FEDERICO
+		// END 
 	}
 // ------------ END PATCH
 

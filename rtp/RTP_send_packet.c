@@ -54,13 +54,13 @@
 
 int RTP_send_packet(RTP_session *session)
 {
-	unsigned char *packet;
-	unsigned int hdr_size;
+	unsigned char *packet=NULL;
+	unsigned int hdr_size=0;
 	RTP_header r;      // 12 bytes
-	int res;
+	int res=ERR_GENERIC;
 	double s_time;
 	double nextts;
-	OMSSlot *slot;
+	OMSSlot *slot=NULL;
 	ssize_t psize_sent=0;
 
 	if(!(slot = OMSbuff_getreader(session->cons))){

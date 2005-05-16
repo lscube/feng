@@ -52,7 +52,7 @@ void eventloop(tsocket main_fd)
 	static int conn_count = 0;
 	tsocket fd = -1;
 	static RTSP_buffer *rtsp_list=NULL;
-	RTSP_buffer *p;
+	RTSP_buffer *p=NULL;
 	uint32 fd_found;
 
 	if (conn_count!=-1)

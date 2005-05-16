@@ -42,7 +42,7 @@
 
 void add_client(RTSP_buffer **rtsp_list,tsocket fd)
 {
-	RTSP_buffer *p,*pp;
+	RTSP_buffer *p=NULL,*pp=NULL;
 	// Add a client
 	if (*rtsp_list==NULL) {
 		*rtsp_list=(RTSP_buffer*)calloc(1,sizeof(RTSP_buffer));
@@ -63,6 +63,7 @@ void add_client(RTSP_buffer **rtsp_list,tsocket fd)
 				return;
 			}
 			p=pp->next;
+			p->next=NULL;
 		}
 	}
 	RTSP_initserver(p,fd);

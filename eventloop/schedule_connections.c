@@ -50,11 +50,9 @@ extern int num_conn;
 void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
 {
 	int res;
-	RTSP_buffer *p,*pp;
-	RTP_session *r, *t;
+	RTSP_buffer *p=*rtsp_list,*pp=NULL;
+	RTP_session *r=NULL, *t=NULL;
 	
-	pp=NULL;
-	p=*rtsp_list;
 	while (p!=NULL)
 	{
 		if ((res=rtsp_server(p))!=ERR_NOERROR)
@@ -89,7 +87,7 @@ void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
                 			// Release the RTSP session
                 			free(p->session_list);
                 		}
-            			// Release the RSTP_buffer
+            			// Release the RTSP_buffer
             			if (p==*rtsp_list)
 				{
             				*rtsp_list=p->next;

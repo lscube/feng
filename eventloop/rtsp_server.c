@@ -48,8 +48,8 @@ int rtsp_server(RTSP_buffer *rtsp)
 	char buffer[RTSP_BUFFERSIZE+1]; /* +1 to control the final '\0'*/
 	int n;
 	int res;
-	RTSP_session *q;
-	RTP_session *p;
+	RTSP_session *q=NULL;
+	RTP_session *p=NULL;
 
 	if (rtsp==NULL) {
 		return ERR_NOERROR;
