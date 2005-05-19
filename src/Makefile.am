@@ -46,7 +46,8 @@ endif
 	
 bin_PROGRAMS = fenice
 
-fenice_SOURCES =	main.c 
+fenice_SOURCES =	main.c \
+			fncheader.c
 
 fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/rtsp/librtsp.la \

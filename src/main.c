@@ -49,7 +49,7 @@
 //#include <sys/types.h> /*fork*/
 //#include <unistd.h>    /*fork*/
 
-
+inline void fncheader(void); // defined in src/fncheader.c
 
 int main(int argc, char **argv)
 {
@@ -59,7 +59,8 @@ int main(int argc, char **argv)
 	// Fake timespec for fake nanosleep. See below.
 	struct timespec ts = { 0, 0 };
 
-	printf("\n%s %s - Open Media Streaming Project - Politecnico di Torino\n\n", PACKAGE, VERSION);
+	// printf("\n%s %s - Open Media Streaming Project - Politecnico di Torino\n\n", PACKAGE, VERSION);
+	fncheader();
 
 	/*command_environment parses the command line and returns the number of error */
 	if (command_environment(argc, argv))
