@@ -88,7 +88,6 @@ do{
 	for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {		
 		
 		if (sched[i].valid) {
-			sched[i].semaph=red; /* green = 0, red = 1 */
 			
 			if (!sched[i].rtp_session->pause) {
 				
@@ -137,16 +136,13 @@ do{
     			}
     			
 				
-			sched[i].semaph=green;
 		}  else if (sched[i].rtp_session) {
-			sched[i].semaph=red; /* green = 0, red = 1 */
 			if(sched[i].rtp_session->is_multicast_dad){/*unicast always is a multicast_dad*/
 				// fprintf(stderr, "rtp session not valid, but still present...\n");
 				RTP_session_destroy(sched[i].rtp_session);
 				sched[i].rtp_session = NULL;
 				fnc_log(FNC_LOG_INFO, "rtp session closed\n");
 			}
-			sched[i].semaph=green;
 		}
 	}
 #ifdef THREADED

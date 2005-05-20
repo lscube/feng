@@ -60,7 +60,6 @@ int schedule_init()
 		sched[i].rtp_session=NULL;
 		sched[i].play_action=NULL;		
 		sched[i].valid=0;
-		sched[i].semaph=green;
 	}
 	#ifdef SIGNALED
 	if (signal(SIGALRM,schedule_do)==SIG_ERR) {

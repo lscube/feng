@@ -43,11 +43,6 @@
 	#include <fenice/debug.h>
 	
 
-	typedef enum {		
-		green=0,
-		red=1
-	} semaphore;
-	
 	typedef struct _play_args {
     		struct tm playback_time;
     		short playback_time_valid;
@@ -58,7 +53,6 @@
 
 	typedef struct _schedule_list {
 		int valid;
-		semaphore semaph;
 		RTP_session *rtp_session;
 		//RTSP_session *rtsp_session;
 		RTP_play_action play_action;
@@ -84,6 +78,5 @@
 	void schedule_stop(int id);
 	int schedule_remove(int id);
 	int schedule_resume(int id, play_args *args);
-	int schedule_semaphore(int id);
 	
 #endif
