@@ -70,7 +70,6 @@ void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
 				num_conn--;
             			if (p->session_list!=NULL) //if client truncated RTSP connection before sending TEARDOWN: error
 				{
-					fnc_log(FNC_LOG_WARN,"WARNING! RTSP connection truncated before ending operations.\n");
                 			r=p->session_list->rtp_session;
                 			// Release all RTP sessions
                 			while (r!=NULL)
@@ -86,6 +85,8 @@ void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
 					//close(p->session_list->fd);
                 			// Release the RTSP session
                 			free(p->session_list);
+					p->session_list=NULL;
+					fnc_log(FNC_LOG_WARN,"WARNING! RTSP connection truncated before ending operations.\n");
                 		}
             			// Release the RTSP_buffer
             			if (p==*rtsp_list)

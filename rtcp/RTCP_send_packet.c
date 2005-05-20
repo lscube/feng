@@ -32,6 +32,7 @@
  *  
  * */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -39,14 +40,15 @@
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
 #include <fenice/types.h>
+#include <fenice/fnc_log.h>
 #include <netinet/in.h>
 #include <sys/time.h>
 
 int RTCP_send_packet(RTP_session *session,rtcp_pkt_type type)
 {
-	unsigned char *pkt;	
+	unsigned char *pkt=NULL;	
 	RTCP_header hdr;			
-	uint32 pkt_size,hdr_s;
+	uint32 pkt_size=0,hdr_s=0;
 	
 	hdr.version=2;
 	hdr.padding=0;	
@@ -57,9 +59,10 @@ int RTCP_send_packet(RTP_session *session,rtcp_pkt_type type)
 			struct timeval ntp_time;
 			RTCP_header_SR hdr_sr;
 			int hdr_sr_s;
+			//printf("SR\n");
 			hdr_sr_s=sizeof(hdr_sr);
 			pkt_size=hdr_s+hdr_sr_s;
-			hdr.length=htons(pkt_size/4-1);
+			hdr.length=htons((pkt_size >> 2) -1);
 			hdr.count=0;
 			hdr_sr.ssrc=htonl(session->ssrc);
 
@@ -76,14 +79,16 @@ int RTCP_send_packet(RTP_session *session,rtcp_pkt_type type)
 			}			
 			memcpy(pkt,&hdr,hdr_s);
 			memcpy(pkt+hdr_s,&hdr_sr,hdr_sr_s);
+			//fprintf(stderr,"pkt_size=%d,hdr_s=%d,hdr_sr_s=%d\n",pkt_size,hdr_s,hdr_sr_s);
 			break;
 		}
 		case RR: {
 			RTCP_header_RR hdr_rr;
 			int hdr_rr_s;
+			//printf("RR\n");
 			hdr_rr_s=sizeof(hdr_rr);
 			pkt_size=hdr_s+hdr_rr_s;
-			hdr.length=htons(pkt_size/4-1);
+			hdr.length=htons((pkt_size >> 2) -1);
 			hdr.count=0;
 			hdr_rr.ssrc=htonl(session->ssrc);
 			pkt=(unsigned char*)calloc(1,pkt_size);
@@ -99,12 +104,14 @@ int RTCP_send_packet(RTP_session *session,rtcp_pkt_type type)
 			char *name;
 			int hdr_sdes_s,name_s;
 			
-			
+			//printf("SDES\n");
 			name=prefs_get_hostname();
 			name_s=strlen(name);			
 			hdr_sdes_s=sizeof(hdr_sdes);			
+			
 			pkt_size=(((hdr_s+hdr_sdes_s+name_s)%4)?1:0)+(hdr_s+hdr_sdes_s+name_s);			
-			hdr.length=htons(pkt_size/4-1);
+			hdr.length=htons((pkt_size >> 2) -1);
+
 			pkt=(unsigned char*)calloc(1,pkt_size);
 			if (pkt==NULL) {
 				return ERR_ALLOC;
@@ -116,15 +123,20 @@ int RTCP_send_packet(RTP_session *session,rtcp_pkt_type type)
 			memcpy(pkt,&hdr,hdr_s);
 			memcpy(pkt+hdr_s,&hdr_sdes,hdr_sdes_s);
 			memcpy(pkt+hdr_s+hdr_sdes_s,name,name_s);
+
+
+			//fprintf(stderr,"pkt_size=%d,hdr_s=%d,hdr_sdes_s=%d,name_s=%d\n",pkt_size,hdr_s,hdr_sdes_s,name_s);
+			
 			break;
 		}
 		case BYE: {
 			RTCP_header_BYE hdr_bye;
 			int hdr_bye_s;
 			char *reason="The medium is over.";
+			//printf("BYE\n");
 			hdr_bye_s=sizeof(hdr_bye);
 			pkt_size=hdr_s+hdr_bye_s;
-			hdr.length=htons(pkt_size/4-1);
+			hdr.length=htons((pkt_size >> 2) -1);
 			hdr.count=1;
 			hdr_bye.ssrc=htonl(session->ssrc);
 			hdr_bye.length=htonl(strlen(reason));
@@ -138,6 +150,7 @@ int RTCP_send_packet(RTP_session *session,rtcp_pkt_type type)
 			break;	
 		}
 		default: {			
+			//printf("DEFAULT\n");
 			return ERR_NOERROR;
 		}
 	}
@@ -146,9 +159,7 @@ int RTCP_send_packet(RTP_session *session,rtcp_pkt_type type)
 		session->rtcp_outsize+=pkt_size;
 	}
 	else {
-		#if DEBUG
-		printf("Output RTCP packet lost\n");
-		#endif
+		fnc_log(FNC_LOG_VERBOSE,"Output RTCP packet lost\n");
 	}
 	free(pkt);
 	return ERR_NOERROR;

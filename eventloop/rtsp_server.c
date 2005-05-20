@@ -50,6 +50,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 	int res;
 	RTSP_session *q=NULL;
 	RTP_session *p=NULL;
+	ssize_t psize_sent=0;	
 
 	if (rtsp==NULL) {
 		return ERR_NOERROR;
@@ -160,9 +161,10 @@ int rtsp_server(RTSP_buffer *rtsp)
 			}
 	    		if (FD_ISSET(p->rtcp_fd_out,&wset)) {
     				// There are RTCP packets to send
-        			if (sendto(p->rtcp_fd_out,p->rtcp_outbuffer,p->rtcp_outsize,0,&(p->rtcp_out_peer),sizeof(p->rtcp_out_peer))<0) {
+        			if ((psize_sent=sendto(p->rtcp_fd_out,p->rtcp_outbuffer,p->rtcp_outsize,0,&(p->rtcp_out_peer),sizeof(p->rtcp_out_peer)))<0) {
         				fnc_log(FNC_LOG_VERBOSE,"RTCP Packet Lost\n");
         			}    		
+				//fprintf(stderr,"psize_sent=%d rtcp_outsize=%d\n",psize_sent,p->rtcp_outsize);
         			p->rtcp_outsize=0;
 	        		fnc_log(FNC_LOG_VERBOSE,"OUT RTCP\n");         	
 			}
