@@ -49,6 +49,7 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp)
 	int ml;			/* total message length including any message body */
 	int bl;			/* message body length */
 	char c;			/* character */
+	int control;
 
 	/*
 	 * return -1 on ERROR
@@ -60,7 +61,12 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp)
 	eomh = mb = ml = bl = 0;
 	while (ml <= rtsp->in_size) {
 		/* look for eol. */
-		ml += strcspn(&(rtsp->in_buffer[ml]), "\r\n");
+		control = strcspn(&(rtsp->in_buffer[ml]), "\r\n");
+		if(control > 0)
+			ml += control;
+		else
+			return ERR_GENERIC;
+		
 		if (ml > rtsp->in_size)
 			return (0);	/* haven't received the entire message yet. */
 		/*

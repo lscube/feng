@@ -61,9 +61,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
 			}
 		}
 		RTSP_discard_msg(rtsp);
-	}
-	if (full_msg == -1) {
-		return ERR_GENERIC;
-	}
-	return ERR_NOERROR;
+		return ERR_NOERROR;
+	} else
+		return full_msg;
 }
