@@ -50,7 +50,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 	int res;
 	RTSP_session *q=NULL;
 	RTP_session *p=NULL;
-	ssize_t psize_sent=0;	
+	/*ssize_t psize_sent=0;*/	
 
 	if (rtsp==NULL) {
 		return ERR_NOERROR;
@@ -136,14 +136,14 @@ int rtsp_server(RTSP_buffer *rtsp)
 		} else {
 			
 			FD_ZERO(&rset);
-		 	FD_ZERO(&wset);
+		 	/*FD_ZERO(&wset);*//*See rtcp/RTCP_handler.c*/
         		t.tv_sec=0;
         		t.tv_usec=100000;
 			FD_SET(p->rtcp_fd_in,&rset);
-    			if (p->rtcp_outsize>0) {
+    			/*if (p->rtcp_outsize>0) {
     				FD_SET(p->rtcp_fd_out,&wset);
-	    		}
-    			if (select(MAX_FDS,&rset,&wset,0,&t)<0) {		
+	    		}*/
+    			if (select(MAX_FDS,&rset,/*&wset*/0,0,&t)<0) {		
     				fnc_log(FNC_LOG_ERR,"select error\n");
 				send_reply(500, NULL, rtsp);
 	    			return ERR_GENERIC; //errore interno al server
@@ -159,15 +159,15 @@ int rtsp_server(RTSP_buffer *rtsp)
 	            		}
         			fnc_log(FNC_LOG_VERBOSE,"IN RTCP\n");
 			}
-	    		if (FD_ISSET(p->rtcp_fd_out,&wset)) {
+			/*---------SEE rtcp/RTCP_handler.c-----------------*/
+	    		/*if (FD_ISSET(p->rtcp_fd_out,&wset)) {
     				// There are RTCP packets to send
         			if ((psize_sent=sendto(p->rtcp_fd_out,p->rtcp_outbuffer,p->rtcp_outsize,0,&(p->rtcp_out_peer),sizeof(p->rtcp_out_peer)))<0) {
         				fnc_log(FNC_LOG_VERBOSE,"RTCP Packet Lost\n");
         			}    		
-				//fprintf(stderr,"psize_sent=%d rtcp_outsize=%d\n",psize_sent,p->rtcp_outsize);
         			p->rtcp_outsize=0;
 	        		fnc_log(FNC_LOG_VERBOSE,"OUT RTCP\n");         	
-			}
+			}*/
 		}	
 	}
 	return ERR_NOERROR;

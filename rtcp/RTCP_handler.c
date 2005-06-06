@@ -32,20 +32,45 @@
  *  
  * */
 
+#include <fenice/eventloop.h>
 #include <fenice/rtcp.h>
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 int RTCP_handler(RTP_session *session)
 {
+	fd_set wset;
+	struct timeval t;
+
 	if (session->rtcp_stats[i_server].pkt_count%20==0) {
-		if (session->rtcp_stats[i_server].pkt_count==0) {
+		if (session->rtcp_stats[i_server].pkt_count==0) 
 			RTCP_send_packet(session,RR);
-		}
-		else {
+		else 
 			RTCP_send_packet(session,SR);
-		}
 		RTCP_send_packet(session,SDES);
+		/*---------------SEND PKT-------------------------*/
+		/*---------------SEE eventloop/rtsp_server.c-------*/
+		FD_ZERO(&wset);
+       		t.tv_sec=0;
+       		t.tv_usec=100000;
+
+		if (session->rtcp_outsize>0) 
+    			FD_SET(session->rtcp_fd_out,&wset);
+		if (select(MAX_FDS,0,&wset,0,&t)<0) {		
+    			fnc_log(FNC_LOG_ERR,"select error\n");
+			/*send_reply(500, NULL, rtsp);*/
+			return ERR_GENERIC; //errore interno al server
+    		}
+
+		if (FD_ISSET(session->rtcp_fd_out,&wset)) {
+        		if (sendto(session->rtcp_fd_out,session->rtcp_outbuffer,session->rtcp_outsize,0,&(session->rtcp_out_peer),sizeof(session->rtcp_out_peer))<0) 
+        			fnc_log(FNC_LOG_VERBOSE,"RTCP Packet Lost\n");
+      		  	    		
+        		session->rtcp_outsize=0;
+	       		fnc_log(FNC_LOG_VERBOSE,"OUT RTCP\n");         	
+		}
+		/*------------------------------------------------*/
 	}
 	return ERR_NOERROR;
 }

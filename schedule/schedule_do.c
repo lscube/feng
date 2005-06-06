@@ -107,6 +107,7 @@ do{
 						//sched[i].rtp_session->mtime+=sched[i].rtp_session->current_media->description.pkt_len;     // old scheduler
         					
 						RTCP_handler(sched[i].rtp_session);
+						/*if RTCP_handler return ERR_GENERIC what do i have to do?*/
 						
 						// Send an RTP packet
 						res = sched[i].play_action(sched[i].rtp_session);

@@ -49,7 +49,7 @@ int RTCP_recv_packet(RTP_session *session)
     			int ssrc_count,i;
     			unsigned char tmp[4];
 //    			printf("SR\n");
-			fnc_log(FNC_LOG_DEBUG, "RTCP SR packet received\n");
+			fnc_log(FNC_LOG_VERBOSE, "RTCP SR packet received\n");
     			session->rtcp_stats[i_client].SR_received += 1;
     			session->rtcp_stats[i_client].pkt_count=*((int*)&(session->rtcp_inbuffer[20+len]));
     			session->rtcp_stats[i_client].octet_count=*((int*)&(session->rtcp_inbuffer[24+len]));
@@ -72,7 +72,7 @@ int RTCP_recv_packet(RTP_session *session)
     			int ssrc_count,i;
     			unsigned char tmp[4];
 //    			printf("RR\n");
-			fnc_log(FNC_LOG_DEBUG, "RTCP RR packet received\n");
+			fnc_log(FNC_LOG_VERBOSE, "RTCP RR packet received\n");
     			session->rtcp_stats[i_client].RR_received += 1;
     			ssrc_count=session->rtcp_inbuffer[0+len] & 0x1f;
     			for (i=0; i<ssrc_count; ++i) {
@@ -91,7 +91,7 @@ int RTCP_recv_packet(RTP_session *session)
     		}
     		case SDES: {
 //    			printf("SDES\n");    			
-			fnc_log(FNC_LOG_DEBUG, "RTCP SDES packet received\n");
+			fnc_log(FNC_LOG_VERBOSE, "RTCP SDES packet received\n");
     			switch (session->rtcp_inbuffer[8]) {
     				case CNAME: {
 		    			session->rtcp_stats[1].dest_SSRC=ntohs(*((int*)&(session->rtcp_inbuffer[4])));
@@ -123,16 +123,16 @@ int RTCP_recv_packet(RTP_session *session)
     		}
     		case BYE: {    			
 //    			printf("BYE\n");		
-			fnc_log(FNC_LOG_DEBUG, "RTCP BYE packet received\n");
+			fnc_log(FNC_LOG_VERBOSE, "RTCP BYE packet received\n");
     			break;
     		}
     		case APP: {
 //    			printf("APP\n");		
-			fnc_log(FNC_LOG_DEBUG, "RTCP APP packet received\n");
+			fnc_log(FNC_LOG_VERBOSE, "RTCP APP packet received\n");
     			break;
     		}
     		default: {
-    			fnc_log(FNC_LOG_DEBUG,"Unknown RTCP received and ignored.\n");
+    			fnc_log(FNC_LOG_VERBOSE,"Unknown RTCP received and ignored.\n");
     			return ERR_NOERROR;
     		}
     	}
