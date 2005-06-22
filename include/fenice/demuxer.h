@@ -38,6 +38,11 @@
 #define resource_name char*
 /*
  * a resource_name can be a mkv, sd, program stream, avi, device ... 
+ * syntax: 
+ * 	udp://ip:port
+ * 	tcp://ip:port
+ * 	file://path/filename
+ * 	dev://device:driver
  */
 
 #define msg_error int
@@ -73,7 +78,7 @@ typedef struct __RESOURCE{
 }Resource;
 
 /*Interface to implement the demuxer*/
-Resource * init_resource(cost char *mrl);
+Resource * init_resource(resource_name);
 int add_resource_info(Resource*, .../*infos*/);
 int add_track(Resource *, const char *name, .../*infos*/);
 typedef struct __INPUTFORMAT{
@@ -87,7 +92,6 @@ typedef struct __INPUTFORMAT{
 	long int (*read_timestamp)();
 	//...
 }InputFormat;
-
 int register_format(InputFormat *);
 
 /*example
@@ -104,12 +108,15 @@ static InputFormat matroska_iformat = {
 };
 
 */
+/*--------------------------------*/
 
+/*Interface between RTSP - RTP and mediathread*/
 Resource * r_open(resource_name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
 msg_error get_info(resource_name, Info *);/*infos for all the tracks*/
 Selector * r_open_tracks(resource_name, uint8 *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/
 msg_error r_seek(Resource *);/*seeks the resource: mkv, sd ...*/
+/*-------------------------------------------*/
 
 #endif
