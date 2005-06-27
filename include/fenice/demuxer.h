@@ -34,6 +34,7 @@
 #include <fenice/types>
 #include <fenice/utils.h>
 #include <fenice/InputStream.h>
+#include <fenice/MediaParser.h>
 
 #define resource_name char*
 /*
@@ -51,8 +52,9 @@
 #define	RESOURCE__NOT_FOUND -1 
 #define	RESOURCE_DAMAGED -2
 #define	RESOURCE_NOT_SEEKABLE -3
+#define	RESOURCE_TRACK_NOT_FOUND -4
 /*...*/
-	
+#define MAX_TRACKS 20	
 
 typedef struct __CAPABILITIES{
 
@@ -69,18 +71,19 @@ typedef struct __INFO{
 typedef __TRACK{
 	InputStream * i_stream;/*not NULL if different from __RESOURCE->i_stream*/
 	Info * track_info;
+	MediaParser * parser;
 }Track;
 
 typedef struct __RESOURCE{
 	InputStream * i_stream;
 	Info * info;
-	Track * tracks[20];
+	Track * tracks[MAX_TRACKS];
 }Resource;
 
 /*Interface to implement the demuxer*/
 Resource * init_resource(resource_name);
-int add_resource_info(Resource*, .../*infos*/);
-int add_track(Resource *, const char *name, .../*infos*/);
+msg_error add_resource_info(Resource*, .../*infos*/);
+msg_error add_track(Resource *, const char *name, .../*infos*/);
 typedef struct __INPUTFORMAT{
 	const char *format_name; /*i.e. "matroska"*/
 	int (*init)(Resource *);
@@ -89,7 +92,7 @@ typedef struct __INPUTFORMAT{
 	int (*read_packet)(Resource *);
 	int (*read_close)(Resource *);
 	int (*read_seek)(Resource *, long int time_msec);
-	long int (*read_timestamp)();
+	long int (*read_timestamp)(Resorce *, uint32 track_id);
 	//...
 }InputFormat;
 int register_format(InputFormat *);

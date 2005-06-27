@@ -35,6 +35,7 @@
 
 typedef struct __CACHE{
 	uint8 *cache;
+	uint32 max_cache_size;
 	uint32 cache_size;
 	uint32 bytes_left;
 }Cache;
