@@ -46,14 +46,17 @@ typedef struct __CACHE{
 	uint32 max_cache_size;
 	uint32 cache_size;
 	uint32 bytes_left;
+	(int *) (read_data)(int fd, void *buf, int nbytes); /*can be: read, read_from_net, read_from_device*/
 }Cache;
 
 typedef enum { st_file=0, st_net, st_pipe, st_device} stream_type;
 
 Cache * create_cache(stream_type);
 uint32 read_internal_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, uint32 bytes_written,  uint32 bytes_left);
+int read_from_net(int fd, void *buf, int nbytes);/*not implemented yet*/
+int read_from_device(int fd, void *buf, int nbytes);/*not implemented yet*/
 
-/*Interface*/
+/*Interface to Cache*/
 int read_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, stream_type);
 void flush_cache(Cache *c); /* {c->byte_left=0;} */
 void free_cache(Cache *c); 
@@ -62,9 +65,9 @@ typedef struct __INPUTSTREAM{
 	stream_type type;
 	Cache * cache;
 	int fd;
-	//... 
+	//... properties for file, net or device 
 }InputStream;
 
-uint32 read_stream(uint32 nbytes, uint8 * buf, InputStream *is); //{ return read_c(nbytes, buf, is->cache, is->fd, is->type); }
-
+/*Interface to InputStream*/
+uint32 read_stream(uint32 nbytes, uint8 * buf, InputStream *is); 
 #endif

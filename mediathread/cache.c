@@ -39,26 +39,31 @@ Cache * create_cache(stream_type type){
 	uint32 size;
 	Cache *c;
 	
+	c=(Cache *)malloc(sizeof(Cache));
+	if(c==NULL)
+		return NULL;
 	switch(type){
 		case 'st_file':
 			size=CACHE_FILE_SIZE;
+			c->read_data=read;
 		break;
 		case 'st_net':
 			size=CACHE_NET_SIZE;
+			c->read_data=read_from_net;
 		break;
 		case 'st_pipe':
 			size=CACHE_PIPE_SIZE;
-
+			c->read_data=read;
 		break;
 		case 'st_device':
 			size=CACHE_DEVICE_SIZE;
-
+			c->read_data=read_from_device;
 		break;
 		default :
 			size=CACHE_DEFAULT_SIZE;
+			c->read_data=read;
 		break;
 	}
-	c=(Cache *)malloc(sizeof(Cache));
 	c->cache=(uint8*)malloc(size);
 	c->max_cache_size=size;
 	c->bytes_left=0;
@@ -74,7 +79,7 @@ uint32 read_internal_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, uint32 byte
 		return bytes_written;
 		
 	if(c->bytes_left==0){
-		c->bytes_left=c->cache_size=read(fd,c->cache,c->max_cache_size);
+		c->bytes_left=c->cache_size=c->read_data(fd,c->cache,c->max_cache_size);/*can be: read, read_from_net, read_from_device*/
 		if(c->cache_size==0) /*EOF*/
 			return bytes_written;
 	}
@@ -87,7 +92,7 @@ uint32 read_internal_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, uint32 byte
 }
 
 
-/*Interface*/
+/*Interface to Cache*/
 int read_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, stream_type type){
 	int bytes_read;
 	if(c==NULL)
@@ -101,7 +106,6 @@ int read_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, stream_type type){
 		return ERR_EOF;
 	return bytes_read;
 }
-
 
 void flush_cache(Cache *c){
 	c->byte_left=0;
