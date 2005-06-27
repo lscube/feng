@@ -11,10 +11,6 @@
  *	- Francesco Varano	<francesco.varano@polito.it>
  *	- Marco Penno		<marco.penno@polito.it>
  *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

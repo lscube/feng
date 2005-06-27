@@ -33,6 +33,14 @@
 
 #include <fenice/types.h>
 
+#define CACHE_FILE_SIZE 65536
+#define CACHE_NET_SIZE 65536
+#define CACHE_PIPE_SIZE 4096
+#define CACHE_DEVICE_SIZE 4096
+#define CACHE_DEFAULT_SIZE 65536
+
+#define min(a,b) (a<b)?a:b
+
 typedef struct __CACHE{
 	uint8 *cache;
 	uint32 max_cache_size;
@@ -40,10 +48,15 @@ typedef struct __CACHE{
 	uint32 bytes_left;
 }Cache;
 
-typedef enum { st_file=0, st_udp, st_tcp, st_pipe, st_device} stream_type;
+typedef enum { st_file=0, st_net, st_pipe, st_device} stream_type;
 
 Cache * create_cache(stream_type);
+uint32 read_internal_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, uint32 bytes_written,  uint32 bytes_left);
+
+/*Interface*/
+int read_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, stream_type);
 void flush_cache(Cache *c); /* {c->byte_left=0;} */
+void free_cache(Cache *c); 
 
 typedef struct __INPUTSTREAM{
 	stream_type type;
@@ -51,5 +64,7 @@ typedef struct __INPUTSTREAM{
 	int fd;
 	//... 
 }InputStream;
+
+uint32 read_stream(uint32 nbytes, uint8 * buf, InputStream *is); //{ return read_c(nbytes, buf, is->cache, is->fd, is->type); }
 
 #endif
