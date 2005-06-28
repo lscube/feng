@@ -138,11 +138,11 @@ static void fnc_syslog(int level, const char *fmt, ...){
 	int no_print=0;
 
 	switch (level) {
-		case FNC_LOG_ERR:
-			l=LOG_ERR;
-			break;
 		case FNC_LOG_FATAL:
 			l=LOG_CRIT;
+			break;
+		case FNC_LOG_ERR:
+			l=LOG_ERR;
 			break;
 		case FNC_LOG_WARN:
 			l=LOG_WARNING;

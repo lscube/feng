@@ -216,10 +216,11 @@ int read_slice(uint8 *buf,uint32 *buf_size, int fin, char *final_byte) {     /* 
         return count;
 }
 
-int probe_standard(media_entry *me,uint8 *buf,uint32 *buf_size,int fin, standard *std)
-{											/* If the sequence_extension occurs immediately */
-        unsigned char final_byte;							/* after the sequence header, the sequence is an */
-        next_start_code(buf,buf_size,fin);						/* MPEG-2 video sequence */
+int probe_standard(media_entry *me, uint8 *buf, uint32 *buf_size, int fin, standard *std)
+{												/* If the sequence_extension occurs immediately */
+        unsigned char final_byte;								/* after the sequence header, the sequence is an */
+
+        next_start_code(buf,buf_size,fin);							/* MPEG-2 video sequence */
         read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
         final_byte=buf[*buf_size-1];
@@ -234,7 +235,8 @@ int probe_standard(media_entry *me,uint8 *buf,uint32 *buf_size,int fin, standard
         return 1;
 }
 
-int read_picture_coding_ext(uint8 *buf,uint32 *buf_size, int fin, unsigned char *final_byte,video_spec_head2* vsh2) {  /* reads picture coding extension */
+int read_picture_coding_ext(uint8 *buf, uint32 *buf_size, int fin, unsigned char *final_byte, video_spec_head2* vsh2) /* reads picture coding extension */
+{
 	int count=0;
         unsigned char byte1,byte2,byte3,byte4,byte5,byte6;
         vsh2->x=0;

@@ -13,7 +13,6 @@ libsocket_la_SOURCES =	get_address.c \
 			udp_close.c \
 			udp_connect.c \
 			udp_open.c
-			 
 			
 libsocket_la_LDFLAGS = -static
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)

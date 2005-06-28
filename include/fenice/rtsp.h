@@ -44,7 +44,7 @@
 	#include <fenice/mediainfo.h>
 	#include <fenice/schedule.h>
 
-	#define RTSP_BUFFERSIZE 2048
+	#define RTSP_BUFFERSIZE 4096
 
 	/* Stati della macchina a stati del server rtsp*/
 	#define INIT_STATE      0

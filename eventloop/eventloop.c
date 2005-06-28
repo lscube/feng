@@ -86,7 +86,7 @@ void eventloop(tsocket main_fd)
         				RTP_port_pool_init(ONE_FORK_MAX_CONNECTION*child_count*2+RTP_DEFAULT_PORT);
 					if (schedule_init()==ERR_FATAL)
 					{
-                  				fnc_log(FNC_LOG_FATAL,"Fatal: Can't start scheduler. Server is aborting.\n");
+                  				fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.\n");
                   				return;
                   			}        			
         				conn_count=1;

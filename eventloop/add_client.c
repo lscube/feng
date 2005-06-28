@@ -45,9 +45,8 @@ void add_client(RTSP_buffer **rtsp_list,tsocket fd)
 	RTSP_buffer *p=NULL,*pp=NULL;
 	// Add a client
 	if (*rtsp_list==NULL) {
-		*rtsp_list=(RTSP_buffer*)calloc(1,sizeof(RTSP_buffer));
-		if (*rtsp_list==NULL) {
-			fnc_log(FNC_LOG_FATAL,"Fatal: calloc failed\n");
+		if ( !(*rtsp_list=(RTSP_buffer*)calloc(1,sizeof(RTSP_buffer)) ) ) {
+			fnc_log(FNC_LOG_FATAL,"Could not alloc memory\n\n");
 			return;
 		}
 		p=*rtsp_list;
@@ -57,9 +56,8 @@ void add_client(RTSP_buffer **rtsp_list,tsocket fd)
 			pp=p;
 		}
 		if (pp!=NULL) {
-			pp->next=(RTSP_buffer *)calloc(1,sizeof(RTSP_buffer));
-			if (pp->next==NULL) {
-				fnc_log(FNC_LOG_FATAL,"Fatal: calloc failed\n");
+			if ( !(pp->next=(RTSP_buffer *)calloc(1,sizeof(RTSP_buffer)) ) ) {
+				fnc_log(FNC_LOG_FATAL,"Could not alloc memory\n");
 				return;
 			}
 			p=pp->next;
