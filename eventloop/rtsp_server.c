@@ -150,8 +150,8 @@ int rtsp_server(RTSP_buffer *rtsp)
     			}
     			if (FD_ISSET(p->rtcp_fd_in,&rset)) {        	
 	    			// There are RTCP packets to read in
-    				int peer_len=sizeof(p->rtcp_in_peer);
-        			if ((p->rtcp_insize=recvfrom(p->rtcp_fd_in,p->rtcp_inbuffer,sizeof(p->rtcp_inbuffer),0,&(p->rtcp_in_peer),&peer_len))<0) {            	
+    				socklen_t peer_len=sizeof(p->rtcp_in_peer);
+        			if ((p->rtcp_insize=recvfrom(p->rtcp_fd_in, p->rtcp_inbuffer, sizeof(p->rtcp_inbuffer), 0, &(p->rtcp_in_peer), &peer_len))<0) {            	
         				fnc_log(FNC_LOG_VERBOSE,"Input RTCP packet Lost\n");
         			}
         			else {

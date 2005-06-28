@@ -46,7 +46,7 @@
 #include <alloca.h>
 #endif*/
 
-int read_seq_head(media_entry *me, uint8 *buf,uint32 *buf_size, int fin, char *final_byte, standard std) {  /* reads sequence header */
+int read_seq_head(media_entry *me, uint8 *buf,uint32 *buf_size, int fin, unsigned char *final_byte, standard std) {  /* reads sequence header */
         uint8 tmp;
 	uint32 x=0, bitcnt=0, n = 18,  picture_rate, bufptr;
 	
@@ -104,7 +104,7 @@ int read_seq_head(media_entry *me, uint8 *buf,uint32 *buf_size, int fin, char *f
         return 1;
 }
 
-int read_gop_head(uint8 *buf,uint32 *buf_size, int fin, char *final_byte, char *hours, char *minutes, char *seconds, char *picture, standard std) {  /* reads GOP header */
+int read_gop_head(uint8 *buf,uint32 *buf_size, int fin, unsigned char *final_byte, char *hours, char *minutes, char *seconds, char *picture, standard std) {  /* reads GOP header */
 	int count=0;
         unsigned char byte1, byte2, byte3, byte4, byte5, byte6, byte7;
         read(fin,&(buf[*buf_size]),4);                       			/* reads GOP hours, minutes, seconds and picture number */
@@ -144,7 +144,7 @@ int read_gop_head(uint8 *buf,uint32 *buf_size, int fin, char *final_byte, char *
         return count;
 }
 
-int read_picture_head(uint8 *buf,uint32 *buf_size, int fin, char *final_byte, char *temp_ref, video_spec_head1* vsh1, standard std) { /* reads picture head */
+int read_picture_head(uint8 *buf,uint32 *buf_size, int fin, unsigned char *final_byte, char *temp_ref, video_spec_head1* vsh1, standard std) { /* reads picture head */
 	int count=0;
         unsigned char byte1,byte2,byte3,byte4,byte5,byte6;
         read(fin,&(buf[*buf_size]),2);            					/* reads picture temporal reference */
@@ -216,14 +216,15 @@ int read_slice(uint8 *buf,uint32 *buf_size, int fin, char *final_byte) {     /* 
         return count;
 }
 
-int probe_standard(media_entry *me,uint8 *buf,uint32 *buf_size,int fin, standard *std) {    /* If the sequence_extension occurs immediately */
-        unsigned char final_byte;                                                      /* after the sequence header, the sequence is an */
-        next_start_code(buf,buf_size,fin);                                             /* MPEG-2 video sequence */
+int probe_standard(media_entry *me,uint8 *buf,uint32 *buf_size,int fin, standard *std)
+{											/* If the sequence_extension occurs immediately */
+        unsigned char final_byte;							/* after the sequence header, the sequence is an */
+        next_start_code(buf,buf_size,fin);						/* MPEG-2 video sequence */
         read(fin,&(buf[*buf_size]),1);
         *buf_size+=1;
         final_byte=buf[*buf_size-1];
         if (final_byte == 0xb3) {
-                read_seq_head(me,buf,buf_size,fin,&final_byte,*std);
+                read_seq_head(me, buf, buf_size, fin, &final_byte, *std);
         }
         if (final_byte  == 0xb5){
                 *std=MPEG_2;
@@ -233,7 +234,7 @@ int probe_standard(media_entry *me,uint8 *buf,uint32 *buf_size,int fin, standard
         return 1;
 }
 
-int read_picture_coding_ext(uint8 *buf,uint32 *buf_size, int fin, char *final_byte,video_spec_head2* vsh2) {  /* reads picture coding extension */
+int read_picture_coding_ext(uint8 *buf,uint32 *buf_size, int fin, unsigned char *final_byte,video_spec_head2* vsh2) {  /* reads picture coding extension */
 	int count=0;
         unsigned char byte1,byte2,byte3,byte4,byte5,byte6;
         vsh2->x=0;

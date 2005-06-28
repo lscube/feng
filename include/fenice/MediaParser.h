@@ -32,7 +32,7 @@
 #define __MEDIAPARSERH
 
 #include <fenice/types.h>
-#include <fenice/bifferpool.h>
+#include <fenice/bufferpool.h>
 
 typedef struct __MEDIAPARSER {
 	/*bufferpool*/
@@ -41,15 +41,15 @@ typedef struct __MEDIAPARSER {
 
 typedef struct __MEDIAPARSERTYPE {
 	const char *encoding_name; /*i.e. MPV, MPA ...*/
-	const char *media_entity: /*i.e. audio, video, text*/
+	const char *media_entity; /*i.e. audio, video, text*/
 	int (*load)();
 	int (*read)();
 	int (*close)(); /*before called free */
-	(long int)(* calculate_timestamp)();
+	long int (* calculate_timestamp)();
 	void *properties; /*to cast to audio, video or text specific properties*/
 } MediaParserType;
 
-int register_media(MediaParserType *);
+int register_media_type(MediaParserType *);
 
 typedef struct __COMMON_PROPERTIES {
 	uint32 bit_rate; /*average if VBR*/

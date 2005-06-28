@@ -99,17 +99,17 @@
 	} static_MPEG_video;
 
 	/* reads sequence header */
-	int read_seq_head(media_entry *me, uint8 *, uint32 *, int fin, char *final_byte, standard std);
+	int read_seq_head(media_entry *me, uint8 *, uint32 *, int fin, unsigned char *final_byte, standard std);
 	/* reads GOP header */
-	int read_gop_head(uint8 *, uint32 *, int fin, char *final_byte, char *hours, char *minutes, char *seconds, char *picture, standard std);
+	int read_gop_head(uint8 *, uint32 *, int fin, unsigned char *final_byte, char *hours, char *minutes, char *seconds, char *picture, standard std);
 	/* reads picture head */
-	int read_picture_head(uint8 *, uint32 *, int fin, char *final_byte, char *temp_ref, video_spec_head1* vsh1, standard std);
+	int read_picture_head(uint8 *, uint32 *, int fin, unsigned char *final_byte, char *temp_ref, video_spec_head1* vsh1, standard std);
 	/* reads a slice */
 	int read_slice(uint8 *, uint32 *, int fin, char *final_byte);
 	/* If the sequence_extension occurs immediately */
 	int probe_standard(media_entry *me, uint8 *, uint32 *,int fin, standard *std);
 	/* reads picture coding extension */
-	int read_picture_coding_ext(uint8 *, uint32 *, int fin, char *final_byte,video_spec_head2* vsh2);
+	int read_picture_coding_ext(uint8 *, uint32 *, int fin, unsigned char *final_byte,video_spec_head2* vsh2);
 
 	int load_MPV (media_entry *me);
 	int read_MPEG_video (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme, uint8 *marker);

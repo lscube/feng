@@ -40,7 +40,7 @@
 #include <fenice/types.h>
 #include <fenice/utils.h>
 
-uint32 is_valid_multicast_address(uint8 *ip){
+uint32 is_valid_multicast_address(char *ip){
 	 /* This only works on IPv4 for right now */
 	struct in_addr haddr;
 	unsigned int addr;

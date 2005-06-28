@@ -140,7 +140,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
 
 	if(max_connection()==ERR_GENERIC){
 		/*redirect*/
-		return send_redirect_3xx(rtsp,object);
+		return send_redirect_3xx(rtsp, object);
 	}
 
 

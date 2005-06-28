@@ -75,7 +75,7 @@ int parse_visual_object_sequence(static_MPEG4_video_es *mpeg4_struct,uint8 *data
 
 int parse_visual_object(uint8 *data, uint32 *data_size,int fin){
 	int visual_object_type;/*now not used yet*/
-	int off = *data_size*8;
+	uint32 off = *data_size*8;
 	/*
 	 *32 bits visual object start code 
 	 *if (is_visual_object_identifier 1 bit){
@@ -110,7 +110,7 @@ int parse_video_object(uint8 *data, uint32 *data_size,int fin){
 }
 
 int parse_video_object_layer(static_MPEG4_video_es *out, uint8 *data, uint32 *data_size,int fin){
-	int off = *data_size*8+9; /*skip 1 bit random_accessible_vol and 8 bits visual_object_type_indication*/
+	uint32 off = *data_size*8+9; /*skip 1 bit random_accessible_vol and 8 bits visual_object_type_indication*/
 	uint32 i;
 	int vop_time_increment=0;
 

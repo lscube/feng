@@ -4,7 +4,8 @@ feniceincludedir = $(top_srcdir)/include
 noinst_LTLIBRARIES = libmediath.la
 
 libmediath_la_SOURCES =	cache.c \
-				InputStream.c
+			demuxer.c \
+			InputStream.c
 			
 			
 libmediath_la_LDFLAGS = -static

@@ -41,9 +41,9 @@
 #include <fenice/types.h>
 #include <fenice/fnc_log.h>
 
-uint32 send_redirect_3xx(RTSP_buffer *rtsp, uint8 *object)
+uint32 send_redirect_3xx(RTSP_buffer *rtsp, char *object)
 {
-	uint8 *r;		/* get reply message buffer pointer */
+	char *r;		/* get reply message buffer pointer */
 	uint8 *mb;		/* message body buffer pointer */
 	uint32 mb_len;
 	SD_descr *matching_descr;

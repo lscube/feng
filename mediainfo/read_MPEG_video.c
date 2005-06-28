@@ -189,18 +189,18 @@ int read_MPEG_video (media_entry *me, uint8 *data, uint32 *data_size, double *mt
 		*recallme=1;
 		while((s->final_byte > 0xAF || s->final_byte==0x00) && *recallme){
 			if (s->final_byte == 0xb3) {
-               			read_seq_head(me,data_tmp,data_size,me->fd,&s->final_byte,s->std);
+               			read_seq_head(me, data_tmp, data_size, me->fd, &s->final_byte, s->std);
                			seq_head_pres=1;
        			}
 
 			if (s->final_byte == 0xb8) {
-                        	read_gop_head(data_tmp,data_size,me->fd,&s->final_byte,&s->hours,&s->minutes,&s->seconds,&s->picture,s->std);
+                        	read_gop_head(data_tmp, data_size, me->fd, &s->final_byte, &s->hours, &s->minutes, &s->seconds, &s->picture, s->std);
                  	}
 		
 			if (s->final_byte == 0x00) {
-                        	read_picture_head(data_tmp,data_size,me->fd,&s->final_byte,&s->temp_ref,&s->vsh1,s->std);
+                        	read_picture_head(data_tmp, data_size, me->fd, &s->final_byte, &s->temp_ref, &s->vsh1, s->std);
                         	if (s->std == MPEG_2 && *data_size<num_bytes) {
-                                	read_picture_coding_ext(data_tmp,data_size,me->fd,&s->final_byte,&s->vsh2);
+                                	read_picture_coding_ext(data_tmp, data_size, me->fd, &s->final_byte, &s->vsh2);
                         	}
                 	}
 			if (s->final_byte == 0xb7) {/*sequence end code*/

@@ -31,7 +31,7 @@
 #if !defined(_DEMUXERH)
 #define _DEMUXERH
 
-#include <fenice/types>
+#include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/InputStream.h>
 #include <fenice/MediaParser.h>
@@ -68,7 +68,7 @@ typedef struct __INFO {
 
 } Info;
 
-typedef __TRACK {
+typedef struct __TRACK {
 	InputStream *i_stream;/*not NULL if different from __RESOURCE->i_stream*/
 	Info *track_info;
 	MediaParser *parser;

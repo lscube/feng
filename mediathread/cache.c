@@ -81,29 +81,28 @@ Cache *create_cache(stream_type type)
 }
 
 
-static uint32 read_internal_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, uint32 bytes_written)
+static uint32 read_internal_c(uint32 nbytes, uint8 *buf, Cache *c, int fd)
 {
-	uint32 towrite;
+	uint32 bytes;
 
 	if(nbytes==0)
-		return bytes_written;
+		return 0;
 		
-	if(c->bytes_left==0){
+	if(c->bytes_left==0) {
 		c->bytes_left=c->cache_size=c->read_data(fd,c->cache,c->max_cache_size);/*can be: read, read_from_net, read_from_device*/
 		if(c->cache_size==0) /*EOF*/
-			return bytes_written;
+			return 0;
 	}
-	towrite=min(nbytes,c->bytes_left);
-	memcpy(&buf[bytes_written], &c->cache[c->cache_size - c->bytes_left], towrite);
-	bytes_written+=towrite;
-	c->bytes_left-=towrite;
+	bytes=min(nbytes,c->bytes_left);
+	memcpy(buf, &c->cache[c->cache_size - c->bytes_left], bytes);
+	c->bytes_left-=bytes;
 	
-	return read_internal_c(nbytes-towrite, buf, c, fd, bytes_written);
+	return bytes + read_internal_c(nbytes-bytes, buf+bytes, c, fd);
 }
 
 
 /*Interface to Cache*/
-int read_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, stream_type type)
+int read_c(uint32 nbytes, uint8 *buf, Cache *c, int fd, stream_type type)
 {
 	int bytes_read;
 
@@ -112,7 +111,7 @@ int read_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, stream_type type)
 		return ERR_FATAL;
 	}
 
-	bytes_read=read_internal_c(nbytes, buf, c, fd, 0);
+	bytes_read=read_internal_c(nbytes, buf, c, fd);
 	if(bytes_read==0)
 		return ERR_EOF;
 	return bytes_read;

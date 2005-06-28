@@ -73,8 +73,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	unsigned int start_seq, start_rtptime;
 	char line[255];
 	media_entry *list, *matching_me, req;
-	struct sockaddr rtsp_peer;
-	int namelen = sizeof(struct sockaddr);
+	struct sockaddr_storage rtsp_peer;
+	socklen_t namelen = sizeof(rtsp_peer);
 	unsigned long ssrc;
 	SD_descr *matching_descr;
 
@@ -298,7 +298,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		sp2->ser_ports.RTCP =matching_me->rtp_multicast_port+1;
 	}
 	
-	if (getpeername(rtsp->fd, &rtsp_peer, &namelen) != 0) {
+	if (getpeername(rtsp->fd, (struct sockaddr *)&rtsp_peer, &namelen) != 0) {
 		send_reply(415, 0, rtsp);	// Internal server error
 		return ERR_GENERIC;
 	}
