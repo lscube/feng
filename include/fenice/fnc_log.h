@@ -43,7 +43,7 @@
 	#define FNC_LOG_SYS 1
 
 	//level
-	#define FNC_LOG_ERR_FATAL 0 
+	#define FNC_LOG_FATAL 0 
 	#define FNC_LOG_ERR 1
 	#define FNC_LOG_WARN 2 
 	#define FNC_LOG_INFO 3 

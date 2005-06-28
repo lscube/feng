@@ -87,13 +87,13 @@ static void fnc_errlog(int level, const char *fmt, ...){
 	tm=localtime(&now);
 	
 	switch (level) {
+		case FNC_LOG_FATAL:
+			strftime(date, MAX_LEN_DATE, ERR_FORMAT ,tm);
+			fprintf(fd, "[%s] [fatal error] ",date);
+			break;
 		case FNC_LOG_ERR:
 			strftime(date, MAX_LEN_DATE, ERR_FORMAT ,tm);
 			fprintf(fd, "[%s] [error] ",date);
-			break;
-		case FNC_LOG_ERR_FATAL:
-			strftime(date, MAX_LEN_DATE, ERR_FORMAT ,tm);
-			fprintf(fd, "[%s] [fatal error] ",date);
 			break;
 		case FNC_LOG_WARN:
 			strftime(date, MAX_LEN_DATE, ERR_FORMAT ,tm);
@@ -141,7 +141,7 @@ static void fnc_syslog(int level, const char *fmt, ...){
 		case FNC_LOG_ERR:
 			l=LOG_ERR;
 			break;
-		case FNC_LOG_ERR_FATAL:
+		case FNC_LOG_FATAL:
 			l=LOG_CRIT;
 			break;
 		case FNC_LOG_WARN:

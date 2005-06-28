@@ -35,6 +35,8 @@
 #ifndef _SOCKETH
 #define _SOCKETH	
 
+#include <config.h>
+
 	typedef unsigned short	u_int16;
 
 	#if defined(__alpha)
@@ -59,17 +61,27 @@
 
 	#ifdef WIN32
 		#include <winsock2.h>
+	#else
+		#include <sys/types.h>
+		#include <sys/socket.h>
+		#include <arpa/inet.h>
 	#endif
-	#include <sys/types.h>
-	#include <sys/socket.h>
 
 	#ifdef WIN32	
 		typedef SOCKET tsocket;
 	#else
 		typedef int tsocket;
 	#endif
+
+#ifndef HAVE_STRUCT_SOCKADDR_STORAGE
+#define MAXSOCKADDR 128 /*!< max socket address structure size */
+struct sockaddr_storage {
+	char padding[MAXSOCKADDR];
+};
+#endif // HAVE_STRUCT_SOCKADDR_STORAGE
 		
 	char *get_address();
+	char *sock_ntop_host(const struct sockaddr *, socklen_t, char *, size_t);
 	tsocket tcp_listen(unsigned short port);
 	tsocket tcp_accept(tsocket fd);	
 	int tcp_read(tsocket fd, void *buffer, int nbytes);

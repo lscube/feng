@@ -56,35 +56,35 @@
 /*...*/
 #define MAX_TRACKS 20	
 
-typedef struct __CAPABILITIES{
+typedef struct __CAPABILITIES {
 
-}Capabilities;
+} Capabilities;
 
-typedef struct __SELECTOR{
+typedef struct __SELECTOR {
 
-}Selector;
+} Selector;
 
-typedef struct __INFO{
+typedef struct __INFO {
 
-}Info;
+} Info;
 
-typedef __TRACK{
-	InputStream * i_stream;/*not NULL if different from __RESOURCE->i_stream*/
-	Info * track_info;
-	MediaParser * parser;
-}Track;
+typedef __TRACK {
+	InputStream *i_stream;/*not NULL if different from __RESOURCE->i_stream*/
+	Info *track_info;
+	MediaParser *parser;
+} Track;
 
-typedef struct __RESOURCE{
-	InputStream * i_stream;
-	Info * info;
-	Track * tracks[MAX_TRACKS];
-}Resource;
+typedef struct __RESOURCE {
+	InputStream *i_stream;
+	Info *info;
+	Track *tracks[MAX_TRACKS];
+} Resource;
 
 /*Interface to implement the demuxer*/
-Resource * init_resource(resource_name);
-msg_error add_resource_info(Resource*, .../*infos*/);
+Resource *init_resource(resource_name);
+msg_error add_resource_info(Resource *, .../*infos*/);
 msg_error add_track(Resource *, const char *name, .../*infos*/);
-typedef struct __INPUTFORMAT{
+typedef struct __INPUTFORMAT {
 	const char *format_name; /*i.e. "matroska"*/
 	int (*init)(Resource *);
 	int (*probe)(Resource *);
@@ -94,7 +94,7 @@ typedef struct __INPUTFORMAT{
 	int (*read_seek)(Resource *, long int time_msec);
 	long int (*read_timestamp)(Resorce *, uint32 track_id);
 	//...
-}InputFormat;
+} InputFormat;
 int register_format(InputFormat *);
 
 /*example
@@ -114,7 +114,7 @@ static InputFormat matroska_iformat = {
 /*--------------------------------*/
 
 /*Interface between RTSP - RTP and mediathread*/
-Resource * r_open(resource_name);/*open the resource: mkv, sd ...*/
+Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
 msg_error get_info(resource_name, Info *);/*infos for all the tracks*/
 Selector * r_open_tracks(resource_name, uint8 *track_name, Capabilities *capabilities);/*open the right tracks*/

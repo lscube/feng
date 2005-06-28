@@ -109,6 +109,9 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(select socket gettimeofday uname getcwd getwd strcspn strdup strtoul strerror strstr setenv)
 AC_CHECK_FUNC(getaddrinfo)
 
+dnl check if we have the generic struct for net addresses the has max possible size
+AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
+
 CFLAGS=""
 
 
@@ -275,6 +278,7 @@ dnl AC_DEFINE(FENICE_CONF_PATH_STR_ENV, "FENICE_CONF_PATH",[Define the name for 
 
 
 AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([mediathread/Makefile])
 AC_CONFIG_FILES([eventloop/Makefile])
 AC_CONFIG_FILES([rtp/Makefile])
 AC_CONFIG_FILES([rtcp/Makefile])

@@ -47,7 +47,7 @@ void add_client(RTSP_buffer **rtsp_list,tsocket fd)
 	if (*rtsp_list==NULL) {
 		*rtsp_list=(RTSP_buffer*)calloc(1,sizeof(RTSP_buffer));
 		if (*rtsp_list==NULL) {
-			fnc_log(FNC_LOG_ERR_FATAL,"Fatal: calloc failed\n");
+			fnc_log(FNC_LOG_FATAL,"Fatal: calloc failed\n");
 			return;
 		}
 		p=*rtsp_list;
@@ -59,7 +59,7 @@ void add_client(RTSP_buffer **rtsp_list,tsocket fd)
 		if (pp!=NULL) {
 			pp->next=(RTSP_buffer *)calloc(1,sizeof(RTSP_buffer));
 			if (pp->next==NULL) {
-				fnc_log(FNC_LOG_ERR_FATAL,"Fatal: calloc failed\n");
+				fnc_log(FNC_LOG_FATAL,"Fatal: calloc failed\n");
 				return;
 			}
 			p=pp->next;

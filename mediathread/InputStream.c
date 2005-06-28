@@ -33,6 +33,7 @@
 #include <fenice/types.h>
 #include <fenice/InputStream.h>
 
-int read_stream(uint32 nbytes, uint8 * buf, InputStream *is){
+int read_stream(uint32 nbytes, uint8 * buf, InputStream *is)
+{
 	return read_c(nbytes, buf, is->cache, is->fd, is->type); 
 }

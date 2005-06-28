@@ -42,8 +42,9 @@
 int tcp_read(tsocket fd, void *buffer, int nbytes)
 {
 	int n;
-	struct sockaddr_in name;
-	int namelen = sizeof(struct sockaddr_in);
+	struct sockaddr_storage name;
+	socklen_t namelen = sizeof(name);
+	char addr_str[128];		/* Unix domain is largest */
 
 	#ifndef WIN32
 		n=read(fd,buffer,nbytes);
@@ -52,10 +53,10 @@ int tcp_read(tsocket fd, void *buffer, int nbytes)
 	#endif
 	
 	if(n>1){
-		if(getpeername(fd,(struct sockaddr*)&name,&namelen)<0)
+		if( getpeername(fd, (struct sockaddr*)&name, &namelen) < 0 )
 			fnc_log(FNC_LOG_CLIENT,"- - - ");
 		else
-			fnc_log(FNC_LOG_CLIENT,"%s - - ",inet_ntoa(name.sin_addr));
+			fnc_log(FNC_LOG_CLIENT,"%s - - ", sock_ntop_host((struct sockaddr *)&name, namelen, addr_str, sizeof(addr_str)) );
 	}
 	
 	return n;

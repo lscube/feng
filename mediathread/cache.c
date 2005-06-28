@@ -34,37 +34,43 @@
 #include <fenice/InputStream.h>
 #include <fenice/utils.h>
 #include <fenice/types.h>
+#include <fenice/fnc_log.h>
 
-Cache * create_cache(stream_type type){
+// shawill: should we receive cache size as parameter?
+Cache *create_cache(stream_type type)
+{
 	uint32 size;
 	Cache *c;
 	
-	c=(Cache *)malloc(sizeof(Cache));
-	if(c==NULL)
+	if ( !(c=(Cache *)malloc(sizeof(Cache))) )
 		return NULL;
-	switch(type){
-		case 'st_file':
+
+	switch(type) {
+		case st_file:
 			size=CACHE_FILE_SIZE;
 			c->read_data=read;
-		break;
-		case 'st_net':
+			break;
+		case st_net:
 			size=CACHE_NET_SIZE;
 			c->read_data=read_from_net;
-		break;
-		case 'st_pipe':
+			break;
+		case st_pipe:
 			size=CACHE_PIPE_SIZE;
 			c->read_data=read;
-		break;
-		case 'st_device':
+			break;
+		case st_device:
 			size=CACHE_DEVICE_SIZE;
 			c->read_data=read_from_device;
-		break;
-		default :
+			break;
+		default:
 			size=CACHE_DEFAULT_SIZE;
 			c->read_data=read;
-		break;
+			break;
 	}
-	c->cache=(uint8*)malloc(size);
+	if ( !(c->cache=(uint8 *)malloc(size)) ) {
+		free(c);
+		return NULL;
+	}
 	c->max_cache_size=size;
 	c->bytes_left=0;
 
@@ -72,7 +78,8 @@ Cache * create_cache(stream_type type){
 }
 
 
-uint32 read_internal_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, uint32 bytes_written){
+static uint32 read_internal_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, uint32 bytes_written)
+{
 	uint32 towrite;
 
 	if(nbytes==0)
@@ -84,34 +91,37 @@ uint32 read_internal_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, uint32 byte
 			return bytes_written;
 	}
 	towrite=min(nbytes,c->bytes_left);
-	memcpy(buf[bytes_written],c->cache[c->cache_size - c->bytes_left],towrite);
+	memcpy(&buf[bytes_written], &c->cache[c->cache_size - c->bytes_left], towrite);
 	bytes_written+=towrite;
 	c->bytes_left-=towrite;
 	
-	return read_internal_c(nbytes-towrite, buf, c, fd, bytes_written):
+	return read_internal_c(nbytes-towrite, buf, c, fd, bytes_written);
 }
 
 
 /*Interface to Cache*/
-int read_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, stream_type type){
+int read_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, stream_type type)
+{
 	int bytes_read;
-	if(c==NULL)
-		c=create_cache(type);
-	if(c==NULL){
-		fnc_log(FNC_LOG_ERR,"FATAL!! It is impossible creating cache\n");
+
+	if( !c && !(c=create_cache(type))) { // shawill: should we do it here?
+		fnc_log(FNC_LOG_FATAL, "Could not create cache for input stream\n");
 		return ERR_FATAL;
 	}
+
 	bytes_read=read_internal_c(nbytes, buf, c, fd, 0);
 	if(bytes_read==0)
 		return ERR_EOF;
 	return bytes_read;
 }
 
-void flush_cache(Cache *c){
-	c->byte_left=0;
+void flush_cache(Cache *c)
+{
+	c->bytes_left=0;
 } 
 
-void free_cache(Cache *c){
+void free_cache(Cache *c)
+{
 	free(c);
 }
 

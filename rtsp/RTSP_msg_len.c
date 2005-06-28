@@ -106,7 +106,7 @@ void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 				}
 
 				if (sscanf(&(rtsp->in_buffer[ml]), "%d", &bl) != 1) {
-					fnc_log(FNC_LOG_ERR_FATAL,"ALERT: invalid ContentLength encountered in message.");
+					fnc_log(FNC_LOG_FATAL,"ALERT: invalid ContentLength encountered in message.");
 					exit(-1);
 				}
 			}
@@ -115,7 +115,7 @@ void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 	}
 
 	if (ml > rtsp->in_size) {
-		fnc_log(FNC_LOG_ERR_FATAL,"PANIC: buffer did not contain the entire RTSP message.");
+		fnc_log(FNC_LOG_FATAL,"PANIC: buffer did not contain the entire RTSP message.");
 		exit(-1);
 	}
 

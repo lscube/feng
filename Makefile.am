@@ -2,6 +2,7 @@ SUBDIRS =	bufferpool \
 		socket \
 		md5 \
 		xmlparser \
+		mediathread \
 		multicast \
 		command_environment \
 		eventloop \

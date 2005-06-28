@@ -1,22 +1,26 @@
 feniceincludedir =	$(includedir)/fenice
+
 noinst_HEADERS	=	bufferpool.h \
 			command_environment.h \
-			multicast.h \
-			debug.h
+			debug.h \
+			demuxer.h \
 			evenloop.h \
+			fnc_log.h \
+			gsm.h \
+			h26l.h \
+			InputStream.h \
 			intnet.h \
 			md5global.h \
 			md5.h \
 			mediainfo.h \
-			pcm.h \
+			MediaParser.h \
 			mp3.h \
-			gsm.h \
 			mpeg4es.h \
 			mpeg.h \
-			mpeg_ts.h \
 			mpeg_system.h \
-			h26l.h \
-			socket.h \
+			mpeg_ts.h \
+			multicast.h \
+			pcm.h \
 			prefs.h \
 			rtcp.h \
 			rtp.h \
@@ -24,6 +28,7 @@ noinst_HEADERS	=	bufferpool.h \
 			rtsp.h \
 			schedule.h \
 			sdp.h \
+			socket.h \
 			types.h \
 			utils.h \
 			xmllexer.h \

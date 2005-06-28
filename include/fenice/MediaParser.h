@@ -34,38 +34,38 @@
 #include <fenice/types.h>
 #include <fenice/bifferpool.h>
 
-typedef struct __MEDIAPARSER{
+typedef struct __MEDIAPARSER {
 	/*bufferpool*/
 	OMSBuffer * buffer;
-}MediaParser;
+} MediaParser;
 
-typedef struct __MEDIAPARSERTYPE{
+typedef struct __MEDIAPARSERTYPE {
 	const char *encoding_name; /*i.e. MPV, MPA ...*/
 	const char *media_entity: /*i.e. audio, video, text*/
 	int (*load)();
 	int (*read)();
 	int (*close)(); /*before called free */
 	void *properties; /*to cast to audio, video or text specific properties*/
-}MediaParserType;
+} MediaParserType;
 
 int register_media(MediaParserType *);
 
-typedef struct __COMMON_PROPERTIES{
+typedef struct __COMMON_PROPERTIES {
 	uint32 bit_rate; /*average if VBR*/
-}common_prop;
+} common_prop;
 
-typedef struct __AUDIO_SPEC_PROPERTIES{
+typedef struct __AUDIO_SPEC_PROPERTIES {
 	common_prop *cprop;
-}audio_spec_prop;
+} audio_spec_prop;
 
-typedef struct __VIDEO_SPEC_PROPERTIES{
+typedef struct __VIDEO_SPEC_PROPERTIES {
 	common_prop *cprop;
 	uint32 frame_rate;
-}video_spec_prop;
+} video_spec_prop;
 
-typedef struct __TEXT_SPEC_PROPERTIES{
+typedef struct __TEXT_SPEC_PROPERTIES {
 	common_prop *cprop;
-}text_spec_prop;
+} text_spec_prop;
 
 #endif
 
