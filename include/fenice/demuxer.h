@@ -39,7 +39,7 @@
 #define resource_name char*
 /*
  * a resource_name can be a mkv, sd, program stream, avi, device ... 
- * syntax: 
+ * syntax could be: 
  * 	udp://ip:port
  * 	tcp://ip:port
  * 	file://path/filename
@@ -64,20 +64,24 @@ typedef struct __SELECTOR {
 
 } Selector;
 
-typedef struct __INFO {
+typedef struct __TRACK_INFO {
 
-} Info;
+} TrackInfo;
 
 typedef struct __TRACK {
 	InputStream *i_stream;/*not NULL if different from __RESOURCE->i_stream*/
-	Info *track_info;
+	TrackInfo *track_info;
 	MediaParser *parser;
 	long int (*read_timestamp)();/*put it in parser->....timestamp*/
 } Track;
 
+typedef struct __RESOURCE_INFO {
+
+} ResourceInfo;
+
 typedef struct __RESOURCE {
 	InputStream *i_stream;
-	Info *info;
+	ResourceInfo *info;
 	Track *tracks[MAX_TRACKS];
 } Resource;
 
@@ -115,7 +119,7 @@ static InputFormat matroska_iformat = {
 /*Interface between RTSP - RTP and mediathread*/
 Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
-msg_error get_info(resource_name, Info *);/*infos for all the tracks*/
+msg_error get_resource_info(resource_name, ResourceInfo *);
 Selector * r_open_tracks(resource_name, uint8 *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/
 msg_error r_seek(Resource *);/*seeks the resource: mkv, sd ...*/
