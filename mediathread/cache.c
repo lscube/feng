@@ -33,7 +33,6 @@
 
 #include <fenice/InputStream.h>
 #include <fenice/utils.h>
-#include <fenice/types.h>
 #include <fenice/fnc_log.h>
 
 // shawill: should we receive cache size as parameter?
@@ -68,6 +67,10 @@ Cache *create_cache(stream_type type)
 			break;
 	}
 	if ( !(c->cache=(uint8 *)malloc(size)) ) {
+		free(c);
+		return NULL;
+	}
+	if(c->cache==NULL){
 		free(c);
 		return NULL;
 	}
@@ -117,11 +120,17 @@ int read_c(uint32 nbytes, uint8 * buf, Cache *c, int fd, stream_type type)
 
 void flush_cache(Cache *c)
 {
-	c->bytes_left=0;
+	if(c!=NULL)
+		c->bytes_left=0;
 } 
 
 void free_cache(Cache *c)
 {
-	free(c);
+	if(c!=NULL){
+		free(c->cache);
+		c->cache=NULL;
+		free(c);
+		c=NULL;
+	}
 }
 

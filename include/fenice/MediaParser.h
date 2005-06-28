@@ -45,6 +45,7 @@ typedef struct __MEDIAPARSERTYPE {
 	int (*load)();
 	int (*read)();
 	int (*close)(); /*before called free */
+	(long int)(* calculate_timestamp)();
 	void *properties; /*to cast to audio, video or text specific properties*/
 } MediaParserType;
 

@@ -30,10 +30,27 @@
 
 
 #include <fenice/utils.h>
-#include <fenice/types.h>
 #include <fenice/InputStream.h>
+
+InputStream * create_inputstream(stream_type type, int fd)
+{
+	InputStream *is;
+	is=(InputStream *)malloc(sizeof(InputStream));
+	if(is==NULL){
+		fnc_log(FNC_LOG_ERR,"FATAL!!! It is impossible to allocate InputStream\n");
+		return is;/*NULL*/	
+	}
+	is->cache=NULL;
+	is->type=type;
+	is->fd=fd;
+	return is;	
+}
 
 int read_stream(uint32 nbytes, uint8 * buf, InputStream *is)
 {
+	if(is==NULL){
+		fnc_log(FNC_LOG_ERR,"FATAL!!! InputStream is NULL\n");
+		return ERR_FATAL;
+	}
 	return read_c(nbytes, buf, is->cache, is->fd, is->type); 
 }

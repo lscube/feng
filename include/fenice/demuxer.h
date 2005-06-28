@@ -28,8 +28,8 @@
  *  
  * */
 
-#if !defined(_MEDIAH)
-#define _MEDIAH
+#if !defined(_DEMUXERH)
+#define _DEMUXERH
 
 #include <fenice/types>
 #include <fenice/utils.h>
@@ -72,6 +72,7 @@ typedef __TRACK {
 	InputStream *i_stream;/*not NULL if different from __RESOURCE->i_stream*/
 	Info *track_info;
 	MediaParser *parser;
+	long int (*read_timestamp)();/*put it in parser->....timestamp*/
 } Track;
 
 typedef struct __RESOURCE {
@@ -92,7 +93,6 @@ typedef struct __INPUTFORMAT {
 	int (*read_packet)(Resource *);
 	int (*read_close)(Resource *);
 	int (*read_seek)(Resource *, long int time_msec);
-	long int (*read_timestamp)(Resorce *, uint32 track_id);
 	//...
 } InputFormat;
 int register_format(InputFormat *);
@@ -107,7 +107,6 @@ static InputFormat matroska_iformat = {
     matroska_read_packet,
     matroska_read_close,
     matroska_read_seek,
-    matroska_read_timestamp
 };
 
 */
