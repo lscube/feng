@@ -65,7 +65,13 @@ typedef struct __SELECTOR {
 } Selector;
 
 typedef struct __TRACK_INFO {
-
+	//start CC
+	char commons_dead[255]; 
+	char rdf_page[255];
+	char title[80];
+	char author[80];	
+	int tag_dim;    
+	//end CC
 } TrackInfo;
 
 typedef struct __TRACK {
@@ -73,16 +79,18 @@ typedef struct __TRACK {
 	TrackInfo *track_info;
 	MediaParser *parser;
 	long int (*read_timestamp)();/*put it in parser->....timestamp*/
+	void *private_data; /*use it as you want*/
 } Track;
 
 typedef struct __RESOURCE_INFO {
-
+	uint8 *twin;
 } ResourceInfo;
 
 typedef struct __RESOURCE {
 	InputStream *i_stream;
 	ResourceInfo *info;
 	Track *tracks[MAX_TRACKS];
+	void *private_data; /*use it as you want*/
 } Resource;
 
 /*Interface to implement the demuxer*/
@@ -116,7 +124,7 @@ static InputFormat matroska_iformat = {
 */
 /*--------------------------------*/
 
-/*Interface between RTSP - RTP and mediathread*/
+/*Interface between mediathread and demuxer*/
 Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
 msg_error get_resource_info(resource_name, ResourceInfo *);

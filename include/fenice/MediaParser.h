@@ -34,11 +34,6 @@
 #include <fenice/types.h>
 #include <fenice/bufferpool.h>
 
-typedef struct __MEDIAPARSER {
-	/*bufferpool*/
-	OMSBuffer * buffer;
-} MediaParser;
-
 typedef struct __MEDIAPARSERTYPE {
 	const char *encoding_name; /*i.e. MPV, MPA ...*/
 	const char *media_entity; /*i.e. audio, video, text*/
@@ -48,20 +43,45 @@ typedef struct __MEDIAPARSERTYPE {
 	long int (* calculate_timestamp)();
 	void *properties; /*to cast to audio, video or text specific properties*/
 } MediaParserType;
-
 int register_media_type(MediaParserType *);
 
+typedef struct __MEDIAPARSER {
+	/*bufferpool*/
+	OMSBuffer * buffer;
+} MediaParser;
+
+typedef enum {undefined=-1,frame=0,sample=1} MediaCoding;
+
 typedef struct __COMMON_PROPERTIES {
-	uint32 bit_rate; /*average if VBR*/
+	uint32 bit_rate; /*average if VBR or -1 is not usefull*/
+	MediaCoding coding_type;
+	uint32 payload_type;
+	uint32 clock_rate;
+	uint8 encoding_name[11];
 } common_prop;
 
 typedef struct __AUDIO_SPEC_PROPERTIES {
 	common_prop *cprop;
+	float sample_rate;/*SamplingFrequency*/
+	float OutputSamplingFrequency;
+	short audio_channels;
+	uint32 bit_per_sample;/*BitDepth*/
 } audio_spec_prop;
 
 typedef struct __VIDEO_SPEC_PROPERTIES {
 	common_prop *cprop;
 	uint32 frame_rate;
+	/*Matroska ...*/
+	uint32 FlagInterlaced;
+	short StereoMode;
+	uint32 PixelWidth;
+	uint32 PixelHeight;
+	uint32 DisplayWidth;
+	uint32 DisplayHeight;
+	uint32 DisplayUnit;
+	uint32 AspectRatio;
+	uint8 *ColorSpace;
+	float GammaValue;
 } video_spec_prop;
 
 typedef struct __TEXT_SPEC_PROPERTIES {

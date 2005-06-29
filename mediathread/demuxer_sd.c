@@ -31,8 +31,75 @@
 #include <fenice/demuxer.h>
 #include <fenice/utils.h>
 
+#if !defined(_MEDIAINFOH) /*remove it when mediainfo will be removed*/ 
+/*RESOURCE PRIVATE_DATA*/
+typedef enum {
+	SD_FL_TWIN=1,
+	SD_FL_MULTICAST=2,
+	SD_FL_MULTICAST_PORT=4
+} sd_descr_flags;
+
+typedef struct __SD_descr {
+		sd_descr_flags flags;
+		char multicast[16];/*???*/
+		char ttl[4];/*???*/
+    		//char twin[255]; //see RESOURCE_INFO -> twin
+} SD_descr;
+/*----------------------*/
+
+
+/*TRACK PRIVATE_DATA*/
+typedef enum {
+	ME_FILENAME=1,
+	/*    disposable   ME=2,  */
+	ME_DESCR_FORMAT=4,
+	ME_AGGREGATE=8,
+	ME_RESERVED=16,
+	ME_FD=32
+} MeFlags;
+
+typedef enum {
+	MED_MSOURCE=2, /* live, stored => st_pipe/st_net/st_device, st_file*/
+	MED_PAYLOAD_TYPE=4,
+	MED_CLOCK_RATE=8,
+	MED_ENCODING_NAME=16,
+	MED_AUDIO_CHANNELS=32,
+	MED_SAMPLE_RATE=64,    	
+	MED_BIT_PER_SAMPLE=128,
+	MED_CODING_TYPE=256,
+	MED_FRAME_LEN=512,
+	MED_BITRATE=1024,
+	MED_PKT_LEN=2048,
+	MED_PRIORITY=4096,
+	MED_FRAME_RATE=16384,
+	MED_BYTE_PER_PCKT=32768,
+	/*start CC*/
+	MED_LICENSE=65536,
+	MED_RDF_PAGE=131072,
+	MED_TITLE=262144,
+	MED_CREATOR=524288,
+	MED_ID3=1048576
+	/*end CC*/
+} MeDescrFlags;
+
+typedef struct __FLAGS_DATA{
+	MeFlags general_flags; 
+	MeDescrFlags description_flags;	    	    	    		
+   	struct __DATA {	
+		int frame_len; // i need to move it in Parser
+		int priority; //i need to move it. Where? Selector, Track 
+		float pkt_len; //i need to move it in Parser
+		int byte_per_pckt; //i need to move it in Parser
+	} data;
+} FlagsData;    	
+
+/*----------------------*/
+#endif //...MEDIAINFOH
+
 int sd_init(Resource *r)
 {
+
+ 		
 	return RESOURCE_OK;
 }
 
