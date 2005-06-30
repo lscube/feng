@@ -29,3 +29,40 @@
  * */
 
 #include <fenice/demuxer.h>
+#include <fenice/utils.h>
+
+Resource *r_open(resource_name n)
+{
+	Resource *r;
+	//...
+	return r;
+}
+void r_close(Resource *r)
+{
+	//...
+}
+
+msg_error get_resource_info(resource_name n , ResourceInfo *r)
+{
+	//...
+	return RESOURCE_OK;
+}
+
+Selector * r_open_tracks(resource_name n, uint8 *track_name, Capabilities *capabilities)
+{
+	Selector *s;
+	//...
+	return s;
+}
+
+void r_close_tracks(Selector *s)
+{
+	//...
+}
+
+msg_error r_seek(Resource *r)
+{
+	//...
+	return RESOURCE_OK;
+}
+

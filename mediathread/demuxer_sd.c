@@ -31,8 +31,8 @@
 #include <fenice/demuxer.h>
 #include <fenice/utils.h>
 
-#if !defined(_MEDIAINFOH) /*remove it when mediainfo will be removed*/ 
 /*RESOURCE PRIVATE_DATA*/
+#if !defined(_MEDIAINFOH) /*remove it when mediainfo will be removed*/ 
 typedef enum {
 	SD_FL_TWIN=1,
 	SD_FL_MULTICAST=2,
@@ -56,7 +56,7 @@ typedef enum {
 	ME_AGGREGATE=8,
 	ME_RESERVED=16,
 	ME_FD=32
-} MeFlags;
+} me_flags;
 
 typedef enum {
 	MED_MSOURCE=2, /* live, stored => st_pipe/st_net/st_device, st_file*/
@@ -80,11 +80,12 @@ typedef enum {
 	MED_CREATOR=524288,
 	MED_ID3=1048576
 	/*end CC*/
-} MeDescrFlags;
+} me_descr_flags;
+#endif //...MEDIAINFOH
 
 typedef struct __FLAGS_DATA{
-	MeFlags general_flags; 
-	MeDescrFlags description_flags;	    	    	    		
+	me_flags general_flags; 
+	me_descr_flags description_flags;	    	    	    		
    	struct __DATA {	
 		int frame_len; // i need to move it in Parser
 		int priority; //i need to move it. Where? Selector, Track 
@@ -94,12 +95,21 @@ typedef struct __FLAGS_DATA{
 } FlagsData;    	
 
 /*----------------------*/
-#endif //...MEDIAINFOH
 
 int sd_init(Resource *r)
 {
 
- 		
+	/*Allocate Resource PRIVATE DATA and cast it*/
+	r->private_data=(SD_descr *)malloc(sizeof(SD_descr));
+
+	/**
+	 * parse sd file. Allocate and cast TRACK PRIVATE DATA foreach track.
+	 * (in this case track = elementary stream media file)
+	 * */
+	do{
+		//...	
+	}while(!eof(r->i_stream->fd));
+
 	return RESOURCE_OK;
 }
 

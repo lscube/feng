@@ -71,7 +71,8 @@ typedef struct __INPUTSTREAM {
 
 
 /*Interface to InputStream*/
-InputStream *create_inputstream(stream_type type, int fd);
+InputStream *create_inputstream(uint8 *mrl);
 inline int read_stream(uint32 nbytes, uint8 *buf, InputStream *is); 
+int parse_mrl(uint8 *mrl, stream_type *type, int *fd);
 
 #endif // __INPUTSTREAMH

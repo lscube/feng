@@ -41,7 +41,6 @@
  * a resource_name can be a mkv, sd, program stream, avi, device ... 
  * syntax could be: 
  * 	udp://ip:port
- * 	tcp://ip:port
  * 	file://path/filename
  * 	dev://device:driver
  */
