@@ -66,3 +66,22 @@ msg_error r_seek(Resource *r)
 	return RESOURCE_OK;
 }
 
+Resource *init_resource(resource_name name)
+{
+	Resource *r;
+	//...
+	return r;
+}
+
+msg_error add_resource_info(Resource *r, .../*infos*/)
+{
+	//...
+	return RESOURCE_OK;
+}
+
+msg_error add_track(Resource *r, const char *name, .../*infos*/)
+{
+	//...
+	return RESOURCE_OK;
+}
+

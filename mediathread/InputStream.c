@@ -29,31 +29,93 @@
  * */
 
 #include <string.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 #include <fenice/utils.h>
 #include <fenice/InputStream.h>
 #include <fenice/fnc_log.h>
 
-
-static int parse_mrl_st_file(uint8 *mrl, int *fd)
+static int open_socket(char *host, char *port,char *path, int *fd)
 {
-	
+
+	//...TODO
 	return ERR_NOERROR;
 }
 
-
-static int parse_mrl_st_net(uint8 *mrl, int *fd)
+static int open_file(uint8 *filename, int *fd)
 {
+	int oflag = O_RDONLY;
+	
+	if(((*fd)=open(filename,oflag))==-1) {
+		fnc_log(FNC_LOG_ERR,"It's impossible to open file\n");
+		return ERR_FATAL;
+	}
 	return ERR_NOERROR;
+}
+
+static int open_device()
+{
+
+	//...TODO
+	return ERR_NOERROR;
+}
+
+static int parse_mrl_st_file(uint8 *mrl, int *fd)
+{
+	return open_file(mrl,fd);
+}
+
+
+static int parse_mrl_st_net(uint8 *urlname, int *fd)
+{
+	char *host, *path;
+	char *port;
+        char *token, *tokenda;
+
+        // initialization
+        if ((tokenda = (char *) malloc(sizeof(char) * (strlen(urlname) + 1))) == NULL)
+                return 1;
+        strcpy(tokenda, urlname);
+        if ((token = strstr(tokenda, "://")) != NULL) {
+                token = strtok(tokenda, ":");
+                if (port != NULL) {
+                        port = strdup(token);
+                }
+                token += strlen(token) + 3;     /* skip *:// */
+        } else
+                token = tokenda;
+        if (strstr(token, ":") != NULL) {
+                token = strtok(token, ":");
+                host = strdup(token);
+                token = strtok(NULL, "/");
+                port = strdup(token);
+        } else {
+                token = strtok(token, "/");
+                host = strdup(token);
+        }
+        token += strlen(token);
+        *(token) = '/';
+        path = strdup(token); /*NULL if no path present*/
+
+        free(tokenda);
+
+	return open_socket(host,port,path,fd);
 }
 
 
 static int parse_mrl_st_device(uint8 *mrl, int *fd)
 {
-	return ERR_NOERROR;
+	//...TODO
+	//
+	return open_device();
 }
 	
 
+/*Interface*/
 InputStream *create_inputstream(uint8 *mrl)
 {
 	InputStream *is;
@@ -62,6 +124,7 @@ InputStream *create_inputstream(uint8 *mrl)
 		fnc_log(FNC_LOG_FATAL,"Could not allocate memory for InputStream\n");
 		return NULL;
 	}
+	strcpy(is->name,mrl); /* ie. file://path/to/file */
 	if(parse_mrl(mrl, &(is->type), &(is->fd))!=ERR_NOERROR) {
 		fnc_log(FNC_LOG_ERR,"mrl not valid\n");
 		free(is);

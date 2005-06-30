@@ -63,6 +63,7 @@ void flush_cache(Cache *c);
 void free_cache(Cache *c); 
 
 typedef struct __INPUTSTREAM {
+	char name[255];
 	stream_type type;
 	Cache *cache;
 	int fd;
