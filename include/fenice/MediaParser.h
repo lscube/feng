@@ -43,25 +43,27 @@ typedef struct __MEDIAPARSERTYPE {
 	long int (* calculate_timestamp)();
 	void *properties; /*to cast to audio, video or text specific properties*/
 } MediaParserType;
+
 int register_media_type(MediaParserType *);
 
 typedef struct __MEDIAPARSER {
-	/*bufferpool*/
-	OMSBuffer * buffer;
+
 } MediaParser;
 
-typedef enum {undefined=-1,frame=0,sample=1} MediaCoding;
+typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCoding;
+
+#define __PROPERTIES_COMMON_FIELDS 	int32 bit_rate; /*average if VBR or -1 is not usefull*/ \
+					MediaCoding coding_type; \
+					uint32 payload_type; \
+					uint32 clock_rate; \
+					uint8 encoding_name[11];
 
 typedef struct __COMMON_PROPERTIES {
-	uint32 bit_rate; /*average if VBR or -1 is not usefull*/
-	MediaCoding coding_type;
-	uint32 payload_type;
-	uint32 clock_rate;
-	uint8 encoding_name[11];
+	__PROPERTIES_COMMON_FIELDS
 } common_prop;
 
 typedef struct __AUDIO_SPEC_PROPERTIES {
-	common_prop *cprop;
+	__PROPERTIES_COMMON_FIELDS
 	float sample_rate;/*SamplingFrequency*/
 	float OutputSamplingFrequency;
 	short audio_channels;
@@ -69,7 +71,7 @@ typedef struct __AUDIO_SPEC_PROPERTIES {
 } audio_spec_prop;
 
 typedef struct __VIDEO_SPEC_PROPERTIES {
-	common_prop *cprop;
+	__PROPERTIES_COMMON_FIELDS
 	uint32 frame_rate;
 	/*Matroska ...*/
 	uint32 FlagInterlaced;
@@ -85,7 +87,7 @@ typedef struct __VIDEO_SPEC_PROPERTIES {
 } video_spec_prop;
 
 typedef struct __TEXT_SPEC_PROPERTIES {
-	common_prop *cprop;
+	__PROPERTIES_COMMON_FIELDS
 } text_spec_prop;
 
 #endif

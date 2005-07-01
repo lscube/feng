@@ -28,3 +28,8 @@
  *  
  * */
 
+#ifndef __MEDIA_THREAD
+#define __MEDIA_THREAD
+
+#endif // __MEDIA_THREAD
+
