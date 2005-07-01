@@ -39,6 +39,13 @@
 #define CACHE_DEVICE_SIZE 4096
 #define CACHE_DEFAULT_SIZE 65536
 
+#define FNC_FILE	"file"
+// #define FNC_PIPE	"pipe"
+#define FNC_UDP		"udp"
+#define FNC_TCP		"tcp"
+#define FNC_DEV		"dev" // it will survive to tomorrow?
+// ... devices, ...
+
 #ifndef min
 #define min(a,b) (a<b)?a:b
 #endif // min
@@ -72,8 +79,8 @@ typedef struct __INPUTSTREAM {
 
 
 /*Interface to InputStream*/
-InputStream *create_inputstream(uint8 *mrl);
+InputStream *create_inputstream(char *mrl);
 inline int read_stream(uint32 nbytes, uint8 *buf, InputStream *is); 
-int parse_mrl(uint8 *mrl, stream_type *type, int *fd);
+int parse_mrl(char *mrl, stream_type *type, int *fd);
 
 #endif // __INPUTSTREAMH

@@ -34,10 +34,18 @@
 
 #ifndef _UTILSH
 #define _UTILSH
+	#include <config.h>
 	#include <time.h>
 	#include <ctype.h>
 	#include <sys/types.h>
 	#include <math.h>
+
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#else
+#include <stdlib.h>
+#endif
+
 	#include <fenice/mediainfo.h>
 	#include <fenice/types.h>
 	#ifdef WIN32
@@ -144,5 +152,13 @@
 	int is_supported_url(char *p);
 
 #define lround(x) (x - 	floor(x) < 0.5) ? floor(x): ceil(x)
+
+#if HAVE_ALLOCA
+#define fnc_alloca(x) alloca(x);
+#define fnc_freea(x)
+#else
+#define fnc_alloca(x) malloc(size);
+#define fnc_freea(x) free(x)
+#endif
 
 #endif

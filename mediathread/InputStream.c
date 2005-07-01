@@ -39,17 +39,18 @@
 #include <fenice/InputStream.h>
 #include <fenice/fnc_log.h>
 
-static int open_socket(char *host, char *port,char *path, int *fd)
+static int open_socket(char *host, char *port, int *fd)
 {
 
 	//...TODO
 	return ERR_NOERROR;
 }
 
-static int open_file(uint8 *filename, int *fd)
+static int open_file(char *filename, int *fd)
 {
 	int oflag = O_RDONLY;
 	
+	// TODO: handle pipe
 	if(((*fd)=open(filename,oflag))==-1) {
 		fnc_log(FNC_LOG_ERR,"It's impossible to open file\n");
 		return ERR_FATAL;
@@ -64,50 +65,36 @@ static int open_device()
 	return ERR_NOERROR;
 }
 
-static int parse_mrl_st_file(uint8 *mrl, int *fd)
+static int parse_mrl_st_file(char *mrl, int *fd)
 {
 	return open_file(mrl,fd);
 }
 
 
-static int parse_mrl_st_net(uint8 *urlname, int *fd)
+static int parse_mrl_st_udp(char *urlname, int *fd)
 {
-	char *host, *path;
+	char *host;
 	char *port;
-        char *token, *tokenda;
+	int res;
+	char *colon;
 
         // initialization
-        if ((tokenda = (char *) malloc(sizeof(char) * (strlen(urlname) + 1))) == NULL)
-                return 1;
-        strcpy(tokenda, urlname);
-        if ((token = strstr(tokenda, "://")) != NULL) {
-                token = strtok(tokenda, ":");
-                if (port != NULL) {
-                        port = strdup(token);
-                }
-                token += strlen(token) + 3;     /* skip *:// */
+        if ( (colon = strchr(urlname, ':')) ) {
+		*colon = '\0';
+                host = urlname;
+                port = colon + 1;
         } else
-                token = tokenda;
-        if (strstr(token, ":") != NULL) {
-                token = strtok(token, ":");
-                host = strdup(token);
-                token = strtok(NULL, "/");
-                port = strdup(token);
-        } else {
-                token = strtok(token, "/");
-                host = strdup(token);
-        }
-        token += strlen(token);
-        *(token) = '/';
-        path = strdup(token); /*NULL if no path present*/
+		return ERR_PARSE;
 
-        free(tokenda);
+	res = open_socket(host,port,fd);
 
-	return open_socket(host,port,path,fd);
+	*colon = ':';
+
+	return res;
 }
 
 
-static int parse_mrl_st_device(uint8 *mrl, int *fd)
+static int parse_mrl_st_device(char *mrl, int *fd)
 {
 	//...TODO
 	//
@@ -116,7 +103,7 @@ static int parse_mrl_st_device(uint8 *mrl, int *fd)
 	
 
 /*Interface*/
-InputStream *create_inputstream(uint8 *mrl)
+InputStream *create_inputstream(char *mrl)
 {
 	InputStream *is;
 
@@ -140,42 +127,39 @@ inline int read_stream(uint32 nbytes, uint8 *buf, InputStream *is)
 	return is ? read_c(nbytes, buf, is->cache, is->fd, is->type): ERR_ALLOC;
 }
 
-int parse_mrl(uint8 *mrl, stream_type *type, int *fd)
+int parse_mrl(char *mrl, stream_type *type, int *fd)
 {
 	char *token;
-	uint32 token_size;
+	int res;
+	char *colon;
 	
-	if ((token = (char *) malloc(sizeof(char) * (strlen(mrl) + 1))) == NULL)
-                return ERR_ALLOC;
-        strcpy(token, mrl);
-        if ((token = strstr(token, "://")) == NULL) {
-		fnc_log(FNC_LOG_ERR,"Invalid resource request \n");
-		free(token);
-		return ERR_PARSE;
-	}
-	token = strtok(token, "://");
-	token_size=strlen(token);
-	if(strcmp(token,"udp")==0) { 
-		*type=st_net;	
-		free(token);
-		return parse_mrl_st_net(mrl+token_size+3, fd);
-	}
-	else if(strcmp(token,"file")==0) { 
+        if ( !(colon = strstr(mrl, "://")) ) {
 		*type=st_file;	
-		free(token);
-		return parse_mrl_st_file(mrl+token_size+3, fd);
+		return parse_mrl_st_file(mrl, fd);
 	}
-	else if(strcmp(token,"dev")==0) {
+	*colon = '\0';
+	token = colon + strlen("://");
+	if(!strcmp(mrl, FNC_UDP)) { 
+		*type=st_net;	
+		res = parse_mrl_st_udp(token, fd);
+	}
+	/*TODO: tcp*/
+	else if(!strcmp(token, FNC_FILE)) { 
+		*type=st_file;	
+		res = parse_mrl_st_file(token, fd);
+	}
+	else if(!strcmp(token, FNC_DEV)) {
 		*type=st_device;	
-		free(token);
-		return parse_mrl_st_device(mrl+token_size+3, fd);
+		res = parse_mrl_st_device(token, fd);
 	}
 	else {
 		fnc_log(FNC_LOG_ERR,"Invalid resource request \n");
-		free(token);
-		return ERR_PARSE;
+		res = ERR_PARSE;
 	}
+
+	*colon = ':';
+
+	return res;
 
 }
 
-		
