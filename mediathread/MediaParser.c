@@ -29,6 +29,13 @@
  * */
 
 #include <fenice/MediaParser.h>
+#include <fenice/utils.h>
+
+int register_media_type(MediaParserType * parser_type, MediaParser * p)
+{
+	p->parser_type=parser_type; 
+	return ERR_NOERROR;
+}
 
 void free_parser(MediaParser *p)
 {

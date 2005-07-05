@@ -90,13 +90,14 @@ typedef struct __RESOURCE_INFO {
 
 typedef struct __RESOURCE {
 	InputStream *i_stream;
+	InputFormat *format;
 	ResourceInfo *info;
 	Track *tracks[MAX_TRACKS];
 	void *private_data; /*use it as you want*/
 } Resource;
 
 /*Interface to implement the demuxer*/
-Resource *init_resource(resource_name);
+//Resource *init_resource(resource_name);
 msg_error add_resource_info(Resource *, .../*infos*/);
 msg_error add_track(Resource *, const char *name, .../*infos*/);
 typedef struct __INPUTFORMAT {
@@ -106,10 +107,11 @@ typedef struct __INPUTFORMAT {
 	int (*read_header)(Resource *);
 	int (*read_packet)(Resource *);
 	int (*read_close)(Resource *);
-	int (*read_seek)(Resource *, long int time_msec);
+	int (*read_seek)(Resource *, long int time_sec);
 	//...
 } InputFormat;
-int register_format(InputFormat *);
+
+int register_format(InputFormat *, Resource *);
 
 /*example
  
@@ -132,7 +134,7 @@ void r_close(Resource *);
 msg_error get_resource_info(resource_name, ResourceInfo *);
 Selector * r_open_tracks(resource_name, uint8 *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/
-msg_error r_seek(Resource *);/*seeks the resource: mkv, sd ...*/
+inline msg_error r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
 /*-------------------------------------------*/
 
 #endif

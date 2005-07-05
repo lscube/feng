@@ -69,6 +69,7 @@ Resource * r_open(resource_name n)
 		return NULL;
 	}
 	r->private_data=NULL;
+	r->format=NULL; /*use register_format*/
 	/*initializate tracks[MAX_TRACKS]??? TODO*/
 	
 	return r;
@@ -110,20 +111,22 @@ Selector * r_open_tracks(resource_name n, uint8 *track_name, Capabilities *capab
 void r_close_tracks(Selector *s)
 {
 	//...
+	/*see r_close, what i have to do???*/
 }
 
-msg_error r_seek(Resource *r)
+inline msg_error r_seek(Resource *r,long int time_sec)
 {
-	//...
-	return RESOURCE_OK;
+	return r->format->read_seek(r,time_sec);
 }
 
+/*
 Resource *init_resource(resource_name name)
 {
 	Resource *r;
 	//...
 	return r;
 }
+*/
 
 msg_error add_resource_info(Resource *r, .../*infos*/)
 {
@@ -137,3 +140,8 @@ msg_error add_track(Resource *r, const char *name, .../*infos*/)
 	return RESOURCE_OK;
 }
 
+int register_format(InputFormat *format, Resource *r) 
+{
+	r->format=format;
+	return RESOURCE_OK;
+}

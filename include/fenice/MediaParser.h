@@ -44,7 +44,7 @@ typedef struct __MEDIAPARSERTYPE {
 	void *properties; /*to cast to audio, video or text specific properties*/
 } MediaParserType;
 
-int register_media_type(MediaParserType *);
+int register_media_type(MediaParserType * /*parser_type*/, MediaParser * /*p*/);/*{p->parser_type=parser_type; return ERR_NOERROR;}*/
 
 typedef struct __MEDIAPARSER {
 	MediaParserType *parser_type;
