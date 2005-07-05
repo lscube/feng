@@ -44,11 +44,12 @@ typedef struct __MEDIAPARSERTYPE {
 	void *properties; /*to cast to audio, video or text specific properties*/
 } MediaParserType;
 
-int register_media_type(MediaParserType * /*parser_type*/, MediaParser * /*p*/);/*{p->parser_type=parser_type; return ERR_NOERROR;}*/
 
 typedef struct __MEDIAPARSER {
 	MediaParserType *parser_type;
 } MediaParser;
+
+int register_media_type(MediaParserType *, MediaParser *);
 
 typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCoding;
 

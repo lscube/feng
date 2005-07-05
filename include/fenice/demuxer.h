@@ -90,16 +90,12 @@ typedef struct __RESOURCE_INFO {
 
 typedef struct __RESOURCE {
 	InputStream *i_stream;
-	InputFormat *format;
+	struct __INPUTFORMAT *format;
 	ResourceInfo *info;
 	Track *tracks[MAX_TRACKS];
 	void *private_data; /*use it as you want*/
 } Resource;
 
-/*Interface to implement the demuxer*/
-//Resource *init_resource(resource_name);
-msg_error add_resource_info(Resource *, .../*infos*/);
-msg_error add_track(Resource *, const char *name, .../*infos*/);
 typedef struct __INPUTFORMAT {
 	const char *format_name; /*i.e. "matroska"*/
 	int (*init)(Resource *);
@@ -110,8 +106,6 @@ typedef struct __INPUTFORMAT {
 	int (*read_seek)(Resource *, long int time_sec);
 	//...
 } InputFormat;
-
-int register_format(InputFormat *, Resource *);
 
 /*example
  
@@ -126,7 +120,12 @@ static InputFormat matroska_iformat = {
 };
 
 */
-/*--------------------------------*/
+
+/*Interface to implement the demuxer*/
+//Resource *init_resource(resource_name);
+msg_error add_resource_info(Resource *, .../*infos*/);
+msg_error add_track(Resource *, const char *name, .../*infos*/);
+int register_format(InputFormat *, Resource *);
 
 /*Interface between mediathread and demuxer*/
 Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
