@@ -30,16 +30,68 @@
 
 #include <fenice/demuxer.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
-Resource *r_open(resource_name n)
+static void free_track(Track * t)
+{
+	close_is(t->i_stream);
+	free(t->track_info);
+	t->track_info=NULL;
+	free_parser(t->parser);
+	OMSbuff_free(t->buffer);
+	if(t->private_data!=NULL) {
+		free(t->private_data);
+		t->private_data=NULL;
+	}
+	t->read_timestamp=NULL;
+}
+
+Resource * r_open(resource_name n)
 {
 	Resource *r;
-	//...
+	
+	if((r=(Resource *)malloc(sizeof(Resource)))==NULL) {
+		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		return NULL;
+	}
+	if((r->info=(ResourceInfo *)malloc(sizeof(ResourceInfo)))==NULL) {
+		free(r);
+		r=NULL;
+		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		return NULL;
+	}
+	if((r->i_stream=create_inputstream(n))==NULL) {
+		free(r->info);
+		r->info=NULL;
+		free(r);
+		r=NULL;
+		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		return NULL;
+	}
+	r->private_data=NULL;
+	/*initializate tracks[MAX_TRACKS]??? TODO*/
+	
 	return r;
 }
+
 void r_close(Resource *r)
 {
-	//...
+	int i;
+
+	if(r!=NULL) {
+		close_is(r->i_stream);
+		free(r->info);
+		r->info=NULL;
+		if(r->private_data!=NULL) {
+			free(r->private_data);
+			r->private_data=NULL;
+		}
+		for(i=0;i<MAX_TRACKS;i++) 
+			if(r->tracks[i]!=NULL)	/*r_close_track ??? TODO*/
+				free_track(r->tracks[i]);
+		free(r);
+		r=NULL;
+	}
 }
 
 msg_error get_resource_info(resource_name n , ResourceInfo *r)

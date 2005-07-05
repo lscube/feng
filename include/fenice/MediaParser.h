@@ -47,7 +47,7 @@ typedef struct __MEDIAPARSERTYPE {
 int register_media_type(MediaParserType *);
 
 typedef struct __MEDIAPARSER {
-
+	MediaParserType *parser_type;
 } MediaParser;
 
 typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCoding;
@@ -89,6 +89,9 @@ typedef struct __VIDEO_SPEC_PROPERTIES {
 typedef struct __TEXT_SPEC_PROPERTIES {
 	__PROPERTIES_COMMON_FIELDS
 } text_spec_prop;
+
+/*MediaParser Interface*/
+void free_parser(MediaParser *);/*TODO*/
 
 #endif
 

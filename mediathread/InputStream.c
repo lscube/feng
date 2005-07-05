@@ -100,6 +100,12 @@ static int parse_mrl_st_device(char *mrl, int *fd)
 	//
 	return open_device();
 }
+
+static void close_fd(InputStream *is) 
+{
+	close(is->fd);
+	is->fd=0;
+}
 	
 
 /*Interface*/
@@ -112,6 +118,7 @@ InputStream *create_inputstream(char *mrl)
 		return NULL;
 	}
 	strcpy(is->name,mrl); /* ie. file://path/to/file */
+	is->fd=0;
 	if(parse_mrl(mrl, &(is->type), &(is->fd))!=ERR_NOERROR) {
 		fnc_log(FNC_LOG_ERR,"mrl not valid\n");
 		free(is);
@@ -120,6 +127,17 @@ InputStream *create_inputstream(char *mrl)
 	is->cache=NULL;
 
 	return is;	
+}
+
+void close_is(InputStream *is) 
+{
+	if(is!=NULL) {
+		close_fd(is);
+		free_cache(is->cache);
+		is->cache=NULL;
+		free(is);
+		is=NULL;
+	}
 }
 
 inline int read_stream(uint32 nbytes, uint8 *buf, InputStream *is)

@@ -35,6 +35,7 @@
 #include <fenice/utils.h>
 #include <fenice/InputStream.h>
 #include <fenice/MediaParser.h>
+#include <fenice/bufferpool.h>
 
 #define resource_name char*
 /*
