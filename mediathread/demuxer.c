@@ -140,8 +140,4 @@ msg_error add_track(Resource *r, const char *name, .../*infos*/)
 	return RESOURCE_OK;
 }
 
-int register_format(InputFormat *format, Resource *r) 
-{
-	r->format=format;
-	return RESOURCE_OK;
-}
+

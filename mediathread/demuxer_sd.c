@@ -96,7 +96,7 @@ typedef struct __FLAGS_DATA{
 
 /*----------------------*/
 
-int sd_init(Resource *r)
+static int sd_init(Resource *r)
 {
 
 	/*Allocate Resource PRIVATE DATA and cast it*/
@@ -113,30 +113,31 @@ int sd_init(Resource *r)
 	return RESOURCE_OK;
 }
 
-int sd_probe(Resource *r)
+static int sd_probe(Resource *r)
 {
 	return RESOURCE_OK;
 }
 
-int sd_read_header(Resource *r)
+static int sd_read_header(Resource *r)
 {
 	return RESOURCE_OK;
 }
 
-int sd_read_packet(Resource *r)
+static int sd_read_packet(Resource *r)
 {
 	return RESOURCE_OK;
 }
 
-int sd_close(Resource *r)
+static int sd_close(Resource *r)
 {
 	return RESOURCE_OK;
 }
 
-int sd_seek(Resource *r, long int time_msec)
+static int sd_seek(Resource *r, long int time_msec)
 {
 	return RESOURCE_NOT_SEEKABLE;
 }
+
 
 static InputFormat sd_iformat = {
     "sd",
@@ -149,3 +150,8 @@ static InputFormat sd_iformat = {
     sd_seek /*seek all media in sd*/
 };
 
+
+void register_format_sd(Resource *r)
+{
+	r->format=&sd_iformat;
+}

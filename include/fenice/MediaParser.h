@@ -92,7 +92,7 @@ typedef struct __TEXT_SPEC_PROPERTIES {
 } text_spec_prop;
 
 /*MediaParser Interface*/
-void free_parser(MediaParser *);/*TODO*/
+void free_parser(MediaParser *);
 
 #endif
 

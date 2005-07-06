@@ -125,7 +125,7 @@ static InputFormat matroska_iformat = {
 //Resource *init_resource(resource_name);
 msg_error add_resource_info(Resource *, .../*infos*/);
 msg_error add_track(Resource *, const char *name, .../*infos*/);
-int register_format(InputFormat *, Resource *);
+void (*register_format)(Resource *);/*i.e. register_format_sd, register_format_matroska, register_format_{format_name}*/
 
 /*Interface between mediathread and demuxer*/
 Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
