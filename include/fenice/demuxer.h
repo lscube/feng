@@ -55,14 +55,12 @@
 #define	RESOURCE_TRACK_NOT_FOUND -4
 /*...*/
 #define MAX_TRACKS 20	
+#define MAX_SEL_TRACKS 5
 
 typedef struct __CAPABILITIES {
 
 } Capabilities;
 
-typedef struct __SELECTOR {
-
-} Selector;
 
 typedef struct __TRACK_INFO {
 	//start CC
@@ -77,12 +75,20 @@ typedef struct __TRACK_INFO {
 typedef struct __TRACK {
 	InputStream *i_stream;/*not NULL if different from __RESOURCE->i_stream*/
 	TrackInfo *track_info;
+	uint8 *track_name;
 	MediaParser *parser;
 	/*bufferpool*/
 	OMSBuffer *buffer;
 	long int (*read_timestamp)();/*put it in parser->....timestamp*/
 	void *private_data; /*use it as you want*/
 } Track;
+
+typedef struct __SELECTOR {
+	Track *tracks[MAX_SEL_TRACKS];	
+	uint32 default_index;
+	uint32 selected_index;/**/
+	uint32 total; /*total tracks in selector*/
+} Selector;
 
 typedef struct __RESOURCE_INFO {
 	uint8 *twin;
@@ -93,6 +99,7 @@ typedef struct __RESOURCE {
 	struct __INPUTFORMAT *format;
 	ResourceInfo *info;
 	Track *tracks[MAX_TRACKS];
+	uint32 num_tracks;
 	void *private_data; /*use it as you want*/
 } Resource;
 
@@ -131,7 +138,7 @@ void (*register_format)(Resource *);/*i.e. register_format_sd, register_format_m
 Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
 msg_error get_resource_info(resource_name, ResourceInfo *);
-Selector * r_open_tracks(resource_name, uint8 *track_name, Capabilities *capabilities);/*open the right tracks*/
+Selector * r_open_tracks(Resource *, uint8 *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/
 inline msg_error r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
 /*-------------------------------------------*/

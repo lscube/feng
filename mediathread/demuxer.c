@@ -49,7 +49,12 @@ static void free_track(Track * t)
 Resource * r_open(resource_name n)
 {
 	Resource *r;
+	InputStream *i_stream;
 	
+	if((i_stream=create_inputstream(n))==NULL) {
+		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		return NULL;
+	}
 	if((r=(Resource *)malloc(sizeof(Resource)))==NULL) {
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
 		return NULL;
@@ -60,14 +65,7 @@ Resource * r_open(resource_name n)
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
 		return NULL;
 	}
-	if((r->i_stream=create_inputstream(n))==NULL) {
-		free(r->info);
-		r->info=NULL;
-		free(r);
-		r=NULL;
-		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-		return NULL;
-	}
+	r->i_stream=i_stream;
 	r->private_data=NULL;
 	r->format=NULL; /*use register_format*/
 	/*initializate tracks[MAX_TRACKS]??? TODO*/
@@ -91,7 +89,6 @@ void r_close(Resource *r)
 			if(r->tracks[i]!=NULL)	/*r_close_track ??? TODO*/
 				free_track(r->tracks[i]);
 		free(r);
-		r=NULL;
 	}
 }
 
@@ -101,17 +98,44 @@ msg_error get_resource_info(resource_name n , ResourceInfo *r)
 	return RESOURCE_OK;
 }
 
-Selector * r_open_tracks(resource_name n, uint8 *track_name, Capabilities *capabilities)
+Selector * r_open_tracks(Resource *r, uint8 *track_name, Capabilities *capabilities)
 {
 	Selector *s;
+	uint32 i=0,j;
+	Track *tracks[MAX_SEL_TRACKS];
+
+	/*Capabilities aren't used yet. TODO*/
+
+	for(j=0;j<r->num_tracks;j++)
+		if(!strcmp((r->tracks[j])->track_name,track_name) && i<MAX_SEL_TRACKS) {
+			if((tracks[i]=(Track *)malloc(sizeof(Track)))!=NULL){
+				tracks[i]=r->tracks[j];
+				i++;
+			}
+		}
+	if(i==0)
+		return NULL;
+	
+	if((s=(Selector*)malloc(sizeof(Selector)))==NULL) {
+		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		for(j=0;j<i;j++)
+			free(tracks[j]);
+		return NULL;
+	}
+
+	for(j=0;j<i;j++)
+		s->tracks[j]=tracks[j];
+	s->total=i;
+	s->default_index=0;/*TODO*/
+	s->selected_index=0;/*TODO*/
 	//...
 	return s;
 }
 
 void r_close_tracks(Selector *s)
 {
-	//...
 	/*see r_close, what i have to do???*/
+	free_track(s->tracks[s->selected_index]);
 }
 
 inline msg_error r_seek(Resource *r,long int time_sec)
