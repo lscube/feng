@@ -35,10 +35,13 @@
 static void free_track(Track * t)
 {
 	close_is(t->i_stream);
-	free(t->track_info);
+	if(t->track_info!=NULL)
+		free(t->track_info);
 	t->track_info=NULL;
-	free_parser(t->parser);
-	OMSbuff_free(t->buffer);
+	if(t->parser!=NULL)
+		free_parser(t->parser);
+	if(t->buffer!=NULL)
+		OMSbuff_free(t->buffer);
 	if(t->private_data!=NULL) {
 		free(t->private_data);
 		t->private_data=NULL;
@@ -85,7 +88,7 @@ void r_close(Resource *r)
 			free(r->private_data);
 			r->private_data=NULL;
 		}
-		for(i=0;i<MAX_TRACKS;i++) 
+		for(i=0;i<r->num_tracks;i++) 
 			if(r->tracks[i]!=NULL)	/*r_close_track ??? TODO*/
 				free_track(r->tracks[i]);
 		free(r);
@@ -108,18 +111,14 @@ Selector * r_open_tracks(Resource *r, uint8 *track_name, Capabilities *capabilit
 
 	for(j=0;j<r->num_tracks;j++)
 		if(!strcmp((r->tracks[j])->track_name,track_name) && i<MAX_SEL_TRACKS) {
-			if((tracks[i]=(Track *)malloc(sizeof(Track)))!=NULL){
-				tracks[i]=r->tracks[j];
-				i++;
-			}
+			tracks[i]=r->tracks[j];
+			i++;
 		}
 	if(i==0)
 		return NULL;
 	
 	if((s=(Selector*)malloc(sizeof(Selector)))==NULL) {
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-		for(j=0;j<i;j++)
-			free(tracks[j]);
 		return NULL;
 	}
 
@@ -152,16 +151,56 @@ Resource *init_resource(resource_name name)
 }
 */
 
-msg_error add_resource_info(Resource *r, .../*infos*/)
+Track *add_track(Resource *r/*, char * filename*/)
 {
-	//...
-	return RESOURCE_OK;
-}
+	Track *t;
+ 	//InputStream *i_stream;
+	TrackInfo *track_info;
+	MediaParser *parser;
+	OMSBuffer *buffer;
 
-msg_error add_track(Resource *r, const char *name, .../*infos*/)
-{
-	//...
-	return RESOURCE_OK;
+	if(r->num_tracks>=MAX_TRACKS)
+		return NULL;
+	if((t=(Track *)malloc(sizeof(Track)))==NULL)
+		return NULL;
+	
+	/*
+	 if(!strcmp(r->i_stream->name,filename)) {
+		if((i_stream=create_inputstream(filename))==NULL) {
+			fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+			free_track(t);
+			return NULL;
+		}
+	}
+	else
+		i_stream = r->i_stream;
+	*/
+	if((track_info = (TrackInfo *)malloc(sizeof(TrackInfo)))==NULL) {
+		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		free_track(t);
+		return NULL;
+	}
+
+	if((parser=add_media_parser())==NULL) {
+		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		free_track(t);
+		return NULL;
+	}
+	if((buffer=OMSbuff_new(OMSBUFFER_DEFAULT_DIM))==NULL) {
+		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		free_track(t);
+		return NULL;
+	}
+
+	t->track_info=track_info;
+	t->parser=parser;
+	t->buffer=buffer;
+	/*t->i_stream=i_stream*/
+	
+	r->tracks[r->num_tracks]=t;
+	r->num_tracks++;
+	
+	return t;
 }
 
 

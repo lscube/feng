@@ -35,8 +35,8 @@
 #include <fenice/bufferpool.h>
 
 typedef struct __MEDIAPARSERTYPE {
-	const char *encoding_name; /*i.e. MPV, MPA ...*/
-	const char *media_entity; /*i.e. audio, video, text*/
+	char encoding_name[11]; /*i.e. MPV, MPA ...*/
+	char media_entity[6]; /*i.e. audio, video, text*/
 	int (*load)();
 	int (*read)();
 	int (*close)(); /*before called free */
@@ -76,7 +76,7 @@ typedef struct __VIDEO_SPEC_PROPERTIES {
 	uint32 frame_rate;
 	/*Matroska ...*/
 	uint32 FlagInterlaced;
-	short StereoMode;
+	//short StereoMode;
 	uint32 PixelWidth;
 	uint32 PixelHeight;
 	uint32 DisplayWidth;
@@ -93,6 +93,7 @@ typedef struct __TEXT_SPEC_PROPERTIES {
 
 /*MediaParser Interface*/
 void free_parser(MediaParser *);
-
+MediaParser * add_media_parser(void); 
+int set_media_entity(MediaParserType *, char *encoding_name);
 #endif
 

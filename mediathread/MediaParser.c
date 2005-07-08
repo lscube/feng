@@ -51,3 +51,37 @@ void free_parser(MediaParser *p)
 		p=NULL;
 	}
 }
+
+MediaParser * add_media_parser(void) {
+	MediaParserType * parser_type;
+	MediaParser *p;
+	if((parser_type=(MediaParserType *)malloc(sizeof(MediaParserType)))==NULL)
+		return NULL;
+	
+	if((p=(MediaParser *)malloc(sizeof(MediaParser)))==NULL) {
+		free(parser_type);
+		return NULL;
+	}
+	p->parser_type=parser_type;
+	return p;
+}
+
+int set_media_entity(MediaParserType *pt, char *encoding_name) {
+
+	if ((strcmp(encoding_name,"H26L")!=0) || (strcmp(encoding_name,"MPV")!=0) || \
+	    (strcmp(encoding_name,"MP2T")!=0) || (strcmp(encoding_name,"MP4V-ES")!=0) ) {
+		
+		strcpy(pt->media_entity,"video");
+		pt->properties=(video_spec_prop *)malloc(sizeof(video_spec_prop));
+	}
+		
+	else if ((strcmp(encoding_name,"MPA")!=0) || (strcmp(encoding_name,"PCM")!=0) || (strcmp(encoding_name,"GSM")!=0)) {
+		strcpy(pt->media_entity,"audio");
+		pt->properties=(audio_spec_prop *)malloc(sizeof(audio_spec_prop));
+	}
+	else
+		return ERR_GENERIC; /*unknown*/
+	/*TODO: text*/
+	
+	return ERR_NOERROR;
+}

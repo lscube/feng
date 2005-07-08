@@ -39,6 +39,7 @@
 // #include <pthread.h>
 #include <stdlib.h>
 
+#define OMSBUFFER_DEFAULT_DIM 5
 #define omsbuff_min(x,y) ((x) < (y) ? (x) : (y))
 
 #define OMSSLOT_DATASIZE 65000

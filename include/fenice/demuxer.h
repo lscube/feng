@@ -73,9 +73,9 @@ typedef struct __TRACK_INFO {
 } TrackInfo;
 
 typedef struct __TRACK {
-	InputStream *i_stream;/*not NULL if different from __RESOURCE->i_stream*/
+	InputStream *i_stream;
 	TrackInfo *track_info;
-	uint8 *track_name;
+	uint8 track_name[255];
 	MediaParser *parser;
 	/*bufferpool*/
 	OMSBuffer *buffer;
@@ -91,7 +91,7 @@ typedef struct __SELECTOR {
 } Selector;
 
 typedef struct __RESOURCE_INFO {
-	uint8 *twin;
+	uint8 twin[255];
 } ResourceInfo;
 
 typedef struct __RESOURCE {
@@ -130,9 +130,29 @@ static InputFormat matroska_iformat = {
 
 /*Interface to implement the demuxer*/
 //Resource *init_resource(resource_name);
-msg_error add_resource_info(Resource *, .../*infos*/);
-msg_error add_track(Resource *, const char *name, .../*infos*/);
-void (*register_format)(Resource *);/*i.e. register_format_sd, register_format_matroska, register_format_{format_name}*/
+Track *add_track(Resource * /*, char * filename*/);
+/*infos: 
+	char* track-name, 
+	char* filename, 
+	char *encoding_name, 
+	uint32 bit_rate,	
+	uint32 clock_rate,	 
+	float sample_rate,
+	float OutputSamplingFrequency,
+	short audio_channels,
+	uint32 bit_per_sample, 
+	uint32 FlagInterlaced,
+	uint32 PixelWidth;
+	uint32 PixelHeight,
+	uint32 DisplayWidth,
+	uint32 DisplayHeight,
+	uint32 DisplayUnit,
+	uint32 AspectRatio,
+	uint8 *ColorSpace,
+	float GammaValue,
+*/
+
+//void (*register_format)(Resource *);/*i.e. register_format_sd, register_format_matroska, register_format_{format_name}*/
 
 /*Interface between mediathread and demuxer*/
 Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
