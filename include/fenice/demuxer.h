@@ -72,6 +72,8 @@ typedef struct __TRACK_INFO {
 	//end CC
 } TrackInfo;
 
+//typedef enum {stored=0,live} media_source;
+	
 typedef struct __TRACK {
 	InputStream *i_stream;
 	TrackInfo *track_info;
@@ -79,6 +81,7 @@ typedef struct __TRACK {
 	MediaParser *parser;
 	/*bufferpool*/
 	OMSBuffer *buffer;
+	media_source msource;
 	long int (*read_timestamp)();/*put it in parser->....timestamp*/
 	void *private_data; /*use it as you want*/
 } Track;

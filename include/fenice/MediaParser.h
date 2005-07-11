@@ -59,9 +59,11 @@ typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCoding;
 					uint32 clock_rate; \
 					uint8 encoding_name[11];
 
+
 typedef struct __COMMON_PROPERTIES {
 	__PROPERTIES_COMMON_FIELDS
 } common_prop;
+
 
 typedef struct __AUDIO_SPEC_PROPERTIES {
 	__PROPERTIES_COMMON_FIELDS
