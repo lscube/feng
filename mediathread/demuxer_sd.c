@@ -28,9 +28,16 @@
  *  
  * */
 
+#include <string.h>
+#include <stdio.h>
+
 #include <fenice/demuxer.h>
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
+
+#include <fenice/multicast.h>	/*is_valid_multicast_address*/
+#include <fenice/rtsp.h>	/*parse_url*/
+#include <fenice/rtpptdefs.h>	/*payload type definitions*/
 
 /*RESOURCE PRIVATE_DATA*/
 #if !defined(_MEDIAINFOH) /*remove it when mediainfo will be removed*/ 
@@ -97,6 +104,116 @@ typedef struct __FLAGS_DATA{
 } FlagsData;    	
 
 /*----------------------*/
+static int validate_audio_track(Track *t)
+{
+        RTP_static_payload pt_info;
+	FlagsData *me;
+	audio_spec_prop *prop;
+
+	me=(FlagsData *)t->private_data;
+
+	prop=(audio_spec_prop *)t->parser->parser_type->properties;
+
+        if (prop->payload_type>=96) {
+                // Basic information needed for a dynamic payload type (96-127)
+                if (!(me->description_flags & MED_ENCODING_NAME)) {
+                        return ERR_PARSE;
+                }
+                if (!(me->description_flags & MED_CLOCK_RATE)) {
+                        return ERR_PARSE;
+                }
+        }
+        else {
+                // Set payload type for well-kwnown encodings and some default configurations if i know them
+                // see include/fenice/rtpptdefs.h
+                pt_info=RTP_payload[prop->payload_type];
+                strcpy(t->parser->parser_type->encoding_name,pt_info.EncName);
+               	prop->clock_rate=pt_info.ClockRate;
+                prop->audio_channels=pt_info.Channels;
+                prop->bit_per_sample=pt_info.BitPerSample;
+                prop->coding_type=pt_info.Type;
+                //prop->pkt_len=pt_info.PktLen;
+                me->description_flags|=MED_ENCODING_NAME;
+                me->description_flags|=MED_CLOCK_RATE;
+                me->description_flags|=MED_AUDIO_CHANNELS;
+                me->description_flags|=MED_BIT_PER_SAMPLE;
+                me->description_flags|=MED_CODING_TYPE;
+                //p->description.flags|=MED_PKT_LEN;
+        }
+	return ERR_NOERROR;
+}
+
+static int validate_video_track(Track *t)
+{
+        RTP_static_payload pt_info;
+	FlagsData *me;
+	video_spec_prop *prop;
+
+	me=(FlagsData *)t->private_data;
+
+	prop=(video_spec_prop *)t->parser->parser_type->properties;
+
+        if (prop->payload_type>=96) {
+                // Basic information needed for a dynamic payload type (96-127)
+                if (!(me->description_flags & MED_ENCODING_NAME)) {
+                        return ERR_PARSE;
+                }
+                if (!(me->description_flags & MED_CLOCK_RATE)) {
+                        return ERR_PARSE;
+                }
+        }
+        else {
+                // Set payload type for well-kwnown encodings and some default configurations if i know them
+                // see include/fenice/rtpptdefs.h
+                pt_info=RTP_payload[prop->payload_type];
+                strcpy(t->parser->parser_type->encoding_name,pt_info.EncName);
+               	prop->clock_rate=pt_info.ClockRate;
+                prop->coding_type=pt_info.Type;
+                //prop->pkt_len=pt_info.PktLen;
+                me->description_flags|=MED_ENCODING_NAME;
+                me->description_flags|=MED_CLOCK_RATE;
+                me->description_flags|=MED_CODING_TYPE;
+                //p->description.flags|=MED_PKT_LEN;
+        }
+	return ERR_NOERROR;
+}
+
+static int validate_track(Resource *r)
+{
+	
+        int res;
+	FlagsData *me;
+	int i=r->num_tracks-1;
+
+	me=(FlagsData *)r->tracks[i]->private_data;
+
+        if (!(me->general_flags & ME_FILENAME)) {
+                return ERR_PARSE;
+        }
+        if (!(me->description_flags & MED_PAYLOAD_TYPE)) {
+                return ERR_PARSE;
+        }
+        if (!(me->description_flags & MED_PRIORITY)) {
+                return ERR_PARSE;
+        }
+
+	if(!strcmp(r->tracks[i]->parser->parser_type->media_entity,"audio"))
+		return validate_audio_track(r->tracks[i]);
+	else if(!strcmp(r->tracks[i]->parser->parser_type->media_entity,"audio"))
+		return validate_video_track(r->tracks[i]);
+	else
+		return ERR_NOERROR;
+/*
+
+*/
+	/*
+        res=register_media(p);
+        if(res==ERR_NOERROR)
+                return p->media_handler->load_media(p);
+        else
+                return res;
+	*/
+}
 
 static int sd_init(Resource *r)
 {
@@ -105,6 +222,9 @@ static int sd_init(Resource *r)
 	Track *track;
 	SD_descr *sd;
 	FlagsData *me;
+        char object[255], server[255];
+        unsigned short port;
+	int res;
 
 	/*--*/
 	int32 bit_rate; /*average if VBR or -1 is not usefull*/ 
@@ -115,8 +235,9 @@ static int sd_init(Resource *r)
 	short audio_channels;
 	uint32 bit_per_sample;/*BitDepth*/
 	uint32 frame_rate;
+	FILE *fd;
 	/*--*/
-	
+	fd=fdopen(r->i_stream->fd,"r");
 	/*Allocate Resource PRIVATE DATA and cast it*/
 	if((sd=malloc(sizeof(SD_descr)))==NULL)
 		return ERR_ALLOC;
@@ -126,19 +247,26 @@ static int sd_init(Resource *r)
 
 	do{
 		memset(keyword,0,sizeof(keyword));
-		while (strcasecmp(keyword,SD_STREAM)!=0 && !feof(r->i_stream->fd)) {
-		        fgets(line,80,r->i_stream->fd);
+		while (strcasecmp(keyword,SD_STREAM)!=0 && !feof(fd)) {
+		        fgets(line,80,fd);
 		        sscanf(line,"%s",keyword);
+			/*
+			*- validate multicast
+			*- validate twin
+			* */
 			if (strcasecmp(keyword,SD_TWIN)==0){ 
 		                sscanf(line,"%s%s",trash,r->info->twin);
-				sd->flags|=SD_FL_TWIN;
+        			if(parse_url(r->info->twin,server, &port, object))
+					sd->flags|=SD_FL_TWIN;
 			}
 			if (strcasecmp(keyword,SD_MULTICAST)==0){ 
 		                sscanf(line,"%s%s",trash,sd->multicast);
 				sd->flags|=SD_FL_MULTICAST;
+			        if(!is_valid_multicast_address(sd->multicast))
+       				         strcpy(sd->multicast,DEFAULT_MULTICAST_ADDRESS);
 			}
 		}
-		if (feof(r->i_stream->fd)) 
+		if (feof(fd)) 
 		        return RESOURCE_OK;
 
 		/* Allocate and cast TRACK PRIVATE DATA foreach track.
@@ -158,8 +286,8 @@ static int sd_init(Resource *r)
 		}
 		
                 memset(keyword,0,sizeof(keyword));
-                while (strcasecmp(keyword,SD_STREAM_END)!=0 && !feof(feof(r->i_stream->fd))) {
-                        fgets(line,80,r->i_stream->fd);
+                while (strcasecmp(keyword,SD_STREAM_END)!=0 && !feof(fd)) {
+                        fgets(line,80,fd);
                         sscanf(line,"%s",keyword);
                         if (strcasecmp(keyword,SD_FILENAME)==0) {
                                 sscanf(line,"%s%255s",trash,track->track_name);
@@ -312,23 +440,23 @@ static int sd_init(Resource *r)
 			}
 		}
 		else {
-			fnc_log(FNC_LOG_ERR,"It' is impossible identify media_entity: audio, video ...\n");
+			fnc_log(FNC_LOG_ERR,"It's impossible identify media_entity: audio, video ...\n");
 			free_track(track);
 			r->num_tracks--;
 			return ERR_ALLOC;
 		}
-
-		/*
-                if ((res = validate_stream(p,&sd_descr)) != ERR_NOERROR) {
+		track->private_data=me;	
+                if ((res = validate_track(r)) != ERR_NOERROR) {
+			free_track(track);
+			r->num_tracks--;
                         return res;
                 }
-		*/
-		track->private_data=me;	
-	}while(!eof(r->i_stream->fd));
+	}while(!feof(fd));
 	r->private_data=sd;
 
 	return RESOURCE_OK;
 }
+
 
 static int sd_probe(Resource *r)
 {
@@ -359,7 +487,7 @@ static int sd_seek(Resource *r, long int time_msec)
 static InputFormat sd_iformat = {
     "sd",
     sd_init,/*ex parse_SD_file*/
-    sd_probe,/*ex validate_stream*/
+    sd_probe,/*(is a sd)?RESOURCE_DAMAGED:RESOURCE_OK*/
     sd_read_header,/*return RESOURCE_OK and nothing more*/ 
     sd_read_packet,/*switchs between the different parser reader according to the timestamp. \
 		     I.e. 1 video frame mpeg1 (1pkt/40msec) and 1 or 2 mp3 audio pkts (1pkt/26.12msec*/
