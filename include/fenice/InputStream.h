@@ -69,19 +69,28 @@ int read_c(uint32 nbytes, uint8 *buf, Cache *c, int fd, stream_type);
 void flush_cache(Cache *c); 
 void free_cache(Cache *c); 
 
+typedef enum { // XXX: all initialized to a power of 2 number.
+	IS_FLAGS_INIT = 0,
+	IS_EXCLUSIVE=1 // if set, input stream can be opened only once at a time.
+} istream_flags;
+
 typedef struct __INPUTSTREAM {
 	char name[255];
 	stream_type type;
 	Cache *cache;
 	int fd;
 	//... properties for file, net or device 
+	istream_flags flags;
 } InputStream;
 
 
 /*Interface to InputStream*/
-InputStream *create_inputstream(char *mrl);
-void close_is(InputStream *);
-inline int read_stream(uint32 nbytes, uint8 *buf, InputStream *is); 
-int parse_mrl(char *mrl, stream_type *type, int *fd);
+InputStream *istream_open(char *mrl);
+#define create_inputstream istream_open
+void istream_close(InputStream *);
+#define close_is istream_close
+inline int istream_read(uint32 nbytes, uint8 *buf, InputStream *is); 
+#define read_stream istream_read
+// int parse_mrl(char *mrl, stream_type *type, int *fd);
 
 #endif // __INPUTSTREAMH
