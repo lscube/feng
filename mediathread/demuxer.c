@@ -28,11 +28,13 @@
  *  
  * */
 
+#include <string.h>
+
 #include <fenice/demuxer.h>
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-static void free_track(Track * t)
+void free_track(Track * t)
 {
 	close_is(t->i_stream);
 	if(t->track_info!=NULL)
@@ -78,7 +80,7 @@ Resource * r_open(resource_name n)
 
 void r_close(Resource *r)
 {
-	int i;
+	uint32 i;
 
 	if(r!=NULL) {
 		close_is(r->i_stream);
@@ -86,7 +88,6 @@ void r_close(Resource *r)
 		r->info=NULL;
 		if(r->private_data!=NULL) {
 			free(r->private_data);
-			r->private_data=NULL;
 		}
 		for(i=0;i<r->num_tracks;i++) 
 			if(r->tracks[i]!=NULL)	/*r_close_track ??? TODO*/

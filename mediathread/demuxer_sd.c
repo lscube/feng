@@ -181,7 +181,6 @@ static int validate_video_track(Track *t)
 static int validate_track(Resource *r)
 {
 	
-        int res;
 	FlagsData *me;
 	int i=r->num_tracks-1;
 
@@ -326,7 +325,7 @@ static int sd_init(Resource *r)
                                 me->general_flags|=ME_AGGREGATE;
                         }       
                         if (strcasecmp(keyword,SD_SAMPLE_RATE)==0) {
-                                sscanf(line,"%s%d",trash,&(sample_rate));
+                                sscanf(line,"%s%f",trash,&(sample_rate));
                                 me->description_flags|=MED_SAMPLE_RATE;
                         }       
                         if (strcasecmp(keyword,SD_BIT_PER_SAMPLE)==0) {

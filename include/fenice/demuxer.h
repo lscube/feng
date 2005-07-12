@@ -133,6 +133,7 @@ static InputFormat matroska_iformat = {
 
 /*Interface to implement the demuxer*/
 //Resource *init_resource(resource_name);
+void free_track(Track *);
 Track *add_track(Resource * /*, char * filename*/);
 /*infos: 
 	char* track-name, 
