@@ -37,16 +37,16 @@
 typedef struct __MEDIAPARSERTYPE {
 	char encoding_name[11]; /*i.e. MPV, MPA ...*/
 	char media_entity[6]; /*i.e. audio, video, text*/
-	int (*load)();
-	int (*read)();
-	int (*close)(); /*before called free */
-	long int (* calculate_timestamp)();
+	//int (*load)(uint8 * /*dest*/, uint8 * /*source*/, uint32 /*nbytes*/); /*Track is opened by specific demuxer*/
+	int (*read)(uint8 * /*dest*/, uint8 * /*source*/, uint32 /*nbytes*/, long int * /*timestamp: &(MediaParser->pts)*/);
+	int (*close)(); /*before call free_parser */
 	void *properties; /*to cast to audio, video or text specific properties*/
 } MediaParserType;
 
 
 typedef struct __MEDIAPARSER {
 	MediaParserType *parser_type;
+	long int pts; /*presentation timestamp*/
 } MediaParser;
 
 int register_media_type(MediaParserType *, MediaParser *);

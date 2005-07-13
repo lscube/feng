@@ -48,7 +48,7 @@ void free_track(Track * t)
 		free(t->private_data);
 		t->private_data=NULL;
 	}
-	t->read_timestamp=NULL;
+	t->calculate_timestamp=NULL; /*TODO*/
 }
 
 Resource * r_open(resource_name n)

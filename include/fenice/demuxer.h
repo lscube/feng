@@ -78,11 +78,12 @@ typedef struct __TRACK {
 	InputStream *i_stream;
 	TrackInfo *track_info;
 	uint8 track_name[255];
+	long int timestamp;
 	MediaParser *parser;
 	/*bufferpool*/
 	OMSBuffer *buffer;
 	media_source msource;
-	long int (*read_timestamp)();/*put it in parser->....timestamp*/
+	long int (*calculate_timestamp)(long int /*parser->pts*/, long int /*this->timestamp*/);/*put it bufferpool->....timestamp*/
 	void *private_data; /*use it as you want*/
 } Track;
 
