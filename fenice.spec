@@ -1,8 +1,8 @@
 Summary: standards-compliant multimedia streaming server
 Name: fenice
-Version: 1.9
+Version: 1.10
 Release: 0
-Copyright: GPL
+License: GPL
 Group: Applications/Internet
 Vendor: OMSP Team (http://streaming.polito.it)
 Packager: OMSP Team (http://streaming.polito.it)
@@ -30,12 +30,13 @@ currently dominant on the market.
 
 %build
 ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
-make
+make -s
 
 %install
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
 rm -rf %{buildroot}%{_datadir}/doc/%{name}
+rm -f %{buildroot}/*/%{name}/%{name}.log
 
 %clean
 rm -rf %{buildroot}
@@ -49,7 +50,13 @@ rm -rf %{buildroot}
 /*/%{name}/avroot/audio.mp3
 /*/%{name}/avroot/video.mpg
 
+%{_localstatedir}/log/%{name}.log
+
 %config %{_sysconfdir}/%{name}.conf
 
 %doc NEWS README TODO COPYING ChangeLog INSTALL-FAST AUTHORS
 %doc docs/howto/%{name}-howto.html docs/%{name}.1.{ps.gz,pdf,html}
+
+%post
+ln -sf %{_localstatedir}/log/%{name}.log /srv/%{name}/%{name}.log
+

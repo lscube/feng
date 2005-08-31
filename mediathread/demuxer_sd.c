@@ -227,7 +227,7 @@ static int sd_init(Resource *r)
 
 	/*--*/
 	int32 bit_rate; /*average if VBR or -1 is not usefull*/ 
-	MediaCoding coding_type; 
+	MediaCoding coding_type = mc_undefined;
 	uint32 payload_type; 
 	uint32 clock_rate;
 	float sample_rate;/*SamplingFrequency*/
@@ -255,7 +255,7 @@ static int sd_init(Resource *r)
 			* */
 			if (strcasecmp(keyword,SD_TWIN)==0){ 
 		                sscanf(line,"%s%s",trash,r->info->twin);
-        			if(parse_url(r->info->twin,server, &port, object))
+        			if(parse_url(r->info->twin, server, &port, object))
 					sd->flags|=SD_FL_TWIN;
 			}
 			if (strcasecmp(keyword,SD_MULTICAST)==0){ 
@@ -343,8 +343,6 @@ static int sd_init(Resource *r)
                                         coding_type=mc_frame;
 				else if (strcasecmp(sparam,"SAMPLE")==0)
                                         coding_type=mc_sample;
-				else
-                                        coding_type=mc_undefined;
                         }
                         if (strcasecmp(keyword,SD_PKT_LEN)==0) {
                                 sscanf(line,"%s%f",trash,&(me->data.pkt_len));
@@ -407,7 +405,9 @@ static int sd_init(Resource *r)
                 	set_media_entity(track->parser->parser_type,track->parser->parser_type->encoding_name);
 			if(!strcmp(track->parser->parser_type->media_entity,"audio")) {
 				audio_spec_prop *prop;
-				prop=malloc(sizeof(audio_spec_prop));	
+				// prop=malloc(sizeof(audio_spec_prop));	
+				// shawill: initialize with calloc
+				prop = calloc(1, sizeof(audio_spec_prop));	
 				prop->sample_rate=sample_rate;/*SamplingFrequency*/
 				prop->audio_channels=audio_channels;
 				prop->bit_per_sample=bit_per_sample;/*BitDepth*/
@@ -424,8 +424,8 @@ static int sd_init(Resource *r)
 			}
 			if(!strcmp(track->parser->parser_type->media_entity,"video")) {
 				video_spec_prop *prop;
-				prop=malloc(sizeof(video_spec_prop));	
-				prop->frame_rate;
+				prop = calloc(1, sizeof(video_spec_prop));	
+				// prop->frame_rate;
 				if(me->description_flags & MED_BITRATE)
 					prop->bit_rate=bit_rate; /*average if VBR or -1 is not usefull*/ 
 				if(me->description_flags & MED_CODING_TYPE)
@@ -439,7 +439,7 @@ static int sd_init(Resource *r)
 			}
 		}
 		else {
-			fnc_log(FNC_LOG_ERR,"It's impossible identify media_entity: audio, video ...\n");
+			fnc_log(FNC_LOG_ERR,"It's impossible to identify media_entity: audio, video ...\n");
 			free_track(track);
 			r->num_tracks--;
 			return ERR_ALLOC;

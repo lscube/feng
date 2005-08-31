@@ -28,14 +28,14 @@ build: build-stamp
 
 build-stamp: configure-stamp 
 	dh_testdir
-	$(MAKE)
+	$(MAKE) -s
 	touch build-stamp
 
 clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp configure-stamp
-	-$(MAKE) clean
+	-$(MAKE) -s clean
 	find . -name "*~" | xargs rm -f
 	dh_clean 
 
@@ -44,7 +44,8 @@ install: build
 	dh_testroot
 	dh_clean -k 
 	dh_installdirs
-	$(MAKE) install DESTDIR=$(CURDIR)/debian/fenice
+	$(MAKE) -s install DESTDIR=$(CURDIR)/debian/fenice
+	rm $(CURDIR)/debian/fenice/srv/fenice/fenice.log
 
 
 # Build architecture-independent files here.
@@ -61,6 +62,7 @@ binary-arch: build install
 #	dh_installlogrotate
 #	dh_installinit
 	dh_installman
+	dh_link var/log/fenice.log srv/fenice/fenice.log
 	dh_link
 	dh_strip
 	dh_compress

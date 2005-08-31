@@ -1,3 +1,10 @@
+1.10:
+	- Added log support via file or sysconfig.
+	- Finished MPEG-4 support (works best for stored contents).
+	- Fixed the annoying 100% CPU bug. Now fenice should run smooth and stable in almost every condition.
+	- Various bugs fixed.
+	- Fenice is GCC4 compatible.
+
 1.9:
 	- Full support of MPEG-4 encoding for stored contents (experimental code for live sessions).
 	- Improved RealOne Player compatibility.

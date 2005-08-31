@@ -23,7 +23,17 @@ EXTRA_DIST = 	include \
 		config \
 		debian \
 		INSTALL-FAST
+
+FENICE_AVROOT_DIR = $(DESTDIR)@fenice_avroot_dir@
+FENICE_LOG_FILE = `basename @fenice_log_file@`
 		
+install-exec-hook:
+	@echo -n "Installing Log file...";\
+	test ! -d $(DESTDIR)$(localstatedir)/log && mkdir -p $(DESTDIR)$(localstatedir)/log || :;\
+	test ! -f $(DESTDIR)@fenice_log_file@ && touch $(DESTDIR)@fenice_log_file@ || :;\
+	test ! -f $(FENICE_AVROOT_DIR)/../$(FENICE_LOG_FILE) && ln -s $(DESTDIR)@fenice_log_file@ $(FENICE_AVROOT_DIR)/../$(FENICE_LOG_FILE) || :;\
+	echo -n " ($(DESTDIR)@fenice_log_file@)";\
+	echo " done.";
 
 dist-hook:
 	@for svn in `find $(distdir) -iname .svn`; do \

@@ -1,3 +1,9 @@
+fenice (1.10-1) unstable; urgency=low
+
+  * Added Log file handling. 
+
+ -- OMSP Team <team@streaming.polito.it>  Tue, 26 Jul 2005 17:00:57 +0200
+
 fenice (1.9) unstable; urgency=low
 
   * ChangeLog updated. 

@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(fenice, 1.9)
+AC_INIT(fenice, 1.10)
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(dist-bzip2 check-news)
@@ -37,7 +37,7 @@ AC_ARG_ENABLE(fhs23,
 
 AC_ARG_ENABLE(debug,
 [  --enable-debug          enable gcc dubugging flags [[default=no]]],,
-	enable-debug="no")
+	enable_debug="no")
 
 AC_ARG_ENABLE(efence,
 [  --enable-efence         link against Electric Fence library to debug memory usage

@@ -2,3 +2,11 @@
 	* daemon mode
 	* system logs
 	* init scripts
+
+1.11:
+	* daemon mode
+	* make the server run as an own dedicated user
+		- create the dedicated user during install procedure
+		- fix files permission during install procedure
+	* init scripts (automagic configuration)
+	* logrotate scripts (automagic configuration)

@@ -74,6 +74,9 @@ typedef enum { // XXX: all initialized to a power of 2 number.
 	IS_EXCLUSIVE=1 // if set, input stream can be opened only once at a time.
 } istream_flags;
 
+#define IS_IS_INIT(is)	is->flags & IS_FLAGS_INIT
+#define IS_ISEXCLUSIVE(is)	is->flags & IS_EXCLUSIVE
+
 typedef struct __INPUTSTREAM {
 	char name[255];
 	stream_type type;

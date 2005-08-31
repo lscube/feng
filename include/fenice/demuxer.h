@@ -77,7 +77,7 @@ typedef struct __TRACK_INFO {
 typedef struct __TRACK {
 	InputStream *i_stream;
 	TrackInfo *track_info;
-	uint8 track_name[255];
+	char track_name[255];
 	long int timestamp;
 	MediaParser *parser;
 	/*bufferpool*/
@@ -95,7 +95,7 @@ typedef struct __SELECTOR {
 } Selector;
 
 typedef struct __RESOURCE_INFO {
-	uint8 twin[255];
+	char twin[255];
 } ResourceInfo;
 
 typedef struct __RESOURCE {
@@ -163,7 +163,7 @@ Track *add_track(Resource * /*, char * filename*/);
 Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
 msg_error get_resource_info(resource_name, ResourceInfo *);
-Selector * r_open_tracks(Resource *, uint8 *track_name, Capabilities *capabilities);/*open the right tracks*/
+Selector * r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/
 inline msg_error r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
 /*-------------------------------------------*/

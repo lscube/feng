@@ -48,6 +48,9 @@ static int open_mrl_st_device(InputStream *);
 static int open_socket(char *host, char *port, int *fd);
 static void close_fd(InputStream *is);
 
+static void is_setfl(InputStream *, istream_flags);
+static void is_clrfl(InputStream *, istream_flags);
+
 /*Interface*/
 InputStream *istream_open(char *mrl)
 {
@@ -84,6 +87,8 @@ inline int istream_read(uint32 nbytes, uint8 *buf, InputStream *is)
 {
 	return is ? read_c(nbytes, buf, is->cache, is->fd, is->type): ERR_ALLOC;
 }
+
+// static/private functions
 
 static int open_mrl(char *mrl, InputStream *is)
 {
@@ -149,7 +154,8 @@ static int open_mrl_st_file(InputStream *is)
 	if ( S_ISFIFO(filestat.st_mode) ) {
 		fnc_log(FNC_LOG_DEBUG, " IS_FIFO... ");
 		oflag |= O_NONBLOCK;
-		is->flags|= IS_EXCLUSIVE;
+		// is->flags|= IS_EXCLUSIVE;
+		is_setfl( is, IS_EXCLUSIVE);
 	}
 	if( (is->fd=open(is->name, oflag))==-1 ) {
 		switch (errno) {
@@ -216,5 +222,15 @@ static void close_fd(InputStream *is)
 {
 	close(is->fd);
 	is->fd=-1;
+}
+
+static void is_setfl(InputStream *is, istream_flags flags)
+{
+	is->flags |= flags;
+}
+
+static void is_clrfl(InputStream *is, istream_flags flags)
+{
+	is->flags &= ~flags;
 }
 

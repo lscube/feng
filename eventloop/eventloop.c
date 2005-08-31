@@ -102,7 +102,7 @@ void eventloop(tsocket main_fd)
         			}					
         		}
 			num_conn++;	
-			fnc_log(FNC_LOG_INFO,"Connection arriched: %d\n",num_conn);
+			fnc_log(FNC_LOG_INFO,"Connections reached: %d\n",num_conn);
         	}
     	}
 	schedule_connections(&rtsp_list,&conn_count);

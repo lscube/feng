@@ -34,24 +34,40 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-void free_track(Track * t)
+typedef struct __TRACK_LIST {
+	Track *track;
+	struct __TRACK_LIST *next;
+} TrackList;
+
+static TrackList *ex_tracks=NULL;
+
+static TrackList *ex_track_search(Track *);
+static void ex_track_remove(Track *);
+static int ex_tracks_save(Track *[], uint32);
+// static void ex_tracks_free(Track *[], uint32);
+
+void free_track(Track *t)
 {
 	close_is(t->i_stream);
 	if(t->track_info!=NULL)
 		free(t->track_info);
-	t->track_info=NULL;
+	// t->track_info=NULL;
 	if(t->parser!=NULL)
 		free_parser(t->parser);
 	if(t->buffer!=NULL)
 		OMSbuff_free(t->buffer);
 	if(t->private_data!=NULL) {
 		free(t->private_data);
-		t->private_data=NULL;
+		// t->private_data=NULL;
 	}
-	t->calculate_timestamp=NULL; /*TODO*/
+	// t->calculate_timestamp=NULL; /*TODO*/
+	if ( t->i_stream && IS_ISEXCLUSIVE(t->i_stream) )
+		ex_track_remove(t);
+
+	free(t);
 }
 
-Resource * r_open(resource_name n)
+Resource *r_open(resource_name n)
 {
 	Resource *r;
 	InputStream *i_stream;
@@ -62,18 +78,24 @@ Resource * r_open(resource_name n)
 	}
 	if((r=(Resource *)malloc(sizeof(Resource)))==NULL) {
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		istream_close(i_stream);
 		return NULL;
 	}
 	if((r->info=(ResourceInfo *)malloc(sizeof(ResourceInfo)))==NULL) {
+		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
 		free(r);
 		r=NULL;
-		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		istream_close(i_stream);
 		return NULL;
 	}
 	r->i_stream=i_stream;
 	r->private_data=NULL;
 	r->format=NULL; /*use register_format*/
 	/*initializate tracks[MAX_TRACKS]??? TODO*/
+	// temporary track initialization:
+	r->num_tracks=0;
+	// search for exclusive tracks: should be done track per track?
+	ex_tracks_save(r->tracks, r->num_tracks);
 	
 	return r;
 }
@@ -96,13 +118,13 @@ void r_close(Resource *r)
 	}
 }
 
-msg_error get_resource_info(resource_name n , ResourceInfo *r)
+msg_error get_resource_info(resource_name n, ResourceInfo *r)
 {
 	//...
 	return RESOURCE_OK;
 }
 
-Selector * r_open_tracks(Resource *r, uint8 *track_name, Capabilities *capabilities)
+Selector *r_open_tracks(Resource *r, char *track_name, Capabilities *capabilities)
 {
 	Selector *s;
 	uint32 i=0,j;
@@ -111,7 +133,7 @@ Selector * r_open_tracks(Resource *r, uint8 *track_name, Capabilities *capabilit
 	/*Capabilities aren't used yet. TODO*/
 
 	for(j=0;j<r->num_tracks;j++)
-		if(!strcmp((r->tracks[j])->track_name,track_name) && i<MAX_SEL_TRACKS) {
+		if( !strcmp((r->tracks[j])->track_name, track_name) && (i<MAX_SEL_TRACKS) ) {
 			tracks[i]=r->tracks[j];
 			i++;
 		}
@@ -135,10 +157,12 @@ Selector * r_open_tracks(Resource *r, uint8 *track_name, Capabilities *capabilit
 void r_close_tracks(Selector *s)
 {
 	/*see r_close, what i have to do???*/
-	free_track(s->tracks[s->selected_index]);
+	// free_track(s->tracks[s->selected_index]);
+	/*shawill: probably we must free only selector data*/
+	free(s);
 }
 
-inline msg_error r_seek(Resource *r,long int time_sec)
+inline msg_error r_seek(Resource *r, long int time_sec)
 {
 	return r->format->read_seek(r,time_sec);
 }
@@ -184,18 +208,23 @@ Track *add_track(Resource *r/*, char * filename*/)
 
 	if((parser=add_media_parser())==NULL) {
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		free(track_info);
 		free_track(t);
 		return NULL;
 	}
 	if((buffer=OMSbuff_new(OMSBUFFER_DEFAULT_DIM))==NULL) {
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		free_parser(parser);
+		free(track_info);
 		free_track(t);
 		return NULL;
 	}
 
+	t->track_name[0]='\0';
 	t->track_info=track_info;
 	t->parser=parser;
 	t->buffer=buffer;
+	t->i_stream=NULL;
 	/*t->i_stream=i_stream*/
 	
 	r->tracks[r->num_tracks]=t;
@@ -204,4 +233,64 @@ Track *add_track(Resource *r/*, char * filename*/)
 	return t;
 }
 
+// static functions
+static TrackList *ex_track_search(Track *track)
+{
+	TrackList *i;
+
+	for (i=ex_tracks; i && (i->track != track); i=i->next);
+
+	return i;
+}
+
+static void ex_track_remove(Track *track)
+{
+	TrackList *i, *prev;
+
+	for (i=prev=ex_tracks; i && (i->track != track); prev=i, i=i->next);
+
+	if (i) {
+		if (i == ex_tracks) {
+			ex_tracks = ex_tracks->next;
+		} else {
+			prev->next = i->next;
+		}
+		free(i);
+	}
+}
+
+static int ex_tracks_save(Track *tracks[], uint32 num_tracks)
+{
+	uint32 i;
+	TrackList *track_item;
+	
+	for (i=0; i<num_tracks; i++) {
+		if ( tracks[i]->i_stream && IS_ISEXCLUSIVE(tracks[i]->i_stream) && !ex_track_search(tracks[i]) ) {
+			if ( !(track_item = malloc(sizeof(TrackList))) ) {
+				fnc_log(FNC_LOG_FATAL,"Could not alloc memory.\n");
+				return ERR_ALLOC;
+			}
+			// insert at the beginning of the list
+			track_item->next = ex_tracks;
+			ex_tracks = track_item;
+		}
+	}
+
+	return ERR_NOERROR;
+}
+
+#if 0
+static void ex_tracks_free(Track *tracks[], uint32 num_tracks)
+{
+	uint32 i;
+	TrackList *track_item;
+	
+	for (i=0; i<num_tracks; i++) {
+		if ( tracks[i]->i_stream && IS_ISEXCLUSIVE(tracks[i]->i_stream) ) {
+			// remove from list (if present)
+			ex_track_remove(tracks[i]);
+		}
+	}
+}
+#endif
 

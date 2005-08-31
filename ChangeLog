@@ -1,5 +1,327 @@
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
+FENICE 1.10
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+r198 | mancho | 2005-07-26 17:50:41 +0200 (Tue, 26 Jul 2005) | 2 lines
+
+Updating the debian subdir.
+
+------------------------------------------------------------------------
+r197 | mancho | 2005-07-26 16:58:01 +0200 (Tue, 26 Jul 2005) | 2 lines
+
+Preparing Release 1.10
+
+------------------------------------------------------------------------
+r177 | shawill | 2005-06-28 16:52:16 +0200 (Tue, 28 Jun 2005) | 2 lines
+
+forgot to include config.h in socket.h.
+
+------------------------------------------------------------------------
+r176 | shawill | 2005-06-28 16:47:59 +0200 (Tue, 28 Jun 2005) | 5 lines
+
+Some changes done in fenice-ng interested also the trunk:
+- sock_ntop_host function added and used somewhere...
+- sockaddr_storage checked in configure and used.
+- some warnings removed from mpeg and mpeg4 functions.
+
+------------------------------------------------------------------------
+r164 | federico | 2005-06-06 13:53:36 +0200 (Mon, 06 Jun 2005) | 6 lines
+
+Fixed a little bug in RTCP scheduling.
+Sending RTCP packets is moved in the same thread where they are created to avoid
+concatenation of different RTCP pkts before send them.
+
+
+
+------------------------------------------------------------------------
+r160 | federico | 2005-05-31 12:36:16 +0200 (Tue, 31 May 2005) | 3 lines
+
+bugfix (no 100% CPU usage)
+
+
+------------------------------------------------------------------------
+r151 | federico | 2005-05-20 18:19:09 +0200 (Fri, 20 May 2005) | 2 lines
+
+First step in order to club new scheduler.
+
+------------------------------------------------------------------------
+r147 | federico | 2005-05-20 11:10:17 +0200 (Fri, 20 May 2005) | 2 lines
+
+Cleaning up.
+
+------------------------------------------------------------------------
+r146 | shawill | 2005-05-19 16:06:44 +0200 (Thu, 19 May 2005) | 2 lines
+
+Fenice now recognize if the source tree is from SVN or from release.
+
+------------------------------------------------------------------------
+r145 | shawill | 2005-05-19 10:21:26 +0200 (Thu, 19 May 2005) | 2 lines
+
+syntax error repaired.
+
+------------------------------------------------------------------------
+r143 | federico | 2005-05-16 19:38:49 +0200 (Mon, 16 May 2005) | 3 lines
+
+Some "ghosts" driven away with valgrind :-)
+
+
+------------------------------------------------------------------------
+r142 | federico | 2005-05-13 20:22:31 +0200 (Fri, 13 May 2005) | 3 lines
+
+Sorry, a mistake ...
+
+
+------------------------------------------------------------------------
+r141 | federico | 2005-05-13 20:15:00 +0200 (Fri, 13 May 2005) | 4 lines
+
+Fenice can now dumps the payload. Please use it only for very
+strong debug. 
+
+
+------------------------------------------------------------------------
+r140 | federico | 2005-05-12 18:51:44 +0200 (Thu, 12 May 2005) | 3 lines
+
+Handling of User-Agent in Fenice logger
+
+
+------------------------------------------------------------------------
+r139 | federico | 2005-05-12 16:55:17 +0200 (Thu, 12 May 2005) | 3 lines
+
+Some steps more in order to have a CLF
+
+
+------------------------------------------------------------------------
+r138 | federico | 2005-05-11 14:53:46 +0200 (Wed, 11 May 2005) | 3 lines
+
+First step in order to have a CLF style.
+
+
+------------------------------------------------------------------------
+r137 | federico | 2005-05-10 19:38:14 +0200 (Tue, 10 May 2005) | 5 lines
+
+Added logging for:
+1) User-Agent
+2) Address of the client
+
+
+------------------------------------------------------------------------
+r136 | federico | 2005-05-10 18:04:06 +0200 (Tue, 10 May 2005) | 3 lines
+
+Opsss, i forgot a log message.
+
+
+------------------------------------------------------------------------
+r134 | federico | 2005-05-10 14:56:48 +0200 (Tue, 10 May 2005) | 2 lines
+
+fenice logger finished.
+
+------------------------------------------------------------------------
+r133 | federico | 2005-05-09 19:35:14 +0200 (Mon, 09 May 2005) | 3 lines
+
+Fenice logger: start to use it
+
+
+------------------------------------------------------------------------
+r132 | federico | 2005-05-09 16:35:52 +0200 (Mon, 09 May 2005) | 19 lines
+
+Added fenice logger. Possible solution are:
+
+1)stderr with -v option (see fenice --help)
+2)default log file (see configure --help)
+3)log_file="<your_log_file" in your fenice.conf
+4)if no -v option presents and it's impossile to write the selected log file then fenice uses syslogd with daemon.log. If it is impossible to use syslog system then stderr is used. 
+
+please use:
+
+fnc_log(int level, const char *fmt, ...)	/*fprintf style*/
+
+where possible levels are (for now):
+	        #define FNC_LOG_ERR 0
+		#define FNC_LOG_INFO 1
+		#define FNC_LOG_WARN 2
+		#define FNC_LOG_DEBUG 3
+					
+
+
+------------------------------------------------------------------------
+r131 | shawill | 2005-05-04 17:22:44 +0200 (Wed, 04 May 2005) | 2 lines
+
+I forgot a debug messagge.
+
+------------------------------------------------------------------------
+r130 | shawill | 2005-05-04 17:19:39 +0200 (Wed, 04 May 2005) | 3 lines
+
+Bugfix for pref.serv_root:
+   if the string doesn't end with a slash, it will be added.
+
+------------------------------------------------------------------------
+r129 | federico | 2005-05-03 16:48:09 +0200 (Tue, 03 May 2005) | 3 lines
+
+Buxfixes in timestamp for mpeg4 video + audio live session
+
+
+------------------------------------------------------------------------
+r128 | shawill | 2005-04-29 13:07:58 +0200 (Fri, 29 Apr 2005) | 2 lines
+
+bufferpool bugfixes.
+
+------------------------------------------------------------------------
+r127 | federico | 2005-04-18 16:01:31 +0200 (Mon, 18 Apr 2005) | 3 lines
+
+Replaced right timestamp for mpeg4 live session with B VOP TYPE.
+
+
+------------------------------------------------------------------------
+r126 | shawill | 2005-04-18 12:23:47 +0200 (Mon, 18 Apr 2005) | 3 lines
+
+Set codec internal data pointer to NULL after the codec-dependant free function
+call in order to be shure no to address the deaalocated struct anymore.
+
+------------------------------------------------------------------------
+r125 | shawill | 2005-04-15 19:58:55 +0200 (Fri, 15 Apr 2005) | 2 lines
+
+mediaclose now closes also pipe fd. these way Felice is able to recognize if the reader is active and can decide not to drop packets.
+
+------------------------------------------------------------------------
+r124 | federico | 2005-04-15 19:11:47 +0200 (Fri, 15 Apr 2005) | 3 lines
+
+Some usefull control in order to correct mpeg 4 video es timestamp if there are some errors in bitstream.
+
+
+------------------------------------------------------------------------
+r123 | shawill | 2005-04-14 09:46:31 +0200 (Thu, 14 Apr 2005) | 3 lines
+
+Bug fix in function that closes media: the parser specific free function must
+be called only if the media is relly closing.
+
+------------------------------------------------------------------------
+r122 | federico | 2005-04-12 19:10:49 +0200 (Tue, 12 Apr 2005) | 2 lines
+
+Cleaned mpeg4 timestamp
+
+------------------------------------------------------------------------
+r121 | federico | 2005-04-11 16:17:18 +0200 (Mon, 11 Apr 2005) | 2 lines
+
+Fixed some bugs 
+
+------------------------------------------------------------------------
+r120 | federico | 2005-04-08 12:23:47 +0200 (Fri, 08 Apr 2005) | 3 lines
+
+Cleaning load_L16, load_GSM, read_GSM
+
+
+------------------------------------------------------------------------
+r119 | federico | 2005-04-07 18:52:54 +0200 (Thu, 07 Apr 2005) | 3 lines
+
+Cleaning up validate_stream and load_*
+
+
+------------------------------------------------------------------------
+r118 | federico | 2005-04-05 16:59:02 +0200 (Tue, 05 Apr 2005) | 3 lines
+
+OneTime i hope it'll work in all situations: timestamp mpeg4 video es.
+
+
+------------------------------------------------------------------------
+r117 | federico | 2005-04-04 19:25:09 +0200 (Mon, 04 Apr 2005) | 4 lines
+
+Audio + MPEG 4 ES video just works!! (really not fine in all situations).
+I'll finish in the next commit (i must think on something in order to do it), please wait.
+
+
+------------------------------------------------------------------------
+r116 | federico | 2005-03-29 17:03:49 +0200 (Tue, 29 Mar 2005) | 7 lines
+
+Some bugs fixed.
+Note: Fenice is also compatible with winamp+in_rtp.dll.
+You can dowload in_rtp.dll from: http://www.live.com/multikit/windows/in_rtp.dll
+and add it in your winamp plugin directory (usually "C:\Program Files\Winamp\Plugins").
+So,i using winamp, winzoz user can listen mp3 streamed from Fenice.
+
+
+------------------------------------------------------------------------
+r115 | federico | 2005-03-24 13:15:17 +0100 (Thu, 24 Mar 2005) | 6 lines
+
+New media support handling. 
+Now read_X, load_XPT and the new free_XPT are function pointer.
+Separated header file for each media type support.
+WARNINGS: do not release this, tests are in progress :-)
+
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+FENICE 1.9
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+r114 | shawill | 2005-03-22 18:41:59 +0100 (Tue, 22 Mar 2005) | 8 lines
+
+Bufferpool writing procedure changed:
+now even if a slot is requested with OMSbuff_getslot the writer position inside
+buffer queue is not yet updated and, at the end of operations with requested
+slot, OMSbuff_write MUST be called for committing written slot.
+The OMSbuff_write understands that the slot was previously requested and do not
+get a new one, it just upgrade the slot paramenters and buffer writer position,
+refs and seq.
+
+------------------------------------------------------------------------
+r113 | mancho | 2005-03-22 16:11:07 +0100 (Tue, 22 Mar 2005) | 2 lines
+
+Preparing release 1.9.
+
+------------------------------------------------------------------------
+r112 | shawill | 2005-03-21 19:33:48 +0100 (Mon, 21 Mar 2005) | 3 lines
+
+RTSP lines now end with CRLF accordingly with rfc.
+Real Audio+Video compatibility regained.
+
+------------------------------------------------------------------------
+r111 | federico | 2005-03-21 18:11:02 +0100 (Mon, 21 Mar 2005) | 11 lines
+
+- final MPEG-4 video ES parser
+- separate header and structure for all video format support
+TODO: 
+	- "config=" in sdp for MPEG-4 video ES
+	- free functions for all media format supports
+	- separate header and structure for all audio format supports
+TEST in progress:
+	- bit rate and video quality with MPEG-4 video ES 
+	- MPEG-4 video ES live support
+
+
+------------------------------------------------------------------------
+r110 | federico | 2005-03-10 19:39:09 +0100 (Thu, 10 Mar 2005) | 5 lines
+
+mpeg4 video live support not finished.
+config in sdp not finished.
+I need one commit more. Wait please!
+
+
+------------------------------------------------------------------------
+r109 | federico | 2005-03-10 13:46:41 +0100 (Thu, 10 Mar 2005) | 8 lines
+
+Full mpeg 4 video es support added. A complete parser was written and so all profiles are suppoted.
+dump_payload.c is used ONLY for STRONG debug (see mediainfo/get_frame.c).
+TODO: right profile-id and config in sdp (you 'll see them in the next commit, please wait!).
+NOTE:
+	1) vcodec: mpeg4
+	2) format: m4v	
+
+
+------------------------------------------------------------------------
+r108 | federico | 2005-03-01 17:05:39 +0100 (Tue, 01 Mar 2005) | 4 lines
+
+First step in order to add mpeg2 TS support.
+read_MPEG_system is disabled.
+
+
+------------------------------------------------------------------------
+r107 | mancho | 2005-03-01 15:43:02 +0100 (Tue, 01 Mar 2005) | 2 lines
+
+Release 1.8
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
 FENICE 1.8
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
