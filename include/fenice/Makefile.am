@@ -4,6 +4,7 @@ noinst_HEADERS	=	bufferpool.h \
 			command_environment.h \
 			debug.h \
 			demuxer.h \
+			demuxer_module.h \
 			evenloop.h \
 			fnc_log.h \
 			gsm.h \

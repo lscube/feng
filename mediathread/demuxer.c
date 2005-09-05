@@ -34,6 +34,15 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
+// global demuxer modules:
+extern Demuxer fnc_demuxer_sd;
+
+// static array containing all the available demuxers:
+static Demuxer *demuxers[] = {
+	&fnc_demuxer_sd,
+	NULL
+};
+
 typedef struct __TRACK_LIST {
 	Track *track;
 	struct __TRACK_LIST *next;
@@ -164,7 +173,7 @@ void r_close_tracks(Selector *s)
 
 inline msg_error r_seek(Resource *r, long int time_sec)
 {
-	return r->format->read_seek(r,time_sec);
+	return r->format->seek(r,time_sec);
 }
 
 /*
@@ -234,6 +243,7 @@ Track *add_track(Resource *r/*, char * filename*/)
 }
 
 // static functions
+// Exclusive Tracks handling functions
 static TrackList *ex_track_search(Track *track)
 {
 	TrackList *i;

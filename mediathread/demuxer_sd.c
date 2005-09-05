@@ -39,6 +39,18 @@
 #include <fenice/rtsp.h>	/*parse_url*/
 #include <fenice/rtpptdefs.h>	/*payload type definitions*/
 
+#include <fenice/demuxer_module.h>
+
+static DemuxerInfo info = {
+	"Source Description",
+	"sd",
+	"OMSP Team",
+	"",
+	"sd"
+};
+
+FNC_LIB_DEMUXER(sd);
+
 /*RESOURCE PRIVATE_DATA*/
 #if !defined(_MEDIAINFOH) /*remove it when mediainfo will be removed*/ 
 typedef enum {
@@ -214,7 +226,12 @@ static int validate_track(Resource *r)
 	*/
 }
 
-static int sd_init(Resource *r)
+static int probe(char *filename)
+{
+	return RESOURCE_OK;
+}
+
+static int init(Resource *r)
 {
 
 	char keyword[80],line[80],trash[80],sparam[10];
@@ -456,46 +473,23 @@ static int sd_init(Resource *r)
 	return RESOURCE_OK;
 }
 
-
-static int sd_probe(Resource *r)
+static int read_header(Resource *r)
 {
 	return RESOURCE_OK;
 }
 
-static int sd_read_header(Resource *r)
+static int read_packet(Resource *r)
 {
 	return RESOURCE_OK;
 }
 
-static int sd_read_packet(Resource *r)
-{
-	return RESOURCE_OK;
-}
-
-static int sd_close(Resource *r)
-{
-	return RESOURCE_OK;
-}
-
-static int sd_seek(Resource *r, long int time_msec)
+static int seek(Resource *r, long int time_msec)
 {
 	return RESOURCE_NOT_SEEKABLE;
 }
 
-
-static InputFormat sd_iformat = {
-    "sd",
-    sd_init,/*ex parse_SD_file*/
-    sd_probe,/*(is a sd)?RESOURCE_DAMAGED:RESOURCE_OK*/
-    sd_read_header,/*return RESOURCE_OK and nothing more*/ 
-    sd_read_packet,/*switchs between the different parser reader according to the timestamp. \
-		     I.e. 1 video frame mpeg1 (1pkt/40msec) and 1 or 2 mp3 audio pkts (1pkt/26.12msec*/
-    sd_close, /*close all media described in sd*/
-    sd_seek /*seek all media in sd*/
-};
-
-
-void register_format_sd(Resource *r)
+static int uninit(Resource *r)
 {
-	r->format=&sd_iformat;
+	return RESOURCE_OK;
 }
+

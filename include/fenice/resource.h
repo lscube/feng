@@ -100,27 +100,40 @@ typedef struct __RESOURCE_INFO {
 
 typedef struct __RESOURCE {
 	InputStream *i_stream;
-	struct __INPUTFORMAT *format;
+	struct __DEMUXER *format;
 	ResourceInfo *info;
 	Track *tracks[MAX_TRACKS];
 	uint32 num_tracks;
 	void *private_data; /*use it as you want*/
 } Resource;
 
-typedef struct __INPUTFORMAT {
-	const char *format_name; /*i.e. "matroska"*/
+typedef struct {
+	/*name of demuxer module*/
+	const char *name;
+	/* short name (for config strings) (e.g.:"sd") */
+	const char *short_name;
+	/* author ("Author name & surname <mail>") */
+	const char *author;
+	/* any additional comments */
+	const char *comment;
+	/* served file extensions */
+	const char *extensions;
+} DemuxerInfo;
+
+typedef struct __DEMUXER {
+	DemuxerInfo *info;
+	int (*probe)(char *);
 	int (*init)(Resource *);
-	int (*probe)(Resource *);
 	int (*read_header)(Resource *);
 	int (*read_packet)(Resource *);
-	int (*read_close)(Resource *);
-	int (*read_seek)(Resource *, long int time_sec);
+	int (*seek)(Resource *, long int time_sec);
+	int (*uninit)(Resource *);
 	//...
-} InputFormat;
+} Demuxer;
 
 /*example
  
-static InputFormat matroska_iformat = {
+static Demuxer matroska_iformat = {
     "matroska",
     matroska_init,
     matroska_probe,
