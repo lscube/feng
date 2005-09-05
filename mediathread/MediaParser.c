@@ -93,7 +93,6 @@ void free_parser(MediaParser *p)
 		p->parser_type=NULL;
 	}
 	if(p!=NULL) {
-		p->pts=0;
 		free(p);	
 		p=NULL;
 	}
@@ -111,7 +110,6 @@ MediaParser * add_media_parser(void)
 		return NULL;
 	}
 	p->parser_type=parser_type;
-	p->pts=0;
 
 	return p;
 }

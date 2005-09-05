@@ -83,7 +83,6 @@ typedef struct __TRACK {
 	/*bufferpool*/
 	OMSBuffer *buffer;
 	media_source msource;
-	long int (*calculate_timestamp)(long int /*parser->pts*/, long int /*this->timestamp*/);/*put it bufferpool->....timestamp*/
 	void *private_data; /*use it as you want*/
 } Track;
 
