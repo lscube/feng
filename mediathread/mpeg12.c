@@ -35,6 +35,13 @@
 #include <fenice/utils.h>
 #include <fenice/types.h>
 
+static MediaParserInfo info = {
+	"MPV",
+	"V"
+};
+
+FNC_LIB_MEDIAPARSER(mpv);
+
 /*see ISO/IEC 11172-2:1993 and ISO/IEC 13818-2:1995 (E)*/
 /*prefix*/
 #define START_CODE 0x000001
