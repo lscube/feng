@@ -33,6 +33,7 @@
 
 #include <fenice/types.h>
 #include <fenice/bufferpool.h>
+#include <fenice/InputStream.h>
 
 typedef struct __MEDIAPARSERTYPE {
 	char encoding_name[11]; /*i.e. MPV, MPA ...*/
@@ -43,8 +44,17 @@ typedef struct __MEDIAPARSERTYPE {
 	void *properties; /*to cast to audio, video or text specific properties*/
 } MediaParserType;
 
+typedef struct {
+	const char *encoding_name; /*i.e. MPV, MPA ...*/
+	const char *media_type; /*i.e. audio, video, text*/
+} MediaParserInfo;
 
 typedef struct __MEDIAPARSER {
+	MediaParserInfo *info;
+	int (*init)(void); // shawill: TODO: specify right parameters
+	int (*get_frame)(uint8 *, uint32, int64 *, void *, InputStream *);
+	int (*packetize)(uint8 *, uint32, uint8 *, uint32, void *properties);
+	int (*uninit)(void); /*before call free_parser */
 	MediaParserType *parser_type;
 } MediaParser;
 

@@ -55,27 +55,6 @@ static void ex_track_remove(Track *);
 static int ex_tracks_save(Track *[], uint32);
 // static void ex_tracks_free(Track *[], uint32);
 
-void free_track(Track *t)
-{
-	close_is(t->i_stream);
-	if(t->track_info!=NULL)
-		free(t->track_info);
-	// t->track_info=NULL;
-	if(t->parser!=NULL)
-		free_parser(t->parser);
-	if(t->buffer!=NULL)
-		OMSbuff_free(t->buffer);
-	if(t->private_data!=NULL) {
-		free(t->private_data);
-		// t->private_data=NULL;
-	}
-	// t->calculate_timestamp=NULL; /*TODO*/
-	if ( t->i_stream && IS_ISEXCLUSIVE(t->i_stream) )
-		ex_track_remove(t);
-
-	free(t);
-}
-
 Resource *r_open(resource_name n)
 {
 	Resource *r;
@@ -240,6 +219,27 @@ Track *add_track(Resource *r/*, char * filename*/)
 	r->num_tracks++;
 	
 	return t;
+}
+
+void free_track(Track *t)
+{
+	close_is(t->i_stream);
+	if(t->track_info!=NULL)
+		free(t->track_info);
+	// t->track_info=NULL;
+	if(t->parser!=NULL)
+		free_parser(t->parser);
+	if(t->buffer!=NULL)
+		OMSbuff_free(t->buffer);
+	if(t->private_data!=NULL) {
+		free(t->private_data);
+		// t->private_data=NULL;
+	}
+	// t->calculate_timestamp=NULL; /*TODO*/
+	if ( t->i_stream && IS_ISEXCLUSIVE(t->i_stream) )
+		ex_track_remove(t);
+
+	free(t);
 }
 
 // static functions

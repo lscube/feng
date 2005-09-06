@@ -36,10 +36,25 @@
  *    returns: 0 on success (file recognized), non-zero on error.
  * */
 static int probe(char *filename);
+
+/* init: ...
+ * */
 static int init(Resource *);
+
+/* read_header: ... shawill: XXX what is this?
+ * */
 static int read_header(Resource *);
+
+/* read_packet: ...
+ * */
 static int read_packet(Resource *);
+
+/* seek: ...
+ * */
 static int seek(Resource *, long int time_sec);
+
+/* uninit: ...
+ * */
 static int uninit(Resource *);
 
 #define FNC_LIB_DEMUXER(x) Demuxer fnc_demuxer_##x =\
