@@ -33,6 +33,14 @@
 #include <fenice/MediaParser.h>
 #include <fenice/utils.h>
 
+// global media parsers modules:
+
+// static array containing all the available media parsers:
+static MediaParser *media_parsers[] = {
+	NULL
+};
+
+#if 0
 static int register_mediatype_functions(MediaParserType *pt, char *encoding_name)
 {
 
@@ -83,37 +91,37 @@ int register_media_type(MediaParserType * parser_type, MediaParser * p)
 	p->parser_type=parser_type; 
 	return ERR_NOERROR;
 }
+#endif
 
-void free_parser(MediaParser *p)
+MediaParser *add_media_parser(void) 
 {
-	if(p->parser_type!=NULL) {
-		free(p->parser_type->properties);
-		p->parser_type->properties=NULL;
-		free(p->parser_type);
-		p->parser_type=NULL;
-	}
-	if(p!=NULL) {
-		free(p);	
-		p=NULL;
-	}
-}
-
-MediaParser * add_media_parser(void) 
-{
-	MediaParserType * parser_type;
 	MediaParser *p;
-	if((parser_type=(MediaParserType *)malloc(sizeof(MediaParserType)))==NULL)
-		return NULL;
-	
-	if((p=(MediaParser *)malloc(sizeof(MediaParser)))==NULL) {
-		free(parser_type);
+
+	if(!(p=malloc(sizeof(MediaParser)))) {
 		return NULL;
 	}
-	p->parser_type=parser_type;
+
+	if(!(p->properties=calloc(1, sizeof(MediaProperties)))) {
+		free(p);
+		return NULL;
+	}
+
+	p->info = NULL;
+	p->private_data=NULL;
 
 	return p;
 }
 
+void free_parser(MediaParser *p)
+{
+	if(p) {
+		p->uninit(p->private_data);
+		free(p->properties);
+		free(p);	
+	}
+}
+
+#if 0
 int set_media_entity(MediaParserType *pt, char *encoding_name)
 {
 
@@ -131,3 +139,4 @@ int set_media_entity(MediaParserType *pt, char *encoding_name)
 
 	return	register_mediatype_functions(pt,encoding_name);
 }
+#endif

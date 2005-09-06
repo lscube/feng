@@ -35,6 +35,7 @@
 #include <fenice/bufferpool.h>
 #include <fenice/InputStream.h>
 
+#if 0
 typedef struct __MEDIAPARSERTYPE {
 	char encoding_name[11]; /*i.e. MPV, MPA ...*/
 	char media_entity[6]; /*i.e. audio, video, text*/
@@ -43,6 +44,36 @@ typedef struct __MEDIAPARSERTYPE {
 	int (*close)(); /*before call free_parser */
 	void *properties; /*to cast to audio, video or text specific properties*/
 } MediaParserType;
+#endif
+
+typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCoding;
+
+typedef struct {
+	int32 bit_rate; /*average if VBR or -1 is not usefull*/
+	MediaCoding coding_type;
+	uint32 payload_type;
+	uint32 clock_rate;
+	char encoding_name[11];
+	char media_type[6];
+	// Audio specific properties:
+	float sample_rate;/*SamplingFrequency*/
+	float OutputSamplingFrequency;
+	short audio_channels;
+	uint32 bit_per_sample;/*BitDepth*/
+	// Video specific properties:
+	uint32 frame_rate;
+	/*Matroska ...*/
+	uint32 FlagInterlaced;
+	//short StereoMode;
+	uint32 PixelWidth;
+	uint32 PixelHeight;
+	uint32 DisplayWidth;
+	uint32 DisplayHeight;
+	uint32 DisplayUnit;
+	uint32 AspectRatio;
+	uint8 *ColorSpace;
+	float GammaValue;
+} MediaProperties;
 
 typedef struct {
 	const char *encoding_name; /*i.e. MPV, MPA ...*/
@@ -54,14 +85,14 @@ typedef struct __MEDIAPARSER {
 	int (*init)(void); // shawill: TODO: specify right parameters
 	int (*get_frame)(uint8 *, uint32, int64 *, void *, InputStream *);
 	int (*packetize)(uint8 *, uint32, uint8 *, uint32, void *properties);
-	int (*uninit)(void); /*before call free_parser */
-	MediaParserType *parser_type;
+	int (*uninit)(void *); /* parser specific init function */
+	void *private_data;
+	MediaProperties *properties; /*to cast to audio, video or text specific properties*/
 } MediaParser;
 
-int register_media_type(MediaParserType *, MediaParser *);
+// int register_media_type(MediaParserType *, MediaParser *);
 
-typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCoding;
-
+#if 0
 #define __PROPERTIES_COMMON_FIELDS 	int32 bit_rate; /*average if VBR or -1 is not usefull*/ \
 					MediaCoding coding_type; \
 					uint32 payload_type; \
@@ -69,10 +100,11 @@ typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCoding;
 					uint8 encoding_name[11];
 
 
+/*
 typedef struct __COMMON_PROPERTIES {
 	__PROPERTIES_COMMON_FIELDS
 } common_prop;
-
+*/
 
 typedef struct __AUDIO_SPEC_PROPERTIES {
 	__PROPERTIES_COMMON_FIELDS
@@ -101,10 +133,11 @@ typedef struct __VIDEO_SPEC_PROPERTIES {
 typedef struct __TEXT_SPEC_PROPERTIES {
 	__PROPERTIES_COMMON_FIELDS
 } text_spec_prop;
+#endif
 
 /*MediaParser Interface*/
 void free_parser(MediaParser *);
 MediaParser * add_media_parser(void); 
-int set_media_entity(MediaParserType *, char *encoding_name);
+// int set_media_entity(MediaParserType *, char *encoding_name);
 #endif
 

@@ -32,6 +32,7 @@
 #define __MEDIAPARSER_MODULE_H
 
 #include <fenice/types.h>
+#include <fenice/InputStream.h>
 
 /* init: inizialize the module
  *    arg: void (for now) TODO; choose rigth paramenters
@@ -41,11 +42,11 @@
 static int init(void);
 /* get_frame: parse one frame from media bitstream.
  *    args:
- *       istream: InputStream of source Elementary Stream,
  *       dst: destination memory slot,
  *       dst_nbytes: number of bytes of *dest memory area,
- *       : number of bytes of *source memory area,
+ *       timestamp; return value for timestap of read frame
  *       void *properties: private data specific for each media parser.
+ *       istream: InputStream of source Elementary Stream,
  *    return: ...
  * */
 static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, void *properties, InputStream *istream);
@@ -62,16 +63,17 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, void *pro
 static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, void *properties);
 
 /* uninit: free the media parser structures.
- *    args: ...
+ *    args:
+ *       private_data: pointer to parser specific private data.
  *    return: void.
  * */
-static int uninit(void); /*before call free_parser */
+static int uninit(void *private_data); /*before call free_parser */
 
 #define FNC_LIB_MEDIAPARSER(x) Demuxer fnc_mediaparser_##x =\
 {\
 	&info, \
 	init, \
-	get_frame, \
+	get_frame2, \
 	packetize, \
 	uninit \
 }

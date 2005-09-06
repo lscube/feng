@@ -76,7 +76,7 @@ static int init(void)
 	return 0;
 }
 
-static int uninit(void)
+static int uninit(void *private_data)
 {
 	return 0;
 }
@@ -90,13 +90,7 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, void *pro
 /*see RFC 2250: RTP Payload Format for MPEG1/MPEG2 Video*/
 static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, void *properties)
 {
-	video_spec_prop *prop;
-
-	prop = (video_spec_prop *)properties;
-
-	
-
-	return ERR_NOERROR;
+	return 0;
 }
 
 
