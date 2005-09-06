@@ -48,7 +48,7 @@ static int init(void);
  *       void *properties: private data specific for each media parser.
  *    return: ...
  * */
-static int get_frame(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, void *properties, InputStream *istream);
+static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, void *properties, InputStream *istream);
 
 /* packetize: ...
  *    args:
@@ -59,7 +59,7 @@ static int get_frame(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, void *prop
  *       void *properties: private data specific for each media parser.
  *    return: ...
  * */
-static int (*packetize)(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, void *properties);
+static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, void *properties);
 
 /* uninit: free the media parser structures.
  *    args: ...

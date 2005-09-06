@@ -17,6 +17,7 @@ noinst_HEADERS	=	bufferpool.h \
 			MediaParser.h \
 			mediaparser_module.h \
 			MediaThread.h \
+			mpeg_utils.h \
 			mp3.h \
 			mpeg4es.h \
 			mpeg.h \

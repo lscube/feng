@@ -29,11 +29,17 @@
  * */
 
 #include <fenice/mpeg.h>
+#include <fenice/mpeg_utils.h>
 #include <fenice/MediaParser.h>
+#include <fenice/mediaparser_module.h>
 #include <fenice/utils.h>
 #include <fenice/types.h>
 
+/*see ISO/IEC 11172-2:1993 and ISO/IEC 13818-2:1995 (E)*/
+/*prefix*/
 #define START_CODE 0x000001
+
+/*value*/
 #define PICTURE_START_CODE 0x00
 #define SLICE_START_CODE /*0x01 to 0xAF*/
 #define USER_DATA_START_CODE 0xB2
@@ -44,21 +50,45 @@
 #define GROUP_START_CODE 0xB8
 
 /*
-static int read_seq_head
+static int seq_head
 
-static int read_gop_head
+static int seq_ext
 
-static int read_picture_head
+static int ext_and_user_data
 
-static int read_slice
+static int gop_head
+
+static int picture_head
+
+static int picture_coding_ext
+
+static int picture_data
+
+static int slice
 
 static int probe_standard
 
-static int read_picture_coding_ext
 */
 
+/*mediaparser_module interface implementation*/
+static int init(void)
+{
+	return 0;
+}
 
-int read_mpeg12(uint8 *dest, uint32 dest_dim, uint8 *source, uint32 source_dim, uint32 nread, void *properties)
+static int uninit(void)
+{
+	return 0;
+}
+
+static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, void *properties, InputStream *istream)
+{
+	return 0;
+}
+
+
+/*see RFC 2250: RTP Payload Format for MPEG1/MPEG2 Video*/
+static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, void *properties)
 {
 	video_spec_prop *prop;
 

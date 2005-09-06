@@ -28,8 +28,7 @@
  *  
  * */
 
-
-#include <fenice/MediaParser.h>
+#include <fenice/utils.h>
 
 int get_field( uint8 *d, uint32 bits, uint32 *offset )
 {
@@ -53,29 +52,5 @@ int get_field( uint8 *d, uint32 bits, uint32 *offset )
                 }
         }
         return v;
-}
-
-int next_start_code(uint8 *buf, uint32 *buf_size,int fin) {
-        char buf_aux[3];
-        int i;
-        unsigned int count=0;
-        if ( read(fin,&buf_aux,3) <3) {                                                 /* If there aren't 3 more bytes we are at EOF */
-                return -1;
-        }
-        while ( !((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01))) {
-                buf[*buf_size]=buf_aux[0];
-                *buf_size+=1;
-                buf_aux[0]=buf_aux[1];
-                buf_aux[1]=buf_aux[2];
-                if ( read(fin,&buf_aux[2],1) < 1) {
-                        return -1;
-                }
-                count++;
-        }
-        for (i=0;i<3;i++) {
-                buf[*buf_size]=buf_aux[i];
-                *buf_size+=1;
-        }
-        return count;
 }
 

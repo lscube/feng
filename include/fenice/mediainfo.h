@@ -39,6 +39,7 @@
 	#include <sys/stat.h>
 	#include <unistd.h>
 	#include <fenice/bufferpool.h>
+	#include <fenice/mpeg_utils.h>
 
 	#define MAX_DESCR_LENGTH 4096
 	#define DIM_VIDEO_BUFFER 5 
@@ -229,7 +230,6 @@
 	/*****************************************read common utils*************************************************/
 	
 	/* returns number of bytes readen looking for start-codes, */
-	int next_start_code(uint8 *, uint32 *,int fin);
 	uint32 random_access(media_entry *me);
 	int changePacketLength(float offset, media_entry *me);
 

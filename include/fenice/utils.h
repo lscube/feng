@@ -151,6 +151,8 @@
 	int get_UTC_time(struct tm *t,char *b);
 	int is_supported_url(char *p);
 
+	int get_field( uint8 *d, uint32 bits, uint32 *offset );
+
 #define lround(x) (x - 	floor(x) < 0.5) ? floor(x): ceil(x)
 
 #if HAVE_ALLOCA
