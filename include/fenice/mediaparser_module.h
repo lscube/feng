@@ -69,7 +69,7 @@ static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbyte
  * */
 static int uninit(void *private_data); /*before call free_parser */
 
-#define FNC_LIB_MEDIAPARSER(x) Demuxer fnc_mediaparser_##x =\
+#define FNC_LIB_MEDIAPARSER(x) MediaParser fnc_mediaparser_##x =\
 {\
 	&info, \
 	init, \
