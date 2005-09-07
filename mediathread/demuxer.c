@@ -43,13 +43,22 @@ static Demuxer *demuxers[] = {
 	NULL
 };
 
+/*! \brief a list for some tracks.
+ * It is useful for <em>exclusive tracks</em> list.
+ * The Media Thread keeps a list of the tracks that can be opened only once.
+ * */
 typedef struct __TRACK_LIST {
 	Track *track;
 	struct __TRACK_LIST *next;
 } TrackList;
 
+/*! \brief The exclusive tracks.
+ * The Media Thread keeps a list of the tracks that can be opened only once.
+ * */
 static TrackList *ex_tracks=NULL;
 
+/*! Private functions for exclusive tracks.
+ * */
 static TrackList *ex_track_search(Track *);
 static void ex_track_remove(Track *);
 static int ex_tracks_save(Track *[], uint32);
@@ -93,7 +102,7 @@ void r_close(Resource *r)
 	uint32 i;
 
 	if(r!=NULL) {
-		close_is(r->i_stream);
+		istream_close(r->i_stream);
 		free(r->info);
 		r->info=NULL;
 		if(r->private_data!=NULL) {
@@ -164,55 +173,43 @@ Resource *init_resource(resource_name name)
 }
 */
 
-Track *add_track(Resource *r/*, char * filename*/)
+/*! Add track to resource tree.  This function adds a new track data struct to
+ * resource tree. It used by specific demuxer function in order to obtain the
+ * struct to fill.
+ * \param r pointer to resource.
+ * \return pointer to newly allocated track struct.
+ * */
+#define ADD_TRACK_ERROR(level, ...) \
+	{ \
+		fnc_log(level, __VA_ARGS__); \
+		free_track(t); \
+		return NULL; \
+	}
+Track *add_track(Resource *r)
 {
 	Track *t;
- 	//InputStream *i_stream;
-	TrackInfo *track_info;
-	MediaParser *parser;
-	OMSBuffer *buffer;
 
 	if(r->num_tracks>=MAX_TRACKS)
 		return NULL;
-	if((t=(Track *)malloc(sizeof(Track)))==NULL)
-		return NULL;
+	if( !(t=(Track *)calloc(1, sizeof(Track))) ) 
+		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
 	
-	/*
-	 if(!strcmp(r->i_stream->name,filename)) {
-		if((i_stream=create_inputstream(filename))==NULL) {
-			fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-			free_track(t);
-			return NULL;
-		}
-	}
-	else
-		i_stream = r->i_stream;
-	*/
-	if((track_info = (TrackInfo *)malloc(sizeof(TrackInfo)))==NULL) {
-		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-		free_track(t);
-		return NULL;
-	}
+	if( !(t->track_info = malloc(sizeof(TrackInfo))) )
+		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
 
-	if((parser=add_media_parser())==NULL) {
-		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-		free(track_info);
-		free_track(t);
-		return NULL;
-	}
-	if((buffer=OMSbuff_new(OMSBUFFER_DEFAULT_DIM))==NULL) {
-		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-		free_parser(parser);
-		free(track_info);
-		free_track(t);
-		return NULL;
-	}
+	if( !(t->properties = malloc(sizeof(MediaProperties))) )
+		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
 
+	if( !(t->parser=add_media_parser()) )
+		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
+
+	if( !(t->buffer=OMSbuff_new(OMSBUFFER_DEFAULT_DIM)) )
+		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
+
+	/* using calloc this initializzation is not needed.
 	t->track_name[0]='\0';
-	t->track_info=track_info;
-	t->parser=parser;
-	t->buffer=buffer;
 	t->i_stream=NULL;
+	*/
 	/*t->i_stream=i_stream*/
 	
 	r->tracks[r->num_tracks]=t;
@@ -220,21 +217,20 @@ Track *add_track(Resource *r/*, char * filename*/)
 	
 	return t;
 }
+#undef ADD_TRACK_ERROR
 
 void free_track(Track *t)
 {
-	close_is(t->i_stream);
-	if(t->track_info!=NULL)
-		free(t->track_info);
-	// t->track_info=NULL;
-	if(t->parser!=NULL)
-		free_parser(t->parser);
-	if(t->buffer!=NULL)
-		OMSbuff_free(t->buffer);
-	if(t->private_data!=NULL) {
-		free(t->private_data);
-		// t->private_data=NULL;
-	}
+	if (!t)
+		return;
+
+	istream_close(t->i_stream);
+	free(t->track_info);
+	free_parser(t->parser);
+	OMSbuff_free(t->buffer);
+#if 0 // private data is not under Track jurisdiction!
+	free(t->private_data);
+#endif
 	// t->calculate_timestamp=NULL; /*TODO*/
 	if ( t->i_stream && IS_ISEXCLUSIVE(t->i_stream) )
 		ex_track_remove(t);

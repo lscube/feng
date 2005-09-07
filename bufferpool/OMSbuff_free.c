@@ -41,6 +41,9 @@ void OMSbuff_free(OMSBuffer *buffer)
 {
 	OMSSlotAdded *added, *tmp;	
 
+	if (!buffer)
+		return;
+
 	added=buffer->added_head;
 	while(added){
 		tmp=added->next_added;

@@ -32,6 +32,7 @@
 #define __MEDIAPARSER_MODULE_H
 
 #include <fenice/types.h>
+#include <fenice/MediaParser.h>
 #include <fenice/InputStream.h>
 
 /* init: inizialize the module
@@ -39,7 +40,7 @@
  *    return: 0 on success, non-zero otherwise.
  * */
 
-static int init(void);
+static int init(MediaProperties *properties, void **private_data);
 /* get_frame: parse one frame from media bitstream.
  *    args:
  *       dst: destination memory slot,

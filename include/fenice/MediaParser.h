@@ -82,12 +82,10 @@ typedef struct {
 
 typedef struct __MEDIAPARSER {
 	MediaParserInfo *info;
-	int (*init)(void); // shawill: TODO: specify right parameters
+	int (*init)(MediaProperties *,void **); // shawill: TODO: specify right parameters
 	int (*get_frame)(uint8 *, uint32, int64 *, void *, InputStream *);
 	int (*packetize)(uint8 *, uint32, uint8 *, uint32, void *properties);
 	int (*uninit)(void *); /* parser specific init function */
-	void *private_data;
-	MediaProperties *properties; /*to cast to audio, video or text specific properties*/
 } MediaParser;
 
 // int register_media_type(MediaParserType *, MediaParser *);

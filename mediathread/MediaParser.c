@@ -34,9 +34,11 @@
 #include <fenice/utils.h>
 
 // global media parsers modules:
+extern MediaParser fnc_mediaparser_mpv;
 
 // static array containing all the available media parsers:
 static MediaParser *media_parsers[] = {
+	&fnc_mediaparser_mpv,
 	NULL
 };
 
@@ -101,13 +103,7 @@ MediaParser *add_media_parser(void)
 		return NULL;
 	}
 
-	if(!(p->properties=calloc(1, sizeof(MediaProperties)))) {
-		free(p);
-		return NULL;
-	}
-
 	p->info = NULL;
-	p->private_data=NULL;
 
 	return p;
 }
@@ -115,8 +111,8 @@ MediaParser *add_media_parser(void)
 void free_parser(MediaParser *p)
 {
 	if(p) {
-		p->uninit(p->private_data);
-		free(p->properties);
+		// p->uninit(p->private_data);
+		p->uninit(NULL);
 		free(p);	
 	}
 }

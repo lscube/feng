@@ -126,7 +126,7 @@ static int validate_audio_track(Track *t)
 	me=(FlagsData *)t->private_data;
 
 	// shawill: prop=(audio_spec_prop *)t->parser->parser_type->properties;
-	prop=t->parser->properties;
+	prop=t->properties;
 
         if (prop->payload_type>=96) {
                 // Basic information needed for a dynamic payload type (96-127)
@@ -168,7 +168,7 @@ static int validate_video_track(Track *t)
 	me=(FlagsData *)t->private_data;
 
 	// shawill: prop=(video_spec_prop *)t->parser->parser_type->properties;
-	prop=t->parser->properties;
+	prop=t->properties;
 
         if (prop->payload_type>=96) {
                 // Basic information needed for a dynamic payload type (96-127)
@@ -214,9 +214,9 @@ static int validate_track(Resource *r)
                 return ERR_PARSE;
         }
 
-	if(!strcmp(r->tracks[i]->parser->properties->media_type, "audio"))
+	if(!strcmp(r->tracks[i]->properties->media_type, "audio"))
 		return validate_audio_track(r->tracks[i]);
-	else if(!strcmp(r->tracks[i]->parser->properties->media_type,"audio"))
+	else if(!strcmp(r->tracks[i]->properties->media_type,"audio"))
 		return validate_video_track(r->tracks[i]);
 	else
 		return ERR_NOERROR;
@@ -320,7 +320,7 @@ static int init(Resource *r)
 				}
                         }
                         if (strcasecmp(keyword,SD_ENCODING_NAME)==0) {
-                                sscanf(line,"%s%10s",trash,track->parser->properties->encoding_name);
+                                sscanf(line,"%s%10s",trash,track->properties->encoding_name);
                                 me->description_flags|=MED_ENCODING_NAME;
 			}       
                         if (strcasecmp(keyword,SD_PRIORITY)==0) {
@@ -425,10 +425,10 @@ static int init(Resource *r)
                 }/*end while !STREAM_END or eof*/
 
 		if(me->description_flags & MED_ENCODING_NAME) {
-			MediaProperties *prop = track->parser->properties;
+			MediaProperties *prop = track->properties;
 			// shawill: init parser functions in another way
                 	// set_media_entity(track->parser->parser_type,track->parser->parser_type->encoding_name);
-			if(!strcmp(track->parser->properties->media_type, "audio")) {
+			if(!strcmp(track->properties->media_type, "audio")) {
 				// audio_spec_prop *prop;
 				// prop=malloc(sizeof(audio_spec_prop));	
 				// shawill: initialize with calloc
@@ -448,7 +448,7 @@ static int init(Resource *r)
 				// shawill: done in add_media_parser:
 				// track->parser->properties=prop;
 			}
-			if(!strcmp(track->parser->properties->media_type, "video")) {
+			if(!strcmp(track->properties->media_type, "video")) {
 				// video_spec_prop *prop;
 				// prop = calloc(1, sizeof(video_spec_prop));	
 				// prop->frame_rate;

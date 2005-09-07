@@ -91,7 +91,6 @@ typedef struct __INPUTSTREAM {
 InputStream *istream_open(char *mrl);
 #define create_inputstream istream_open
 void istream_close(InputStream *);
-#define close_is istream_close
 inline int istream_read(uint32 nbytes, uint8 *buf, InputStream *is); 
 #define read_stream istream_read
 // int parse_mrl(char *mrl, stream_type *type, int *fd);

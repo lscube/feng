@@ -83,7 +83,10 @@ typedef struct __TRACK {
 	/*bufferpool*/
 	OMSBuffer *buffer;
 	media_source msource;
-	void *private_data; /*use it as you want*/
+	MediaProperties *properties; /* track properties */
+	/* private data is managed by specific media parser: from allocation to deallocation
+	 * track must not do anything on this pointer! */ 
+	void *private_data; /* private data of media parser */
 } Track;
 
 typedef struct __SELECTOR {
@@ -103,7 +106,7 @@ typedef struct __RESOURCE {
 	ResourceInfo *info;
 	Track *tracks[MAX_TRACKS];
 	uint32 num_tracks;
-	void *private_data; /*use it as you want*/
+	void *private_data; /* private data of demuxer */
 } Resource;
 
 typedef struct {
@@ -130,24 +133,6 @@ typedef struct __DEMUXER {
 	//...
 } Demuxer;
 
-/*example
- 
-static Demuxer matroska_iformat = {
-    "matroska",
-    matroska_init,
-    matroska_probe,
-    matroska_read_header,
-    matroska_read_packet,
-    matroska_read_close,
-    matroska_read_seek,
-};
-
-*/
-
-/*Interface to implement the demuxer*/
-//Resource *init_resource(resource_name);
-void free_track(Track *);
-Track *add_track(Resource * /*, char * filename*/);
 /*infos: 
 	char* track-name, 
 	char* filename, 
@@ -169,15 +154,17 @@ Track *add_track(Resource * /*, char * filename*/);
 	float GammaValue,
 */
 
-//void (*register_format)(Resource *);/*i.e. register_format_sd, register_format_matroska, register_format_{format_name}*/
-
-/*Interface between mediathread and demuxer*/
+// Resounces
 Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
 msg_error get_resource_info(resource_name, ResourceInfo *);
 Selector * r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
-void r_close_tracks(Selector *);/*close all tracks*/
+void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
 inline msg_error r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
+
+// Tracks
+Track *add_track(Resource *);
+void free_track(Track *);
 /*-------------------------------------------*/
 
 #endif

@@ -78,7 +78,7 @@ static int probe_standard
 */
 
 /*mediaparser_module interface implementation*/
-static int init(void)
+static int init(MediaProperties *properties, void **private_data)
 {
 	return 0;
 }
