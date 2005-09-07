@@ -234,7 +234,12 @@ static int validate_track(Resource *r)
 
 static int probe(char *filename)
 {
-	return RESOURCE_OK;
+	char *ext;
+	
+	if ( (ext=strrchr(filename, '.')) && (!strcmp(ext, ".sd"))) {
+		return RESOURCE_OK;
+	}
+	return RESOURCE_DAMAGED;
 }
 
 static int init(Resource *r)
@@ -314,7 +319,7 @@ static int init(Resource *r)
                         if (strcasecmp(keyword,SD_FILENAME)==0) {
                                 sscanf(line,"%s%255s",trash,track->track_name);
                                 me->general_flags|=ME_FILENAME;
-				if((track->i_stream=create_inputstream(track->track_name))==NULL) {
+				if((track->i_stream=istream_open(track->track_name))==NULL) {
 					free_track(track);
 					return ERR_ALLOC;
 				}

@@ -37,7 +37,7 @@
 #include <fenice/MediaParser.h>
 #include <fenice/bufferpool.h>
 
-#define resource_name char*
+#define resource_name char *
 /*
  * a resource_name can be a mkv, sd, program stream, avi, device ... 
  * syntax could be: 
@@ -102,7 +102,7 @@ typedef struct __RESOURCE_INFO {
 
 typedef struct __RESOURCE {
 	InputStream *i_stream;
-	struct __DEMUXER *format;
+	struct __DEMUXER *demuxer;
 	ResourceInfo *info;
 	Track *tracks[MAX_TRACKS];
 	uint32 num_tracks;
@@ -119,7 +119,7 @@ typedef struct {
 	/* any additional comments */
 	const char *comment;
 	/* served file extensions */
-	const char *extensions;
+	const char *extensions; // coma separated list of extensions (w/o '.')
 } DemuxerInfo;
 
 typedef struct __DEMUXER {

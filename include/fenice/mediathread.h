@@ -38,13 +38,13 @@
 
 typedef struct __MT_RESOURCE_ITEM {
 	Resource *resource;
-	pthread_mutex_t *mutex
+	pthread_mutex_t *mutex;
 	struct __MT_RESOURCE_ITEM *next;
 } mt_resource_item;
 
 typedef struct __MT_EXCL_INS {
 	InputStream *i_stream;
-	  __MT_EXCL_INS *next;
+	struct __MT_EXCL_INS *next;
 } mt_excl_ins;
 
 Resource *resource_open(char *);

@@ -36,7 +36,9 @@
 #include <fenice/InputStream.h>
 
 /* init: inizialize the module
- *    arg: void (for now) TODO; choose rigth paramenters
+ *    arg:
+ *       properties; pointer of allocated struct to fill with properties
+ *       private_data: private data of parser will be, if needed, linked to this pointer (double)
  *    return: 0 on success, non-zero otherwise.
  * */
 
@@ -50,7 +52,7 @@ static int init(MediaProperties *properties, void **private_data);
  *       istream: InputStream of source Elementary Stream,
  *    return: ...
  * */
-static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, void *properties, InputStream *istream);
+static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStream *istream, MediaProperties *properties, void *private_data);
 
 /* packetize: ...
  *    args:
@@ -61,7 +63,7 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, void *pro
  *       void *properties: private data specific for each media parser.
  *    return: ...
  * */
-static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, void *properties);
+static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data);
 
 /* uninit: free the media parser structures.
  *    args:

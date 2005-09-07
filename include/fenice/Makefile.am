@@ -16,13 +16,13 @@ noinst_HEADERS	=	bufferpool.h \
 			mediainfo.h \
 			MediaParser.h \
 			mediaparser_module.h \
-			MediaThread.h \
-			mpeg_utils.h \
+			mediathread.h \
 			mp3.h \
 			mpeg4es.h \
 			mpeg.h \
 			mpeg_system.h \
 			mpeg_ts.h \
+			mpeg_utils.h \
 			multicast.h \
 			pcm.h \
 			prefs.h \

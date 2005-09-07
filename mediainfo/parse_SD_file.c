@@ -39,6 +39,9 @@
 #include <fenice/fnc_log.h>
 #include <stdio.h>
 
+// shatries: prova
+#include <fenice/mediathread.h>
+
 int parse_SD_file(char *object,SD_descr *sd_descr)
 {
         FILE *f;
@@ -53,6 +56,10 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
 
         strcat(thefile,object);
         fnc_log(FNC_LOG_DEBUG,"Requested file is: %s\n", thefile);
+
+	/* shatries */
+	r_open(thefile);
+	/* /shatries */
 
         f=fopen(thefile,"r");
         if (f==NULL) {

@@ -64,33 +64,49 @@ static void ex_track_remove(Track *);
 static int ex_tracks_save(Track *[], uint32);
 // static void ex_tracks_free(Track *[], uint32);
 
+// private funcions for specific demuxer
+static int find_demuxer(resource_name);
+
 Resource *r_open(resource_name n)
 {
 	Resource *r;
-	InputStream *i_stream;
+	int dmx_idx;
+
+	// shawill: MUST go away!!!
+	fnc_log(FNC_LOG_DEBUG, "[MT] Resource requested: %s\n", n);
+	if ( (dmx_idx=find_demuxer(n))<0 ) {
+		fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer for resource %s\n", n);
+		return NULL;
+	}
+
+	fnc_log(FNC_LOG_DEBUG, "[MT] Demuxer found: \"%s\"\n", demuxers[dmx_idx]->info->name);
+
+	if( !(r = calloc(1, sizeof(Resource))) ) {
+		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		return NULL;
+	}
 	
-	if((i_stream=create_inputstream(n))==NULL) {
-		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-		return NULL;
-	}
-	if((r=(Resource *)malloc(sizeof(Resource)))==NULL) {
-		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-		istream_close(i_stream);
-		return NULL;
-	}
-	if((r->info=(ResourceInfo *)malloc(sizeof(ResourceInfo)))==NULL) {
-		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+	if( !(r->i_stream=istream_open(n)) ) {
 		free(r);
-		r=NULL;
-		istream_close(i_stream);
 		return NULL;
 	}
-	r->i_stream=i_stream;
+
+	if( !(r->info=calloc(1, sizeof(ResourceInfo))) ) { // init all infos
+		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		istream_close(r->i_stream);
+		free(r);
+		return NULL;
+	}
+	/* initialization non needed 'cause we use calloc
 	r->private_data=NULL;
-	r->format=NULL; /*use register_format*/
-	/*initializate tracks[MAX_TRACKS]??? TODO*/
+	r->demuxer=NULL;
+	//initializate tracks[MAX_TRACKS]??? TODO
 	// temporary track initialization:
 	r->num_tracks=0;
+	*/
+	// TODO decomment when ready
+	// demuxers[dmx_idx]->init(r);
+
 	// search for exclusive tracks: should be done track per track?
 	ex_tracks_save(r->tracks, r->num_tracks);
 	
@@ -161,7 +177,7 @@ void r_close_tracks(Selector *s)
 
 inline msg_error r_seek(Resource *r, long int time_sec)
 {
-	return r->format->seek(r,time_sec);
+	return r->demuxer->seek(r,time_sec);
 }
 
 /*
@@ -299,4 +315,40 @@ static void ex_tracks_free(Track *tracks[], uint32 num_tracks)
 	}
 }
 #endif
+
+// private funcions for specific demuxer
+static int find_demuxer(resource_name n)
+{
+	// this int will contain the index of the demuxer already probed second
+	// the extension suggestion, in order to not probe twice the same
+	// demuxer that was proved to be not usable.
+	int probed=-1;
+	char found=0; // flag for demuxer found.
+	int i; // index
+	char exts[128], *res_ext, *tkn; // temp string containing extensione served by probing demuxer.
+
+	// First of all try that with matching extension: we use extension as a
+	// suggestion of resource type.
+	// find resource name extension:
+	if ( (res_ext=strrchr(n, '.')) && (res_ext++) ) {
+		// extension present
+		for (i=0; demuxers[i]; i++) {
+			strncpy(exts, demuxers[i]->info->extensions, sizeof(exts));
+			for (tkn=strtok(exts, ","); tkn; tkn=strtok(NULL, ",")) {
+				if (!strcmp(tkn, res_ext)) {
+					fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: extension \"%s\" matches \"%s\" demuxer\n", res_ext, demuxers[i]->info->name);
+					if (demuxers[i]->probe(n) == RESOURCE_OK) {
+						fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: demuxer found\n", res_ext, demuxers[i]->info->name);
+						found = 1;
+						break;
+					}
+				}
+			}
+			if (found)
+				break;
+		}
+	}
+
+	return found ? i: -1;
+}
 

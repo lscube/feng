@@ -35,6 +35,9 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
+static int read_from_net(int fd, void *buf, size_t nbytes);/*not implemented yet*/
+static int read_from_device(int fd, void *buf, size_t nbytes);/*not implemented yet*/
+
 // shawill: should we receive cache size as parameter?
 Cache *create_cache(stream_type type)
 {
@@ -131,5 +134,14 @@ void free_cache(Cache *c)
 		free(c);
 		c=NULL;
 	}
+}
+
+static int read_from_net(int fd, void *buf, size_t nbytes)
+{
+	return -1;
+}
+static int read_from_device(int fd, void *buf, size_t nbytes)
+{
+	return -1;
 }
 
