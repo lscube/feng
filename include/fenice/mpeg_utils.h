@@ -32,7 +32,11 @@
 	
 	#include <fenice/types.h>
 
-	int next_start_code(uint8 *buf, uint32 *buf_size,int fin);
+	#ifndef min
+	#define min(a,b) (a<b)?a:b
+	#endif // min
+
+	int next_start_code2(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained);
 
 #endif
 

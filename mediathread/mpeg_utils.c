@@ -32,27 +32,26 @@
 #include <unistd.h>
 #include <fenice/mpeg_utils.h>
 
-int next_start_code(uint8 *buf, uint32 *buf_size,int fin) {
-        char buf_aux[3];
+int next_start_code2(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained) 
+{	
         int i;
-        unsigned int count=0;
-        if ( read(fin,&buf_aux,3) <3) {                                                 /* If there aren't 3 more bytes we are at EOF */
-                return -1;
-        }
-        while ( !((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01))) {
-                buf[*buf_size]=buf_aux[0];
-                *buf_size+=1;
-                buf_aux[0]=buf_aux[1];
-                buf_aux[1]=buf_aux[2];
-                if ( read(fin,&buf_aux[2],1) < 1) {
-                        return -1;
-                }
-                count++;
-        }
-        for (i=0;i<3;i++) {
-                buf[*buf_size]=buf_aux[i];
-                *buf_size+=1;
-        }
-        return count;
+        int count;
+	char buf[3];
+	
+	count=min(dst_remained,src_remained);
+
+	for(i=0;i<count;i++) {
+		buf[i%3]=src[i];
+		if(i>=3) { 
+			if(buf[(i-2)%3]==0x00 && buf[(i-1)%3]==0x00 && buf[i%3]==0x01)	
+				return i - 3; /*start_code found, return the number of bytes write to dst/read from src until 000001 (not included)*/
+			dst[i-3]=src[i-3];	
+		}
+	}
+	dst[i-2]=src[i-2];
+	dst[i-1]=src[i-1];
+	dst[i]=src[i];
+
+        return -1; /*start_code not found, dst is filled  or src is finished*/
 }
 

@@ -57,23 +57,41 @@ FNC_LIB_MEDIAPARSER(mpv);
 #define GROUP_START_CODE 0xB8
 
 /*
-static int seq_head
+static int seq_head()
+{
+}
 
-static int seq_ext
+static int seq_ext()
+{
+}
 
-static int ext_and_user_data
+static int ext_and_user_data()
+{
+}
 
-static int gop_head
+static int gop_head()
+{
+}
 
-static int picture_head
+static int picture_head()
+{
+}
 
-static int picture_coding_ext
+static int picture_coding_ext()
+{
+}
 
-static int picture_data
+static int picture_data()
+{
+}
 
-static int slice
+static int slice()
+{
+}
 
-static int probe_standard
+static int probe_standard()
+{
+}
 
 */
 
@@ -95,9 +113,39 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, void *pro
 
 
 /*see RFC 2250: RTP Payload Format for MPEG1/MPEG2 Video*/
+/*src contains a frame*/
 static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, void *properties)
 {
-	return 0;
+	int ret=0;
+	int dst_remained=dst_nbytes;
+	int src_remained=src_nbytes;
+	uint8 final_byte;
+		
+	do{
+		ret=next_start_code2(dst+dst_nbytes-dst_remained,dst_remained,src+src_nbytes-src_remained,src_remained);
+		if(ret==-1)
+			return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
+		dst_remained-=ret;
+		src_remained-=ret;
+		final_byte=src[src_nbytes-src_remained+3];
+
+		if(final_byte==SEQ_START_CODE) {
+		
+		}
+		else if(final_byte==EXT_START_CODE) {
+			/*means MPEG2*/
+		}
+		/*
+		else if(final_byte==) {
+		
+		}
+		else if(final_byte==)
+		else if(final_byte==)
+		else if(final_byte==)
+		**/
+	}while(ret!=-1);
+	
+	return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
 }
 
 
