@@ -73,13 +73,13 @@ Resource *r_open(resource_name n)
 	int dmx_idx;
 
 	// shawill: MUST go away!!!
-	fnc_log(FNC_LOG_DEBUG, "[MT] Resource requested: %s\n", n);
 	if ( (dmx_idx=find_demuxer(n))<0 ) {
 		fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer for resource %s\n", n);
 		return NULL;
+	} else {
+		r->demuxer=demuxers[dmx_idx];
+		fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource \"%s\"\n", demuxers[dmx_idx]->info->name, n);
 	}
-
-	fnc_log(FNC_LOG_DEBUG, "[MT] Demuxer found: \"%s\"\n", demuxers[dmx_idx]->info->name);
 
 	if( !(r = calloc(1, sizeof(Resource))) ) {
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
@@ -104,8 +104,7 @@ Resource *r_open(resource_name n)
 	// temporary track initialization:
 	r->num_tracks=0;
 	*/
-	// TODO decomment when ready
-	// demuxers[dmx_idx]->init(r);
+	// r->demuxer->init(r);
 
 	// search for exclusive tracks: should be done track per track?
 	ex_tracks_save(r->tracks, r->num_tracks);
@@ -317,6 +316,16 @@ static void ex_tracks_free(Track *tracks[], uint32 num_tracks)
 #endif
 
 // private funcions for specific demuxer
+
+/*! This function finds the correct demuxer for the given
+ * <tt>resource_name</tt>.
+ * First of all, it tries to match the <tt>resource_name</tt>'s extension with
+ * one of those served by the demuxers and, if found, probes that demuxer.  If
+ * no demuxer can be found this way, then it tries everyone from demuxer list.
+ * \param resource_name the name of the resource.
+ * \return the index of the valid demuxer in the list or -1 if it could not be
+ * found.
+ * */
 static int find_demuxer(resource_name n)
 {
 	// this int will contain the index of the demuxer already probed second
@@ -329,8 +338,7 @@ static int find_demuxer(resource_name n)
 
 	// First of all try that with matching extension: we use extension as a
 	// suggestion of resource type.
-	// find resource name extension:
-	if ( (res_ext=strrchr(n, '.')) && (res_ext++) ) {
+	if ( (/* find resource name extension: */res_ext=strrchr(n, '.')) && (res_ext++) ) {
 		// extension present
 		for (i=0; demuxers[i]; i++) {
 			strncpy(exts, demuxers[i]->info->extensions, sizeof(exts));
@@ -346,6 +354,15 @@ static int find_demuxer(resource_name n)
 			}
 			if (found)
 				break;
+		}
+	}
+	if (!found) {
+		for (i=0; demuxers[i]; i++) {
+			if ( (i!=probed) && (demuxers[i]->probe(n) == RESOURCE_OK) ) {
+				fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: demuxer found\n", res_ext, demuxers[i]->info->name);
+				found = 1;
+				break;
+			}
 		}
 	}
 

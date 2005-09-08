@@ -84,7 +84,7 @@ typedef struct __MEDIAPARSER {
 	MediaParserInfo *info;
 	int (*init)(MediaProperties *,void **); // shawill: TODO: specify right parameters
 	int (*get_frame)(uint8 *, uint32, int64 *, InputStream *, MediaProperties *, void *);
-	int (*packetize)(uint8 *, uint32, uint8 *, uint32, MediaProperties, void *);
+	int (*packetize)(uint8 *, uint32, uint8 *, uint32, MediaProperties *, void *);
 	int (*uninit)(void *); /* parser specific init function */
 } MediaParser;
 

@@ -115,122 +115,10 @@ typedef struct __FLAGS_DATA{
 	} data;
 } FlagsData;    	
 
-/*----------------------*/
-static int validate_audio_track(Track *t)
-{
-        RTP_static_payload pt_info;
-	FlagsData *me;
-	// shawill: audio_spec_prop *prop;
-	MediaProperties *prop;
-
-	me=(FlagsData *)t->private_data;
-
-	// shawill: prop=(audio_spec_prop *)t->parser->parser_type->properties;
-	prop=t->properties;
-
-        if (prop->payload_type>=96) {
-                // Basic information needed for a dynamic payload type (96-127)
-                if (!(me->description_flags & MED_ENCODING_NAME)) {
-                        return ERR_PARSE;
-                }
-                if (!(me->description_flags & MED_CLOCK_RATE)) {
-                        return ERR_PARSE;
-                }
-        }
-        else {
-                // Set payload type for well-kwnown encodings and some default configurations if i know them
-                // see include/fenice/rtpptdefs.h
-                pt_info=RTP_payload[prop->payload_type];
-                // shawill: strcpy(t->parser->parser_type->encoding_name,pt_info.EncName);
-                strcpy(prop->encoding_name, pt_info.EncName);
-               	prop->clock_rate=pt_info.ClockRate;
-                prop->audio_channels=pt_info.Channels;
-                prop->bit_per_sample=pt_info.BitPerSample;
-                prop->coding_type=pt_info.Type;
-                //prop->pkt_len=pt_info.PktLen;
-                me->description_flags|=MED_ENCODING_NAME;
-                me->description_flags|=MED_CLOCK_RATE;
-                me->description_flags|=MED_AUDIO_CHANNELS;
-                me->description_flags|=MED_BIT_PER_SAMPLE;
-                me->description_flags|=MED_CODING_TYPE;
-                //p->description.flags|=MED_PKT_LEN;
-        }
-	return ERR_NOERROR;
-}
-
-static int validate_video_track(Track *t)
-{
-        RTP_static_payload pt_info;
-	FlagsData *me;
-	// shawill: video_spec_prop *prop;
-	MediaProperties *prop;
-
-	me=(FlagsData *)t->private_data;
-
-	// shawill: prop=(video_spec_prop *)t->parser->parser_type->properties;
-	prop=t->properties;
-
-        if (prop->payload_type>=96) {
-                // Basic information needed for a dynamic payload type (96-127)
-                if (!(me->description_flags & MED_ENCODING_NAME)) {
-                        return ERR_PARSE;
-                }
-                if (!(me->description_flags & MED_CLOCK_RATE)) {
-                        return ERR_PARSE;
-                }
-        }
-        else {
-                // Set payload type for well-kwnown encodings and some default configurations if i know them
-                // see include/fenice/rtpptdefs.h
-                pt_info=RTP_payload[prop->payload_type];
-                // shawill: strcpy(t->parser->parser_type->encoding_name,pt_info.EncName);
-                strcpy(prop->encoding_name, pt_info.EncName);
-               	prop->clock_rate=pt_info.ClockRate;
-                prop->coding_type=pt_info.Type;
-                //prop->pkt_len=pt_info.PktLen;
-                me->description_flags|=MED_ENCODING_NAME;
-                me->description_flags|=MED_CLOCK_RATE;
-                me->description_flags|=MED_CODING_TYPE;
-                //p->description.flags|=MED_PKT_LEN;
-        }
-	return ERR_NOERROR;
-}
-
-static int validate_track(Resource *r)
-{
-	
-	FlagsData *me;
-	int i=r->num_tracks-1;
-
-	me=(FlagsData *)r->tracks[i]->private_data;
-
-        if (!(me->general_flags & ME_FILENAME)) {
-                return ERR_PARSE;
-        }
-        if (!(me->description_flags & MED_PAYLOAD_TYPE)) {
-                return ERR_PARSE;
-        }
-        if (!(me->description_flags & MED_PRIORITY)) {
-                return ERR_PARSE;
-        }
-
-	if(!strcmp(r->tracks[i]->properties->media_type, "audio"))
-		return validate_audio_track(r->tracks[i]);
-	else if(!strcmp(r->tracks[i]->properties->media_type,"audio"))
-		return validate_video_track(r->tracks[i]);
-	else
-		return ERR_NOERROR;
-/*
-
-*/
-	/*
-        res=register_media(p);
-        if(res==ERR_NOERROR)
-                return p->media_handler->load_media(p);
-        else
-                return res;
-	*/
-}
+// private functions definition:
+static int validate_audio_track(Track *);
+static int validate_video_track(Track *);
+static int validate_track(Resource *);
 
 static int probe(char *filename)
 {
@@ -264,6 +152,7 @@ static int init(Resource *r)
 	uint32 frame_rate;
 	FILE *fd;
 	/*--*/
+
 	fd=fdopen(r->i_stream->fd,"r");
 	/*Allocate Resource PRIVATE DATA and cast it*/
 	if((sd=malloc(sizeof(SD_descr)))==NULL)
@@ -508,3 +397,121 @@ static int uninit(Resource *r)
 	return RESOURCE_OK;
 }
 
+// internal functions:
+
+/*----------------------*/
+static int validate_audio_track(Track *t)
+{
+        RTP_static_payload pt_info;
+	FlagsData *me;
+	// shawill: audio_spec_prop *prop;
+	MediaProperties *prop;
+
+	me=(FlagsData *)t->private_data;
+
+	// shawill: prop=(audio_spec_prop *)t->parser->parser_type->properties;
+	prop=t->properties;
+
+        if (prop->payload_type>=96) {
+                // Basic information needed for a dynamic payload type (96-127)
+                if (!(me->description_flags & MED_ENCODING_NAME)) {
+                        return ERR_PARSE;
+                }
+                if (!(me->description_flags & MED_CLOCK_RATE)) {
+                        return ERR_PARSE;
+                }
+        }
+        else {
+                // Set payload type for well-kwnown encodings and some default configurations if i know them
+                // see include/fenice/rtpptdefs.h
+                pt_info=RTP_payload[prop->payload_type];
+                // shawill: strcpy(t->parser->parser_type->encoding_name,pt_info.EncName);
+                strcpy(prop->encoding_name, pt_info.EncName);
+               	prop->clock_rate=pt_info.ClockRate;
+                prop->audio_channels=pt_info.Channels;
+                prop->bit_per_sample=pt_info.BitPerSample;
+                prop->coding_type=pt_info.Type;
+                //prop->pkt_len=pt_info.PktLen;
+                me->description_flags|=MED_ENCODING_NAME;
+                me->description_flags|=MED_CLOCK_RATE;
+                me->description_flags|=MED_AUDIO_CHANNELS;
+                me->description_flags|=MED_BIT_PER_SAMPLE;
+                me->description_flags|=MED_CODING_TYPE;
+                //p->description.flags|=MED_PKT_LEN;
+        }
+	return ERR_NOERROR;
+}
+
+static int validate_video_track(Track *t)
+{
+        RTP_static_payload pt_info;
+	FlagsData *me;
+	// shawill: video_spec_prop *prop;
+	MediaProperties *prop;
+
+	me=(FlagsData *)t->private_data;
+
+	// shawill: prop=(video_spec_prop *)t->parser->parser_type->properties;
+	prop=t->properties;
+
+        if (prop->payload_type>=96) {
+                // Basic information needed for a dynamic payload type (96-127)
+                if (!(me->description_flags & MED_ENCODING_NAME)) {
+                        return ERR_PARSE;
+                }
+                if (!(me->description_flags & MED_CLOCK_RATE)) {
+                        return ERR_PARSE;
+                }
+        }
+        else {
+                // Set payload type for well-kwnown encodings and some default configurations if i know them
+                // see include/fenice/rtpptdefs.h
+                pt_info=RTP_payload[prop->payload_type];
+                // shawill: strcpy(t->parser->parser_type->encoding_name,pt_info.EncName);
+                strcpy(prop->encoding_name, pt_info.EncName);
+               	prop->clock_rate=pt_info.ClockRate;
+                prop->coding_type=pt_info.Type;
+                //prop->pkt_len=pt_info.PktLen;
+                me->description_flags|=MED_ENCODING_NAME;
+                me->description_flags|=MED_CLOCK_RATE;
+                me->description_flags|=MED_CODING_TYPE;
+                //p->description.flags|=MED_PKT_LEN;
+        }
+	return ERR_NOERROR;
+}
+
+static int validate_track(Resource *r)
+{
+	
+	FlagsData *me;
+	int i=r->num_tracks-1;
+
+	me=(FlagsData *)r->tracks[i]->private_data;
+
+        if (!(me->general_flags & ME_FILENAME)) {
+                return ERR_PARSE;
+        }
+        if (!(me->description_flags & MED_PAYLOAD_TYPE)) {
+                return ERR_PARSE;
+        }
+        if (!(me->description_flags & MED_PRIORITY)) {
+                return ERR_PARSE;
+        }
+
+	if(!strcmp(r->tracks[i]->properties->media_type, "audio"))
+		return validate_audio_track(r->tracks[i]);
+	else if(!strcmp(r->tracks[i]->properties->media_type,"audio"))
+		return validate_video_track(r->tracks[i]);
+	else
+		return ERR_NOERROR;
+/*
+
+*/
+	/*
+        res=register_media(p);
+        if(res==ERR_NOERROR)
+                return p->media_handler->load_media(p);
+        else
+                return res;
+	*/
+}
