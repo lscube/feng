@@ -54,50 +54,32 @@ FNC_LIB_MEDIAPARSER(mpv);
 #define SEQ_ERROR_CODE 0xB4
 #define EXT_START_CODE 0xB5 
 #define SEQ_END_CODE 0xB7
-#define GROUP_START_CODE 0xB8
+#define GOP_START_CODE 0xB8
 
-/*
-static int seq_head()
-{
-}
+typedef struct _MPV_DATA{
+	video_spec_head1 vsh1;
+	video_spec_head2 vsh2;
+	char temp_ref;
+	char hours;
+	char minutes;
+	char seconds;
+	char picture;
+	standard std;
+}mpv_data;
 
-static int seq_ext()
-{
-}
-
-static int ext_and_user_data()
-{
-}
-
-static int gop_head()
-{
-}
-
-static int picture_head()
-{
-}
-
-static int picture_coding_ext()
-{
-}
-
-static int picture_data()
-{
-}
-
-static int slice()
-{
-}
-
-static int probe_standard()
-{
-}
-
-*/
+static int seq_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video);
+static int seq_ext(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video);
+static int ext_and_user_data(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video);
+static int gop_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video);
+static int picture_coding_ext(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video);
+static int picture_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video);
+static int picture_data(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video);
+static int slice(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained);
 
 /*mediaparser_module interface implementation*/
 static int init(MediaProperties *properties, void **private_data)
 {
+	*private_data=malloc(sizeof(mpv_data));
 	return 0;
 }
 
@@ -108,36 +90,124 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStre
 
 
 /*see RFC 2250: RTP Payload Format for MPEG1/MPEG2 Video*/
-/*src contains a frame*/
+/*
+ * A possible use is:
+ *
+ get_frame2();
+ do {
+	ret=packetize(dst, dst_nbytes, src, src_nbytes, properties, *private_data);
+	src+=ret;
+	src_nbytes-=ret;
+	rtp_marker_bit = !(src_nbytes>0);
+	// use dst
+ } while(src_nbytes);
+
+ *
+ */
 static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
 {
 	int ret=0;
 	int dst_remained=dst_nbytes;
 	int src_remained=src_nbytes;
 	uint8 final_byte;
+	mpv_data *mpeg_video;
+
+	mpeg_video=(mpv_data *)private_data;
 		
 	do{
-		ret=next_start_code2(dst+dst_nbytes-dst_remained,dst_remained,src+src_nbytes-src_remained,src_remained);
+		ret=next_start_code2(dst,dst_remained,src,src_remained);
 		if(ret==-1)
 			return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
 		dst_remained-=ret;
 		src_remained-=ret;
-		final_byte=src[src_nbytes-src_remained+3];
+		dst+=ret;
+		src+=ret;
+		final_byte=src[0];
 
 		if(final_byte==SEQ_START_CODE) {
+			ret=seq_head(dst,dst_remained,src,src_remained,mpeg_video);
+			dst_remained-=ret;
+			src_remained-=ret;
+			dst+=ret;
+			src+=ret;
+			final_byte=src[0];
+			if(final_byte==EXT_START_CODE) {
+				/*means MPEG2*/
+				mpeg_video->std=MPEG_2;
+				ret=seq_ext(dst,dst_remained,src,src_remained,mpeg_video);
+				dst_remained-=ret;
+				src_remained-=ret;
+				dst+=ret;
+				src+=ret;
+				final_byte=src[0];
+			}
+			else
+				mpeg_video->std=MPEG_1;
+		}
+		else if(final_byte==GOP_START_CODE) {
+			ret=gop_head(dst,dst_remained,src,src_remained,mpeg_video);
+			dst_remained-=ret;
+			src_remained-=ret;
+			dst+=ret;
+			src+=ret;
+			final_byte=src[0];
+		}
+		else if(final_byte==PICTURE_START_CODE) {
+			ret=picture_head(dst,dst_remained,src,src_remained,mpeg_video);
+			dst_remained-=ret;
+			src_remained-=ret;
+			dst+=ret;
+			src+=ret;
+			final_byte=src[0];
+			
+			if(final_byte==USER_DATA_START_CODE) {
+				ret=ext_and_user_data(dst,dst_remained,src,src_remained,mpeg_video);
+				dst_remained-=ret;
+				src_remained-=ret;
+				dst+=ret;
+				src+=ret;
+				final_byte=src[0];
+			}
+			 do {
+				ret=slice(dst,dst_remained,src,src_remained);
+			 	dst_remained-=ret;
+			 	src_remained-=ret;
+				dst+=ret;
+				src+=ret;
+				final_byte=src[0];
+			 } while(ret!=-1 && final_byte>=0x01 && final_byte<=0xAF /*SLICE_START_CODE*/);
+			 
+		}
+		else if(final_byte>=0x01 && final_byte<=0xAF /*SLICE_START_CODE*/) {
+			if(ret!=0 ){ 
+				/*means that the end of a fragmented slice is arreached*/
+				return ret;
+			}
+			else {
+			 	do {
+					ret=slice(dst,dst_remained,src,src_remained);
+			 		dst_remained-=ret;
+			 		src_remained-=ret;
+					dst+=ret;
+					src+=ret;
+					final_byte=src[0];
+				 } while(ret!=-1 && final_byte>=0x01 && final_byte<=0xAF /*SLICE_START_CODE*/);
+			}
 		
 		}
-		else if(final_byte==EXT_START_CODE) {
-			/*means MPEG2*/
+		else if(final_byte==SEQ_END_CODE) {
+			/*adding SEQ_END_CODE*/	
+			if(dst_remained>=4) {
+				dst[0]=0x00;
+				dst[1]=0x00;
+				dst[2]=0x01;
+				dst[3]=SEQ_END_CODE;
+			}
+			else {
+				/*i must send another packet??!?*/
+			}
+			/*in this case the video sequence should be finished, so min(dst_nbytes,src_nbytes) = src_nbytes*/
 		}
-		/*
-		else if(final_byte==) {
-		
-		}
-		else if(final_byte==)
-		else if(final_byte==)
-		else if(final_byte==)
-		**/
 	}while(ret!=-1);
 	
 	return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
@@ -146,5 +216,98 @@ static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbyte
 static int uninit(void *private_data)
 {
 	return 0;
+}
+
+
+/*usefull function to parse*/
+static int seq_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video)
+{
+	int count=0;
+	/*
+	 *read bitstream and increment dst and src, decrement dst_remained and src_remained
+	 * */
+	
+	return count+next_start_code2(dst,dst_remained,src,src_remained);
+}
+
+static int seq_ext(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video)
+{
+	int count=0;
+	/*
+	 *read bitstream and increment dst and src, decrement dst_remained and src_remained
+	 * */
+	
+	return count+next_start_code2(dst,dst_remained,src,src_remained);
+}
+
+static int ext_and_user_data(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video)
+{
+	int count=0;
+	/*
+	 *read bitstream and increment dst and src, decrement dst_remained and src_remained
+	 * */
+	
+	return count+next_start_code2(dst,dst_remained,src,src_remained);
+}
+
+static int gop_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video)
+{
+	int count=0;
+	/*
+	 *read bitstream and increment dst and src, decrement dst_remained and src_remained
+	 * */
+	
+	return count+next_start_code2(dst,dst_remained,src,src_remained);
+}
+
+static int picture_coding_ext(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video)
+{
+	int count=0;
+	/*
+	 *read bitstream and increment dst and src, decrement dst_remained and src_remained
+	 * */
+	
+	return count+next_start_code2(dst,dst_remained,src,src_remained);
+}
+
+static int picture_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video)
+{
+	int ret;
+	int count=0;
+	uint8 final_byte;
+	/*
+	 *read bitstream and increment dst, src and count, decrement dst_remained and src_remained
+	 * */
+	/*---*/
+
+
+	/*---*/
+	ret=next_start_code2(dst,dst_remained,src,src_remained);
+	dst_remained-=ret;
+	src_remained-=ret;
+	dst+=ret;
+	src+=ret;
+	count+=ret;
+	final_byte=src[0];
+	if(final_byte==EXT_START_CODE) 	
+		count+=picture_coding_ext(dst,dst_remained,src,src_remained,mpeg_video);
+
+	return count+next_start_code2(dst,dst_remained,src,src_remained); 
+}
+
+
+static int picture_data(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video)
+{
+	int count=0;
+	/*
+	 *read bitstream and increment dst and src, decrement dst_remained and src_remained
+	 * */
+	
+	return count+next_start_code2(dst,dst_remained,src,src_remained);
+}
+
+static int slice(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained)
+{
+	return next_start_code2(dst,dst_remained,src,src_remained);
 }
 

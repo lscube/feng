@@ -42,7 +42,7 @@ int next_start_code2(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_rem
 
 	for(i=0;i<count;i++) {
 		buf[i%3]=src[i];
-		if(i>=3) { 
+		if(i>=2) { 
 			if(buf[(i-2)%3]==0x00 && buf[(i-1)%3]==0x00 && buf[i%3]==0x01)	
 				return i - 3; /*start_code found, return the number of bytes write to dst/read from src until 000001 (not included)*/
 			dst[i-3]=src[i-3];	

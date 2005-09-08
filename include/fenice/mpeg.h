@@ -79,10 +79,13 @@
         	unsigned int x:1;
 	} video_spec_head2;
 
-
 	typedef enum {MPEG_1,MPEG_2,TO_PROBE} standard;
 
-	typedef struct {
+
+	/*--------------------------------------------------*/
+	/*	STARTING FROM HERE: NOT USED BY MT	    */
+	/*--------------------------------------------------*/
+	typedef struct { /*not used from mediathread*/
 		video_spec_head1 vsh1;
 		video_spec_head2 vsh2;
 		unsigned char final_byte;
@@ -114,6 +117,6 @@
 	int load_MPV (media_entry *me);
 	int read_MPEG_video (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme, uint8 *marker);
 	int free_MPV (void * stat);
-
+	/*--------------------------------------------------*/
 
 #endif

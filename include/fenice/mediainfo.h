@@ -230,6 +230,7 @@
 	/*****************************************read common utils*************************************************/
 	
 	/* returns number of bytes readen looking for start-codes, */
+	int next_start_code(uint8 *buf, uint32 *buf_size,int fin);
 	uint32 random_access(media_entry *me);
 	int changePacketLength(float offset, media_entry *me);
 

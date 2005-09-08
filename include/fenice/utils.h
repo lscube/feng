@@ -141,10 +141,7 @@
         #define SD_CREATOR "CREATOR"
 	/*end CC*/
 
-  	/* COMMAND KEYWORDS AND PORT */
-	//#define COMMAND_PORT 3000
  	uint32 random32(int);
-	// static uint32 md_32(char *string, int length); // shawill: what?
 	int parse_url(const char *url,char *server, unsigned short *port, char *file_name);
 	char *alloc_path_name(char *base_path, char *file_path);
 	float NTP_time(time_t t);
