@@ -153,6 +153,7 @@ static int init(Resource *r)
 	FILE *fd;
 	/*--*/
 
+	fnc_log(FNC_LOG_DEBUG,"SD init function\n");
 	fd=fdopen(r->i_stream->fd,"r");
 	/*Allocate Resource PRIVATE DATA and cast it*/
 	if((sd=malloc(sizeof(SD_descr)))==NULL)
@@ -189,10 +190,8 @@ static int init(Resource *r)
 		 * (in this case track = elementary stream media file)
 		 * */
 
-		if((track=add_track(r))==NULL) {
-			fnc_log(FNC_LOG_ERR,"Memory allocation error during add_track\n");
+		if( !(track=add_track(r)) )
 			return ERR_ALLOC;
-		}
 		
 		if((me=malloc(sizeof(FlagsData)))==NULL) {
 			fnc_log(FNC_LOG_ERR,"Memory allocation error for track->private_data\n");

@@ -42,58 +42,11 @@ static MediaParser *media_parsers[] = {
 	NULL
 };
 
-#if 0
-static int register_mediatype_functions(MediaParserType *pt, char *encoding_name)
+void mparser_unreg(MediaParser *p)
 {
-
-#if 0
-	if (!strcmp(encoding_name,"H26L")) {
-		//pt->load = load_H26L;
-		pt->read = read_H26L;
-		pt->close= free_H26L;
-	} 
-	else if(!strcmp(encoding_name,"MPV")) {
-		//pt->load = load_MPV; 
-		pt->read = read_MPEG_video;
-		pt->close= free_MPV; 
-	} 
-	else if(!strcmp(encoding_name,"MP2T")) {
-		//pt->load = load_MP2T; 
-		pt->read = read_MPEG_ts;
-		pt->close= free_MP2T; 		
-	}
-	else if(!strcmp(encoding_name,"MP4V-ES")) {
-		//pt->load = load_MP4ES; 
-		pt->read = read_MPEG4ES_video; 
-		pt->close= free_MP4ES; 		
-	}	
-	else if(!strcmp(encoding_name,"MPA")) {
-		//pt->load = load_MPA; 
-		pt->read = read_MP3; 
-		pt->close= free_MPA;	
-	}
-	else if(!strcmp(encoding_name,"L16")) {
-		//pt->load = load_L16; 
-		pt->read = read_PCM; 
-		pt->close= free_L16;	
-	}
-	else if(!strcmp(encoding_name,"GSM")) {
-		//pt->load = load_GSM; 
-		pt->read = read_GSM;
-		pt->close= free_GSM;	
-	}
-	else
-		return ERR_GENERIC; /*unknown*/
-#endif
-	return ERR_NOERROR;
+	if (p)
+		p->uninit(NULL);
 }
-
-int register_media_type(MediaParserType * parser_type, MediaParser * p)
-{
-	p->parser_type=parser_type; 
-	return ERR_NOERROR;
-}
-#endif
 
 MediaParser *add_media_parser(void) 
 {
@@ -113,7 +66,7 @@ void free_parser(MediaParser *p)
 	if(p) {
 		// p->uninit(p->private_data);
 		p->uninit(NULL);
-		free(p);	
+		// free(p);	
 	}
 }
 

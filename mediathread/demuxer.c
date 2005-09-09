@@ -76,11 +76,11 @@ Resource *r_open(resource_name n)
 	if ( (dmx_idx=find_demuxer(n))<0 ) {
 		fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer for resource %s\n", n);
 		return NULL;
-	} else {
-		r->demuxer=demuxers[dmx_idx];
-		fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource \"%s\"\n", demuxers[dmx_idx]->info->name, n);
 	}
 
+	fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource \"%s\"\n", demuxers[dmx_idx]->info->name, n);
+
+	// ----------- allocation of all data structures ---------------------------//
 	if( !(r = calloc(1, sizeof(Resource))) ) {
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
 		return NULL;
@@ -97,6 +97,8 @@ Resource *r_open(resource_name n)
 		free(r);
 		return NULL;
 	}
+	// -------------------------------------------------------------------------//
+	// ----------------------- initializations ---------------------------------//
 	/* initialization non needed 'cause we use calloc
 	r->private_data=NULL;
 	r->demuxer=NULL;
@@ -104,7 +106,10 @@ Resource *r_open(resource_name n)
 	// temporary track initialization:
 	r->num_tracks=0;
 	*/
-	// r->demuxer->init(r);
+	r->demuxer=demuxers[dmx_idx];
+	// ------------------------------------------------------------------------//
+
+	r->demuxer->init(r);
 
 	// search for exclusive tracks: should be done track per track?
 	ex_tracks_save(r->tracks, r->num_tracks);
@@ -215,8 +220,11 @@ Track *add_track(Resource *r)
 	if( !(t->properties = malloc(sizeof(MediaProperties))) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
 
+	/* parser allocation no more needed.
+	 * we should now find the right media parser and link the correspondig index in 
 	if( !(t->parser=add_media_parser()) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
+	*/
 
 	if( !(t->buffer=OMSbuff_new(OMSBUFFER_DEFAULT_DIM)) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
@@ -241,7 +249,7 @@ void free_track(Track *t)
 
 	istream_close(t->i_stream);
 	free(t->track_info);
-	free_parser(t->parser);
+	mparser_unreg(t->private_data);
 	OMSbuff_free(t->buffer);
 #if 0 // private data is not under Track jurisdiction!
 	free(t->private_data);
