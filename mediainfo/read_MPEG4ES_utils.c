@@ -41,30 +41,6 @@
 #include <fenice/types.h>
 #include <fenice/utils.h>
 
-int get_field( uint8 *d, uint32 bits, uint32 *offset )
-{
-	uint32 v = 0;
-	uint32 i;
-
-	for( i = 0; i < bits; )
-	{
-		if( bits - i >= 8 && *offset % 8 == 0 )
-		{
-			v <<= 8;
-			v |= d[*offset/8];
-			i += 8;
-			*offset += 8;
-		} else
-		{
-			v <<= 1;
-			v |= ( d[*offset/8] >> ( 7 - *offset % 8 ) ) & 1;
-			++i;
-			++(*offset);
-		}
-	}
-	return v;
-}
-
 int parse_visual_object_sequence(static_MPEG4_video_es *mpeg4_struct,uint8 *data, uint32 *data_size,int fin){
 	if(read(fin,&data[*data_size],1)<1)
 		return ERR_EOF;

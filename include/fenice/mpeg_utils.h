@@ -37,6 +37,6 @@
 	#endif // min
 
 	int next_start_code2(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained);
-
+	
 #endif
 

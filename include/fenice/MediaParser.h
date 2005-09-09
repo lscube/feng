@@ -70,7 +70,7 @@ typedef struct {
 	uint32 DisplayWidth;
 	uint32 DisplayHeight;
 	uint32 DisplayUnit;
-	uint32 AspectRatio;
+	uint32 AspectRatio;	
 	uint8 *ColorSpace;
 	float GammaValue;
 } MediaProperties;
