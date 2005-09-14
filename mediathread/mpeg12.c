@@ -206,7 +206,7 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStre
 
 /*see RFC 2250: RTP Payload Format for MPEG1/MPEG2 Video*/
 #ifdef MPEG2VSHE
-	#define VSHCPY  vsh_tmp = (char *)(mpeg_video->vsh1); \
+	#define VSHCPY  vsh_tmp = (uint8 *)(mpeg_video->vsh1); \
         		init_dst[0] = vsh_tmp[3]; \
         		init_dst[1] = vsh_tmp[2]; \
         		init_dst[2] = vsh_tmp[1]; \
@@ -219,7 +219,7 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStre
         	        	init_dst[7] = vsh_tmp[0]; \
        		 	} 
 #else
-	#define VSHCPY  vsh_tmp = (char *)(mpeg_video->vsh1); \
+	#define VSHCPY  vsh_tmp = (uint8 *)(mpeg_video->vsh1); \
         		init_dst[0] = vsh_tmp[3]; \
         		init_dst[1] = vsh_tmp[2]; \
         		init_dst[2] = vsh_tmp[1]; \
@@ -590,7 +590,8 @@ static int gop_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_rema
 static int picture_coding_ext(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video)
 {
 	int count=0;
-	int i,bt, off;
+	int i,bt;
+	uint32 off;
 	/*
 	 *read bitstream and increment dst and src, decrement dst_remained and src_remained
 	 * */
@@ -651,7 +652,8 @@ static int picture_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_
 {
 	int bt;
 	int count=0;
-	int i, off;
+	int i;
+	uint32 off;
 	uint8 final_byte;
 	/*
 	 *read bitstream and increment dst, src and count, decrement dst_remained and src_remained

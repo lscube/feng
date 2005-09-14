@@ -42,12 +42,13 @@ static MediaParser *media_parsers[] = {
 	NULL
 };
 
-void mparser_unreg(MediaParser *p)
+void mparser_unreg(MediaParser *p, void *private_data)
 {
 	if (p)
-		p->uninit(NULL);
+		p->uninit(private_data);
 }
 
+// shawill: probably these functions will be removed sooner ir later.
 MediaParser *add_media_parser(void) 
 {
 	MediaParser *p;
@@ -69,23 +70,5 @@ void free_parser(MediaParser *p)
 		// free(p);	
 	}
 }
+// ---------------
 
-#if 0
-int set_media_entity(MediaParserType *pt, char *encoding_name)
-{
-
-	if ((strcmp(encoding_name,"H26L")!=0) || (strcmp(encoding_name,"MPV")!=0) || \
-	    (strcmp(encoding_name,"MP2T")!=0) || (strcmp(encoding_name,"MP4V-ES")!=0) ) {
-		strcpy(pt->media_entity,"video");
-	}
-		
-	else if ((strcmp(encoding_name,"MPA")!=0) || (strcmp(encoding_name,"L16")!=0) || (strcmp(encoding_name,"GSM")!=0)) {
-		strcpy(pt->media_entity,"audio");
-	}
-	else
-		return ERR_GENERIC; /*unknown*/
-	/*TODO: text*/
-
-	return	register_mediatype_functions(pt,encoding_name);
-}
-#endif

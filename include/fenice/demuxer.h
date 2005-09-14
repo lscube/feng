@@ -85,9 +85,17 @@ typedef struct __TRACK {
 	media_source msource;
 	MediaProperties *properties; /* track properties */
 	/* private data is managed by specific media parser: from allocation to deallocation
-	 * track must not do anything on this pointer! */ 
+	 * track MUST NOT do anything on this pointer! */ 
 	void *private_data; /* private data of media parser */
 } Track;
+
+/*! \brief a double linked list for some tracks.
+ * It is useful for <em>exclusive tracks</em> list.
+ * */
+typedef struct __TRACK_LIST {
+	Track *track;
+	struct __TRACK_LIST *next;
+} TrackList;
 
 typedef struct __SELECTOR {
 	Track *tracks[MAX_SEL_TRACKS];	
@@ -161,6 +169,8 @@ msg_error get_resource_info(resource_name, ResourceInfo *);
 Selector * r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
 inline msg_error r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
+
+// TrackList handling functions
 
 // Tracks
 Track *add_track(Resource *);

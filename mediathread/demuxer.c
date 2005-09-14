@@ -43,15 +43,6 @@ static Demuxer *demuxers[] = {
 	NULL
 };
 
-/*! \brief a list for some tracks.
- * It is useful for <em>exclusive tracks</em> list.
- * The Media Thread keeps a list of the tracks that can be opened only once.
- * */
-typedef struct __TRACK_LIST {
-	Track *track;
-	struct __TRACK_LIST *next;
-} TrackList;
-
 /*! \brief The exclusive tracks.
  * The Media Thread keeps a list of the tracks that can be opened only once.
  * */
@@ -221,7 +212,7 @@ Track *add_track(Resource *r)
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
 
 	/* parser allocation no more needed.
-	 * we should now find the right media parser and link the correspondig index in 
+	 * we should now find the right media parser and link t->parse to the correspondig index
 	if( !(t->parser=add_media_parser()) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
 	*/
@@ -249,7 +240,7 @@ void free_track(Track *t)
 
 	istream_close(t->i_stream);
 	free(t->track_info);
-	mparser_unreg(t->private_data);
+	mparser_unreg(t->parser, t->private_data);
 	OMSbuff_free(t->buffer);
 #if 0 // private data is not under Track jurisdiction!
 	free(t->private_data);

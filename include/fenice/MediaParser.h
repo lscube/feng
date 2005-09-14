@@ -80,7 +80,7 @@ typedef struct __MEDIAPARSER {
 /*MediaParser Interface*/
 void free_parser(MediaParser *);
 MediaParser * add_media_parser(void); 
-void mparser_unreg(MediaParser *);
+void mparser_unreg(MediaParser *, void *);
 // int set_media_entity(MediaParserType *, char *encoding_name);
 #endif
 
