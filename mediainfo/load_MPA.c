@@ -81,7 +81,7 @@ int load_MPA(media_entry *p)
 	// shawill: look if ID3 tag is present
 	if (!memcmp(p->buff_data, "ID3", 3)) { // ID3 tag present
 		n = read_dim(p->fd, &tag_dim); // shawill: one day we will look also at this function
-		printf("%ld\n",tag_dim);
+		//printf("%ld\n",tag_dim);
 		p->description.flags|=MED_ID3;
 		p->description.tag_dim=tag_dim;
 		lseek(p->fd,tag_dim,SEEK_CUR);
