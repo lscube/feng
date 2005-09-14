@@ -77,4 +77,6 @@ if FENICE_EFENCE
 fenice_LDFLAGS = -lefence
 endif
 
+fenice_LDADD += @GLIB_LIBS@
+
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)

@@ -114,7 +114,7 @@ AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 
 CFLAGS=""
 
-AM_PATH_GLIB_2_0(2.0.0,,AC_MSG_ERROR([Fenice from 1.10+ uses Glib. Please install it (you need devel files).]),)
+AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Fenice (>1.10) uses Glib. Please install it (you need devel files).]),)
 
 AM_CONDITIONAL(FENICE_EFENCE, /bin/false)
 if test "$enable_efence" = "yes"; then

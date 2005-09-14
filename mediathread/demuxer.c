@@ -47,12 +47,14 @@ static Demuxer *demuxers[] = {
  * The Media Thread keeps a list of the tracks that can be opened only once.
  * */
 static TrackList *ex_tracks=NULL;
+static GList *Gex_tracks=NULL;
 
 /*! Private functions for exclusive tracks.
  * */
 static TrackList *ex_track_search(Track *);
 static void ex_track_remove(Track *);
 static int ex_tracks_save(Track *[], uint32);
+static int Gex_tracks_save(Track *[], uint32);
 // static void ex_tracks_free(Track *[], uint32);
 
 // private funcions for specific demuxer
@@ -104,6 +106,7 @@ Resource *r_open(resource_name n)
 
 	// search for exclusive tracks: should be done track per track?
 	ex_tracks_save(r->tracks, r->num_tracks);
+	Gex_tracks_save(r->tracks, r->num_tracks);
 	
 	return r;
 }
@@ -291,10 +294,22 @@ static int ex_tracks_save(Track *tracks[], uint32 num_tracks)
 				return ERR_ALLOC;
 			}
 			// insert at the beginning of the list
+			track_item->track = tracks[i];
 			track_item->next = ex_tracks;
 			ex_tracks = track_item;
 		}
 	}
+
+	return ERR_NOERROR;
+}
+
+static int Gex_tracks_save(Track *tracks[], uint32 num_tracks)
+{
+	uint32 i;
+
+	for (i=0; i<num_tracks; i++)
+		if ( tracks[i]->i_stream && IS_ISEXCLUSIVE(tracks[i]->i_stream) && !g_list_find(Gex_tracks, tracks[i]) )
+			Gex_tracks = g_list_prepend(Gex_tracks, tracks[i]);
 
 	return ERR_NOERROR;
 }

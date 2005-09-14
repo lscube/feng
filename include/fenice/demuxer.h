@@ -31,6 +31,8 @@
 #if !defined(_DEMUXERH)
 #define _DEMUXERH
 
+#include <glib.h>
+
 #include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/InputStream.h>
