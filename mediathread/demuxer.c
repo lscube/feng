@@ -46,27 +46,29 @@ static Demuxer *demuxers[] = {
 /*! \brief The exclusive tracks.
  * The Media Thread keeps a list of the tracks that can be opened only once.
  * */
-static TrackList *ex_tracks=NULL;
-static GList *Gex_tracks=NULL;
+static GList *ex_tracks=NULL;
 
 /*! Private functions for exclusive tracks.
  * */
-static TrackList *ex_track_search(Track *);
-static void ex_track_remove(Track *);
-static int ex_tracks_save(Track *[], uint32);
-static int Gex_tracks_save(Track *[], uint32);
+static inline void ex_tracks_save(GList *);
+static void ex_track_save(Track *, gpointer *);
+static inline void ex_track_remove(Track *);
 // static void ex_tracks_free(Track *[], uint32);
 
 // private funcions for specific demuxer
-static int find_demuxer(resource_name);
+static int find_demuxer(InputStream *);
 
 Resource *r_open(resource_name n)
 {
 	Resource *r;
 	int dmx_idx;
+	InputStream *i_stream;
+
+	if( !(i_stream=istream_open(n)) )
+		return NULL;
 
 	// shawill: MUST go away!!!
-	if ( (dmx_idx=find_demuxer(n))<0 ) {
+	if ( (dmx_idx=find_demuxer(i_stream))<0 ) {
 		fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer for resource %s\n", n);
 		return NULL;
 	}
@@ -76,17 +78,13 @@ Resource *r_open(resource_name n)
 	// ----------- allocation of all data structures ---------------------------//
 	if( !(r = calloc(1, sizeof(Resource))) ) {
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-		return NULL;
-	}
-	
-	if( !(r->i_stream=istream_open(n)) ) {
-		free(r);
+		istream_close(i_stream);
 		return NULL;
 	}
 
 	if( !(r->info=calloc(1, sizeof(ResourceInfo))) ) { // init all infos
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-		istream_close(r->i_stream);
+		istream_close(i_stream);
 		free(r);
 		return NULL;
 	}
@@ -95,36 +93,33 @@ Resource *r_open(resource_name n)
 	/* initialization non needed 'cause we use calloc
 	r->private_data=NULL;
 	r->demuxer=NULL;
-	//initializate tracks[MAX_TRACKS]??? TODO
+	//initializate tracks??? TODO
 	// temporary track initialization:
 	r->num_tracks=0;
 	*/
+	r->i_stream = i_stream;
 	r->demuxer=demuxers[dmx_idx];
 	// ------------------------------------------------------------------------//
 
 	r->demuxer->init(r);
 
 	// search for exclusive tracks: should be done track per track?
-	ex_tracks_save(r->tracks, r->num_tracks);
-	Gex_tracks_save(r->tracks, r->num_tracks);
+	ex_tracks_save(r->tracks);
 	
 	return r;
 }
 
 void r_close(Resource *r)
 {
-	uint32 i;
-
-	if(r!=NULL) {
+	if(r) {
 		istream_close(r->i_stream);
 		free(r->info);
 		r->info=NULL;
-		if(r->private_data!=NULL) {
+		if(r->private_data!=NULL)
 			free(r->private_data);
-		}
-		for(i=0;i<r->num_tracks;i++) 
-			if(r->tracks[i]!=NULL)	/*r_close_track ??? TODO*/
-				free_track(r->tracks[i]);
+
+		g_list_foreach(r->tracks, (GFunc)free_track, r);
+
 		free(r);
 	}
 }
@@ -138,27 +133,28 @@ msg_error get_resource_info(resource_name n, ResourceInfo *r)
 Selector *r_open_tracks(Resource *r, char *track_name, Capabilities *capabilities)
 {
 	Selector *s;
-	uint32 i=0,j;
 	Track *tracks[MAX_SEL_TRACKS];
+	GList *track, *sel_tracks=NULL;
 
 	/*Capabilities aren't used yet. TODO*/
 
-	for(j=0;j<r->num_tracks;j++)
-		if( !strcmp((r->tracks[j])->track_name, track_name) && (i<MAX_SEL_TRACKS) ) {
-			tracks[i]=r->tracks[j];
-			i++;
-		}
-	if(i==0)
+	for (track=g_list_first(r->tracks); track; track=g_list_next(track))
+		if( !strcmp(((Track *)track->data)->track_name, track_name) )
+			sel_tracks=g_list_prepend(sel_tracks, track);
+
+	if (!sel_tracks)
 		return NULL;
+	// now we reverse the order of the list to rebuild the resource tracks order
+	// Probably this is not so useful: I feel free to remove the instruction sooner or later...
+	g_list_reverse(sel_tracks);
 	
 	if((s=(Selector*)malloc(sizeof(Selector)))==NULL) {
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
 		return NULL;
 	}
 
-	for(j=0;j<i;j++)
-		s->tracks[j]=tracks[j];
-	s->total=i;
+	s->tracks = sel_tracks;
+	s->total = g_list_length(sel_tracks);
 	s->default_index=0;/*TODO*/
 	s->selected_index=0;/*TODO*/
 	//...
@@ -196,7 +192,7 @@ Resource *init_resource(resource_name name)
 #define ADD_TRACK_ERROR(level, ...) \
 	{ \
 		fnc_log(level, __VA_ARGS__); \
-		free_track(t); \
+		free_track(t, r); \
 		return NULL; \
 	}
 Track *add_track(Resource *r)
@@ -229,14 +225,14 @@ Track *add_track(Resource *r)
 	*/
 	/*t->i_stream=i_stream*/
 	
-	r->tracks[r->num_tracks]=t;
+	r->tracks = g_list_append(r->tracks, t);
 	r->num_tracks++;
 	
 	return t;
 }
 #undef ADD_TRACK_ERROR
 
-void free_track(Track *t)
+void free_track(Track *t, Resource *r)
 {
 	if (!t)
 		return;
@@ -252,82 +248,26 @@ void free_track(Track *t)
 	if ( t->i_stream && IS_ISEXCLUSIVE(t->i_stream) )
 		ex_track_remove(t);
 
+	r->tracks = g_list_remove(r->tracks, t);
 	free(t);
 }
 
 // static functions
-// Exclusive Tracks handling functions
-static TrackList *ex_track_search(Track *track)
+static inline void ex_tracks_save(GList *tracks)
 {
-	TrackList *i;
-
-	for (i=ex_tracks; i && (i->track != track); i=i->next);
-
-	return i;
+	g_list_foreach(tracks, (GFunc)ex_track_save, NULL);
 }
 
-static void ex_track_remove(Track *track)
+static void ex_track_save(Track *track, gpointer *user_data)
 {
-	TrackList *i, *prev;
-
-	for (i=prev=ex_tracks; i && (i->track != track); prev=i, i=i->next);
-
-	if (i) {
-		if (i == ex_tracks) {
-			ex_tracks = ex_tracks->next;
-		} else {
-			prev->next = i->next;
-		}
-		free(i);
-	}
+	if ( track->i_stream && IS_ISEXCLUSIVE(track->i_stream) && !g_list_find(ex_tracks, track) )
+			ex_tracks = g_list_prepend(ex_tracks, track);
 }
 
-static int ex_tracks_save(Track *tracks[], uint32 num_tracks)
+static inline void ex_track_remove(Track *track)
 {
-	uint32 i;
-	TrackList *track_item;
-	
-	for (i=0; i<num_tracks; i++) {
-		if ( tracks[i]->i_stream && IS_ISEXCLUSIVE(tracks[i]->i_stream) && !ex_track_search(tracks[i]) ) {
-			if ( !(track_item = malloc(sizeof(TrackList))) ) {
-				fnc_log(FNC_LOG_FATAL,"Could not alloc memory.\n");
-				return ERR_ALLOC;
-			}
-			// insert at the beginning of the list
-			track_item->track = tracks[i];
-			track_item->next = ex_tracks;
-			ex_tracks = track_item;
-		}
-	}
-
-	return ERR_NOERROR;
+	ex_tracks = g_list_remove(ex_tracks, track);
 }
-
-static int Gex_tracks_save(Track *tracks[], uint32 num_tracks)
-{
-	uint32 i;
-
-	for (i=0; i<num_tracks; i++)
-		if ( tracks[i]->i_stream && IS_ISEXCLUSIVE(tracks[i]->i_stream) && !g_list_find(Gex_tracks, tracks[i]) )
-			Gex_tracks = g_list_prepend(Gex_tracks, tracks[i]);
-
-	return ERR_NOERROR;
-}
-
-#if 0
-static void ex_tracks_free(Track *tracks[], uint32 num_tracks)
-{
-	uint32 i;
-	TrackList *track_item;
-	
-	for (i=0; i<num_tracks; i++) {
-		if ( tracks[i]->i_stream && IS_ISEXCLUSIVE(tracks[i]->i_stream) ) {
-			// remove from list (if present)
-			ex_track_remove(tracks[i]);
-		}
-	}
-}
-#endif
 
 // private funcions for specific demuxer
 
@@ -340,7 +280,8 @@ static void ex_tracks_free(Track *tracks[], uint32 num_tracks)
  * \return the index of the valid demuxer in the list or -1 if it could not be
  * found.
  * */
-static int find_demuxer(resource_name n)
+// static int find_demuxer(resource_name n)
+static int find_demuxer(InputStream *i_stream)
 {
 	// this int will contain the index of the demuxer already probed second
 	// the extension suggestion, in order to not probe twice the same
@@ -352,14 +293,14 @@ static int find_demuxer(resource_name n)
 
 	// First of all try that with matching extension: we use extension as a
 	// suggestion of resource type.
-	if ( (/* find resource name extension: */res_ext=strrchr(n, '.')) && (res_ext++) ) {
+	if ( (/* find resource name extension: */res_ext=strrchr(i_stream->name, '.')) && (res_ext++) ) {
 		// extension present
 		for (i=0; demuxers[i]; i++) {
 			strncpy(exts, demuxers[i]->info->extensions, sizeof(exts));
 			for (tkn=strtok(exts, ","); tkn; tkn=strtok(NULL, ",")) {
 				if (!strcmp(tkn, res_ext)) {
 					fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: extension \"%s\" matches \"%s\" demuxer\n", res_ext, demuxers[i]->info->name);
-					if (demuxers[i]->probe(n) == RESOURCE_OK) {
+					if (demuxers[i]->probe(i_stream) == RESOURCE_OK) {
 						fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: demuxer found\n", res_ext, demuxers[i]->info->name);
 						found = 1;
 						break;
@@ -372,7 +313,7 @@ static int find_demuxer(resource_name n)
 	}
 	if (!found) {
 		for (i=0; demuxers[i]; i++) {
-			if ( (i!=probed) && (demuxers[i]->probe(n) == RESOURCE_OK) ) {
+			if ( (i!=probed) && (demuxers[i]->probe(i_stream) == RESOURCE_OK) ) {
 				fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: demuxer found\n", res_ext, demuxers[i]->info->name);
 				found = 1;
 				break;

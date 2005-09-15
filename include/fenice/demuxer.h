@@ -91,16 +91,9 @@ typedef struct __TRACK {
 	void *private_data; /* private data of media parser */
 } Track;
 
-/*! \brief a double linked list for some tracks.
- * It is useful for <em>exclusive tracks</em> list.
- * */
-typedef struct __TRACK_LIST {
-	Track *track;
-	struct __TRACK_LIST *next;
-} TrackList;
-
 typedef struct __SELECTOR {
-	Track *tracks[MAX_SEL_TRACKS];	
+	// Track *tracks[MAX_SEL_TRACKS];	
+	GList *tracks;
 	uint32 default_index;
 	uint32 selected_index;/**/
 	uint32 total; /*total tracks in selector*/
@@ -114,7 +107,8 @@ typedef struct __RESOURCE {
 	InputStream *i_stream;
 	struct __DEMUXER *demuxer;
 	ResourceInfo *info;
-	Track *tracks[MAX_TRACKS];
+	// Track *tracks[MAX_TRACKS];
+	GList *tracks;
 	uint32 num_tracks;
 	void *private_data; /* private data of demuxer */
 } Resource;
@@ -134,7 +128,7 @@ typedef struct {
 
 typedef struct __DEMUXER {
 	DemuxerInfo *info;
-	int (*probe)(char *);
+	int (*probe)(InputStream *);
 	int (*init)(Resource *);
 	int (*read_header)(Resource *);
 	int (*read_packet)(Resource *);
@@ -176,7 +170,7 @@ inline msg_error r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource
 
 // Tracks
 Track *add_track(Resource *);
-void free_track(Track *);
+void free_track(Track *, Resource *);
 /*-------------------------------------------*/
 
 #endif

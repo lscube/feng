@@ -35,7 +35,7 @@
  *    arg - Resource filename to probe
  *    returns: 0 on success (file recognized), non-zero on error.
  * */
-static int probe(char *filename);
+static int probe(InputStream *);
 
 /* init: ...
  * */

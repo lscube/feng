@@ -60,10 +60,10 @@ typedef enum {
 } sd_descr_flags;
 
 typedef struct __SD_descr {
-		sd_descr_flags flags;
-		char multicast[16];/*???*/
-		char ttl[4];/*???*/
-    		//char twin[255]; //see RESOURCE_INFO -> twin
+	sd_descr_flags flags;
+	char multicast[16];/*???*/
+	char ttl[4];/*???*/
+    	//char twin[255]; //see RESOURCE_INFO -> twin
 } SD_descr;
 /*----------------------*/
 
@@ -120,11 +120,11 @@ static int validate_audio_track(Track *);
 static int validate_video_track(Track *);
 static int validate_track(Resource *);
 
-static int probe(char *filename)
+static int probe(InputStream *i_stream)
 {
 	char *ext;
 	
-	if ( (ext=strrchr(filename, '.')) && (!strcmp(ext, ".sd"))) {
+	if ( (ext=strrchr(i_stream->name, '.')) && (!strcmp(ext, ".sd"))) {
 		return RESOURCE_OK;
 	}
 	return RESOURCE_DAMAGED;
@@ -132,7 +132,6 @@ static int probe(char *filename)
 
 static int init(Resource *r)
 {
-
 	char keyword[80],line[80],trash[80],sparam[10];
 	Track *track;
 	SD_descr *sd;
@@ -140,6 +139,7 @@ static int init(Resource *r)
         char object[255], server[255];
         unsigned short port;
 	int res;
+	char content_base[255]="";
 
 	/*--*/
 	int32 bit_rate; /*average if VBR or -1 is not usefull*/ 
@@ -195,7 +195,7 @@ static int init(Resource *r)
 		
 		if((me=malloc(sizeof(FlagsData)))==NULL) {
 			fnc_log(FNC_LOG_ERR,"Memory allocation error for track->private_data\n");
-			free_track(track);
+			free_track(track, r);
 			r->num_tracks--;
 			return ERR_ALLOC;
 		}
@@ -208,7 +208,7 @@ static int init(Resource *r)
                                 sscanf(line,"%s%255s",trash,track->track_name);
                                 me->general_flags|=ME_FILENAME;
 				if((track->i_stream=istream_open(track->track_name))==NULL) {
-					free_track(track);
+					free_track(track, r);
 					return ERR_ALLOC;
 				}
                         }
@@ -360,13 +360,13 @@ static int init(Resource *r)
 		}
 		else {
 			fnc_log(FNC_LOG_ERR,"It's impossible to identify media_type: audio, video ...\n");
-			free_track(track);
+			free_track(track, r);
 			r->num_tracks--;
 			return ERR_ALLOC;
 		}
 		track->private_data=me;	
                 if ((res = validate_track(r)) != ERR_NOERROR) {
-			free_track(track);
+			free_track(track, r);
 			r->num_tracks--;
                         return res;
                 }
@@ -481,11 +481,17 @@ static int validate_video_track(Track *t)
 
 static int validate_track(Resource *r)
 {
-	
 	FlagsData *me;
 	int i=r->num_tracks-1;
+	GList *track_i = g_list_last(r->tracks);
+	Track *t;
 
-	me=(FlagsData *)r->tracks[i]->private_data;
+	if (track_i)
+		t=track_i->data;
+	else
+		return ERR_ALLOC;
+
+	me=(FlagsData *)t->private_data;
 
         if (!(me->general_flags & ME_FILENAME)) {
                 return ERR_PARSE;
@@ -497,10 +503,10 @@ static int validate_track(Resource *r)
                 return ERR_PARSE;
         }
 
-	if(!strcmp(r->tracks[i]->properties->media_type, "audio"))
-		return validate_audio_track(r->tracks[i]);
-	else if(!strcmp(r->tracks[i]->properties->media_type,"audio"))
-		return validate_video_track(r->tracks[i]);
+	if(!strcmp(t->properties->media_type, "audio"))
+		return validate_audio_track(t);
+	else if(!strcmp(t->properties->media_type,"video"))
+		return validate_video_track(t);
 	else
 		return ERR_NOERROR;
 /*
