@@ -62,17 +62,47 @@ static int init(MediaProperties *properties, void **private_data)
 static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStream *istream, MediaProperties *properties, void *private_data) 
 {
 	mpa_data *mpeg_audio;
-	int count;
+	int count=0, ret;
+	uint32 N_bytes;
+	uint8 buf_data[2];
+	uint32 sync_found=0;
 	
 	mpeg_audio = (mpa_data *)private_data;
 
 	if(!mpeg_audio->is_probed) {
 		count=probe(dst, dst_nbytes, istream, properties, mpeg_audio);
-		if(count==-1)
-			return -1;
-		dst+=count; /*may be 4 bytes*/
+		if(count<0)
+			return -1; /*EOF or syncword not found or header error*/
 	}
-	
+	else {
+		count = istream_read(2, buf_data, istream);	
+		if(count<0)
+			return -1;
+		sync_found=0;
+		while(!sync_found){
+			if (!(buf_data[0]==0xff) && ((buf_data[1] & 0xe0)==0xe0)) { /* no syncword at the beginning*/
+				if (!(buf_data[1]==0xff) && ((buf_data[0] & 0x07)==0x07)) { /* no syncword at the beginning*/
+					buf_data[0]=buf_data[1];
+					ret = istream_read(1, &buf_data[1], istream);	
+					if(ret<0)
+						return -1;
+				}
+				else sync_found=1;
+			}
+			else sync_found=1;
+		}
+		dst[0]=buf_data[0];
+		dst[1]=buf_data[1];
+		count + = istream_read(2, &dst[2], istream);	
+	}
+		
+	N_bytes=(int)(mpeg_audio->frame_len * (float)properties->bit_rate / (float)properties->sample_rate / 8); /*2 bytes which contain 12 bit for syncword*/
+	if((dst[2] & 0x02)) N_bytes++;
+	dst+=count;
+	dst_remaind-=count;
+	count + = ret = istream_read(N_bytes - 4, dst, istream); /*4 bytes are read yet*/
+	if(ret<0)
+		return -1;
 
 	return count;
 }
@@ -119,7 +149,7 @@ static int probe(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaPrope
 	/*read 4 bytes to calculate mpa parameters or to skip ID3*/
 	if ( (count = istream_read(4, buff_data, istream)) != 4) return -1;
 
-	// shawill: look if ID3 tag is present
+	/*look if ID3 tag is present*/
 	if (!memcmp(buff_data, "ID3", 3)) { // ID3 tag present
 		if ( (count = istream_read(2, buff_data, istream)) != 2) return -1; /*skip second byte of version in ID3 Header*/
 		if ( (count = istream_read(4, buff_data, istream)) != 4) return -1; /*4 bytes for ID3 size*/
@@ -131,7 +161,7 @@ static int probe(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaPrope
 		if ( (count = istream_read(4, buff_data, istream)) != 4) return -1;
 	}
 
-	if (! ((buff_data[0]==0xff) && ((buff_data[1] & 0xe0)==0xe0))) return -1;
+	if (! ((buff_data[0]==0xff) && ((buff_data[1] & 0xe0)==0xe0))) return -1; /*syncword not found*/
 
         switch (buff_data[1] & 0x1e) {                /* Mpeg version and Level */
                 case 18: ColIndex = 4; break;  /* Mpeg-2 L3 */
@@ -158,7 +188,6 @@ static int probe(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaPrope
 			 }
                 }
         } else {                /* Mpeg-2 */
-                // switch (sync3 & 0x0c) {
                 switch (buff_data[2] & 0x0c) {
                         case 0x00: properties->sample_rate=22050; break;
                         case 0x04: properties->sample_rate=24000; break;
