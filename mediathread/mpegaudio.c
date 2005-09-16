@@ -73,6 +73,7 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStre
 		count=probe(dst, dst_nbytes, istream, properties, mpeg_audio);
 		if(count<0)
 			return -1; /*EOF or syncword not found or header error*/
+		(*timestamp)-=mpeg_audio->pkt_len;/*i set it negative so at the first time it is zero (see at the end of this function)*/
 	}
 	else {
 		count = istream_read(2, buf_data, istream);	
@@ -103,13 +104,35 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStre
 	count + = ret = istream_read(N_bytes - 4, dst, istream); /*4 bytes are read yet*/
 	if(ret<0)
 		return -1;
+	
+	(*timestamp)+=mpeg_audio->pkt_len; /*it was negative at the beginning so it is zero at the first time*/
 
 	return count;
 }
 
 static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
 {
-	return 0;
+	uint32 count;
+	uint8 tmp[3];
+
+	/*4 bytes for rtp encapsulation*/	
+	dst_remained=dst_nbytes - 4;
+
+	count=min(dst_remained,src_nbytes);
+	memcpy(dst+4,src,count);
+	dst[0]=0;
+	dst[1]=0;
+	if(count<src_nbytes) {
+		sprintf(tmp,"%d",count);
+		dst[2]=tmp[0];
+		dst[3]=tmp[1];
+	}
+	else {
+		dst[2]=0;
+		dst[3]=0;
+	}
+	
+	return count + 4;
 }
 
 static int uninit(void *private_data)
