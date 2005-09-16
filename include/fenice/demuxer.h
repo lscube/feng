@@ -79,7 +79,7 @@ typedef struct __TRACK_INFO {
 typedef struct __TRACK {
 	InputStream *i_stream;
 	TrackInfo *track_info;
-	char track_name[255];
+	char name[255];
 	long int timestamp;
 	MediaParser *parser;
 	/*bufferpool*/

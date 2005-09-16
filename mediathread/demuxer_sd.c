@@ -132,14 +132,14 @@ static int probe(InputStream *i_stream)
 
 static int init(Resource *r)
 {
-	char keyword[80],line[80],trash[80],sparam[10];
+	char keyword[80],line[256], /* fmt[80], */ sparam[10];
 	Track *track;
 	SD_descr *sd;
 	FlagsData *me;
         char object[255], server[255];
         unsigned short port;
 	int res;
-	char content_base[255]="";
+	char content_base[256]="", *separator, track_file[256];
 
 	/*--*/
 	int32 bit_rate; /*average if VBR or -1 is not usefull*/ 
@@ -159,25 +159,38 @@ static int init(Resource *r)
 	if((sd=malloc(sizeof(SD_descr)))==NULL)
 		return ERR_ALLOC;
 
+	// content base
+	// if ( (seaparator=strrchr(r->i_stream->name, '/')) )
+	// using GLib it becomes:
+	if ( (separator=strrchr(r->i_stream->name, G_DIR_SEPARATOR)) ) {
+		if ( (unsigned)(separator-r->i_stream->name+1) >= sizeof(content_base)) {
+			fnc_log(FNC_LOG_ERR, "content base string too long\n");
+			return ERR_GENERIC;
+		} else {
+			strncpy(content_base, r->i_stream->name, separator-r->i_stream->name+1);
+			fnc_log(FNC_LOG_DEBUG, "content base: %s\n", content_base);
+		}
+	}
+
 	/**
 	 * parse sd file.*/
 
 	do{
 		memset(keyword,0,sizeof(keyword));
 		while (strcasecmp(keyword,SD_STREAM)!=0 && !feof(fd)) {
-		        fgets(line,80,fd);
+		        fgets(line, sizeof(line),fd);
 		        sscanf(line,"%s",keyword);
 			/*
 			*- validate multicast
 			*- validate twin
 			* */
 			if (strcasecmp(keyword,SD_TWIN)==0){ 
-		                sscanf(line,"%s%s",trash,r->info->twin);
+		                sscanf(line,"%*s%s", r->info->twin);
         			if(parse_url(r->info->twin, server, &port, object))
 					sd->flags|=SD_FL_TWIN;
 			}
 			if (strcasecmp(keyword,SD_MULTICAST)==0){ 
-		                sscanf(line,"%s%s",trash,sd->multicast);
+		                sscanf(line,"%*s%s", sd->multicast);
 				sd->flags|=SD_FL_MULTICAST;
 			        if(!is_valid_multicast_address(sd->multicast))
        				         strcpy(sd->multicast,DEFAULT_MULTICAST_ADDRESS);
@@ -202,58 +215,73 @@ static int init(Resource *r)
 		
                 memset(keyword,0,sizeof(keyword));
                 while (strcasecmp(keyword,SD_STREAM_END)!=0 && !feof(fd)) {
-                        fgets(line,80,fd);
+                        fgets(line, sizeof(line),fd);
                         sscanf(line,"%s",keyword);
                         if (strcasecmp(keyword,SD_FILENAME)==0) {
-                                sscanf(line,"%s%255s",trash,track->track_name);
+                                sscanf(line,"%*s%255s", track_file);
+				// if ( *track_file == '/')
+				if ( *track_file == G_DIR_SEPARATOR)
+					strncpy(track->name, track_file, sizeof(track->name));
+				else {
+					strncpy(track->name, content_base, sizeof(track->name));
+					strncat(track->name, track_file, sizeof(track->name)-strlen(track->name));
+				}
+#if 0 // bello ma non vale la pena!!!
+				strcpy(track->name, content_base);
+				// some tricks and track, flips and flaps, to avoid buffer overflows
+				// we prepare format string for netx sscanf
+				sprintf(fmt, "%%*s%%%us", sizeof(track->name)-strlen(track->name));
+                                // sscanf(line,"%*s%255s", track->name+strlen(track->name));
+                                sscanf(line,fmt, track->name+strlen(track->name));
+#endif // bell'e ver'
                                 me->general_flags|=ME_FILENAME;
-				if((track->i_stream=istream_open(track->track_name))==NULL) {
+				if((track->i_stream=istream_open(track->name))==NULL) {
 					free_track(track, r);
 					return ERR_ALLOC;
 				}
                         }
                         if (strcasecmp(keyword,SD_ENCODING_NAME)==0) {
-                                sscanf(line,"%s%10s",trash,track->properties->encoding_name);
+                                sscanf(line,"%*s%10s", track->properties->encoding_name);
                                 me->description_flags|=MED_ENCODING_NAME;
 			}       
                         if (strcasecmp(keyword,SD_PRIORITY)==0) {
-                                sscanf(line,"%s %d\n",trash,&(me->data.priority));
+                                sscanf(line,"%*s %d\n", &(me->data.priority));
                                 me->description_flags|=MED_PRIORITY;
                         }
                         if (strcasecmp(keyword,SD_BITRATE)==0) {
-                                sscanf(line,"%s %d\n",trash,&(/*track->parser->parser_type->properties->*/bit_rate));
+                                sscanf(line,"%*s %d\n", &(/*track->parser->parser_type->properties->*/bit_rate));
                                 me->description_flags|=MED_BITRATE;
                         }
                         if (strcasecmp(keyword,SD_PAYLOAD_TYPE)==0) {
-                                sscanf(line,"%s %d\n",trash,&(payload_type));
+                                sscanf(line,"%*s %d\n", &(payload_type));
                                 me->description_flags|=MED_PAYLOAD_TYPE;
                         }
                         if (strcasecmp(keyword,SD_CLOCK_RATE)==0) {
-                                sscanf(line,"%s %d\n",trash,&(clock_rate));
+                                sscanf(line,"%*s %d\n", &(clock_rate));
                                 me->description_flags|=MED_CLOCK_RATE;
                         }
                         if (strcasecmp(keyword,SD_AUDIO_CHANNELS)==0) {
-                                sscanf(line,"%s %hd\n",trash,&(audio_channels));
+                                sscanf(line,"%*s %hd\n", &(audio_channels));
                                 me->description_flags|=MED_AUDIO_CHANNELS;
                         }       
                         if (strcasecmp(keyword,SD_AGGREGATE)==0) {
-                                sscanf(line,"%s%50s",trash,me->data.aggregate);
+                                sscanf(line,"%*s%50s", me->data.aggregate);
                                 me->general_flags|=ME_AGGREGATE;
                         }       
                         if (strcasecmp(keyword,SD_SAMPLE_RATE)==0) {
-                                sscanf(line,"%s%f",trash,&(sample_rate));
+                                sscanf(line,"%*s%f", &(sample_rate));
                                 me->description_flags|=MED_SAMPLE_RATE;
                         }       
                         if (strcasecmp(keyword,SD_BIT_PER_SAMPLE)==0) {
-                                sscanf(line,"%s%d",trash,&(bit_per_sample));
+                                sscanf(line,"%*s%d", &(bit_per_sample));
                                 me->description_flags|=MED_BIT_PER_SAMPLE;
                         }                                       
                         if (strcasecmp(keyword,SD_FRAME_LEN)==0) {
-                                sscanf(line,"%s%d",trash,&(me->data.frame_len));
+                                sscanf(line,"%*s%d", &(me->data.frame_len));
                                 me->description_flags|=MED_FRAME_LEN;
                         }                                                       
                         if (strcasecmp(keyword,SD_CODING_TYPE)==0) {
-                                sscanf(line,"%s%10s",trash,sparam);
+                                sscanf(line,"%*s%10s", sparam);
                                 me->description_flags|=MED_CODING_TYPE;
                                 if (strcasecmp(sparam,"FRAME")==0)
                                         coding_type=mc_frame;
@@ -261,20 +289,20 @@ static int init(Resource *r)
                                         coding_type=mc_sample;
                         }
                         if (strcasecmp(keyword,SD_PKT_LEN)==0) {
-                                sscanf(line,"%s%f",trash,&(me->data.pkt_len));
+                                sscanf(line,"%*s%f", &(me->data.pkt_len));
                                 me->description_flags|=MED_PKT_LEN;
                         }
                         if (strcasecmp(keyword,SD_FRAME_RATE)==0) {
-                                sscanf(line,"%s%d",trash,&(frame_rate));
+                                sscanf(line,"%*s%d", &(frame_rate));
                                 me->description_flags|=MED_FRAME_RATE;
                         }
                         if (strcasecmp(keyword,SD_BYTE_PER_PCKT)==0) {
-                                sscanf(line,"%s%d",trash,&(me->data.byte_per_pckt));
+                                sscanf(line,"%*s%d", &(me->data.byte_per_pckt));
                                 me->description_flags|=MED_BYTE_PER_PCKT;
                         }              
 			                   
 			if (strcasecmp(keyword,SD_MEDIA_SOURCE)==0) {
-                                sscanf(line,"%s%10s",trash,sparam);
+                                sscanf(line,"%*s%10s", sparam);
                                 me->description_flags|=MED_MSOURCE;
                                 if (strcasecmp(sparam,"STORED")==0) 
                                         track->msource=stored;
@@ -283,11 +311,11 @@ static int init(Resource *r)
                         }
 			/*****START CC****/
 			if (strcasecmp(keyword,SD_LICENSE)==0) {
-				sscanf(line,"%s%s",trash,(track->track_info->commons_dead));
+				sscanf(line,"%*s%s", (track->track_info->commons_dead));
 				me->description_flags|=MED_LICENSE;
 		        }
 			if (strcasecmp(keyword,SD_RDF)==0) {
-				sscanf(line,"%s%s",trash,(track->track_info->rdf_page));
+				sscanf(line,"%*s%s", (track->track_info->rdf_page));
 				me->description_flags|=MED_RDF_PAGE;
 		        }                     
 			if (strcasecmp(keyword,SD_TITLE)==0) {

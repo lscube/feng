@@ -139,7 +139,7 @@ Selector *r_open_tracks(Resource *r, char *track_name, Capabilities *capabilitie
 	/*Capabilities aren't used yet. TODO*/
 
 	for (track=g_list_first(r->tracks); track; track=g_list_next(track))
-		if( !strcmp(((Track *)track->data)->track_name, track_name) )
+		if( !strcmp(((Track *)track->data)->name, track_name) )
 			sel_tracks=g_list_prepend(sel_tracks, track);
 
 	if (!sel_tracks)
