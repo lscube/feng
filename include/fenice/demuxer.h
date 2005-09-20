@@ -88,7 +88,8 @@ typedef struct __TRACK {
 	MediaProperties *properties; /* track properties */
 	/* private data is managed by specific media parser: from allocation to deallocation
 	 * track MUST NOT do anything on this pointer! */ 
-	void *private_data; /* private data of media parser */
+	void *private_data;
+	void *parser_private; /* private data of media parser */
 } Track;
 
 typedef struct __SELECTOR {
@@ -162,7 +163,7 @@ typedef struct __DEMUXER {
 Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
 msg_error get_resource_info(resource_name, ResourceInfo *);
-Selector * r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
+Selector *r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
 inline msg_error r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
 

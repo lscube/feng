@@ -31,6 +31,8 @@
 #if !defined(__MEDIAPARSERH)
 #define __MEDIAPARSERH
 
+#include <glib.h>
+
 #include <fenice/types.h>
 #include <fenice/bufferpool.h>
 #include <fenice/InputStream.h>
@@ -79,7 +81,8 @@ typedef struct __MEDIAPARSER {
 
 /*MediaParser Interface*/
 void free_parser(MediaParser *);
-MediaParser * add_media_parser(void); 
+MediaParser *add_media_parser(void); 
+MediaParser *mparser_find(const char *);
 void mparser_unreg(MediaParser *, void *);
 // int set_media_entity(MediaParserType *, char *encoding_name);
 #endif

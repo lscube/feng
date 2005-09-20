@@ -4,12 +4,14 @@ feniceincludedir = $(top_srcdir)/include
 noinst_LTLIBRARIES = libmediath.la
 
 libmediath_la_SOURCES =	cache.c \
+			demuxer.c \
+			demuxer_sd.c \
 			InputStream.c \
 			MediaParser.c \
-			mpeg_utils.c \
+			mediathread.c \
 			mpeg12.c \
-			demuxer.c \
-			demuxer_sd.c 
+			mpegaudio.c \
+			mpeg_utils.c
 			
 			
 libmediath_la_LDFLAGS = -static

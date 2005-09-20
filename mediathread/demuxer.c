@@ -67,7 +67,6 @@ Resource *r_open(resource_name n)
 	if( !(i_stream=istream_open(n)) )
 		return NULL;
 
-	// shawill: MUST go away!!!
 	if ( (dmx_idx=find_demuxer(i_stream))<0 ) {
 		fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer for resource %s\n", n);
 		return NULL;
@@ -250,6 +249,7 @@ void free_track(Track *t, Resource *r)
 
 	r->tracks = g_list_remove(r->tracks, t);
 	free(t);
+	r->num_tracks--;
 }
 
 // static functions

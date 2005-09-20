@@ -32,15 +32,32 @@
 
 #include <fenice/MediaParser.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 // global media parsers modules:
 extern MediaParser fnc_mediaparser_mpv;
+extern MediaParser fnc_mediaparser_mpa;
 
 // static array containing all the available media parsers:
 static MediaParser *media_parsers[] = {
 	&fnc_mediaparser_mpv,
+	&fnc_mediaparser_mpa,
 	NULL
 };
+
+MediaParser *mparser_find(const char *encoding_name)
+{
+	int i;
+
+	for(i=0; media_parsers[i]; i++) {
+		if ( !g_ascii_strcasecmp(encoding_name, media_parsers[i]->info->encoding_name) ) {
+			fnc_log(FNC_LOG_DEBUG, "[MT] Found Media Parser for %s\n", encoding_name);
+			return media_parsers[i];
+		}
+	}
+
+	return NULL;
+}
 
 void mparser_unreg(MediaParser *p, void *private_data)
 {
