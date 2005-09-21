@@ -37,7 +37,6 @@
 #include <fenice/types.h>
 #include <fenice/fnc_log.h>
 
-
 static MediaParserInfo info = {
 	"MPA",
 	"A"
@@ -45,23 +44,34 @@ static MediaParserInfo info = {
 
 FNC_LIB_MEDIAPARSER(mpa);
 
-typedef struct _MPA_DATA{
+#define ID3v2_HDRLEN 10 // basic header lenght for id3 tag
+
+// inspired by id3lib
+#define MASK(bits) ((1 << (bits)) - 1)
+
+#define MPA_IS_SYNC(buff_data) ((buff_data[0]==0xff) && ((buff_data[1] & 0xe0)==0xe0))
+
+typedef struct {
 	enum {MPA_MPEG_2_5=0, MPA_MPEG_RES, MPA_MPEG_2, MPA_MPEG_1} id;
 	enum {MPA_LAYER_RES=0, MPA_LAYER_III, MPA_LAYER_II, MPA_LAYER_I} layer;
-	uint32 frame_len;
-	double pkt_len;
-	uint32 is_probed;
-}mpa_data;
+	uint32 frame_size;
+	// double pkt_len;
+	uint32 pkt_len;
+	uint32 probed;
+} mpa_data;
 
 
-static int probe(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio);
+static uint32 dec_synchsafe_int(uint8 [4]);
+static int mpa_read_id3v2(InputStream *, mpa_data *); // for now only skipped.
+static int mpa_sync(uint32 *, InputStream *);
+static int mpa_decode_header(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio);
 
 static int init(MediaProperties *properties, void **private_data) 
 {
 	mpa_data *mpeg_audio;
 	(*private_data) = malloc (sizeof(mpa_data));
 	mpeg_audio = (mpa_data *)(*private_data);
-	mpeg_audio->is_probed=0;
+	mpeg_audio->probed=0;
 	return 0;
 }
 
@@ -75,8 +85,8 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStre
 	
 	mpeg_audio = (mpa_data *)private_data;
 
-	if(!mpeg_audio->is_probed) {
-		count=probe(dst, dst_nbytes, istream, properties, mpeg_audio);
+	if(!mpeg_audio->probed) {
+		count=mpa_decode_header(dst, dst_nbytes, istream, properties, mpeg_audio);
 		if(count<0)
 			return -1; /*EOF or syncword not found or header error*/
 		(*timestamp)-=mpeg_audio->pkt_len;/*i set it negative so at the first time it is zero (see at the end of this function)*/
@@ -103,7 +113,7 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStre
 		count += istream_read(2, &dst[2], istream);	
 	}
 		
-	N_bytes=(int)(mpeg_audio->frame_len * (float)properties->bit_rate / (float)properties->sample_rate / 8); /*2 bytes which contain 12 bit for syncword*/
+	N_bytes=(int)(mpeg_audio->frame_size * (float)properties->bit_rate / (float)properties->sample_rate / 8); /*2 bytes which contain 12 bit for syncword*/
 	if((dst[2] & 0x02)) N_bytes++;
 	dst+=count;
 	// dst_remained-=count;
@@ -149,12 +159,52 @@ static int uninit(void *private_data)
 	return 0;
 }
 
-static int probe(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio)
+static uint32 dec_synchsafe_int(uint8 encoded[4])
+{
+	uint32 decoded=/*(uint32)*/encoded[sizeof(encoded)-1];
+	const unsigned char bitsused = 7;
+	int i;
+
+	for (i=sizeof(encoded)-2; i>=0; i--) {
+		decoded <<= bitsused;
+		decoded = encoded[i] & MASK(bitsused);
+	}
+
+	return decoded;
+}
+
+// for the moment we just skip the ID3v2 tag.
+static int mpa_read_id3v2(InputStream *i_stream, mpa_data *mpeg_audio)
+{
+	return 0;
+}
+
+static int mpa_sync(uint32 *header, InputStream *i_stream)
+{
+	uint8 *sync_w = (uint8 *)header;
+	int ret;
+
+	if ( (ret=istream_read(2, sync_w, i_stream)) != 2 )
+		return ret;
+	while ( !MPA_IS_SYNC(sync_w) ) {
+		sync_w[0]=sync_w[1];
+		if ( (ret=istream_read(1, &sync_w[1], i_stream)) != 1 )
+			return ret;
+	}
+
+	if ( (ret=istream_read(2, &sync_w[2], i_stream)) != 2 )
+		return ret;
+
+	return 0;
+}
+
+static int mpa_decode_header(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio)
 {
 	int ret, count,off;
 	/*long*/ int tag_dim;
         int n,RowIndex, ColIndex;
 	uint8 buff_data[4];
+	int padding;
         int BitrateMatrix[16][5] = {
                 {0,     0,     0,     0,     0     },
                 {32000, 32000, 32000, 32000, 8000  },
@@ -174,6 +224,13 @@ static int probe(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaPrope
                 {0,     0,     0,     0,     0     }
         };
 
+	float SRateMatrix[4][3] = {
+		{44100,	22050,	11025	},
+		{48000,	24000,	12000	},
+		{32000,	16000,	8000	},
+		{-1,	-1,	-1	}
+	};
+
 	if(dst_nbytes < 4)
 		return -1;
 
@@ -182,7 +239,7 @@ static int probe(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaPrope
 
 	/*look if ID3 tag is present*/
 	if (!memcmp(buff_data, "ID3", 3)) { // ID3 tag present
-		if ( (count = istream_read(2, buff_data, istream)) != 2) return -1; /*skip second byte of version in ID3 Header*/
+		if ( (count = istream_read(2, buff_data, istream)) != 2) return -1; /*skip second byte of version in ID3 Header and flags*/
 		if ( (count = istream_read(4, buff_data, istream)) != 4) return -1; /*4 bytes for ID3 size*/
 		off=0;
 		tag_dim=get_field(buff_data,32,&off); /*chicco: if you want use: tag_dim=strtol(buff_data,(char **)NULL, 10);*/
@@ -192,82 +249,65 @@ static int probe(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaPrope
 		if ( (count = istream_read(4, buff_data, istream)) != 4) return -1;
 	}
 
-	if (! ((buff_data[0]==0xff) && ((buff_data[1] & 0xe0)==0xe0))) return -1; /*syncword not found*/
+	if ( !((buff_data[0]==0xff) && ((buff_data[1] & 0xe0)==0xe0)) ) return -1; /*syncword not found*/
 
 	mpeg_audio->id = (buff_data[1] & 0x18) >> 3;
 	mpeg_audio->layer = (buff_data[1] & 0x06) >> 1;
 
-#if 1
-        switch (buff_data[1] & 0x1e) {                /* Mpeg version and Level */
-		case  2:			/* Mpeg-2.5 L3 */
-		case  4:			/* Mpeg-2.5 L2 */
-                case 18:			/* Mpeg-2   L3 */
-                case 20: ColIndex = 4; break;	/* Mpeg-2   L2 */
-                case  8:			/* Mpeg-2.5 L1 */
-                case 22: ColIndex = 3; break;	/* Mpeg-2   L1 */
-                case 26: ColIndex = 2; break;	/* Mpeg-1   L3 */
-                case 28: ColIndex = 1; break;	/* Mpeg-1   L2 */
-                case 30: ColIndex = 0; break;	/* Mpeg-1   L1 */
-                default: {
-				 return -1;
-			 }
-        }
-#endif
+	switch (mpeg_audio->id<< 2 | mpeg_audio->layer) {
+		case MPA_MPEG_1<<2|MPA_LAYER_I:		// MPEG 1 layer I
+			ColIndex = 0;
+			break;
+		case MPA_MPEG_1<<2|MPA_LAYER_II:	// MPEG 1 layer II
+			ColIndex = 1;
+			break;
+		case MPA_MPEG_1<<2|MPA_LAYER_III:	// MPEG 1 layer III
+			ColIndex = 2;
+			break;
+		case MPA_MPEG_2<<2|MPA_LAYER_I:		// MPEG 2 layer I
+		case MPA_MPEG_2_5<<2|MPA_LAYER_I:	// MPEG 2.5 layer I
+			ColIndex = 3;
+			break;
+		case MPA_MPEG_2<<2|MPA_LAYER_II:	// MPEG 2 layer II
+		case MPA_MPEG_2<<2|MPA_LAYER_III:	// MPEG 2 layer III
+		case MPA_MPEG_2_5<<2|MPA_LAYER_II:	// MPEG 2.5 layer II
+		case MPA_MPEG_2_5<<2|MPA_LAYER_III:	// MPEG 2.5 layer III
+			ColIndex = 4;
+			break;
+		default: return -1; break;
+	}
+
+        RowIndex = (buff_data[2] & 0xf0) >> 4;
+        properties->bit_rate = BitrateMatrix[RowIndex][ColIndex];
+
 	switch (mpeg_audio->id) {
-		case MPA_MPEG_1:
-			fnc_log(FNC_LOG_DEBUG, "[MT] mpeg 1 (%d) ", mpeg_audio->id);
-			switch (mpeg_audio->layer) {
-				case MPA_LAYER_III:
-					fnc_log(FNC_LOG_DEBUG, "Layer III (%d)\n", mpeg_audio->layer);
-					break;
-				case MPA_LAYER_II:
-					fnc_log(FNC_LOG_DEBUG, "Layer II (%d)\n", mpeg_audio->layer);
-					break;
-				case MPA_LAYER_I:
-					fnc_log(FNC_LOG_DEBUG, "Layer I (%d)\n", mpeg_audio->layer);
-					break;
-			}
-			break;
-		case MPA_MPEG_2:
-			fnc_log(FNC_LOG_DEBUG, "[MT] mpeg 2 (%d)\n", mpeg_audio->id);
-		case MPA_MPEG_2_5:
-			fnc_log(FNC_LOG_DEBUG, "[MT] mpeg 2.5 (%d)\n", mpeg_audio->id);
-			break;
+		case MPA_MPEG_1: ColIndex = 0; break;
+		case MPA_MPEG_2: ColIndex = 1; break;
+		case MPA_MPEG_2_5: ColIndex = 2; break;
 		default:
-			fnc_log(FNC_LOG_DEBUG, "[MT] mpeg ver error (%d)\n", mpeg_audio->id);
 			return -1;
 			break;
 	}
 
-        RowIndex = (buff_data[2] & 0xf0) << 4;
-        properties->bit_rate = BitrateMatrix[RowIndex][ColIndex];
+	RowIndex = (buff_data[2] & 0x0c) >> 2;
+        properties->sample_rate = SRateMatrix[RowIndex][ColIndex];
 
-        if (buff_data[1] & 0x08) {     /* Mpeg-1 */
-                switch (buff_data[2] & 0x0c) {
-                        case 0x00: properties->sample_rate=44100; break;
-                        case 0x04: properties->sample_rate=48000; break;
-                        case 0x08: properties->sample_rate=32000; break;
-                	default: {
-				 return -1;
-			 }
-                }
-        } else {                /* Mpeg-2 */
-                switch (buff_data[2] & 0x0c) {
-                        case 0x00: properties->sample_rate=22050; break;
-                        case 0x04: properties->sample_rate=24000; break;
-                        case 0x08: properties->sample_rate=16000; break;
-                	default: {
-				 return -1;
-			 }
-                }
-        }
+	// padding
+	padding = buff_data[2] & 0x02 >> 2;
+	fnc_log(FNC_LOG_DEBUG, "[MT] padding: %d\n", padding);
 
-        if ((buff_data[1] & 0x06) == 6)
-		mpeg_audio->frame_len = 384;
-        else
-		mpeg_audio->frame_len = 1152;
+        // if ((buff_data[1] & 0x06) == 6)
+        if (mpeg_audio->layer == 1) { // layer 1
+		mpeg_audio->frame_size = 384;
+		mpeg_audio->pkt_len=((12 * properties->bit_rate)/properties->sample_rate + padding)* 4;
+	} else { // layer 2 or 3
+		mpeg_audio->frame_size = 1152;
+		mpeg_audio->pkt_len=(144 * properties->bit_rate)/properties->sample_rate + padding;
+	}
 
-        mpeg_audio->pkt_len=(double)mpeg_audio->frame_len/(double)properties->sample_rate*1000;
+	fnc_log(FNC_LOG_DEBUG, "[MT] pkt_len: %d\n", mpeg_audio->pkt_len);
+
+        // mpeg_audio->pkt_len=(double)mpeg_audio->frame_size/(double)properties->sample_rate*1000;
         //p->description.delta_mtime=p->description.pkt_len;
 	dst[0]=buff_data[0];
 	dst[1]=buff_data[1];

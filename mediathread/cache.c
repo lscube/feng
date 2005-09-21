@@ -115,9 +115,11 @@ int read_c(uint32 nbytes, uint8 *buf, Cache *c, int fd, stream_type type)
 	}
 
 	bytes_read=read_internal_c(nbytes, buf, c, fd);
+	/*
 	if(bytes_read==0)
 		return ERR_EOF;
-	return bytes_read;
+	*/
+	return bytes_read ? bytes_read : ERR_EOF;
 }
 
 void flush_cache(Cache *c)
