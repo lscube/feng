@@ -84,6 +84,9 @@ Cache *create_cache(stream_type type)
 }
 
 
+/*! internal read function
+ * if buf pointer is NULL, then the read act like a forward seek
+ * */
 static uint32 read_internal_c(uint32 nbytes, uint8 *buf, Cache *c, int fd)
 {
 	uint32 bytes;
@@ -97,7 +100,8 @@ static uint32 read_internal_c(uint32 nbytes, uint8 *buf, Cache *c, int fd)
 			return 0;
 	}
 	bytes=min(nbytes,c->bytes_left);
-	memcpy(buf, &c->cache[c->cache_size - c->bytes_left], bytes);
+	if (buf)
+		memcpy(buf, &c->cache[c->cache_size - c->bytes_left], bytes);
 	c->bytes_left-=bytes;
 	
 	return bytes + read_internal_c(nbytes-bytes, buf+bytes, c, fd);

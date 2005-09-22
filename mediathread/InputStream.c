@@ -83,6 +83,9 @@ void istream_close(InputStream *is)
 	}
 }
 
+/*! InputStream read function
+ * If buf pointer is NULL then the function act like a forward seek
+ * */
 inline int istream_read(uint32 nbytes, uint8 *buf, InputStream *is)
 {
 	return is ? read_c(nbytes, buf, is->cache, is->fd, is->type): ERR_ALLOC;

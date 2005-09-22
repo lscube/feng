@@ -60,11 +60,21 @@ typedef struct {
 	uint32 probed;
 } mpa_data;
 
+typedef struct {
+	uint8 id[3];
+	uint8 major;
+	uint8 rev;
+	uint8 flags;
+	// uint8 size[sizeof(uint32)];
+	uint8 size[4];
+	// not using extended header
+} id3v2_hdr;
 
 static uint32 dec_synchsafe_int(uint8 [4]);
-static int mpa_read_id3v2(InputStream *, mpa_data *); // for now only skipped.
-static int mpa_sync(uint32 *, InputStream *);
-static int mpa_decode_header(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio);
+static int mpa_read_id3v2(id3v2_hdr *, InputStream *, mpa_data *); // for now only skipped.
+static int mpa_sync(uint32 *, InputStream *, mpa_data *);
+// static int mpa_decode_header(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio);
+static int mpa_decode_header(uint32 header, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio);
 
 static int init(MediaProperties *properties, void **private_data) 
 {
@@ -78,13 +88,19 @@ static int init(MediaProperties *properties, void **private_data)
 static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStream *istream, MediaProperties *properties, void *private_data) 
 {
 	mpa_data *mpeg_audio;
-	int count=0, ret;
+	int count=4, ret;
 	uint32 N_bytes;
 	uint8 buf_data[2];
 	uint32 sync_found=0;
+	uint32 header;
 	
 	mpeg_audio = (mpa_data *)private_data;
 
+	if ( (ret=mpa_sync(&header, istream, mpeg_audio)) )
+		return ret;
+	if ( (ret=mpa_decode_header(header, istream, properties, mpeg_audio)) )
+		return ret;
+#if 0
 	if(!mpeg_audio->probed) {
 		count=mpa_decode_header(dst, dst_nbytes, istream, properties, mpeg_audio);
 		if(count<0)
@@ -112,13 +128,17 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStre
 		dst[1]=buf_data[1];
 		count += istream_read(2, &dst[2], istream);	
 	}
+#endif
 		
+#if 0
 	N_bytes=(int)(mpeg_audio->frame_size * (float)properties->bit_rate / (float)properties->sample_rate / 8); /*2 bytes which contain 12 bit for syncword*/
 	if((dst[2] & 0x02)) N_bytes++;
 	dst+=count;
+#endif
+	memcpy(dst, &header, sizeof(header));
 	// dst_remained-=count;
 	dst_nbytes-=count;
-	count += ret = istream_read(N_bytes - 4, dst, istream); /*4 bytes are read yet*/
+	count += ret = istream_read(N_bytes - 4, dst + 4, istream); /*4 bytes are read yet*/
 	if(ret<0)
 		return -1;
 	
@@ -173,37 +193,67 @@ static uint32 dec_synchsafe_int(uint8 encoded[4])
 	return decoded;
 }
 
+// internal functions
+
 // for the moment we just skip the ID3v2 tag.
-static int mpa_read_id3v2(InputStream *i_stream, mpa_data *mpeg_audio)
+static int mpa_read_id3v2(id3v2_hdr *id3hdr, InputStream *i_stream, mpa_data *mpeg_audio)
 {
+	uint32 tagsize;
+	int ret;
+
+	tagsize=dec_synchsafe_int(id3hdr->size);
+
+	if ( (ret=istream_read(tagsize, NULL, i_stream)) != (int)tagsize )
+		return (ret<0) ? ERR_PARSE : ERR_EOF;
+
 	return 0;
 }
 
-static int mpa_sync(uint32 *header, InputStream *i_stream)
+static int mpa_sync(uint32 *header, InputStream *i_stream, mpa_data *mpeg_audio)
 {
 	uint8 *sync_w = (uint8 *)header;
 	int ret;
 
-	if ( (ret=istream_read(2, sync_w, i_stream)) != 2 )
-		return ret;
+	// if ( (ret=istream_read(2, sync_w, i_stream)) != 2 )
+	if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
+		return (ret<0) ? ERR_PARSE : ERR_EOF;
+	if (!mpeg_audio->probed) {
+		/*look if ID3 tag is present*/
+		if (!memcmp(sync_w, "ID3", 3)) { // ID3 tag present
+			id3v2_hdr id3hdr;
+
+			memcpy(sync_w, sync_w, 4);
+			if ( (ret = istream_read(ID3v2_HDRLEN - 4, ((uint8 *)&id3hdr)+4, i_stream)) != ID3v2_HDRLEN - 4 )
+				return (ret<0) ? ERR_PARSE : ERR_EOF;
+			if ( (ret=mpa_read_id3v2(&id3hdr, i_stream, mpeg_audio)) )
+				return ret;
+		}
+	}
 	while ( !MPA_IS_SYNC(sync_w) ) {
-		sync_w[0]=sync_w[1];
-		if ( (ret=istream_read(1, &sync_w[1], i_stream)) != 1 )
-			return ret;
+		fnc_log(FNC_LOG_DEBUG, "[MT] synch: %X\n", *header);
+		// sync_w[0]=sync_w[1];
+		*header <<= 8;
+		// if ( (ret=istream_read(1, &sync_w[1], i_stream)) != 1 )
+		if ( (ret=istream_read(1, &sync_w[3], i_stream)) != 1 )
+			return (ret<0) ? ERR_PARSE : ERR_EOF;
 	}
 
+	/*
 	if ( (ret=istream_read(2, &sync_w[2], i_stream)) != 2 )
 		return ret;
+	*/
 
 	return 0;
 }
 
-static int mpa_decode_header(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio)
+// static int mpa_decode_header(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio)
+static int mpa_decode_header(uint32 header, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio)
 {
 	int ret, count,off;
 	/*long*/ int tag_dim;
         int n,RowIndex, ColIndex;
-	uint8 buff_data[4];
+	// uint8 buff_data[4];
+	uint8 *buff_data = (uint8 * )&header;
 	int padding;
         int BitrateMatrix[16][5] = {
                 {0,     0,     0,     0,     0     },
@@ -231,23 +281,13 @@ static int mpa_decode_header(uint8 *dst, uint32 dst_nbytes, InputStream *istream
 		{-1,	-1,	-1	}
 	};
 
+	/*
 	if(dst_nbytes < 4)
 		return -1;
+		*/
 
 	/*read 4 bytes to calculate mpa parameters or to skip ID3*/
-	if ( (count = istream_read(4, buff_data, istream)) != 4) return -1;
-
-	/*look if ID3 tag is present*/
-	if (!memcmp(buff_data, "ID3", 3)) { // ID3 tag present
-		if ( (count = istream_read(2, buff_data, istream)) != 2) return -1; /*skip second byte of version in ID3 Header and flags*/
-		if ( (count = istream_read(4, buff_data, istream)) != 4) return -1; /*4 bytes for ID3 size*/
-		off=0;
-		tag_dim=get_field(buff_data,32,&off); /*chicco: if you want use: tag_dim=strtol(buff_data,(char **)NULL, 10);*/
-		if ( (count = istream_read(tag_dim, buff_data, istream)) != tag_dim) return -1; /*skip ID3*/
-		
-		/*read 4 bytes to calculate mpa parameters*/
-		if ( (count = istream_read(4, buff_data, istream)) != 4) return -1;
-	}
+	// if ( (count = istream_read(4, buff_data, istream)) != 4) return -1;
 
 	if ( !((buff_data[0]==0xff) && ((buff_data[1] & 0xe0)==0xe0)) ) return -1; /*syncword not found*/
 
@@ -309,10 +349,10 @@ static int mpa_decode_header(uint8 *dst, uint32 dst_nbytes, InputStream *istream
 
         // mpeg_audio->pkt_len=(double)mpeg_audio->frame_size/(double)properties->sample_rate*1000;
         //p->description.delta_mtime=p->description.pkt_len;
-	dst[0]=buff_data[0];
-	dst[1]=buff_data[1];
-	dst[2]=buff_data[2];
-	dst[3]=buff_data[3];
+	// dst[0]=buff_data[0];
+	// dst[1]=buff_data[1];
+	// dst[2]=buff_data[2];
+	// dst[3]=buff_data[3];
 	
 	return count; /*return 4*/
 }
