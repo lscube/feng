@@ -36,6 +36,7 @@
 #include <fenice/utils.h>
 #include <fenice/types.h>
 #include <fenice/fnc_log.h>
+#include <fenice/debug.h>
 
 static MediaParserInfo info = {
 	"MPA",
@@ -51,6 +52,32 @@ FNC_LIB_MEDIAPARSER(mpa);
 
 #define MPA_IS_SYNC(buff_data) ((buff_data[0]==0xff) && ((buff_data[1] & 0xe0)==0xe0))
 
+#define BITRATEMATRIX { \
+	{0,     0,     0,     0,     0     }, \
+	{32000, 32000, 32000, 32000, 8000  }, \
+	{64000, 48000, 40000, 48000, 16000 }, \
+	{96000, 56000, 48000, 56000, 24000 }, \
+	{128000,64000, 56000, 64000, 32000 }, \
+	{160000,80000, 64000, 80000, 40000 }, \
+	{192000,96000, 80000, 96000, 48000 }, \
+	{224000,112000,96000, 112000,56000 }, \
+	{256000,128000,112000,128000,64000 }, \
+	{288000,160000,128000,144000,80000 }, \
+	{320000,192000,160000,160000,96000 }, \
+	{352000,224000,192000,176000,112000}, \
+	{384000,256000,224000,192000,128000}, \
+	{416000,320000,256000,224000,144000}, \
+	{448000,384000,320000,256000,160000}, \
+	{0,     0,     0,     0,     0     } \
+}
+
+#define SRATEMATRIX { \
+	{44100,	22050,	11025	}, \
+	{48000,	24000,	12000	}, \
+	{32000,	16000,	8000	}, \
+	{-1,	-1,	-1	} \
+}
+
 typedef struct {
 	enum {MPA_MPEG_2_5=0, MPA_MPEG_RES, MPA_MPEG_2, MPA_MPEG_1} id;
 	enum {MPA_LAYER_RES=0, MPA_LAYER_III, MPA_LAYER_II, MPA_LAYER_I} layer;
@@ -65,7 +92,6 @@ typedef struct {
 	uint8 major;
 	uint8 rev;
 	uint8 flags;
-	// uint8 size[sizeof(uint32)];
 	uint8 size[4];
 	// not using extended header
 } id3v2_hdr;
@@ -73,8 +99,11 @@ typedef struct {
 static uint32 dec_synchsafe_int(uint8 [4]);
 static int mpa_read_id3v2(id3v2_hdr *, InputStream *, mpa_data *); // for now only skipped.
 static int mpa_sync(uint32 *, InputStream *, mpa_data *);
-// static int mpa_decode_header(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio);
-static int mpa_decode_header(uint32 header, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio);
+static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_data *mpeg_audio);
+#ifdef DEBUG
+// debug function to diplay MPA header information
+static void mpa_info(mpa_data *, MediaProperties *);
+#endif // DEBUG
 
 static int init(MediaProperties *properties, void **private_data) 
 {
@@ -89,16 +118,16 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStre
 {
 	mpa_data *mpeg_audio;
 	int count=4, ret;
-	uint32 N_bytes;
-	uint8 buf_data[2];
-	uint32 sync_found=0;
+	// uint32 N_bytes;
+	// uint8 buf_data[2];
+	// uint32 sync_found=0;
 	uint32 header;
 	
 	mpeg_audio = (mpa_data *)private_data;
 
 	if ( (ret=mpa_sync(&header, istream, mpeg_audio)) )
 		return ret;
-	if ( (ret=mpa_decode_header(header, istream, properties, mpeg_audio)) )
+	if ( (ret=mpa_decode_header(header, properties, mpeg_audio)) )
 		return ret;
 #if 0
 	if(!mpeg_audio->probed) {
@@ -138,7 +167,8 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStre
 	memcpy(dst, &header, sizeof(header));
 	// dst_remained-=count;
 	dst_nbytes-=count;
-	count += ret = istream_read(N_bytes - 4, dst + 4, istream); /*4 bytes are read yet*/
+	// count += ret = istream_read(N_bytes - 4, dst + 4, istream); /*4 bytes are read yet*/
+	count += ret = istream_read(mpeg_audio->pkt_len - 4, dst + 4, istream); /*4 bytes are read yet*/
 	if(ret<0)
 		return -1;
 	
@@ -152,10 +182,6 @@ static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbyte
 	uint32 count;
 	uint8 tmp[3];
 
-	/*4 bytes for rtp encapsulation*/	
-	// uint32 dst_remained=dst_nbytes - 4;
-
-	// count=min(dst_remained,src_nbytes);
 	count=min(dst_nbytes, src_nbytes);
 	memcpy(dst+4,src,count);
 	dst[0]=0;
@@ -179,21 +205,21 @@ static int uninit(void *private_data)
 	return 0;
 }
 
+// internal functions
+
 static uint32 dec_synchsafe_int(uint8 encoded[4])
 {
-	uint32 decoded=/*(uint32)*/encoded[sizeof(encoded)-1];
 	const unsigned char bitsused = 7;
-	int i;
+	uint32 decoded =/*(uint32)*/encoded[0] & MASK(bitsused);
+	unsigned i;
 
-	for (i=sizeof(encoded)-2; i>=0; i--) {
+	for (i=1; i<sizeof(encoded); i++) {
 		decoded <<= bitsused;
-		decoded = encoded[i] & MASK(bitsused);
+		decoded |= encoded[i] & MASK(bitsused);
 	}
 
 	return decoded;
 }
-
-// internal functions
 
 // for the moment we just skip the ID3v2 tag.
 static int mpa_read_id3v2(id3v2_hdr *id3hdr, InputStream *i_stream, mpa_data *mpeg_audio)
@@ -214,82 +240,51 @@ static int mpa_sync(uint32 *header, InputStream *i_stream, mpa_data *mpeg_audio)
 	uint8 *sync_w = (uint8 *)header;
 	int ret;
 
-	// if ( (ret=istream_read(2, sync_w, i_stream)) != 2 )
 	if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
 		return (ret<0) ? ERR_PARSE : ERR_EOF;
+
 	if (!mpeg_audio->probed) {
 		/*look if ID3 tag is present*/
 		if (!memcmp(sync_w, "ID3", 3)) { // ID3 tag present
 			id3v2_hdr id3hdr;
 
-			memcpy(sync_w, sync_w, 4);
-			if ( (ret = istream_read(ID3v2_HDRLEN - 4, ((uint8 *)&id3hdr)+4, i_stream)) != ID3v2_HDRLEN - 4 )
+			fnc_log(FNC_LOG_DEBUG, "ID3v2 tag present in %s\n", i_stream->name);
+
+			memcpy(&id3hdr, sync_w, 4);
+			if ( (ret = istream_read(ID3v2_HDRLEN - 4, &id3hdr.rev, i_stream)) != ID3v2_HDRLEN - 4 )
 				return (ret<0) ? ERR_PARSE : ERR_EOF;
 			if ( (ret=mpa_read_id3v2(&id3hdr, i_stream, mpeg_audio)) )
 				return ret;
+			if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
+				return (ret<0) ? ERR_PARSE : ERR_EOF;
 		}
 	}
 	while ( !MPA_IS_SYNC(sync_w) ) {
-		fnc_log(FNC_LOG_DEBUG, "[MT] synch: %X\n", *header);
+		*header >>= 8;
 		// sync_w[0]=sync_w[1];
-		*header <<= 8;
-		// if ( (ret=istream_read(1, &sync_w[1], i_stream)) != 1 )
+		// sync_w[1]=sync_w[2];
+		// sync_w[2]=sync_w[3];
+
 		if ( (ret=istream_read(1, &sync_w[3], i_stream)) != 1 )
 			return (ret<0) ? ERR_PARSE : ERR_EOF;
+		fnc_log(FNC_LOG_DEBUG, "[MT] sync: %X%X%X%X\n", sync_w[0], sync_w[1], sync_w[2], sync_w[3]);
 	}
-
-	/*
-	if ( (ret=istream_read(2, &sync_w[2], i_stream)) != 2 )
-		return ret;
-	*/
 
 	return 0;
 }
 
-// static int mpa_decode_header(uint8 *dst, uint32 dst_nbytes, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio)
-static int mpa_decode_header(uint32 header, InputStream *istream, MediaProperties *properties, mpa_data *mpeg_audio)
+static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_data *mpeg_audio)
 {
-	int ret, count,off;
-	/*long*/ int tag_dim;
-        int n,RowIndex, ColIndex;
+	// int ret, count,off;
+	// /*long*/ int tag_dim;
+        int /*n,*/ RowIndex,ColIndex;
 	// uint8 buff_data[4];
 	uint8 *buff_data = (uint8 * )&header;
 	int padding;
-        int BitrateMatrix[16][5] = {
-                {0,     0,     0,     0,     0     },
-                {32000, 32000, 32000, 32000, 8000  },
-                {64000, 48000, 40000, 48000, 16000 },
-                {96000, 56000, 48000, 56000, 24000 },
-                {128000,64000, 56000, 64000, 32000 },
-                {160000,80000, 64000, 80000, 40000 },
-                {192000,96000, 80000, 96000, 48000 },
-                {224000,112000,96000, 112000,56000 },
-                {256000,128000,112000,128000,64000 },
-                {288000,160000,128000,144000,80000 },
-                {320000,192000,160000,160000,96000 },
-                {352000,224000,192000,176000,112000},
-                {384000,256000,224000,192000,128000},
-                {416000,320000,256000,224000,144000},
-                {448000,384000,320000,256000,160000},
-                {0,     0,     0,     0,     0     }
-        };
+        int BitrateMatrix[16][5] = BITRATEMATRIX;
+	float SRateMatrix[4][3] = SRATEMATRIX;
 
-	float SRateMatrix[4][3] = {
-		{44100,	22050,	11025	},
-		{48000,	24000,	12000	},
-		{32000,	16000,	8000	},
-		{-1,	-1,	-1	}
-	};
-
-	/*
-	if(dst_nbytes < 4)
-		return -1;
-		*/
-
-	/*read 4 bytes to calculate mpa parameters or to skip ID3*/
-	// if ( (count = istream_read(4, buff_data, istream)) != 4) return -1;
-
-	if ( !((buff_data[0]==0xff) && ((buff_data[1] & 0xe0)==0xe0)) ) return -1; /*syncword not found*/
+	if ( !MPA_IS_SYNC(buff_data) ) return -1; /*syncword not found*/
 
 	mpeg_audio->id = (buff_data[1] & 0x18) >> 3;
 	mpeg_audio->layer = (buff_data[1] & 0x06) >> 1;
@@ -337,22 +332,55 @@ static int mpa_decode_header(uint32 header, InputStream *istream, MediaPropertie
 	fnc_log(FNC_LOG_DEBUG, "[MT] padding: %d\n", padding);
 
         // if ((buff_data[1] & 0x06) == 6)
-        if (mpeg_audio->layer == 1) { // layer 1
+        if (mpeg_audio->layer == MPA_LAYER_I) { // layer 1
 		mpeg_audio->frame_size = 384;
 		mpeg_audio->pkt_len=((12 * properties->bit_rate)/properties->sample_rate + padding)* 4;
 	} else { // layer 2 or 3
 		mpeg_audio->frame_size = 1152;
-		mpeg_audio->pkt_len=(144 * properties->bit_rate)/properties->sample_rate + padding;
+		mpeg_audio->pkt_len= 144 * properties->bit_rate /properties->sample_rate + padding;
 	}
-
-	fnc_log(FNC_LOG_DEBUG, "[MT] pkt_len: %d\n", mpeg_audio->pkt_len);
-
-        // mpeg_audio->pkt_len=(double)mpeg_audio->frame_size/(double)properties->sample_rate*1000;
-        //p->description.delta_mtime=p->description.pkt_len;
-	// dst[0]=buff_data[0];
-	// dst[1]=buff_data[1];
-	// dst[2]=buff_data[2];
-	// dst[3]=buff_data[3];
 	
-	return count; /*return 4*/
+#ifdef DEBUG
+	mpa_info(mpeg_audio, properties);
+#endif // DEBUG
+	
+	return 0;// count; /*return 4*/
 }
+
+#if DEBUG
+// debug function to diplay MPA header information
+static void mpa_info(mpa_data *mpeg_audio, MediaProperties *properties)
+{
+	switch (mpeg_audio->id) {
+		case MPA_MPEG_1:
+			fnc_log(FNC_LOG_DEBUG, "[MT] MPEG1\n");
+			break;
+		case MPA_MPEG_2:
+			fnc_log(FNC_LOG_DEBUG, "[MT] MPEG2\n");
+			break;
+		case MPA_MPEG_2_5:
+			fnc_log(FNC_LOG_DEBUG, "[MT] MPEG2.5\n");
+			break;
+		default:
+			fnc_log(FNC_LOG_DEBUG, "[MT] MPEG reserved (bad)\n");
+			return;
+			break;
+	}
+	switch (mpeg_audio->layer) {
+		case MPA_LAYER_I:
+			fnc_log(FNC_LOG_DEBUG, "[MT] Layer I\n");
+			break;
+		case MPA_LAYER_II:
+			fnc_log(FNC_LOG_DEBUG, "[MT] Layer II\n");
+			break;
+		case MPA_LAYER_III:
+			fnc_log(FNC_LOG_DEBUG, "[MT] Layer III\n");
+			break;
+		default:
+			fnc_log(FNC_LOG_DEBUG, "[MT] Layer reserved (bad)\n");
+			return;
+			break;
+	}
+	fnc_log(FNC_LOG_DEBUG, "[MT] bitrate: %d; sample rate: %3.0f; pkt_len: %d\n", properties->bit_rate, properties->sample_rate, mpeg_audio->pkt_len);
+}
+#endif // DEBUG

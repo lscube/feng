@@ -342,7 +342,7 @@ static int init(Resource * r)
 				return ERR_GENERIC;
 			track->parser->init(track->properties, &track->parser_private);
 
-#if 0
+#if 1
 	// shawill: just for parser trying:
 	{
 		uint8 tmp_dst[32];

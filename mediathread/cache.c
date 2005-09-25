@@ -109,20 +109,17 @@ static uint32 read_internal_c(uint32 nbytes, uint8 *buf, Cache *c, int fd)
 
 
 /*Interface to Cache*/
-int read_c(uint32 nbytes, uint8 *buf, Cache *c, int fd, stream_type type)
+int read_c(uint32 nbytes, uint8 *buf, Cache **c, int fd, stream_type type)
 {
 	int bytes_read;
 
-	if( !c && !(c=create_cache(type))) { // shawill: should we do it here?
+	if( !*c && !(*c=create_cache(type))) { // shawill: should we do it here?
 		fnc_log(FNC_LOG_FATAL, "Could not create cache for input stream\n");
 		return ERR_FATAL;
 	}
 
-	bytes_read=read_internal_c(nbytes, buf, c, fd);
-	/*
-	if(bytes_read==0)
-		return ERR_EOF;
-	*/
+	bytes_read=read_internal_c(nbytes, buf, *c, fd);
+
 	return bytes_read ? bytes_read : ERR_EOF;
 }
 

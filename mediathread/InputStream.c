@@ -88,7 +88,7 @@ void istream_close(InputStream *is)
  * */
 inline int istream_read(uint32 nbytes, uint8 *buf, InputStream *is)
 {
-	return is ? read_c(nbytes, buf, is->cache, is->fd, is->type): ERR_ALLOC;
+	return is ? read_c(nbytes, buf, &is->cache, is->fd, is->type): ERR_ALLOC;
 }
 
 // static/private functions

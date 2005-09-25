@@ -66,7 +66,7 @@ Cache *create_cache(stream_type);
 // int read_from_device(int fd, void *buf, size_t nbytes);/*not implemented yet*/
 
 /*Interface to Cache*/
-int read_c(uint32 nbytes, uint8 *buf, Cache *c, int fd, stream_type);
+int read_c(uint32 nbytes, uint8 *buf, Cache **c, int fd, stream_type);
 void flush_cache(Cache *c); 
 void free_cache(Cache *c); 
 
