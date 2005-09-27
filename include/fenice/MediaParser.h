@@ -28,7 +28,7 @@
  *  
  * */
 
-#if !defined(__MEDIAPARSERH)
+#ifndef __MEDIAPARSERH
 #define __MEDIAPARSERH
 
 #include <glib.h>
@@ -36,6 +36,10 @@
 #include <fenice/types.h>
 #include <fenice/bufferpool.h>
 #include <fenice/InputStream.h>
+
+// return errors
+#define MP_PKT_TOO_SMALL -101
+#define MP_NOT_FULL_FRAME -102
 
 typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCoding;
 
@@ -74,7 +78,7 @@ typedef struct {
 typedef struct __MEDIAPARSER {
 	MediaParserInfo *info;
 	int (*init)(MediaProperties *,void **); // shawill: TODO: specify right parameters
-	int (*get_frame)(uint8 *, uint32, int64 *, InputStream *, MediaProperties *, void *);
+	int (*get_frame)(uint8 *, uint32, double *, InputStream *, MediaProperties *, void *);
 	int (*packetize)(uint8 *, uint32, uint8 *, uint32, MediaProperties *, void *);
 	int (*uninit)(void *); /* parser specific init function */
 } MediaParser;

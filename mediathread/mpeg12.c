@@ -155,7 +155,7 @@ static int init(MediaProperties *properties, void **private_data)
 		buf_aux[2]=final_byte; \
 	} while(final_byte!=PICTURE_START_CODE && count < dst_nbytes); 
 
-static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStream *istream, MediaProperties *properties, void *private_data)
+static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data)
 {
 	uint32 count=0, ret;
 	uint8 final_byte;
@@ -198,7 +198,8 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStre
 	ret=packetize(trash, 1024, dst, count, properties, private_data);
 	free(trash);
 		
-	(*timestamp) = (mpeg_video->hours * 3.6e6) + (mpeg_video->minutes * 6e4) + (mpeg_video->seconds * 1000) +  (mpeg_video->temp_ref*1024*1000/properties->frame_rate) + (mpeg_video->pictures*1000/properties->frame_rate); 
+	// (*timestamp) = (mpeg_video->hours * 3.6e6) + (mpeg_video->minutes * 6e4) + (mpeg_video->seconds * 1000) +  (mpeg_video->temp_ref*1024*1000/properties->frame_rate) + (mpeg_video->pictures*1000/properties->frame_rate); // milliseconds
+	(*timestamp) = (mpeg_video->hours * 3.6e3) + (mpeg_video->minutes * 60) + (mpeg_video->seconds) +  (mpeg_video->temp_ref*1024/properties->frame_rate) + (mpeg_video->pictures/properties->frame_rate); // seconds
 
 	return count;
 }

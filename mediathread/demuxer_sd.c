@@ -342,11 +342,11 @@ static int init(Resource * r)
 				return ERR_GENERIC;
 			track->parser->init(track->properties, &track->parser_private);
 
-#if 1
+#if 0
 	// shawill: just for parser trying:
 	{
-		uint8 tmp_dst[32];
-		int64 timest;
+		uint8 tmp_dst[512];
+		double timest;
 
 		fnc_log(FNC_LOG_DEBUG, "[MT] demuxer sd init done.\n");
 

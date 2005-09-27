@@ -52,7 +52,7 @@ static int init(MediaProperties *properties, void **private_data);
  *       istream: InputStream of source Elementary Stream,
  *    return: ...
  * */
-static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStream *istream, MediaProperties *properties, void *private_data);
+static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data);
 
 /* packetize: ...
  *    args:

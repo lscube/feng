@@ -91,12 +91,12 @@ static uint32 read_internal_c(uint32 nbytes, uint8 *buf, Cache *c, int fd)
 {
 	uint32 bytes;
 
-	if(nbytes==0)
+	if(!nbytes)
 		return 0;
 		
-	if(c->bytes_left==0) {
+	if(!c->bytes_left) {
 		c->bytes_left=c->cache_size=c->read_data(fd,c->cache,c->max_cache_size);/*can be: read, read_from_net, read_from_device*/
-		if(c->cache_size==0) /*EOF*/
+		if(!c->cache_size) /*EOF*/
 			return 0;
 	}
 	bytes=min(nbytes,c->bytes_left);

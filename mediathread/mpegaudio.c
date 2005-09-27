@@ -52,6 +52,8 @@ FNC_LIB_MEDIAPARSER(mpa);
 
 #define MPA_IS_SYNC(buff_data) ((buff_data[0]==0xff) && ((buff_data[1] & 0xe0)==0xe0))
 
+#define MPA_RTPSUBHDR 4
+
 #define BITRATEMATRIX { \
 	{0,     0,     0,     0,     0     }, \
 	{32000, 32000, 32000, 32000, 8000  }, \
@@ -85,6 +87,12 @@ typedef struct {
 	// double pkt_len;
 	uint32 pkt_len;
 	uint32 probed;
+	double time;
+	// fragmentation suuport:
+	uint8 fragmented;
+	uint8 *frag_src;
+	uint32 frag_src_nbytes;
+	uint32 frag_offset;
 } mpa_data;
 
 typedef struct {
@@ -96,10 +104,19 @@ typedef struct {
 	// not using extended header
 } id3v2_hdr;
 
+typedef struct {
+	InputStream *istream;
+	uint8 *src;
+	uint32 src_nbytes;
+} mpa_input;
+
+static int mpa_read(uint32, uint8 *, mpa_input *);
 static uint32 dec_synchsafe_int(uint8 [4]);
-static int mpa_read_id3v2(id3v2_hdr *, InputStream *, mpa_data *); // for now only skipped.
-static int mpa_sync(uint32 *, InputStream *, mpa_data *);
-static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_data *mpeg_audio);
+// static int mpa_read_id3v2(id3v2_hdr *, InputStream *, mpa_data *); // for now only skipped.
+static int mpa_read_id3v2(id3v2_hdr *, mpa_input *, mpa_data *); // for now only skipped.
+// static int mpa_sync(uint32 *, InputStream *, mpa_data *);
+static int mpa_sync(uint32 *, mpa_input *, mpa_data *);
+static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_data *mpa);
 #ifdef DEBUG
 // debug function to diplay MPA header information
 static void mpa_info(mpa_data *, MediaProperties *);
@@ -107,96 +124,87 @@ static void mpa_info(mpa_data *, MediaProperties *);
 
 static int init(MediaProperties *properties, void **private_data) 
 {
-	mpa_data *mpeg_audio;
-	(*private_data) = malloc (sizeof(mpa_data));
-	mpeg_audio = (mpa_data *)(*private_data);
-	mpeg_audio->probed=0;
+	if ( !(*private_data = calloc (1, sizeof(mpa_data))) )
+		return ERR_ALLOC;
+
 	return 0;
 }
 
-static int get_frame2(uint8 *dst, uint32 dst_nbytes, int64 *timestamp, InputStream *istream, MediaProperties *properties, void *private_data) 
+// at the moment get_frame do not support packet fragmentation
+static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data) 
 {
-	mpa_data *mpeg_audio;
-	int count=4, ret;
-	// uint32 N_bytes;
-	// uint8 buf_data[2];
-	// uint32 sync_found=0;
+	mpa_input in={istream, NULL, 0};
+	mpa_data *mpa;
+	int ret;
 	uint32 header;
-	
-	mpeg_audio = (mpa_data *)private_data;
 
-	if ( (ret=mpa_sync(&header, istream, mpeg_audio)) )
+	mpa = (mpa_data *)private_data;
+
+	// if ( (ret=mpa_sync(&header, istream, mpa)) )
+	if ( (ret=mpa_sync(&header, &in, mpa)) )
 		return ret;
-	if ( (ret=mpa_decode_header(header, properties, mpeg_audio)) )
+	if ( (ret=mpa_decode_header(header, properties, mpa)) )
 		return ret;
-#if 0
-	if(!mpeg_audio->probed) {
-		count=mpa_decode_header(dst, dst_nbytes, istream, properties, mpeg_audio);
-		if(count<0)
-			return -1; /*EOF or syncword not found or header error*/
-		(*timestamp)-=mpeg_audio->pkt_len;/*i set it negative so at the first time it is zero (see at the end of this function)*/
-	}
-	else {
-		count = istream_read(2, buf_data, istream);	
-		if(count<0)
-			return -1;
-		sync_found=0;
-		while(!sync_found){
-			if (!(buf_data[0]==0xff) && ((buf_data[1] & 0xe0)==0xe0)) { /* no syncword at the beginning*/
-				if (!(buf_data[1]==0xff) && ((buf_data[0] & 0x07)==0x07)) { /* no syncword at the beginning*/
-					buf_data[0]=buf_data[1];
-					ret = istream_read(1, &buf_data[1], istream);	
-					if(ret<0)
-						return -1;
-				}
-				else sync_found=1;
-			}
-			else sync_found=1;
-		}
-		dst[0]=buf_data[0];
-		dst[1]=buf_data[1];
-		count += istream_read(2, &dst[2], istream);	
-	}
-#endif
-		
-#if 0
-	N_bytes=(int)(mpeg_audio->frame_size * (float)properties->bit_rate / (float)properties->sample_rate / 8); /*2 bytes which contain 12 bit for syncword*/
-	if((dst[2] & 0x02)) N_bytes++;
-	dst+=count;
-#endif
+
+	if (dst_nbytes < mpa->pkt_len)
+		return MP_PKT_TOO_SMALL;
+
 	memcpy(dst, &header, sizeof(header));
-	// dst_remained-=count;
-	dst_nbytes-=count;
-	// count += ret = istream_read(N_bytes - 4, dst + 4, istream); /*4 bytes are read yet*/
-	count += ret = istream_read(mpeg_audio->pkt_len - 4, dst + 4, istream); /*4 bytes are read yet*/
-	if(ret<0)
-		return -1;
-	
-	(*timestamp)+=mpeg_audio->pkt_len; /*it was negative at the beginning so it is zero at the first time*/
 
-	return count;
+	if ( (uint32)(ret = istream_read(mpa->pkt_len - 4, dst + 4, istream)) < mpa->pkt_len-4 )
+		return (ret>=0) ? MP_NOT_FULL_FRAME : ret;
+	
+	// (*timestamp)+=mpa->pkt_len; /*it was negative at the beginning so it is zero at the first time*/
+	*timestamp = mpa->time;
+	mpa->time += (double)mpa->frame_size/(double)properties->sample_rate;
+	fnc_log(FNC_LOG_DEBUG, "[MPA] time: %fs\n", mpa->time);
+
+	return ret + sizeof(header);
 }
 
+// packet fragmentation supported
 static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
 {
-	uint32 count;
+	mpa_input in={ NULL, src, src_nbytes };
+	uint32 header, mpa_header=0;
+	mpa_data *mpa=(mpa_data *)properties;
+	int ret;
+	uint32 dst_offset=0;
+
+	uint32 to_cpy, end_frm_dist;
 	uint8 tmp[3];
 
-	count=min(dst_nbytes, src_nbytes);
-	memcpy(dst+4,src,count);
-	dst[0]=0;
-	dst[1]=0;
-	if(count<src_nbytes) {
-		sprintf(tmp,"%d",count);
-		dst[2]=tmp[0];
-		dst[3]=tmp[1];
+	if ( (mpa->fragmented) && (mpa->frag_src == src) && (mpa->frag_src_nbytes == src_nbytes) ) { // last frame was fragmented
+		end_frm_dist = mpa->pkt_len - mpa->frag_offset;
+		to_cpy = min(end_frm_dist, (mpa->frag_src_nbytes-mpa->frag_offset));
+		src += mpa->frag_offset;
+		if (to_cpy==end_frm_dist)
+			mpa->fragmented=0;
+		else
+			mpa->frag_offset += to_cpy;
+		mpa_header = mpa->frag_offset & 0x00FF;
+	} else { // last frame wasn't fragmented
+		if ( (ret=mpa_sync(&header, &in, mpa)) )
+			return ret;
+		// mpa_header = 0; // already initialized
+		memcpy(dst + 4, &header, sizeof(header));
+		dst_offset+=4;
+		to_cpy = min(mpa->pkt_len, dst_nbytes);
+		if (to_cpy<mpa->pkt_len) {
+			mpa->fragmented = 1;
+			mpa->frag_src = src;
+			mpa->frag_src_nbytes = src_nbytes;
+			mpa->frag_offset = to_cpy;
+		} else
+			mpa->fragmented = 0;
 	}
-	else {
-		dst[2]=0;
-		dst[3]=0;
-	}
+
+	// rtp MPA sub-header
+	memcpy(dst, &mpa_header, sizeof(mpa_header));
+
+	ret = mpa_read(to_cpy, dst+sizeof(mpa_header)+dst_offset, &in);
 	
-	return count + 4;
+	return ret+dst_offset;
 }
 
 static int uninit(void *private_data)
@@ -222,40 +230,47 @@ static uint32 dec_synchsafe_int(uint8 encoded[4])
 }
 
 // for the moment we just skip the ID3v2 tag.
-static int mpa_read_id3v2(id3v2_hdr *id3hdr, InputStream *i_stream, mpa_data *mpeg_audio)
+// static int mpa_read_id3v2(id3v2_hdr *id3hdr, InputStream *i_stream, mpa_data *mpa)
+static int mpa_read_id3v2(id3v2_hdr *id3hdr, mpa_input *in, mpa_data *mpa)
 {
 	uint32 tagsize;
 	int ret;
 
 	tagsize=dec_synchsafe_int(id3hdr->size);
 
-	if ( (ret=istream_read(tagsize, NULL, i_stream)) != (int)tagsize )
+	// if ( (ret=istream_read(tagsize, NULL, i_stream)) != (int)tagsize )
+	if ( (ret=mpa_read(tagsize, NULL, in)) != (int)tagsize )
 		return (ret<0) ? ERR_PARSE : ERR_EOF;
 
 	return 0;
 }
 
-static int mpa_sync(uint32 *header, InputStream *i_stream, mpa_data *mpeg_audio)
+// static int mpa_sync(uint32 *header, InputStream *i_stream, mpa_data *mpa)
+static int mpa_sync(uint32 *header, mpa_input *in, mpa_data *mpa)
 {
 	uint8 *sync_w = (uint8 *)header;
 	int ret;
 
-	if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
+	// if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
+	if ( (ret=mpa_read(4, sync_w, in)) != 4 )
 		return (ret<0) ? ERR_PARSE : ERR_EOF;
 
-	if (!mpeg_audio->probed) {
+	if (!mpa->probed) {
 		/*look if ID3 tag is present*/
 		if (!memcmp(sync_w, "ID3", 3)) { // ID3 tag present
 			id3v2_hdr id3hdr;
 
-			fnc_log(FNC_LOG_DEBUG, "ID3v2 tag present in %s\n", i_stream->name);
+			// fnc_log(FNC_LOG_DEBUG, "ID3v2 tag present in %s\n", i_stream->name);
 
 			memcpy(&id3hdr, sync_w, 4);
-			if ( (ret = istream_read(ID3v2_HDRLEN - 4, &id3hdr.rev, i_stream)) != ID3v2_HDRLEN - 4 )
+			// if ( (ret = istream_read(ID3v2_HDRLEN - 4, &id3hdr.rev, i_stream)) != ID3v2_HDRLEN - 4 )
+			if ( (ret = mpa_read(ID3v2_HDRLEN - 4, &id3hdr.rev, in)) != ID3v2_HDRLEN - 4 )
 				return (ret<0) ? ERR_PARSE : ERR_EOF;
-			if ( (ret=mpa_read_id3v2(&id3hdr, i_stream, mpeg_audio)) )
+			// if ( (ret=mpa_read_id3v2(&id3hdr, i_stream, mpa)) )
+			if ( (ret=mpa_read_id3v2(&id3hdr, in, mpa)) )
 				return ret;
-			if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
+			// if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
+			if ( (ret=mpa_read(4, sync_w, in)) != 4 )
 				return (ret<0) ? ERR_PARSE : ERR_EOF;
 		}
 	}
@@ -265,20 +280,18 @@ static int mpa_sync(uint32 *header, InputStream *i_stream, mpa_data *mpeg_audio)
 		// sync_w[1]=sync_w[2];
 		// sync_w[2]=sync_w[3];
 
-		if ( (ret=istream_read(1, &sync_w[3], i_stream)) != 1 )
+		// if ( (ret=istream_read(1, &sync_w[3], i_stream)) != 1 )
+		if ( (ret=mpa_read(1, &sync_w[3], in)) != 1 )
 			return (ret<0) ? ERR_PARSE : ERR_EOF;
-		fnc_log(FNC_LOG_DEBUG, "[MT] sync: %X%X%X%X\n", sync_w[0], sync_w[1], sync_w[2], sync_w[3]);
+		fnc_log(FNC_LOG_DEBUG, "[MPA] sync: %X%X%X%X\n", sync_w[0], sync_w[1], sync_w[2], sync_w[3]);
 	}
 
 	return 0;
 }
 
-static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_data *mpeg_audio)
+static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_data *mpa)
 {
-	// int ret, count,off;
-	// /*long*/ int tag_dim;
-        int /*n,*/ RowIndex,ColIndex;
-	// uint8 buff_data[4];
+        int RowIndex,ColIndex;
 	uint8 *buff_data = (uint8 * )&header;
 	int padding;
         int BitrateMatrix[16][5] = BITRATEMATRIX;
@@ -286,10 +299,10 @@ static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_dat
 
 	if ( !MPA_IS_SYNC(buff_data) ) return -1; /*syncword not found*/
 
-	mpeg_audio->id = (buff_data[1] & 0x18) >> 3;
-	mpeg_audio->layer = (buff_data[1] & 0x06) >> 1;
+	mpa->id = (buff_data[1] & 0x18) >> 3;
+	mpa->layer = (buff_data[1] & 0x06) >> 1;
 
-	switch (mpeg_audio->id<< 2 | mpeg_audio->layer) {
+	switch (mpa->id<< 2 | mpa->layer) {
 		case MPA_MPEG_1<<2|MPA_LAYER_I:		// MPEG 1 layer I
 			ColIndex = 0;
 			break;
@@ -315,7 +328,7 @@ static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_dat
         RowIndex = (buff_data[2] & 0xf0) >> 4;
         properties->bit_rate = BitrateMatrix[RowIndex][ColIndex];
 
-	switch (mpeg_audio->id) {
+	switch (mpa->id) {
 		case MPA_MPEG_1: ColIndex = 0; break;
 		case MPA_MPEG_2: ColIndex = 1; break;
 		case MPA_MPEG_2_5: ColIndex = 2; break;
@@ -329,19 +342,18 @@ static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_dat
 
 	// padding
 	padding = buff_data[2] & 0x02 >> 2;
-	fnc_log(FNC_LOG_DEBUG, "[MT] padding: %d\n", padding);
 
-        // if ((buff_data[1] & 0x06) == 6)
-        if (mpeg_audio->layer == MPA_LAYER_I) { // layer 1
-		mpeg_audio->frame_size = 384;
-		mpeg_audio->pkt_len=((12 * properties->bit_rate)/properties->sample_rate + padding)* 4;
+	// packet len
+        if (mpa->layer == MPA_LAYER_I) { // layer 1
+		mpa->frame_size = 384;
+		mpa->pkt_len=((12 * properties->bit_rate)/properties->sample_rate + padding)* 4;
 	} else { // layer 2 or 3
-		mpeg_audio->frame_size = 1152;
-		mpeg_audio->pkt_len= 144 * properties->bit_rate /properties->sample_rate + padding;
+		mpa->frame_size = 1152;
+		mpa->pkt_len= 144 * properties->bit_rate /properties->sample_rate + padding;
 	}
 	
-#ifdef DEBUG
-	mpa_info(mpeg_audio, properties);
+#if DEBUG
+	mpa_info(mpa, properties);
 #endif // DEBUG
 	
 	return 0;// count; /*return 4*/
@@ -349,38 +361,55 @@ static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_dat
 
 #if DEBUG
 // debug function to diplay MPA header information
-static void mpa_info(mpa_data *mpeg_audio, MediaProperties *properties)
+static void mpa_info(mpa_data *mpa, MediaProperties *properties)
 {
-	switch (mpeg_audio->id) {
+	switch (mpa->id) {
 		case MPA_MPEG_1:
-			fnc_log(FNC_LOG_DEBUG, "[MT] MPEG1\n");
+			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG1\n");
 			break;
 		case MPA_MPEG_2:
-			fnc_log(FNC_LOG_DEBUG, "[MT] MPEG2\n");
+			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG2\n");
 			break;
 		case MPA_MPEG_2_5:
-			fnc_log(FNC_LOG_DEBUG, "[MT] MPEG2.5\n");
+			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG2.5\n");
 			break;
 		default:
-			fnc_log(FNC_LOG_DEBUG, "[MT] MPEG reserved (bad)\n");
+			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG reserved (bad)\n");
 			return;
 			break;
 	}
-	switch (mpeg_audio->layer) {
+	switch (mpa->layer) {
 		case MPA_LAYER_I:
-			fnc_log(FNC_LOG_DEBUG, "[MT] Layer I\n");
+			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer I\n");
 			break;
 		case MPA_LAYER_II:
-			fnc_log(FNC_LOG_DEBUG, "[MT] Layer II\n");
+			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer II\n");
 			break;
 		case MPA_LAYER_III:
-			fnc_log(FNC_LOG_DEBUG, "[MT] Layer III\n");
+			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer III\n");
 			break;
 		default:
-			fnc_log(FNC_LOG_DEBUG, "[MT] Layer reserved (bad)\n");
+			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer reserved (bad)\n");
 			return;
 			break;
 	}
-	fnc_log(FNC_LOG_DEBUG, "[MT] bitrate: %d; sample rate: %3.0f; pkt_len: %d\n", properties->bit_rate, properties->sample_rate, mpeg_audio->pkt_len);
+	fnc_log(FNC_LOG_DEBUG, "[MPA] bitrate: %d; sample rate: %3.0f; pkt_len: %d\n", properties->bit_rate, properties->sample_rate, mpa->pkt_len);
 }
 #endif // DEBUG
+
+static int mpa_read(uint32 nbytes, uint8 *buf, mpa_input *in)
+{
+	if (in->istream)
+		return istream_read(nbytes, buf, in->istream);
+	else if (in->src) {
+		uint32 to_cpy=min(nbytes, in->src_nbytes);
+
+		if (buf)
+			memcpy(buf, in->src, to_cpy);
+		in->src += to_cpy;
+		in->src_nbytes -= to_cpy;
+		return to_cpy;
+	} else
+		return ERR_EOF;
+}
+
