@@ -28,8 +28,8 @@
  *  
  * */
 
-#if !defined(_DEMUXERH)
-#define _DEMUXERH
+#ifndef __DEMUXER_H
+#define __DEMUXER_H
 
 #include <glib.h>
 
@@ -59,14 +59,28 @@
 #define MAX_TRACKS 20	
 #define MAX_SEL_TRACKS 5
 
+typedef struct {
+	char *mrl;
+	time_t last_change;
+	GList *media; // GList of MediaDescr elements
+	char *sdp;
+	// here we will put other description formats that may be supported.
+} SessionDescr;
+
+typedef struct {
+	char *mrl;
+	time_t last_change;
+	char *sdp;
+	// here we will put other description formats that may be supported.
+} MediaDescr;
+
 typedef struct __CAPABILITIES {
 
 } Capabilities;
 
-
 typedef struct __TRACK_INFO {
 	//start CC
-	char commons_dead[255]; 
+	char commons_deed[255]; 
 	char rdf_page[255];
 	char title[80];
 	char author[80];	
@@ -174,4 +188,4 @@ Track *add_track(Resource *);
 void free_track(Track *, Resource *);
 /*-------------------------------------------*/
 
-#endif
+#endif // __DEMUXER_H

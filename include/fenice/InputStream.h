@@ -39,12 +39,16 @@
 #define CACHE_DEVICE_SIZE 4096
 #define CACHE_DEFAULT_SIZE 65536
 
+#define FNC_PROTO_SEPARATOR "://"
+
 #define FNC_FILE	"file"
 // #define FNC_PIPE	"pipe"
 #define FNC_UDP		"udp"
 #define FNC_TCP		"tcp"
 #define FNC_DEV		"dev" // it will survive to tomorrow?
 // ... devices, ...
+
+#define DEFAULT_ST_TYPE st_file
 
 #ifndef min
 #define min(a,b) (a<b)?a:b
@@ -58,7 +62,7 @@ typedef struct __CACHE {
 	int (*read_data)(int /*fd*/, void * /*buf*/, size_t /*nbytes*/); /*can be: read, read_from_net, read_from_device*/
 } Cache;
 
-typedef enum { st_file=0, st_net, st_pipe, st_device} stream_type;
+typedef enum { st_unknown=-1, st_file=0, st_net, st_pipe, st_device} stream_type;
 
 Cache *create_cache(stream_type);
 // shawill: define static in cache.c
@@ -91,8 +95,9 @@ typedef struct __INPUTSTREAM {
 /*Interface to InputStream*/
 InputStream *istream_open(char *mrl);
 void istream_close(InputStream *);
+
 inline int istream_read(uint32 nbytes, uint8 *buf, InputStream *is); 
-#define read_stream istream_read
 // int parse_mrl(char *mrl, stream_type *type, int *fd);
+stream_type parse_mrl(char *mrl, char **resource_name);
 
 #endif // __INPUTSTREAMH

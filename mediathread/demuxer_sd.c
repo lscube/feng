@@ -302,7 +302,7 @@ static int init(Resource * r)
 			} else if (!strcasecmp(keyword, SD_LICENSE)) {
 				/*******START CC********/
 				// SD_LICENSE
-				sscanf(line, "%*s%s", (track->track_info->commons_dead));
+				sscanf(line, "%*s%s", (track->track_info->commons_deed));
 				me->description_flags |= MED_LICENSE;
 			} else if (!strcasecmp(keyword, SD_RDF)) {
 				// SD_RDF

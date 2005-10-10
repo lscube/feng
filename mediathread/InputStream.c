@@ -91,43 +91,59 @@ inline int istream_read(uint32 nbytes, uint8 *buf, InputStream *is)
 	return is ? read_c(nbytes, buf, &is->cache, is->fd, is->type): ERR_ALLOC;
 }
 
+stream_type parse_mrl(char *mrl, char **resource_name)
+{
+	char *colon;
+	int res;
+
+        if ( !(colon = strstr(mrl, "://")) ) {
+		*resource_name=mrl;
+		return DEFAULT_ST_TYPE;
+	}
+	*colon = '\0';
+	*resource_name = colon + strlen("://");
+
+	if(!strcmp(mrl, FNC_UDP))
+		res = st_net;	
+	/*TODO: tcp*/
+	else if(!strcmp(mrl, FNC_FILE))
+		res = st_file;
+	else if(!strcmp(mrl, FNC_DEV))
+		res = st_device;	
+	else
+		res = st_unknown;
+
+	*colon = ':';
+
+	return res;
+}
+
+// TDOD mrl_changed
+
 // static/private functions
 
 static int open_mrl(char *mrl, InputStream *is)
 {
 	char *token;
-	int res;
-	char *colon;
 	
-        if ( !(colon = strstr(mrl, "://")) ) {
-		is->type=st_file;	
-		strcpy(is->name, mrl); // we store name w/o type
-		return open_mrl_st_file(is);
-	}
-	*colon = '\0';
-	token = colon + strlen("://");
+	is->type=parse_mrl(mrl, &token);
 	strcpy(is->name, token); // we store name w/o type
-	if(!strcmp(mrl, FNC_UDP)) { 
-		is->type=st_net;	
-		res = open_mrl_st_udp(is);
+	switch ( is->type ) {
+		case st_file:
+		case st_pipe:
+			return open_mrl_st_file(is);
+			break;
+		case st_net:
+			return open_mrl_st_udp(is);
+			break;
+		case st_device:
+			return open_mrl_st_device(is);
+			break;
+		default:
+			fnc_log(FNC_LOG_ERR,"Invalid resource request \n");
+			return ERR_PARSE;
+			break;
 	}
-	/*TODO: tcp*/
-	else if(!strcmp(token, FNC_FILE)) { 
-		is->type=st_file;	
-		res = open_mrl_st_file(is);
-	}
-	else if(!strcmp(token, FNC_DEV)) {
-		is->type=st_device;	
-		res = open_mrl_st_device(is);
-	}
-	else {
-		fnc_log(FNC_LOG_ERR,"Invalid resource request \n");
-		res = ERR_PARSE;
-	}
-
-	*colon = ':';
-
-	return res;
 
 }
 
