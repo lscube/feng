@@ -143,7 +143,7 @@ static int init(Resource * r)
 
 	/*--*/
 	int32 bit_rate;		/*average if VBR or -1 is not usefull */
-	MediaCoding coding_type = mc_undefined;
+	MediaCodingType coding_type = mc_undefined;
 	uint32 payload_type;
 	uint32 clock_rate;
 	float sample_rate;	/*SamplingFrequency */
@@ -221,13 +221,13 @@ static int init(Resource * r)
 				sscanf(line, "%*s%255s", track_file);
 				// if ( *track_file == '/')
 				if (*track_file == G_DIR_SEPARATOR)	// is filename absolute path?
-					strncpy(track->name, track_file, sizeof(track->name));
+					strncpy(track->info->name, track_file, sizeof(track->info->name));
 				else {
-					strncpy(track->name, content_base, sizeof(track->name));
-					strncat(track->name, track_file, sizeof(track->name) - strlen(track->name));
+					strncpy(track->info->name, content_base, sizeof(track->info->name));
+					strncat(track->info->name, track_file, sizeof(track->info->name) - strlen(track->info->name));
 				}
 				me->general_flags |= ME_FILENAME;
-				if (!(track->i_stream = istream_open(track->name))) {
+				if (!(track->i_stream = istream_open(track->info->name))) {
 					free_track(track, r);
 					return ERR_ALLOC;
 				}
@@ -302,33 +302,33 @@ static int init(Resource * r)
 			} else if (!strcasecmp(keyword, SD_LICENSE)) {
 				/*******START CC********/
 				// SD_LICENSE
-				sscanf(line, "%*s%s", (track->track_info->commons_deed));
+				sscanf(line, "%*s%s", (track->info->commons_deed));
 				me->description_flags |= MED_LICENSE;
 			} else if (!strcasecmp(keyword, SD_RDF)) {
 				// SD_RDF
-				sscanf(line, "%*s%s", (track->track_info->rdf_page));
+				sscanf(line, "%*s%s", (track->info->rdf_page));
 				me->description_flags |= MED_RDF_PAGE;
 			} else if (!strcasecmp(keyword, SD_TITLE)) {
 				// SD_TITLE
 				int i = 7;
 				int j = 0;
 				while (line[i] != '\n') {
-					track->track_info->title[j] = line[i];
+					track->info->title[j] = line[i];
 					i++;
 					j++;
 				}
-				track->track_info->title[j] = '\0';
+				track->info->title[j] = '\0';
 				me->description_flags |= MED_TITLE;
 			} else if (!strcasecmp(keyword, SD_CREATOR)) {
 				// SD_CREATOR
 				int i = 9;
 				int j = 0;
 				while (line[i] != '\n') {
-					track->track_info->author[j] = line[i];
+					track->info->author[j] = line[i];
 					i++;
 					j++;
 				}
-				track->track_info->author[j] = '\0';
+				track->info->author[j] = '\0';
 				me->description_flags |= MED_CREATOR;
 			}
 			/********END CC*********/
@@ -353,46 +353,51 @@ static int init(Resource * r)
 		track->parser->get_frame(tmp_dst, sizeof(tmp_dst), &timest, track->i_stream, track->properties, track->parser_private);
 	}
 #endif
-			if (!strcmp(track->properties->media_type, "audio")) {
-				// audio_spec_prop *prop;
-				// prop=malloc(sizeof(audio_spec_prop));        
-				// shawill: initialize with calloc
-				// prop = calloc(1, sizeof(audio_spec_prop));   
-				prop->sample_rate = sample_rate;	/*SamplingFrequency */
-				prop->audio_channels = audio_channels;
-				prop->bit_per_sample = bit_per_sample;	/*BitDepth */
-				if (me->description_flags & MED_BITRATE)
-					prop->bit_rate = bit_rate;	/*average if VBR or -1 is not usefull */
-				if (me->description_flags & MED_CODING_TYPE)
-					prop->coding_type = coding_type;
-				if (me->description_flags & MED_PAYLOAD_TYPE)
-					prop->payload_type = payload_type;
-				if (me->description_flags & MED_CLOCK_RATE)
-					prop->clock_rate = clock_rate;
+			switch (track->properties->media_type) {
+				case MP_audio:
+					// audio_spec_prop *prop;
+					// prop=malloc(sizeof(audio_spec_prop));        
+					// shawill: initialize with calloc
+					// prop = calloc(1, sizeof(audio_spec_prop));   
+					prop->sample_rate = sample_rate;	/*SamplingFrequency */
+					prop->audio_channels = audio_channels;
+					prop->bit_per_sample = bit_per_sample;	/*BitDepth */
+					if (me->description_flags & MED_BITRATE)
+						prop->bit_rate = bit_rate;	/*average if VBR or -1 is not usefull */
+					if (me->description_flags & MED_CODING_TYPE)
+						prop->coding_type = coding_type;
+					if (me->description_flags & MED_PAYLOAD_TYPE)
+						prop->payload_type = payload_type;
+					if (me->description_flags & MED_CLOCK_RATE)
+						prop->clock_rate = clock_rate;
+	
+					// shawill: done in add_media_parser:
+					// track->parser->properties=prop;
+					break;
+				case MP_video:
+					// video_spec_prop *prop;
+					// prop = calloc(1, sizeof(video_spec_prop));   
+					// prop->frame_rate;
+					if (me->description_flags & MED_BITRATE)
+						prop->bit_rate = bit_rate;	/*average if VBR or -1 is not usefull */
+					if (me->description_flags & MED_CODING_TYPE)
+						prop->coding_type = coding_type;
+					if (me->description_flags & MED_PAYLOAD_TYPE)
+						prop->payload_type = payload_type;
+					if (me->description_flags & MED_CLOCK_RATE)
+						prop->clock_rate = clock_rate;
 
-				// shawill: done in add_media_parser:
-				// track->parser->properties=prop;
-			} else if (!strcmp(track->properties->media_type, "video")) {
-				// video_spec_prop *prop;
-				// prop = calloc(1, sizeof(video_spec_prop));   
-				// prop->frame_rate;
-				if (me->description_flags & MED_BITRATE)
-					prop->bit_rate = bit_rate;	/*average if VBR or -1 is not usefull */
-				if (me->description_flags & MED_CODING_TYPE)
-					prop->coding_type = coding_type;
-				if (me->description_flags & MED_PAYLOAD_TYPE)
-					prop->payload_type = payload_type;
-				if (me->description_flags & MED_CLOCK_RATE)
-					prop->clock_rate = clock_rate;
-
-				// shawill: done in add_media_parser:
-				// track->parser->parser_type->properties=prop;
+					// shawill: done in add_media_parser:
+					// track->parser->parser_type->properties=prop;
+					break;
+				// TODO other media types, if needed.
+				default:
+					fnc_log(FNC_LOG_ERR, "It's impossible to identify media_type: audio, video ...\n");
+					free_track(track, r);
+					r->num_tracks--;
+					return ERR_ALLOC;
+					break;
 			}
-		} else {
-			fnc_log(FNC_LOG_ERR, "It's impossible to identify media_type: audio, video ...\n");
-			free_track(track, r);
-			r->num_tracks--;
-			return ERR_ALLOC;
 		}
 		track->private_data = me;
 		if ((res = validate_track(r)) != ERR_NOERROR) {
@@ -531,12 +536,17 @@ static int validate_track(Resource * r)
 		return ERR_PARSE;
 	}
 
-	if (!strcmp(t->properties->media_type, "audio"))
-		return validate_audio_track(t);
-	else if (!strcmp(t->properties->media_type, "video"))
-		return validate_video_track(t);
-	else
-		return ERR_NOERROR;
+	switch (t->properties->media_type) {
+		case MP_audio:
+			return validate_audio_track(t);
+			break;
+		case MP_video:
+			return validate_video_track(t);
+			break;
+		default:
+			return ERR_NOERROR;
+			break;
+	}
 /*
 
 */

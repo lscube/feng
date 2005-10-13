@@ -37,7 +37,7 @@
 
 static MediaParserInfo info = {
 	"MPV",
-	"V"
+	MP_video
 };
 
 FNC_LIB_MEDIAPARSER(mpv);

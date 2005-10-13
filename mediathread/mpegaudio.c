@@ -40,7 +40,7 @@
 
 static MediaParserInfo info = {
 	"MPA",
-	"A"
+	MP_audio
 };
 
 FNC_LIB_MEDIAPARSER(mpa);

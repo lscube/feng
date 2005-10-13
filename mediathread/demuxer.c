@@ -47,6 +47,12 @@ static Demuxer *demuxers[] = {
  * The Media Thread keeps a list of the tracks that can be opened only once.
  * */
 static GList *ex_tracks=NULL;
+/*! \brief The resource description cache.
+ * This list holds the cache of resource descriptions. This way the mediathread
+ * can provide the description buffer without opening the resource every time.
+ * This will result in a better performance for RTSP DESCRIBE metod response.
+ * */
+static GList *descr_cache=NULL;
 
 /*! Private functions for exclusive tracks.
  * */
@@ -54,6 +60,8 @@ static inline void ex_tracks_save(GList *);
 static void ex_track_save(Track *, gpointer *);
 static inline void ex_track_remove(Track *);
 // static void ex_tracks_free(Track *[], uint32);
+
+static void descr_cache_update(Resource *);
 
 // private funcions for specific demuxer
 static int find_demuxer(InputStream *);
@@ -81,12 +89,15 @@ Resource *r_open(resource_name n)
 		return NULL;
 	}
 
+#if 0 // we use MObject_new: that will alloc memory and exits the program if something goes wrong
 	if( !(r->info=calloc(1, sizeof(ResourceInfo))) ) { // init all infos
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
 		istream_close(i_stream);
 		free(r);
 		return NULL;
 	}
+#endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
+	MObject_new(ResourceInfo, 1);
 	// -------------------------------------------------------------------------//
 	// ----------------------- initializations ---------------------------------//
 	/* initialization non needed 'cause we use calloc
@@ -112,7 +123,7 @@ void r_close(Resource *r)
 {
 	if(r) {
 		istream_close(r->i_stream);
-		free(r->info);
+		MObject_unref((MObject *)r->info);
 		r->info=NULL;
 		if(r->private_data!=NULL)
 			free(r->private_data);
@@ -138,7 +149,7 @@ Selector *r_open_tracks(Resource *r, char *track_name, Capabilities *capabilitie
 	/*Capabilities aren't used yet. TODO*/
 
 	for (track=g_list_first(r->tracks); track; track=g_list_next(track))
-		if( !strcmp(((Track *)track->data)->name, track_name) )
+		if( !strcmp(((Track *)track->data)->info->name, track_name) )
 			sel_tracks=g_list_prepend(sel_tracks, track);
 
 	if (!sel_tracks)
@@ -173,6 +184,20 @@ inline msg_error r_seek(Resource *r, long int time_sec)
 	return r->demuxer->seek(r,time_sec);
 }
 
+int r_changed(ResourceDescr *descr)
+{
+	GList *m_descr=g_list_first(descr->media);
+	
+	if ( mrl_changed(descr->info->mrl, &descr->last_change) )
+		return 1;
+	for (/* m_descr=descr->media */; m_descr; m_descr=g_list_next(m_descr)) {
+		if ( mrl_changed(((MediaDescr *)m_descr->data)->info->mrl, &((MediaDescr *)m_descr->data)->last_change) )
+			return 1;
+	}
+
+	return 0;
+}
+
 /*
 Resource *init_resource(resource_name name)
 {
@@ -203,8 +228,11 @@ Track *add_track(Resource *r)
 	if( !(t=(Track *)calloc(1, sizeof(Track))) ) 
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
 	
-	if( !(t->track_info = malloc(sizeof(TrackInfo))) )
+#if 0 // we use MObject_new: that will alloc memory and exits the program if something goes wrong
+	if( !(t->info = calloc(1, sizeof(TrackInfo))) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
+#endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
+	MObject_new(TrackInfo, 1);
 
 	if( !(t->properties = malloc(sizeof(MediaProperties))) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
@@ -237,7 +265,7 @@ void free_track(Track *t, Resource *r)
 		return;
 
 	istream_close(t->i_stream);
-	free(t->track_info);
+	MObject_unref((MObject *)t->info);
 	mparser_unreg(t->parser, t->private_data);
 	OMSbuff_free(t->buffer);
 #if 0 // private data is not under Track jurisdiction!
@@ -250,6 +278,50 @@ void free_track(Track *t, Resource *r)
 	r->tracks = g_list_remove(r->tracks, t);
 	free(t);
 	r->num_tracks--;
+}
+
+ResourceDescr *r_descr_new(Resource *r)
+{
+	ResourceDescr *new_descr;
+	MediaDescr *new_mdescr;
+	GList *tracks;
+	
+	new_descr=g_new(ResourceDescr, 1);
+	new_descr->media = NULL;
+
+	new_descr->info=r->info;
+	MObject_ref(r->info);
+	new_descr->last_change=mrl_mtime(r->info->mrl);
+
+	for (tracks=g_list_first(r->tracks); tracks; tracks=g_list_next(tracks)) {
+		new_mdescr = g_new(MediaDescr, 1);
+		new_mdescr->info = TRACK(tracks)->info;
+		MObject_ref(TRACK(tracks)->info);
+		new_mdescr->properties = TRACK(tracks)->properties;
+		MObject_ref(TRACK(tracks)->properties);
+		new_mdescr->last_change = mrl_mtime(TRACK(tracks)->info->mrl);
+		new_descr->media = g_list_prepend(new_descr->media, new_mdescr);
+	}
+	new_descr->media=g_list_reverse(new_descr->media); // put the Media description in the same order of tracks.
+
+	return NULL;
+}
+
+void r_descr_free(ResourceDescr *descr)
+{
+	GList *m_descr;
+
+	if (!descr)
+		return;
+	
+	for ( m_descr=g_list_first(descr->media); m_descr; m_descr=g_list_next(m_descr) ) {
+		MObject_unref( (MObject *)((MediaDescr *)m_descr->data)->info );
+		MObject_unref( (MObject *)((MediaDescr *)m_descr->data)->properties );
+	}
+	g_list_free(descr->media);
+
+	MObject_unref( (MObject *)descr->info );
+	g_free(descr);
 }
 
 // static functions
@@ -322,5 +394,31 @@ static int find_demuxer(InputStream *i_stream)
 	}
 
 	return found ? i: -1;
+}
+
+// --- Description Cache management --- //
+static gint cache_cmp(gconstpointer a, gconstpointer b)
+{
+	return strcmp( ((ResourceDescr *)((GList *)a)->data)->info->mrl, (const char *)b );
+}
+
+static void descr_cache_update(Resource *r)
+{
+	GList *cache_el;
+	ResourceDescr *r_descr=NULL;
+	
+	if ( ( cache_el = g_list_find_custom(descr_cache, r->info->mrl, cache_cmp) ) ) {
+		r_descr = cache_el->data;
+		// TODO free ResourceDescr
+		descr_cache = g_list_remove_link(descr_cache, cache_el);
+		if (r_changed(r_descr)) {
+			r_descr_free(r_descr);
+			r_descr=NULL;
+		}
+	}
+	if (!r_descr)
+		r_descr = r_descr_new(r);
+
+	g_list_prepend(descr_cache, r_descr);
 }
 

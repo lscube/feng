@@ -94,7 +94,7 @@ inline int istream_read(uint32 nbytes, uint8 *buf, InputStream *is)
 stream_type parse_mrl(char *mrl, char **resource_name)
 {
 	char *colon;
-	int res;
+	stream_type res;
 
         if ( !(colon = strstr(mrl, "://")) ) {
 		*resource_name=mrl;
@@ -118,7 +118,93 @@ stream_type parse_mrl(char *mrl, char **resource_name)
 	return res;
 }
 
-// TDOD mrl_changed
+/*! \brief The function just returns the last change time of given mrl.
+ * \return modification time of mrl or 0 if not guessable.
+ * */
+time_t mrl_mtime(char *mrl)
+{
+	char *resource_name;
+	struct stat filestat;
+
+	if (!mrl)
+		return 0;
+	
+	switch (parse_mrl(mrl, &resource_name)) {
+		case st_file:
+			if (stat(resource_name, &filestat) == -1 ) {
+				switch(errno) {
+					case ENOENT:
+						fnc_log(FNC_LOG_ERR,"%s: file not found\n", resource_name);
+						return ERR_NOT_FOUND;
+						break;
+					default:
+						fnc_log(FNC_LOG_ERR,"Cannot stat file %s\n", resource_name);
+						return ERR_GENERIC;
+						break;
+				}
+			}
+			return filestat.st_mtime;
+			break;
+		case st_pipe:
+			return 0; // we cannot know if pipe content media-type is changed, we must trust in it!
+			break;
+		case st_net:
+		case st_device:
+			return 0; // TODO other stream types case
+			break;
+		default:
+			return ERR_INPUT_PARAM;
+			break;
+	}
+	
+	return 0;
+}
+
+/*! \brief Checks if the given mrl has been modified
+ * The function parses the given mrl and, depending on the type, checks if that mrl has been modified. The second parameter of the function is both normal and return parameter.
+ * \param mrl mrl to check for changes
+ * \param last_change uptodate time for mrl and return parameter for new time if mrl is changed.
+ * \return 1 is mrl is changed since last_change.
+ * */
+int mrl_changed(char *mrl, time_t *last_change)
+{
+	char *resource_name;
+	struct stat filestat;
+	
+	switch (parse_mrl(mrl, &resource_name)) {
+		case st_file:
+			if (stat(resource_name, &filestat) == -1 ) {
+				switch(errno) {
+					case ENOENT:
+						fnc_log(FNC_LOG_ERR,"%s: file not found\n", resource_name);
+						return ERR_NOT_FOUND;
+						break;
+					default:
+						fnc_log(FNC_LOG_ERR,"Cannot stat file %s\n", resource_name);
+						return ERR_GENERIC;
+						break;
+				}
+			}
+			if (filestat.st_mtime > *last_change) {
+				*last_change = filestat.st_mtime;
+				return 1; // file changed
+			} else
+				return 0; // file NOT changed
+			break;
+		case st_pipe:
+			return 0; // we cannot know if pipe content media-type is changed, we must trust in it!
+			break;
+		case st_net:
+		case st_device:
+			return 0; // TODO other stream types case
+			break;
+		default:
+			return ERR_INPUT_PARAM;
+			break;
+	}
+	
+	return 0;
+}
 
 // static/private functions
 

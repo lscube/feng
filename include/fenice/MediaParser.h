@@ -35,21 +35,28 @@
 
 #include <fenice/types.h>
 #include <fenice/bufferpool.h>
+#include <fenice/mediautils.h>
 #include <fenice/InputStream.h>
 
 // return errors
 #define MP_PKT_TOO_SMALL -101
 #define MP_NOT_FULL_FRAME -102
 
-typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCoding;
+typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCodingType;
 
+typedef enum {MP_audio, MP_video, MP_application, MP_data, MP_control} MediaType;
+
+#if 0 // define MObject with MObject_def
 typedef struct {
+	MOBJECT_COMMONS; // MObject commons MUST be the first field
+#endif
+MObject_def()
 	int32 bit_rate; /*average if VBR or -1 is not usefull*/
-	MediaCoding coding_type;
+	MediaCodingType coding_type;
 	uint32 payload_type;
 	uint32 clock_rate;
 	char encoding_name[11];
-	char media_type[6];
+	MediaType media_type;
 	// Audio specific properties:
 	float sample_rate;/*SamplingFrequency*/
 	float OutputSamplingFrequency;
@@ -57,7 +64,7 @@ typedef struct {
 	uint32 bit_per_sample;/*BitDepth*/
 	// Video specific properties:
 	uint32 frame_rate;
-	/*Matroska ...*/
+	// more specific video information
 	uint32 FlagInterlaced;
 	//short StereoMode;
 	uint32 PixelWidth;
@@ -72,7 +79,7 @@ typedef struct {
 
 typedef struct {
 	const char *encoding_name; /*i.e. MPV, MPA ...*/
-	const char *media_type; /*i.e. audio, video, text*/
+	const MediaType media_type;
 } MediaParserInfo;
 
 typedef struct __MEDIAPARSER {

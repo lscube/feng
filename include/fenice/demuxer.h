@@ -35,6 +35,7 @@
 
 #include <fenice/types.h>
 #include <fenice/utils.h>
+#include <fenice/mediautils.h>
 #include <fenice/InputStream.h>
 #include <fenice/MediaParser.h>
 #include <fenice/bufferpool.h>
@@ -59,32 +60,26 @@
 #define MAX_TRACKS 20	
 #define MAX_SEL_TRACKS 5
 
-typedef struct {
-	char *mrl;
-	time_t last_change;
-	GList *media; // GList of MediaDescr elements
-	char *sdp;
-	// here we will put other description formats that may be supported.
-} SessionDescr;
-
-typedef struct {
-	char *mrl;
-	time_t last_change;
-	char *sdp;
-	// here we will put other description formats that may be supported.
-} MediaDescr;
+#define RESOURCE(x) ((Resource *)x->data)
+#define TRACK(x) ((Track *)x->data)
 
 typedef struct __CAPABILITIES {
 
 } Capabilities;
 
+#if 0 // define MObject with MObject_def
 typedef struct __TRACK_INFO {
+	MOBJECT_COMMONS; // MObject commons MUST be the first field
+#endif
+MObject_def(__TRACK_INFO)
+	char *mrl;
+	char name[255];
 	//start CC
 	char commons_deed[255]; 
 	char rdf_page[255];
 	char title[80];
 	char author[80];	
-	int tag_dim;    
+	// int tag_dim;    
 	//end CC
 } TrackInfo;
 
@@ -92,8 +87,8 @@ typedef struct __TRACK_INFO {
 	
 typedef struct __TRACK {
 	InputStream *i_stream;
-	TrackInfo *track_info;
-	char name[255];
+	TrackInfo *info;
+	// char name[255];
 	long int timestamp;
 	MediaParser *parser;
 	/*bufferpool*/
@@ -114,7 +109,12 @@ typedef struct __SELECTOR {
 	uint32 total; /*total tracks in selector*/
 } Selector;
 
+#if 0 // define MObject with MObject_def
 typedef struct __RESOURCE_INFO {
+	MOBJECT_COMMONS; // MObject commons MUST be the first field
+#endif
+MObject_def(__RESOURCE_INFO)
+	char *mrl;
 	char twin[255];
 } ResourceInfo;
 
@@ -152,26 +152,19 @@ typedef struct __DEMUXER {
 	//...
 } Demuxer;
 
-/*infos: 
-	char* track-name, 
-	char* filename, 
-	char *encoding_name, 
-	uint32 bit_rate,	
-	uint32 clock_rate,	 
-	float sample_rate,
-	float OutputSamplingFrequency,
-	short audio_channels,
-	uint32 bit_per_sample, 
-	uint32 FlagInterlaced,
-	uint32 PixelWidth;
-	uint32 PixelHeight,
-	uint32 DisplayWidth,
-	uint32 DisplayHeight,
-	uint32 DisplayUnit,
-	uint32 AspectRatio,
-	uint8 *ColorSpace,
-	float GammaValue,
-*/
+typedef struct {
+	time_t last_change;
+	ResourceInfo *info;
+	GList *media; // GList of MediaDescr elements
+} ResourceDescr;
+
+typedef struct {
+	time_t last_change;
+	TrackInfo *info;
+	MediaProperties *properties;
+} MediaDescr;
+
+// --- functions --- //
 
 // Resounces
 Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
@@ -180,12 +173,17 @@ msg_error get_resource_info(resource_name, ResourceInfo *);
 Selector *r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
 inline msg_error r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
+int r_changed(ResourceDescr *);
 
 // TrackList handling functions
 
 // Tracks
 Track *add_track(Resource *);
 void free_track(Track *, Resource *);
+
+// Resources and Media descriptions
+ResourceDescr *r_descr_new(Resource *);
+void r_descr_free(ResourceDescr *);
 /*-------------------------------------------*/
 
 #endif // __DEMUXER_H

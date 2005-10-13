@@ -28,7 +28,7 @@
  *  
  * */
 
-#if !defined(__INPUTSTREAMH)
+#ifndef __INPUTSTREAMH
 #define __INPUTSTREAMH
 
 #include <fenice/types.h>
@@ -97,7 +97,8 @@ InputStream *istream_open(char *mrl);
 void istream_close(InputStream *);
 
 inline int istream_read(uint32 nbytes, uint8 *buf, InputStream *is); 
-// int parse_mrl(char *mrl, stream_type *type, int *fd);
 stream_type parse_mrl(char *mrl, char **resource_name);
+time_t mrl_mtime(char *mrl);
+int mrl_changed(char *mrl, time_t *last_change);
 
 #endif // __INPUTSTREAMH
