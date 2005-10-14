@@ -62,6 +62,8 @@
 
 #define RESOURCE(x) ((Resource *)x->data)
 #define TRACK(x) ((Track *)x->data)
+#define RESOURCE_DESCR(x) ((ResourceDescr *)x->data)
+#define TRACK_DESCR(x) ((TrackDescr *)x->data)
 
 typedef struct __CAPABILITIES {
 
@@ -114,7 +116,8 @@ typedef struct __RESOURCE_INFO {
 	MOBJECT_COMMONS; // MObject commons MUST be the first field
 #endif
 MObject_def(__RESOURCE_INFO)
-	char *mrl;
+	// char *mrl;
+	char mrl[255];
 	char twin[255];
 } ResourceInfo;
 

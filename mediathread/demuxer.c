@@ -51,8 +51,13 @@ static GList *ex_tracks=NULL;
  * This list holds the cache of resource descriptions. This way the mediathread
  * can provide the description buffer without opening the resource every time.
  * This will result in a better performance for RTSP DESCRIBE metod response.
+ * Descriptions are ordered for access time, so that the last is the less
+ * recently addressed media description and will be chosen for removal if cache
+ * reaches the limit.
  * */
 static GList *descr_cache=NULL;
+//! cache size of descriptions (maybe we need to take it from fenice configuration file?)
+#define MAX_DESCR_CACHE_SIZE 10
 
 /*! Private functions for exclusive tracks.
  * */
@@ -61,6 +66,7 @@ static void ex_track_save(Track *, gpointer *);
 static inline void ex_track_remove(Track *);
 // static void ex_tracks_free(Track *[], uint32);
 
+static gint cache_cmp(gconstpointer, gconstpointer);
 static void descr_cache_update(Resource *);
 
 // private funcions for specific demuxer
@@ -107,6 +113,7 @@ Resource *r_open(resource_name n)
 	// temporary track initialization:
 	r->num_tracks=0;
 	*/
+	g_strlcpy(r->info->mrl, n, sizeof(r->info->mrl));
 	r->i_stream = i_stream;
 	r->demuxer=demuxers[dmx_idx];
 	// ------------------------------------------------------------------------//
@@ -115,6 +122,8 @@ Resource *r_open(resource_name n)
 
 	// search for exclusive tracks: should be done track per track?
 	ex_tracks_save(r->tracks);
+	// update the Description cache
+	descr_cache_update(r);
 	
 	return r;
 }
@@ -420,5 +429,11 @@ static void descr_cache_update(Resource *r)
 		r_descr = r_descr_new(r);
 
 	g_list_prepend(descr_cache, r_descr);
+
+	if (g_list_length(descr_cache)>MAX_DESCR_CACHE_SIZE) {
+		cache_el = g_list_last(descr_cache);
+		r_descr_free(RESOURCE_DESCR(cache_el));
+		descr_cache = g_list_delete_link(descr_cache, cache_el);
+	}
 }
 
