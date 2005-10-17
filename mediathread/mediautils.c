@@ -39,6 +39,7 @@ void *MObject_malloc(size_t size)
 	
 	new_obj = g_malloc(size);
 	MObject_ref(new_obj);
+	MObject_destructor(new_obj, g_free);
 
 	return new_obj;
 }
@@ -49,13 +50,15 @@ void *MObject_calloc(size_t size)
 	
 	new_obj = g_malloc0(size);
 	MObject_ref(new_obj);
+	MObject_destructor(new_obj, free);
 
 	return new_obj;
 }
 
 void MObject_unref(MObject *mobject)
 {
-	if (!--mobject->refs)
-		free(mobject); // XXX shawill: probably we should support a customable free function
+	if ( mobject && !--mobject->refs)
+		mobject->destructor(mobject);
+		// free(mobject); // XXX shawill: probably we should support a customable free function
 }
 

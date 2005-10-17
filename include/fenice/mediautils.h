@@ -31,18 +31,21 @@
 #ifndef __MEDIAUTILS_H
 #define __MEDIAUTILS_H
 
-#define MOBJECT_COMMONS int refs
+#define MOBJECT_COMMONS int refs; \
+			void (*destructor)(void *)
 
 #define MObject_def(x) typedef struct x { \
 			MOBJECT_COMMONS;
 
 typedef struct {
 	MOBJECT_COMMONS;
+	char data[1];
 } MObject;
 
 #define MObject_new(type, n) (type *)MObject_malloc(n*sizeof(type))
 #define MObject_new0(type, n) (type *)MObject_calloc(n*sizeof(type))
 #define MObject_ref(object) ++object->refs
+#define MObject_destructor(object, destr) object->destructor=destr
 
 // void *MObject_new(size_t);
 void *MObject_malloc(size_t);

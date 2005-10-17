@@ -96,12 +96,14 @@ stream_type parse_mrl(char *mrl, char **resource_name)
 	char *colon;
 	stream_type res;
 
-        if ( !(colon = strstr(mrl, "://")) ) {
+        // if ( !(colon = strstr(mrl, "://")) ) {
+        if ( !(colon = strstr(mrl, FNC_PROTO_SEPARATOR)) ) {
 		*resource_name=mrl;
 		return DEFAULT_ST_TYPE;
 	}
 	*colon = '\0';
-	*resource_name = colon + strlen("://");
+	// *resource_name = colon + strlen("://");
+	*resource_name = colon + strlen(FNC_PROTO_SEPARATOR);
 
 	if(!strcmp(mrl, FNC_UDP))
 		res = st_net;	
@@ -113,7 +115,9 @@ stream_type parse_mrl(char *mrl, char **resource_name)
 	else
 		res = st_unknown;
 
-	*colon = ':';
+	// *colon = ':';
+	// *colon = *FNC_PROTO_SEPARATOR;
+	*colon = FNC_PROTO_SEPARATOR[0];
 
 	return res;
 }

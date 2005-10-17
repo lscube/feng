@@ -127,6 +127,8 @@ static int init(MediaProperties *properties, void **private_data)
 	if ( !(*private_data = calloc (1, sizeof(mpa_data))) )
 		return ERR_ALLOC;
 
+	properties->media_type = info.media_type;
+
 	return 0;
 }
 

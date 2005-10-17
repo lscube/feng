@@ -69,6 +69,9 @@ static inline void ex_track_remove(Track *);
 static gint cache_cmp(gconstpointer, gconstpointer);
 static void descr_cache_update(Resource *);
 
+static void resinfo_free(void *);
+static void trackinfo_free(void *);
+
 // private funcions for specific demuxer
 static int find_demuxer(InputStream *);
 
@@ -103,7 +106,8 @@ Resource *r_open(resource_name n)
 		return NULL;
 	}
 #endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
-	MObject_new(ResourceInfo, 1);
+	r->info = MObject_new(ResourceInfo, 1);
+	MObject_destructor(r->info, resinfo_free);
 	// -------------------------------------------------------------------------//
 	// ----------------------- initializations ---------------------------------//
 	/* initialization non needed 'cause we use calloc
@@ -113,7 +117,7 @@ Resource *r_open(resource_name n)
 	// temporary track initialization:
 	r->num_tracks=0;
 	*/
-	g_strlcpy(r->info->mrl, n, sizeof(r->info->mrl));
+	r->info->mrl = g_strdup(n);
 	r->i_stream = i_stream;
 	r->demuxer=demuxers[dmx_idx];
 	// ------------------------------------------------------------------------//
@@ -241,7 +245,8 @@ Track *add_track(Resource *r)
 	if( !(t->info = calloc(1, sizeof(TrackInfo))) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
 #endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
-	MObject_new(TrackInfo, 1);
+	t->info = MObject_new(TrackInfo, 1);
+	MObject_destructor(t->info, trackinfo_free);
 
 	if( !(t->properties = malloc(sizeof(MediaProperties))) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
@@ -435,5 +440,25 @@ static void descr_cache_update(Resource *r)
 		r_descr_free(RESOURCE_DESCR(cache_el));
 		descr_cache = g_list_delete_link(descr_cache, cache_el);
 	}
+}
+
+static void resinfo_free(void *resinfo)
+{
+	if (!resinfo)
+		return;
+
+	g_free(((ResourceInfo *)resinfo)->mrl);
+
+	g_free(resinfo);
+}
+
+static void trackinfo_free(void *trackinfo)
+{
+	if (!trackinfo)
+		return;
+
+	g_free(((TrackInfo *)trackinfo)->mrl);
+
+	g_free(trackinfo);
 }
 

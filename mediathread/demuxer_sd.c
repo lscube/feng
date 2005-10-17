@@ -220,14 +220,17 @@ static int init(Resource * r)
 				// SD_FILENAME
 				sscanf(line, "%*s%255s", track_file);
 				// if ( *track_file == '/')
-				if (*track_file == G_DIR_SEPARATOR)	// is filename absolute path?
-					strncpy(track->info->name, track_file, sizeof(track->info->name));
-				else {
-					strncpy(track->info->name, content_base, sizeof(track->info->name));
-					strncat(track->info->name, track_file, sizeof(track->info->name) - strlen(track->info->name));
-				}
+				if ((*track_file == G_DIR_SEPARATOR) || (separator=strstr(track_file, FNC_PROTO_SEPARATOR)) )
+					// is filename absolute path or complete mrl?
+					track->info->mrl = g_strdup(track_file);
+				else
+					track->info->mrl=g_strdup_printf("%s%s", content_base, track_file);
+
 				me->general_flags |= ME_FILENAME;
-				if (!(track->i_stream = istream_open(track->info->name))) {
+				if ((separator = strrchr(track_file, G_DIR_SEPARATOR)))
+					g_strlcpy(track->info->name, separator+1, sizeof(track->info->name));
+
+				if (!(track->i_stream = istream_open(track->info->mrl))) {
 					free_track(track, r);
 					return ERR_ALLOC;
 				}
@@ -237,7 +240,7 @@ static int init(Resource * r)
 				me->description_flags |= MED_ENCODING_NAME;
 			} else if (!strcasecmp(keyword, SD_PRIORITY)) {
 				// SD_PRIORITY
-				sscanf(line, "%*s %d\n", &(me->data.priority));
+				sscanf(line, "%*s %d\n", &me->data.priority);
 				me->description_flags |= MED_PRIORITY;
 			} else if (!strcasecmp(keyword, SD_BITRATE)) {
 				// SD_BITRATE
@@ -245,15 +248,15 @@ static int init(Resource * r)
 				me->description_flags |= MED_BITRATE;
 			} else if (!strcasecmp(keyword, SD_PAYLOAD_TYPE)) {
 				// SD_PAYLOAD_TYPE
-				sscanf(line, "%*s %d\n", &(payload_type));
+				sscanf(line, "%*s %u\n", &payload_type);
 				me->description_flags |= MED_PAYLOAD_TYPE;
 			} else if (!strcasecmp(keyword, SD_CLOCK_RATE)) {
 				// SD_CLOCK_RATE
-				sscanf(line, "%*s %d\n", &(clock_rate));
+				sscanf(line, "%*s %u\n", &clock_rate);
 				me->description_flags |= MED_CLOCK_RATE;
 			} else if (!strcasecmp(keyword, SD_AUDIO_CHANNELS)) {
 				// SD_AUDIO_CHANNELS
-				sscanf(line, "%*s %hd\n", &(audio_channels));
+				sscanf(line, "%*s %hd\n", &audio_channels);
 				me->description_flags |= MED_AUDIO_CHANNELS;
 			} else if (!strcasecmp(keyword, SD_AGGREGATE)) {
 				// SD_AGGREGATE
@@ -261,15 +264,15 @@ static int init(Resource * r)
 				me->general_flags |= ME_AGGREGATE;
 			} else if (!strcasecmp(keyword, SD_SAMPLE_RATE)) {
 				// SD_SAMPLE_RATE
-				sscanf(line, "%*s%f", &(sample_rate));
+				sscanf(line, "%*s%f", &sample_rate);
 				me->description_flags |= MED_SAMPLE_RATE;
 			} else if (!strcasecmp(keyword, SD_BIT_PER_SAMPLE)) {
 				// SD_BIT_PER_SAMPLE
-				sscanf(line, "%*s%d", &(bit_per_sample));
+				sscanf(line, "%*s%u", &bit_per_sample);
 				me->description_flags |= MED_BIT_PER_SAMPLE;
 			} else if (!strcasecmp(keyword, SD_FRAME_LEN)) {
 				// SD_FRAME_LEN
-				sscanf(line, "%*s%d", &(me->data.frame_len));
+				sscanf(line, "%*s%d", &me->data.frame_len);
 				me->description_flags |= MED_FRAME_LEN;
 			} else if (!strcasecmp(keyword, SD_CODING_TYPE)) {
 				// SD_CODING_TYPE
@@ -281,15 +284,15 @@ static int init(Resource * r)
 					coding_type = mc_sample;
 			} else if (!strcasecmp(keyword, SD_PKT_LEN)) {
 				// SD_PKT_LEN
-				sscanf(line, "%*s%f", &(me->data.pkt_len));
+				sscanf(line, "%*s%f", &me->data.pkt_len);
 				me->description_flags |= MED_PKT_LEN;
 			} else if (strcasecmp(keyword, SD_FRAME_RATE)) {
 				// SD_FRAME_RATE
-				sscanf(line, "%*s%d", &(frame_rate));
+				sscanf(line, "%*s%u", &frame_rate);
 				me->description_flags |= MED_FRAME_RATE;
 			} else if (!strcasecmp(keyword, SD_BYTE_PER_PCKT)) {
 				// SD_BYTE_PER_PCKT
-				sscanf(line, "%*s%d", &(me->data.byte_per_pckt));
+				sscanf(line, "%*s%d", &me->data.byte_per_pckt);
 				me->description_flags |= MED_BYTE_PER_PCKT;
 			} else if (!strcasecmp(keyword, SD_MEDIA_SOURCE)) {
 				// SD_MEDIA_SOURCE
@@ -302,11 +305,11 @@ static int init(Resource * r)
 			} else if (!strcasecmp(keyword, SD_LICENSE)) {
 				/*******START CC********/
 				// SD_LICENSE
-				sscanf(line, "%*s%s", (track->info->commons_deed));
+				sscanf(line, "%*s%s", track->info->commons_deed);
 				me->description_flags |= MED_LICENSE;
 			} else if (!strcasecmp(keyword, SD_RDF)) {
 				// SD_RDF
-				sscanf(line, "%*s%s", (track->info->rdf_page));
+				sscanf(line, "%*s%s", track->info->rdf_page);
 				me->description_flags |= MED_RDF_PAGE;
 			} else if (!strcasecmp(keyword, SD_TITLE)) {
 				// SD_TITLE
@@ -340,7 +343,8 @@ static int init(Resource * r)
 			// set_media_entity(track->parser->parser_type,track->parser->parser_type->encoding_name);
 			if ( !(track->parser = mparser_find(prop->encoding_name)) )
 				return ERR_GENERIC;
-			track->parser->init(track->properties, &track->parser_private);
+			if (track->parser->init(track->properties, &track->parser_private))
+				return ERR_GENERIC;
 
 #if 0
 	// shawill: just for parser trying:
