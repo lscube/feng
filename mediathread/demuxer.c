@@ -136,7 +136,7 @@ void r_close(Resource *r)
 {
 	if(r) {
 		istream_close(r->i_stream);
-		MObject_unref((MObject *)r->info);
+		MObject_unref(MOBJECT(r->info));
 		r->info=NULL;
 		if(r->private_data!=NULL)
 			free(r->private_data);
@@ -229,27 +229,39 @@ Resource *init_resource(resource_name name)
 #define ADD_TRACK_ERROR(level, ...) \
 	{ \
 		fnc_log(level, __VA_ARGS__); \
+		MObject_unref(MOBJECT(t->info)); \
+		MObject_unref(MOBJECT(t->properties)); \
 		free_track(t, r); \
 		return NULL; \
 	}
-Track *add_track(Resource *r)
+Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 {
 	Track *t;
 
 	if(r->num_tracks>=MAX_TRACKS)
 		return NULL;
 	if( !(t=(Track *)calloc(1, sizeof(Track))) ) 
-		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems.\n");
 	
 #if 0 // we use MObject_new: that will alloc memory and exits the program if something goes wrong
 	if( !(t->info = calloc(1, sizeof(TrackInfo))) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
 #endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
-	t->info = MObject_new(TrackInfo, 1);
+	if (info)
+		t->info = MObject_dup(info, sizeof(TrackInfo));
+	else
+		t->info = MObject_new0(TrackInfo, 1);
 	MObject_destructor(t->info, trackinfo_free);
 
+
+#if 0 // we use MObject_new: that will alloc memory and exits the program if something goes wrong
 	if( !(t->properties = malloc(sizeof(MediaProperties))) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
+#endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
+	if (prop_hints)
+		t->properties = MObject_dup(prop_hints, sizeof(MediaProperties));
+	else
+		t->properties = MObject_new0(MediaProperties, 1);
 
 	/* parser allocation no more needed.
 	 * we should now find the right media parser and link t->parse to the correspondig index
@@ -258,13 +270,20 @@ Track *add_track(Resource *r)
 	*/
 
 	if( !(t->buffer=OMSbuff_new(OMSBUFFER_DEFAULT_DIM)) )
-		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems.\n");
 
 	/* using calloc this initializzation is not needed.
 	t->track_name[0]='\0';
 	t->i_stream=NULL;
 	*/
 	/*t->i_stream=i_stream*/
+	if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
+		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not open %s.\n", t->info->mrl);
+
+	if ( !(t->parser = mparser_find(t->properties->encoding_name)) )
+		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser.\n");
+	if (t->parser->init(t->properties, &t->parser_private))
+		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s.\n", t->properties->encoding_name);
 	
 	r->tracks = g_list_append(r->tracks, t);
 	r->num_tracks++;
@@ -279,7 +298,7 @@ void free_track(Track *t, Resource *r)
 		return;
 
 	istream_close(t->i_stream);
-	MObject_unref((MObject *)t->info);
+	MObject_unref(MOBJECT(t->info));
 	mparser_unreg(t->parser, t->private_data);
 	OMSbuff_free(t->buffer);
 #if 0 // private data is not under Track jurisdiction!
@@ -329,12 +348,12 @@ void r_descr_free(ResourceDescr *descr)
 		return;
 	
 	for ( m_descr=g_list_first(descr->media); m_descr; m_descr=g_list_next(m_descr) ) {
-		MObject_unref( (MObject *)((MediaDescr *)m_descr->data)->info );
-		MObject_unref( (MObject *)((MediaDescr *)m_descr->data)->properties );
+		MObject_unref( MOBJECT(MEDIA_DESCR(m_descr)->info) );
+		MObject_unref( MOBJECT(MEDIA_DESCR(m_descr)->properties) );
 	}
 	g_list_free(descr->media);
 
-	MObject_unref( (MObject *)descr->info );
+	MObject_unref( MOBJECT(descr->info) );
 	g_free(descr);
 }
 

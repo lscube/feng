@@ -29,6 +29,7 @@
  * */
 
 #include <stdlib.h>
+#include <string.h>
 #include <glib.h>
 
 #include <fenice/mediautils.h>
@@ -38,7 +39,7 @@ void *MObject_malloc(size_t size)
 	MObject *new_obj;
 	
 	new_obj = g_malloc(size);
-	MObject_ref(new_obj);
+	new_obj->refs=1;
 	MObject_destructor(new_obj, g_free);
 
 	return new_obj;
@@ -49,10 +50,41 @@ void *MObject_calloc(size_t size)
 	MObject *new_obj;
 	
 	new_obj = g_malloc0(size);
-	MObject_ref(new_obj);
+	new_obj->refs=1;
 	MObject_destructor(new_obj, free);
 
 	return new_obj;
+}
+
+void *MObject_alloca(size_t size)
+{
+	MObject *new_obj;
+
+	new_obj = g_alloca(size);
+	new_obj->refs=1;
+	// we don't need desctructor for alloca
+	new_obj->destructor = NULL;
+
+	return new_obj;
+}
+
+void *MObject_dup(void *obj, size_t size)
+{
+	MObject *new_obj;
+
+	if ( (new_obj = g_memdup(obj, size)) )
+		new_obj->refs=1;
+
+	return new_obj;
+}
+
+void MObject_zero(MObject *obj, size_t size)
+{
+	size_t obj_hdr_size;
+
+	// set to zero object data part
+	obj_hdr_size = obj->data - (char *)obj;
+	memset(obj->data, 0, size-obj_hdr_size);
 }
 
 void MObject_unref(MObject *mobject)

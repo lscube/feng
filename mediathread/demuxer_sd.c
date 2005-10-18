@@ -150,8 +150,11 @@ static int init(Resource * r)
 	short audio_channels;
 	uint32 bit_per_sample;	/*BitDepth */
 	uint32 frame_rate;
+	media_source msource = stored;
 	FILE *fd;
 	/*--*/
+	MediaProperties props_hints;
+	TrackInfo trackinfo;
 
 	fnc_log(FNC_LOG_DEBUG, "SD init function\n");
 	fd = fdopen(r->i_stream->fd, "r");
@@ -171,6 +174,9 @@ static int init(Resource * r)
 			fnc_log(FNC_LOG_DEBUG, "content base: %s\n", content_base);
 		}
 	}
+
+	MObject_0(MOBJECT(&props_hints), MediaProperties);
+	MObject_0(MOBJECT(&trackinfo), TrackInfo);
 
 	/**
 	 * parse sd file.*/
@@ -199,16 +205,12 @@ static int init(Resource * r)
 		if (feof(fd))
 			return RESOURCE_OK;
 
+
 		/* Allocate and cast TRACK PRIVATE DATA foreach track.
 		 * (in this case track = elementary stream media file)
 		 * */
-
-		if (!(track = add_track(r)))
-			return ERR_ALLOC;
-
 		if ((me = malloc(sizeof(FlagsData))) == NULL) {
 			fnc_log(FNC_LOG_ERR, "Memory allocation error for track->private_data\n");
-			free_track(track, r);
 			return ERR_ALLOC;
 		}
 		// memset(keyword,0,sizeof(keyword));
@@ -222,41 +224,43 @@ static int init(Resource * r)
 				// if ( *track_file == '/')
 				if ((*track_file == G_DIR_SEPARATOR) || (separator=strstr(track_file, FNC_PROTO_SEPARATOR)) )
 					// is filename absolute path or complete mrl?
-					track->info->mrl = g_strdup(track_file);
+					trackinfo.mrl = g_strdup(track_file);
 				else
-					track->info->mrl=g_strdup_printf("%s%s", content_base, track_file);
+					trackinfo.mrl=g_strdup_printf("%s%s", content_base, track_file);
 
 				me->general_flags |= ME_FILENAME;
 				if ((separator = strrchr(track_file, G_DIR_SEPARATOR)))
-					g_strlcpy(track->info->name, separator+1, sizeof(track->info->name));
+					g_strlcpy(trackinfo.name, separator+1, sizeof(trackinfo.name));
 
+#if 0
 				if (!(track->i_stream = istream_open(track->info->mrl))) {
 					free_track(track, r);
 					return ERR_ALLOC;
 				}
+#endif
 			} else if (!strcasecmp(keyword, SD_ENCODING_NAME)) {
 				// SD_ENCODING_NAME
-				sscanf(line, "%*s%10s", track->properties->encoding_name);
+				sscanf(line, "%*s%10s", props_hints.encoding_name);
 				me->description_flags |= MED_ENCODING_NAME;
 			} else if (!strcasecmp(keyword, SD_PRIORITY)) {
-				// SD_PRIORITY
+				// SD_PRIORITY // shawill XXX: probably to be moved in properties or infos
 				sscanf(line, "%*s %d\n", &me->data.priority);
 				me->description_flags |= MED_PRIORITY;
 			} else if (!strcasecmp(keyword, SD_BITRATE)) {
 				// SD_BITRATE
-				sscanf(line, "%*s %d\n", &( /*track->parser->parser_type->properties-> */ bit_rate));
+				sscanf(line, "%*s %d\n", &props_hints.bit_rate);
 				me->description_flags |= MED_BITRATE;
 			} else if (!strcasecmp(keyword, SD_PAYLOAD_TYPE)) {
 				// SD_PAYLOAD_TYPE
-				sscanf(line, "%*s %u\n", &payload_type);
+				sscanf(line, "%*s %u\n", &props_hints.payload_type);
 				me->description_flags |= MED_PAYLOAD_TYPE;
 			} else if (!strcasecmp(keyword, SD_CLOCK_RATE)) {
 				// SD_CLOCK_RATE
-				sscanf(line, "%*s %u\n", &clock_rate);
+				sscanf(line, "%*s %u\n", &props_hints.clock_rate);
 				me->description_flags |= MED_CLOCK_RATE;
 			} else if (!strcasecmp(keyword, SD_AUDIO_CHANNELS)) {
 				// SD_AUDIO_CHANNELS
-				sscanf(line, "%*s %hd\n", &audio_channels);
+				sscanf(line, "%*s %hd\n", &props_hints.audio_channels);
 				me->description_flags |= MED_AUDIO_CHANNELS;
 			} else if (!strcasecmp(keyword, SD_AGGREGATE)) {
 				// SD_AGGREGATE
@@ -264,11 +268,11 @@ static int init(Resource * r)
 				me->general_flags |= ME_AGGREGATE;
 			} else if (!strcasecmp(keyword, SD_SAMPLE_RATE)) {
 				// SD_SAMPLE_RATE
-				sscanf(line, "%*s%f", &sample_rate);
+				sscanf(line, "%*s%f", &props_hints.sample_rate);
 				me->description_flags |= MED_SAMPLE_RATE;
 			} else if (!strcasecmp(keyword, SD_BIT_PER_SAMPLE)) {
 				// SD_BIT_PER_SAMPLE
-				sscanf(line, "%*s%u", &bit_per_sample);
+				sscanf(line, "%*s%u", &props_hints.bit_per_sample);
 				me->description_flags |= MED_BIT_PER_SAMPLE;
 			} else if (!strcasecmp(keyword, SD_FRAME_LEN)) {
 				// SD_FRAME_LEN
@@ -279,16 +283,16 @@ static int init(Resource * r)
 				sscanf(line, "%*s%10s", sparam);
 				me->description_flags |= MED_CODING_TYPE;
 				if (strcasecmp(sparam, "FRAME") == 0)
-					coding_type = mc_frame;
+					props_hints.coding_type = mc_frame;
 				else if (strcasecmp(sparam, "SAMPLE") == 0)
-					coding_type = mc_sample;
+					props_hints.coding_type = mc_sample;
 			} else if (!strcasecmp(keyword, SD_PKT_LEN)) {
 				// SD_PKT_LEN
 				sscanf(line, "%*s%f", &me->data.pkt_len);
 				me->description_flags |= MED_PKT_LEN;
 			} else if (strcasecmp(keyword, SD_FRAME_RATE)) {
 				// SD_FRAME_RATE
-				sscanf(line, "%*s%u", &frame_rate);
+				sscanf(line, "%*s%u", &props_hints.frame_rate);
 				me->description_flags |= MED_FRAME_RATE;
 			} else if (!strcasecmp(keyword, SD_BYTE_PER_PCKT)) {
 				// SD_BYTE_PER_PCKT
@@ -299,52 +303,58 @@ static int init(Resource * r)
 				sscanf(line, "%*s%10s", sparam);
 				me->description_flags |= MED_MSOURCE;
 				if (strcasecmp(sparam, "STORED") == 0)
-					track->msource = stored;
+					msource = stored;
 				if (strcasecmp(sparam, "LIVE") == 0)
-					track->msource = live;
+					msource = live;
 			} else if (!strcasecmp(keyword, SD_LICENSE)) {
 				/*******START CC********/
 				// SD_LICENSE
-				sscanf(line, "%*s%s", track->info->commons_deed);
+				sscanf(line, "%*s%s", trackinfo.commons_deed);
 				me->description_flags |= MED_LICENSE;
 			} else if (!strcasecmp(keyword, SD_RDF)) {
 				// SD_RDF
-				sscanf(line, "%*s%s", track->info->rdf_page);
+				sscanf(line, "%*s%s", trackinfo.rdf_page);
 				me->description_flags |= MED_RDF_PAGE;
 			} else if (!strcasecmp(keyword, SD_TITLE)) {
 				// SD_TITLE
 				int i = 7;
 				int j = 0;
 				while (line[i] != '\n') {
-					track->info->title[j] = line[i];
+					trackinfo.title[j] = line[i];
 					i++;
 					j++;
 				}
-				track->info->title[j] = '\0';
+				trackinfo.title[j] = '\0';
 				me->description_flags |= MED_TITLE;
 			} else if (!strcasecmp(keyword, SD_CREATOR)) {
 				// SD_CREATOR
 				int i = 9;
 				int j = 0;
 				while (line[i] != '\n') {
-					track->info->author[j] = line[i];
+					trackinfo.author[j] = line[i];
 					i++;
 					j++;
 				}
-				track->info->author[j] = '\0';
+				trackinfo.author[j] = '\0';
 				me->description_flags |= MED_CREATOR;
 			}
 			/********END CC*********/
 		}	/*end while !STREAM_END or eof */
 
+		if (!(track = add_track(r, &trackinfo, &props_hints)))
+			return ERR_ALLOC;
+
+#if 0
 		if (me->description_flags & MED_ENCODING_NAME) {
-			MediaProperties *prop = track->properties;
+			// MediaProperties *prop = &props_hints;
 			// shawill: init parser functions in another way
 			// set_media_entity(track->parser->parser_type,track->parser->parser_type->encoding_name);
-			if ( !(track->parser = mparser_find(prop->encoding_name)) )
+#if 0
+			if ( !(track->parser = mparser_find(props_hints.encoding_name)) )
 				return ERR_GENERIC;
-			if (track->parser->init(track->properties, &track->parser_private))
+			if (track->parser->init(&props_hints, &track->parser_private))
 				return ERR_GENERIC;
+#endif
 
 #if 0
 	// shawill: just for parser trying:
@@ -357,7 +367,8 @@ static int init(Resource * r)
 		track->parser->get_frame(tmp_dst, sizeof(tmp_dst), &timest, track->i_stream, track->properties, track->parser_private);
 	}
 #endif
-			switch (track->properties->media_type) {
+#if 0
+			switch (props_hints.media_type) {
 				case MP_audio:
 					// audio_spec_prop *prop;
 					// prop=malloc(sizeof(audio_spec_prop));        
@@ -402,7 +413,10 @@ static int init(Resource * r)
 					return ERR_ALLOC;
 					break;
 			}
+#endif 
 		}
+#endif
+		track->msource = msource;
 		track->private_data = me;
 		if ((res = validate_track(r)) != ERR_NOERROR) {
 			free_track(track, r);

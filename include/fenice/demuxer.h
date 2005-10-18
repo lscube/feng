@@ -63,7 +63,7 @@
 #define RESOURCE(x) ((Resource *)x->data)
 #define TRACK(x) ((Track *)x->data)
 #define RESOURCE_DESCR(x) ((ResourceDescr *)x->data)
-#define TRACK_DESCR(x) ((TrackDescr *)x->data)
+#define MEDIA_DESCR(x) ((MediaDescr *)x->data)
 
 typedef struct __CAPABILITIES {
 
@@ -181,7 +181,8 @@ int r_changed(ResourceDescr *);
 // TrackList handling functions
 
 // Tracks
-Track *add_track(Resource *);
+// Track *add_track(Resource *);
+Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 void free_track(Track *, Resource *);
 
 // Resources and Media descriptions
