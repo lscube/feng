@@ -38,9 +38,10 @@
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <stdio.h>
-
+#if 0
 // shatries: prova
 #include <fenice/mediathread.h>
+#endif
 
 int parse_SD_file(char *object,SD_descr *sd_descr)
 {
@@ -50,6 +51,10 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
         char thefile[255];
         int res;
 	struct stat data;
+#if 0
+	// shatries
+	ResourceDescr *r_descr;
+#endif
                 
         // Save the .SD file name               
         strcpy(thefile,prefs_get_serv_root());
@@ -57,9 +62,12 @@ int parse_SD_file(char *object,SD_descr *sd_descr)
         strcat(thefile,object);
         fnc_log(FNC_LOG_DEBUG,"Requested file is: %s\n", thefile);
 
+#if 0
 	/* shatries */
-	r_open(thefile);
+	// r_open(thefile);
+	r_descr=r_descr_get(thefile);
 	/* /shatries */
+#endif
 
         f=fopen(thefile,"r");
         if (f==NULL) {

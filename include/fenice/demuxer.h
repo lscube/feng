@@ -60,6 +60,7 @@
 #define MAX_TRACKS 20	
 #define MAX_SEL_TRACKS 5
 
+//! Macros that take the data part of a GList element and cast to correct type
 #define RESOURCE(x) ((Resource *)x->data)
 #define TRACK(x) ((Track *)x->data)
 #define RESOURCE_DESCR(x) ((ResourceDescr *)x->data)
@@ -186,8 +187,9 @@ Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 void free_track(Track *, Resource *);
 
 // Resources and Media descriptions
-ResourceDescr *r_descr_new(Resource *);
-void r_descr_free(ResourceDescr *);
+ResourceDescr *r_descr_get(resource_name);
+// ResourceDescr *r_descr_new(Resource *);
+// void r_descr_free(ResourceDescr *);
 /*-------------------------------------------*/
 
 #endif // __DEMUXER_H

@@ -44,6 +44,12 @@
 #include <fenice/rtp.h>
 #include <fenice/multicast.h>
 
+/* shatries */
+#include <fenice/prefs.h>
+#include <fenice/mediathread.h>
+#include <fenice/fnc_log.h>
+/* /shatries */
+
 int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 {	
 	char s[30],t[255],app[80];
@@ -53,6 +59,11 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 	char ttl[4];
 		
 	int res;
+	/* shatries */
+	ResourceDescr *r_descr;
+	/* /shatries */
+
+	fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s\n", url);
 	
 	if((res=enum_media(url,&matching_descr))!=ERR_NOERROR)
 		return res;
@@ -79,8 +90,7 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 		strcat(descr,"/");
 		sprintf(ttl, "%d", (int)DEFAULT_TTL);
 		strcat(descr, ttl); /*TODO: the possibility to change ttl. See multicast.h, RTSP_setup.c, send_setup_reply.c*/
-	}
-	else
+	} else
    		strcat(descr, get_address());
    	
 	strcat(descr, SDP_EL);

@@ -416,7 +416,7 @@ static int init(Resource * r)
 #endif 
 		}
 #endif
-		track->msource = msource;
+		track->msource = msource; // XXX shawill: this variable should not be set here
 		track->private_data = me;
 		if ((res = validate_track(r)) != ERR_NOERROR) {
 			free_track(track, r);

@@ -120,7 +120,7 @@ static float AspectRatioCode[] = {		/* value 	height/width	video source		*/
 static int init(MediaProperties *properties, void **private_data)
 {
 	mpv_data *mpeg_video;
-	*private_data = malloc(sizeof(mpv_data));
+	*private_data = calloc(1, sizeof(mpv_data));
 	mpeg_video = (mpv_data *)(*private_data);
 	mpeg_video->vsh1 = malloc(sizeof(video_spec_head1));
 	mpeg_video->vsh2 = malloc(sizeof(video_spec_head2));

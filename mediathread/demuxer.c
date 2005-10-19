@@ -67,7 +67,10 @@ static inline void ex_track_remove(Track *);
 // static void ex_tracks_free(Track *[], uint32);
 
 static gint cache_cmp(gconstpointer, gconstpointer);
-static void descr_cache_update(Resource *);
+#define r_descr_find(mrl) g_list_find_custom(descr_cache, mrl, cache_cmp)
+static void r_descr_cache_update(Resource *);
+static ResourceDescr *r_descr_new(Resource *);
+static void r_descr_free(ResourceDescr *);
 
 static void resinfo_free(void *);
 static void trackinfo_free(void *);
@@ -106,7 +109,7 @@ Resource *r_open(resource_name n)
 		return NULL;
 	}
 #endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
-	r->info = MObject_new(ResourceInfo, 1);
+	r->info = MObject_new0(ResourceInfo, 1);
 	MObject_destructor(r->info, resinfo_free);
 	// -------------------------------------------------------------------------//
 	// ----------------------- initializations ---------------------------------//
@@ -127,7 +130,7 @@ Resource *r_open(resource_name n)
 	// search for exclusive tracks: should be done track per track?
 	ex_tracks_save(r->tracks);
 	// update the Description cache
-	descr_cache_update(r);
+	r_descr_cache_update(r);
 	
 	return r;
 }
@@ -284,6 +287,17 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser.\n");
 	if (t->parser->init(t->properties, &t->parser_private))
 		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s.\n", t->properties->encoding_name);
+#if 0
+	// shawill: just for parser trying:
+	{
+		uint8 tmp_dst[512];
+		double timest;
+
+		fnc_log(FNC_LOG_DEBUG, "[MT] demuxer sd init done.\n");
+
+		t->parser->get_frame(tmp_dst, sizeof(tmp_dst), &timest, t->i_stream, t->properties, t->parser_private);
+	}
+#endif
 	
 	r->tracks = g_list_append(r->tracks, t);
 	r->num_tracks++;
@@ -297,7 +311,6 @@ void free_track(Track *t, Resource *r)
 	if (!t)
 		return;
 
-	istream_close(t->i_stream);
 	MObject_unref(MOBJECT(t->info));
 	mparser_unreg(t->parser, t->private_data);
 	OMSbuff_free(t->buffer);
@@ -307,57 +320,30 @@ void free_track(Track *t, Resource *r)
 	// t->calculate_timestamp=NULL; /*TODO*/
 	if ( t->i_stream && IS_ISEXCLUSIVE(t->i_stream) )
 		ex_track_remove(t);
+	istream_close(t->i_stream);
 
 	r->tracks = g_list_remove(r->tracks, t);
 	free(t);
 	r->num_tracks--;
 }
 
-ResourceDescr *r_descr_new(Resource *r)
+ResourceDescr *r_descr_get(resource_name n)
 {
-	ResourceDescr *new_descr;
-	MediaDescr *new_mdescr;
-	GList *tracks;
-	
-	new_descr=g_new(ResourceDescr, 1);
-	new_descr->media = NULL;
+	GList *cache_el;
 
-	new_descr->info=r->info;
-	MObject_ref(r->info);
-	new_descr->last_change=mrl_mtime(r->info->mrl);
-
-	for (tracks=g_list_first(r->tracks); tracks; tracks=g_list_next(tracks)) {
-		new_mdescr = g_new(MediaDescr, 1);
-		new_mdescr->info = TRACK(tracks)->info;
-		MObject_ref(TRACK(tracks)->info);
-		new_mdescr->properties = TRACK(tracks)->properties;
-		MObject_ref(TRACK(tracks)->properties);
-		new_mdescr->last_change = mrl_mtime(TRACK(tracks)->info->mrl);
-		new_descr->media = g_list_prepend(new_descr->media, new_mdescr);
+	if ( !(cache_el=r_descr_find(n)) ) {
+		Resource *r;
+		if ( !(r=r_open(n)) ) // shawill TODO: implement pre_open cache
+			return NULL;
+		cache_el=r_descr_find(n);
+		r_close(r);
 	}
-	new_descr->media=g_list_reverse(new_descr->media); // put the Media description in the same order of tracks.
-
-	return NULL;
+	
+	return RESOURCE_DESCR(cache_el);
 }
 
-void r_descr_free(ResourceDescr *descr)
-{
-	GList *m_descr;
+// --- static functions --- //
 
-	if (!descr)
-		return;
-	
-	for ( m_descr=g_list_first(descr->media); m_descr; m_descr=g_list_next(m_descr) ) {
-		MObject_unref( MOBJECT(MEDIA_DESCR(m_descr)->info) );
-		MObject_unref( MOBJECT(MEDIA_DESCR(m_descr)->properties) );
-	}
-	g_list_free(descr->media);
-
-	MObject_unref( MOBJECT(descr->info) );
-	g_free(descr);
-}
-
-// static functions
 static inline void ex_tracks_save(GList *tracks)
 {
 	g_list_foreach(tracks, (GFunc)ex_track_save, NULL);
@@ -432,16 +418,16 @@ static int find_demuxer(InputStream *i_stream)
 // --- Description Cache management --- //
 static gint cache_cmp(gconstpointer a, gconstpointer b)
 {
-	return strcmp( ((ResourceDescr *)((GList *)a)->data)->info->mrl, (const char *)b );
+	return strcmp( ((ResourceDescr *)a)->info->mrl, (const char *)b );
 }
 
-static void descr_cache_update(Resource *r)
+static void r_descr_cache_update(Resource *r)
 {
 	GList *cache_el;
 	ResourceDescr *r_descr=NULL;
 	
-	if ( ( cache_el = g_list_find_custom(descr_cache, r->info->mrl, cache_cmp) ) ) {
-		r_descr = cache_el->data;
+	if ( ( cache_el = r_descr_find(r->info->mrl) ) ) {
+		r_descr = RESOURCE_DESCR(cache_el);
 		// TODO free ResourceDescr
 		descr_cache = g_list_remove_link(descr_cache, cache_el);
 		if (r_changed(r_descr)) {
@@ -452,13 +438,58 @@ static void descr_cache_update(Resource *r)
 	if (!r_descr)
 		r_descr = r_descr_new(r);
 
-	g_list_prepend(descr_cache, r_descr);
+	descr_cache=g_list_prepend(descr_cache, r_descr);
 
 	if (g_list_length(descr_cache)>MAX_DESCR_CACHE_SIZE) {
 		cache_el = g_list_last(descr_cache);
 		r_descr_free(RESOURCE_DESCR(cache_el));
 		descr_cache = g_list_delete_link(descr_cache, cache_el);
 	}
+}
+
+static ResourceDescr *r_descr_new(Resource *r)
+{
+	ResourceDescr *new_descr;
+	MediaDescr *new_mdescr;
+	GList *tracks;
+	
+	new_descr=g_new(ResourceDescr, 1);
+	new_descr->media = NULL;
+
+	new_descr->info=r->info;
+	MObject_ref(r->info);
+	new_descr->last_change=mrl_mtime(r->info->mrl);
+
+	for (tracks=g_list_first(r->tracks); tracks; tracks=g_list_next(tracks)) {
+		new_mdescr = g_new(MediaDescr, 1);
+		new_mdescr->info = TRACK(tracks)->info;
+		MObject_ref(TRACK(tracks)->info);
+		new_mdescr->properties = TRACK(tracks)->properties;
+		MObject_ref(TRACK(tracks)->properties);
+		new_mdescr->last_change = mrl_mtime(TRACK(tracks)->info->mrl);
+		new_descr->media = g_list_prepend(new_descr->media, new_mdescr);
+	}
+	// put the Media description in the same order of tracks.
+	new_descr->media=g_list_reverse(new_descr->media);
+
+	return new_descr;
+}
+
+static void r_descr_free(ResourceDescr *descr)
+{
+	GList *m_descr;
+
+	if (!descr)
+		return;
+	
+	for ( m_descr=g_list_first(descr->media); m_descr; m_descr=g_list_next(m_descr) ) {
+		MObject_unref( MOBJECT(MEDIA_DESCR(m_descr)->info) );
+		MObject_unref( MOBJECT(MEDIA_DESCR(m_descr)->properties) );
+	}
+	g_list_free(descr->media);
+
+	MObject_unref( MOBJECT(descr->info) );
+	g_free(descr);
 }
 
 static void resinfo_free(void *resinfo)
