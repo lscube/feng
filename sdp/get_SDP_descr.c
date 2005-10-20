@@ -32,6 +32,9 @@
  *  
  * */
 
+#define SHATRIES
+// #undef SHATRIES
+
 #include <stdio.h>
 #include <string.h>
 
@@ -44,11 +47,14 @@
 #include <fenice/rtp.h>
 #include <fenice/multicast.h>
 
+#ifdef SHATRIES
 /* shatries */
+#include <glib.h>
 #include <fenice/prefs.h>
 #include <fenice/mediathread.h>
 #include <fenice/fnc_log.h>
 /* /shatries */
+#endif // SHATRIES
 
 int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 {	
@@ -59,16 +65,23 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 	char ttl[4];
 		
 	int res;
+#ifdef SHATRIES
 	/* shatries */
+        char thefile[255];
 	ResourceDescr *r_descr;
-	/* /shatries */
 
-	fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s\n", url);
+        strcpy(thefile,prefs_get_serv_root());
+        strcat(thefile,url);
+	fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s\n", thefile);
+	r_descr=r_descr_get(thefile);
+	/* /shatries */
+#endif // SHATRIES
 	
 	if((res=enum_media(url,&matching_descr))!=ERR_NOERROR)
 		return res;
 	list=matching_descr->me_list;
 	memset(&req,0,sizeof(req));
+	// search media with highest priority
 	req.description.flags|=MED_PRIORITY;
 	req.description.priority=1;
 	p=search_media(&req,list);
@@ -85,6 +98,15 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
    	strcat(descr, "IN ");		/* Network type: Internet. */
    	strcat(descr, "IP4 ");		/* Address type: IP4. */
 
+#ifdef SHATRIES
+	if(*r_descr->info->multicast) {
+   		strcat(descr, r_descr->info->multicast);
+		strcat(descr,"/");
+		sprintf(ttl, "%d", (int)DEFAULT_TTL);
+		strcat(descr, ttl); /*TODO: the possibility to change ttl. See multicast.h, RTSP_setup.c, send_setup_reply.c*/
+	} else
+   		strcat(descr, get_address());
+#else // SHATRIES
 	if(matching_descr->flags & SD_FL_MULTICAST){
    		strcat(descr, matching_descr->multicast);
 		strcat(descr,"/");
@@ -92,6 +114,7 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 		strcat(descr, ttl); /*TODO: the possibility to change ttl. See multicast.h, RTSP_setup.c, send_setup_reply.c*/
 	} else
    		strcat(descr, get_address());
+#endif // SHATRIES
    	
 	strcat(descr, SDP_EL);
    	strcat(descr, "s=RTSP Session"SDP_EL);
@@ -113,12 +136,12 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 		p->flags|=ME_RESERVED;
 		p=p->next;
 	}
-   	if (extended) {
+
+   	if (extended)
 		p=list;
-   	}
-	else {
+   	else
 	   	p=media;
-	}
+
    	do {   	
    		if (p->description.priority == 1) {
 			strcat(descr,"m=");

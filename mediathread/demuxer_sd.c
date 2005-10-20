@@ -61,9 +61,9 @@ typedef enum {
 
 typedef struct __SD_descr {
 	sd_descr_flags flags;
-	char multicast[16];	/*??? */
-	char ttl[4];		/*??? */
-	//char twin[255]; //see RESOURCE_INFO -> twin
+	// char multicast[16];	//see RESOURCE_INFO -> multicast	/*??? */
+	// char ttl[4];		//see RESOURCE_INFO -> ttl		/*??? */
+	// char twin[255];	//see RESOURCE_INFO -> twin
 } SD_descr;
 /*----------------------*/
 
@@ -142,14 +142,14 @@ static int init(Resource * r)
 	char content_base[256] = "", *separator, track_file[256];
 
 	/*--*/
-	int32 bit_rate;		/*average if VBR or -1 is not usefull */
-	MediaCodingType coding_type = mc_undefined;
-	uint32 payload_type;
-	uint32 clock_rate;
-	float sample_rate;	/*SamplingFrequency */
-	short audio_channels;
-	uint32 bit_per_sample;	/*BitDepth */
-	uint32 frame_rate;
+	// int32 bit_rate;		/*average if VBR or -1 is not usefull */
+	// MediaCodingType coding_type = mc_undefined;
+	// uint32 payload_type;
+	// uint32 clock_rate;
+	// float sample_rate;	/*SamplingFrequency */
+	// short audio_channels;
+	// uint32 bit_per_sample;	/*BitDepth */
+	// uint32 frame_rate;
 	media_source msource = stored;
 	FILE *fd;
 	/*--*/
@@ -196,10 +196,13 @@ static int init(Resource * r)
 				if (parse_url(r->info->twin, server, &port, object))
 					sd->flags |= SD_FL_TWIN;
 			} else if (!strcasecmp(keyword, SD_MULTICAST)) {
-				sscanf(line, "%*s%s", sd->multicast);
+				// sscanf(line, "%*s%s", sd->multicast);
+				sscanf(line, "%*s%s", r->info->multicast);
 				sd->flags |= SD_FL_MULTICAST;
-				if (!is_valid_multicast_address(sd->multicast))
-					strcpy(sd->multicast, DEFAULT_MULTICAST_ADDRESS);
+				// if (!is_valid_multicast_address(sd->multicast))
+				if (!is_valid_multicast_address(r->info->multicast))
+					//strcpy(sd->multicast, DEFAULT_MULTICAST_ADDRESS);
+					strcpy(r->info->multicast, DEFAULT_MULTICAST_ADDRESS);
 			}
 		}
 		if (feof(fd))

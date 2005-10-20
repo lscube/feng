@@ -241,6 +241,8 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 {
 	Track *t;
 
+	// TODO: search first of all in exclusive tracks
+
 	if(r->num_tracks>=MAX_TRACKS)
 		return NULL;
 	if( !(t=(Track *)calloc(1, sizeof(Track))) ) 
