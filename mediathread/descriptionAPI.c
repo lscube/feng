@@ -42,16 +42,22 @@ inline char *r_descr_mrl(ResourceDescr *r_descr)
 
 inline char *r_descr_twin(ResourceDescr *r_descr)
 {
-	return (r_descr && r_descr->info) ? r_descr->info->twin : NULL;
+	// use this if 'twin' become a char pointer
+	// return (r_descr && r_descr->info) ? r_descr->info->twin : NULL;
+	return (r_descr && r_descr->info && *r_descr->info->twin) ? r_descr->info->twin : NULL;
 }
 
 inline char *r_descr_multicast(ResourceDescr *r_descr)
 {
-	return (r_descr && r_descr->info) ? r_descr->info->multicast : NULL;
+	// use this if 'multicast' become a char pointer
+	// return (r_descr && r_descr->info) ? r_descr->info->multicast : NULL;
+	return (r_descr && r_descr->info && *r_descr->info->multicast) ? r_descr->info->multicast : NULL;
 }
 
 inline char *r_descr_ttl(ResourceDescr *r_descr)
 {
-	return (r_descr && r_descr->info) ? r_descr->info->ttl : NULL;
+	// use this if 'ttl' become a char pointer
+	// return (r_descr && r_descr->info) ? r_descr->info->ttl : NULL;
+	return (r_descr && r_descr->info && *r_descr->info->ttl) ? r_descr->info->ttl : NULL;
 }
 

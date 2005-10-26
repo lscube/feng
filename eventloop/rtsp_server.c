@@ -92,9 +92,8 @@ int rtsp_server(RTSP_buffer *rtsp)
 		}
 		
 		fnc_log(FNC_LOG_VERBOSE,"INPUT_BUFFER was:\n");				
-#ifdef VERBOSE
+		
 		dump_buffer(buffer);
-#endif
 		
 		memcpy(&(rtsp->in_buffer[rtsp->in_size]),buffer,n);
 		rtsp->in_size+=n;

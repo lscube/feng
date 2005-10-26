@@ -44,7 +44,7 @@
 
 #define MAX_FILE_DUMP 6
 
-int dump_payload(uint8 *data_slot, uint32 data_size, uint8 fname[255])
+int dump_payload(uint8 *data_slot, uint32 data_size, char fname[255])
 {
 	static int fin[MAX_FILE_DUMP];	
 	static char filename[MAX_FILE_DUMP][255];

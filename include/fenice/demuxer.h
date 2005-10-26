@@ -77,6 +77,7 @@ typedef struct __TRACK_INFO {
 MObject_def(__TRACK_INFO)
 	char *mrl;
 	char name[255];
+	char *sdp_private;
 	//start CC
 	char commons_deed[255]; 
 	char rdf_page[255];
@@ -118,6 +119,7 @@ typedef struct __RESOURCE_INFO {
 #endif
 MObject_def(__RESOURCE_INFO)
 	char *mrl;
+	char *sdp_private;
 	// char mrl[255];
 	char twin[255];
 	char multicast[16];
@@ -193,9 +195,11 @@ ResourceDescr *r_descr_get(resource_name);
 // ResourceDescr *r_descr_new(Resource *);
 // void r_descr_free(ResourceDescr *);
 /* --- functions implemented in descriptionAPI.c --- */
-/* the functions that return pointers do not allocate new memory, simply return
+/*! the functions that return pointers do not allocate new memory, simply return
  * the pointer of the description resource. So,l there is no need to free
- * anything. */
+ * anything. 
+ * The functions that return pointers return NULL if the value is not set.
+ * */
 inline char *r_descr_mrl(ResourceDescr *);
 inline char *r_descr_twin(ResourceDescr *);
 inline char *r_descr_multicast(ResourceDescr *);

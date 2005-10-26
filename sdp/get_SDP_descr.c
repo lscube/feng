@@ -99,8 +99,10 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
    	strcat(descr, "IP4 ");		/* Address type: IP4. */
 
 #ifdef SHATRIES
-	if(*r_descr->info->multicast) {
-   		strcat(descr, r_descr->info->multicast);
+	// if(*r_descr->info->multicast) {
+	if(r_descr_multicast(r_descr)) {
+   		// strcat(descr, r_descr->info->multicast);
+   		strcat(descr, r_descr_multicast(r_descr));
 		strcat(descr,"/");
 		sprintf(ttl, "%d", (int)DEFAULT_TTL);
 		strcat(descr, ttl); /*TODO: the possibility to change ttl. See multicast.h, RTSP_setup.c, send_setup_reply.c*/
@@ -121,12 +123,17 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 	// sprintf(descr, "%si=%s %s Streaming Server"SDP_EL, descr, PACKAGE, VERSION);
 	sprintf(descr + strlen(descr), "i=%s %s Streaming Server"SDP_EL, PACKAGE, VERSION);
 
+#ifdef SHATRIES
+#else // SHATRIES
+#endif // SHATRIES
 	if (p==NULL) 
 		return ERR_PARSE;
 	
    	if (p->flags & ME_AGGREGATE) {
-   		sprintf(descr + strlen(descr), "a=control:%s!%s"SDP_EL, url, p->aggregate);
+   		// sprintf(descr + strlen(descr), "a=control:%s!%s"SDP_EL, url, p->aggregate);
+   		sprintf(descr + strlen(descr), "a=control:*"SDP_EL);
    	}
+// #endif // SHATRIES
    	sprintf(descr + strlen(descr), "u=%s"SDP_EL, url);
    	strcat(descr, "t=0 0"SDP_EL);	
    	// media specific
@@ -291,6 +298,9 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 		   	}
 	   	}
    	} while (p!=NULL);
+
+	dump_buffer(descr);
+	
    	return ERR_NOERROR;
 }
 
