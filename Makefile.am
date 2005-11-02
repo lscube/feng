@@ -12,6 +12,7 @@ SUBDIRS =	bufferpool \
 		rtsp \
 		mediainfo \
 		sdp \
+		sdp2 \
 		schedule \
 		src \
 		docs \

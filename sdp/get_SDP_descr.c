@@ -32,8 +32,8 @@
  *  
  * */
 
-#define SHATRIES
-// #undef SHATRIES
+// #define SHATRIES
+#undef SHATRIES
 
 #include <stdio.h>
 #include <string.h>
@@ -131,7 +131,7 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 	
    	if (p->flags & ME_AGGREGATE) {
    		// sprintf(descr + strlen(descr), "a=control:%s!%s"SDP_EL, url, p->aggregate);
-   		sprintf(descr + strlen(descr), "a=control:*"SDP_EL);
+   		sprintf(descr + strlen(descr), "a=control:%s"SDP_EL, url);
    	}
 // #endif // SHATRIES
    	sprintf(descr + strlen(descr), "u=%s"SDP_EL, url);
@@ -298,8 +298,6 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 		   	}
 	   	}
    	} while (p!=NULL);
-
-	dump_buffer(descr);
 	
    	return ERR_NOERROR;
 }

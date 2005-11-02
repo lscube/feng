@@ -50,7 +50,7 @@ typedef enum {MP_audio, MP_video, MP_application, MP_data, MP_control} MediaType
 typedef struct {
 	MOBJECT_COMMONS; // MObject commons MUST be the first field
 #endif
-MObject_def()
+MObject_def(__MEDIA_PROPERTIES)
 	int32 bit_rate; /*average if VBR or -1 is not usefull*/
 	MediaCodingType coding_type;
 	uint32 payload_type;

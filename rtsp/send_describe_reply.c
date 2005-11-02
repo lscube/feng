@@ -74,7 +74,8 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format des
 		break;
 		}
 	}
-	sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/"RTSP_EL, prefs_get_hostname(), object);
+	// sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/"RTSP_EL, prefs_get_hostname(), object);
+	sprintf(r + strlen(r), "Content-Base: rtsp://%s/"RTSP_EL, prefs_get_hostname());
 	sprintf(r + strlen(r), "Content-Length: %d"RTSP_EL, strlen(descr));
 	// end of message
 	strcat(r, RTSP_EL);
