@@ -75,7 +75,7 @@ static void r_descr_free(ResourceDescr *);
 static void resinfo_free(void *);
 static void trackinfo_free(void *);
 
-// private funcions for specific demuxer
+// private functions for specific demuxer
 static int find_demuxer(InputStream *);
 
 Resource *r_open(resource_name n)
@@ -394,7 +394,7 @@ static int find_demuxer(InputStream *i_stream)
 				if (!strcmp(tkn, res_ext)) {
 					fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: extension \"%s\" matches \"%s\" demuxer\n", res_ext, demuxers[i]->info->name);
 					if (demuxers[i]->probe(i_stream) == RESOURCE_OK) {
-						fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: demuxer found\n", res_ext, demuxers[i]->info->name);
+						fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\" demuxer found\n", demuxers[i]->info->name);
 						found = 1;
 						break;
 					}
@@ -407,7 +407,7 @@ static int find_demuxer(InputStream *i_stream)
 	if (!found) {
 		for (i=0; demuxers[i]; i++) {
 			if ( (i!=probed) && (demuxers[i]->probe(i_stream) == RESOURCE_OK) ) {
-				fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: demuxer found\n", res_ext, demuxers[i]->info->name);
+				fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\" demuxer found\n", demuxers[i]->info->name);
 				found = 1;
 				break;
 			}

@@ -58,7 +58,7 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStr
  *    args:
  *       dst: destination memory slot,
  *       dst_nbytes: number of bytes of *dest memory area,
- *       src: source memory slto,
+ *       src: source memory slot,
  *       src_nbytes: number of bytes of *source memory area,
  *       void *properties: private data specific for each media parser.
  *    return: ...
