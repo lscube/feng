@@ -142,11 +142,11 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStr
 
 	mpa = (mpa_data *)private_data;
 
-	// if ( (ret=mpa_sync(&header, istream, mpa)) )
-	if ( (ret=mpa_sync(&header, &in, mpa)) )
-		return ret;
-	if ( (ret=mpa_decode_header(header, properties, mpa)) )
-		return ret;
+	do {
+		if ( (ret=mpa_sync(&header, &in, mpa)) )
+			return ret;
+		ret=mpa_decode_header(header, properties, mpa);
+	} while(ret);
 
 	if (dst_nbytes < mpa->pkt_len)
 		return MP_PKT_TOO_SMALL;
@@ -169,12 +169,12 @@ static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbyte
 {
 	mpa_input in={ NULL, src, src_nbytes };
 	uint32 header, mpa_header=0;
-	mpa_data *mpa=(mpa_data *)properties;
+	mpa_data *mpa=(mpa_data *)private_data;
 	int ret;
 	uint32 dst_offset=0;
 
 	uint32 to_cpy, end_frm_dist;
-	uint8 tmp[3];
+	// uint8 tmp[3];
 
 	if ( (mpa->fragmented) && (mpa->frag_src == src) && (mpa->frag_src_nbytes == src_nbytes) ) { // last frame was fragmented
 		end_frm_dist = mpa->pkt_len - mpa->frag_offset;
@@ -293,10 +293,10 @@ static int mpa_sync(uint32 *header, mpa_input *in, mpa_data *mpa)
 
 static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_data *mpa)
 {
-        int RowIndex,ColIndex;
+	int RowIndex,ColIndex;
 	uint8 *buff_data = (uint8 * )&header;
 	int padding;
-        int BitrateMatrix[16][5] = BITRATEMATRIX;
+	int BitrateMatrix[16][5] = BITRATEMATRIX;
 	float SRateMatrix[4][3] = SRATEMATRIX;
 
 	if ( !MPA_IS_SYNC(buff_data) ) return -1; /*syncword not found*/
@@ -326,9 +326,13 @@ static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_dat
 			break;
 		default: return -1; break;
 	}
-
-        RowIndex = (buff_data[2] & 0xf0) >> 4;
-        properties->bit_rate = BitrateMatrix[RowIndex][ColIndex];
+	
+	RowIndex = (buff_data[2] & 0xf0) >> 4;
+	if (RowIndex == 0xF) // bad bitrate
+		return -1;
+	if (RowIndex == 0) // free bitrate: not supported
+		return -1;
+	properties->bit_rate = BitrateMatrix[RowIndex][ColIndex];
 
 	switch (mpa->id) {
 		case MPA_MPEG_1: ColIndex = 0; break;
@@ -340,13 +344,15 @@ static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_dat
 	}
 
 	RowIndex = (buff_data[2] & 0x0c) >> 2;
-        properties->sample_rate = SRateMatrix[RowIndex][ColIndex];
+	if (RowIndex == 3) // reserved
+		return -1;
+	properties->sample_rate = SRateMatrix[RowIndex][ColIndex];
 
 	// padding
-	padding = buff_data[2] & 0x02 >> 2;
+	padding = (buff_data[2] & 0x02) >> 1;
 
 	// packet len
-        if (mpa->layer == MPA_LAYER_I) { // layer 1
+	if (mpa->layer == MPA_LAYER_I) { // layer 1
 		mpa->frame_size = 384;
 		mpa->pkt_len=((12 * properties->bit_rate)/properties->sample_rate + padding)* 4;
 	} else { // layer 2 or 3
