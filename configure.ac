@@ -249,7 +249,7 @@ AC_SUBST(fenice_conf_dir)
 fenice_docs_dir=$datadir/doc/$PACKAGE_NAME
 AC_SUBST(fenice_docs_dir)
 
-if test -f configure.ac; then
+if test -f svnrev.h; then
 	AC_DEFINE(FENICE_SVN, 1,[Define if this is a development (subversion) tree])
 fi
 

@@ -38,7 +38,8 @@
 #include <config.h>
 
 #ifdef FENICE_SVN
-#define SVNREV "$Rev$"
+// #define SVNREV "$Rev$"
+#include <svnrev.h>
 #endif
 
 inline void fncheader(void)
@@ -47,7 +48,6 @@ inline void fncheader(void)
 #ifdef SVNREV
 	char *tkn;
 
-	// strcat(svnrev, SVNREV+1);
 	snprintf(svnrev, sizeof(svnrev), "- SVN %s", SVNREV + 1);
 	if ( (tkn=strchr(svnrev, '$')) )
 		*tkn = '\0';
