@@ -63,7 +63,7 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStr
  *       void *properties: private data specific for each media parser.
  *    return: ...
  * */
-static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data);
+static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data);
 
 /* uninit: free the media parser structures.
  *    args:

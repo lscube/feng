@@ -12,8 +12,7 @@ libmediath_la_SOURCES =	cache.c \
 			mediathread.c \
 			mediautils.c \
 			mpeg12.c \
-			mpegaudio.c \
-			mpeg_utils.c
+			mpegaudio.c 
 			
 			
 libmediath_la_LDFLAGS = -static

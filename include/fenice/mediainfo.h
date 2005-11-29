@@ -39,7 +39,7 @@
 	#include <sys/stat.h>
 	#include <unistd.h>
 	#include <fenice/bufferpool.h>
-	#include <fenice/mpeg_utils.h>
+	//#include <fenice/mpeg_utils.h>
 
 	#define MAX_DESCR_LENGTH 4096
 	#define DIM_VIDEO_BUFFER 5 

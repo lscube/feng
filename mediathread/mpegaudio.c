@@ -165,7 +165,7 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStr
 }
 
 // packet fragmentation supported
-static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
+static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
 {
 	mpa_input in={ NULL, src, src_nbytes };
 	uint32 header, mpa_header=0;
@@ -191,7 +191,7 @@ static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbyte
 		// mpa_header = 0; // already initialized
 		memcpy(dst + 4, &header, sizeof(header));
 		dst_offset+=4;
-		to_cpy = min(mpa->pkt_len, dst_nbytes);
+		to_cpy = min(mpa->pkt_len, *dst_nbytes);
 		if (to_cpy<mpa->pkt_len) {
 			mpa->fragmented = 1;
 			mpa->frag_src = src;

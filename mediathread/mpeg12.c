@@ -29,7 +29,6 @@
  * */
 
 #include <fenice/mpeg.h>
-#include <fenice/mpeg_utils.h>
 #include <fenice/MediaParser.h>
 #include <fenice/mediaparser_module.h>
 #include <fenice/utils.h>
@@ -44,23 +43,52 @@ FNC_LIB_MEDIAPARSER(mpv);
 
 /*see ISO/IEC 11172-2:1993 and ISO/IEC 13818-2:1995 (E)*/
 /*prefix*/
-#define START_CODE 0x000001
+#if (BYTE_ORDER == BIG_ENDIAN)
+	#define SHIFT_RIGHT(a,n) (a<<=n)
+	#define SHIFT_LEFT(a,n) (a>>=n)
+#elif (BYTE_ORDER == LITTLE_ENDIAN)
+	#define SHIFT_RIGHT(a,n) (a>>=n)
+	#define SHIFT_LEFT(a,n) (a<<=n)
+#endif //ENDIAN
 
 /*value*/
-#define PICTURE_START_CODE 0x00
-#define SLICE_START_CODE /*0x01 to 0xAF*/
-#define USER_DATA_START_CODE 0xB2
-#define SEQ_START_CODE 0xB3
-#define SEQ_ERROR_CODE 0xB4
-#define EXT_START_CODE 0xB5 
-#define SEQ_END_CODE 0xB7
-#define GOP_START_CODE 0xB8
+#if (BYTE_ORDER == BIG_ENDIAN)
+	#define START_CODE 0x010000
+	#define PICTURE_START_CODE 0x00000100
+	#define SLICE_MIN_START_CODE 0x00000101 
+	#define SLICE_MAX_START_CODE 0x000001AF
+	#define USER_DATA_START_CODE 0x000001B2
+	#define SEQ_START_CODE 0x000001B3
+	#define SEQ_ERROR_CODE 0x000001B4
+	#define EXT_START_CODE 0x000001B5 
+	#define SEQ_END_CODE 0x000001B7
+	#define GOP_START_CODE 0x000001B8
+#elif (BYTE_ORDER == LITTLE_ENDIAN)
+	#define START_CODE 0x000001
+	#define PICTURE_START_CODE 0x00010000
+	#define SLICE_MIN_START_CODE 0x01010000 
+	#define SLICE_MAX_START_CODE 0xAF010000
+	#define USER_DATA_START_CODE 0xB2010000
+	#define SEQ_START_CODE 0xB3010000
+	#define SEQ_ERROR_CODE 0xB4010000
+	#define EXT_START_CODE 0xB5010000 
+	#define SEQ_END_CODE 0xB7010000
+	#define GOP_START_CODE 0xB8010000
+#endif //ENDIAN
+
+#define IS_SLICE(a) (a>=SLICE_MIN_START_CODE && a<=SLICE_MAX_START_CODE)
+#define MPV_IS_SYNC(buff_data) ( (buff_data[0]==0x00) && (buff_data[1] ==0x00) && (buff_data[2] ==0x01) )
 
 typedef struct _MPV_DATA{
+
 	uint32 is_buffered;
-	uint8 buf[4];
+	uint32 buffer;
+
+	uint32 is_fragmented;
+
 	video_spec_head1 *vsh1;
 	video_spec_head2 *vsh2;
+
 	uint32 hours;
 	uint32 minutes;
 	uint32 seconds;
@@ -70,14 +98,28 @@ typedef struct _MPV_DATA{
 	standard std;
 }mpv_data;
 
-static int seq_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, MediaProperties *properties, mpv_data *mpeg_video);
-static int read_ext(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained/*, mpv_data *mpeg_video*/);
-static int seq_ext(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained/*, mpv_data *mpeg_video*/);
-static int ext_and_user_data(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained/*, mpv_data *mpeg_video*/);
-static int gop_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video);
-static int picture_coding_ext(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video);
-static int picture_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video);
-static int slice(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video);
+typedef struct {
+	InputStream *istream; 
+	uint8 *src;
+	uint32 src_nbytes;
+} mpv_input;
+
+
+static int get_header(uint32 *header, uint8* src, mpv_data *mpv);
+static int mpv_sync(uint32 *header, mpv_input *in, mpv_data *mpv);
+
+static int seq_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
+static int seq_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
+static int read_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
+static int gop_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
+static int ext_and_user_data(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
+static int picture_coding_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
+static int picture_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
+static int slice(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
+
+static int next_start_code2(uint8 *dst, uint32 dst_remained, mpv_input *in); 
+
+static int mpv_read(uint32 nbytes, uint8 *buf, mpv_input *in);
 
 static float FrameRateCode[] = {
 		0.000,
@@ -116,286 +158,192 @@ static float AspectRatioCode[] = {		/* value 	height/width	video source		*/
 		0.0000                          /*  15		reserved				*/
 	};                                      /*							*/
 
+
 /*mediaparser_module interface implementation*/
-static int init(MediaProperties *properties, void **private_data)
+int init(MediaProperties *properties, void **private_data)
 {
 	mpv_data *mpeg_video;
 	*private_data = calloc(1, sizeof(mpv_data));
 	mpeg_video = (mpv_data *)(*private_data);
 	mpeg_video->vsh1 = malloc(sizeof(video_spec_head1));
 	mpeg_video->vsh2 = malloc(sizeof(video_spec_head2));
+	mpeg_video->is_buffered=0;/*false*/
 
 	return 0;
 }
 
-#define GET_UNTIL_PICTURE_START_CODE \
-	do { \
-		while ( !((buf_aux[0] == 0x00) && (buf_aux[1]==0x00) && (buf_aux[2]==0x01))) { \
-    			dst[count]=buf_aux[0]; \
-			count++; \
-			buf_aux[0]=buf_aux[1]; \
-			buf_aux[1]=buf_aux[2]; \
-      			if ( istream_read(1,&buf_aux[2],istream) < 1) { \
-    				for (i=0;i<3;i++) { \
-    					dst[count]=buf_aux[i]; \
-      					count++; \
-    				} \
-				mpeg_video->is_buffered=0; \
-				return count; \
-			} \
-  	  	} \
-		ret=istream_read(1, &final_byte, istream); \
-		mpeg_video->is_buffered=1; \
-		mpeg_video->buf[0]=buf_aux[0]; \
-		mpeg_video->buf[1]=buf_aux[1]; \
-		mpeg_video->buf[2]=buf_aux[2]; \
-		mpeg_video->buf[2]=final_byte; \
-		buf_aux[0]=buf_aux[1]; \
-		buf_aux[1]=buf_aux[2]; \
-		buf_aux[2]=final_byte; \
-	} while(final_byte!=PICTURE_START_CODE && count < dst_nbytes); 
-
-static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data)
+int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data)
 {
-	uint32 count=0, ret;
-	uint8 final_byte;
-	uint8 buf_aux[3];                                               	
-	int i;
-	mpv_data *mpeg_video;
-	uint32 was_buffered;
-	uint8 *trash;
-
-	mpeg_video=(mpv_data *)private_data;
-	was_buffered=mpeg_video->is_buffered;	
-		
+	uint32 count=0, header;
+	int ret=0;
+	mpv_data *mpv;
+	mpv_input in={istream, NULL, 0};
+	mpv=(mpv_data *)private_data;
 	
-	if(was_buffered) {
-		dst[0]=mpeg_video->buf[0];
-		dst[1]=mpeg_video->buf[1];
-		dst[2]=mpeg_video->buf[2];
-		dst[3]=mpeg_video->buf[3];
-		count=4;
+	if(mpv->is_buffered) {
+		header=mpv->buffer;
+		ret=4;
 	}
-	if ( istream_read(3, buf_aux, istream) <3) 
-		return -1;
+	else if ( (ret=mpv_sync(&header, &in, mpv)) ) 
+		return ret;
+
+//#if (BYTE_ORDER == BIG_ENDIAN)
+	memcpy(dst,&header,4);
+/*#elif (BYTE_ORDER == LITTLE_ENDIAN)
+	dst[0]=((uint8 *)&header)[3];
+	dst[1]=((uint8 *)&header)[2];
+	dst[2]=((uint8 *)&header)[1];
+	dst[3]=((uint8 *)&header)[0];
+	
+#endif //ENDIAN*/
+
+	count+=4;
+	dst_nbytes-=4;
+	
+	mpv->vsh1->s=0;/*sequence header is not present, but it is set to 1 if seq_head is called*/ 
+	while(!IS_SLICE(header)) {
+		/*
+		 *ogni funzione trova il suo start code caricato e ritornare il numero di byte letti (compreso lo start code successivo)
+		 *oppure ERR_EOF oppure ERR_PARSE oppure MP_PKT_TOO_SMALL 
+		 *
+		 */
+		if(header == SEQ_START_CODE) {
+			ret=seq_head(&dst[count], dst_nbytes, &in, properties, mpv);
+			mpv->vsh1->s=1;/*sequence header is not present, but it is set to 1 if seq_head is called*/ 
+		}
+		else if(header == GOP_START_CODE)
+			ret=gop_head(&dst[count], dst_nbytes, &in, properties, mpv);
+
+		else if(header == PICTURE_START_CODE)
+			ret=picture_head(&dst[count], dst_nbytes, &in, properties, mpv);
 		
-	GET_UNTIL_PICTURE_START_CODE;
-	if(count >= dst_nbytes)
+		else //return ERR_PARSE;/*TODO: SKIP: next_start_code*/
+			ret=read_ext(&dst[count], dst_nbytes, &in, properties, mpv);
+
+		if(ret<0)
+			return (ret==MP_PKT_TOO_SMALL)?MP_NOT_FULL_FRAME:ret;
+		dst_nbytes-=ret;
+		count+=ret;
+		
+		if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
+			return ret;
+	}
+	
+	/*read all slices in picture*/
+	while(IS_SLICE(header)) {
+		ret=slice(&dst[count], dst_nbytes, &in, properties, mpv);
+		if(ret<0)
+			return (ret==MP_PKT_TOO_SMALL)?MP_NOT_FULL_FRAME:ret;
+		dst_nbytes-=ret;
+		count+=ret;
+		if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
+			return ret;
+	}
+	/*now we have the whole picture + next_start_code in dst*/
+	mpv->buffer=header;
+	mpv->is_buffered=1;/*yes*/
+
+	/*seconds*/
+	(*timestamp) = ((mpv->hours * 3.6e3) + (mpv->minutes * 60) + (mpv->seconds))*1000 +  (mpv->temp_ref*1000/properties->frame_rate) + (mpv->pictures*1000/properties->frame_rate);
+	//(*timestamp) = ((mpv->hours * 3.6e3) + (mpv->minutes * 60) + (mpv->seconds))*1000 +  (mpv->temp_ref*40) + (mpv->pictures*40);
+	
+	if(header == SEQ_END_CODE)
 		return count;
-	
-	if(!was_buffered) {
-		buf_aux[0]=buf_aux[1];
-		buf_aux[1]=buf_aux[2];
-      		if ( istream_read(1,&buf_aux[2],istream) < 1) 
-			return count;
-		GET_UNTIL_PICTURE_START_CODE;
-
-		if(count >= dst_nbytes)
-			return count;
-	}
-
-	trash=malloc(1024); /* i call packetize to fill the time dates*/
-	ret=packetize(trash, 1024, dst, count, properties, private_data);
-	free(trash);
-		
-	// (*timestamp) = (mpeg_video->hours * 3.6e6) + (mpeg_video->minutes * 6e4) + (mpeg_video->seconds * 1000) +  (mpeg_video->temp_ref*1024*1000/properties->frame_rate) + (mpeg_video->pictures*1000/properties->frame_rate); // milliseconds
-	(*timestamp) = (mpeg_video->hours * 3.6e3) + (mpeg_video->minutes * 60) + (mpeg_video->seconds) +  (mpeg_video->temp_ref*1024/properties->frame_rate) + (mpeg_video->pictures/properties->frame_rate); // seconds
-
-	return count;
+	return count-4; /*whole picture (i remove the next_start_code*/
 }
 
 
 /*see RFC 2250: RTP Payload Format for MPEG1/MPEG2 Video*/
-#ifdef MPEG2VSHE
-	#define VSHCPY  vsh_tmp = (uint8 *)(mpeg_video->vsh1); \
-        		init_dst[0] = vsh_tmp[3]; \
-        		init_dst[1] = vsh_tmp[2]; \
-        		init_dst[2] = vsh_tmp[1]; \
-        		init_dst[3] = vsh_tmp[0]; \
-        		if (s->std == MPEG_2 && !flag) { \
-        		        vsh_tmp = (char *)(mpeg_video->vsh2); \
-				init_dst[4] = vsh_tmp[3]; \
-        	       		init_dst[5] = vsh_tmp[2]; \
-        	       		init_dst[6] = vsh_tmp[1]; \
-        	        	init_dst[7] = vsh_tmp[0]; \
+#if MPEG2VSHE
+	#define VSHCPY  vsh_tmp = (uint8 *)(mpv->vsh1); \
+        		dst[0] = vsh_tmp[3]; \
+        		dst[1] = vsh_tmp[2]; \
+        		dst[2] = vsh_tmp[1]; \
+        		dst[3] = vsh_tmp[0]; \
+        		if (mpv->std == MPEG_2) { \
+        		        vsh_tmp = (char *)(mpv->vsh2); \
+				dst[4] = vsh_tmp[3]; \
+        	       		dst[5] = vsh_tmp[2]; \
+        	       		dst[6] = vsh_tmp[1]; \
+        	        	dst[7] = vsh_tmp[0]; \
        		 	} 
 #else
-	#define VSHCPY  vsh_tmp = (uint8 *)(mpeg_video->vsh1); \
-        		init_dst[0] = vsh_tmp[3]; \
-        		init_dst[1] = vsh_tmp[2]; \
-        		init_dst[2] = vsh_tmp[1]; \
-        		init_dst[3] = vsh_tmp[0]; 
+	#define VSHCPY  vsh_tmp = (uint8 *)(mpv->vsh1); \
+        		dst[0] = vsh_tmp[3]; \
+        		dst[1] = vsh_tmp[2]; \
+        		dst[2] = vsh_tmp[1]; \
+        		dst[3] = vsh_tmp[0]; 
 
-#endif
+#endif //MPEG2VSHE
 
-#define SHFRET	if (ret!=-1) { \
-			dst_remained-=ret; \
-			src_remained-=ret; \
-			dst+=ret; \
-			src+=ret; \
-			final_byte=src[3]; \
-		}
-/*
- * A possible use is:
- *
- get_frame2();
- do {
-	ret=packetize(dst, dst_nbytes, src, src_nbytes, properties, *private_data);
-	src+=ret;
-	src_nbytes-=ret;
-	rtp_marker_bit = !(src_nbytes>0);
-	// use dst
- } while(src_nbytes);
-
- *
- */
-static int packetize(uint8 *dst, uint32 dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
+int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
 {
-	int ret=0;
-	int dst_remained=dst_nbytes;
-	int src_remained=src_nbytes;
-	uint8 final_byte;
-	mpv_data *mpeg_video;
-	uint8* init_dst;
+	int ret=0, count=0,countsrc=0;
+	uint32 header;
+	mpv_data *mpv;
 	uint8 *vsh_tmp;
+	mpv_input in = {NULL,src,src_nbytes};
 
-	init_dst=dst;
-	mpeg_video=(mpv_data *)private_data;
-	mpeg_video->vsh1->s=0;/*sequence header is not present, but it is set to 1 if seq_head is called*/ 
-	mpeg_video->vsh1->b=0;/*begining of slice*/
-	mpeg_video->vsh1->e=0;/*end of slice*/
+		
+	mpv=(mpv_data *)private_data;
+	mpv->vsh1->b=0;/*begining of slice*/
+	mpv->vsh1->e=0;/*end of slice*/
 
-	if (mpeg_video->std == MPEG_2)  {/*the first time is TO_PROBE, so for the first time is it impossible to use the optional vsh2*/
-		#ifdef MPEG2VSHE
-		dst += 8;
-		dst_remained -= 8;
-		mpeg_video->vsh1->t=1;
+	if (mpv->std == MPEG_2)  {
+		#if MPEG2VSHE
+		count+= 8;
+		mpv->vsh1->t=1;
 		#else
-		*dst += 4;
-		dst_remained -= 4;
-		mpeg_video->vsh1->t=0;
+		count += 4;
+		mpv->vsh1->t=0;
 		#endif                               				/* bytes for the video specific header */
 	} else {
-        	*dst += 4;
-		dst_remained -= 4;
-		mpeg_video->vsh1->t=0;
+        	count += 4;
+		mpv->vsh1->t=0;
 	}
-	do{
-		ret=next_start_code2(dst,dst_remained,src,src_remained);
-		if(ret==-1) {
-			VSHCPY;
-			return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
-		}
-		SHFRET;
 
-		if(final_byte==SEQ_START_CODE) {
-			ret=seq_head(dst,dst_remained,src,src_remained,properties,mpeg_video);
-			if(ret==-1) {
-				VSHCPY;
-				return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
-			}
-			SHFRET;
-			if(final_byte==EXT_START_CODE) {
-				/*means MPEG2*/
-				mpeg_video->std=MPEG_2;
-				ret=seq_ext(dst,dst_remained,src,src_remained/*,mpeg_video*/);
-				if(ret==-1) {
-					VSHCPY;
-					return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
-				}
-				SHFRET;
-			}
-			else
-				mpeg_video->std=MPEG_1;
+	while(countsrc < src_nbytes && count < *dst_nbytes) {
+		if ( (ret=mpv_read(1, &dst[count], &in)) != 1 ) {
+			mpv->vsh1->e=1;/*end of slice*/
+			mpv->is_fragmented=0;
+			VSHCPY;
+			*dst_nbytes=count;
+			//return countsrc; 
+			//return (ret<0) ? ERR_PARSE : ERR_EOF;
+			return ERR_EOF;
 		}
-		else if(final_byte==EXT_START_CODE) {
-			ret=read_ext(dst,dst_remained,src,src_remained/*,mpeg_video*/);
-			if(ret==-1) {
-				VSHCPY;
-				return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
-			}
-			SHFRET;
-		}
-		else if(final_byte==GOP_START_CODE) {
-			ret=gop_head(dst,dst_remained,src,src_remained,mpeg_video);
-			if(ret==-1) {
-				VSHCPY;
-				return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
-			}
-			SHFRET;
-		}
-		else if(final_byte==USER_DATA_START_CODE) {
-			ret=ext_and_user_data(dst,dst_remained,src,src_remained/*,mpeg_video*/);
-			if(ret==-1) {
-				VSHCPY;
-				return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
-			}
-			SHFRET;
-		}
-		else if(final_byte==PICTURE_START_CODE) {
-			ret=picture_head(dst,dst_remained,src,src_remained,mpeg_video);
-			if(ret==-1) {
-				VSHCPY;
-				return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
-			}
-			SHFRET;
-			if(mpeg_video->std == MPEG_2 && final_byte== EXT_START_CODE) {
-				ret=picture_coding_ext(dst,dst_remained,src,src_remained,mpeg_video);
-				if(ret==-1) {
-					VSHCPY;
-					return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
-				}
-				SHFRET;
-			}
-			do {
-				ret=slice(dst,dst_remained,src,src_remained, mpeg_video);
-				SHFRET;
-			 } while(ret!=-1 && final_byte>=0x01 && final_byte<=0xAF /*SLICE_START_CODE*/);
-		}
-		else if(final_byte>=0x01 && final_byte<=0xAF /*SLICE_START_CODE*/) {
-			if(ret!=0 ){ 
-				/*means that the end of a fragmented slice is arreached*/
-				VSHCPY;
-				return ret;
-			}
-			else {
-			 	do {
-					ret=slice(dst,dst_remained,src,src_remained, mpeg_video);
-					SHFRET;
-				 } while(ret!=-1 && final_byte>=0x01 && final_byte<=0xAF /*SLICE_START_CODE*/);
-			}
-		}
-		else if(final_byte==SEQ_END_CODE) {
-			/*adding SEQ_END_CODE*/	
-			if(dst_remained>=4) {
-				dst[0]=0x00;
-				dst[1]=0x00;
-				dst[2]=0x01;
-				dst[3]=SEQ_END_CODE;
-			}
-			else {
-				/*i must send another packet??!?*/
-			}
-			/*in this case the video sequence should be finished, so min(dst_nbytes,src_nbytes) = src_nbytes*/
-		}
-		else {
-			/*unknow start_code*/
-			dst[0]=0x00;
-			dst[1]=0x00;
-			dst[2]=0x01;
-			dst[3]=final_byte;
-			dst+=4;
-			src+=4;
-			dst_remained-=4;
-			src_remained-=4;
-		 }
-	}while(ret!=-1);
+		count++;
+		countsrc++;
+		
+		if(countsrc==4) 
+			if ( !(get_header(&header, &dst[count-4], mpv)) ) 
+				mpv->vsh1->b=1;/*begining of slice*/
 	
+		if(mpv->is_fragmented) {
+			if ( !(get_header(&header, &src[countsrc], mpv)) ) 
+				break;
+		}
+		
+	}
+	
+	if ( !(get_header(&header, &src[countsrc], mpv)) ) {
+		mpv->vsh1->e=1;/*end of slice*/
+		mpv->is_fragmented=0;
+	}
+	else {
+		mpv->vsh1->e=0;/*end of slice*/
+		mpv->is_fragmented=1;
+	}
+
 	VSHCPY;
-	return min(dst_nbytes,src_nbytes); /*if src_nbytes => marker=1 because src contains a frame*/
+	*dst_nbytes=count;
+
+	mpv->vsh1->s=0;/*RESET. sequence header is not present. SEQ_HEADER can be present only in the first pkt of a frame */ 
+
+	return countsrc; 
 }
 
-static int uninit(void *private_data)
+int uninit(void *private_data)
 {
 	mpv_data *mpeg_video;
 	mpeg_video=(mpv_data *)private_data;
@@ -405,357 +353,324 @@ static int uninit(void *private_data)
 	return 0;
 }
 
-/*usefull function to parse*/
-static int seq_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, MediaProperties *properties, mpv_data *mpeg_video)
+
+static int get_header(uint32 *header, uint8* src, mpv_data *mpv)
+{
+	uint8 *sync_w = (uint8 *)header;
+	int ret;
+	mpv_input in = {NULL, src, 4};
+
+	if ( (ret=mpv_read(4, sync_w, &in)) != 4 ) 
+		return (ret<0) ? ERR_PARSE : ERR_EOF;
+	
+	while ( !MPV_IS_SYNC(sync_w) ) {
+		return ERR_PARSE;
+	}
+
+	return 0;
+}
+
+static int mpv_sync(uint32 *header, mpv_input *in, mpv_data *mpv)
+{
+	uint8 *sync_w = (uint8 *)header;
+	int ret;
+
+	if ( (ret=mpv_read(4, sync_w, in)) != 4 ) 
+		return (ret<0) ? ERR_PARSE : ERR_EOF;
+	
+	while ( !MPV_IS_SYNC(sync_w) ) {
+		SHIFT_RIGHT(*header,8);
+		if ( (ret=mpv_read(1, &sync_w[3], in)) != 1 ) 
+			return (ret<0) ? ERR_PARSE : ERR_EOF;
+	}
+
+	return 0;
+}
+
+static int next_start_code2(uint8 *dst, uint32 dst_remained, mpv_input *in)
 {
 	int count=0;
-	int i;
+	int ret;
+	uint8 sync_w[4];
+
+	if ( (ret=mpv_read(4, sync_w, in)) != 4 ) 
+		return (ret<0) ? ERR_PARSE : ERR_EOF;
+	
+	while ( !MPV_IS_SYNC(sync_w) ) {
+		dst[count]=sync_w[0];
+		//printf("count=%d - dst[count] =%X - sync_w=%X%X%X%X\n",count,dst[count],sync_w[0],sync_w[1],sync_w[2],sync_w[3]);
+		count++;
+		sync_w[0]=sync_w[1];
+		sync_w[1]=sync_w[2];
+		sync_w[2]=sync_w[3];
+		if ( (ret=mpv_read(1, &sync_w[3], in)) != 1 ) 
+			return (ret<0) ? ERR_PARSE : ERR_EOF;
+	}
+	
+	memcpy(&dst[count],sync_w,4);
+	count+=4;
+
+	return count;
+
+}
+
+static int seq_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+	int count=0,ret;
+	uint32 header;
+	uint32 off;
 	int bt;
-	uint32 off;
-	uint8 final_byte;
-	/*
-	 *read bitstream and increment dst and src, decrement dst_remained and src_remained
-	 * */
 
-	mpeg_video->vsh1->s=1; 
-	for(i=0;i<4;i++)
-		dst[i]=src[i]; /*cp start_code*/
-	src+=4; 
-	dst+=4;
-	count+=4;
-	dst_remained-=4;
-	src_remained-=4;
+	/*---------------------*/
+	count=next_start_code2(dst, dst_remained, in);
+	if(count < 0)
+		return count;
+	dst_remained-=count;
+	
 	off=0;
-	properties->PixelWidth=get_field(src,12,&off);
+	properties->PixelWidth=get_field(dst,12,&off);
 	off=12;
-	properties->PixelHeight=get_field(src,12,&off);
-	for(i=0;i<3;i++)
-		dst[i]=src[i]; 
-	src+=3; 
-	dst+=3;
-	count+=3;
-	dst_remained-=3;
-	src_remained-=3;
-	off=0;
-	properties->AspectRatio=AspectRatioCode[get_field(src,4,&off)];
-	off=4;
-	properties->frame_rate=FrameRateCode[get_field(src,4,&off)];
-	dst[0]=src[0]; 
-	src+=1; 
-	dst+=1;
-	count+=1;
-	dst_remained-=1;
-	src_remained-=1;
-	off=0;
-	bt=get_field(src,18,&off);
-	properties->bit_rate=(bt<262143)?(400*bt):0; /*if 0 -> VBR*/
-	off=18;
-	for(i=0;i<3;i++)
-		dst[i]=src[i]; 
-	src+=3; 
-	dst+=3;
-	count+=3;
-	dst_remained-=3;
-	src_remained-=3;
-	
-	count+=bt=next_start_code2(dst,dst_remained,src,src_remained);
-	if(bt==-1)
-		return -1;
-	if(mpeg_video->std==MPEG_1) {
-		dst_remained-=bt;
-		src_remained-=bt;
-		dst+=bt;
-		src+=bt;
-		final_byte=src[3];
-		if(final_byte==EXT_START_CODE) {
-			count+=bt=read_ext(dst, dst_remained, src, src_remained/*, mpeg_video*/);
-			if(bt==-1)
-				return  -1;
-			dst_remained-=bt;
-			src_remained-=bt;
-			dst+=bt;
-			src+=bt;
-			final_byte=src[3];
-		}
-		if(final_byte==USER_DATA_START_CODE) {
-			count+=bt=ext_and_user_data(dst, dst_remained, src, src_remained/*, mpeg_video*/);
-			if(bt==-1)
-				return -1;
-			dst_remained-=bt;
-			src_remained-=bt;
-			dst+=bt;
-			src+=bt;
-			//final_byte=src[3];
-		}
-	}
-	return count;
-}
-
-static int read_ext(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained/*, mpv_data *mpeg_video*/)
-{
-	int count=0;
-	int i;
-	/*
-	 *read bitstream and increment dst and src, decrement dst_remained and src_remained
-	 * */
-	for(i=0;i<4;i++)
-		dst[i]=src[i]; /*cp start_code*/
-	src+=4; 
-	dst+=4;
-	count+=4;
-	dst_remained-=4;
-	src_remained-=4;
-	count+=i=next_start_code2(dst,dst_remained,src,src_remained);
-	if(i==-1)
-		return -1;
-	return count;
-}
-
-
-static int seq_ext(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained/*, mpv_data *mpeg_video*/)
-{
-	return read_ext(dst, dst_remained, src, src_remained/*, mpeg_video*/);
-}
-
-static int ext_and_user_data(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained/*, mpv_data *mpeg_video*/)
-{
-	return read_ext(dst, dst_remained, src, src_remained/*, mpeg_video*/);
-}
-
-static int gop_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video)
-{
-	int count=0;
-	int i,bt;
-	uint32 off;
-	uint8 final_byte;
-	/*
-	 *read bitstream and increment dst and src, decrement dst_remained and src_remained
-	 * */
-	for(i=0;i<4;i++)
-		dst[i]=src[i]; /*cp start_code*/
-	src+=4; 
-	dst+=4;
-	count+=4;
-	dst_remained-=4;
-	src_remained-=4;
-	off=1;
-	mpeg_video->hours=get_field(src,5,&off);
-	off=6;
-	mpeg_video->minutes=get_field(src,6,&off);
-	off=13;
-	mpeg_video->seconds=get_field(src,6,&off);
-	off=19;
-	mpeg_video->pictures=get_field(src,6,&off);
-
-	for(i=0;i<3;i++)
-		dst[i]=src[i]; 
-	src+=3; 
-	dst+=3;
-	count+=3;
-	dst_remained-=3;
-	src_remained-=3;
-	
-	count+=bt=next_start_code2(dst,dst_remained,src,src_remained);
-	if(bt==-1)
-		return -1;
-	if(mpeg_video->std==MPEG_1) {
-		dst_remained-=bt;
-		src_remained-=bt;
-		dst+=bt;
-		src+=bt;
-		final_byte=src[3];
-		if(final_byte==EXT_START_CODE) {
-			count+=bt=read_ext(dst, dst_remained, src, src_remained/*, mpeg_video*/);
-			if(bt==-1)
-				return  -1;
-			dst_remained-=bt;
-			src_remained-=bt;
-			dst+=bt;
-			src+=bt;
-			final_byte=src[3];
-		}
-		if(final_byte==USER_DATA_START_CODE) {
-			count+=bt=ext_and_user_data(dst, dst_remained, src, src_remained/*, mpeg_video*/);
-			if(bt==-1)
-				return -1;
-			dst_remained-=bt;
-			src_remained-=bt;
-			dst+=bt;
-			src+=bt;
-			//final_byte=src[3];
-		}
-	}
-	return count;
-}
-
-static int picture_coding_ext(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video)
-{
-	int count=0;
-	int i,bt;
-	uint32 off;
-	/*
-	 *read bitstream and increment dst and src, decrement dst_remained and src_remained
-	 * */
-	for(i=0;i<4;i++)
-		dst[i]=src[i]; /*cp start_code*/
-	src+=4; 
-	dst+=4;
-	count+=4;
-	dst_remained-=4;
-	src_remained-=4;
-	/*---*/
-	mpeg_video->vsh2->x=0;
-	mpeg_video->vsh2->e=0; /*TODO extension data*/
-	
-	off=4;
-	mpeg_video->vsh2->f00=get_field(src,4,&off);
-	off=8;
-	mpeg_video->vsh2->f01=get_field(src,4,&off);
-	off=12;
-	mpeg_video->vsh2->f10=get_field(src,4,&off);
-	off=16;
-	mpeg_video->vsh2->f11=get_field(src,4,&off);
-	off=20;
-	mpeg_video->vsh2->dc=get_field(src,2,&off);
-	off=22;
-	mpeg_video->vsh2->ps=get_field(src,2,&off);
+	properties->PixelHeight=get_field(dst,12,&off);
 	off=24;
-	mpeg_video->vsh2->t=get_field(src,1,&off);
-	off=25;
-	mpeg_video->vsh2->p=get_field(src,1,&off);
-	off=26;
-	mpeg_video->vsh2->c=get_field(src,1,&off);
-	off=27;
-	mpeg_video->vsh2->q=get_field(src,1,&off);
+	properties->AspectRatio=AspectRatioCode[get_field(dst,4,&off)];	
 	off=28;
-	mpeg_video->vsh2->v=get_field(src,1,&off);
-	off=29;
-	mpeg_video->vsh2->a=get_field(src,1,&off);
-	off=30;
-	mpeg_video->vsh2->r=get_field(src,1,&off);
-	off=31;
-	mpeg_video->vsh2->h=get_field(src,1,&off);
+	properties->frame_rate=FrameRateCode[get_field(dst,4,&off)];
 	off=32;
-	mpeg_video->vsh2->g=get_field(src,1,&off);
-	off=33;
-	mpeg_video->vsh2->d=get_field(src,1,&off);
+	bt=get_field(dst,18,&off);
+	properties->bit_rate=(bt<262144)?(400*bt):0; /*if 0 -> VBR*/
+	
+	/*---------------------*/
+	if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
+		return ret;
 
-	/*---*/
-	count+=bt=next_start_code2(dst,dst_remained,src,src_remained);
-	if(bt==-1)
-		return -1;
+	if(header == EXT_START_CODE) {/*MPEG_2*/
+		mpv->std=MPEG_2;
+		bt=seq_ext(&dst[count], dst_remained, in, properties, mpv);
+		if(bt<0)
+			return bt;
+		count+=bt;
+	}
+	else mpv->std=MPEG_1;
 
 	return count;
 }
 
-/*chicco: continue.....*/
-static int picture_head(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video)
+static int seq_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
-	int bt;
 	int count=0;
-	int i;
-	uint32 off;
-	uint8 final_byte;
-	/*
-	 *read bitstream and increment dst, src and count, decrement dst_remained and src_remained
-	 * */
-	for(i=0;i<4;i++)
-		dst[i]=src[i]; /*cp start_code*/
-	src+=4; 
-	dst+=4;
-	count+=4;
-	dst_remained-=4;
-	src_remained-=4;
+
+	/*---------------------*/
+	count=next_start_code2(dst, dst_remained, in);
+
+	/*---------------------*/
+	return count;
+
+}
+
+static int read_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+	int count=0;
+
+	/*---------------------*/
+	count=next_start_code2(dst, dst_remained, in);
+
+	/*---------------------*/
+	return count;
+
+}
+
+
+static int ext_and_user_data(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+	int count=0;
+
+	/*---------------------*/
+	count=next_start_code2(dst, dst_remained, in);
+
+	/*---------------------*/
+	return count;
+
+}
+
+static int gop_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+	int count=0, ret,off,bt;
+	uint32 header;
+
+	/*---------------------*/
+	count=next_start_code2(dst, dst_remained, in);
+	dst_remained-=count;
+
+	off=1;
+	mpv->hours=get_field(dst,5,&off);
+	off=6;
+	mpv->minutes=get_field(dst,6,&off);
+	off=13;
+	mpv->seconds=get_field(dst,6,&off);
+	off=19;
+	mpv->pictures=get_field(dst,6,&off);
+
+	/*---------------------*/
+	if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
+		return ret;
+	
+	if(header == EXT_START_CODE) {
+		bt=read_ext(&dst[count], dst_remained, in, properties, mpv);
+		if(bt<0)
+			return bt;
+		count+=bt;
+	}
+
+	return count;
+}
+
+static int picture_coding_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+	int count=0, ret,off,bt;
+	uint32 header;
+
+	/*---------------------*/
+	count=next_start_code2(dst, dst_remained, in);
+	dst_remained-=count;
+
+	off=4;
+	mpv->vsh2->f00=get_field(dst,4,&off);
+	off=8;
+	mpv->vsh2->f01=get_field(dst,4,&off);
+	off=12;
+	mpv->vsh2->f10=get_field(dst,4,&off);
+	off=16;
+	mpv->vsh2->f11=get_field(dst,4,&off);
+	off=20;
+	mpv->vsh2->dc=get_field(dst,2,&off);
+	off=22;
+	mpv->vsh2->ps=get_field(dst,2,&off);
+	off=24;
+	mpv->vsh2->t=get_field(dst,1,&off);
+	off=25;
+	mpv->vsh2->p=get_field(dst,1,&off);
+	off=26;
+	mpv->vsh2->c=get_field(dst,1,&off);
+	off=27;
+	mpv->vsh2->q=get_field(dst,1,&off);
+	off=28;
+	mpv->vsh2->v=get_field(dst,1,&off);
+	off=29;
+	mpv->vsh2->a=get_field(dst,1,&off);
+	off=30;
+	mpv->vsh2->r=get_field(dst,1,&off);
+	off=31;
+	mpv->vsh2->h=get_field(dst,1,&off);
+	off=32;
+	mpv->vsh2->g=get_field(dst,1,&off);
+	off=33;
+	mpv->vsh2->d=get_field(dst,1,&off);
+
+
+	/*---------------------*/
+	
+	if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
+		return ret;
+
+	if(header == EXT_START_CODE) {
+		bt=ext_and_user_data(&dst[count], dst_remained, in, properties, mpv);
+		if(bt<0)
+			return bt;
+		count+=bt;
+	}
+
+	return count;
+
+}
+
+static int picture_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+	int count=0, ret,off,bt;
+	uint32 header;
+
+	/*---------------------*/
+	count=next_start_code2(dst, dst_remained, in);
+	dst_remained-=count;
 
 	off=0;
-	mpeg_video->vsh1->mbz=0; /*unused*/
-	mpeg_video->vsh1->tr=mpeg_video->temp_ref=get_field(src,10,&off);
+	mpv->vsh1->mbz=0; /*unused*/
+	mpv->vsh1->tr=mpv->temp_ref=get_field(dst,10,&off);
 	
-	mpeg_video->vsh1->an=0;/*TODO*/ 
-	mpeg_video->vsh1->n=0;/*TODO*/ 
+	mpv->vsh1->an=0;/*TODO*/ 
+	mpv->vsh1->n=0;/*TODO*/ 
 	
 	off=10;
-	mpeg_video->vsh1->p=mpeg_video->picture_coding_type=get_field(src,3,&off);
+	mpv->vsh1->p=mpv->picture_coding_type=get_field(dst,3,&off);
 	
-	if(mpeg_video->picture_coding_type == 2 || mpeg_video->picture_coding_type == 3) {
+	if(mpv->picture_coding_type == 2 || mpv->picture_coding_type == 3) {
 		off=29;
-		mpeg_video->vsh1->ffv=get_field(src,1,&off);
+		mpv->vsh1->ffv=get_field(dst,1,&off);
 		off=30;
-		mpeg_video->vsh1->ffc=get_field(src,3,&off);
+		mpv->vsh1->ffc=get_field(dst,3,&off);
 	}
 	else {
 	
-		mpeg_video->vsh1->ffv=0;
-		mpeg_video->vsh1->ffc=0;
+		mpv->vsh1->ffv=0;
+		mpv->vsh1->ffc=0;
 	}
 
-	if(mpeg_video->picture_coding_type == 3) {
+	if(mpv->picture_coding_type == 3) {
 		off=33;
-		mpeg_video->vsh1->fbv=get_field(src,1,&off);
+		mpv->vsh1->fbv=get_field(dst,1,&off);
 		off=34;
-		mpeg_video->vsh1->bfc=get_field(src,3,&off);
+		mpv->vsh1->bfc=get_field(dst,3,&off);
 	} 
 	else {
 	
-		mpeg_video->vsh1->fbv=0;
-		mpeg_video->vsh1->bfc=0;
+		mpv->vsh1->fbv=0;
+		mpv->vsh1->bfc=0;
 	}
+	
+	/*---------------------*/
+	if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
+		return ret;
 
-	count+=bt=next_start_code2(dst,dst_remained,src,src_remained);
-	if(bt==-1)
-		return -1;
-	if(mpeg_video->std==MPEG_1) {
-		dst_remained-=bt;
-		src_remained-=bt;
-		dst+=bt;
-		src+=bt;
-		final_byte=src[3];
-		if(final_byte==EXT_START_CODE) {
-			count+=bt=read_ext(dst, dst_remained, src, src_remained/*, mpeg_video*/);
-			if(bt==-1)
-				return  -1;
-			dst_remained-=bt;
-			src_remained-=bt;
-			dst+=bt;
-			src+=bt;
-			final_byte=src[3];
-		}
-		if(final_byte==USER_DATA_START_CODE) {
-			count+=bt=ext_and_user_data(dst, dst_remained, src, src_remained/*, mpeg_video*/);
-			if(bt==-1)
-				return -1;
-			dst_remained-=bt;
-			src_remained-=bt;
-			dst+=bt;
-			src+=bt;
-			//final_byte=src[3];
-		}
+	if(header == EXT_START_CODE) {
+		bt=picture_coding_ext(&dst[count], dst_remained, in, properties, mpv);
+		if(bt<0)
+			return bt;
+		count+=bt;
 	}
 
 	return count;
+
 }
 
-static int slice(uint8 *dst, uint32 dst_remained, uint8 *src, uint32 src_remained, mpv_data *mpeg_video)
+static int slice(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
-	int i;
 	int count=0;
 
-	mpeg_video->vsh1->b=1;
-	for(i=0;i<4;i++)
-		dst[i]=src[i]; /*cp start_code*/
-	src+=4; 
-	dst+=4;
-	count+=4;
-	dst_remained-=4;
-	src_remained-=4;
-	count+=i=next_start_code2(dst,dst_remained,src,src_remained);
-	if(i==-1) {
-		if(dst_remained<src_remained)
-			mpeg_video->vsh1->e=0;
-		else
-			mpeg_video->vsh1->e=1; /*FIXME: if the initial src isn't a whole frame???*/
-		return -1;
-	}
+	/*---------------------*/
+	count=next_start_code2(dst, dst_remained, in);
+
+	/*---------------------*/
 	return count;
+
+}
+
+static int mpv_read(uint32 nbytes, uint8 *buf, mpv_input *in)
+{
+	if (in->istream) 
+	{
+		//printf("Reading from file n_bytes=%d\n",nbytes);
+		return istream_read(nbytes, buf, in->istream);
+	}
+	else if (in->src) {
+		uint32 to_cpy=min(nbytes, in->src_nbytes);
+
+		if (buf)
+			memcpy(buf, in->src, to_cpy);
+		in->src += to_cpy;
+		in->src_nbytes -= to_cpy;
+
+		return to_cpy;
+	} else 
+		return ERR_EOF;
+	
 }
 
