@@ -23,7 +23,6 @@ noinst_HEADERS	=	bufferpool.h \
 			mpeg.h \
 			mpeg_system.h \
 			mpeg_ts.h \
-			mpeg_utils.h \
 			multicast.h \
 			pcm.h \
 			prefs.h \
