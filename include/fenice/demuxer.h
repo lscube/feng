@@ -200,6 +200,7 @@ ResourceDescr *r_descr_get(resource_name);
  * anything. 
  * The functions that return pointers return NULL if the value is not set.
  * */
+inline time_t r_descr_last_change(ResourceDescr *);
 inline char *r_descr_mrl(ResourceDescr *);
 inline char *r_descr_twin(ResourceDescr *);
 inline char *r_descr_multicast(ResourceDescr *);

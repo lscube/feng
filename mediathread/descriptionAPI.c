@@ -35,6 +35,11 @@
 
 /* --- ResourceInfo wrapper functions --- */
 
+inline time_t r_descr_last_change(ResourceDescr *r_descr)
+{
+	return r_descr ? r_descr->last_change : 0;
+}
+
 inline char *r_descr_mrl(ResourceDescr *r_descr)
 {
 	return (r_descr && r_descr->info) ? r_descr->info->mrl : NULL;
@@ -60,4 +65,3 @@ inline char *r_descr_ttl(ResourceDescr *r_descr)
 	// return (r_descr && r_descr->info) ? r_descr->info->ttl : NULL;
 	return (r_descr && r_descr->info && *r_descr->info->ttl) ? r_descr->info->ttl : NULL;
 }
-
