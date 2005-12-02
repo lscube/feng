@@ -68,7 +68,7 @@ int get_media_descr(char *object,media_entry *req,media_entry *media,char *descr
     }	
 	if (media_is_empty(req)) {
 	    // If there is no specific request describe every media	
-	    // in the SD (recursive=1)			
+	    // in the SD (recursive=1)
 	    res=get_SDP_descr(list,descr,1,object);
 		return res;
 	}

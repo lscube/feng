@@ -28,14 +28,9 @@
  *  
  * */
 
-#include <stdio.h>
-
 #include <fenice/sdp2.h>
-#include <fenice/utils.h>
 
-gint sdp_get_version(ResourceDescr *r_descr, char *dest, size_t dest_size)
+gint sdp_session_id(char *dest, size_t dest_size)
 {
-	time_t t=r_descr_last_change(r_descr);
-	
-	return g_snprintf(dest, dest_size,"%.0f", t ? NTP_time(t) : NTP_time(time(NULL)));
+	return g_snprintf(dest, dest_size,"%.0f", NTP_time(time(NULL)));
 }

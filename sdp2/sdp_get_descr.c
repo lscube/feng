@@ -31,43 +31,76 @@
 #include <stdio.h>
 #include <string.h>
 #include <pwd.h>
+#include <netdb.h> // for getnameinfo()
 
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <fenice/sdp2.h>
+#include <fenice/socket.h>
 
-int sdp_get_descr(resource_name n, char *descr, uint32 descr_size)
+
+#define CK_OVERFLOW(x) if ( (size_left -= x) < 0) return ERR_INPUT_PARAM;
+int sdp_get_descr(resource_name n, int net_fd, char *descr, size_t descr_size)
 {
-	char thefile[255];
+	struct sockaddr_storage localaddr;
+	socklen_t localaddr_len = sizeof(localaddr);
+	char thefile[255], localhostname[NI_MAXHOST];
 	struct passwd *pwitem=getpwuid(getuid());
-	gint used_size=0;
+	gint64 size_left=descr_size;
 	ResourceDescr *r_descr;
 
 	strcpy(thefile, prefs_get_serv_root());
 	strcat(thefile, n);
 	
-	fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s\n", thefile);
+	fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s\n", thefile);
 	if ( !(r_descr=r_descr_get(thefile)) )
 		return ERR_NOT_FOUND;
+	// get name of localhost
+	if (getsockname(net_fd, (struct sockaddr *)&localaddr, &localaddr_len) < 0)
+		return ERR_INPUT_PARAM; // given socket is not valid
+	if (getnameinfo((struct sockaddr *)&localaddr, localaddr_len, localhostname, sizeof(localhostname), NULL, 0, NI_NUMERICHOST))
+		return ERR_INPUT_PARAM; // could not get address name or IP
+	// v=
+	CK_OVERFLOW(g_snprintf(descr, size_left, "v=%d"SDP2_EL, SDP2_VERSION))
+	// o=
+	CK_OVERFLOW(g_strlcat(descr, "o=", size_left ))
+	// g_strlcat(descr, PACKAGE, descr_size-strlen(descr));
+	if (pwitem && pwitem->pw_name && *pwitem->pw_name) {
+		CK_OVERFLOW(g_strlcat(descr, pwitem->pw_name, size_left))
+	} else {
+		CK_OVERFLOW(g_strlcat(descr, "-", size_left))
+	}
+	CK_OVERFLOW(g_strlcat(descr, " ", size_left))
+	CK_OVERFLOW(sdp_session_id(descr+strlen(descr), size_left))
+	CK_OVERFLOW(g_strlcat(descr," ", size_left))
+	CK_OVERFLOW(sdp_get_version(r_descr, descr+strlen(descr), size_left))
+	CK_OVERFLOW(g_strlcat(descr, " IN IP4 ", size_left))		/* Network type: Internet; Address type: IP4. */
+//	CK_OVERFLOW(g_strlcat(descr, localhostname, size_left))
+	CK_OVERFLOW(g_strlcat(descr, get_address(), size_left))
+   	CK_OVERFLOW(g_strlcat(descr, SDP2_EL, size_left))
+   	// c=
+	CK_OVERFLOW(g_strlcat(descr, "c=", size_left))
+	CK_OVERFLOW(g_strlcat(descr, "IN ", size_left))		/* Network type: Internet. */
+	CK_OVERFLOW(g_strlcat(descr, "IP4 ", size_left))		/* Address type: IP4. */
 	
-	g_snprintf(descr,descr_size , "v=%d"SDP2_EL, SDP2_VERSION);
-	g_strlcat(descr, "o=", descr_size-strlen(descr));
-//	g_strlcat(descr, PACKAGE, descr_size-strlen(descr));
-   	if (pwitem && pwitem->pw_name && *pwitem->pw_name)
-		strcat(descr, pwitem->pw_name);
-	else
-		strcat(descr, "-");
-   	g_strlcat(descr," ", descr_size-strlen(descr));
-//   	strcat(descr, get_SDP_session_id(s));
-   	strcat(descr," ");
-   	used_size = strlen(descr);
-   	if (sdp_get_version(r_descr, descr+used_size, descr_size-used_size) < (gint)descr_size-used_size)
-   		return ERR_INPUT_PARAM;
-//   	strcat(descr, get_SDP_version(s));
-   	strcat(descr, SDP2_EL);
-   	strcat(descr, "c=");
-   	strcat(descr, "IN ");		/* Network type: Internet. */
-   	strcat(descr, "IP4 ");		/* Address type: IP4. */
+	// s=
+	// i=
+	// u=
+	// e=
+	// p=
+	// c=
+	// b=
+	// z=
+	// k=
+	// a=
+	
+	// t=
+	// r=
+	
+	// media
    	
+	fnc_log(FNC_LOG_INFO, "\n[SDP2] description:\n%s\n", descr);
+	
 	return 0;
 }
+#undef CK_OVERFLOW

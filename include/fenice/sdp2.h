@@ -28,14 +28,26 @@
  *  
  * */
 
-#include <stdio.h>
+#ifndef SDP2_H_
+#define SDP2_H_
 
-#include <fenice/sdp2.h>
-#include <fenice/utils.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <glib.h>
 
-gint sdp_get_version(ResourceDescr *r_descr, char *dest, size_t dest_size)
-{
-	time_t t=r_descr_last_change(r_descr);
-	
-	return g_snprintf(dest, dest_size,"%.0f", t ? NTP_time(t) : NTP_time(time(NULL)));
-}
+#include <fenice/types.h>
+#include <fenice/demuxer.h>
+
+#include <config.h>
+#ifndef PACKAGE
+#define PACKAGE "fenice"
+#endif
+
+#define SDP2_EL "\r\n"
+#define SDP2_VERSION 0
+
+gint sdp_session_id(char *, size_t);
+gint sdp_get_version(ResourceDescr *, char *, size_t);
+int sdp_get_descr(resource_name, int, char *, uint32);
+
+#endif /*SDP2_H_*/

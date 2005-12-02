@@ -39,6 +39,7 @@
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include <fenice/sdp.h>
+#include <fenice/sdp2.h>
 #include <fenice/fnc_log.h>
 
 /*
@@ -128,6 +129,8 @@ int RTSP_describe(RTSP_buffer * rtsp)
 	memset(&req, 0, sizeof(req));
 	req.flags = ME_DESCR_FORMAT;
 	req.descr_format = descr_format;
+	if ( sdp_get_descr(object, rtsp->fd, descr, sizeof(descr)) )
+		return ERR_NOERROR;
 	res = get_media_descr(object, &req, &media, descr);
 	if (res == ERR_NOT_FOUND) {
 		send_reply(404, 0, rtsp);	// Not found
