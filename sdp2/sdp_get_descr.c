@@ -36,6 +36,7 @@
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <fenice/sdp2.h>
+#include <fenice/multicast.h>
 #include <fenice/socket.h>
 
 
@@ -58,7 +59,7 @@ int sdp_get_descr(resource_name n, int net_fd, char *descr, size_t descr_size)
 	// get name of localhost
 	if (getsockname(net_fd, (struct sockaddr *)&localaddr, &localaddr_len) < 0)
 		return ERR_INPUT_PARAM; // given socket is not valid
-	if (getnameinfo((struct sockaddr *)&localaddr, localaddr_len, localhostname, sizeof(localhostname), NULL, 0, NI_NUMERICHOST))
+	if (getnameinfo((struct sockaddr *)&localaddr, localaddr_len, localhostname, sizeof(localhostname), NULL, 0, 0))
 		return ERR_INPUT_PARAM; // could not get address name or IP
 	// v=
 	CK_OVERFLOW(g_snprintf(descr, size_left, "v=%d"SDP2_EL, SDP2_VERSION))
@@ -75,20 +76,27 @@ int sdp_get_descr(resource_name n, int net_fd, char *descr, size_t descr_size)
 	CK_OVERFLOW(g_strlcat(descr," ", size_left))
 	CK_OVERFLOW(sdp_get_version(r_descr, descr+strlen(descr), size_left))
 	CK_OVERFLOW(g_strlcat(descr, " IN IP4 ", size_left))		/* Network type: Internet; Address type: IP4. */
-//	CK_OVERFLOW(g_strlcat(descr, localhostname, size_left))
-	CK_OVERFLOW(g_strlcat(descr, get_address(), size_left))
+	CK_OVERFLOW(g_strlcat(descr, localhostname, size_left))
+//	CK_OVERFLOW(g_strlcat(descr, get_address(), size_left))
    	CK_OVERFLOW(g_strlcat(descr, SDP2_EL, size_left))
-   	// c=
-	CK_OVERFLOW(g_strlcat(descr, "c=", size_left))
-	CK_OVERFLOW(g_strlcat(descr, "IN ", size_left))		/* Network type: Internet. */
-	CK_OVERFLOW(g_strlcat(descr, "IP4 ", size_left))		/* Address type: IP4. */
 	
 	// s=
+	CK_OVERFLOW(g_strlcat(descr, "s=RTSP Session"SDP2_EL, size_left))
 	// i=
 	// u=
 	// e=
 	// p=
 	// c=
+	CK_OVERFLOW(g_strlcat(descr, "c=", size_left))
+	CK_OVERFLOW(g_strlcat(descr, "IN ", size_left))		/* Network type: Internet. */
+	CK_OVERFLOW(g_strlcat(descr, "IP4 ", size_left))		/* Address type: IP4. */
+	if(r_descr_multicast(r_descr)) {
+		CK_OVERFLOW(g_strlcat(descr, r_descr_multicast(r_descr), size_left))
+		CK_OVERFLOW(g_strlcat(descr, "/", size_left))
+//		sprintf(ttl, "%d", (int)DEFAULT_TTL);
+//		strcat(descr, ttl); /*TODO: the possibility to change ttl. See multicast.h, RTSP_setup.c, send_setup_reply.c*/
+	} else
+		CK_OVERFLOW(g_strlcat(descr, "0.0.0.0", size_left))
 	// b=
 	// z=
 	// k=

@@ -63,7 +63,7 @@ tsocket tcp_listen(unsigned short port)
 		return ERR_GENERIC;
     }
 
-    setsockopt(f, SOL_SOCKET, SO_REUSEADDR, (char *) &v, sizeof(int));
+    setsockopt(f, SOL_SOCKET, SO_REUSEADDR, (char *) &v, sizeof(v));
 
     s.sin_family = AF_INET;
     s.sin_addr.s_addr = htonl(INADDR_ANY);
