@@ -35,6 +35,7 @@ noinst_HEADERS	=	bufferpool.h \
 			socket.h \
 			types.h \
 			utils.h \
+			wsocket.h \
 			xmllexer.h \
 			xmlparser.h 
 

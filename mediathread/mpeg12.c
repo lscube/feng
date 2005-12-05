@@ -152,7 +152,7 @@ static float AspectRatioCode[] = {		/* value 	height/width	video source		*/
 		0.9815,                         /*  9		0,9815					*/
 		1.0255,                         /*  10		1,0255					*/
 		1.0695,                         /*  11		1,0695					*/
-		+1.0950,	                        /*  12		1,0950		CCIR Rec.601 525 lines	*/
+		1.0950,	                        /*  12		1,0950		CCIR Rec.601 525 lines	*/
 		1.1575,                         /*  13		1,1575					*/
 		1.2015,                         /*  14		1,2015					*/
 		0.0000                          /*  15		reserved				*/

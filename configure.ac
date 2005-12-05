@@ -29,6 +29,51 @@ AC_ARG_WITH(log-file,
 AC_ARG_WITH(max-session,
 [  --with-max-session      max number of incoming sessions [[default=100]]],,
 	with_max_session=100)
+dnl netembryo
+AC_ARG_ENABLE(ipv6,
+[  --enable-ipv6            enable IPv6 support [[default=autodetected]]],,
+        enable_ipv6="yes")
+
+AM_CONDITIONAL(HAVE_SSL, /bin/false)
+AC_DEFUN([CHECK_SSL],
+[AC_MSG_CHECKING(if ssl is wanted)
+AC_ARG_WITH(ssl,
+[  --with-ssl enable ssl [will check /usr/local/ssl
+                            /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr. [Default certificate = /var/local/lib/fenice/certs/cert.pem]]
+],
+[   AC_MSG_RESULT(yes)
+    for dir in $withval /usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr; do
+        ssldir="$dir"
+        if test -f "$dir/include/openssl/ssl.h"; then
+            found_ssl="yes";
+            CFLAGS="$CFLAGS -I$ssldir/include/openssl -DHAVE_SSL";
+            break;
+        fi
+        if test -f "$dir/include/ssl.h"; then
+            found_ssl="yes";
+            CFLAGS="$CFLAGS -I$ssldir/include/openssl -DHAVE_SSL";
+            break
+        fi
+    done
+    if test x_$found_ssl != x_yes; then
+        AC_MSG_ERROR(Cannot find ssl libraries)
+        AC_DEFINE([HAVE_SSL],[0],[Disable SSl])
+dnl     AC_DEFINE([HAVE_SSL],[0],[Disable SSl])
+    else
+        printf "OpenSSL found in $ssldir\n";
+        LIBS="$LIBS -lssl -lcrypto";
+        LDFLAGS="$LDFLAGS -L$ssldir/lib";
+        AM_CONDITIONAL(HAVE_SSL, /bin/true)
+        AC_DEFINE([HAVE_SSL],[1],[Enable SSl])
+    fi
+dnl     AC_SUBST(HAVE_SSL)
+],
+[
+    with_ssl="${localstatedir}/local/lib/fenice/certs/cert.pem"
+    AC_MSG_RESULT(no)
+])
+])dnl netembryo
+
 
 AC_ARG_ENABLE(fhs23,
 [  --enable-fhs23          enable Filesystem Hierarchy Standard 2.3:
@@ -78,7 +123,9 @@ LIBTOOL="$LIBTOOL --silent"
 AC_SUBST([LIBTOOL_DEPS])
 
 dnl Check for Endianess
-AC_C_BIGENDIAN
+dnl AC_C_BIGENDIAN
+dnl netembryo
+AC_C_BIGENDIAN([BIGENDIAN="Big Endian"] AC_DEFINE([WORDS_BIGENDIAN], 1, [Define if manchine is big-endian]),[BIGENDIAN="Little Endian"] )
 
 dnl Checks for libraries.
 AC_CHECK_LIB(pthread,pthread_create)
@@ -91,7 +138,7 @@ dnl Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/time.h unistd.h strings.h errno.h fcntl.h malloc.h sys/ioctl.h getopt.h syslog.h) 
+AC_CHECK_HEADERS(sys/time.h unistd.h strings.h errno.h sys/errno.h fcntl.h malloc.h sys/ioctl.h getopt.h syslog.h) 
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -101,20 +148,46 @@ AC_TYPE_PID_T
 AC_C_INLINE
 AC_HEADER_TIME
 
+dnl init CFLAG and PKG_LIB - netembryo
+AC_SUBST(PACKAGE_CFLAGS)
+AC_SUBST(PACKAGE_LIBS)
+
 dnl Checks for library functions.
 AC_FUNC_ALLOCA
 AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(select socket gettimeofday uname getcwd getwd strcspn strdup strtoul strerror strstr setenv)
+AC_CHECK_FUNCS(select socket gettimeofday uname getcwd getwd strcspn strdup strtoul strerror strstr setenv getopt_long uname)
 AC_CHECK_FUNC(getaddrinfo)
+CHECK_SSL
+if test "x$with_ssl" = "xyes"; then
+        fenice_cert="${localstatedir}/local/lib/fenice/certs/cert.pem"
+else
+        fenice_cert=$with_ssl
+fi
+
+AC_SUBST(fenice_cert)
+fenice_state_dir=${localstatedir}/local/lib/fenice/certs
+AC_SUBST(fenice_state_dir)
 
 dnl check if we have the generic struct for net addresses the has max possible size
 AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 
-CFLAGS=""
+dnl CFLAGS=""
 
 AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Fenice (>1.10) uses Glib. Please install it (you need devel files).]),)
+
+dnl test enable
+if test "x$enable_ipv6" = "xyes"; then
+        AC_CHECK_TYPE(struct sockaddr_in6, AC_DEFINE([IPV6], 1, [Define IPv6 support]), , [#include <netinet/in.h>])
+else
+        AC_MSG_WARN([IPv6 disabled: check skipped.])
+fi
+
+ssl_msg="libssl activeted ..................... : no";
+if test x_$found_ssl == x_yes; then
+ssl_msg="libssl activeted ..................... : yes"
+fi
 
 AM_CONDITIONAL(FENICE_EFENCE, /bin/false)
 if test "$enable_efence" = "yes"; then
@@ -153,8 +226,6 @@ if test "$enable_verbose" = "yes"; then
 	enable_verbose=yes
 	verbose_msg="   You chose fenice to be very verbose... who'll stop it talking now!!!"
 fi
-
-
 
 
 case "$enable_warnings" in
@@ -277,6 +348,12 @@ dnl AC_DEFINE(FENICE_CONF_DIR_ENV, "FENICE_CONF_DIR",[Define the name for the EN
 AC_DEFINE_UNQUOTED(FENICE_CONF_PATH_DEFAULT_STR, "$fenice_conf_dir/$fenice_conf_file", [Define absolute path string for Fenice configuration file])
 dnl AC_DEFINE(FENICE_CONF_PATH_STR_ENV, "FENICE_CONF_PATH",[Define the name for the ENV variable for Fenice configuration file path string])
 
+dnl netembryo
+AC_DEFINE_UNQUOTED(FENICE_CERT_FILE_DEFAULT, $fenice_cert, [Define default file for Certificate (pem format)])
+AC_DEFINE_UNQUOTED(FENICE_CERT_FILE_DEFAULT_STR, "$fenice_cert", [Define default string file for Certificate (pem format])
+AC_DEFINE_UNQUOTED(FENICE_STATE_DIR, $fenice_state_dir, [Define default dir for Certificate (pem format)])
+AC_DEFINE_UNQUOTED(FENIC_STATE_DIR_STR, "$fenice_state_dir", [Define default string dir for Certificate (pem format)])
+
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([mediathread/Makefile])
@@ -295,6 +372,8 @@ AC_CONFIG_FILES([schedule/Makefile])
 AC_CONFIG_FILES([xmlparser/Makefile])
 AC_CONFIG_FILES([multicast/Makefile])
 AC_CONFIG_FILES([command_environment/Makefile])
+AC_CONFIG_FILES([var/Makefile])
+AC_CONFIG_FILES([wsocket/Makefile])
 AC_CONFIG_FILES([docs/Makefile])
 AC_CONFIG_FILES([docs/howto/Makefile])
 AC_CONFIG_FILES([etc/Makefile])
@@ -310,6 +389,8 @@ Fenice Configuration path .......: $fenice_conf_dir
 Fenice Log File .................: $fenice_log_file
 Fenice Multimedia Files root ....: $fenice_avroot_dir
 Fenice RTSP listening port ......: $fenice_rtsp_port
+Byte order ..................... : this is a $BIGENDIAN machine
+$ssl_msg
 $debug_msg
 $efence_msg
 $verbose_msg
