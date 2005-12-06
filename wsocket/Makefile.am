@@ -37,6 +37,7 @@ libwsocket_la_SOURCES +=	addr_ntop.c \
 				Sock_accept.c \
 				Sock_bind.c \
 				Sock_close.c \
+				Sock_compare.c \
 				Sock_connect.c \
 				Sock_init.c \
 				Sock_listen.c \

@@ -221,6 +221,7 @@ int Sock_write(Sock *, void *buffer, int nbytes);
 int Sock_close(Sock *);
 int get_fd(Sock *);
 void Sock_init(void);
+int Sock_compare(Sock *p, Sock *q);
 
 /*get_info.c*/
 char * get_remote_host(Sock *);
