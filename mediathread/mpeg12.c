@@ -28,6 +28,7 @@
  *  
  * */
 
+#include <string.h>
 #include <fenice/mpeg.h>
 #include <fenice/MediaParser.h>
 #include <fenice/mediaparser_module.h>
@@ -165,8 +166,8 @@ int init(MediaProperties *properties, void **private_data)
 	mpv_data *mpeg_video;
 	*private_data = calloc(1, sizeof(mpv_data));
 	mpeg_video = (mpv_data *)(*private_data);
-	mpeg_video->vsh1 = malloc(sizeof(video_spec_head1));
-	mpeg_video->vsh2 = malloc(sizeof(video_spec_head2));
+	mpeg_video->vsh1 = calloc(1,sizeof(video_spec_head1));
+	mpeg_video->vsh2 = calloc(1,sizeof(video_spec_head2));
 	mpeg_video->is_buffered=0;/*false*/
 
 	return 0;
@@ -347,8 +348,8 @@ int uninit(void *private_data)
 {
 	mpv_data *mpeg_video;
 	mpeg_video=(mpv_data *)private_data;
-	free(mpeg_video->vsh1);
-	free(mpeg_video->vsh2);
+	/*free(mpeg_video->vsh1);
+	free(mpeg_video->vsh2);*/
 	free(private_data);
 	return 0;
 }

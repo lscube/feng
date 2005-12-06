@@ -36,25 +36,33 @@
 #include <time.h>
 #include <stdlib.h>
 #include <config.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h> /*SOMAXCONN*/
+
 #ifdef WIN32
 #include <winsock2.h>
 #endif
+	/*x-x*/
 #include <fenice/socket.h>
+#include <fenice/wsocket.h>
+
 #include <fenice/eventloop.h>
 #include <fenice/prefs.h>
 #include <fenice/schedule.h>
 #include <fenice/utils.h>
 #include <fenice/command_environment.h>
-#include <fenice/fnc_log.h>
-//#include <sys/types.h> /*fork*/
-//#include <unistd.h>    /*fork*/
+#include <glib.h>
+#include <glib/gprintf.h>
 
 inline void fncheader(void); // defined in src/fncheader.c
 
 int main(int argc, char **argv)
 {
 	tsocket main_fd;
-	unsigned int port;
+	Sock *m_fd;
+	char *port;
+	int wsocket_flag=0;
+        int on=1; /*setting non-blocking flag*/
 
 	// Fake timespec for fake nanosleep. See below.
 	struct timespec ts = { 0, 0 };
@@ -66,7 +74,7 @@ int main(int argc, char **argv)
 	if (command_environment(argc, argv))
 		return 0;
 	/* prefs_get_port() reads the static var prefs and returns the port number */
-	port = prefs_get_port();
+	port = g_strdup_printf("%d",prefs_get_port());
 
 #ifdef WIN32
 	{
@@ -85,7 +93,25 @@ int main(int argc, char **argv)
 
 	printf("CTRL-C terminate the server.\n");
 	fnc_log(FNC_LOG_INFO,"Waiting for RTSP connections on port %d...\n", port);
-	main_fd = tcp_listen(port);
+
+	Sock_init();
+	m_fd = Sock_bind(NULL, port, &main_fd, TCP, wsocket_flag);
+	if(m_fd==NULL) {
+                fnc_log(FNC_LOG_ERR,"bind() error." );
+		return 0;
+	}
+	
+	if (Sock_set_props(main_fd, FIONBIO, &on) < 0) { /*set to non-blocking*/
+		fnc_log(FNC_LOG_ERR,"ioctl() error.\n" );
+		return 0;
+    	}
+
+	if(Sock_listen(m_fd,SOMAXCONN)) {
+		fnc_log(FNC_LOG_ERR,"listen() error.\n" );
+		return 0;
+	}
+	/*x-x*/
+	//main_fd = tcp_listen(port);
 
 	/* next line: schedule_init() initialises the array of schedule_list sched 
 	   and creates the thread schedule_do() -> look at schedule.c */

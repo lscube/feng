@@ -223,6 +223,14 @@ int get_fd(Sock *);
 void Sock_init(void);
 int Sock_compare(Sock *p, Sock *q);
 
+/*ioctl set properties for socket
+ *RETURN VALUE
+ *	Usually, on success zero is returned.  
+ *	A few ioctls use the return value as an output parameter and return a nonnegative value on success.  On error, -1 is returned, and errno  is  set
+ *	appropriately.
+ * */
+int Sock_set_props(int d, int request, int *on);
+
 /*get_info.c*/
 char * get_remote_host(Sock *);
 char * get_local_host(Sock *);

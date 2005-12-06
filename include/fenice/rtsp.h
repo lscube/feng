@@ -38,7 +38,10 @@
 	#include <time.h>
 	#include <config.h>
 	#include <fenice/utils.h>
+		/*x-x*/
 	#include <fenice/socket.h>
+	#include <fenice/wsocket.h>
+
 	#include <fenice/rtp.h>
 	#include <fenice/rtcp.h>
 	#include <fenice/mediainfo.h>
@@ -56,7 +59,6 @@
 #define RTSP_EL "\r\n"
 	
    	 typedef struct _RTSP_session {
-    		//tsocket fd;
     		int cur_state;    	
     		int session_id;
     		RTP_session *rtp_session;
@@ -64,8 +66,12 @@
     	} RTSP_session;
 				
     	typedef struct _RTSP_buffer {
+		/*wsocket*/
+		Sock *sock;
+		/*x-x*/
 		tsocket fd;
 		unsigned int port;
+		
     		// Buffers    	
     		char in_buffer[RTSP_BUFFERSIZE];
     		int in_size;

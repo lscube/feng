@@ -41,6 +41,7 @@ libwsocket_la_SOURCES +=	addr_ntop.c \
 				Sock_connect.c \
 				Sock_init.c \
 				Sock_listen.c \
+				Sock_set_props.c \
 				Sock_read.c \
 				Sock_write.c \
 				Sock_create_ssl_connection.c
