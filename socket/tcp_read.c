@@ -37,6 +37,7 @@
 #include <arpa/inet.h>
 
 #include <fenice/socket.h>
+#include <fenice/wsocket.h>
 #include <fenice/fnc_log.h>
 
 int tcp_read(tsocket fd, void *buffer, int nbytes)
@@ -56,7 +57,7 @@ int tcp_read(tsocket fd, void *buffer, int nbytes)
 		if( getpeername(fd, (struct sockaddr*)&name, &namelen) < 0 )
 			fnc_log(FNC_LOG_CLIENT,"- - - ");
 		else
-			fnc_log(FNC_LOG_CLIENT,"%s - - ", sock_ntop_host((struct sockaddr *)&name, namelen, addr_str, sizeof(addr_str)) );
+			fnc_log(FNC_LOG_CLIENT,"%s - - ", sock_ntop_host2((struct sockaddr *)&name, namelen, addr_str, sizeof(addr_str)) );
 	}
 	
 	return n;

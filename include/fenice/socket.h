@@ -81,7 +81,7 @@ struct sockaddr_storage {
 #endif // HAVE_STRUCT_SOCKADDR_STORAGE
 		
 	char *get_address();
-	char *sock_ntop_host(const struct sockaddr *, socklen_t, char *, size_t);
+	char *sock_ntop_host2(const struct sockaddr *, socklen_t, char *, size_t); 
 	tsocket tcp_listen(unsigned short port);
 	tsocket tcp_accept(tsocket fd);	
 	int tcp_read(tsocket fd, void *buffer, int nbytes);
