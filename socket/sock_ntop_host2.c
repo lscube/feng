@@ -39,7 +39,7 @@
 #include <sys/un.h>
 #endif
 
-char *sock_ntop_host(const struct sockaddr *sa, socklen_t salen, char *str, size_t len)
+char *sock_ntop_host2(const struct sockaddr *sa, socklen_t salen, char *str, size_t len)
 {
     // static char str[128];		/* Unix domain is largest */
     // size_t len = sizeof(str);
