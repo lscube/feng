@@ -65,3 +65,28 @@ inline char *r_descr_ttl(ResourceDescr *r_descr)
 	// return (r_descr && r_descr->info) ? r_descr->info->ttl : NULL;
 	return (r_descr && r_descr->info && *r_descr->info->ttl) ? r_descr->info->ttl : NULL;
 }
+
+inline char *r_descr_name(ResourceDescr *r_descr)
+{
+	return (r_descr && r_descr->info) ? r_descr->info->name : NULL;
+}
+
+inline char *r_descr_description(ResourceDescr *r_descr)
+{
+	return (r_descr && r_descr->info) ? r_descr->info->description : NULL;
+}
+
+inline char *r_descr_descrURI(ResourceDescr *r_descr)
+{
+	return (r_descr && r_descr->info) ? r_descr->info->descrURI : NULL;
+}
+
+inline char *r_descr_email(ResourceDescr *r_descr)
+{
+	return (r_descr && r_descr->info) ? r_descr->info->email : NULL;
+}
+
+inline char *r_descr_phone(ResourceDescr *r_descr)
+{
+	return (r_descr && r_descr->info) ? r_descr->info->phone : NULL;
+}

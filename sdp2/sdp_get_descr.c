@@ -40,7 +40,7 @@
 #include <fenice/socket.h>
 
 
-#define CK_OVERFLOW(x) if ( (size_left -= x) < 0) return ERR_INPUT_PARAM;
+#define CK_OVERFLOW(x) { if ( (size_left -= x) < 0) return ERR_INPUT_PARAM; else cursor=descr+descr_size-size_left; }
 int sdp_get_descr(resource_name n, int net_fd, char *descr, size_t descr_size)
 {
 	struct sockaddr_storage localaddr;
@@ -48,8 +48,10 @@ int sdp_get_descr(resource_name n, int net_fd, char *descr, size_t descr_size)
 	char thefile[255], localhostname[NI_MAXHOST];
 	struct passwd *pwitem=getpwuid(getuid());
 	gint64 size_left=descr_size;
+	char *cursor=descr;
 	ResourceDescr *r_descr;
 
+	// temporary?
 	strcpy(thefile, prefs_get_serv_root());
 	strcat(thefile, n);
 	
@@ -62,45 +64,58 @@ int sdp_get_descr(resource_name n, int net_fd, char *descr, size_t descr_size)
 	if (getnameinfo((struct sockaddr *)&localaddr, localaddr_len, localhostname, sizeof(localhostname), NULL, 0, 0))
 		return ERR_INPUT_PARAM; // could not get address name or IP
 	// v=
-	CK_OVERFLOW(g_snprintf(descr, size_left, "v=%d"SDP2_EL, SDP2_VERSION))
+	CK_OVERFLOW(g_snprintf(cursor, size_left, "v=%d"SDP2_EL, SDP2_VERSION))
 	// o=
-	CK_OVERFLOW(g_strlcat(descr, "o=", size_left ))
-	// g_strlcat(descr, PACKAGE, descr_size-strlen(descr));
-	if (pwitem && pwitem->pw_name && *pwitem->pw_name) {
-		CK_OVERFLOW(g_strlcat(descr, pwitem->pw_name, size_left))
-	} else {
-		CK_OVERFLOW(g_strlcat(descr, "-", size_left))
-	}
-	CK_OVERFLOW(g_strlcat(descr, " ", size_left))
-	CK_OVERFLOW(sdp_session_id(descr+strlen(descr), size_left))
-	CK_OVERFLOW(g_strlcat(descr," ", size_left))
-	CK_OVERFLOW(sdp_get_version(r_descr, descr+strlen(descr), size_left))
-	CK_OVERFLOW(g_strlcat(descr, " IN IP4 ", size_left))		/* Network type: Internet; Address type: IP4. */
-	CK_OVERFLOW(g_strlcat(descr, localhostname, size_left))
-//	CK_OVERFLOW(g_strlcat(descr, get_address(), size_left))
-   	CK_OVERFLOW(g_strlcat(descr, SDP2_EL, size_left))
+	CK_OVERFLOW(g_strlcat(cursor, "o=", size_left ))
+	if (pwitem && pwitem->pw_name && *pwitem->pw_name)
+		CK_OVERFLOW(g_strlcat(cursor, pwitem->pw_name, size_left))
+	else
+		CK_OVERFLOW(g_strlcat(cursor, "-", size_left))
+	CK_OVERFLOW(g_strlcat(cursor, " ", size_left))
+	CK_OVERFLOW(sdp_session_id(cursor, size_left))
+	CK_OVERFLOW(g_strlcat(cursor," ", size_left))
+	CK_OVERFLOW(sdp_get_version(r_descr, cursor, size_left))
+	CK_OVERFLOW(g_strlcat(cursor, " IN IP4 ", size_left))		/* Network type: Internet; Address type: IP4. */
+	CK_OVERFLOW(g_strlcat(cursor, localhostname, size_left))
+//	CK_OVERFLOW(g_strlcat(cursor, get_address(), size_left))
+   	CK_OVERFLOW(g_strlcat(cursor, SDP2_EL, size_left))
 	
 	// s=
-	CK_OVERFLOW(g_strlcat(descr, "s=RTSP Session"SDP2_EL, size_left))
+	if (r_descr_name(r_descr))
+		CK_OVERFLOW(g_snprintf(cursor, size_left, "s=%s"SDP2_EL, r_descr_name(r_descr)))
+	else
+		CK_OVERFLOW(g_strlcat(cursor, "s=RTSP Session"SDP2_EL, size_left)) // TODO: choose a better session name
 	// i=
+	CK_OVERFLOW(g_snprintf(cursor, size_left, "i=%s %s Streaming Server"SDP2_EL, PACKAGE, VERSION)) // TODO: choose a better session description
 	// u=
+	if (r_descr_descrURI(r_descr))
+		CK_OVERFLOW(g_snprintf(cursor, size_left, "u=%s"SDP2_EL, r_descr_descrURI(r_descr)))
 	// e=
+	if (r_descr_email(r_descr))
+		CK_OVERFLOW(g_snprintf(cursor, size_left, "e=%s"SDP2_EL, r_descr_email(r_descr)))
 	// p=
+	if (r_descr_phone(r_descr))
+		CK_OVERFLOW(g_snprintf(cursor, size_left, "p=%s"SDP2_EL, r_descr_phone(r_descr)))
 	// c=
-	CK_OVERFLOW(g_strlcat(descr, "c=", size_left))
-	CK_OVERFLOW(g_strlcat(descr, "IN ", size_left))		/* Network type: Internet. */
-	CK_OVERFLOW(g_strlcat(descr, "IP4 ", size_left))		/* Address type: IP4. */
+	CK_OVERFLOW(g_strlcat(cursor, "c=", size_left))
+	CK_OVERFLOW(g_strlcat(cursor, "IN ", size_left))		/* Network type: Internet. */
+	CK_OVERFLOW(g_strlcat(cursor, "IP4 ", size_left))		/* Address type: IP4. */
 	if(r_descr_multicast(r_descr)) {
-		CK_OVERFLOW(g_strlcat(descr, r_descr_multicast(r_descr), size_left))
-		CK_OVERFLOW(g_strlcat(descr, "/", size_left))
+		CK_OVERFLOW(g_strlcat(cursor, r_descr_multicast(r_descr), size_left))
+		CK_OVERFLOW(g_strlcat(cursor, "/", size_left))
+		if (r_descr_ttl(r_descr))
+			CK_OVERFLOW(g_snprintf(cursor, size_left, "%s"SDP2_EL, r_descr_ttl(r_descr)))
+		else
+			CK_OVERFLOW(g_snprintf(cursor, size_left, "%d"SDP2_EL, DEFAULT_TTL))
 //		sprintf(ttl, "%d", (int)DEFAULT_TTL);
-//		strcat(descr, ttl); /*TODO: the possibility to change ttl. See multicast.h, RTSP_setup.c, send_setup_reply.c*/
+//		strcat(cursor, ttl); /*TODO: the possibility to change ttl. See multicast.h, RTSP_setup.c, send_setup_reply.c*/
 	} else
-		CK_OVERFLOW(g_strlcat(descr, "0.0.0.0", size_left))
+		CK_OVERFLOW(g_strlcat(cursor, "0.0.0.0", size_left))
 	// b=
 	// z=
 	// k=
 	// a=
+	// other private data
 	
 	// t=
 	// r=

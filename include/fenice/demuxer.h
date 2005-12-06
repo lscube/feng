@@ -119,6 +119,11 @@ typedef struct __RESOURCE_INFO {
 #endif
 MObject_def(__RESOURCE_INFO)
 	char *mrl;
+	char *name;
+	char *description;
+	char *descrURI;
+	char *email;
+	char *phone;
 	char *sdp_private;
 	// char mrl[255];
 	char twin[255];
@@ -205,6 +210,11 @@ inline char *r_descr_mrl(ResourceDescr *);
 inline char *r_descr_twin(ResourceDescr *);
 inline char *r_descr_multicast(ResourceDescr *);
 inline char *r_descr_ttl(ResourceDescr *);
+inline char *r_descr_name(ResourceDescr *);
+inline char *r_descr_description(ResourceDescr *);
+inline char *r_descr_descrURI(ResourceDescr *);
+inline char *r_descr_email(ResourceDescr *);
+inline char *r_descr_phone(ResourceDescr *);
 /*-------------------------------------------*/
 
 #endif // __DEMUXER_H
