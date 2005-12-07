@@ -2,7 +2,8 @@
 feniceincludedir = $(top_srcdir)/include
 
 noinst_LTLIBRARIES = libsdp2.la
-libsdp2_la_SOURCES =	sdp_get_descr.c \
+libsdp2_la_SOURCES =		sdp_session_descr.c \
+						sdp_media_descr.c \
 						sdp_get_version.c \
 						sdp_session_id.c
 			

@@ -90,3 +90,8 @@ inline char *r_descr_phone(ResourceDescr *r_descr)
 {
 	return (r_descr && r_descr->info) ? r_descr->info->phone : NULL;
 }
+
+inline char *r_descr_sdp_private(ResourceDescr *r_descr)
+{
+	return (r_descr && r_descr->info) ? r_descr->info->sdp_private : NULL;
+}

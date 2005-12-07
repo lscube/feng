@@ -39,9 +39,11 @@
 #include <fenice/multicast.h>
 #include <fenice/socket.h>
 
+#include "sdp_get_version.c"
+
 
 #define CK_OVERFLOW(x) { if ( (size_left -= x) < 0) return ERR_INPUT_PARAM; else cursor=descr+descr_size-size_left; }
-int sdp_get_descr(resource_name n, int net_fd, char *descr, size_t descr_size)
+int sdp_session_descr(resource_name n, int net_fd, char *descr, size_t descr_size)
 {
 	struct sockaddr_storage localaddr;
 	socklen_t localaddr_len = sizeof(localaddr);
@@ -50,6 +52,7 @@ int sdp_get_descr(resource_name n, int net_fd, char *descr, size_t descr_size)
 	gint64 size_left=descr_size;
 	char *cursor=descr;
 	ResourceDescr *r_descr;
+	GList *m = NULL;
 
 	// temporary?
 	strcpy(thefile, prefs_get_serv_root());
@@ -110,20 +113,26 @@ int sdp_get_descr(resource_name n, int net_fd, char *descr, size_t descr_size)
 //		sprintf(ttl, "%d", (int)DEFAULT_TTL);
 //		strcat(cursor, ttl); /*TODO: the possibility to change ttl. See multicast.h, RTSP_setup.c, send_setup_reply.c*/
 	} else
-		CK_OVERFLOW(g_strlcat(cursor, "0.0.0.0", size_left))
+		CK_OVERFLOW(g_strlcat(cursor, "0.0.0.0"SDP2_EL, size_left))
 	// b=
+	// t=
+	CK_OVERFLOW(g_strlcat(cursor, "t=0 0"SDP2_EL, size_left))
+	// r=
 	// z=
 	// k=
 	// a=
+	// control attribute. We should look if aggregate metod is supported?
+	CK_OVERFLOW(g_snprintf(cursor, size_left, "a=control:%s"SDP2_EL, n))
 	// other private data
-	
-	// t=
-	// r=
-	
+	if (r_descr_sdp_private(r_descr))
+		CK_OVERFLOW(g_snprintf(cursor, size_left, "%s"SDP2_EL, r_descr_sdp_private(r_descr)))
 	// media
+	for (m = g_list_first(r_descr->media); m; m=m->next) {
+		sdp_media_descr(r_descr, MEDIA_DESCR(m), cursor, size_left);
+	}
    	
 	fnc_log(FNC_LOG_INFO, "\n[SDP2] description:\n%s\n", descr);
 	
-	return 0;
+	return ERR_NOERROR;
 }
 #undef CK_OVERFLOW

@@ -47,15 +47,6 @@
 #include <fenice/rtp.h>
 #include <fenice/multicast.h>
 
-#ifdef SHATRIES
-/* shatries */
-#include <glib.h>
-#include <fenice/prefs.h>
-#include <fenice/mediathread.h>
-#include <fenice/fnc_log.h>
-/* /shatries */
-#endif // SHATRIES
-
 int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 {	
 	char s[30],t[255],app[80];
@@ -65,17 +56,6 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 	char ttl[4];
 		
 	int res;
-#ifdef SHATRIES
-	/* shatries */
-        char thefile[255];
-	ResourceDescr *r_descr;
-
-        strcpy(thefile,prefs_get_serv_root());
-        strcat(thefile,url);
-	fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s\n", thefile);
-	r_descr=r_descr_get(thefile);
-	/* /shatries */
-#endif // SHATRIES
 	
 	if((res=enum_media(url,&matching_descr))!=ERR_NOERROR)
 		return res;
@@ -98,17 +78,6 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
    	strcat(descr, "IN ");		/* Network type: Internet. */
    	strcat(descr, "IP4 ");		/* Address type: IP4. */
 
-#ifdef SHATRIES
-	// if(*r_descr->info->multicast) {
-	if(r_descr_multicast(r_descr)) {
-   		// strcat(descr, r_descr->info->multicast);
-   		strcat(descr, r_descr_multicast(r_descr));
-		strcat(descr,"/");
-		sprintf(ttl, "%d", (int)DEFAULT_TTL);
-		strcat(descr, ttl); /*TODO: the possibility to change ttl. See multicast.h, RTSP_setup.c, send_setup_reply.c*/
-	} else
-   		strcat(descr, get_address());
-#else // SHATRIES
 	if(matching_descr->flags & SD_FL_MULTICAST){
    		strcat(descr, matching_descr->multicast);
 		strcat(descr,"/");
@@ -116,16 +85,12 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 		strcat(descr, ttl); /*TODO: the possibility to change ttl. See multicast.h, RTSP_setup.c, send_setup_reply.c*/
 	} else
    		strcat(descr, get_address());
-#endif // SHATRIES
    	
 	strcat(descr, SDP_EL);
    	strcat(descr, "s=RTSP Session"SDP_EL);
 	// sprintf(descr, "%si=%s %s Streaming Server"SDP_EL, descr, PACKAGE, VERSION);
 	sprintf(descr + strlen(descr), "i=%s %s Streaming Server"SDP_EL, PACKAGE, VERSION);
 
-#ifdef SHATRIES
-#else // SHATRIES
-#endif // SHATRIES
 	if (p==NULL) 
 		return ERR_PARSE;
 	
@@ -133,7 +98,7 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
    		// sprintf(descr + strlen(descr), "a=control:%s!%s"SDP_EL, url, p->aggregate);
    		sprintf(descr + strlen(descr), "a=control:%s"SDP_EL, url);
    	}
-// #endif // SHATRIES
+   	
    	sprintf(descr + strlen(descr), "u=%s"SDP_EL, url);
    	strcat(descr, "t=0 0"SDP_EL);	
    	// media specific

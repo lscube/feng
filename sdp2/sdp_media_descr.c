@@ -6,7 +6,8 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
+ * 
+ *  - (LS)³ Team			<team@streaming.polito.it>	
  *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
  *	- Francesco Varano	<francesco.varano@polito.it>
  *	- Federico Ridolfo	<federico.ridolfo@polito.it>
@@ -28,27 +29,16 @@
  *  
  * */
 
-#ifndef SDP2_H_
-#define SDP2_H_
+#include <fenice/sdp2.h>
 
-#include <sys/types.h>
-#include <unistd.h>
-#include <glib.h>
-
-#include <fenice/types.h>
-#include <fenice/demuxer.h>
-
-#include <config.h>
-#ifndef PACKAGE
-#define PACKAGE "fenice"
-#endif
-
-#define SDP2_EL "\r\n"
-#define SDP2_VERSION 0
-
-gint sdp_session_id(char *, size_t);
-gint sdp_get_version(ResourceDescr *, char *, size_t);
-int sdp_session_descr(resource_name, int, char *, uint32);
-int sdp_media_descr(ResourceDescr *, MediaDescr *, char *, uint32);
-
-#endif /*SDP2_H_*/
+#define CK_OVERFLOW(x) { if ( (size_left -= x) < 0) return ERR_INPUT_PARAM; else cursor=descr+descr_size-size_left; }
+int sdp_media_descr(ResourceDescr *r_descr, MediaDescr *m_descr, char *descr, uint32 descr_size)
+{
+	gint64 size_left=descr_size;
+	char *cursor=descr;
+	
+	CK_OVERFLOW(g_strlcat(cursor, "m=", size_left))
+	
+	return ERR_NOERROR;
+}
+#undef CK_OVERFLOW

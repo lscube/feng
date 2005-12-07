@@ -129,7 +129,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
 	memset(&req, 0, sizeof(req));
 	req.flags = ME_DESCR_FORMAT;
 	req.descr_format = descr_format;
-	if ( sdp_get_descr(object, rtsp->fd, descr, sizeof(descr)) )
+	if ( sdp_session_descr(object, rtsp->fd, descr, sizeof(descr)) )
 		return ERR_NOERROR;
 	res = get_media_descr(object, &req, &media, descr);
 	if (res == ERR_NOT_FOUND) {

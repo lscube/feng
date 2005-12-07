@@ -215,6 +215,7 @@ inline char *r_descr_description(ResourceDescr *);
 inline char *r_descr_descrURI(ResourceDescr *);
 inline char *r_descr_email(ResourceDescr *);
 inline char *r_descr_phone(ResourceDescr *);
+inline char *r_descr_sdp_private(ResourceDescr *);
 /*-------------------------------------------*/
 
 #endif // __DEMUXER_H
