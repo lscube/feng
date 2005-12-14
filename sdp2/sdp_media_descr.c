@@ -30,15 +30,43 @@
  * */
 
 #include <fenice/sdp2.h>
+#include <fenice/utils.h>
 
-#define CK_OVERFLOW(x) { if ( (size_left -= x) < 0) return ERR_INPUT_PARAM; else cursor=descr+descr_size-size_left; }
+#define DESCRCAT(x) { if ( (size_left -= x) < 0) return ERR_INPUT_PARAM; else cursor=descr+descr_size-size_left; }
 int sdp_media_descr(ResourceDescr *r_descr, MediaDescr *m_descr, char *descr, uint32 descr_size)
 {
 	gint64 size_left=descr_size;
 	char *cursor=descr;
 	
-	CK_OVERFLOW(g_strlcat(cursor, "m=", size_left))
+	// m=
+	switch (m_descr_type(m_descr)) {
+		case MP_audio:
+			DESCRCAT(g_strlcat(cursor, "m=audio ", size_left))
+			break;
+		case MP_video:
+			DESCRCAT(g_strlcat(cursor, "m=video ", size_left))
+		case MP_application:
+			DESCRCAT(g_strlcat(cursor, "m=application ", size_left))
+		case MP_data:
+			DESCRCAT(g_strlcat(cursor, "m=data ", size_left))
+		case MP_control:
+			DESCRCAT(g_strlcat(cursor, "m=control ", size_left))
+		default:
+			return ERR_INPUT_PARAM;
+			break;
+	}
+
+	// shawill: TODO: probably the transport should not be hard coded, but obtained in some way	
+	DESCRCAT(g_snprintf(cursor, size_left, "%d RTP/AVP %u"SDP2_EL, m_descr_rtp_port(m_descr), m_descr_rtp_pt(m_descr)))
 	
+	// i=*
+	// c=*
+	// b=*
+	// k=*
+	// a=*
+	DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s!%s"SDP2_EL, r_descr_mrl(r_descr), m_descr_name(m_descr)))
+	// CC licenses *
+		
 	return ERR_NOERROR;
 }
-#undef CK_OVERFLOW
+#undef DESCRCAT

@@ -44,7 +44,7 @@
 
 typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCodingType;
 
-typedef enum {MP_audio, MP_video, MP_application, MP_data, MP_control} MediaType;
+typedef enum {MP_undef=-1, MP_audio, MP_video, MP_application, MP_data, MP_control} MediaType;
 
 #if 0 // define MObject with MObject_def
 typedef struct {

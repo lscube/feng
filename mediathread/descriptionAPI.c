@@ -95,3 +95,36 @@ inline char *r_descr_sdp_private(ResourceDescr *r_descr)
 {
 	return (r_descr && r_descr->info) ? r_descr->info->sdp_private : NULL;
 }
+
+/*! This function creates an array of MediaDescrList containing media descriptions.
+ * This array is returned to function caller.
+ * Each element of the array is a MediaDescrList that contain all the media of the same type with the same name.
+ * All the elements of each list can be included together in the sdp description in a single m= block.
+ * \param r_descr Resource description that contains all the media
+ * \param m_descrs this is a return parameter. It will contain the MediaDescrList array
+ * \return the dimension of the array or an interger < 0 if an error occurred.
+ * */
+int r_descr_get_media(ResourceDescr *r_descr, MediaDescrList **m_descrs)
+{
+	return 0;
+}
+
+inline char *m_descr_name(MediaDescr *m_descr)
+{
+	return (m_descr && m_descr->info) ? m_descr->info->name : NULL;
+}
+
+inline MediaType m_descr_type(MediaDescr *m_descr)
+{
+	return (m_descr && m_descr->properties) ? m_descr->properties->media_type : MP_undef;
+}
+
+inline int m_descr_rtp_port(MediaDescr *m_descr)
+{
+	return (m_descr && m_descr->info) ? m_descr->info->rtp_port : 0;
+}
+
+inline uint32 m_descr_rtp_pt(MediaDescr *m_descr)
+{
+	return (m_descr && m_descr->properties) ? m_descr->properties->payload_type : 0;
+}

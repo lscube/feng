@@ -150,11 +150,13 @@ void r_close(Resource *r)
 	}
 }
 
+#if 0 // not implemented... use r_descr_...
 msg_error get_resource_info(resource_name n, ResourceInfo *r)
 {
 	//...
 	return RESOURCE_OK;
 }
+#endif // if 0
 
 Selector *r_open_tracks(Resource *r, char *track_name, Capabilities *capabilities)
 {

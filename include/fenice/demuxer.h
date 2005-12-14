@@ -60,6 +60,10 @@
 #define MAX_TRACKS 20	
 #define MAX_SEL_TRACKS 5
 
+//! macros that give convenient names to GLists used
+#define TrackList		GList *
+#define MediaDescrList	GList *
+
 //! Macros that take the data part of a GList element and cast to correct type
 #define RESOURCE(x) ((Resource *)x->data)
 #define TRACK(x) ((Track *)x->data)
@@ -77,6 +81,7 @@ typedef struct __TRACK_INFO {
 MObject_def(__TRACK_INFO)
 	char *mrl;
 	char name[255];
+	int rtp_port;
 	char *sdp_private;
 	//start CC
 	char commons_deed[255]; 
@@ -107,7 +112,7 @@ typedef struct __TRACK {
 
 typedef struct __SELECTOR {
 	// Track *tracks[MAX_SEL_TRACKS];	
-	GList *tracks;
+	TrackList tracks;
 	uint32 default_index;
 	uint32 selected_index;/**/
 	uint32 total; /*total tracks in selector*/
@@ -136,7 +141,7 @@ typedef struct __RESOURCE {
 	struct __DEMUXER *demuxer;
 	ResourceInfo *info;
 	// Track *tracks[MAX_TRACKS];
-	GList *tracks;
+	TrackList tracks;
 	uint32 num_tracks;
 	void *private_data; /* private data of demuxer */
 } Resource;
@@ -168,7 +173,7 @@ typedef struct __DEMUXER {
 typedef struct {
 	time_t last_change;
 	ResourceInfo *info;
-	GList *media; // GList of MediaDescr elements
+	MediaDescrList media; // GList of MediaDescr elements
 } ResourceDescr;
 
 typedef struct {
@@ -182,7 +187,7 @@ typedef struct {
 // Resounces
 Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
-msg_error get_resource_info(resource_name, ResourceInfo *);
+//msg_error get_resource_info(resource_name, ResourceInfo *);
 Selector *r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
 inline msg_error r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
@@ -201,8 +206,8 @@ ResourceDescr *r_descr_get(resource_name);
 // void r_descr_free(ResourceDescr *);
 /* --- functions implemented in descriptionAPI.c --- */
 /*! the functions that return pointers do not allocate new memory, simply return
- * the pointer of the description resource. So,l there is no need to free
- * anything. 
+ * the pointer of the description resource. So, there is no need to free
+ * anything.
  * The functions that return pointers return NULL if the value is not set.
  * */
 inline time_t r_descr_last_change(ResourceDescr *);
@@ -216,6 +221,11 @@ inline char *r_descr_descrURI(ResourceDescr *);
 inline char *r_descr_email(ResourceDescr *);
 inline char *r_descr_phone(ResourceDescr *);
 inline char *r_descr_sdp_private(ResourceDescr *);
+int r_descr_get_media(ResourceDescr *, MediaDescrList **);
+inline char *m_descr_name(MediaDescr *);
+inline MediaType m_descr_type(MediaDescr *);
+inline int m_descr_rtp_port(MediaDescr *);
+inline uint32 m_descr_rtp_pt(MediaDescr *);
 /*-------------------------------------------*/
 
 #endif // __DEMUXER_H
