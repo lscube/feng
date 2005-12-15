@@ -52,7 +52,10 @@ int sdp_session_descr(resource_name n, int net_fd, char *descr, size_t descr_siz
 	gint64 size_left=descr_size;
 	char *cursor=descr;
 	ResourceDescr *r_descr;
-	GList *m = NULL;
+	MediaDescrListArray m_descrs;
+//	GList *m = NULL;
+//	MediaDescrList m_list;
+	guint i;
 
 	// temporary?
 	strcpy(thefile, prefs_get_serv_root());
@@ -127,8 +130,10 @@ int sdp_session_descr(resource_name n, int net_fd, char *descr, size_t descr_siz
 	if (r_descr_sdp_private(r_descr))
 		DESCRCAT(g_snprintf(cursor, size_left, "%s"SDP2_EL, r_descr_sdp_private(r_descr)))
 	// media
-	for (m = g_list_first(r_descr->media); m; m=m->next) {
-		sdp_media_descr(r_descr, MEDIA_DESCR(m), cursor, size_left);
+	m_descrs = r_descr_get_media(r_descr);
+
+	for (i=0;i<m_descrs->len;i++) { // TODO: wrap g_array functions
+		sdp_media_descr(r_descr, m_descrs->pdata[i], cursor, size_left);
 	}
    	
 	fnc_log(FNC_LOG_INFO, "\n[SDP2] description:\n%s\n", descr);

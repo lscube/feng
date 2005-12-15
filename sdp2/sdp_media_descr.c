@@ -33,11 +33,14 @@
 #include <fenice/utils.h>
 
 #define DESCRCAT(x) { if ( (size_left -= x) < 0) return ERR_INPUT_PARAM; else cursor=descr+descr_size-size_left; }
-int sdp_media_descr(ResourceDescr *r_descr, MediaDescr *m_descr, char *descr, uint32 descr_size)
+int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list, char *descr, uint32 descr_size)
 {
+	MediaDescr *m_descr = m_descr_list ? MEDIA_DESCR(m_descr_list) : NULL;
 	gint64 size_left=descr_size;
 	char *cursor=descr;
 	
+	if (!m_descr)
+		return ERR_ALLOC;
 	// m=
 	switch (m_descr_type(m_descr)) {
 		case MP_audio:

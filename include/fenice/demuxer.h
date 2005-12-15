@@ -60,15 +60,16 @@
 #define MAX_TRACKS 20	
 #define MAX_SEL_TRACKS 5
 
-//! macros that give convenient names to GLists used
-#define TrackList		GList *
-#define MediaDescrList	GList *
-
 //! Macros that take the data part of a GList element and cast to correct type
 #define RESOURCE(x) ((Resource *)x->data)
 #define TRACK(x) ((Track *)x->data)
 #define RESOURCE_DESCR(x) ((ResourceDescr *)x->data)
 #define MEDIA_DESCR(x) ((MediaDescr *)x->data)
+
+//! typedefs that give convenient names to GLists used
+typedef GList *TrackList;
+typedef GList *MediaDescrList;
+typedef GPtrArray *MediaDescrListArray;
 
 typedef struct __CAPABILITIES {
 
@@ -221,7 +222,7 @@ inline char *r_descr_descrURI(ResourceDescr *);
 inline char *r_descr_email(ResourceDescr *);
 inline char *r_descr_phone(ResourceDescr *);
 inline char *r_descr_sdp_private(ResourceDescr *);
-int r_descr_get_media(ResourceDescr *, MediaDescrList **);
+MediaDescrListArray r_descr_get_media(ResourceDescr *);
 inline char *m_descr_name(MediaDescr *);
 inline MediaType m_descr_type(MediaDescr *);
 inline int m_descr_rtp_port(MediaDescr *);

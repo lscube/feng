@@ -31,6 +31,7 @@
 /* here we have some utils to handle the ResourceDescr and MediaDescr structire
  * types in order to simplify its usage to the mediathread library user */
 
+#include <string.h>
 #include <fenice/demuxer.h>
 
 /* --- ResourceInfo wrapper functions --- */
@@ -104,9 +105,36 @@ inline char *r_descr_sdp_private(ResourceDescr *r_descr)
  * \param m_descrs this is a return parameter. It will contain the MediaDescrList array
  * \return the dimension of the array or an interger < 0 if an error occurred.
  * */
-int r_descr_get_media(ResourceDescr *r_descr, MediaDescrList **m_descrs)
+MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
 {
-	return 0;
+	MediaDescrListArray new_m_descrs;
+	MediaDescrList m_descr_list, m_descr;
+	guint i;
+	gboolean found;
+	
+	new_m_descrs = g_ptr_array_sized_new(g_list_position(r_descr->media, g_list_last(r_descr->media))+1);
+	
+	for (m_descr=g_list_first(r_descr->media); m_descr; m_descr=g_list_next(m_descr)) {
+		found = FALSE;
+		for (i = 0; (i < new_m_descrs->len); ++i) {
+			m_descr_list = g_ptr_array_index(new_m_descrs, i);
+			if ( (m_descr_type(MEDIA_DESCR(m_descr))==m_descr_type(MEDIA_DESCR(m_descr_list))) &&
+				 !strcmp(m_descr_name(MEDIA_DESCR(m_descr)), m_descr_name(MEDIA_DESCR(m_descr_list))) ) {
+				found = TRUE;
+				break;
+			}
+		}
+		if (found) {
+			m_descr_list = g_ptr_array_index(new_m_descrs, i);
+			m_descr_list = g_list_prepend(m_descr_list, MEDIA_DESCR(m_descr));
+			new_m_descrs->pdata[i]=m_descr_list;
+		} else {
+			m_descr_list = g_list_prepend(NULL, MEDIA_DESCR(m_descr));
+			g_ptr_array_add(new_m_descrs, m_descr_list);
+		}
+	}
+	
+	return new_m_descrs;
 }
 
 inline char *m_descr_name(MediaDescr *m_descr)
