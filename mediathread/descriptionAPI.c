@@ -116,7 +116,7 @@ MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
 	
 	for (m_descr=g_list_first(r_descr->media); m_descr; m_descr=g_list_next(m_descr)) {
 		found = FALSE;
-		for (i = 0; (i < new_m_descrs->len); ++i) {
+		for (i = 0; i < new_m_descrs->len; ++i) {
 			m_descr_list = g_ptr_array_index(new_m_descrs, i);
 			if ( (m_descr_type(MEDIA_DESCR(m_descr))==m_descr_type(MEDIA_DESCR(m_descr_list))) &&
 				 !strcmp(m_descr_name(MEDIA_DESCR(m_descr)), m_descr_name(MEDIA_DESCR(m_descr_list))) ) {
@@ -128,12 +128,19 @@ MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
 			m_descr_list = g_ptr_array_index(new_m_descrs, i);
 			m_descr_list = g_list_prepend(m_descr_list, MEDIA_DESCR(m_descr));
 			new_m_descrs->pdata[i]=m_descr_list;
+//			printf("*!* %u, %d\n", new_m_descrs->len, m_descr_type(MEDIA_DESCR(m_descr)));
 		} else {
 			m_descr_list = g_list_prepend(NULL, MEDIA_DESCR(m_descr));
 			g_ptr_array_add(new_m_descrs, m_descr_list);
+//			printf("*?* %u, %d\n", new_m_descrs->len, m_descr_type(MEDIA_DESCR(m_descr)));
 		}
 	}
 	
+	for (i = 0; i < new_m_descrs->len; ++i) {
+			m_descr_list = g_ptr_array_index(new_m_descrs, i);
+			m_descr_list = g_list_reverse(m_descr_list);
+	}
+		
 	return new_m_descrs;
 }
 

@@ -71,6 +71,10 @@ typedef GList *TrackList;
 typedef GList *MediaDescrList;
 typedef GPtrArray *MediaDescrListArray;
 
+//! Some macros to wrap GList functions
+#define mdl_first(x) g_list_first(x)
+#define mdl_next(x) g_list_next(x)
+
 typedef struct __CAPABILITIES {
 
 } Capabilities;

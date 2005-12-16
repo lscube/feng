@@ -36,11 +36,12 @@
 int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list, char *descr, uint32 descr_size)
 {
 	MediaDescr *m_descr = m_descr_list ? MEDIA_DESCR(m_descr_list) : NULL;
+	MediaDescrList tmp_mdl;
 	gint64 size_left=descr_size;
 	char *cursor=descr;
 	
 	if (!m_descr)
-		return ERR_ALLOC;
+		return ERR_INPUT_PARAM;
 	// m=
 	switch (m_descr_type(m_descr)) {
 		case MP_audio:
@@ -48,19 +49,26 @@ int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list, char *d
 			break;
 		case MP_video:
 			DESCRCAT(g_strlcat(cursor, "m=video ", size_left))
+			break;
 		case MP_application:
 			DESCRCAT(g_strlcat(cursor, "m=application ", size_left))
+			break;
 		case MP_data:
 			DESCRCAT(g_strlcat(cursor, "m=data ", size_left))
+			break;
 		case MP_control:
 			DESCRCAT(g_strlcat(cursor, "m=control ", size_left))
+			break;
 		default:
 			return ERR_INPUT_PARAM;
 			break;
 	}
 
-	// shawill: TODO: probably the transport should not be hard coded, but obtained in some way	
-	DESCRCAT(g_snprintf(cursor, size_left, "%d RTP/AVP %u"SDP2_EL, m_descr_rtp_port(m_descr), m_descr_rtp_pt(m_descr)))
+	// shawill: TODO: probably the transport should not be hard coded, but obtained in some way
+	DESCRCAT(g_snprintf(cursor, size_left, "%d RTP/AVP", m_descr_rtp_port(m_descr) ))
+	for (tmp_mdl = mdl_first(m_descr_list); tmp_mdl; tmp_mdl=mdl_next(tmp_mdl))
+		DESCRCAT(g_snprintf(cursor, size_left, " %u", m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl))))
+	DESCRCAT(g_strlcat(cursor, SDP2_EL, size_left))
 	
 	// i=*
 	// c=*

@@ -35,6 +35,8 @@
 #include <fenice/MediaParser.h>
 #include <fenice/InputStream.h>
 
+#define INIT_PROPS properties->media_type = info.media_type;
+
 /* init: inizialize the module
  *    arg:
  *       properties; pointer of allocated struct to fill with properties

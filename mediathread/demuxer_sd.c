@@ -234,6 +234,8 @@ static int init(Resource * r)
 				me->general_flags |= ME_FILENAME;
 				if ((separator = strrchr(track_file, G_DIR_SEPARATOR)))
 					g_strlcpy(trackinfo.name, separator+1, sizeof(trackinfo.name));
+				else
+					g_strlcpy(trackinfo.name, track_file, sizeof(trackinfo.name));
 
 #if 0
 				if (!(track->i_stream = istream_open(track->info->mrl))) {

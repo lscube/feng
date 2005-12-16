@@ -169,6 +169,8 @@ int init(MediaProperties *properties, void **private_data)
 	mpeg_video->vsh1 = calloc(1,sizeof(video_spec_head1));
 	mpeg_video->vsh2 = calloc(1,sizeof(video_spec_head2));
 	mpeg_video->is_buffered=0;/*false*/
+	
+	INIT_PROPS
 
 	return 0;
 }
