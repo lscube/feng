@@ -67,7 +67,7 @@
 				
     	typedef struct _RTSP_buffer {
 		/*wsocket*/
-		Sock *sock;
+		Sock *s_fd;
 		/*x-x*/
 		tsocket fd;
 		unsigned int port;
@@ -117,7 +117,9 @@
 	void RTSP_msg_len(int *hdr_len,int *body_len,RTSP_buffer *rtsp);	
 	int RTSP_valid_response_msg(unsigned short *status,char *msg,RTSP_buffer *rtsp);
 	int RTSP_validate_method(RTSP_buffer * rtsp);	
-	void RTSP_initserver(RTSP_buffer *rtsp,tsocket fd);
+	/*x-x*/
+	//void RTSP_initserver(RTSP_buffer *rtsp,tsocket fd);
+	void RTSP_initserver(RTSP_buffer *rtsp, Sock *s_fd);
 	
 	// DESCRIBE	
 	int send_describe_reply(RTSP_buffer *rtsp,char *object,description_format descr_format,char *descr);

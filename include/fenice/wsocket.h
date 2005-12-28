@@ -49,9 +49,11 @@
 #define IN_IS_ADDR_MULTICAST(a)	((((in_addr_t)(a)) & 0xf0000000) == 0xe0000000)
 #endif
 
+#if IPV6
 #ifndef IN6_IS_ADDR_MULTICAST
 #define IN6_IS_ADDR_MULTICAST(a) (((__const uint8_t *) (a))[0] == 0xff)
 #endif
+#endif //IPV6
 
 #ifdef WORDS_BIGENDIAN
 #define ntohl24(x) (x)
@@ -81,8 +83,8 @@ struct sockaddr_storage
 /*definition for flags*/
 /*ssl_flags*/
 #define USE_SSL		01 
-//#define USE_CRYPTO	03 /*set also USE_SSL*/
-/*multicast and ipv6 flags*/
+//#define USE_TLS	03 /*set also USE_SSL*/
+/*multicast*/
 #define IS_MULTICAST	04
 
 enum sock_types {
@@ -102,10 +104,12 @@ enum sock_types {
  *	}
  * */
 
+#if IPV6
 struct ipv6_mreq_in6 {
 	struct ipv6_mreq NETmreq6;
 	struct in6_addr __imr_interface6;
 };
+#endif
 
 struct ip_mreq_in {
 	struct ip_mreq NETmreq;
@@ -119,15 +123,20 @@ union ADDR {
 };
 #endif
 union ADDR {
+#if IPV6
 	struct ipv6_mreq_in6 mreq_in6; /*struct in6_addr ipv6mr_multiaddr; struct in6_addr imr_interface6 ; unsigned int ipv6mr_interface; */
+#endif //IPV6
 	struct ip_mreq_in mreq_in; /*struct in_addr ipv4mr_multiaddr; struct in_addr imr_interface4; unsigned int ipv4mr_interface;*/
+};
+#if IPV6
 	#define imr_interface6 __imr_interface6
+	#define ipv6_interface NETmreq6.ipv6mr_interface
+	#define ipv6_multiaddr NETmreq6.ipv6mr_multiaddr
+#endif //IPV6
 	#define ipv4_interface __ipv4mr_interface
 	#define imr_interface4 NETmreq.imr_interface
 	#define ipv4_multiaddr NETmreq.imr_multiaddr
-	#define ipv6_interface NETmreq6.ipv6mr_interface
-	#define ipv6_multiaddr NETmreq6.ipv6mr_multiaddr
-};
+
 /* Developper HowTo:
  *
  * union ADDR
@@ -222,6 +231,7 @@ int Sock_close(Sock *);
 int get_fd(Sock *);
 void Sock_init(void);
 int Sock_compare(Sock *p, Sock *q);
+#define Sock_cmp Sock_compare
 
 /*ioctl set properties for socket
  *RETURN VALUE

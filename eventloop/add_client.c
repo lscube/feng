@@ -36,11 +36,15 @@
 #include <string.h>
 
 #include <fenice/eventloop.h>
+/*x-x*/
 #include <fenice/socket.h>
+#include <fenice/wsocket.h>
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
 
-void add_client(RTSP_buffer **rtsp_list,tsocket fd)
+/*x-x*/
+//void add_client(RTSP_buffer **rtsp_list,tsocket fd)
+void add_client(RTSP_buffer **rtsp_list, Sock *s_fd)
 {
 	RTSP_buffer *p=NULL,*pp=NULL;
 	// Add a client
@@ -64,7 +68,7 @@ void add_client(RTSP_buffer **rtsp_list,tsocket fd)
 			p->next=NULL;
 		}
 	}
-	RTSP_initserver(p,fd);
-	fnc_log(FNC_LOG_INFO,"Incoming RTSP connection accepted on socket: %d\n",p->fd);
+	RTSP_initserver(p,s_fd);
+	fnc_log(FNC_LOG_INFO,"Incoming RTSP connection accepted on socket: %d\n",get_fd(p->s_fd));
 }
 

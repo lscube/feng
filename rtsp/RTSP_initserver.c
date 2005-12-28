@@ -35,11 +35,17 @@
 #include <string.h>
 
 #include <fenice/rtsp.h>
+/*x-x*/
 #include <fenice/socket.h>
+#include <fenice/wsocket.h>
 
-void RTSP_initserver(RTSP_buffer * rtsp, tsocket fd)
+/*x-x*/
+//void RTSP_initserver(RTSP_buffer * rtsp, tsocket fd)
+void RTSP_initserver(RTSP_buffer * rtsp, Sock *s_fd)
 {
-	rtsp->fd = fd;
+	/*x-x*/
+	rtsp->fd = get_fd(s_fd);/*delete it when wsocket will beinserted*/
+	rtsp->s_fd = s_fd;
 	rtsp->session_list = (RTSP_session *) calloc(1, sizeof(RTSP_session));
 	rtsp->session_list->session_id = -1;
 }

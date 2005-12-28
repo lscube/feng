@@ -35,16 +35,22 @@
 #ifndef _EVENTLOOPH
 #define _EVENTLOOPH
 
+	/*x-x*/
 	#include <fenice/socket.h>	
+	#include <fenice/wsocket.h>	
 	#include <fenice/rtsp.h>
 
 	#define MAX_FDS 800
 	
 	typedef int (*event_function)(void *data);
 	
-	void eventloop(tsocket main_fd);
+	/*x-x*/
+	//void eventloop(tsocket main_fd);
+	void eventloop(Sock *m_fd);
 	int rtsp_server(RTSP_buffer *rtsp);
-	void add_client(RTSP_buffer **rtsp_list,tsocket fd);
+	/*x-x*/
+	//void add_client(RTSP_buffer **rtsp_list,tsocket fd);
+	void add_client(RTSP_buffer **rtsp_list, Sock *s_fd);
 	void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count);
 	
 #endif

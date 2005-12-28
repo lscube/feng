@@ -35,8 +35,9 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+/*x-x*/
 #include <fenice/socket.h>
+#include <fenice/wsocket.h>
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
@@ -46,25 +47,34 @@
 
 int num_conn = 0;
 
-void eventloop(tsocket main_fd)
+void eventloop(Sock *m_fd)
 {
 	static uint32 child_count=0;
 	static int conn_count = 0;
-	tsocket fd = -1;
+	/*x-x*/
+	//tsocket fd = -1;
+	//tsocket main_fd = get_fd(m_fd);
+	Sock *s_fd = NULL;
 	static RTSP_buffer *rtsp_list=NULL;
 	RTSP_buffer *p=NULL;
 	uint32 fd_found;
 
 	if (conn_count!=-1)
 	{
-		fd=tcp_accept(main_fd);
+		/*x-x*/
+		//fd=tcp_accept(main_fd);
+		s_fd=Sock_accept(m_fd);
 	} // shawill: and... if not?
 
 	// Handle a new connection
-	if (fd>=0)
+	/*x-x*/
+	//if (fd>=0)
+	if (s_fd != NULL)
 	{
 		for (fd_found=0,p=rtsp_list; p!=NULL; p=p->next)
-			if (p->fd==fd)
+			/*x-x*/
+			//if (p->fd==fd)
+			if (Sock_cmp(p->s_fd,s_fd)==0)
 			{				
 				fd_found=1;
 				break;
@@ -75,7 +85,7 @@ void eventloop(tsocket main_fd)
 			{
         			++conn_count;
         			// ADD A CLIENT
-        			add_client(&rtsp_list,fd);
+        			add_client(&rtsp_list,s_fd);
         		}
         		else
 			{
@@ -91,14 +101,17 @@ void eventloop(tsocket main_fd)
                   			}        			
         				conn_count=1;
         				rtsp_list=NULL;
-        				add_client(&rtsp_list,fd);
+        				add_client(&rtsp_list,s_fd);
         			}
         			else
 				{
         				// I'm the father
-        				fd=-1;
+					/*x-x*/
+        				//fd=-1;
         				conn_count=-1;
-        				tcp_close(main_fd);				
+					/*x-x*/
+        				//tcp_close(main_fd);				
+        				Sock_close(m_fd);				
         			}					
         		}
 			num_conn++;	
