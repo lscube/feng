@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 #endif
 
 	printf("CTRL-C terminate the server.\n");
-	fnc_log(FNC_LOG_INFO,"Waiting for RTSP connections on port %d...\n", port);
+	fnc_log(FNC_LOG_INFO,"Waiting for RTSP connections on port %s...\n", port);
 
 	Sock_init();
 	m_fd = Sock_bind(NULL, port, &main_fd, TCP, wsocket_flag);

@@ -39,6 +39,7 @@
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
+#include <fenice/wsocket.h>
 
 int rtsp_server(RTSP_buffer *rtsp)
 {	
@@ -61,20 +62,26 @@ int rtsp_server(RTSP_buffer *rtsp)
  	FD_ZERO(&wset);
 	t.tv_sec=0;
 	t.tv_usec=100000;
-	FD_SET(rtsp->fd,&rset);  // fd is tcp connection socket and FD_SET adds this one to rset
+	/*x-x*/
+	//FD_SET(rtsp->fd,&rset);  // fd is tcp connection socket and FD_SET adds this one to rset
+	FD_SET(get_fd(rtsp->s_fd),&rset);  // fd is tcp connection socket and FD_SET adds this one to rset
 	if (rtsp->out_size>0) {
-		FD_SET(rtsp->fd,&wset);  // idem for wset
+		/*x-x*/
+		//FD_SET(rtsp->fd,&wset);  // idem for wset
+		FD_SET(get_fd(rtsp->s_fd),&wset); 
 	}
 	if (select(MAX_FDS,&rset,&wset,0,&t)<0) {
 		fnc_log(FNC_LOG_ERR,"select error\n");			
 		send_reply(500, NULL, rtsp);
 		return ERR_GENERIC; //errore interno al server
 	}
-	if (FD_ISSET(rtsp->fd,&rset)) {		
+	if (FD_ISSET(get_fd(rtsp->s_fd),&rset)) {		
 		// There are RTSP packets to read in
 		memset(buffer,0,sizeof(buffer));
 		size=sizeof(buffer)-1;
-		n=tcp_read(rtsp->fd,buffer,size);			
+		/*x-x*/
+		//n=tcp_read(rtsp->fd,buffer,size);			
+		n=Sock_read(rtsp->s_fd,buffer,size);
 		if (n==0) {
 			return ERR_CONNECTION_CLOSE;
 		}
@@ -84,6 +91,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 			send_reply(500, NULL, rtsp);
 			return ERR_GENERIC;//errore interno al server    			
 		}			
+		fnc_log(FNC_LOG_CLIENT,"%s - - ", get_remote_host(rtsp->s_fd));
 		
 		if (rtsp->in_size+n>RTSP_BUFFERSIZE) {
 			fnc_log(FNC_LOG_DEBUG,"RTSP buffer overflow (input RTSP message is most likely invalid).\n");
@@ -102,10 +110,12 @@ int rtsp_server(RTSP_buffer *rtsp)
 			return ERR_NOERROR;
 		}
 	}	
-	if (FD_ISSET(rtsp->fd,&wset)) {						
+	if (FD_ISSET(get_fd(rtsp->s_fd),&wset)) {						
 		// There are RTSP packets to send
 		if (rtsp->out_size>0) {
-			n=tcp_write(rtsp->fd,rtsp->out_buffer,rtsp->out_size);
+			/*x-x*/
+			//n=tcp_write(rtsp->fd,rtsp->out_buffer,rtsp->out_size);
+			n=Sock_write(rtsp->s_fd,rtsp->out_buffer,rtsp->out_size);
 			if (n<0) {
 				fnc_log(FNC_LOG_ERR,"tcp_write() error in rtsp_server()\n");        			
 				send_reply(500, NULL, rtsp);
