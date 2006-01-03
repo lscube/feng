@@ -51,12 +51,13 @@ void *MObject_calloc(size_t size)
 	
 	new_obj = g_malloc0(size);
 	new_obj->refs=1;
-	MObject_destructor(new_obj, free);
+	MObject_destructor(new_obj, g_free);
 
 	return new_obj;
 }
 
-void *MObject_alloca(size_t size)
+#if 0
+inline void *MObject_alloca(size_t size)
 {
 	MObject *new_obj;
 
@@ -64,9 +65,11 @@ void *MObject_alloca(size_t size)
 	new_obj->refs=1;
 	// we don't need desctructor for alloca
 	new_obj->destructor = NULL;
+	printf("!!!obj = %p; size = %d; hdr size = %d\n", new_obj, size, new_obj->data-(char *)new_obj);
 
 	return new_obj;
 }
+#endif
 
 void *MObject_dup(void *obj, size_t size)
 {
@@ -76,6 +79,12 @@ void *MObject_dup(void *obj, size_t size)
 		new_obj->refs=1;
 
 	return new_obj;
+}
+
+void MObject_init(MObject *obj)
+{
+	obj->refs = 1;
+	obj->destructor = NULL;
 }
 
 void MObject_zero(MObject *obj, size_t size)
@@ -89,8 +98,7 @@ void MObject_zero(MObject *obj, size_t size)
 
 void MObject_unref(MObject *mobject)
 {
-	if ( mobject && !--mobject->refs)
+	if ( mobject && !--mobject->refs && mobject->destructor)
 		mobject->destructor(mobject);
-		// free(mobject); // XXX shawill: probably we should support a customable free function
 }
 

@@ -175,6 +175,10 @@ static int init(Resource * r)
 		}
 	}
 
+//	props_hints = MObject_newa(MediaProperties, 1);
+	MObject_init(MOBJECT(&props_hints));
+//	trackinfo = MObject_newa(TrackInfo, 1);
+	MObject_init(MOBJECT(&trackinfo));
 	MObject_0(MOBJECT(&props_hints), MediaProperties);
 	MObject_0(MOBJECT(&trackinfo), TrackInfo);
 

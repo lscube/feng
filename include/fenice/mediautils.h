@@ -45,7 +45,7 @@ typedef struct {
 
 #define MObject_new(type, n) (type *)MObject_malloc(n*sizeof(type))
 #define MObject_new0(type, n) (type *)MObject_calloc(n*sizeof(type))
-#define MObject_newa(type, n) (type *)MObject_alloca(n*sizeof(type))
+//#define MObject_newa(type, n) (type *)MObject_alloca(n*sizeof(type))
 #define MObject_0(obj, type) MObject_zero(obj, sizeof(type))
 #define MObject_ref(object) ++((object)->refs)
 #define MObject_destructor(object, destr) (object)->destructor=destr
@@ -53,7 +53,8 @@ typedef struct {
 // void *MObject_new(size_t);
 void *MObject_malloc(size_t);
 void *MObject_calloc(size_t);
-void *MObject_alloca(size_t);
+//inline void *MObject_alloca(size_t);
+void MObject_init(MObject *);
 void MObject_zero(MObject *, size_t);
 void *MObject_dup(void *, size_t);
 void MObject_unref(MObject *);

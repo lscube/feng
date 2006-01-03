@@ -97,7 +97,8 @@ int main(int argc, char **argv)
 	Sock_init();
 	m_fd = Sock_bind(NULL, port, &main_fd, TCP, wsocket_flag);
 	if(m_fd==NULL) {
-                fnc_log(FNC_LOG_ERR,"bind() error." );
+		fnc_log(FNC_LOG_ERR,"bind() error.\n" );
+		fprintf(stderr, "bind() error.\n" );
 		return 0;
 	}
 	

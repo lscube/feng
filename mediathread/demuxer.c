@@ -248,11 +248,11 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 	if(r->num_tracks>=MAX_TRACKS)
 		return NULL;
 	if( !(t=(Track *)calloc(1, sizeof(Track))) ) 
-		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems.\n");
+		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
 	
 #if 0 // we use MObject_new: that will alloc memory and exits the program if something goes wrong
 	if( !(t->info = calloc(1, sizeof(TrackInfo))) )
-		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems\n");
 #endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
 	if (info)
 		t->info = MObject_dup(info, sizeof(TrackInfo));
@@ -263,7 +263,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 
 #if 0 // we use MObject_new: that will alloc memory and exits the program if something goes wrong
 	if( !(t->properties = malloc(sizeof(MediaProperties))) )
-		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
+		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems\n");
 #endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
 	if (prop_hints)
 		t->properties = MObject_dup(prop_hints, sizeof(MediaProperties));
@@ -277,7 +277,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 	*/
 
 	if( !(t->buffer=OMSbuff_new(OMSBUFFER_DEFAULT_DIM)) )
-		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems.\n");
+		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
 
 	/* using calloc this initializzation is not needed.
 	t->track_name[0]='\0';
@@ -285,19 +285,19 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 	*/
 	/*t->i_stream=i_stream*/
 	if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
-		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not open %s.\n", t->info->mrl);
+		ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
 
 	if ( !(t->parser = mparser_find(t->properties->encoding_name)) )
-		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser.\n");
+		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
 	if (t->parser->init(t->properties, &t->parser_private))
-		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s.\n", t->properties->encoding_name);
+		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n", t->properties->encoding_name);
 #if 0
 	// shawill: just for parser trying:
 	{
 		uint8 tmp_dst[512];
 		double timest;
 
-		fnc_log(FNC_LOG_DEBUG, "[MT] demuxer sd init done.\n");
+		fnc_log(FNC_LOG_DEBUG, "[MT] demuxer sd init done\n");
 
 		t->parser->get_frame(tmp_dst, sizeof(tmp_dst), &timest, t->i_stream, t->properties, t->parser_private);
 	}

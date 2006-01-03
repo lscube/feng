@@ -133,7 +133,7 @@ int sdp_session_descr(resource_name n, int net_fd, char *descr, size_t descr_siz
 	m_descrs = r_descr_get_media(r_descr);
 
 	for (i=0;i<m_descrs->len;i++) { // TODO: wrap g_array functions
-		printf("*** %d\n", i);
+//		printf("*** %d\n", i);
 		sdp_media_descr(r_descr, m_descrs->pdata[i], cursor, size_left);
 	}
    	
