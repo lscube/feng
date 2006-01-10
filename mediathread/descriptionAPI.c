@@ -92,7 +92,7 @@ inline char *r_descr_phone(ResourceDescr *r_descr)
 	return (r_descr && r_descr->info) ? r_descr->info->phone : NULL;
 }
 
-inline char *r_descr_sdp_private(ResourceDescr *r_descr)
+inline sdp_field_list r_descr_sdp_private(ResourceDescr *r_descr)
 {
 	return (r_descr && r_descr->info) ? r_descr->info->sdp_private : NULL;
 }
@@ -152,6 +152,11 @@ inline char *m_descr_name(MediaDescr *m_descr)
 inline MediaType m_descr_type(MediaDescr *m_descr)
 {
 	return (m_descr && m_descr->properties) ? m_descr->properties->media_type : MP_undef;
+}
+
+inline sdp_field_list m_descr_sdp_private(MediaDescr *m_descr)
+{
+	return (m_descr && m_descr->properties) ? m_descr->properties->sdp_private : NULL;
 }
 
 inline int m_descr_rtp_port(MediaDescr *m_descr)

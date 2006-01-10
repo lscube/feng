@@ -39,6 +39,7 @@
 #include <fenice/InputStream.h>
 #include <fenice/MediaParser.h>
 #include <fenice/bufferpool.h>
+#include <fenice/sdp_grammar.h>
 
 #define resource_name char *
 /*
@@ -72,8 +73,12 @@ typedef GList *MediaDescrList;
 typedef GPtrArray *MediaDescrListArray;
 
 //! Some macros to wrap GList functions
-#define mdl_first(x) g_list_first(x)
-#define mdl_next(x) g_list_next(x)
+#define list_first(x) g_list_first(x)
+#define list_next(x) g_list_next(x)
+
+//! Some mecros to wrap GPtrArray functions
+#define array_data(x) x->pdata
+#define array_index(x, y) x->pdata[y]
 
 typedef struct __CAPABILITIES {
 
@@ -87,7 +92,7 @@ MObject_def(__TRACK_INFO)
 	char *mrl;
 	char name[255];
 	int rtp_port;
-	char *sdp_private;
+//	char *sdp_private; // moved in MediaParser.h
 	//start CC
 	char commons_deed[255]; 
 	char rdf_page[255];
@@ -134,7 +139,7 @@ MObject_def(__RESOURCE_INFO)
 	char *descrURI;
 	char *email;
 	char *phone;
-	char *sdp_private;
+	sdp_field_list sdp_private;
 	// char mrl[255];
 	char twin[255];
 	char multicast[16];
@@ -225,10 +230,11 @@ inline char *r_descr_description(ResourceDescr *);
 inline char *r_descr_descrURI(ResourceDescr *);
 inline char *r_descr_email(ResourceDescr *);
 inline char *r_descr_phone(ResourceDescr *);
-inline char *r_descr_sdp_private(ResourceDescr *);
+inline sdp_field_list r_descr_sdp_private(ResourceDescr *);
 MediaDescrListArray r_descr_get_media(ResourceDescr *);
 inline char *m_descr_name(MediaDescr *);
 inline MediaType m_descr_type(MediaDescr *);
+inline sdp_field_list m_descr_sdp_private(MediaDescr *);
 inline int m_descr_rtp_port(MediaDescr *);
 inline uint32 m_descr_rtp_pt(MediaDescr *);
 /*-------------------------------------------*/

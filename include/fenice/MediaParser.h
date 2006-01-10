@@ -37,6 +37,7 @@
 #include <fenice/bufferpool.h>
 #include <fenice/mediautils.h>
 #include <fenice/InputStream.h>
+#include <fenice/sdp_grammar.h>
 
 // return errors
 #define MP_PKT_TOO_SMALL -101
@@ -75,6 +76,7 @@ MObject_def(__MEDIA_PROPERTIES)
 	uint32 AspectRatio;	
 	uint8 *ColorSpace;
 	float GammaValue;
+	sdp_field_list sdp_private;
 } MediaProperties;
 
 typedef struct {

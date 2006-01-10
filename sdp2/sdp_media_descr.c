@@ -37,6 +37,7 @@ int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list, char *d
 {
 	MediaDescr *m_descr = m_descr_list ? MEDIA_DESCR(m_descr_list) : NULL;
 	MediaDescrList tmp_mdl;
+	sdp_field_list sdp_private;
 	gint64 size_left=descr_size;
 	char *cursor=descr;
 	
@@ -66,7 +67,7 @@ int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list, char *d
 
 	// shawill: TODO: probably the transport should not be hard coded, but obtained in some way
 	DESCRCAT(g_snprintf(cursor, size_left, "%d RTP/AVP", m_descr_rtp_port(m_descr) ))
-	for (tmp_mdl = mdl_first(m_descr_list); tmp_mdl; tmp_mdl=mdl_next(tmp_mdl))
+	for (tmp_mdl = list_first(m_descr_list); tmp_mdl; tmp_mdl=list_next(tmp_mdl))
 		DESCRCAT(g_snprintf(cursor, size_left, " %u", m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl))))
 	DESCRCAT(g_strlcat(cursor, SDP2_EL, size_left))
 	
@@ -76,6 +77,22 @@ int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list, char *d
 	// k=*
 	// a=*
 	DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s!%s"SDP2_EL, r_descr_mrl(r_descr), m_descr_name(m_descr)))
+	// other sdp private data
+	for (tmp_mdl = list_first(m_descr_list); tmp_mdl; tmp_mdl=list_next(tmp_mdl))
+	if ( (sdp_private=m_descr_sdp_private(MEDIA_DESCR(tmp_mdl))) )
+		for (sdp_private = list_first(sdp_private); sdp_private; sdp_private = list_next(sdp_private)) {
+			switch (SDP_FIELD(sdp_private)->type) {
+				case empty_field:
+					DESCRCAT(g_snprintf(cursor, size_left, "%s"SDP2_EL, SDP_FIELD(sdp_private)->field))
+					break;
+				case fmtp:
+					DESCRCAT(g_snprintf(cursor, size_left, "a=fmtp:%u %s"SDP2_EL, m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl)), SDP_FIELD(sdp_private)->field))
+					break;
+				// other supported private fields?
+				default: // ignore private field
+					break;
+			}
+		}
 	// CC licenses *
 		
 	return ERR_NOERROR;

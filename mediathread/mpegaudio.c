@@ -124,8 +124,17 @@ static void mpa_info(mpa_data *, MediaProperties *);
 
 static int init(MediaProperties *properties, void **private_data) 
 {
+	sdp_field *sdp_private;
+	
 	if ( !(*private_data = calloc (1, sizeof(mpa_data))) )
 		return ERR_ALLOC;
+	
+	sdp_private = g_new(sdp_field, 1);
+	
+	sdp_private->type = fmtp;
+	sdp_private->field = g_strdup("example of sdp private struct");
+		
+	properties->sdp_private=g_list_prepend(properties->sdp_private, sdp_private);
 
 	INIT_PROPS
 

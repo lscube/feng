@@ -163,12 +163,21 @@ static float AspectRatioCode[] = {		/* value 	height/width	video source		*/
 /*mediaparser_module interface implementation*/
 int init(MediaProperties *properties, void **private_data)
 {
+	sdp_field *sdp_private;
+	
 	mpv_data *mpeg_video;
 	*private_data = calloc(1, sizeof(mpv_data));
 	mpeg_video = (mpv_data *)(*private_data);
 	mpeg_video->vsh1 = calloc(1,sizeof(video_spec_head1));
 	mpeg_video->vsh2 = calloc(1,sizeof(video_spec_head2));
 	mpeg_video->is_buffered=0;/*false*/
+		
+	sdp_private = g_new(sdp_field, 1);
+	
+	sdp_private->type = fmtp;
+	sdp_private->field = g_strdup("example of sdp private struct");
+		
+	properties->sdp_private=g_list_prepend(properties->sdp_private, sdp_private);
 	
 	INIT_PROPS
 

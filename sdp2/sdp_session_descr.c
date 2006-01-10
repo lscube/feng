@@ -53,6 +53,7 @@ int sdp_session_descr(resource_name n, int net_fd, char *descr, size_t descr_siz
 	char *cursor=descr;
 	ResourceDescr *r_descr;
 	MediaDescrListArray m_descrs;
+	sdp_field_list sdp_private;
 //	GList *m = NULL;
 //	MediaDescrList m_list;
 	guint i;
@@ -64,6 +65,7 @@ int sdp_session_descr(resource_name n, int net_fd, char *descr, size_t descr_siz
 	fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s\n", thefile);
 	if ( !(r_descr=r_descr_get(thefile)) )
 		return ERR_NOT_FOUND;
+		
 	// get name of localhost
 	if (getsockname(net_fd, (struct sockaddr *)&localaddr, &localaddr_len) < 0)
 		return ERR_INPUT_PARAM; // given socket is not valid
@@ -127,14 +129,24 @@ int sdp_session_descr(resource_name n, int net_fd, char *descr, size_t descr_siz
 	// control attribute. We should look if aggregate metod is supported?
 	DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s"SDP2_EL, n))
 	// other private data
-	if (r_descr_sdp_private(r_descr))
-		DESCRCAT(g_snprintf(cursor, size_left, "%s"SDP2_EL, r_descr_sdp_private(r_descr)))
+	if ( (sdp_private=r_descr_sdp_private(r_descr)) )
+		for (sdp_private = list_first(sdp_private); sdp_private; sdp_private = list_next(sdp_private)) {
+			switch (SDP_FIELD(sdp_private)->type) {
+				case empty_field:
+					DESCRCAT(g_snprintf(cursor, size_left, "%s"SDP2_EL, SDP_FIELD(sdp_private)->field))
+					break;
+				// other supported private fields?
+				default: // ignore private field
+					break;
+			}
+		}
+		
 	// media
 	m_descrs = r_descr_get_media(r_descr);
 
 	for (i=0;i<m_descrs->len;i++) { // TODO: wrap g_array functions
 //		printf("*** %d\n", i);
-		sdp_media_descr(r_descr, m_descrs->pdata[i], cursor, size_left);
+		sdp_media_descr(r_descr, array_data(m_descrs)[i], cursor, size_left);
 	}
    	
 	fnc_log(FNC_LOG_INFO, "\n[SDP2] description:\n%s\n", descr);
