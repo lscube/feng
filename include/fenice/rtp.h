@@ -38,8 +38,10 @@
 	#include <time.h>
 	#include <sys/timeb.h>
 	#include <sys/types.h>
+	/*x-x*/
 	#include <sys/socket.h>
 	#include <fenice/socket.h>
+	#include <fenice/wsocket.h>
 	#include <fenice/mediainfo.h>
 	#include <fenice/bufferpool.h>
 	#include <fenice/types.h>
@@ -72,14 +74,20 @@
 	} RTCP_stats;
 
 	typedef struct _RTP_session {
-		tsocket rtp_fd;
-		tsocket rtcp_fd_in,rtcp_fd_out;
+		/*x-x*/
+		tsocket rtp_fd; /*it is stored in RTSP_setup.c, but unused*/
+		Sock *s_rtp_fd;
+		/*x-x*/
+		tsocket rtcp_fd_in,rtcp_fd_out; /*they are stored but unused, see RTSP_setup.c*/
+		Sock *s_rtcp_fd_in, *s_rtcp_fd_out;
+		/*x-x*/
 		struct sockaddr rtcp_in_peer,rtcp_out_peer;
+		struct sockaddr rtp_peer;
+
 		unsigned char rtcp_inbuffer[RTCP_BUFFERSIZE];
 		int rtcp_insize;
 		unsigned char rtcp_outbuffer[RTCP_BUFFERSIZE];
 		uint32 rtcp_outsize;
-		struct sockaddr rtp_peer;
 		/*	
 		//these time vars now are in media_entry structure
 		double mtime;

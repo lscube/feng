@@ -43,11 +43,16 @@
 #include <arpa/inet.h>
 
 #include <fenice/rtsp.h>
+/*x-x*/
 #include <fenice/socket.h>
+#include <fenice/wsocket.h>
+
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include <fenice/multicast.h>
 #include <fenice/fnc_log.h>
+#include <glib.h>
+#include <glib/gprintf.h>
 
 /*
  	****************************************************************
@@ -298,10 +303,11 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		sp2->ser_ports.RTCP =matching_me->rtp_multicast_port+1;
 	}
 	
-	if (getpeername(rtsp->fd, (struct sockaddr *)&rtsp_peer, &namelen) != 0) {
+	/*x-x*/
+	/*if (getpeername(rtsp->fd, (struct sockaddr *)&rtsp_peer, &namelen) != 0) {
 		send_reply(415, 0, rtsp);	// Internal server error
 		return ERR_GENERIC;
-	}
+	}*/
 
 	sp2->is_multicast_dad=1;/*unicast and the first multicast*/
 
@@ -334,12 +340,17 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 			fnc_log(FNC_LOG_DEBUG,"\nSet up socket for multicast ok\n");
 		}
 	} else {/*unicast*/
-		strcpy(address, get_address());
+		/*x-x*/
+		/*strcpy(address, get_address());
 		//UDP connection for outgoing RTP packets
 		udp_connect(cli_ports.RTP, &(sp2->rtp_peer), (*((struct sockaddr_in *) (&rtsp_peer))).sin_addr.s_addr,&(sp2->rtp_fd));
 		//UDP connection for outgoing RTCP packets
 		udp_connect(cli_ports.RTCP, &(sp2->rtcp_out_peer),(*((struct sockaddr_in *) (&rtsp_peer))).sin_addr.s_addr, &(sp2->rtcp_fd_out));
 		udp_open(ser_ports.RTCP, &(sp2->rtcp_in_peer), &(sp2->rtcp_fd_in));	//bind 
+		*/
+		sp2->s_rtp_fd = Sock_connect(get_remote_host(rtsp->s_fd), g_strdup_printf("%d",cli_ports.RTP), &(sp2->rtp_fd), UDP, 0);
+		sp2->s_rtcp_fd_out = Sock_connect(get_remote_host(rtsp->s_fd), g_strdup_printf("%d",cli_ports.RTCP), &(sp2->rtcp_fd_out), UDP, 0);
+		sp2->s_rtcp_fd_in = Sock_bind(NULL, g_strdup_printf("%d",ser_ports.RTCP), &(sp2->rtcp_fd_in), UDP, 0);
 	}	
 	
 	/*xxx*/
