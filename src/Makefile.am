@@ -1,6 +1,6 @@
 feniceincludedir = $(top_srcdir)/include
 
-noinst_LTLIBRARIES = liblog.la libutils.la libprefs.la
+noinst_LTLIBRARIES = liblog.la libsafectype.la libutils.la libprefs.la
 
 if FENICE_VERBOSE
 noinst_LTLIBRARIES += libdebug.la
@@ -20,6 +20,9 @@ liblog_la_SOURCES =	fnc_log.c
 
 liblog_la_LDFLAGS = -static -lm
 
+libsafectype_la_SOURCES =	safe-ctype.c 
+
+libsafectype_la_LDFLAGS = -static -lm
 
 libprefs_la_SOURCES =	prefs_init.c \
 			prefs_get_serv_root.c \
@@ -69,6 +72,7 @@ fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/src/libprefs.la \
 		$(top_srcdir)/src/libutils.la \
 		$(top_srcdir)/src/liblog.la \
+		$(top_srcdir)/src/libsafectype.la \
 		$(top_srcdir)/md5/libmd5.la
 
 if FENICE_VERBOSE

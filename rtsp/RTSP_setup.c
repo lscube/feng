@@ -38,13 +38,15 @@
 #include <stdlib.h>		// shawill: for rand, srand
 #include <unistd.h>		// shawill: for close
 // shawill: for inet_aton
-#include <sys/socket.h>
+/*x-x*/
+//#include <sys/socket.h>
+
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include <fenice/rtsp.h>
 /*x-x*/
-#include <fenice/socket.h>
+//#include <fenice/socket.h>
 #include <fenice/wsocket.h>
 
 #include <fenice/utils.h>
@@ -63,7 +65,7 @@
 
 int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
-	char address[16];
+	//char address[16];
 	int valid_url;
 	char object[255], server[255], trash[255];
 	char url[255];
@@ -78,8 +80,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	unsigned int start_seq, start_rtptime;
 	char line[255];
 	media_entry *list, *matching_me, req;
-	struct sockaddr_storage rtsp_peer;
-	socklen_t namelen = sizeof(rtsp_peer);
+	//struct sockaddr_storage rtsp_peer;
+	//socklen_t namelen = sizeof(rtsp_peer);
 	unsigned long ssrc;
 	SD_descr *matching_descr;
 
@@ -314,7 +316,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	if ((matching_descr->flags & SD_FL_MULTICAST) ) {	/*multicast*/
 		sp2->is_multicast_dad=0;
 		if (!(matching_descr->flags & SD_FL_MULTICAST_PORT) ) {	
-			struct in_addr inp;
+			/*x-x*/
+			/*struct in_addr inp;
 			unsigned char ttl=DEFAULT_TTL;
 			struct ip_mreq mreq;
 
@@ -323,7 +326,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 			setsockopt(sp2->rtp_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
 			setsockopt(sp2->rtp_fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
 
-			sp2->is_multicast_dad=1;
 			strcpy(address, matching_descr->multicast);
 			//RTP outgoing packets
 			inet_aton(address, &inp);
@@ -332,11 +334,19 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 			inet_aton(address, &inp);
 			udp_connect(ser_ports.RTCP, &(sp2->rtcp_out_peer), inp.s_addr, &(sp2->rtcp_fd_out));
 			//udp_open(ser_ports.RTCP, &(sp2->rtcp_in_peer), &(sp2->rtcp_fd_in));	//bind 
+			*/
 			
+			sp2->s_rtp_fd = Sock_connect(matching_descr->multicast, g_strdup_printf("%d",ser_ports.RTP), &(sp2->rtp_fd), UDP, 0);
+			sp2->s_rtcp_fd_out = Sock_connect(matching_descr->multicast, g_strdup_printf("%d",ser_ports.RTCP), &(sp2->rtcp_fd_out), UDP, 0);
+			/*rtcp_fd_in not open for now for multicast sessions*/
+			//sp2->s_rtcp_fd_in = Sock_bind(NULL, g_strdup_printf("%d",cli_ports.RTCP), &(sp2->rtcp_fd_in), UDP, 0);
+
 			if(matching_me->next==NULL)
 				matching_descr->flags |= SD_FL_MULTICAST_PORT;
 			
 			matching_me->rtp_multicast_port = ser_ports.RTP;
+
+			sp2->is_multicast_dad=1;
 			fnc_log(FNC_LOG_DEBUG,"\nSet up socket for multicast ok\n");
 		}
 	} else {/*unicast*/

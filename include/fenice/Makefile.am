@@ -30,6 +30,7 @@ noinst_HEADERS	=	bufferpool.h \
 			rtp.h \
 			rtpptdefs.h \
 			rtsp.h \
+			safe-ctype.h \
 			schedule.h \
 			sdp_grammar.h \
 			sdp.h \
