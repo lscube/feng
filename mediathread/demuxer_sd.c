@@ -299,7 +299,7 @@ static int init(Resource * r)
 				// SD_PKT_LEN
 				sscanf(line, "%*s%f", &me->data.pkt_len);
 				me->description_flags |= MED_PKT_LEN;
-			} else if (strcasecmp(keyword, SD_FRAME_RATE)) {
+			} else if (!strcasecmp(keyword, SD_FRAME_RATE)) {
 				// SD_FRAME_RATE
 				sscanf(line, "%*s%u", &props_hints.frame_rate);
 				me->description_flags |= MED_FRAME_RATE;

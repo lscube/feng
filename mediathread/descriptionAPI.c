@@ -168,3 +168,31 @@ inline uint32 m_descr_rtp_pt(MediaDescr *m_descr)
 {
 	return (m_descr && m_descr->properties) ? m_descr->properties->payload_type : 0;
 }
+
+inline char *m_descr_commons_deed(MediaDescr *m_descr)
+{
+	// use this if 'twin' become a char pointer
+//	return (m_descr && m_descr->info) ? m_descr->info->commons_deed : NULL;
+	return (m_descr && m_descr->info && *m_descr->info->commons_deed) ? m_descr->info->commons_deed : NULL;
+}
+
+inline char *m_descr_rdf_page(MediaDescr *m_descr)
+{
+	// use this if 'twin' become a char pointer
+//	return (m_descr && m_descr->info) ? m_descr->info->rdf_page : NULL;
+	return (m_descr && m_descr->info && *m_descr->info->rdf_page) ? m_descr->info->rdf_page : NULL;
+}
+
+inline char *m_descr_title(MediaDescr *m_descr)
+{
+	// use this if 'twin' become a char pointer
+//	return (m_descr && m_descr->info) ? m_descr->info->title : NULL;
+	return (m_descr && m_descr->info && *m_descr->info->title) ? m_descr->info->title : NULL;
+}
+
+inline char *m_descr_author(MediaDescr *m_descr)
+{
+	// use this if 'twin' become a char pointer
+//	return (m_descr && m_descr->info) ? m_descr->info->author : NULL;
+	return (m_descr && m_descr->info && *m_descr->info->author) ? m_descr->info->author : NULL;
+}

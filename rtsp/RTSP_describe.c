@@ -130,7 +130,8 @@ int RTSP_describe(RTSP_buffer * rtsp)
 	req.flags = ME_DESCR_FORMAT;
 	req.descr_format = descr_format;
 	if ( sdp_session_descr(object, rtsp->fd, descr, sizeof(descr)) ) // shawill tries for sdp2 lib
-		return ERR_GENERIC;
+		fnc_log(FNC_LOG_ERR,"[SDP2] error\n");
+//		return ERR_GENERIC;
 	res = get_media_descr(object, &req, &media, descr);
 	if (res == ERR_NOT_FOUND) {
 		send_reply(404, 0, rtsp);	// Not found

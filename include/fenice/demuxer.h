@@ -237,6 +237,10 @@ inline MediaType m_descr_type(MediaDescr *);
 inline sdp_field_list m_descr_sdp_private(MediaDescr *);
 inline int m_descr_rtp_port(MediaDescr *);
 inline uint32 m_descr_rtp_pt(MediaDescr *);
+inline char *m_descr_commons_deed(MediaDescr *);
+inline char *m_descr_rdf_page(MediaDescr *);
+inline char *m_descr_title(MediaDescr *);
+inline char *m_descr_author(MediaDescr *);
 /*-------------------------------------------*/
 
 #endif // __DEMUXER_H

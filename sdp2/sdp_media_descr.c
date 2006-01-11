@@ -76,7 +76,7 @@ int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list, char *d
 	// b=*
 	// k=*
 	// a=*
-	DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s!%s"SDP2_EL, r_descr_mrl(r_descr), m_descr_name(m_descr)))
+	DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s!%s"SDP2_EL, r_descr_name(r_descr), m_descr_name(m_descr)))
 	// other sdp private data
 	for (tmp_mdl = list_first(m_descr_list); tmp_mdl; tmp_mdl=list_next(tmp_mdl))
 	if ( (sdp_private=m_descr_sdp_private(MEDIA_DESCR(tmp_mdl))) )
@@ -94,6 +94,14 @@ int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list, char *d
 			}
 		}
 	// CC licenses *
+	if (m_descr_commons_deed(m_descr))
+		DESCRCAT(g_snprintf(cursor, size_left, "a=uriLicense:%s"SDP2_EL, m_descr_commons_deed(m_descr)))
+	if (m_descr_rdf_page(m_descr))
+		DESCRCAT(g_snprintf(cursor, size_left, "a=uriMetadata:%s"SDP2_EL, m_descr_rdf_page(m_descr)))
+	if (m_descr_title(m_descr))
+		DESCRCAT(g_snprintf(cursor, size_left, "a=title:%s"SDP2_EL, m_descr_title(m_descr)))
+	if (m_descr_author(m_descr))
+		DESCRCAT(g_snprintf(cursor, size_left, "a=author:%s"SDP2_EL, m_descr_author(m_descr)))
 		
 	return ERR_NOERROR;
 }
