@@ -1,5 +1,5 @@
 
-feniceincludedir = $(top_srcdir)/include
+netembryoincludedir = $(top_srcdir)/include
 
 noinst_LTLIBRARIES = libwsocket.la
 libwsocket_la_SOURCES =		is_multicast.c \
@@ -53,7 +53,7 @@ libwsocket_la_LDFLAGS = -static
 #libwsocket_la_LIBADD  = $(SSL_LIBS)
 #endif
 
-INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)
+INCLUDES = -I$(netembryoincludedir) -I$(top_srcdir)
 
 #if HAVE_SSL
 #INCLUDES += $(SSL_CFLAG)

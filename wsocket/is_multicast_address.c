@@ -1,27 +1,26 @@
 /* * 
  *  $Id$
  *  
- *  This file is part of Fenice
+ *  This file is part of NetEmbryo 
  *
- *  Fenice -- Open Media Server
+ * NetEmbryo -- default network wrapper 
  *
  *  Copyright (C) 2005 by
  *  	
  *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- (LS)³			<team@streaming.polito.it>
  * 
- *  Fenice is free software; you can redistribute it and/or modify
+ *  NetEmbryo is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
  *
- *  Fenice is distributed in the hope that it will be useful,
+ *  NetEmbryo is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with Fenice; if not, write to the Free Software
+ *  along with NetEmbryo; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
@@ -29,7 +28,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
-#include <fenice/wsocket.h>
+#include <netembryo/wsocket.h>
 
 #ifndef IN_IS_ADDR_MULTICAST
 #define IN_IS_ADDR_MULTICAST(a) ((((in_addr_t )(a)) & 0xf0000000) == 0xe0000000)
