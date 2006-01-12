@@ -31,23 +31,27 @@
 #include <stdio.h>
 #include <string.h>
 #include <pwd.h>
-#include <netdb.h> // for getnameinfo()
+/*x-x*/
+//#include <netdb.h> // for getnameinfo()
 
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <fenice/sdp2.h>
 #include <fenice/multicast.h>
-#include <fenice/socket.h>
+/*x-x*/
+//#include <fenice/socket.h>
+#include <fenice/wsocket.h>
 
 #include "sdp_get_version.c"
 
 
 #define DESCRCAT(x) { if ( (size_left -= x) < 0) return ERR_INPUT_PARAM; else cursor=descr+descr_size-size_left; }
-int sdp_session_descr(resource_name n, int net_fd, char *descr, size_t descr_size)
+int sdp_session_descr(resource_name n, Sock *rtsp_sock/*int net_fd*/, char *descr, size_t descr_size)
 {
-	struct sockaddr_storage localaddr;
-	socklen_t localaddr_len = sizeof(localaddr);
-	char thefile[255], localhostname[NI_MAXHOST];
+	/*x-x*/
+	//struct sockaddr_storage localaddr;
+	//socklen_t localaddr_len = sizeof(localaddr);
+	char thefile[255], *localhostname/*[NI_MAXHOST]*/;
 	struct passwd *pwitem=getpwuid(getuid());
 	gint64 size_left=descr_size;
 	char *cursor=descr;
@@ -67,10 +71,14 @@ int sdp_session_descr(resource_name n, int net_fd, char *descr, size_t descr_siz
 		return ERR_NOT_FOUND;
 		
 	// get name of localhost
-	if (getsockname(net_fd, (struct sockaddr *)&localaddr, &localaddr_len) < 0)
-		return ERR_INPUT_PARAM; // given socket is not valid
-	if (getnameinfo((struct sockaddr *)&localaddr, localaddr_len, localhostname, sizeof(localhostname), NULL, 0, 0))
+	//if (getsockname(net_fd, (struct sockaddr *)&localaddr, &localaddr_len) < 0)
+	//	return ERR_INPUT_PARAM; // given socket is not valid
+	//if (getnameinfo((struct sockaddr *)&localaddr, localaddr_len, localhostname, sizeof(localhostname), NULL, 0, 0))
+	//	return ERR_INPUT_PARAM; // could not get address name or IP
+	if(get_local_hostname(rtsp_sock,localhostname)) {
+		fnc_log(FNC_LOG_ERR, "[SDP2] get_local_hostname %s\n", thefile);
 		return ERR_INPUT_PARAM; // could not get address name or IP
+	}
 	// v=
 	DESCRCAT(g_snprintf(cursor, size_left, "v=%d"SDP2_EL, SDP2_VERSION))
 	// o=

@@ -29,6 +29,7 @@
 #include <glib.h>
 #include <fenice/wsocket.h>
 #include <netinet/in.h>
+#include <netdb.h> // for getnameinfo()
 
 inline char * get_remote_host(Sock *s)
 {
@@ -40,6 +41,19 @@ char * get_local_host(Sock *s)
 	char local_host[128]; /*Unix domain is largest*/
 
 	return addr_ntop(s, local_host, sizeof(local_host));
+}
+
+int get_local_hostname(Sock *s, char *localhostname) //return 0 if ok
+{
+	char lhname[NI_MAXHOST];
+	size_t/*socklen_t*/ localaddr_len = sizeof(s->sock_stg);
+	int res;
+	
+	res=getnameinfo((struct sockaddr *)&(s->sock_stg), localaddr_len, lhname, sizeof(lhname), NULL, 0, 0);
+	if(!res)
+		localhostname = g_strdup(lhname);
+
+	return res;
 }
 
 inline char * get_remote_port(Sock *s)

@@ -244,6 +244,7 @@ int Sock_set_props(int d, int request, int *on);
 /*get_info.c*/
 char * get_remote_host(Sock *);
 char * get_local_host(Sock *);
+int get_local_hostname(Sock *s, char *localhostname); // return 0 if ok
 char * get_remote_port(Sock *);
 char * get_local_port(Sock *);
 /*----------------------------------------------------------------------------------------------------------------------------*/

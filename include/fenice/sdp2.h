@@ -37,6 +37,7 @@
 
 #include <fenice/types.h>
 #include <fenice/demuxer.h>
+#include <fenice/wsocket.h>
 
 #include <config.h>
 #ifndef PACKAGE
@@ -48,7 +49,7 @@
 
 gint sdp_session_id(char *, size_t);
 gint sdp_get_version(ResourceDescr *, char *, size_t);
-int sdp_session_descr(resource_name, int, char *, size_t);
+int sdp_session_descr(resource_name, Sock * /*int*/, char *, size_t);
 int sdp_media_descr(ResourceDescr *, MediaDescrList, char *, uint32);
 
 #endif /*SDP2_H_*/
