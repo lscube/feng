@@ -35,12 +35,6 @@
 #ifndef _INTNETH
 #define _INTNETH
 
-	/*#include <time.h>
-	#include <sys/timeb.h>
-	#include <sys/socket.h>
-	#include <fenice/socket.h>
-	#include <fenice/mediainfo.h>
-*/
 	#include <fenice/rtp.h>
 	#include <fenice/rtcp.h>
 

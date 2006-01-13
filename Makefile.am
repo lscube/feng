@@ -1,5 +1,4 @@
 SUBDIRS =	bufferpool \
-		socket \
 		var \
 		wsocket \
 		md5 \

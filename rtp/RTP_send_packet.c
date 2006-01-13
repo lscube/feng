@@ -105,8 +105,6 @@ int RTP_send_packet(RTP_session *session)
 		memcpy(packet,&r,hdr_size);
 		memcpy(packet+hdr_size,slot->data,slot->data_size);
 		
-		/*x-x*/
-		//if ((psize_sent=sendto(session->rtp_fd,packet,slot->data_size+hdr_size,0,&(session->rtp_peer),sizeof(session->rtp_peer)))<0){
 		if ((psize_sent = Sock_write(session->s_rtp_fd,packet,slot->data_size+hdr_size))<0){
 			
 			fnc_log(FNC_LOG_DEBUG,"RTP Packet Lost\n");

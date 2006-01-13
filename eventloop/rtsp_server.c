@@ -62,12 +62,8 @@ int rtsp_server(RTSP_buffer *rtsp)
  	FD_ZERO(&wset);
 	t.tv_sec=0;
 	t.tv_usec=100000;
-	/*x-x*/
-	//FD_SET(rtsp->fd,&rset);  // fd is tcp connection socket and FD_SET adds this one to rset
 	FD_SET(get_fd(rtsp->s_fd),&rset);  // fd is tcp connection socket and FD_SET adds this one to rset
 	if (rtsp->out_size>0) {
-		/*x-x*/
-		//FD_SET(rtsp->fd,&wset);  // idem for wset
 		FD_SET(get_fd(rtsp->s_fd),&wset); 
 	}
 	if (select(MAX_FDS,&rset,&wset,0,&t)<0) {
@@ -79,8 +75,6 @@ int rtsp_server(RTSP_buffer *rtsp)
 		// There are RTSP packets to read in
 		memset(buffer,0,sizeof(buffer));
 		size=sizeof(buffer)-1;
-		/*x-x*/
-		//n=tcp_read(rtsp->fd,buffer,size);			
 		n=Sock_read(rtsp->s_fd,buffer,size);
 		if (n==0) {
 			return ERR_CONNECTION_CLOSE;
@@ -113,8 +107,6 @@ int rtsp_server(RTSP_buffer *rtsp)
 	if (FD_ISSET(get_fd(rtsp->s_fd),&wset)) {						
 		// There are RTSP packets to send
 		if (rtsp->out_size>0) {
-			/*x-x*/
-			//n=tcp_write(rtsp->fd,rtsp->out_buffer,rtsp->out_size);
 			n=Sock_write(rtsp->s_fd,rtsp->out_buffer,rtsp->out_size);
 			if (n<0) {
 				fnc_log(FNC_LOG_ERR,"tcp_write() error in rtsp_server()\n");        			
@@ -160,7 +152,7 @@ int rtsp_server(RTSP_buffer *rtsp)
     			if (FD_ISSET(p->rtcp_fd_in,&rset)) {        	
 	    			// There are RTCP packets to read in
 				// /*x-x*/
-    				socklen_t peer_len=sizeof(p->rtcp_in_peer);
+    				//socklen_t peer_len=sizeof(p->rtcp_in_peer);
         			//if ((p->rtcp_insize=recvfrom(p->rtcp_fd_in, p->rtcp_inbuffer, sizeof(p->rtcp_inbuffer), 0, &(p->rtcp_in_peer), &peer_len))<0) {            	
         			if ((Sock_read(p->s_rtcp_fd_in, p->rtcp_inbuffer, sizeof(p->rtcp_inbuffer)))<0) {            	
         				fnc_log(FNC_LOG_VERBOSE,"Input RTCP packet Lost\n");

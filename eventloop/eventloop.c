@@ -35,8 +35,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
-/*x-x*/
-#include <fenice/socket.h>
 #include <fenice/wsocket.h>
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
@@ -51,9 +49,6 @@ void eventloop(Sock *m_fd)
 {
 	static uint32 child_count=0;
 	static int conn_count = 0;
-	/*x-x*/
-	//tsocket fd = -1;
-	//tsocket main_fd = get_fd(m_fd);
 	Sock *s_fd = NULL;
 	static RTSP_buffer *rtsp_list=NULL;
 	RTSP_buffer *p=NULL;
@@ -61,19 +56,13 @@ void eventloop(Sock *m_fd)
 
 	if (conn_count!=-1)
 	{
-		/*x-x*/
-		//fd=tcp_accept(main_fd);
 		s_fd=Sock_accept(m_fd);
 	} // shawill: and... if not?
 
 	// Handle a new connection
-	/*x-x*/
-	//if (fd>=0)
 	if (s_fd != NULL)
 	{
 		for (fd_found=0,p=rtsp_list; p!=NULL; p=p->next)
-			/*x-x*/
-			//if (p->fd==fd)
 			if (Sock_cmp(p->s_fd,s_fd)==0)
 			{				
 				fd_found=1;
@@ -106,11 +95,7 @@ void eventloop(Sock *m_fd)
         			else
 				{
         				// I'm the father
-					/*x-x*/
-        				//fd=-1;
         				conn_count=-1;
-					/*x-x*/
-        				//tcp_close(main_fd);				
         				Sock_close(m_fd);				
         			}					
         		}

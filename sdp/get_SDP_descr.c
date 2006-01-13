@@ -84,7 +84,8 @@ int get_SDP_descr(media_entry *media,char *descr,int extended,char *url)
 		sprintf(ttl, "%d", (int)DEFAULT_TTL);
 		strcat(descr, ttl); /*TODO: the possibility to change ttl. See multicast.h, RTSP_setup.c, send_setup_reply.c*/
 	} else
-   		strcat(descr, get_address());
+   		strcat(descr, "0.0.0.0");
+   		//strcat(descr, get_address());
    	
 	strcat(descr, SDP_EL);
    	strcat(descr, "s=RTSP Session"SDP_EL);

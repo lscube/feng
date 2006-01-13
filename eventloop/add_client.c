@@ -36,14 +36,10 @@
 #include <string.h>
 
 #include <fenice/eventloop.h>
-/*x-x*/
-#include <fenice/socket.h>
 #include <fenice/wsocket.h>
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
 
-/*x-x*/
-//void add_client(RTSP_buffer **rtsp_list,tsocket fd)
 void add_client(RTSP_buffer **rtsp_list, Sock *s_fd)
 {
 	RTSP_buffer *p=NULL,*pp=NULL;

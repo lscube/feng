@@ -65,8 +65,6 @@ int RTCP_handler(RTP_session *session)
     		}
 
 		if (FD_ISSET(session->rtcp_fd_out,&wset)) {
-			/*x-x*/
-        		//if (sendto(session->rtcp_fd_out,session->rtcp_outbuffer,session->rtcp_outsize,0,&(session->rtcp_out_peer),sizeof(session->rtcp_out_peer))<0) 
         		if (Sock_write(session->s_rtcp_fd_out,session->rtcp_outbuffer,session->rtcp_outsize)<0) 
         			fnc_log(FNC_LOG_VERBOSE,"RTCP Packet Lost\n");
       		  	    		

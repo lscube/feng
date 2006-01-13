@@ -37,8 +37,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <fenice/socket.h>
 #include <fenice/eventloop.h>
+#include <fenice/wsocket.h>
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
@@ -65,7 +65,7 @@ void schedule_connections(RTSP_buffer **rtsp_list, int *conn_count)
 				else
 					fnc_log(FNC_LOG_INFO,"RTSP connection closed by server.\n");
 
-				close(p->fd);
+				Sock_close(p->s_fd);
             			--*conn_count;
 				num_conn--;
             			if (p->session_list!=NULL) //if client truncated RTSP connection before sending TEARDOWN: error

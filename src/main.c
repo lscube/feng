@@ -42,8 +42,6 @@
 #ifdef WIN32
 #include <winsock2.h>
 #endif
-	/*x-x*/
-#include <fenice/socket.h>
 #include <fenice/wsocket.h>
 
 #include <fenice/eventloop.h>
@@ -111,8 +109,6 @@ int main(int argc, char **argv)
 		fnc_log(FNC_LOG_ERR,"listen() error.\n" );
 		return 0;
 	}
-	/*x-x*/
-	//main_fd = tcp_listen(port);
 
 	/* next line: schedule_init() initialises the array of schedule_list sched 
 	   and creates the thread schedule_do() -> look at schedule.c */
@@ -128,8 +124,6 @@ int main(int argc, char **argv)
 		// Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
 		// See also schedule.c
 		nanosleep(&ts, NULL);
-		/*x-x*/
-		//eventloop(main_fd);
 		eventloop(m_fd);
 	}
 	/* eventloop looks for incoming RTSP connections and generates for each

@@ -30,5 +30,6 @@
 #define __FENICE_SOCKET_H
 
 	#include <netembryo/wsocket.h>
+	typedef int tsocket;	
 
 #endif

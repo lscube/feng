@@ -27,8 +27,7 @@
  * */
 
 #include <fenice/rtcp.h>
-#include <fenice/socket.h>
-//#include <fenice/version.h>
+#include <fenice/wsocket.h>
 #include <pwd.h>
 
 int build_rtcp_sdes(RTP_session *session, unsigned char *pkt, int left)
@@ -43,7 +42,7 @@ int build_rtcp_sdes(RTP_session *session, unsigned char *pkt, int left)
 	/* SDES CNAME: username@ipaddress */
 	strcpy(str, pwitem->pw_name);
 	strcat(str, "@");
-	strcat(str, get_address());
+	strcat(str, get_local_host(session->s_rtcp_fd_in));
 	if ( ((strlen(str) + sizeof(rtcp_sdes_item_t) - 1 + sizeof(rtcp_common_t) +1) >> 2)  > (unsigned int)left )
 		/* No space left in UDP pkt */
 		return 0;
