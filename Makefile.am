@@ -11,6 +11,7 @@ SUBDIRS =	bufferpool \
 		rtcp \
 		intnet \
 		rtsp \
+		stunserver \
 		mediainfo \
 		sdp \
 		sdp2 \

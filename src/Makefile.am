@@ -55,6 +55,7 @@ fenice_SOURCES =	main.c \
 
 fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/rtsp/librtsp.la \
+		$(top_srcdir)/stunserver/libstunserver.la \
 		$(top_srcdir)/sdp/libsdp.la \
 		$(top_srcdir)/sdp2/libsdp2.la \
 		$(top_srcdir)/schedule/libschedule.la \

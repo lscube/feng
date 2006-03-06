@@ -35,6 +35,7 @@ noinst_HEADERS	=	bufferpool.h \
 			sdp_grammar.h \
 			sdp.h \
 			socket.h \
+			stun.h \
 			types.h \
 			utils.h \
 			wsocket.h \

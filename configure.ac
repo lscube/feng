@@ -39,7 +39,13 @@ AC_DEFUN([CHECK_SSL],
 [AC_MSG_CHECKING(if ssl is wanted)
 AC_ARG_WITH(ssl,
 [  --with-ssl enable ssl [will check /usr/local/ssl
-                            /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr. [Default certificate = /var/local/lib/fenice/certs/cert.pem]]
+                            /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr. [Default certificate = /var/local/lib/fenice/certs/cert.pem]]typedef struct
+{
+      UInt16 type;
+      UInt16 length;
+} StunAtrHdr;
+
+
 ],
 [   AC_MSG_RESULT(yes)
     for dir in $withval /usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr; do
@@ -362,6 +368,7 @@ AC_CONFIG_FILES([rtp/Makefile])
 AC_CONFIG_FILES([rtcp/Makefile])
 AC_CONFIG_FILES([intnet/Makefile])
 AC_CONFIG_FILES([rtsp/Makefile])
+AC_CONFIG_FILES([stunserver/Makefile])
 AC_CONFIG_FILES([mediainfo/Makefile])
 AC_CONFIG_FILES([sdp/Makefile])
 AC_CONFIG_FILES([sdp2/Makefile])
