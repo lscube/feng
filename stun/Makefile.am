@@ -1,4 +1,4 @@
-feniceincludedir = $(top_srcdir)/include
+OMSstunincludedir = $(top_srcdir)/include
 
 noinst_LTLIBRARIES = libstun.la
 
@@ -15,4 +15,4 @@ libstun_la_SOURCES =	changed-address.c \
 			username.c
 
 libstun_la_LDFLAGS = -static
-INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)
+INCLUDES = -I$(OMSstunincludedir) -I$(top_srcdir)

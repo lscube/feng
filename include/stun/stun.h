@@ -199,4 +199,63 @@ typedef struct STUN_PKT_DEV {
 	uint16 num_message_atrs; /* at most = STUN_MAX_MESSAGE_ATRS*/
 } OMS_STUN_PKT_DEV;
 
+/*
+
+  	| Destination | Change IP | Change Port | Return IP:port |
+--------+-------------+-----------+-------------+----------------+
+Test I	|   IP1:1     |    N      |     N       |      IP1:1     |
+--------+-------------+-----------+-------------+----------------+
+Test II	|   IP1:1     |    Y      |     Y       |      IP2:2     |
+--------+-------------+-----------+-------------+----------------+
+Test III|   IP2:1     |    N      |     N       |      IP2:1     |
+--------+-------------+-----------+-------------+----------------+
+Test IV	|   IP1:1     |    N      |     Y       |      IP1:2     |
+--------+-------------+-----------+-------------+----------------+
+
+                        +--------+
+                        |  Test  |
+                        |   I    |
+                        +--------+
+                             |
+                             |
+                             V
+                            /\              /\
+                         N /  \ Y          /  \ Y             +--------+
+          UDP     <-------/Resp\--------->/ IP \------------->|  Test  |
+          Blocked         \ ?  /          \Same/              |   II   |
+                           \  /            \? /               +--------+
+                            \/              \/                    |
+                                             | N                  |
+                                             |                    V
+                                             V                    /\
+                                         +--------+  Sym.      N /  \
+                                         |  Test  |  UDP    <---/Resp\
+                                         |   II   |  Firewall   \ ?  /
+                                         +--------+              \  /
+                                             |                    \/
+                                             V                     |Y
+                  /\                         /\                    |
+   Symmetric  N  /  \       +--------+   N  /  \                   V
+      NAT  <--- / IP \<-----|  Test  |<--- /Resp\               Open
+                \Same/      |   I    |     \ ?  /               Internet
+                 \? /       +--------+      \  /
+                  \/                         \/
+                  |                           |Y
+                  |                           |
+                  |                           V
+                  |                           Full
+                  |                           Cone
+                  V              /\
+              +--------+        /  \ Y
+              |  Test  |------>/Resp\---->Restricted
+              |   III  |       \ ?  /
+              +--------+        \  /
+                                 \/
+                                  |N
+                                  |       Port
+                                  +------>Restricted
+
+                    Flow for type discovery process
+*/
+
 #endif //__STUNH

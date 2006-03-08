@@ -1,4 +1,4 @@
-stunincludedir =	$(includedir)/stun
+OMSstunincludedir =	$(includedir)/stun
 
 noinst_HEADERS	=	stun.h
 
