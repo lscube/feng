@@ -29,3 +29,58 @@
  *  
  * */
 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <glib.h>
+#include <glib/gprintf.h>
+
+#include <stun/stun.h>
+#include <fenice/stunserver.h>
+#include <fenice/types.h>
+
+OMSStunServer *
+	OMSStunServerInit(uint8 *addr1,uint8 *port1,uint8 *addr2,uint8 *port2)
+{
+	uint16 idx;
+	OMSStunServer *omsss = calloc(1,sizeof(OMSStunServer));
+
+	if(omsss == NULL)
+		return NULL;
+
+	omsss->addr_port = calloc(1,sizeof(OMSStunServerConfigPair));
+
+	if(omsss->addr_port == NULL) {
+		free(omsss);
+		return NULL;
+	}
+
+	for(idx = 0; idx < NUM_SOCKSPAIR; idx++) {
+		omsss->socks_pair[idx] = (OMSStunSockPair *)calloc(1,sizeof(OMSStunSockPair));
+		if(omsss->socks_pair[idx] == NULL) {
+			uint16 idxprev;
+			for(idxprev = 0;idxprev < idx; idxprev++)
+				free(omsss->socks_pair[idxprev]);
+			free(omsss->addr_port);
+			free(omsss);
+			return NULL;
+		}
+	}
+	
+	omsss->addr_port->addr[PRIMARY] = g_strdup_printf("%s", addr1);
+	omsss->addr_port->addr[SECONDARY] = g_strdup_printf("%s", addr2);
+	omsss->addr_port->port[PRIMARY] = g_strdup_printf("%s", port1);
+	omsss->addr_port->port[SECONDARY] = g_strdup_printf("%s", port2);
+	
+	for(idx = 0; idx < NUM_SOCKSPAIR; idx++) {
+		int *fd[NUM_SOCKSPAIR];
+		omsss->socks_pair[idx]->addr_idx = IDX_IDXADDR(idx);
+		omsss->socks_pair[idx]->port_idx = IDX_IDXPORT(idx);
+		
+		/*mmm, i'm not sure to bind all port... chicco*/
+		omsss->socks_pair[idx]->sock = Sock_bind(omsss->addr_port->addr[SOCKSPAIR_IDX(omsss->socks_pair[idx])],omsss->addr_port->port[SOCKSPAIR_IDX(omsss->socks_pair[idx])], fd[idx], UDP, 0);
+	}
+	
+	return omsss;
+}

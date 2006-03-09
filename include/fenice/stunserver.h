@@ -43,10 +43,10 @@
 
 #define PRIMARY 0
 #define SECONDARY 1
-#define CHANGE_IDX((uint16)idx) ((++idx)%2) /*idx of port or addr*/
+#define CHANGE_IDX(idx) ((++idx)%2) /*idx of port or addr*/
 typedef struct STUN_SERVER_CONFIG_PAIR {
-	uint8 *addr[2];/*addr[PRIMARY] and addr[SECONDARY]*/
-        uint8 *port[2];/*port[PRIMARY] and port[SECONDARY]*/
+	char *addr[2];/*addr[PRIMARY] and addr[SECONDARY]*/
+        char *port[2];/*port[PRIMARY] and port[SECONDARY]*/
 } OMSStunServerConfigPair;
 
 typedef struct STUN_SOCK_PAIR {
@@ -57,13 +57,13 @@ typedef struct STUN_SOCK_PAIR {
 
 #define NUM_SOCKSPAIR 4
 typedef struct STUN_SERVER {
-	OMSStunSockPair socks_pair[NUM_SOCKSPAIR];	/*receives from:*/
+	OMSStunSockPair *socks_pair[NUM_SOCKSPAIR];	/*receives from:*/
 							/*socks[0], socks[1]*/
 		  	  	  			/*sends to all*/
 	OMSStunServerConfigPair *addr_port;
 } OMSStunServer;	
 /*macro to map (addr_idx,port_idx) to socks_idx*/
-#define GET_SOCKSPAIR_IDX((uint16)idx_addr, (uint16)idx_port) \
+#define GET_SOCKSPAIR_IDX(idx_addr, idx_port) \
 			(2 *idx_addr + idx_port)
 /*map:
  * addr	port socks_idx
@@ -72,9 +72,16 @@ typedef struct STUN_SERVER {
  * 1	0	2
  * 1	1	3
  * */
-#define SOCKSPAIR_IDX((OMSStunSockPair *)s) \
-	GET_SOCKSPAIR_IDX(s->addr_idx, port_idx)
+#define SOCKSPAIR_IDX(s) \
+	GET_SOCKSPAIR_IDX(s->addr_idx, s->port_idx)
 
+/*from socks_idx to addr_idx or port_idx*/
+#define IDX_IDXADDR(idx) ((idx<2)?0:1)
+#define IDX_IDXPORT(idx) (idx%2)
+
+/*API*/
+OMSStunServer *
+	OMSStunServerInit(uint8 *addr1,uint8 *port1,uint8 *addr2,uint8 *port2);
 
 
 #endif //_STUNSERVERH

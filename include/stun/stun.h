@@ -136,7 +136,7 @@ struct STUN_ATR_ADDRESS { /*MAPPED, RESPONSE, CHANGED, SOURCE, REFLECTED-FROM*/
 
 struct STUN_ATR_CHANGE_REQUEST {
 	uint32 flagsAB;/*0000000000000000000000000000AB0*/
-}		       /* 
+};		       /* 
 			* A = change IP
 			* B = change port 
 			*/
@@ -146,7 +146,7 @@ struct STUN_ATR_STRING { /*USERNAME, PASSWORD*/
 
 /*doesn't map the following struct to costruct the pkt. Let cast to the previous one*/
 struct STUN_ATR_STRING_CTRL { /*this stuct is usefull only to store the string length*/
-	struct STUN_ATR_STRING;
+	struct STUN_ATR_STRING atr_string;
 	uint16 length;
 };
 
@@ -162,7 +162,7 @@ struct STUN_ATR_ERROR_CODE {
 };
 /*doesn't map the following struct to costruct the pkt. Let cast to the previous one*/
 struct STUN_ATR_ERROR_CODE_CTRL { /*this stuct is usefull only to store the reason length*/
-	struct STUN_ATR_ERROR_CODE;
+	struct STUN_ATR_ERROR_CODE atr_err_code;
 	uint16 length;
 };
 
@@ -173,10 +173,10 @@ struct STUN_ATR_ERROR_CODE_CTRL { /*this stuct is usefull only to store the reas
  * num_attr is odd, one of the attributes MUST be repeated.*/
 struct STUN_ATR_UNKNOWN {
       uint16 attrType[STUN_MAX_UNKNOWN_ATTRIBUTES];
-}
+};
 /*doesn't map the following struct to costruct the pkt. Let cast to the previous one*/
 struct STUN_ATR_UNKNOWN_CTRL { /*this stuct is usefull only to store the number of  */
-	struct STUN_ATR_UNKNOWN;				/*  attribute type  */
+	struct STUN_ATR_UNKNOWN atr_unknown;				/*  attribute type  */
 	uint16 num_attr;;
 };
 /*---- END STUN PAYLOAD SECTION ----*/
