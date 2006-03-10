@@ -33,12 +33,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
+
 #include <glib.h>
 #include <glib/gprintf.h>
 
 #include <stun/stun.h>
 #include <fenice/stunserver.h>
 #include <fenice/types.h>
+#include <fenice/fnc_log.h>
+
+#define FREE_ALL	uint16 idxprev; \
+			for(idxprev = 0;idxprev < idx; idxprev++) \
+				free(omsss->socks_pair[idxprev]->sock); \
+			for(idxprev = 0;idxprev < NUM_SOCKSPAIR; idxprev++) \
+				free(omsss->socks_pair[idxprev]); \
+			free(omsss->addr_port); \
+			free(omsss);
+
 
 OMSStunServer *
 	OMSStunServerInit(uint8 *addr1,uint8 *port1,uint8 *addr2,uint8 *port2)
@@ -75,11 +87,29 @@ OMSStunServer *
 	
 	for(idx = 0; idx < NUM_SOCKSPAIR; idx++) {
 		int *fd[NUM_SOCKSPAIR];
+        	int on=1; /*setting non-blocking flag*/
+			
 		omsss->socks_pair[idx]->addr_idx = IDX_IDXADDR(idx);
 		omsss->socks_pair[idx]->port_idx = IDX_IDXPORT(idx);
 		
-		/*mmm, i'm not sure to bind all port... chicco*/
-		omsss->socks_pair[idx]->sock = Sock_bind(omsss->addr_port->addr[SOCKSPAIR_IDX(omsss->socks_pair[idx])],omsss->addr_port->port[SOCKSPAIR_IDX(omsss->socks_pair[idx])], fd[idx], UDP, 0);
+		/*mmm, i'm not sure to bind all ... chicco*/
+		omsss->socks_pair[idx]->sock = Sock_bind(omsss->addr_port->addr[IDX_IDXADDR(idx)],omsss->addr_port->port[IDX_IDXPORT(idx)], fd[idx], UDP, 0);
+	
+		if (omsss->socks_pair[idx]->sock == NULL) {
+			FREE_ALL
+			fnc_log(FNC_LOG_ERR,"Error during bind the socket.\n" );
+			
+			return NULL;
+
+		}
+		
+		if (Sock_set_props(get_fd(omsss->socks_pair[idx]->sock), FIONBIO, &on) < 0) { /*set to non-blocking*/
+			FREE_ALL
+			fnc_log(FNC_LOG_ERR,"ioctl() error.\n" );
+			
+			return NULL;
+    		}
+
 	}
 	
 	return omsss;

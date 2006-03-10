@@ -67,7 +67,7 @@ struct STUN_HEADER{
 /*Shared Secret (not enabled in the first implementation*/
 #define SHARED_SECRET_REQUEST 0x0002 /*S_REQ*/
 #define SHARED_SECRET_RESPONSE 0x0102 /*S_RES*/
-#define SHARED_SECRET_ERROR_RESPONSE 0x0002 /*S_ERR*/
+#define SHARED_SECRET_ERROR_RESPONSE 0x0112 /*S_ERR*/
 
 /*---- END STUN HEADER SECTION ----*/
 
@@ -169,7 +169,7 @@ struct STUN_ATR_ERROR_CODE_CTRL { /*this stuct is usefull only to store the reas
 /*UNKNOWN-ATTRIBUTES is present only in a B_ERR or S_ERR when the response code in
  * the ERROR-CODE is 420*/
 /*the following attribute contains a list of 16 bit values each of which
- * represents an attribute type that was not understoodby the server. If
+ * represents an attribute type that was not understood by the server. If
  * num_attr is odd, one of the attributes MUST be repeated.*/
 struct STUN_ATR_UNKNOWN {
       uint16 attrType[STUN_MAX_UNKNOWN_ATTRIBUTES];
@@ -183,13 +183,13 @@ struct STUN_ATR_UNKNOWN_CTRL { /*this stuct is usefull only to store the number 
 
 typedef struct STUN_ATR {
 	struct STUN_ATR_HEADER stun_atr_hdr;
-	void *atr;
+	void *atr;/*to allocate*/
 } stun_atr;
 
 /*Packet*/
 typedef struct STUN_PKT {
 	struct STUN_HEADER stun_hdr;
-	stun_atr atrs[STUN_MAX_MESSAGE_ATRS];
+	stun_atr *atrs[STUN_MAX_MESSAGE_ATRS];/*to allocate*/
 } OMS_STUN_PKT;
 
 /*a mask variable to set end unset the different Attributes*/
@@ -257,5 +257,14 @@ Test IV	|   IP1:1     |    N      |     Y       |      IP1:2     |
 
                     Flow for type discovery process
 */
+
+/*API*/
+/*
+ *parse_stun_message:
+ *receives a pkt, parses it and returns an  OMS_STUN_PKT_DEV by which
+ *it is simple to manage message type and attributes.
+ *
+ * */
+OMS_STUN_PKT_DEV *parse_stun_message(uint8 *pkt, uint32 pktsize);
 
 #endif //__STUNH
