@@ -71,6 +71,18 @@ struct STUN_HEADER{
 
 /*---- END STUN HEADER SECTION ----*/
 
+/*see RFC - page 30 */
+#define STUN_BAD_REQUEST_CODE 400
+#define STUN_UNAUTHORIZED_CODE 401
+#define STUN_UNKNOWN_ATTRIBUTE_CODE 420
+#define STUN_STALE_CREDENTIALS_CODE 430
+#define STUN_INTEGRITY_CHECK_FAILURE_CODE 431
+#define STUN_MISSING_USERNAME_CODE 432
+#define STUN_USE_TLS_CODE 433
+#define STUN_SERVER_ERROR_CODE 500
+#define STUN_GLOBAL_FAILURE_CODE 600
+
+
 
 /*---- STUN PAYLOAD SECTION ----*/ 
 /*After the header are 0 or more attributes.*/
@@ -140,6 +152,11 @@ struct STUN_ATR_CHANGE_REQUEST {
 			* A = change IP
 			* B = change port 
 			*/
+#define SET_CHANGE_PORT_FLAG(iflag) ( iflag|=0x00000004 )
+#define SET_CHANGE_ADDR_FLAG(iflag) ( iflag|=0x00000002 )
+#define IS_SET_CHANGE_PORT_FLAG(iflag) ( iflag & 0x00000004 )
+#define IS_SET_CHANGE_ADDR_FLAG(iflag) ( iflag & 0x00000002 )
+
 struct STUN_ATR_STRING { /*USERNAME, PASSWORD*/
 	uint8 username[STUN_MAX_STRING]; /*Its length MUST be a multiple of 4 bytes*/
 };
@@ -195,9 +212,19 @@ typedef struct STUN_PKT {
 /*a mask variable to set end unset the different Attributes*/
 typedef struct STUN_PKT_DEV {
 	OMS_STUN_PKT stun_pkt;
-	uint16 set_atr_mask; //only 11 bits are needed
+	uint16 set_atr_mask; 
 	uint16 num_message_atrs; /* at most = STUN_MAX_MESSAGE_ATRS*/
+	uint8 list_uknown[STUN_MAX_MESSAGE_ATRS];/*0 or 1. List of*/
+						/*the unknown attributes*/
+						/*in the received*/
+						/*message. 0 = UNKNOWN*/
 } OMS_STUN_PKT_DEV;
+
+#define IS_VALID_ATR_TYPE(atrtype) ( (atrtype >= MAPPED_ADDRESS) && \
+						(atrtype<=REFLECTED_FROM ) )
+
+#define SET_ATRMASK(atrtype,mask) \
+	( (IS_VALID_ATR_TYPE(atrtype))?(mask|=( 0x0001 << (atrtype - 1))):0 ) 
 
 /*
 
@@ -261,10 +288,28 @@ Test IV	|   IP1:1     |    N      |     Y       |      IP1:2     |
 /*API*/
 /*
  *parse_stun_message:
- *receives a pkt, parses it and returns an  OMS_STUN_PKT_DEV by which
+ *receives a pkt, parses it and allocates an  OMS_STUN_PKT_DEV by which
  *it is simple to manage message type and attributes.
  *
+ *return value: 
+ *	one of error code or zero for success
  * */
-OMS_STUN_PKT_DEV *parse_stun_message(uint8 *pkt, uint32 pktsize);
+uint32 parse_stun_message(uint8 *pkt, uint32 pktsize, 
+				OMS_STUN_PKT_DEV **pkt_dev_pt);
+
+/*return value: 
+ *	one of error code or zero for success
+ */
+uint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev);
+
+uint32 mapped_address(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
+uint32 response_address(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
+uint32 change_request(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
+uint32 source_address(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
+uint32 changed_address(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
+uint32 username(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
+uint32 password(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
+uint32 message_integrity(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
+uint32 unknown_attribute(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
 
 #endif //__STUNH

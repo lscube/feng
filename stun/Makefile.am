@@ -7,6 +7,7 @@ libstun_la_SOURCES =	changed-address.c \
 			error-code.c \
 			mapped-address.c \
 			message-integrity.c \
+			parse_atrs.c \
 			parse_stun_message.c \
 			password.c \
 			reflected-from.c \
