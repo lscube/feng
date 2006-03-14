@@ -317,4 +317,19 @@ uint32 message_integrity(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
 uint32 unknown_attribute(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
 uint32 reflected_from(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
 
+
+/*common function for MAPPED, RESPONSE, CHANGED, SOURCE, REFLECTED-FROM */
+stun_atr *create_address(uint8 family, uint16 port, uint32 address);
+
+stun_atr *create_mapped_address(uint8 family, uint16 port, uint32 address);
+stun_atr *create_response_address(uint8 family, uint16 port, uint32 address);
+stun_atr *create_change_request();
+stun_atr *create_source_address(uint8 family, uint16 port, uint32 address);
+stun_atr *create_changed_address(uint8 family, uint16 port, uint32 address);
+stun_atr *create_username();
+stun_atr *create_password();
+stun_atr *create_message_integrity();
+stun_atr *create_unknown_attribute();
+stun_atr *create_reflected_from(uint8 family, uint16 port, uint32 address);
+
 #endif //__STUNH

@@ -18,7 +18,8 @@ libstun_la_SOURCES +=	changed-address.c \
 			unknown-attributes.c \
 			username.c
 
-libstun_la_SOURCES +=	create-changed-address.c \
+libstun_la_SOURCES +=	create-address.c \
+			create-changed-address.c \
 			create-change-request.c \
 			create-error-code.c \
 			create-mapped-address.c \
