@@ -3,7 +3,8 @@ OMSstunincludedir = $(top_srcdir)/include
 noinst_LTLIBRARIES = libstun.la
 
 
-libstun_la_SOURCES =	parse_atrs.c \
+libstun_la_SOURCES =	free_pkt_dev.c \
+			parse_atrs.c \
 			parse_stun_message.c 	
 
 libstun_la_SOURCES +=	changed-address.c \

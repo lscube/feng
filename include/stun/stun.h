@@ -332,4 +332,6 @@ stun_atr *create_message_integrity();
 stun_atr *create_unknown_attribute();
 stun_atr *create_reflected_from(uint8 family, uint16 port, uint32 address);
 
+void free_pkt_dev(OMS_STUN_PKT_DEV *pkt_dev);
+
 #endif //__STUNH
