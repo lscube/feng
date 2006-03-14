@@ -29,3 +29,15 @@
  *  
  * */
 
+#include <stdio.h>
+
+#include <stun/stun.h>
+
+uint32 password(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx) 
+{
+
+	fprintf(stderr,"\tPASSWORD\n");
+
+	return 0;
+}
+

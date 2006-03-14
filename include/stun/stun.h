@@ -131,7 +131,7 @@ struct STUN_HEADER{
 					 * blank spaces means Not Applicable
 					 * */
 /*the previous table shows there is at most 4 attributes in a message*/
-#define STUN_MAX_MESSAGE_ATRS 4
+#define STUN_MAX_MESSAGE_ATRS 5 
 
 struct STUN_ATR_HEADER{
       uint16 type;
@@ -203,18 +203,22 @@ typedef struct STUN_ATR {
 	void *atr;/*to allocate*/
 } stun_atr;
 
-/*Packet*/
+/*General Stun Packet*/
 typedef struct STUN_PKT {
 	struct STUN_HEADER stun_hdr;
 	stun_atr *atrs[STUN_MAX_MESSAGE_ATRS];/*to allocate*/
 } OMS_STUN_PKT;
 
 /*a mask variable to set end unset the different Attributes*/
+/*this struct is used to parse the received pkt*/
 typedef struct STUN_PKT_DEV {
-	OMS_STUN_PKT stun_pkt;
-	uint16 set_atr_mask; 
+	OMS_STUN_PKT stun_pkt; /*received*/
+	uint16 set_atr_mask;   /*only 11 bits are needed*/
 	uint16 num_message_atrs; /* at most = STUN_MAX_MESSAGE_ATRS*/
-	uint8 list_uknown[STUN_MAX_MESSAGE_ATRS];/*0 or 1. List of*/
+	
+	uint8  num_unknown_atrs; /*the num of attribute type*/
+				 /*unknown in the received message*/
+	uint8 list_unknown[STUN_MAX_MESSAGE_ATRS];/*0 or 1. List of*/
 						/*the unknown attributes*/
 						/*in the received*/
 						/*message. 0 = UNKNOWN*/
@@ -311,5 +315,6 @@ uint32 username(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
 uint32 password(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
 uint32 message_integrity(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
 uint32 unknown_attribute(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
+uint32 reflected_from(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
 
 #endif //__STUNH

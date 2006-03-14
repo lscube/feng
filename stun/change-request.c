@@ -29,3 +29,15 @@
  *  
  * */
 
+#include <stdio.h>
+
+#include <stun/stun.h>
+
+uint32 change_request(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx) 
+{
+
+	fprintf(stderr,"\tCHANGE-REQUEST\n");
+
+	return 0;
+}
+

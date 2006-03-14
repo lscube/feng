@@ -74,8 +74,13 @@ uint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 			case UNKNOWN_ATTRIBUTES:
 				ret = unknown_attribute(pkt_dev,idx);
 			break;
+			case REFLECTED_FROM:
+				ret = reflected_from(pkt_dev,idx);
+			break;
 			default :
-				return STUN_UNKNOWN_ATTRIBUTE_CODE;
+				//STUN_UNKNOWN_ATTRIBUTE_CODE;
+				pkt_dev->list_unknown[idx] = 1;
+				pkt_dev->num_unknown_atrs++;
 			break;
 		
 		}
@@ -84,11 +89,7 @@ uint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 			return ret;
 		
 		if(!SET_ATRMASK((pkt_dev->stun_pkt.atrs[idx])->stun_atr_hdr.type, pkt_dev->set_atr_mask)) {
-			/*
-			 * this will not happen for the previuos
-			 * switch
-			 * */
-			return STUN_UNKNOWN_ATTRIBUTE_CODE;
+			fprintf(stderr,"\tThere is an unknown attribute type. Idx: %d\n",idx);
 		}
 
 	}

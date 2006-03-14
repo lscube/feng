@@ -29,3 +29,15 @@
  *  
  * */
 
+#include <stdio.h>
+
+#include <stun/stun.h>
+
+uint32 mapped_address(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx) 
+{
+
+	fprintf(stderr,"\tMAPPED-ADDRESS\n");
+
+	return 0;
+}
+

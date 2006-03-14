@@ -29,3 +29,15 @@
  *  
  * */
 
+#include <stdio.h>
+
+#include <stun/stun.h>
+
+uint32 message_integrity(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx) 
+{
+
+	fprintf(stderr,"\tMESSAGE-INTEGRITY\n");
+
+	return 0;
+}
+

@@ -29,3 +29,15 @@
  *  
  * */
 
+#include <stdio.h>
+
+#include <stun/stun.h>
+
+uint32 unknown_attribute(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx) 
+{
+
+	fprintf(stderr,"\tUNKNOWN-ATTRIBUTE\n");
+
+	return 0;
+}
+
