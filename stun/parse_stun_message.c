@@ -44,7 +44,7 @@ uint32 parse_stun_message(uint8 *pkt, uint32 pktsize,
 	uint32 bytes_readed = 0;
 	OMS_STUN_PKT_DEV *pkt_dev;
 
-	if(pktsize < 20) {
+	if(pktsize < 20) { /*malformed message*/
 		/*header is 20 bytes length*/ 
 		return STUN_BAD_REQUEST_CODE;
 	}

@@ -298,8 +298,8 @@ Test IV	|   IP1:1     |    N      |     Y       |      IP1:2     |
  *return value: 
  *	one of error code or zero for success
  * */
-uint32 parse_stun_message(uint8 *pkt, uint32 pktsize, 
-				OMS_STUN_PKT_DEV **pkt_dev_pt);
+uint32 parse_stun_message(uint8 *pkt, uint32 pktsize,
+		OMS_STUN_PKT_DEV **pkt_dev_pt);
 
 /*return value: 
  *	one of error code or zero for success

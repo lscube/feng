@@ -4,6 +4,7 @@ feniceincludedir = $(top_srcdir)/include
 noinst_LTLIBRARIES = libstunserver.la
 libstunserver_la_SOURCES =	binding_error_response.c \
 				binding_response.c \
+				OMSstunserverActions.c \
 				OMSstunserverInit.c 
 			
 libstunserver_la_LDFLAGS = -static

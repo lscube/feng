@@ -83,5 +83,7 @@ typedef struct STUN_SERVER {
 OMSStunServer *
 	OMSStunServerInit(uint8 *addr1,uint8 *port1,uint8 *addr2,uint8 *port2);
 
+uint32 OMSstunserverActions(OMSStunServer *omsss, uint8 *pkt, uint32 pktsize);
+
 
 #endif //_STUNSERVERH
