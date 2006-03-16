@@ -29,3 +29,17 @@
  *  
  * */
 
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <stun/stun.h>
+#include <fenice/stunserver.h>
+#include <fenice/types.h>
+#include <fenice/fnc_log.h>
+
+uint32 binding_error_response(OMS_STUN_PKT_DEV *pkt_dev, 
+				uint32 error_code, uint8 **buffer)
+{
+	return 0;
+}
+

@@ -37,16 +37,28 @@
 #include <fenice/types.h>
 #include <fenice/fnc_log.h>
 
-uint32 OMSstunserverActions(OMSStunServer *omsss, uint8 *pkt, uint32 pktsize)
+uint32 OMSstunserverActions(OMSStunServer *omsss, uint16 socks_pair_idx)
 {
 	OMS_STUN_PKT_DEV *pkt_dev;
 	uint32 ret;
+	uint8 *msg;
+	uint32 msgsize;
+	uint8 pkt[STUN_MAX_MESSAGE_SIZE];
+	uint32 pktsize;
+
+	pktsize = Sock_read(omsss->socks_pair[socks_pair_idx]->sock,pkt,STUN_MAX_MESSAGE_SIZE);
+	
+	/*TODO if pktsize < 0 Internal Server Error*/
 
 	ret = parse_stun_message(pkt, pktsize, &pkt_dev);
 	if(ret != 0) {
 		/*BAD_ERROR_CODE or GLOBAL_ERROR_CODE*/
-		/*TODO prepare binding_error*/
+		msgsize = binding_error_response(pkt_dev,ret,&msg);
 
+		//if(msgsize > 0)
+		//	send msg
+		//
+		
 		return ret;
 	}
 
@@ -56,17 +68,29 @@ uint32 OMSstunserverActions(OMSStunServer *omsss, uint8 *pkt, uint32 pktsize)
 		/*BAD_ERROR_CODE or GLOBAL_ERROR_CODE*/
 		/*TODO prepare binding_error*/
 		
+		msgsize = binding_error_response(pkt_dev,ret,&msg);
+		//if(msgsize > 0)
+		//	send msg
+		//
 
 		return ret;
 	}
 
 	if(pkt_dev->num_unknown_atrs > 0) {
 		/*TODO prepare binding_error with create_unknown_attributes*/
+		msgsize = binding_error_response(pkt_dev,ret,&msg);
+		//if(msgsize > 0)
+		//	send msg
+		//
 		
 		return 0;
 	}
 	
 	/*TODO prepare binding_response*/
+	msgsize = binding_response(pkt_dev,&msg);
+	//if(msgsize > 0)
+	//	send msg
+	//
 	
 
 	free_pkt_dev(pkt_dev);

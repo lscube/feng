@@ -37,7 +37,6 @@
 
 #define STUN_MAX_STRING 256
 #define STUN_MAX_MESSAGE_SIZE 2048
-#define STUN_MAX_UNKNOWN_ATTRIBUTES 8
 
 /*---- STUN HEADER SECTION ----*/ 
 
@@ -132,6 +131,7 @@ struct STUN_HEADER{
 					 * */
 /*the previous table shows there is at most 4 attributes in a message*/
 #define STUN_MAX_MESSAGE_ATRS 5 
+#define STUN_MAX_UNKNOWN_ATTRIBUTES STUN_MAX_MESSAGE_ATRS 
 
 struct STUN_ATR_HEADER{
       uint16 type;
@@ -218,7 +218,7 @@ typedef struct STUN_PKT_DEV {
 	
 	uint8  num_unknown_atrs; /*the num of attribute type*/
 				 /*unknown in the received message*/
-	uint8 list_unknown[STUN_MAX_MESSAGE_ATRS];/*0 or 1. List of*/
+	uint8 list_unknown[STUN_MAX_UNKNOWN_ATTRIBUTES];/*0 or 1. List of*/
 						/*the unknown attributes*/
 						/*in the received*/
 						/*message. 0 = UNKNOWN*/
