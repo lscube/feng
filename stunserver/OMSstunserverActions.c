@@ -35,7 +35,24 @@
 #include <stun/stun.h>
 #include <fenice/stunserver.h>
 #include <fenice/types.h>
+#include <fenice/utils.h>
 #include <fenice/fnc_log.h>
+
+static int send_msg(OMSStunServer *omsss, uint16 socks_pair_idx, uint8 *msg, uint32 msgsize)
+{
+	Sock *s;
+	int sfd;
+	s = Sock_connect(get_remote_host(omsss->socks_pair[socks_pair_idx]->sock),
+			 get_remote_port(omsss->socks_pair[socks_pair_idx]->sock),
+			 &sfd, UDP, 0);	
+	if(s) {
+		Sock_write(s,msg,msgsize);
+		Sock_close(s);
+	}
+	else
+		return ERR_GENERIC; /*TODO: handle. Not peer!??!!?!*/
+	return 0;
+}
 
 uint32 OMSstunserverActions(OMSStunServer *omsss, uint16 socks_pair_idx)
 {
@@ -48,17 +65,25 @@ uint32 OMSstunserverActions(OMSStunServer *omsss, uint16 socks_pair_idx)
 
 	pktsize = Sock_read(omsss->socks_pair[socks_pair_idx]->sock,pkt,STUN_MAX_MESSAGE_SIZE);
 	
-	/*TODO if pktsize < 0 Internal Server Error*/
+	if(pktsize < 0) {
+		free_pkt_dev(pkt_dev);
+		return ERR_GENERIC; /*TODO: handle this case*/
+	}
 
 	ret = parse_stun_message(pkt, pktsize, &pkt_dev);
 	if(ret != 0) {
 		/*BAD_ERROR_CODE or GLOBAL_ERROR_CODE*/
 		msgsize = binding_error_response(pkt_dev,ret,&msg);
 
-		//if(msgsize > 0)
-		//	send msg
-		//
+		if(msgsize > 0) {
+			int retsmsg;
+			if((retsmsg=send_msg(omsss,socks_pair_idx,msg,msgsize)) != 0)
+				return retsmsg; /*TODO: handle*/
+		}
+		else
+			return ERR_GENERIC; /*TODO: handle*/
 		
+		free_pkt_dev(pkt_dev);
 		return ret;
 	}
 
@@ -66,31 +91,43 @@ uint32 OMSstunserverActions(OMSStunServer *omsss, uint16 socks_pair_idx)
 	if( ret!=0 ) {
 		/*mmm malformed message*/
 		/*BAD_ERROR_CODE or GLOBAL_ERROR_CODE*/
-		/*TODO prepare binding_error*/
-		
 		msgsize = binding_error_response(pkt_dev,ret,&msg);
-		//if(msgsize > 0)
-		//	send msg
-		//
 
+		if(msgsize > 0) {
+			int retsmsg;
+			if((retsmsg=send_msg(omsss,socks_pair_idx,msg,msgsize)) != 0)
+				return retsmsg; /*TODO: handle*/
+		}
+		else
+			return ERR_GENERIC; /*TODO: handle*/
+
+
+		free_pkt_dev(pkt_dev);
 		return ret;
 	}
 
 	if(pkt_dev->num_unknown_atrs > 0) {
-		/*TODO prepare binding_error with create_unknown_attributes*/
 		msgsize = binding_error_response(pkt_dev,ret,&msg);
-		//if(msgsize > 0)
-		//	send msg
-		//
+		if(msgsize > 0) {
+			int retsmsg;
+			if((retsmsg=send_msg(omsss,socks_pair_idx,msg,msgsize)) != 0)
+				return retsmsg; /*TODO: handle*/
+		}
+		else
+			return ERR_GENERIC; /*TODO: handle*/
 		
+		free_pkt_dev(pkt_dev);
 		return 0;
 	}
 	
-	/*TODO prepare binding_response*/
 	msgsize = binding_response(pkt_dev,&msg);
-	//if(msgsize > 0)
-	//	send msg
-	//
+	if(msgsize > 0) {
+		int retsmsg;
+		if((retsmsg=send_msg(omsss,socks_pair_idx,msg,msgsize)) != 0)
+			return retsmsg; /*TODO: handle*/
+	}
+	else
+		return ERR_GENERIC; /*TODO: handle*/
 	
 
 	free_pkt_dev(pkt_dev);
