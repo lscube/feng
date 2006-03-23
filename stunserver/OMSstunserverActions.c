@@ -40,23 +40,21 @@
 
 static int send_msg(OMSStunServer *omsss, uint16 socks_pair_idx, uint8 *msg, uint32 msgsize)
 {
-	Sock *s;
-	int sfd;
-	s = Sock_connect(get_remote_host(omsss->socks_pair[socks_pair_idx]->sock),
-			 get_remote_port(omsss->socks_pair[socks_pair_idx]->sock),
-			 &sfd, UDP, 0);	
-	if(s) {
-		Sock_write(s,msg,msgsize);
-		Sock_close(s);
-	}
+	int ret;
+	ret = Sock_connect_by_sock(omsss->socks_pair[socks_pair_idx]->sock,
+				get_remote_host(omsss->socks_pair[socks_pair_idx]->sock),
+				get_remote_port(omsss->socks_pair[socks_pair_idx]->sock));	
+	/*if ret== -1 not binded socket. Use Sock_connect instead*/
+	if(ret == 0) 
+		Sock_write(omsss->socks_pair[socks_pair_idx]->sock,msg,msgsize);
 	else
-		return ERR_GENERIC; /*TODO: handle. Not peer!??!!?!*/
+		return ERR_GENERIC; 
 	return 0;
 }
 
 uint32 OMSstunserverActions(OMSStunServer *omsss, uint16 socks_pair_idx)
 {
-	OMS_STUN_PKT_DEV *pkt_dev;
+	OMS_STUN_PKT_DEV *pkt_dev = NULL;
 	uint32 ret;
 	uint8 *msg;
 	uint32 msgsize;
@@ -65,10 +63,8 @@ uint32 OMSstunserverActions(OMSStunServer *omsss, uint16 socks_pair_idx)
 
 	pktsize = Sock_read(omsss->socks_pair[socks_pair_idx]->sock,pkt,STUN_MAX_MESSAGE_SIZE);
 	
-	if(pktsize < 0) {
-		free_pkt_dev(pkt_dev);
-		return ERR_GENERIC; /*TODO: handle this case*/
-	}
+	if(pktsize < 0) 
+		return ERR_GENERIC; 
 
 	ret = parse_stun_message(pkt, pktsize, &pkt_dev);
 	if(ret != 0) {
@@ -78,10 +74,10 @@ uint32 OMSstunserverActions(OMSStunServer *omsss, uint16 socks_pair_idx)
 		if(msgsize > 0) {
 			int retsmsg;
 			if((retsmsg=send_msg(omsss,socks_pair_idx,msg,msgsize)) != 0)
-				return retsmsg; /*TODO: handle*/
+				ret = retsmsg; 
 		}
 		else
-			return ERR_GENERIC; /*TODO: handle*/
+			ret = ERR_GENERIC; 
 		
 		free_pkt_dev(pkt_dev);
 		return ret;
@@ -96,10 +92,10 @@ uint32 OMSstunserverActions(OMSStunServer *omsss, uint16 socks_pair_idx)
 		if(msgsize > 0) {
 			int retsmsg;
 			if((retsmsg=send_msg(omsss,socks_pair_idx,msg,msgsize)) != 0)
-				return retsmsg; /*TODO: handle*/
+				ret = retsmsg; 
 		}
 		else
-			return ERR_GENERIC; /*TODO: handle*/
+			ret = ERR_GENERIC; 
 
 
 		free_pkt_dev(pkt_dev);
@@ -111,23 +107,25 @@ uint32 OMSstunserverActions(OMSStunServer *omsss, uint16 socks_pair_idx)
 		if(msgsize > 0) {
 			int retsmsg;
 			if((retsmsg=send_msg(omsss,socks_pair_idx,msg,msgsize)) != 0)
-				return retsmsg; /*TODO: handle*/
+				ret = retsmsg; 
 		}
 		else
-			return ERR_GENERIC; /*TODO: handle*/
+			ret = ERR_GENERIC; 
 		
 		free_pkt_dev(pkt_dev);
-		return 0;
+		return ret;
 	}
 	
 	msgsize = binding_response(pkt_dev,&msg);
-	if(msgsize > 0) {
+	
+	 if(msgsize > 0) {
 		int retsmsg;
-		if((retsmsg=send_msg(omsss,socks_pair_idx,msg,msgsize)) != 0)
-			return retsmsg; /*TODO: handle*/
+		if((retsmsg=send_msg(omsss,socks_pair_idx,msg,msgsize)) != 0) 
+			ret = retsmsg;
+		/*MISTAKE. Select the right sock (change IP and/or PORT ??!!!)*/
 	}
 	else
-		return ERR_GENERIC; /*TODO: handle*/
+		ret = ERR_GENERIC; 
 	
 
 	free_pkt_dev(pkt_dev);
