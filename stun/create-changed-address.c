@@ -29,3 +29,10 @@
  *  
  * */
 
+#include <stun/stun.h>
+
+inline stun_atr *create_changed_address(STUNuint8 family, STUNuint16 port, STUNuint32 address)
+{
+	return create_address(family,port,address,CHANGED_ADDRESS);
+}
+

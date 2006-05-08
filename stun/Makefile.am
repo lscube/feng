@@ -7,17 +7,18 @@ libstun_la_SOURCES =	free_pkt_dev.c \
 			parse_atrs.c \
 			parse_stun_message.c 	
 
-libstun_la_SOURCES +=	changed-address.c \
-			change-request.c \
-			error-code.c \
-			mapped-address.c \
-			message-integrity.c \
-			password.c \
-			reflected-from.c \
-			response-address.c \
-			source-address.c \
-			unknown-attributes.c \
-			username.c
+
+#libstun_la_SOURCES +=	parse-changed-address.c \
+#			parse-change-request.c \
+#			parse-error-code.c \
+#			parse-mapped-address.c \
+#			parse-message-integrity.c \
+#			parse-password.c \
+#			parse-reflected-from.c \
+#			parse-response-address.c \
+#			parse-source-address.c \
+#			parse-unknown-attributes.c \
+#			parse-username.c
 
 libstun_la_SOURCES +=	create-address.c \
 			create-changed-address.c \

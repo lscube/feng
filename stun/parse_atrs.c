@@ -36,46 +36,46 @@
 #include <stun/stun.h>
 
 
-uint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
+STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 {
-	uint16 idx;
-	uint32 ret = 0;
+	STUNuint16 idx;
+	STUNuint32 ret = 0;
 
 	for(idx=0;idx < pkt_dev->num_message_atrs; idx++) {
 		switch(pkt_dev->stun_pkt.atrs[idx]->stun_atr_hdr.type) 
 		{
 			case MAPPED_ADDRESS:
-				ret = mapped_address(pkt_dev,idx);
+				ret = parse_mapped_address(pkt_dev,idx);
 			break;
 			case RESPONSE_ADDRESS:
-				ret = response_address(pkt_dev,idx);
+				ret = parse_response_address(pkt_dev,idx);
 			break;
 			case CHANGE_REQUEST:
-				ret = change_request(pkt_dev,idx);
+				ret = parse_change_request(pkt_dev,idx);
 			break;
 			case SOURCE_ADDRESS:
-				ret = source_address(pkt_dev,idx);
+				ret = parse_source_address(pkt_dev,idx);
 			break;
 			case CHANGED_ADDRESS:
-				ret = changed_address(pkt_dev,idx);
+				ret = parse_changed_address(pkt_dev,idx);
 			break;
 			case USERNAME:
-				ret = username(pkt_dev,idx);
+				ret = parse_username(pkt_dev,idx);
 			break;
 			case PASSWORD:
-				ret = password(pkt_dev,idx);
+				ret = parse_password(pkt_dev,idx);
 			break;
 			case MESSAGE_INTEGRITY:
-				ret = message_integrity(pkt_dev,idx);
+				ret = parse_message_integrity(pkt_dev,idx);
 			break;
 			case ERROR_CODE:
-				ret = error_code(pkt_dev,idx);
+				ret = parse_error_code(pkt_dev,idx);
 			break;
 			case UNKNOWN_ATTRIBUTES:
-				ret = unknown_attribute(pkt_dev,idx);
+				ret = parse_unknown_attribute(pkt_dev,idx);
 			break;
 			case REFLECTED_FROM:
-				ret = reflected_from(pkt_dev,idx);
+				ret = parse_reflected_from(pkt_dev,idx);
 			break;
 			default :
 				//STUN_UNKNOWN_ATTRIBUTE_CODE;

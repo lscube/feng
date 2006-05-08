@@ -52,14 +52,14 @@ static int send_msg(OMSStunServer *omsss, uint16 socks_pair_idx, uint8 *msg, uin
 	return 0;
 }
 
-uint32 OMSstunserverActions(OMSStunServer *omsss, uint16 socks_pair_idx)
+int32 OMSstunserverActions(OMSStunServer *omsss, uint16 socks_pair_idx)
 {
 	OMS_STUN_PKT_DEV *pkt_dev = NULL;
 	uint32 ret;
 	uint8 *msg;
 	uint32 msgsize;
 	uint8 pkt[STUN_MAX_MESSAGE_SIZE];
-	uint32 pktsize;
+	int32 pktsize;
 
 	pktsize = Sock_read(omsss->socks_pair[socks_pair_idx]->sock,pkt,STUN_MAX_MESSAGE_SIZE);
 	

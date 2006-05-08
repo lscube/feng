@@ -29,11 +29,11 @@
  *  
  * */
 
-#ifndef _STUNH	
-#define _STUNH
+#ifndef __STUN_H	
+#define __STUN_H
 /*RFC-3489*/
 
-#include <fenice/types.h>
+#include <stun/types.h>
 
 #define STUN_MAX_STRING 256
 #define STUN_MAX_MESSAGE_SIZE 2048
@@ -53,9 +53,9 @@
  */
 
 struct STUN_HEADER{
-	uint16 msgtype;	
-	uint32 msglen; /*not including the 20 byte header*/
-	uint128 transactionID;
+	STUNuint16 msgtype;	
+	STUNuint32 msglen; /*not including the 20 byte header*/
+	STUNuint128 transactionID;
 };
 
 /* Define Message Types values */
@@ -134,53 +134,62 @@ struct STUN_HEADER{
 #define STUN_MAX_UNKNOWN_ATTRIBUTES STUN_MAX_MESSAGE_ATRS 
 
 struct STUN_ATR_HEADER{
-      uint16 type;
-      uint16 length;
+      STUNuint16 type;
+      STUNuint16 length;
 };
+
+typedef struct STUN_ATR {
+	struct STUN_ATR_HEADER stun_atr_hdr;
+	void *atr;/*to allocate. It can be cast to: */
+} stun_atr;	/*
+			*	STUN_ATR_ADDRESS
+			*	STUN_ATR_CHANGE_REQUEST
+			*	STUN_ATR_STRING
+			*	STUN_ATR_INTEGRITY
+			*	STUN_ATR_ERROR_CODE
+			*	STUN_ATR_UNKNOWN
+		*/
 
 /*define structs for different Attribute*/
 struct STUN_ATR_ADDRESS { /*MAPPED, RESPONSE, CHANGED, SOURCE, REFLECTED-FROM*/
-	uint8 ignored;	 
-	uint8 family; /*is always 0x01 = IPv4*/
-	uint16 port; /*network byte order*/
-	uint32 address;
+	STUNuint8 ignored;	 
+	STUNuint8 family; /*is always 0x01 = IPv4*/
+	STUNuint16 port; /*network byte order*/
+	STUNuint32 address;
 };
 
 struct STUN_ATR_CHANGE_REQUEST {
-	uint32 flagsAB;/*0000000000000000000000000000AB0*/
-};		       /* 
-			* A = change IP
-			* B = change port 
-			*/
+	STUNuint32 flagsAB;/*0000000000000000000000000000AB0*/
+};		       /* A = change IP; B = change port*/
 #define SET_CHANGE_PORT_FLAG(iflag) ( iflag|=0x00000004 )
 #define SET_CHANGE_ADDR_FLAG(iflag) ( iflag|=0x00000002 )
 #define IS_SET_CHANGE_PORT_FLAG(iflag) ( iflag & 0x00000004 )
 #define IS_SET_CHANGE_ADDR_FLAG(iflag) ( iflag & 0x00000002 )
 
 struct STUN_ATR_STRING { /*USERNAME, PASSWORD*/
-	uint8 username[STUN_MAX_STRING]; /*Its length MUST be a multiple of 4 bytes*/
+	STUNuint8 username_or_passwd[STUN_MAX_STRING]; /*Its length MUST be a multiple of 4 bytes*/
 };
 
 /*doesn't map the following struct to costruct the pkt. Let cast to the previous one*/
 struct STUN_ATR_STRING_CTRL { /*this stuct is usefull only to store the string length*/
 	struct STUN_ATR_STRING atr_string;
-	uint16 length;
+	STUNuint16 length;
 };
 
 struct STUN_ATR_INTEGRITY { /*MUST be the last attribute in any STUN message.*/
-	uint8 hash[20]; /* HMAC-SHA1*/
+	STUNuint8 hash[20]; /* HMAC-SHA1*/
 };
 
 struct STUN_ATR_ERROR_CODE {
-	uint16 zerobytes; /*0*/
-	uint8  error_class;
-	uint8 number;
-	uint8 reason[STUN_MAX_STRING];
+	STUNuint16 zerobytes; /*0*/
+	STUNuint8  error_class;
+	STUNuint8 number;
+	STUNuint8 reason[STUN_MAX_STRING];
 };
 /*doesn't map the following struct to costruct the pkt. Let cast to the previous one*/
 struct STUN_ATR_ERROR_CODE_CTRL { /*this stuct is usefull only to store the reason length*/
 	struct STUN_ATR_ERROR_CODE atr_err_code;
-	uint16 length;
+	STUNuint16 length;
 };
 
 /*UNKNOWN-ATTRIBUTES is present only in a B_ERR or S_ERR when the response code in
@@ -189,19 +198,15 @@ struct STUN_ATR_ERROR_CODE_CTRL { /*this stuct is usefull only to store the reas
  * represents an attribute type that was not understood by the server. If
  * num_attr is odd, one of the attributes MUST be repeated.*/
 struct STUN_ATR_UNKNOWN {
-      uint16 attrType[STUN_MAX_UNKNOWN_ATTRIBUTES];
+      STUNuint16 attrType[STUN_MAX_UNKNOWN_ATTRIBUTES];
 };
 /*doesn't map the following struct to costruct the pkt. Let cast to the previous one*/
 struct STUN_ATR_UNKNOWN_CTRL { /*this stuct is usefull only to store the number of  */
 	struct STUN_ATR_UNKNOWN atr_unknown;				/*  attribute type  */
-	uint16 num_attr;;
+	STUNuint16 num_attr;;
 };
-/*---- END STUN PAYLOAD SECTION ----*/
 
-typedef struct STUN_ATR {
-	struct STUN_ATR_HEADER stun_atr_hdr;
-	void *atr;/*to allocate*/
-} stun_atr;
+/*---- END STUN PAYLOAD SECTION ----*/
 
 /*General Stun Packet*/
 typedef struct STUN_PKT {
@@ -213,15 +218,15 @@ typedef struct STUN_PKT {
 /*this struct is used to parse the received pkt*/
 typedef struct STUN_PKT_DEV {
 	OMS_STUN_PKT stun_pkt; /*received*/
-	uint16 set_atr_mask;   /*only 11 bits are needed*/
-	uint16 num_message_atrs; /* at most = STUN_MAX_MESSAGE_ATRS*/
+	STUNuint16 set_atr_mask;   /*only 11 bits are needed*/
+	STUNuint16 num_message_atrs; /* at most = STUN_MAX_MESSAGE_ATRS*/
 	
-	uint8  num_unknown_atrs; /*the num of attribute type*/
+	STUNuint8  num_unknown_atrs; /*the num of attribute type*/
 				 /*unknown in the received message*/
-	uint8 list_unknown[STUN_MAX_UNKNOWN_ATTRIBUTES];/*0 or 1. List of*/
+	STUNuint8 list_unknown[STUN_MAX_UNKNOWN_ATTRIBUTES];/*0 or 1. List of*/
 						/*the unknown attributes*/
 						/*in the received*/
-						/*message. 0 = UNKNOWN*/
+						/*message. 1 = UNKNOWN*/
 } OMS_STUN_PKT_DEV;
 
 #define IS_VALID_ATR_TYPE(atrtype) ( (atrtype >= MAPPED_ADDRESS) && \
@@ -290,6 +295,8 @@ Test IV	|   IP1:1     |    N      |     Y       |      IP1:2     |
 */
 
 /*API*/
+									  
+/* --- RECEIVER SIDE --- */
 /*
  *parse_stun_message:
  *receives a pkt, parses it and allocates an  OMS_STUN_PKT_DEV by which
@@ -298,40 +305,53 @@ Test IV	|   IP1:1     |    N      |     Y       |      IP1:2     |
  *return value: 
  *	one of error code or zero for success
  * */
-uint32 parse_stun_message(uint8 *pkt, uint32 pktsize,
+STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 		OMS_STUN_PKT_DEV **pkt_dev_pt);
+void free_pkt_dev(OMS_STUN_PKT_DEV *pkt_dev);
 
+
+/*PARSER FUNCTION (received pkts)*/
 /*return value: 
  *	one of error code or zero for success
  */
-uint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev);
+STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev);
 
-uint32 mapped_address(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
-uint32 response_address(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
-uint32 change_request(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
-uint32 source_address(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
-uint32 changed_address(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
-uint32 username(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
-uint32 password(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
-uint32 message_integrity(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
-uint32 unknown_attribute(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
-uint32 reflected_from(OMS_STUN_PKT_DEV *pkt_dev,uint32 idx);
+STUNuint32 parse_mapped_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_response_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_change_request(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_source_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_changed_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_username(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_password(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_message_integrity(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_unknown_attribute(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_reflected_from(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_error_code(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 
 
+/* --- SENDER SIDE --- */
+/*CREATE ATRIBUTES (sent pktS)*/
+/*returned value:
+ *	stun_atr* on success, otherside NULL
+ */
 /*common function for MAPPED, RESPONSE, CHANGED, SOURCE, REFLECTED-FROM */
-stun_atr *create_address(uint8 family, uint16 port, uint32 address);
+stun_atr *create_address(STUNuint8 family, STUNuint16 port, STUNuint32 address, STUNuint16 type);
+inline stun_atr *create_mapped_address(STUNuint8 family, STUNuint16 port, STUNuint32 address);
+inline stun_atr *create_response_address(STUNuint8 family, STUNuint16 port, STUNuint32 address);
+inline stun_atr *create_source_address(STUNuint8 family, STUNuint16 port, STUNuint32 address);
+inline stun_atr *create_changed_address(STUNuint8 family, STUNuint16 port, STUNuint32 address);
+inline stun_atr *create_reflected_from(STUNuint8 family, STUNuint16 port, STUNuint32 address);
 
-stun_atr *create_mapped_address(uint8 family, uint16 port, uint32 address);
-stun_atr *create_response_address(uint8 family, uint16 port, uint32 address);
 stun_atr *create_change_request();
-stun_atr *create_source_address(uint8 family, uint16 port, uint32 address);
-stun_atr *create_changed_address(uint8 family, uint16 port, uint32 address);
-stun_atr *create_username();
-stun_atr *create_password();
-stun_atr *create_message_integrity();
 stun_atr *create_unknown_attribute();
-stun_atr *create_reflected_from(uint8 family, uint16 port, uint32 address);
 
-void free_pkt_dev(OMS_STUN_PKT_DEV *pkt_dev);
+stun_atr *create_username();
+
+stun_atr *create_password();
+
+stun_atr *create_message_integrity();
+
+
+
 
 #endif //__STUNH

@@ -36,12 +36,12 @@
 
 #include <stun/stun.h>
 
-uint32 parse_stun_message(uint8 *pkt, uint32 pktsize,
+STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 				OMS_STUN_PKT_DEV **pkt_dev_pt)
 {
 
 	struct STUN_HEADER *stun_hdr;
-	uint32 bytes_readed = 0;
+	STUNuint32 bytes_readed = 0;
 	OMS_STUN_PKT_DEV *pkt_dev;
 
 	if(pktsize < 20) { /*malformed message*/
@@ -90,14 +90,14 @@ uint32 parse_stun_message(uint8 *pkt, uint32 pktsize,
 		return 0;
 	}
 
-	/*....continue parsing all attributes...*/
+	/*....continue adding all attributes...*/
 	/*copy header*/
 	memcpy(pkt_dev,pkt,20);
 	bytes_readed += 20;
 	while(bytes_readed < pktsize && 
 			pkt_dev->num_message_atrs <= STUN_MAX_MESSAGE_ATRS) {
 	
-		uint16 len = 0;
+		STUNuint16 len = 0;
 		
 		pkt_dev->stun_pkt.atrs[pkt_dev->num_message_atrs] = 
 			calloc(1,sizeof(stun_atr));	
@@ -127,5 +127,5 @@ uint32 parse_stun_message(uint8 *pkt, uint32 pktsize,
 		
 	*pkt_dev_pt = pkt_dev;
 	
-	return 0;
+	return parse_atrs(pkt_dev);
 }

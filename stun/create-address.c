@@ -29,3 +29,31 @@
  *  
  * */
 
+#include <stdlib.h> /*calloc*/
+#include <arpa/inet.h> /*htons*/
+#include <stun/stun.h>
+
+stun_atr *create_address(STUNuint8 family, STUNuint16 port, STUNuint32 address, STUNuint16 type)
+{
+	stun_atr *atr = calloc(1,sizeof(stun_atr));
+	if(atr == NULL)
+		return NULL;
+	atr->atr = (struct STUN_ATR_ADDRESS *) \
+   		   calloc(1,sizeof(struct STUN_ATR_ADDRESS));
+	if(atr->atr == NULL) {
+		free(atr);
+		return NULL;
+	}
+	
+	((struct STUN_ATR_ADDRESS *)(atr->atr))->family = family;
+	((struct STUN_ATR_ADDRESS *)(atr->atr))->port = htons(port);
+	((struct STUN_ATR_ADDRESS *)(atr->atr))->address = address; 
+	/*Question: htons(address) ?*/
+	
+	(atr->stun_atr_hdr).type = type;
+	(atr->stun_atr_hdr).length = sizeof(struct STUN_ATR_ADDRESS);
+
+	return atr;
+}
+
+

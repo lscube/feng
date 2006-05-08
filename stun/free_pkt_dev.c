@@ -36,7 +36,7 @@
 
 void free_pkt_dev(OMS_STUN_PKT_DEV *pkt_dev)
 {
-	uint16 idx;
+	STUNuint16 idx;
 
 	for(idx=0; idx < pkt_dev->num_message_atrs; idx++) {
 		free(pkt_dev->stun_pkt.atrs[idx]->atr);
