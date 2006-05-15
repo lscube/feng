@@ -29,3 +29,27 @@
  *  
  * */
 
+#include <stdlib.h> /*for calloc*/
+#include <string.h> /*for memcpy*/
+#include <stun/stun.h>
+
+stun_atr *create_error_code(STUNuint8 error_code_type)
+{
+	stun_atr *atr = calloc(1,sizeof(stun_atr));
+
+	if (atr == NULL)
+		return NULL;
+	
+	atr->atr = calloc (1, sizeof(struct STUN_ATR_ERROR_CODE));
+
+	if (atr->atr == NULL) {
+		free(atr);
+		return NULL;
+	}
+	
+	memcpy(atr->atr,&(ERROR_CODE_MTRX[error_code_type]),sizeof(struct STUN_ATR_ERROR_CODE));
+
+	add_stun_atr_hdr(atr, ERROR_CODE, sizeof(struct STUN_ATR_ERROR_CODE));
+	
+	return atr;
+}

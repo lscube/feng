@@ -70,18 +70,6 @@ struct STUN_HEADER{
 
 /*---- END STUN HEADER SECTION ----*/
 
-/*see RFC - page 30 */
-#define STUN_BAD_REQUEST_CODE 400
-#define STUN_UNAUTHORIZED_CODE 401
-#define STUN_UNKNOWN_ATTRIBUTE_CODE 420
-#define STUN_STALE_CREDENTIALS_CODE 430
-#define STUN_INTEGRITY_CHECK_FAILURE_CODE 431
-#define STUN_MISSING_USERNAME_CODE 432
-#define STUN_USE_TLS_CODE 433
-#define STUN_SERVER_ERROR_CODE 500
-#define STUN_GLOBAL_FAILURE_CODE 600
-
-
 
 /*---- STUN PAYLOAD SECTION ----*/ 
 /*After the header are 0 or more attributes.*/
@@ -180,17 +168,35 @@ struct STUN_ATR_INTEGRITY { /*MUST be the last attribute in any STUN message.*/
 	STUNuint8 hash[20]; /* HMAC-SHA1*/
 };
 
+#define STUN_MAX_ERROR_REASON 256
 struct STUN_ATR_ERROR_CODE {
 	STUNuint16 zerobytes; /*0*/
-	STUNuint8  error_class;
-	STUNuint8 number;
-	STUNuint8 reason[STUN_MAX_STRING];
+	STUNuint16  error_class_number; /* [1..6] */
+	STUNuint8 reason[STUN_MAX_ERROR_REASON]; /*STUN_ATR_CODE has fixed size. The unused space
+					in reason is filled with \0 char*/
 };
-/*doesn't map the following struct to costruct the pkt. Let cast to the previous one*/
-struct STUN_ATR_ERROR_CODE_CTRL { /*this stuct is usefull only to store the reason length*/
-	struct STUN_ATR_ERROR_CODE atr_err_code;
-	STUNuint16 length;
+/*see RFC - page 30 */
+struct STUN_ATR_ERROR_CODE ERROR_CODE_MTRX[] = {
+	{0, 0, ""},
+	{0, 400, "Bad Request"},
+	{0, 401, "Unauthorized"},
+	{0, 420, "Unknown Attribute"},
+	{0, 430, "Stale Credentials"},
+	{0, 431, "Integrity Check Failure"},
+	{0, 432, "Missing Username"},
+	{0, 433, "Use TLS"},
+	{0, 500, "Server Error"},
+	{0, 600, "Global Failure"}
 };
+#define STUN_BAD_REQUEST		1	
+#define STUN_UNAUTHORIZED		2
+#define STUN_UNKNOWN_ATTRIBUTE 		3
+#define STUN_STALE_CREDENTIALS 		4
+#define STUN_INTEGRITY_CHECK_FAILURE 	5
+#define STUN_MISSING_USERNAME 		6	
+#define STUN_USE_TLS			7
+#define STUN_SERVER_ERROR		8
+#define STUN_GLOBAL_FAILURE 		9
 
 /*UNKNOWN-ATTRIBUTES is present only in a B_ERR or S_ERR when the response code in
  * the ERROR-CODE is 420*/
@@ -198,12 +204,7 @@ struct STUN_ATR_ERROR_CODE_CTRL { /*this stuct is usefull only to store the reas
  * represents an attribute type that was not understood by the server. If
  * num_attr is odd, one of the attributes MUST be repeated.*/
 struct STUN_ATR_UNKNOWN {
-      STUNuint16 attrType[STUN_MAX_UNKNOWN_ATTRIBUTES];
-};
-/*doesn't map the following struct to costruct the pkt. Let cast to the previous one*/
-struct STUN_ATR_UNKNOWN_CTRL { /*this stuct is usefull only to store the number of  */
-	struct STUN_ATR_UNKNOWN atr_unknown;				/*  attribute type  */
-	STUNuint16 num_attr;;
+	STUNuint16 *attrType;
 };
 
 /*---- END STUN PAYLOAD SECTION ----*/
@@ -218,22 +219,15 @@ typedef struct STUN_PKT {
 /*this struct is used to parse the received pkt*/
 typedef struct STUN_PKT_DEV {
 	OMS_STUN_PKT stun_pkt; /*received*/
-	STUNuint16 set_atr_mask;   /*only 11 bits are needed*/
-	STUNuint16 num_message_atrs; /* at most = STUN_MAX_MESSAGE_ATRS*/
-	
-	STUNuint8  num_unknown_atrs; /*the num of attribute type*/
-				 /*unknown in the received message*/
-	STUNuint8 list_unknown[STUN_MAX_UNKNOWN_ATTRIBUTES];/*0 or 1. List of*/
-						/*the unknown attributes*/
-						/*in the received*/
-						/*message. 1 = UNKNOWN*/
+
+	STUNuint8 num_message_atrs; /* at most = STUN_MAX_MESSAGE_ATRS*/
+	STUNuint8 num_unknown_atrs; /*the num of attribute type*/
+	STUNuint16 list_unknown_attrType[STUN_MAX_UNKNOWN_ATTRIBUTES];
+
 } OMS_STUN_PKT_DEV;
 
 #define IS_VALID_ATR_TYPE(atrtype) ( (atrtype >= MAPPED_ADDRESS) && \
 						(atrtype<=REFLECTED_FROM ) )
-
-#define SET_ATRMASK(atrtype,mask) \
-	( (IS_VALID_ATR_TYPE(atrtype))?(mask|=( 0x0001 << (atrtype - 1))):0 ) 
 
 /*
 
@@ -310,7 +304,7 @@ STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 void free_pkt_dev(OMS_STUN_PKT_DEV *pkt_dev);
 
 
-/*PARSER FUNCTION (received pkts)*/
+/*PARSER FUNCTION (received pkts) for the attributes*/
 /*return value: 
  *	one of error code or zero for success
  */
@@ -321,16 +315,21 @@ STUNuint32 parse_response_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 STUNuint32 parse_change_request(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 STUNuint32 parse_source_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 STUNuint32 parse_changed_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
-STUNuint32 parse_username(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
-STUNuint32 parse_password(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
-STUNuint32 parse_message_integrity(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 STUNuint32 parse_unknown_attribute(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 STUNuint32 parse_reflected_from(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 STUNuint32 parse_error_code(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+/*TODO: */
+STUNuint32 parse_username(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_password(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_message_integrity(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 
 
 /* --- SENDER SIDE --- */
+STUNint32 stun_rand();
+STUNuint128 create_transactionID(STUNuint32 testNum);
+
 /*CREATE ATRIBUTES (sent pktS)*/
+void add_stun_atr_hdr(stun_atr *atr, STUNuint16 type, STUNuint16 len);
 /*returned value:
  *	stun_atr* on success, otherside NULL
  */
@@ -342,16 +341,26 @@ inline stun_atr *create_source_address(STUNuint8 family, STUNuint16 port, STUNui
 inline stun_atr *create_changed_address(STUNuint8 family, STUNuint16 port, STUNuint32 address);
 inline stun_atr *create_reflected_from(STUNuint8 family, STUNuint16 port, STUNuint32 address);
 
-stun_atr *create_change_request();
-stun_atr *create_unknown_attribute();
+stun_atr *create_change_request(STUNbool port, STUNbool addr);
+stun_atr *create_unknown_attribute(OMS_STUN_PKT_DEV *received);
+stun_atr *create_error_code(STUNuint8 error_code_type); 
+/*
+error_code_type can be:
 
+	STUN_BAD_REQUEST		
+	STUN_UNAUTHORIZED		
+	STUN_UNKNOWN_ATTRIBUTE 		
+	STUN_STALE_CREDENTIALS 		
+	STUN_INTEGRITY_CHECK_FAILURE 	
+	STUN_MISSING_USERNAME 		
+	STUN_USE_TLS			
+	STUN_SERVER_ERROR		
+	STUN_GLOBAL_FAILURE
+*/
+
+/*TODO: */
 stun_atr *create_username();
-
 stun_atr *create_password();
-
 stun_atr *create_message_integrity();
-
-
-
 
 #endif //__STUNH

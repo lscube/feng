@@ -79,7 +79,8 @@ STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 			break;
 			default :
 				//STUN_UNKNOWN_ATTRIBUTE_CODE;
-				pkt_dev->list_unknown[idx] = 1;
+				pkt_dev->list_unknown_attrType[pkt_dev->num_unknown_atrs] =
+				       	pkt_dev->stun_pkt.atrs[idx]->stun_atr_hdr.type;
 				pkt_dev->num_unknown_atrs++;
 			break;
 		
@@ -87,10 +88,6 @@ STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 		
 		if(ret!=0)
 			return ret;
-		
-		if(!SET_ATRMASK((pkt_dev->stun_pkt.atrs[idx])->stun_atr_hdr.type, pkt_dev->set_atr_mask)) {
-			fprintf(stderr,"\tThere is an unknown attribute type. Idx: %d\n",idx);
-		}
 
 	}
 		

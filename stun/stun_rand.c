@@ -28,26 +28,32 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
+#include <stdlib.h>
 
-#ifndef __STUN_TYPES_H
-#define __STUN_TYPES_H
+#include <stun/stun.h>
 
-
-#include <inttypes.h>
-
-	typedef enum STUNBOOL {
-		STUN_FALSE=0,
-		STUN_TRUE=1	
-	}STUNbool;
-	typedef uint8_t STUNuint8;
-	typedef uint16_t STUNuint16;
-	typedef uint32_t STUNuint32;
-	typedef uint64_t STUNuint64;
-	typedef int8_t STUNint8;
-	typedef int16_t	STUNint16;
-	typedef int32_t	STUNint32;
-	typedef int64_t	STUNint64;
-	typedef struct { unsigned char octet[16]; }  STUNuint128; 
-
-#endif
-
+/*based on stund implementation from Vovida.org*/
+STUNint32 stun_rand()
+{
+	static STUNbool init=STUN_FALSE;
+	if ( !init ) { 
+		init = STUN_TRUE;
+		STUNuint64 tick;
+		
+#if defined(__GNUC__) && ( defined(__i686__) || defined(__i386__) )
+		asm("rdtsc" : "=A" (tick));
+#elif defined (__SUNPRO_CC) || defined( __sparc__ )	
+		tick = gethrtime();
+#elif defined(__MACH__) 
+		STUNint32 fd=open("/dev/random",O_RDONLY);
+		read(fd,&tick,sizeof(tick));
+		close(fd);
+#else
+#     error Need some way to seed the random number generator 
+#endif 
+		STUNint32 seed = (STUNint32)tick;
+		srandom(seed);
+	}
+	
+	return random(); 
+}

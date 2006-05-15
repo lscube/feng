@@ -50,8 +50,7 @@ stun_atr *create_address(STUNuint8 family, STUNuint16 port, STUNuint32 address, 
 	((struct STUN_ATR_ADDRESS *)(atr->atr))->address = address; 
 	/*Question: htons(address) ?*/
 	
-	(atr->stun_atr_hdr).type = type;
-	(atr->stun_atr_hdr).length = sizeof(struct STUN_ATR_ADDRESS);
+	add_stun_atr_hdr(atr, type, sizeof(struct STUN_ATR_ADDRESS));
 
 	return atr;
 }

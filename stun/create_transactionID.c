@@ -29,25 +29,25 @@
  *  
  * */
 
-#ifndef __STUN_TYPES_H
-#define __STUN_TYPES_H
+#include <stun/stun.h>
 
+/*based on stund from Vovida.org*/
+STUNuint128 create_transactionID(STUNuint32 testNum)
+{
+	STUNint32 i;
+	STUNuint128 id;
 
-#include <inttypes.h>
+	for ( i=0; i<16; i=i+4 ) {
+		STUNint32 r = stun_rand();
+		id.octet[i+0]= r>>0;
+		id.octet[i+1]= r>>8;
+		id.octet[i+2]= r>>16;
+		id.octet[i+3]= r>>24;
+	}
+	
+	if ( testNum != 0 ) {
+		id.octet[0] = testNum; 
+	}
 
-	typedef enum STUNBOOL {
-		STUN_FALSE=0,
-		STUN_TRUE=1	
-	}STUNbool;
-	typedef uint8_t STUNuint8;
-	typedef uint16_t STUNuint16;
-	typedef uint32_t STUNuint32;
-	typedef uint64_t STUNuint64;
-	typedef int8_t STUNint8;
-	typedef int16_t	STUNint16;
-	typedef int32_t	STUNint32;
-	typedef int64_t	STUNint64;
-	typedef struct { unsigned char octet[16]; }  STUNuint128; 
-
-#endif
-
+	return id;
+}

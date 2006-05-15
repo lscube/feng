@@ -29,3 +29,32 @@
  *  
  * */
 
+#include <stdlib.h>
+#include <stun/stun.h>
+
+stun_atr *create_unknown_attribute(OMS_STUN_PKT_DEV *received)
+{
+	STUNuint8 idx;
+
+	stun_atr *atr = calloc(1,sizeof(stun_atr));
+
+	if (atr == NULL)
+		return NULL;
+
+	if ((atr->atr = calloc(1,sizeof(struct STUN_ATR_UNKNOWN))) == NULL) {
+		free(atr);
+		return NULL;
+	}
+
+	((struct STUN_ATR_UNKNOWN *)(atr->atr))->attrType = 
+		calloc(received->num_unknown_atrs,sizeof(STUNuint16));
+	for(idx = 0; idx < received->num_unknown_atrs; idx++) {
+		((struct STUN_ATR_UNKNOWN *)(atr->atr))->attrType[idx*sizeof(STUNuint16)] = 
+			(received->list_unknown_attrType[idx]);
+	}
+
+	add_stun_atr_hdr(atr, UNKNOWN_ATTRIBUTES, sizeof(struct STUN_ATR_UNKNOWN));
+	
+		
+	return atr;
+}

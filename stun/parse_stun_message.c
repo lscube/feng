@@ -44,9 +44,9 @@ STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 	STUNuint32 bytes_readed = 0;
 	OMS_STUN_PKT_DEV *pkt_dev;
 
-	if(pktsize < 20) { /*malformed message*/
+	if(pktsize < sizeof(struct STUN_HEADER)) { /*malformed message*/
 		/*header is 20 bytes length*/ 
-		return STUN_BAD_REQUEST_CODE;
+		return STUN_BAD_REQUEST;
 	}
 
 	/*map STUN_HEADER*/
@@ -61,51 +61,50 @@ STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 		break;
 		case SHARED_SECRET_REQUEST:
 			/*not implemented yet*/
-			return STUN_GLOBAL_FAILURE_CODE;
+			return STUN_GLOBAL_FAILURE;
 		break;
 		case SHARED_SECRET_RESPONSE:
 			/*not implemented yet*/
-			return STUN_GLOBAL_FAILURE_CODE;
+			return STUN_GLOBAL_FAILURE;
 		break;
 		case SHARED_SECRET_ERROR_RESPONSE:
 			/*not implemented yet*/
-			return STUN_GLOBAL_FAILURE_CODE;
+			return STUN_GLOBAL_FAILURE;
 		break;
 		default:
-			return STUN_BAD_REQUEST_CODE;
+			return STUN_BAD_REQUEST;
 		break;
 	}
-	if(stun_hdr->msglen != pktsize - 20) {/*malformed message*/
-		return STUN_BAD_REQUEST_CODE;
+	if(stun_hdr->msglen != pktsize - sizeof(struct STUN_HEADER)) {/*malformed message*/
+		return STUN_BAD_REQUEST;
 	}
 
 
 	pkt_dev = calloc(1,sizeof(OMS_STUN_PKT_DEV));
 	
+	/*copy header*/
+	memcpy(&(pkt_dev->stun_pkt.stun_hdr), pkt, sizeof(struct STUN_HEADER));
+
 	if(stun_hdr->msglen == 0) {/*no attibutes present*/
-		memcpy(pkt_dev,pkt,pktsize);
-		pkt_dev->set_atr_mask = 0;
 		pkt_dev->num_message_atrs = 0;
 		*pkt_dev_pt = pkt_dev;
 		return 0;
 	}
 
 	/*....continue adding all attributes...*/
-	/*copy header*/
-	memcpy(pkt_dev,pkt,20);
-	bytes_readed += 20;
+	bytes_readed += sizeof(struct STUN_HEADER);
 	while(bytes_readed < pktsize && 
 			pkt_dev->num_message_atrs <= STUN_MAX_MESSAGE_ATRS) {
 	
 		STUNuint16 len = 0;
 		
 		pkt_dev->stun_pkt.atrs[pkt_dev->num_message_atrs] = 
-			calloc(1,sizeof(stun_atr));	
+			calloc(1,sizeof(stun_atr));
 		/*copy atr_hdr (attribute header)*/	
 		memcpy(&((pkt_dev->stun_pkt.atrs[pkt_dev->num_message_atrs])->stun_atr_hdr),
-				pkt+bytes_readed,4);
+				pkt+bytes_readed,sizeof(struct STUN_ATR_HEADER));
 		
-		bytes_readed += 4;
+		bytes_readed += sizeof(struct STUN_ATR_HEADER);
 		
 		/*read Attribute Length*/
 		len = (pkt_dev->stun_pkt.atrs[pkt_dev->num_message_atrs])->stun_atr_hdr.length;

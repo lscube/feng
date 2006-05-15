@@ -29,25 +29,10 @@
  *  
  * */
 
-#ifndef __STUN_TYPES_H
-#define __STUN_TYPES_H
+#include <stun/stun.h>
 
-
-#include <inttypes.h>
-
-	typedef enum STUNBOOL {
-		STUN_FALSE=0,
-		STUN_TRUE=1	
-	}STUNbool;
-	typedef uint8_t STUNuint8;
-	typedef uint16_t STUNuint16;
-	typedef uint32_t STUNuint32;
-	typedef uint64_t STUNuint64;
-	typedef int8_t STUNint8;
-	typedef int16_t	STUNint16;
-	typedef int32_t	STUNint32;
-	typedef int64_t	STUNint64;
-	typedef struct { unsigned char octet[16]; }  STUNuint128; 
-
-#endif
-
+void add_stun_atr_hdr(stun_atr *atr, STUNuint16 type, STUNuint16 len)
+{
+	(atr->stun_atr_hdr).type = type; 
+	(atr->stun_atr_hdr).length = len; 
+}

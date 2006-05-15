@@ -4,8 +4,10 @@ noinst_LTLIBRARIES = libstun.la
 
 
 libstun_la_SOURCES =	free_pkt_dev.c \
+			create_transactionID.c \
 			parse_atrs.c \
-			parse_stun_message.c 	
+			parse_stun_message.c \
+			stun_rand.c
 
 
 #libstun_la_SOURCES +=	parse-changed-address.c \
@@ -20,7 +22,8 @@ libstun_la_SOURCES =	free_pkt_dev.c \
 #			parse-unknown-attributes.c \
 #			parse-username.c
 
-libstun_la_SOURCES +=	create-address.c \
+libstun_la_SOURCES +=	add_stun_atr_hdr.c \
+			create-address.c \
 			create-changed-address.c \
 			create-change-request.c \
 			create-error-code.c \
