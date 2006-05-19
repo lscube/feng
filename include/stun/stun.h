@@ -84,7 +84,7 @@ struct STUN_HEADER{
  * ---------------------------------------------------------
  *
  */
-
+#define NUM_ATRS_TYPE 11
 /*Define Attribute Types*/		/*B_REQ|B_RES|B_ERR|S_REQ|S_RES|S_ERR*/
 /*---------------------------------------------------------------------------*/
 #define MAPPED_ADDRESS 0x0001 		/*     |  M  |     |     |     |     */
@@ -223,6 +223,7 @@ typedef struct STUN_PKT_DEV {
 	STUNuint8 num_message_atrs; /* at most = STUN_MAX_MESSAGE_ATRS*/
 	STUNuint8 num_unknown_atrs; /*the num of attribute type*/
 	STUNuint16 list_unknown_attrType[STUN_MAX_UNKNOWN_ATTRIBUTES];
+	STUNuint32 idx_atr_type_list[NUM_ATRS_TYPE];
 
 } OMS_STUN_PKT_DEV;
 
@@ -310,13 +311,18 @@ void free_pkt_dev(OMS_STUN_PKT_DEV *pkt_dev);
  */
 STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev);
 
+/*common function for MAPPED, RESPONSE, CHANGED, SOURCE, REFLECTED-FROM */
+STUNuint32 parse_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+/*
 STUNuint32 parse_mapped_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 STUNuint32 parse_response_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
-STUNuint32 parse_change_request(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
-STUNuint32 parse_source_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 STUNuint32 parse_changed_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
-STUNuint32 parse_unknown_attribute(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_source_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 STUNuint32 parse_reflected_from(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+*/
+
+STUNuint32 parse_change_request(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
+STUNuint32 parse_unknown_attribute(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 STUNuint32 parse_error_code(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);
 /*TODO: */
 STUNuint32 parse_username(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx);

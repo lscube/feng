@@ -10,17 +10,13 @@ libstun_la_SOURCES =	free_pkt_dev.c \
 			stun_rand.c
 
 
-#libstun_la_SOURCES +=	parse-changed-address.c \
-#			parse-change-request.c \
-#			parse-error-code.c \
-#			parse-mapped-address.c \
-#			parse-message-integrity.c \
-#			parse-password.c \
-#			parse-reflected-from.c \
-#			parse-response-address.c \
-#			parse-source-address.c \
-#			parse-unknown-attributes.c \
-#			parse-username.c
+libstun_la_SOURCES +=	parse_address.c \
+			parse_change_request.c \
+			parse_error_code.c \
+			parse_message_integrity.c \
+			parse_password.c \
+			parse_unknown_attributes.c \
+			parse_username.c
 
 libstun_la_SOURCES +=	add_stun_atr_hdr.c \
 			create-address.c \

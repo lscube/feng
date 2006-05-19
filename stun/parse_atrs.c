@@ -45,19 +45,19 @@ STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 		switch(pkt_dev->stun_pkt.atrs[idx]->stun_atr_hdr.type) 
 		{
 			case MAPPED_ADDRESS:
-				ret = parse_mapped_address(pkt_dev,idx);
+				ret = parse_address(pkt_dev,idx);
 			break;
 			case RESPONSE_ADDRESS:
-				ret = parse_response_address(pkt_dev,idx);
+				ret = parse_address(pkt_dev,idx);
 			break;
 			case CHANGE_REQUEST:
 				ret = parse_change_request(pkt_dev,idx);
 			break;
 			case SOURCE_ADDRESS:
-				ret = parse_source_address(pkt_dev,idx);
+				ret = parse_address(pkt_dev,idx);
 			break;
 			case CHANGED_ADDRESS:
-				ret = parse_changed_address(pkt_dev,idx);
+				ret = parse_address(pkt_dev,idx);
 			break;
 			case USERNAME:
 				ret = parse_username(pkt_dev,idx);
@@ -75,7 +75,7 @@ STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 				ret = parse_unknown_attribute(pkt_dev,idx);
 			break;
 			case REFLECTED_FROM:
-				ret = parse_reflected_from(pkt_dev,idx);
+				ret = parse_address(pkt_dev,idx);
 			break;
 			default :
 				//STUN_UNKNOWN_ATTRIBUTE_CODE;
@@ -88,6 +88,8 @@ STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 		
 		if(ret!=0)
 			return ret;
+
+		pkt_dev->idx_atr_type_list[(pkt_dev->stun_pkt.atrs[idx])->stun_atr_hdr.type] = idx;
 
 	}
 		
