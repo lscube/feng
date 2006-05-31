@@ -30,11 +30,14 @@
  * */
 
 #include <stdlib.h>
+#include <arpa/inet.h> /*ntohs*/
 #include <stun/stun.h>
 
 stun_atr *create_change_request(STUNbool port, STUNbool addr)
 {
 	stun_atr *atr = calloc(1,sizeof(stun_atr));
+	STUNuint32 flagsAB;
+	
 	if(atr == NULL)
 		return NULL;
 	atr->atr = (struct STUN_ATR_CHANGE_REQUEST *) \
@@ -45,13 +48,12 @@ stun_atr *create_change_request(STUNbool port, STUNbool addr)
 	}
 
 	if(port)
-		SET_CHANGE_PORT_FLAG(((struct  STUN_ATR_CHANGE_REQUEST *)
-					(atr->atr))->flagsAB);
+		SET_CHANGE_PORT_FLAG(flagsAB);
 	if(addr)
-		SET_CHANGE_ADDR_FLAG(((struct  STUN_ATR_CHANGE_REQUEST *)
-					(atr->atr))->flagsAB);
+		SET_CHANGE_ADDR_FLAG(flagsAB);
 	
 	add_stun_atr_hdr(atr, CHANGE_REQUEST, sizeof(struct STUN_ATR_CHANGE_REQUEST));
-	
+	((struct  STUN_ATR_CHANGE_REQUEST *)(atr->atr))->flagsAB = htons(flagsAB);
+		
 	return atr;
 }

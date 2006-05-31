@@ -34,6 +34,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <arpa/inet.h> /*htons*/
+
 #include <stun/stun.h>
 
 STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
@@ -41,19 +43,26 @@ STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 {
 
 	struct STUN_HEADER *stun_hdr;
-	STUNuint32 bytes_readed = 0;
+	STUNuint32 bytes_read = 0;
 	OMS_STUN_PKT_DEV *pkt_dev;
 
 	if(pktsize < sizeof(struct STUN_HEADER)) { /*malformed message*/
 		/*header is 20 bytes length*/ 
+#if DEBUG_STUN
+		printf("STUN_BAD_REQUEST 1\n");
+#endif
 		return STUN_BAD_REQUEST;
 	}
 
 	/*map STUN_HEADER*/
 	stun_hdr = (struct STUN_HEADER *)pkt;	
+	
 
-	switch(stun_hdr->msgtype) {
+	switch(ntohs(stun_hdr->msgtype)) {
 		case BINDING_REQUEST:
+#if DEBUG_STUN
+			printf("BINDING_REQUEST\n");
+#endif
 		break;
 		case BINDING_RESPONSE:
 		break;
@@ -72,10 +81,27 @@ STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 			return STUN_GLOBAL_FAILURE;
 		break;
 		default:
+#if DEBUG_STUN
+			printf("STUN_BAD_REQUEST 2\n");
+#endif
 			return STUN_BAD_REQUEST;
 		break;
 	}
-	if(stun_hdr->msglen != pktsize - sizeof(struct STUN_HEADER)) {/*malformed message*/
+
+#if 0
+#if DEBUG_STUN
+	printf("stun_hdr \
+			\tmsgtype: %d\n \
+			\t\tmsglen: %d\n \
+			\t\tpktsize: %d\n \
+			\t\tsizeof STUN_HEADER: %d\n", ntohs(stun_hdr->msgtype), ntohs(stun_hdr->msglen),pktsize,  sizeof(struct STUN_HEADER));
+#endif
+#endif //0
+
+	if(ntohs(stun_hdr->msglen) != pktsize - sizeof(struct STUN_HEADER)) {/*malformed message*/		
+#if DEBUG_STUN
+		printf("STUN_BAD_REQUEST 3\n");
+#endif
 		return STUN_BAD_REQUEST;
 	}
 
@@ -85,15 +111,15 @@ STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 	/*copy header*/
 	memcpy(&(pkt_dev->stun_pkt.stun_hdr), pkt, sizeof(struct STUN_HEADER));
 
-	if(stun_hdr->msglen == 0) {/*no attibutes present*/
+	if(ntohs(stun_hdr->msglen) == 0) {/*no attibutes present*/
 		pkt_dev->num_message_atrs = 0;
 		*pkt_dev_pt = pkt_dev;
 		return 0;
 	}
 
 	/*....continue adding all attributes...*/
-	bytes_readed += sizeof(struct STUN_HEADER);
-	while(bytes_readed < pktsize && 
+	bytes_read += sizeof(struct STUN_HEADER);
+	while(bytes_read < pktsize && 
 			pkt_dev->num_message_atrs <= STUN_MAX_MESSAGE_ATRS) {
 	
 		STUNuint16 len = 0;
@@ -102,12 +128,12 @@ STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 			calloc(1,sizeof(stun_atr));
 		/*copy atr_hdr (attribute header)*/	
 		memcpy(&((pkt_dev->stun_pkt.atrs[pkt_dev->num_message_atrs])->stun_atr_hdr),
-				pkt+bytes_readed,sizeof(struct STUN_ATR_HEADER));
+				pkt+bytes_read,sizeof(struct STUN_ATR_HEADER));
 		
-		bytes_readed += sizeof(struct STUN_ATR_HEADER);
+		bytes_read += sizeof(struct STUN_ATR_HEADER);
 		
 		/*read Attribute Length*/
-		len = (pkt_dev->stun_pkt.atrs[pkt_dev->num_message_atrs])->stun_atr_hdr.length;
+		len = ntohs((pkt_dev->stun_pkt.atrs[pkt_dev->num_message_atrs])->stun_atr_hdr.length);
 		
 		/*allocate the right space where i will copy the 
 		 * Attribute Value*/
@@ -116,9 +142,9 @@ STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 		
 		/*copy Attribute Value*/
 		memcpy(pkt_dev->stun_pkt.atrs[pkt_dev->num_message_atrs]->atr,
-				pkt+bytes_readed,len);
+				pkt+bytes_read,len);
 		
-		bytes_readed += len;
+		bytes_read += len;
 
 		/*increment the number of attributes*/
 		pkt_dev->num_message_atrs++;

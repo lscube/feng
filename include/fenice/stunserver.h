@@ -29,66 +29,47 @@
  *  
  * */
 
-#ifndef _STUNSERVERH	
-#define _STUNSERVERH
+#ifndef _STUNSERVER_H	
+#define _STUNSERVER_H
 /*RFC-3489*/
 
 #include <fenice/types.h>
 #include <netembryo/wsocket.h>
 #include <stun/stun.h>
 
-#define STUN_DEFAULT_PORT1 3478
+#define OMS_STUN_DEFAULT_PORT1 3478
 #define OMS_STUN_DEFAULT_PORT2 3479 /*it shall be changeable*/
 
-
-#define PRIMARY 0
-#define SECONDARY 1
-#define CHANGE_IDX(idx) ((++idx)%2) /*idx of port or addr*/
-typedef struct STUN_SERVER_CONFIG_PAIR {
-	char *addr[2];/*addr[PRIMARY] and addr[SECONDARY]*/
-        char *port[2];/*port[PRIMARY] and port[SECONDARY]*/
-} OMSStunServerConfigPair;
-
-typedef struct STUN_SOCK_PAIR {
-	uint16 addr_idx; /* = PRIMARY or SECONDARY*/
-	uint16 port_idx; /* = PRIMARY or SECONDARY*/
-	Sock *sock;
-} OMSStunSockPair;
-
 #define NUM_SOCKSPAIR 4
-typedef struct STUN_SERVER {
-	OMSStunSockPair *socks_pair[NUM_SOCKSPAIR];	/*receives from:*/
-							/*socks[0], socks[1]*/
-		  	  	  			/*sends to all*/
-	OMSStunServerConfigPair *addr_port;
-} OMSStunServer;	
-/*macro to map (addr_idx,port_idx) to socks_idx*/
-#define GET_SOCKSPAIR_IDX(idx_addr, idx_port) \
-			(2 *idx_addr + idx_port)
-/*map:
- * addr	port socks_idx
- * 0	0	0
- * 0	1	1
- * 1	0	2
- * 1	1	3
- * */
-#define SOCKSPAIR_IDX(s) \
-	GET_SOCKSPAIR_IDX(s->addr_idx, s->port_idx)
+typedef struct STUN_SERVER_CONFIG {
+	Sock *sock;	
+	Sock *change_port;	
+	Sock *change_addr;	
+	Sock *change_port_addr;	
+}OMSStunServerCfg;
 
-/*from socks_idx to addr_idx or port_idx*/
-#define IDX_IDXADDR(idx) ((idx<2)?0:1)
-#define IDX_IDXPORT(idx) (idx%2)
+typedef struct STUN_SERVER {
+	OMSStunServerCfg sock[NUM_SOCKSPAIR];
+} OMSStunServer;	
+/*
+	sock[0] => IP1:1
+	sock[1] => IP2:2
+	sock[2] => IP2:1
+	sock[3] => IP1:2
+*/
 
 /*API*/
 OMSStunServer *
-	OMSStunServerInit(uint8 *addr1,uint8 *port1,uint8 *addr2,uint8 *port2);
+	OMSStunServerInit(char *addr1, char *port1,char *addr2, char *port2);
 
-int32 OMSstunserverActions(OMSStunServer *omsss, uint16 socks_pair_idx);
+void OMSstunserverActions(OMSStunServer *omsss);
 
 
-uint32 binding_response(OMS_STUN_PKT_DEV *pkt_dev, uint8 **buffer);
+/*idx_sock is the index of the received sock*/
+void response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omsss, uint32 idx_sock);
+void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omsss, uint32 idx_sock);
+void binding_error_response(uint32 error_code, OMSStunServer *omsss, uint32 idx_sock);
+uint32 get_local_s_addr( Sock * );
+uint32 get_remote_s_addr( Sock * );
 
-uint32 binding_error_response(OMS_STUN_PKT_DEV *pkt_dev, 
-				uint32 error_code, uint8 **buffer);
-
-#endif //_STUNSERVERH
+#endif //_STUNSERVER_H

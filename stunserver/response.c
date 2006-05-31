@@ -32,51 +32,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <time.h>
 #include <stun/stun.h>
 #include <fenice/stunserver.h>
 #include <fenice/types.h>
-#include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-/*NOTE:
- Sock_connect_by_sock(omsss->socks_pair[socks_pair_idx]->sock,
-		get_remote_host(omsss->socks_pair[socks_pair_idx]->sock),
-		get_remote_port(omsss->socks_pair[socks_pair_idx]->sock));	
-
-*/
-void OMSstunserverActions(OMSStunServer *omsss)
+void response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omsss, uint32 idx_sock)
 {
-	OMS_STUN_PKT_DEV *pkt_dev = NULL;
-	// Fake timespec for fake nanosleep. See below.
-	struct timespec ts = { 0, 0 };
-	int32 n = 0 ;
-	uint8 buffer[STUN_MAX_MESSAGE_SIZE];
-	uint32 buffer_size = STUN_MAX_MESSAGE_SIZE;
-	uint32 ret = 0;
+	//printf ("Preparing response...\n");	
 
-	while (1) {
-		n = 0;
-		if ( (n = Sock_read( (omsss->sock[0]).sock, buffer, buffer_size)) > 0 ) { 
-			if ( (ret = parse_stun_message(buffer, n, &pkt_dev) ) != 0 ) {
-				binding_error_response(ret, omsss,0);
-			}
-			else
-				response(pkt_dev, omsss,0);
-		}
-		else if ( (n = Sock_read( (omsss->sock[2]).sock, buffer, buffer_size)) > 0 ) { 
-			if ( (ret = parse_stun_message(buffer, n, &pkt_dev) ) != 0 ) {
-				binding_error_response(ret, omsss,2);
-			}
-			else
-				response(pkt_dev, omsss,2);
-		}
-		//printf("n = %d\n",n);	
-		// Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
-		nanosleep(&ts, NULL);
-		
-		if (pkt_dev != NULL)
-			free_pkt_dev(pkt_dev);
-		pkt_dev = NULL;
+	if(ntohs((pkt_dev->stun_pkt).stun_hdr.msgtype) != BINDING_REQUEST) {
+		binding_error_response(STUN_BAD_REQUEST,omsss, idx_sock);
+	}
+	else if(pkt_dev->num_unknown_atrs > 0) {
+		binding_error_response(STUN_UNKNOWN_ATTRIBUTE,omsss,idx_sock);
+	} 
+	else {
+		binding_response(pkt_dev,omsss,idx_sock);
 	}
 }
+

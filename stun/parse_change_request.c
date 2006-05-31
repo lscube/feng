@@ -29,9 +29,23 @@
  *  
  * */
 
+#if DEBUG_STUN
+	#include <stdio.h> /*printf*/
+	#include <arpa/inet.h> /*ntohs*/
+#endif
+
 #include <stun/stun.h>
 
 STUNuint32 parse_change_request(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx)
 {
+#if 0
+#if DEBUG_STUN
+	printf("idx: %d\n", idx);
+	printf("ATR_TYPE: %d\n", ntohs((pkt_dev->stun_pkt.atrs[idx])->stun_atr_hdr.type));
+	printf("ATR_LEN: %d\n", ntohs((pkt_dev->stun_pkt.atrs[idx])->stun_atr_hdr.length));
+	printf("sizeof ATR_LEN: %d\n", sizeof((pkt_dev->stun_pkt.atrs[idx])));
+	printf("flagsAB ntohl: %d\n", ntohl(((struct STUN_ATR_CHANGE_REQUEST *)((pkt_dev->stun_pkt.atrs[idx])->atr))->flagsAB));
+#endif
+#endif
 	return 0;
 }

@@ -35,6 +35,8 @@
 
 #include <stun/types.h>
 
+#define DEBUG_STUN 1
+
 #define STUN_MAX_STRING 256
 #define STUN_MAX_MESSAGE_SIZE 2048
 
@@ -53,8 +55,10 @@
  */
 
 struct STUN_HEADER{
-	STUNuint16 msgtype;	
-	STUNuint32 msglen; /*not including the 20 byte header*/
+	STUNuint16 msgtype; //network byte order 	
+	STUNuint16 msglen; /*not including the 20 byte header*/
+			//network byte order
+
 	STUNuint128 transactionID;
 };
 
@@ -84,6 +88,7 @@ struct STUN_HEADER{
  * ---------------------------------------------------------
  *
  */
+#define SIZE_ATR_HDR sizeof(struct STUN_ATR_HEADER)
 #define NUM_ATRS_TYPE 11
 /*Define Attribute Types*/		/*B_REQ|B_RES|B_ERR|S_REQ|S_RES|S_ERR*/
 /*---------------------------------------------------------------------------*/
@@ -122,8 +127,8 @@ struct STUN_HEADER{
 #define STUN_MAX_UNKNOWN_ATTRIBUTES STUN_MAX_MESSAGE_ATRS 
 
 struct STUN_ATR_HEADER{
-      STUNuint16 type;
-      STUNuint16 length;
+      STUNuint16 type; //network byte order
+      STUNuint16 length; //network byte order
 };
 
 typedef struct STUN_ATR {
@@ -143,12 +148,15 @@ struct STUN_ATR_ADDRESS { /*MAPPED, RESPONSE, CHANGED, SOURCE, REFLECTED-FROM*/
 	STUNuint8 ignored;	 
 	STUNuint8 family; /*is always 0x01 = IPv4*/
 	STUNuint16 port; /*network byte order*/
-	STUNuint32 address;
+	STUNuint32 address; /*??? network byte order ???*/
 };
+#define IPv4family 0x01
 
 struct STUN_ATR_CHANGE_REQUEST {
 	STUNuint32 flagsAB;/*0000000000000000000000000000AB0*/
 };		       /* A = change IP; B = change port*/
+			/*network byte order*/
+
 #define SET_CHANGE_PORT_FLAG(iflag) ( iflag|=0x00000004 )
 #define SET_CHANGE_ADDR_FLAG(iflag) ( iflag|=0x00000002 )
 #define IS_SET_CHANGE_PORT_FLAG(iflag) ( iflag & 0x00000004 )
@@ -174,19 +182,6 @@ struct STUN_ATR_ERROR_CODE {
 	STUNuint16  error_class_number; /* [1..6] */
 	STUNuint8 reason[STUN_MAX_ERROR_REASON]; /*STUN_ATR_CODE has fixed size. The unused space
 					in reason is filled with \0 char*/
-};
-/*see RFC - page 30 */
-struct STUN_ATR_ERROR_CODE ERROR_CODE_MTRX[] = {
-	{0, 0, ""},
-	{0, 400, "Bad Request"},
-	{0, 401, "Unauthorized"},
-	{0, 420, "Unknown Attribute"},
-	{0, 430, "Stale Credentials"},
-	{0, 431, "Integrity Check Failure"},
-	{0, 432, "Missing Username"},
-	{0, 433, "Use TLS"},
-	{0, 500, "Server Error"},
-	{0, 600, "Global Failure"}
 };
 #define STUN_BAD_REQUEST		1	
 #define STUN_UNAUTHORIZED		2

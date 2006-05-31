@@ -29,10 +29,11 @@
  *  
  * */
 
+#include <arpa/inet.h>
 #include <stun/stun.h>
 
 void add_stun_atr_hdr(stun_atr *atr, STUNuint16 type, STUNuint16 len)
 {
-	(atr->stun_atr_hdr).type = type; 
-	(atr->stun_atr_hdr).length = len; 
+	(atr->stun_atr_hdr).type = htons(type); 
+	(atr->stun_atr_hdr).length = htons(len); 
 }

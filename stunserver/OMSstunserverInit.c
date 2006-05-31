@@ -32,85 +32,68 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+//#include <string.h>
 #include <sys/ioctl.h>
-
 #include <glib.h>
-#include <glib/gprintf.h>
-
+//#include <glib/gprintf.h>
 #include <stun/stun.h>
+
 #include <fenice/stunserver.h>
 #include <fenice/types.h>
 #include <fenice/fnc_log.h>
 
-#define FREE_ALL	uint16 idxprev; \
-			for(idxprev = 0;idxprev < idx; idxprev++) \
-				free(omsss->socks_pair[idxprev]->sock); \
-			for(idxprev = 0;idxprev < NUM_SOCKSPAIR; idxprev++) \
-				free(omsss->socks_pair[idxprev]); \
-			free(omsss->addr_port); \
-			free(omsss);
-
 
 OMSStunServer *
-	OMSStunServerInit(uint8 *addr1,uint8 *port1,uint8 *addr2,uint8 *port2)
+	OMSStunServerInit(char *addr1, char *port1,char *addr2,char *port2)
 {
-	uint16 idx;
 	OMSStunServer *omsss = calloc(1,sizeof(OMSStunServer));
+	int *fd;
+	int i;
+	int on = 1;
 
 	if(omsss == NULL)
 		return NULL;
+	//NOTE: g_strdup_printf
+	((omsss->sock)[0]).sock = Sock_bind (g_strdup(addr1),g_strdup(port1),fd,UDP,0);
+	((omsss->sock)[1]).sock = Sock_bind (g_strdup(addr2),g_strdup(port2),fd,UDP,0);
+	((omsss->sock)[2]).sock = Sock_bind (g_strdup(addr2),g_strdup(port1),fd,UDP,0);
+	((omsss->sock)[3]).sock = Sock_bind (g_strdup(addr1),g_strdup(port2),fd,UDP,0);
+	
+	for(i=0;i<4;i++) {
+		//printf("local port: %d\n", atoi(get_local_port( ((omsss->sock)[i]).sock )) );
 
-	omsss->addr_port = calloc(1,sizeof(OMSStunServerConfigPair));
-
-	if(omsss->addr_port == NULL) {
-		free(omsss);
-		return NULL;
-	}
-
-	for(idx = 0; idx < NUM_SOCKSPAIR; idx++) {
-		omsss->socks_pair[idx] = (OMSStunSockPair *)calloc(1,sizeof(OMSStunSockPair));
-		if(omsss->socks_pair[idx] == NULL) {
-			uint16 idxprev;
-			for(idxprev = 0;idxprev < idx; idxprev++)
-				free(omsss->socks_pair[idxprev]);
-			free(omsss->addr_port);
+		if ( ((omsss->sock)[i]).sock == NULL) {
+			fnc_log(FNC_LOG_ERR,"Error during binding. Control ethernet interface configurations\n" );
 			free(omsss);
 			return NULL;
 		}
-	}
-	
-	omsss->addr_port->addr[PRIMARY] = g_strdup_printf("%s", addr1);
-	omsss->addr_port->addr[SECONDARY] = g_strdup_printf("%s", addr2);
-	omsss->addr_port->port[PRIMARY] = g_strdup_printf("%s", port1);
-	omsss->addr_port->port[SECONDARY] = g_strdup_printf("%s", port2);
-	
-	for(idx = 0; idx < NUM_SOCKSPAIR; idx++) {
-		int *fd[NUM_SOCKSPAIR];
-        	int on=1; /*setting non-blocking flag*/
-			
-		omsss->socks_pair[idx]->addr_idx = IDX_IDXADDR(idx);
-		omsss->socks_pair[idx]->port_idx = IDX_IDXPORT(idx);
-		
-		/*mmm, i'm not sure to bind all ... chicco*/
-		omsss->socks_pair[idx]->sock = Sock_bind(omsss->addr_port->addr[IDX_IDXADDR(idx)],omsss->addr_port->port[IDX_IDXPORT(idx)], fd[idx], UDP, 0);
-	
-		if (omsss->socks_pair[idx]->sock == NULL) {
-			FREE_ALL
-			fnc_log(FNC_LOG_ERR,"Error during bind the socket.\n" );
-			
-			return NULL;
-
-		}
-		
-		if (Sock_set_props(get_fd(omsss->socks_pair[idx]->sock), FIONBIO, &on) < 0) { /*set to non-blocking*/
-			FREE_ALL
+		if (Sock_set_props( get_fd(((omsss->sock)[i]).sock), FIONBIO, &on) < 0) { /*set to non-blocking*/
 			fnc_log(FNC_LOG_ERR,"ioctl() error.\n" );
-			
+			free(omsss);
 			return NULL;
     		}
-
-	}
 	
+	}
+
+
+	((omsss->sock)[0]).change_port = ((omsss->sock)[3]).sock;
+	((omsss->sock)[0]).change_addr = ((omsss->sock)[2]).sock;
+	((omsss->sock)[0]).change_port_addr = ((omsss->sock)[1]).sock;
+
+	
+	((omsss->sock)[1]).change_port = ((omsss->sock)[2]).sock;
+	((omsss->sock)[1]).change_addr = ((omsss->sock)[3]).sock;
+	((omsss->sock)[1]).change_port_addr = ((omsss->sock)[0]).sock;
+
+	((omsss->sock)[2]).change_port = ((omsss->sock)[1]).sock;
+	((omsss->sock)[2]).change_addr = ((omsss->sock)[0]).sock;
+	((omsss->sock)[2]).change_port_addr = ((omsss->sock)[3]).sock;
+
+	((omsss->sock)[3]).change_port = ((omsss->sock)[0]).sock;
+	((omsss->sock)[3]).change_addr = ((omsss->sock)[1]).sock;
+	((omsss->sock)[3]).change_port_addr = ((omsss->sock)[2]).sock;
+
 	return omsss;
 }
+
+

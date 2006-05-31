@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <arpa/inet.h> /*ntohs*/
 #include <stun/stun.h>
 
 
@@ -42,7 +42,7 @@ STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 	STUNuint32 ret = 0;
 
 	for(idx=0;idx < pkt_dev->num_message_atrs; idx++) {
-		switch(pkt_dev->stun_pkt.atrs[idx]->stun_atr_hdr.type) 
+		switch(ntohs(pkt_dev->stun_pkt.atrs[idx]->stun_atr_hdr.type)) 
 		{
 			case MAPPED_ADDRESS:
 				ret = parse_address(pkt_dev,idx);
@@ -80,7 +80,7 @@ STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 			default :
 				//STUN_UNKNOWN_ATTRIBUTE_CODE;
 				pkt_dev->list_unknown_attrType[pkt_dev->num_unknown_atrs] =
-				       	pkt_dev->stun_pkt.atrs[idx]->stun_atr_hdr.type;
+				       	ntohs(pkt_dev->stun_pkt.atrs[idx]->stun_atr_hdr.type);
 				pkt_dev->num_unknown_atrs++;
 			break;
 		
@@ -89,7 +89,7 @@ STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 		if(ret!=0)
 			return ret;
 
-		pkt_dev->idx_atr_type_list[(pkt_dev->stun_pkt.atrs[idx])->stun_atr_hdr.type] = idx;
+		pkt_dev->idx_atr_type_list[ntohs((pkt_dev->stun_pkt.atrs[idx])->stun_atr_hdr.type)] = idx;
 
 	}
 		

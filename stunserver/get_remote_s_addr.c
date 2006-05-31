@@ -29,31 +29,11 @@
  *  
  * */
 
-#include <stdlib.h> /*calloc*/
-#include <arpa/inet.h> /*htons*/
-#include <stun/stun.h>
+#include <arpa/inet.h>
+#include <fenice/stunserver.h>
 
-stun_atr *create_address(STUNuint8 family, STUNuint16 port, STUNuint32 address, STUNuint16 type)
+uint32 get_remote_s_addr( Sock *s)
 {
-	stun_atr *atr = calloc(1,sizeof(stun_atr));
-	if(atr == NULL)
-		return NULL;
-	atr->atr = (struct STUN_ATR_ADDRESS *) \
-   		   calloc(1,sizeof(struct STUN_ATR_ADDRESS));
-	if(atr->atr == NULL) {
-		free(atr);
-		return NULL;
-	}
-	
-	((struct STUN_ATR_ADDRESS *)(atr->atr))->ignored = 0x00;
-	((struct STUN_ATR_ADDRESS *)(atr->atr))->family = family;
-	((struct STUN_ATR_ADDRESS *)(atr->atr))->port = htons(port);
-	((struct STUN_ATR_ADDRESS *)(atr->atr))->address = address; 
-	/*Question: htonl(address) ?*/
-	
-	add_stun_atr_hdr(atr, type, sizeof(struct STUN_ATR_ADDRESS));
-
-	return atr;
+return ntohl( ((struct sockaddr_in *)&(s->sock_stg))->sin_addr.s_addr);	
 }
-
 

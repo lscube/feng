@@ -37,9 +37,8 @@
 #include <fenice/types.h>
 #include <fenice/fnc_log.h>
 
-uint32 binding_error_response(OMS_STUN_PKT_DEV *pkt_dev, 
-				uint32 error_code, uint8 **buffer)
+void binding_error_response(uint32 error_code, OMSStunServer *omsss, uint32 idx_sock)
 {
-	return 0;
+	printf("BINDING ERROR RESPONSE\n");
 }
 

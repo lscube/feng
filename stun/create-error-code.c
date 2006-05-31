@@ -33,6 +33,21 @@
 #include <string.h> /*for memcpy*/
 #include <stun/stun.h>
 
+/*see RFC - page 30 */
+struct STUN_ATR_ERROR_CODE ERROR_CODE_MTRX[] = {
+	{0, 0, ""},
+	{0, 400, "Bad Request"},
+	{0, 401, "Unauthorized"},
+	{0, 420, "Unknown Attribute"},
+	{0, 430, "Stale Credentials"},
+	{0, 431, "Integrity Check Failure"},
+	{0, 432, "Missing Username"},
+	{0, 433, "Use TLS"},
+	{0, 500, "Server Error"},
+	{0, 600, "Global Failure"}
+};
+
+
 stun_atr *create_error_code(STUNuint8 error_code_type)
 {
 	stun_atr *atr = calloc(1,sizeof(stun_atr));
