@@ -46,14 +46,50 @@
 OMSStunServer *
 	OMSStunServerInit(char *addr1, char *port1,char *addr2,char *port2)
 {
-	OMSStunServer *omsss = calloc(1,sizeof(OMSStunServer));
+	OMSStunServer *omsss;
 	int *fd;
-	int i;
+	int i = 0;
 	int on = 1;
+	int nif = 0;
+	uint32 ai[10];
+	char *tmp;
+	uint16 found_1 = 0, found_2 = 0;
+	/*
+	char *a1 = g_strdup(addr1);
+	char *p1 = g_strdup(port1);
+	char *a2 = g_strdup(addr2);
+	char *p2 = g_strdup(port2);
+	*/
+	fnc_log(FNC_LOG_DEBUG,"OMSStunServerInit args: %s,%s,%s,%s\n",addr1,port1,addr2,port2);
 
+	nif=find_local_interfaces(ai,10);
+
+	while(i<nif) {
+		tmp = g_strdup_printf("%d.%d.%d.%d", ((ai[i]>>24)&0xFF),((ai[i]>>16)&0xFF),((ai[i]>> 8)&0xFF),((ai[i])&0xFF));			
+		i++;
+		//printf("%s\n",tmp);
+		if ( strcmp(tmp, g_strdup( addr1)) == 0 ) { 
+			fnc_log(FNC_LOG_DEBUG,"Found Stun Addr1\n" );
+			found_1 = 1;
+		}
+		else if ( strcmp(tmp,  g_strdup(addr2)) == 0 ) {
+			fnc_log(FNC_LOG_DEBUG,"Found Stun Addr2\n" );
+			found_2 = 1;
+		}
+	}
+
+	if ( found_1 == 0 || found_2 == 0 ) {
+		fnc_log(FNC_LOG_ERR,"Let control ethernet interface configurations\n" );
+		//printf("Let control ethernet interface configurations\n" );
+		
+		return NULL;
+	}
+		
+
+	omsss = calloc(1,sizeof(OMSStunServer));
 	if(omsss == NULL)
 		return NULL;
-	//NOTE: g_strdup_printf
+
 	((omsss->sock)[0]).sock = Sock_bind (g_strdup(addr1),g_strdup(port1),fd,UDP,0);
 	((omsss->sock)[1]).sock = Sock_bind (g_strdup(addr2),g_strdup(port2),fd,UDP,0);
 	((omsss->sock)[2]).sock = Sock_bind (g_strdup(addr2),g_strdup(port1),fd,UDP,0);
@@ -63,7 +99,7 @@ OMSStunServer *
 		//printf("local port: %d\n", atoi(get_local_port( ((omsss->sock)[i]).sock )) );
 
 		if ( ((omsss->sock)[i]).sock == NULL) {
-			fnc_log(FNC_LOG_ERR,"Error during binding. Control ethernet interface configurations\n" );
+			fnc_log(FNC_LOG_ERR,"Error during binding. Let control ethernet interface configurations\n" );
 			free(omsss);
 			return NULL;
 		}

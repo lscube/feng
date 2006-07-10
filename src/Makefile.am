@@ -30,6 +30,7 @@ libprefs_la_SOURCES =	prefs_init.c \
 			prefs_get_port.c \
 			prefs_get_max_session.c \
 			prefs_get_log.c \
+			prefs_get_stuncfg.c \
 			prefs_use_default.c
 
 libprefs_la_LDFLAGS = -static
@@ -55,8 +56,6 @@ fenice_SOURCES =	main.c \
 
 fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/rtsp/librtsp.la \
-		$(top_srcdir)/stunserver/libstunserver.la \
-		$(top_srcdir)/stun/libstun.la \
 		$(top_srcdir)/sdp/libsdp.la \
 		$(top_srcdir)/sdp2/libsdp2.la \
 		$(top_srcdir)/schedule/libschedule.la \
@@ -67,10 +66,14 @@ fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/mediathread/libmediath.la \
 		$(top_srcdir)/bufferpool/libbufferpool.la \
 		$(top_srcdir)/xmlparser/libxmlparser.la \
-		$(top_srcdir)/multicast/libmulticast.la \
-		$(top_srcdir)/stunserver/libstunserver.la \
-		$(top_srcdir)/stun/libstun.la \
-		$(top_srcdir)/wsocket/libwsocket.la \
+		$(top_srcdir)/multicast/libmulticast.la 
+
+if FENICE_STUN
+fenice_LDADD += $(top_srcdir)/stunserver/libstunserver.la \
+		$(top_srcdir)/stun/libstun.la 
+endif
+		
+fenice_LDADD +=	$(top_srcdir)/wsocket/libwsocket.la \
 		$(top_srcdir)/command_environment/libcommand.la \
 		$(top_srcdir)/src/libprefs.la \
 		$(top_srcdir)/src/libutils.la \
@@ -82,9 +85,11 @@ if FENICE_VERBOSE
 fenice_LDADD += $(top_srcdir)/src/libdebug.la
 endif
 
+
 if FENICE_EFENCE
 fenice_LDFLAGS = -lefence
 endif
+
 
 fenice_LDADD += @GLIB_LIBS@
 

@@ -71,5 +71,15 @@ void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omsss, uint32 id
 void binding_error_response(uint32 error_code, OMSStunServer *omsss, uint32 idx_sock);
 uint32 get_local_s_addr( Sock * );
 uint32 get_remote_s_addr( Sock * );
+int find_local_interfaces(uint32 *addresses, int maxRet);
+
+struct STUN_SERVER_IFCFG {
+	char a1[16];
+	char a2[16];
+	char p1[6];
+	char p2[6];
+};
+
+void *OMSstunserverStart(void *arg);
 
 #endif //_STUNSERVER_H

@@ -10,10 +10,15 @@ SUBDIRS =	bufferpool \
 		rtp \
 		rtcp \
 		intnet \
-		rtsp \
-		stunserver \
-		stun \
-		mediainfo \
+		rtsp 
+
+if FENICE_STUN
+SUBDIRS +=	stunserver \
+		stun 
+
+endif
+
+SUBDIRS +=	mediainfo \
 		sdp \
 		sdp2 \
 		schedule \

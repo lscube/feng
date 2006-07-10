@@ -33,19 +33,17 @@ dnl netembryo
 AC_ARG_ENABLE(ipv6,
 [  --enable-ipv6            enable IPv6 support [[default=autodetected]]],,
         enable_ipv6="yes")
+dnl StunServer
+AC_ARG_ENABLE(stun,
+[  --enable-stun            enable stun support [[default=no]]],,
+        enable_stun="no")
 
 AM_CONDITIONAL(HAVE_SSL, /bin/false)
 AC_DEFUN([CHECK_SSL],
 [AC_MSG_CHECKING(if ssl is wanted)
 AC_ARG_WITH(ssl,
 [  --with-ssl enable ssl [will check /usr/local/ssl
-                            /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr. [Default certificate = /var/local/lib/fenice/certs/cert.pem]]typedef struct
-{
-      UInt16 type;
-      UInt16 length;
-} StunAtrHdr;
-
-
+                            /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr. [Default certificate = /var/local/lib/fenice/certs/cert.pem]]
 ],
 [   AC_MSG_RESULT(yes)
     for dir in $withval /usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr; do
@@ -183,12 +181,24 @@ dnl CFLAGS=""
 
 AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Fenice (>1.10) uses Glib. Please install it (you need devel files).]),)
 
+
+stun_msg="stun enabled ..................... : no";
+dnl Stun. Disable ipv6 if stun is enabled
+AM_CONDITIONAL(FENICE_STUN, /bin/false)
+if test "$enable_stun" = "yes"; then
+	AM_CONDITIONAL(FENICE_STUN, /bin/true)
+	AC_DEFINE(ENABLE_STUN, 1,[Stun enabled])
+	enable_ipv6=no
+	stun_msg="stun enabled ..................... : yes";
+fi
+
 dnl test enable
 if test "x$enable_ipv6" = "xyes"; then
         AC_CHECK_TYPE(struct sockaddr_in6, AC_DEFINE([IPV6], 1, [Define IPv6 support]), , [#include <netinet/in.h>])
 else
         AC_MSG_WARN([IPv6 disabled: check skipped.])
 fi
+
 
 ssl_msg="libssl activeted ..................... : no";
 if test x_$found_ssl == x_yes; then
@@ -398,6 +408,7 @@ Fenice Multimedia Files root ....: $fenice_avroot_dir
 Fenice RTSP listening port ......: $fenice_rtsp_port
 Byte order ..................... : this is a $BIGENDIAN machine
 $ssl_msg
+$stun_msg
 $debug_msg
 $efence_msg
 $verbose_msg

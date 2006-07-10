@@ -52,6 +52,9 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 
+#include <fenice/stunserver.h>
+#include <pthread.h>
+
 inline void fncheader(void); // defined in src/fncheader.c
 
 int main(int argc, char **argv)
@@ -89,10 +92,29 @@ int main(int argc, char **argv)
 	}
 #endif
 
+
 	printf("CTRL-C terminate the server.\n");
 	fnc_log(FNC_LOG_INFO,"Waiting for RTSP connections on port %s...\n", port);
 
 	Sock_init();
+
+
+#if ENABLE_STUN
+	struct STUN_SERVER_IFCFG *cfg = (struct STUN_SERVER_IFCFG *)prefs_get_stuncfg();
+	
+	if( cfg!= NULL) {
+		pthread_t thread;
+
+		fnc_log(FNC_LOG_DEBUG,"Trying to start OMSstunserver thread\n");
+		fnc_log(FNC_LOG_DEBUG,"stun parameters: %s,%s,%s,%s\n",cfg->a1,cfg->p1,cfg->a2,cfg->p2);
+	
+		pthread_create(&thread,NULL,OMSstunserverStart,(void *)(cfg));
+	}
+#endif //ENABLE_STUN
+
+
+
+	
 	m_fd = Sock_bind(NULL, port, &main_fd, TCP, wsocket_flag);
 	if(m_fd==NULL) {
 		fnc_log(FNC_LOG_ERR,"bind() error.\n" );

@@ -148,6 +148,73 @@ void prefs_init(char *fileconf)
 		else {
 			prefs_use_default(3);
 		}
+
+
+		//stuncfg
+		fseek(f,0,SEEK_SET);
+		prefs.use_stun = 1;
+		do {
+			cont=fgets(line,80,f);
+			p=strstr(line,PREFS_STUNCFG);
+		} while ((p==NULL && cont) || line[0]=='#');
+		if (p!=NULL) {
+			p=strstr(p,"=");
+			if (p!=NULL) {
+				char tmp[50];
+				char *pt1;
+
+				strcpy(tmp,p+1);
+				p=strstr(tmp,"\n");
+				if (p!=NULL) {
+					*p='\0';
+				}
+				else {
+					prefs_use_default(4);
+				}
+
+				////
+				pt1 = strtok(tmp,",");
+				if( pt1 == NULL )
+					prefs_use_default(4);
+				else {
+					strcpy(prefs.a1,pt1);
+					strcat(prefs.a1,"\0");
+				}
+
+				pt1 = strtok(NULL,",");
+				if( pt1 == NULL )
+					prefs_use_default(4);
+				else {
+					strcpy(prefs.p1,pt1);
+					strcat(prefs.p1,"\0");
+				}
+
+				pt1 = strtok(NULL,",");
+				if( pt1 == NULL )
+					prefs_use_default(4);
+				else {
+					strcpy(prefs.a2,pt1);
+					strcat(prefs.a2,"\0");
+				}
+
+				pt1 = strtok(NULL,"\n");
+				if( pt1 == NULL )
+					prefs_use_default(4);
+				else {
+					strcpy(prefs.p2,pt1);
+					strcat(prefs.p2,"\0");
+				}
+				////
+			}
+			else {
+				prefs_use_default(4);
+			}
+		}
+		else {
+			prefs_use_default(4);
+		}
+		/////////
+
 	}
 	gethostname(prefs.hostname,sizeof(prefs.hostname));
 	l=strlen(prefs.hostname);

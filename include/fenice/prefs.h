@@ -58,6 +58,7 @@
 	#define PREFS_PORT "port"
 	#define PREFS_MAX_SESSION "max_session"
 	#define PREFS_LOG "log_file"
+	#define PREFS_STUNCFG "stuncfg"
 
 	typedef struct _serv_prefs {
 		char hostname[256];
@@ -65,6 +66,15 @@
 		char log[256];
 		unsigned int port;			
 		unsigned int max_session;			
+	
+		//STUNCFG
+		int use_stun;
+		char a1[16];
+		char a2[16];
+		char p1[6];
+		char p2[6];
+		//
+
 	} serv_prefs;
 
 	void prefs_init(char *fileconf);
@@ -73,6 +83,7 @@
 	int prefs_get_port();		
 	int prefs_get_max_session();
 	char *prefs_get_log();
+	void *prefs_get_stuncfg();		
 	void prefs_use_default(int index);
 		
 #endif
