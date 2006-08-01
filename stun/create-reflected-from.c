@@ -33,6 +33,7 @@
 
 inline stun_atr *create_reflected_from(STUNuint8 family, STUNuint16 port, STUNuint32 address)
 {
+	
 	return create_address(family,port,address,REFLECTED_FROM);
 }
 

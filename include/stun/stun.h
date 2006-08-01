@@ -217,8 +217,8 @@ typedef struct STUN_PKT_DEV {
 
 	STUNuint8 num_message_atrs; /* at most = STUN_MAX_MESSAGE_ATRS*/
 	STUNuint8 num_unknown_atrs; /*the num of attribute type*/
-	STUNuint16 list_unknown_attrType[STUN_MAX_UNKNOWN_ATTRIBUTES];
-	STUNuint32 idx_atr_type_list[NUM_ATRS_TYPE];
+	STUNint16 list_unknown_attrType[STUN_MAX_UNKNOWN_ATTRIBUTES];
+	STUNint32 idx_atr_type_list[NUM_ATRS_TYPE];
 
 } OMS_STUN_PKT_DEV;
 

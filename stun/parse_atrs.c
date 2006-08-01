@@ -38,9 +38,13 @@
 
 STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 {
-	STUNuint16 idx;
+	STUNint16 idx;
 	STUNuint32 ret = 0;
 
+	for(idx=0;idx < pkt_dev->num_message_atrs; idx++) {
+		pkt_dev->idx_atr_type_list[idx] = -1; //init the atr list
+	}
+	
 	for(idx=0;idx < pkt_dev->num_message_atrs; idx++) {
 		switch(ntohs(pkt_dev->stun_pkt.atrs[idx]->stun_atr_hdr.type)) 
 		{
