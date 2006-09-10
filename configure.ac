@@ -37,6 +37,9 @@ dnl StunServer
 AC_ARG_ENABLE(stun,
 [  --enable-stun            enable stun support [[default=no]]],,
         enable_stun="no")
+AC_ARG_ENABLE(libavformat,
+[  --enable-libavformat          enable ffmpeg's libavformat  support [[default=yes]]],,
+        enable_ffmpeg="yes")
 
 AM_CONDITIONAL(HAVE_SSL, /bin/false)
 AC_DEFUN([CHECK_SSL],
@@ -122,6 +125,11 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
 dnl Check for LibTool Dynamic Loading
+m4_undefine([AC_PROG_CXX])
+m4_defun([AC_PROG_CXX],[])
+m4_undefine([AC_PROG_F77])
+m4_defun([AC_PROG_F77],[])
+
 AC_PROG_LIBTOOL
 LIBTOOL="$LIBTOOL --silent"
 AC_SUBST([LIBTOOL_DEPS])
@@ -182,14 +190,14 @@ dnl CFLAGS=""
 AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Fenice (>1.10) uses Glib. Please install it (you need devel files).]),)
 
 
-stun_msg="stun enabled ..................... : no";
+stun_msg="stun enabled ................... : no";
 dnl Stun. Disable ipv6 if stun is enabled
 AM_CONDITIONAL(FENICE_STUN, /bin/false)
 if test "$enable_stun" = "yes"; then
 	AM_CONDITIONAL(FENICE_STUN, /bin/true)
 	AC_DEFINE(ENABLE_STUN, 1,[Stun enabled])
 	enable_ipv6=no
-	stun_msg="stun enabled ..................... : yes";
+	stun_msg="stun enabled ................... : yes";
 fi
 
 dnl test enable
@@ -198,11 +206,20 @@ if test "x$enable_ipv6" = "xyes"; then
 else
         AC_MSG_WARN([IPv6 disabled: check skipped.])
 fi
+avformat_msg="libavformat enabled ............... : no"
+if test "x$enable_ffmpeg" = "xyes"; then
+	PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 50.5.0],
+        [LIBAVFORMAT_DEMUXER=demuxer_lavf.c,
+         AC_DEFINE(HAVE_AVFORMAT,,[Define if libavformat support is available])
+         ],[LIBAVFORMAT_DEMUXER=])
+         CFLAGS="$CFLAGS $LIBAVFORMAT_CFLAGS"
+         LIBS="$LIBS $LIBAVFORMAT_LIBS"
+         avformat_msg="libavformat enabled ............ : yes"
+fi
 
-
-ssl_msg="libssl activeted ..................... : no";
+ssl_msg="libssl found ................... : no"
 if test x_$found_ssl == x_yes; then
-ssl_msg="libssl activeted ..................... : yes"
+ssl_msg="libssl found ................... : yes"
 fi
 
 AM_CONDITIONAL(FENICE_EFENCE, /bin/false)
@@ -402,13 +419,14 @@ AC_MSG_NOTICE([config files successfully generated!
  
 Fenice Install prefix .......... : $prefix
 Fenice Binary path ............. : $exec_prefix/bin/fenice
-Fenice Configuration path .......: $fenice_conf_dir
-Fenice Log File .................: $fenice_log_file
-Fenice Multimedia Files root ....: $fenice_avroot_dir
-Fenice RTSP listening port ......: $fenice_rtsp_port
+Fenice Configuration path ...... : $fenice_conf_dir
+Fenice Log File ................ : $fenice_log_file
+Fenice Multimedia Files root ... : $fenice_avroot_dir
+Fenice RTSP listening port ..... : $fenice_rtsp_port
 Byte order ..................... : this is a $BIGENDIAN machine
 $ssl_msg
 $stun_msg
+$avformat_msg
 $debug_msg
 $efence_msg
 $verbose_msg
