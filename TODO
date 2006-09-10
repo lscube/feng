@@ -4,9 +4,13 @@
 	* init scripts
 
 1.11:
+	* mediathread
+		- mmapped I/O
+		- libavformat support (starting from mov/mp4)
+		- mov2sdp (limited to interesting format)
 	* daemon mode
-	* make the server run as an own dedicated user
-		- create the dedicated user during install procedure
-		- fix files permission during install procedure
-	* init scripts (automagic configuration)
 	* logrotate scripts (automagic configuration)
+1.12:
+	* fast seek
+	* cross file stream sync (homogeneous files)
+	* ipc/rpc systems
