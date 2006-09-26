@@ -35,7 +35,6 @@
 #include <string.h>
 
 #include <arpa/inet.h> /*htons*/
-
 #include <stun/stun.h>
 
 STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
@@ -48,9 +47,6 @@ STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 
 	if(pktsize < sizeof(struct STUN_HEADER)) { /*malformed message*/
 		/*header is 20 bytes length*/ 
-#if DEBUG_STUN
-		printf("STUN_BAD_REQUEST 1\n");
-#endif
 		return STUN_BAD_REQUEST;
 	}
 
@@ -60,13 +56,19 @@ STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 
 	switch(ntohs(stun_hdr->msgtype)) {
 		case BINDING_REQUEST:
-#if DEBUG_STUN
-			printf("BINDING_REQUEST\n");
-#endif
+//#if DEBUG_STUN
+//		fprintf(stderr,">>>received BINDING_REQUEST\n");			
+//#endif
 		break;
 		case BINDING_RESPONSE:
+//#if DEBUG_STUN
+//			fprintf(stderr,">>>received BINDING_RESPONSE\n");			
+//#endif
 		break;
 		case BINDING_ERROR_RESPONSE:
+//#if DEBUG_STUN
+//			fprintf(stderr,">>>received BINDING_ERROR_RESPONSE\n");			
+//#endif
 		break;
 		case SHARED_SECRET_REQUEST:
 			/*not implemented yet*/
@@ -81,9 +83,6 @@ STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 			return STUN_GLOBAL_FAILURE;
 		break;
 		default:
-#if DEBUG_STUN
-			printf("STUN_BAD_REQUEST 2\n");
-#endif
 			return STUN_BAD_REQUEST;
 		break;
 	}
@@ -99,9 +98,6 @@ STUNuint32 parse_stun_message(STUNuint8 *pkt, STUNuint32 pktsize,
 #endif //0
 
 	if(ntohs(stun_hdr->msglen) != pktsize - sizeof(struct STUN_HEADER)) {/*malformed message*/		
-#if DEBUG_STUN
-		printf("STUN_BAD_REQUEST 3\n");
-#endif
 		return STUN_BAD_REQUEST;
 	}
 

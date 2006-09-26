@@ -39,15 +39,16 @@
 
 void response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omsss, uint32 idx_sock)
 {
-	//printf ("Preparing response...\n");	
-
 	if(ntohs((pkt_dev->stun_pkt).stun_hdr.msgtype) != BINDING_REQUEST) {
+		fnc_log(FNC_LOG_DEBUG,"send STUN_BAD_REQUEST\n");	
 		binding_error_response(STUN_BAD_REQUEST,omsss, idx_sock);
 	}
 	else if(pkt_dev->num_unknown_atrs > 0) {
+		fnc_log(FNC_LOG_DEBUG,"send STUN_UNKNOW_ATTRIBUTE\n");	
 		binding_error_response(STUN_UNKNOWN_ATTRIBUTE,omsss,idx_sock);
 	} 
 	else {
+		fnc_log(FNC_LOG_DEBUG,"send response to idx=%d\n",idx_sock);	
 		binding_response(pkt_dev,omsss,idx_sock);
 	}
 }

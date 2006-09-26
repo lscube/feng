@@ -42,7 +42,6 @@ static int32 send_binding_reponse(STUNbool caddr, STUNbool cport, uint32 idx_soc
 {
 	int32 n = 0;
 
-	//printf("idx_socks: %d \n", idx_socks);
 	if( cport && caddr ) {
 		n = Sock_write( (omss->sock[idx_socks]).change_port_addr, pkt, pkt_size); 
 	}
@@ -75,13 +74,21 @@ void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omss, uint32 idx
 	uint16 msglen = 0;
 	uint32 idx_ca = pkt_dev->idx_atr_type_list[CHANGE_REQUEST];
 	int32 idx_ra = pkt_dev->idx_atr_type_list[RESPONSE_ADDRESS];
-	STUNbool cport = IS_SET_CHANGE_PORT_FLAG( ( (struct STUN_ATR_CHANGE_REQUEST *)((pkt_dev->stun_pkt).atrs[idx_ca]))->flagsAB );
-	STUNbool caddr = IS_SET_CHANGE_ADDR_FLAG( ( (struct STUN_ATR_CHANGE_REQUEST *)((pkt_dev->stun_pkt).atrs[idx_ca]))->flagsAB );
-	
+	STUNbool cport = STUN_FALSE;
+	STUNbool caddr = STUN_FALSE;
 	struct STUN_HEADER *stun_hdr = calloc(1,sizeof(struct STUN_HEADER));
 	stun_atr *atr;
 	uint32 n;
 	uint8 pkt[STUN_MAX_MESSAGE_SIZE];
+	
+	/*if change port is present*/
+	//if((struct STUN_ATR_CHANGE_REQUEST *)((pkt_dev->stun_pkt).atrs[idx_ca]) != NULL)
+	if(pkt_dev->idx_atr_type_list[CHANGE_REQUEST])
+	{
+		cport = IS_SET_CHANGE_PORT_FLAG( ntohl(( (struct STUN_ATR_CHANGE_REQUEST *)((pkt_dev->stun_pkt).atrs[idx_ca])->atr)->flagsAB ));
+		caddr = IS_SET_CHANGE_ADDR_FLAG( ntohl(( (struct STUN_ATR_CHANGE_REQUEST *)((pkt_dev->stun_pkt).atrs[idx_ca])->atr)->flagsAB ));
+ 	}
+	
 
 	memset(pkt,0,sizeof(pkt));
 
@@ -136,23 +143,26 @@ void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omss, uint32 idx
 	msglen += 4;
 	free(atr);
 
+
 	//changed address
 	if( cport && caddr ) {
 		ca = htonl( get_local_s_addr( (omss->sock[idx_socks]).change_port_addr ));
-		atr = create_changed_address(IPv4family, atoi(get_remote_port((omss->sock[idx_socks]).change_port_addr)), ca);
+		atr = create_changed_address(IPv4family, atoi(get_local_port((omss->sock[idx_socks]).change_port_addr)), ca);
 	}
 	else if( cport ) {
 		ca = htonl( get_local_s_addr( (omss->sock[idx_socks]).change_port ));
-		atr = create_changed_address(IPv4family, atoi(get_remote_port((omss->sock[idx_socks]).change_port)), ca);
+		atr = create_changed_address(IPv4family, atoi(get_local_port((omss->sock[idx_socks]).change_port)), ca);
 	}
 	else if ( caddr ) {
 		ca = htonl( get_local_s_addr( (omss->sock[idx_socks]).change_addr ));
-		atr = create_changed_address(IPv4family, atoi(get_remote_port((omss->sock[idx_socks]).change_addr)), ca);
+		atr = create_changed_address(IPv4family, atoi(get_local_port((omss->sock[idx_socks]).change_addr)), ca);
 	}
 	else {
 		ca = htonl( get_local_s_addr( (omss->sock[idx_socks]).sock ));
-		atr = create_changed_address(IPv4family, atoi(get_remote_port((omss->sock[idx_socks]).sock)), ca);
+		atr = create_changed_address(IPv4family, atoi(get_local_port((omss->sock[idx_socks]).sock)), ca);
 	}
+
+	//printf("flagAB = %d\n",ntohl(((struct STUN_ATR_CHANGE_REQUEST *)(((pkt_dev->stun_pkt).atrs[idx_ca])->atr))->flagsAB));
 	
 	atrlen = sizeof(struct STUN_ATR_ADDRESS) + SIZE_ATR_HDR;
 	
@@ -177,15 +187,16 @@ void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omss, uint32 idx
 
 
 
+#if 0
 	//reflected from
 	if(idx_ra != -1) { //if response addr present. See parse_atrs
 	
 		atr = create_reflected_from(IPv4family, 0, 0); //only to allocate atr
-		memcpy(atr,(pkt_dev->stun_pkt).atrs[idx_ra], sizeof(struct STUN_ATR_ADDRESS) + SIZE_ATR_HDR) ;
+		atrlen = sizeof(struct STUN_ATR_ADDRESS) + SIZE_ATR_HDR;
+
+		memcpy(atr,(pkt_dev->stun_pkt).atrs[idx_ra], atrlen) ;
 		atr->stun_atr_hdr.type = REFLECTED_FROM;
 		
-		atrlen = sizeof(struct STUN_ATR_ADDRESS) + SIZE_ATR_HDR;
-	
 		memcpy(&(pkt[wbytes]), atr, SIZE_ATR_HDR); 
 		wbytes += SIZE_ATR_HDR;
 		msglen += SIZE_ATR_HDR;
@@ -205,7 +216,7 @@ void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omss, uint32 idx
 		msglen += 4;
 		free(atr);
 	}
-
+#endif //0
 
 	
 	stun_hdr->msglen = htons(msglen);
@@ -215,5 +226,4 @@ void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omss, uint32 idx
 
 
 }
-//int Sock_connect_by_sock(Sock *s,char *host, char *port);
 

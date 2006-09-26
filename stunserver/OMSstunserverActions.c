@@ -39,12 +39,6 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-/*NOTE:
- Sock_connect_by_sock(omsss->socks_pair[socks_pair_idx]->sock,
-		get_remote_host(omsss->socks_pair[socks_pair_idx]->sock),
-		get_remote_port(omsss->socks_pair[socks_pair_idx]->sock));	
-
-*/
 void OMSstunserverActions(OMSStunServer *omsss)
 {
 	OMS_STUN_PKT_DEV *pkt_dev = NULL;
@@ -71,7 +65,6 @@ void OMSstunserverActions(OMSStunServer *omsss)
 			else
 				response(pkt_dev, omsss,2);
 		}
-		//printf("n = %d\n",n);	
 		// Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
 		nanosleep(&ts, NULL);
 		

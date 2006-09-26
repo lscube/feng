@@ -32,10 +32,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <string.h>
 #include <sys/ioctl.h>
 #include <glib.h>
-//#include <glib/gprintf.h>
 #include <stun/stun.h>
 
 #include <fenice/stunserver.h>
@@ -54,12 +52,7 @@ OMSStunServer *
 	uint32 ai[10];
 	char *tmp;
 	uint16 found_1 = 0, found_2 = 0;
-	/*
-	char *a1 = g_strdup(addr1);
-	char *p1 = g_strdup(port1);
-	char *a2 = g_strdup(addr2);
-	char *p2 = g_strdup(port2);
-	*/
+
 	fnc_log(FNC_LOG_DEBUG,"OMSStunServerInit args: %s,%s,%s,%s\n",addr1,port1,addr2,port2);
 
 	nif=find_local_interfaces(ai,10);
@@ -67,7 +60,6 @@ OMSStunServer *
 	while(i<nif) {
 		tmp = g_strdup_printf("%d.%d.%d.%d", ((ai[i]>>24)&0xFF),((ai[i]>>16)&0xFF),((ai[i]>> 8)&0xFF),((ai[i])&0xFF));			
 		i++;
-		//printf("%s\n",tmp);
 		if ( strcmp(tmp, g_strdup( addr1)) == 0 ) { 
 			fnc_log(FNC_LOG_DEBUG,"Found Stun Addr1\n" );
 			found_1 = 1;
@@ -80,7 +72,6 @@ OMSStunServer *
 
 	if ( found_1 == 0 || found_2 == 0 ) {
 		fnc_log(FNC_LOG_ERR,"Let control ethernet interface configurations\n" );
-		//printf("Let control ethernet interface configurations\n" );
 		
 		return NULL;
 	}
@@ -96,8 +87,6 @@ OMSStunServer *
 	((omsss->sock)[3]).sock = Sock_bind (g_strdup(addr1),g_strdup(port2),fd,UDP,0);
 	
 	for(i=0;i<4;i++) {
-		//printf("local port: %d\n", atoi(get_local_port( ((omsss->sock)[i]).sock )) );
-
 		if ( ((omsss->sock)[i]).sock == NULL) {
 			fnc_log(FNC_LOG_ERR,"Error during binding. Let control ethernet interface configurations\n" );
 			free(omsss);

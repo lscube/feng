@@ -153,14 +153,14 @@ struct STUN_ATR_ADDRESS { /*MAPPED, RESPONSE, CHANGED, SOURCE, REFLECTED-FROM*/
 #define IPv4family 0x01
 
 struct STUN_ATR_CHANGE_REQUEST {
-	STUNuint32 flagsAB;/*0000000000000000000000000000AB0*/
+	STUNuint32 flagsAB;/*00000000000000000000000000000AB0*/
 };		       /* A = change IP; B = change port*/
 			/*network byte order*/
 
-#define SET_CHANGE_PORT_FLAG(iflag) ( iflag|=0x00000004 )
-#define SET_CHANGE_ADDR_FLAG(iflag) ( iflag|=0x00000002 )
-#define IS_SET_CHANGE_PORT_FLAG(iflag) ( iflag & 0x00000004 )
-#define IS_SET_CHANGE_ADDR_FLAG(iflag) ( iflag & 0x00000002 )
+#define SET_CHANGE_ADDR_FLAG(iflag) ( iflag|=0x00000004 )
+#define SET_CHANGE_PORT_FLAG(iflag) ( iflag|=0x00000002 )
+#define IS_SET_CHANGE_ADDR_FLAG(iflag) ( iflag & 0x00000004 )
+#define IS_SET_CHANGE_PORT_FLAG(iflag) ( iflag & 0x00000002 )
 
 struct STUN_ATR_STRING { /*USERNAME, PASSWORD*/
 	STUNuint8 username_or_passwd[STUN_MAX_STRING]; /*Its length MUST be a multiple of 4 bytes*/

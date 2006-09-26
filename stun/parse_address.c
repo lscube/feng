@@ -33,9 +33,11 @@
 
 STUNuint32 parse_address(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx)
 {
-	if(sizeof(pkt_dev->stun_pkt.atrs[idx]) != 
-			sizeof(struct STUN_ATR_ADDRESS))
+	//TODO
+#if 0
+	if(sizeof(pkt_dev->stun_pkt.atrs[idx])->atr != sizeof(struct STUN_ATR_ADDRESS) )
 		return STUN_BAD_REQUEST;
+#endif
 
 	return 0;
 }

@@ -47,5 +47,6 @@ STUNuint32 parse_change_request(OMS_STUN_PKT_DEV *pkt_dev,STUNuint32 idx)
 	printf("flagsAB ntohl: %d\n", ntohl(((struct STUN_ATR_CHANGE_REQUEST *)((pkt_dev->stun_pkt.atrs[idx])->atr))->flagsAB));
 #endif
 #endif
-	return 0;
+
+	return parse_address(pkt_dev,idx);
 }

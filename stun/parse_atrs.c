@@ -29,7 +29,9 @@
  *  
  * */
 
-#include <stdio.h>
+//#if DEBUG_STUN				
+//#include <stdio.h>
+//#endif
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h> /*ntohs*/
@@ -49,18 +51,33 @@ STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 		switch(ntohs(pkt_dev->stun_pkt.atrs[idx]->stun_atr_hdr.type)) 
 		{
 			case MAPPED_ADDRESS:
+//#if DEBUG_STUN				
+//				printf("MAPPED ADDRESS\n");
+//#endif
 				ret = parse_address(pkt_dev,idx);
 			break;
 			case RESPONSE_ADDRESS:
+//#if DEBUG_STUN				
+//				printf("RESPONSE ADDRESS\n");
+//#endif
 				ret = parse_address(pkt_dev,idx);
 			break;
 			case CHANGE_REQUEST:
+//#if DEBUG_STUN				
+//				printf("CHANGE REQUEST\n");
+//#endif
 				ret = parse_change_request(pkt_dev,idx);
 			break;
 			case SOURCE_ADDRESS:
+//#if DEBUG_STUN				
+//				printf("SOURCE ADDRESS\n");
+//#endif
 				ret = parse_address(pkt_dev,idx);
 			break;
 			case CHANGED_ADDRESS:
+//#if DEBUG_STUN				
+//				printf("CHANGED ADDRESS\n");
+//#endif
 				ret = parse_address(pkt_dev,idx);
 			break;
 			case USERNAME:
@@ -79,6 +96,9 @@ STUNuint32 parse_atrs(OMS_STUN_PKT_DEV *pkt_dev)
 				ret = parse_unknown_attribute(pkt_dev,idx);
 			break;
 			case REFLECTED_FROM:
+//#if DEBUG_STUN				
+//				printf("REFLECTED FROM\n");
+//#endif
 				ret = parse_address(pkt_dev,idx);
 			break;
 			default :
