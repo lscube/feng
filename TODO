@@ -1,15 +1,9 @@
-1.8:
-	* daemon mode
-	* system logs
-	* init scripts
-
 1.11:
 	* mediathread
 		- mmapped I/O
 		- libavformat support (starting from mov/mp4)
 		- mov2sdp (limited to interesting format)
 	* daemon mode
-	* logrotate scripts (automagic configuration)
 1.12:
 	* fast seek
 	* cross file stream sync (homogeneous files)

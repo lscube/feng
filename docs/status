@@ -1,0 +1,17 @@
+Codecs
+
+    Name        Status          rfc         Comments
+-   h264        Inexistent      3984
+-   h264        To Be Ported    2429        Exists in the previous fenice
+-   mpeg1/2     Working         2250
+-   mp3         To Be Updated   3119        The former draft is supported
+-   vorbis      To Be Completed draft
+-   theora      To Be Completed draft
+-   amr         Inexistent      3267
+
+Containers
+    Name        Status          Reference
+-   sd          To Be Updated   internal    Native configuration, 
+                                            to be extended to support mappings
+-   mov/mp4     Inexistent      ISO/IEC     14496-14
+-   mkv         Inexistent      website     http://www.matroska.org/technical/specs/index.html
