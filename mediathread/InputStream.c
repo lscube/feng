@@ -28,6 +28,11 @@
  *  
  * */
 
+/* 
+ * mmap wrappers mostly ripped from xine's patches
+ * from Diego Pettenò <flameeyes@gentoo.org>
+ */
+
 #include <string.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -40,6 +45,10 @@
 #include <fenice/utils.h>
 #include <fenice/InputStream.h>
 #include <fenice/fnc_log.h>
+
+#ifdef HAVE_MMAP
+#include <sys/mman.h>
+#endif
 
 static int open_mrl(char *, InputStream *);
 static int open_mrl_st_file(InputStream *);
@@ -63,6 +72,12 @@ InputStream *istream_open(char *mrl)
 	// is->name[0] = '\0';
 	is->flags=IS_FLAGS_INIT;
 	is->cache=NULL;
+#ifdef HAVE_MMAP
+        is->mmap_on = 0;
+        is->mmap_base = NULL;
+        is->mmap_curr = NULL;
+        is->mmap_len = 0;
+#endif
 	if(open_mrl(mrl, is)!=ERR_NOERROR) {
 		fnc_log(FNC_LOG_ERR,"mrl not valid\n");
 		free(is);
@@ -83,12 +98,41 @@ void istream_close(InputStream *is)
 	}
 }
 
+#ifdef HAVE_MMAP
+static int read_mmap(uint32 nbytes, uint8 *buf, InputStream *is)
+{
+    off_t len = nbytes;
+
+    if (!nbytes) //FIXME: move higher...
+        return 0;
+ 
+    if ( (is->mmap_curr + len) > (is->mmap_base + is->mmap_len) )
+        len = (is->mmap_base + is->mmap_len) - is->mmap_curr;
+    /* FIXME: don't memcpy! */
+    if (buf)
+        memcpy(buf, is->mmap_curr, len);
+
+    is->mmap_curr += len;
+
+    return len;
+}
+#endif
+
+
 /*! InputStream read function
  * If buf pointer is NULL then the function act like a forward seek
  * */
 inline int istream_read(uint32 nbytes, uint8 *buf, InputStream *is)
 {
-	return is ? read_c(nbytes, buf, &is->cache, is->fd, is->type): ERR_ALLOC;
+    if (is) {
+#ifdef HAVE_MMAP
+        if (is->mmap_on)
+            return read_mmap(nbytes, buf, is);
+        else
+#endif
+	    return read_c(nbytes, buf, &is->cache, is->fd, is->type);
+    } else
+    return ERR_ALLOC;
 }
 
 stream_type parse_mrl(char *mrl, char **resource_name)
@@ -265,7 +309,19 @@ static int open_mrl_st_file(InputStream *is)
 		oflag |= O_NONBLOCK;
 		// is->flags|= IS_EXCLUSIVE;
 		is_setfl( is, IS_EXCLUSIVE);
-	}
+#ifdef HAVE_MMAP
+	} else {
+            if ( (is->mmap_base =
+                    mmap(NULL, filestat.st_size, PROT_READ, MAP_SHARED,
+                         is->fd, 0)) != MAP_FAILED ) {
+                    is->mmap_on = 1;
+                    is->mmap_curr = is->mmap_base;
+                    is->mmap_len = filestat.st_size;
+                    return ERR_NOERROR;
+            }
+#endif
+        }
+
 	if( (is->fd=open(is->name, oflag))==-1 ) {
 		switch (errno) {
 			case EACCES:
@@ -331,6 +387,15 @@ static void close_fd(InputStream *is)
 {
 	close(is->fd);
 	is->fd=-1;
+#ifdef HAVE_MMAP
+        if ( is->mmap_base ) {
+            munmap(is->mmap_base, is->mmap_len);
+            is->mmap_on = 0;
+            is->mmap_base = NULL;
+            is->mmap_curr = NULL;
+            is->mmap_len = 0;
+        }
+#endif
 }
 
 static void is_setfl(InputStream *is, istream_flags flags)

@@ -112,7 +112,7 @@ static uint32 read_internal_c(uint32 nbytes, uint8 *buf, Cache *c, int fd)
 int read_c(uint32 nbytes, uint8 *buf, Cache **c, int fd, stream_type type)
 {
 	int bytes_read;
-
+//FIXME make sure it is thread safe!
 	if( !*c && !(*c=create_cache(type))) { // shawill: should we do it here?
 		fnc_log(FNC_LOG_FATAL, "Could not create cache for input stream\n");
 		return ERR_FATAL;
