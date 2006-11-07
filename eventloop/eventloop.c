@@ -34,6 +34,7 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/select.h>
 #include <unistd.h>
 #include <fenice/wsocket.h>
 #include <fenice/eventloop.h>
@@ -53,10 +54,15 @@ void eventloop(Sock *m_fd)
 	static RTSP_buffer *rtsp_list=NULL;
 	RTSP_buffer *p=NULL;
 	uint32 fd_found;
+	fd_set rset;
+	struct timeval tv = {0, 0};
 
 	if (conn_count!=-1)
 	{
-		s_fd=Sock_accept(m_fd);
+		FD_ZERO(&rset);
+		FD_SET(get_fd(m_fd),&rset);
+		if (select(get_fd(m_fd) + 1, &rset, NULL, NULL, &tv))
+			s_fd = Sock_accept(m_fd);
 	} // shawill: and... if not?
 
 	// Handle a new connection

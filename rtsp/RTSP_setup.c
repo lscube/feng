@@ -128,7 +128,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		return ERR_NOERROR;
 	}
 	/* Validate the URL */
-	if (!parse_url(url, server, &port, object)) {	//object é il nome del file richiesto
+	if (!parse_url(url, server, &port, object)) {	//object ï¿½il nome del file richiesto
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
@@ -155,12 +155,12 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	} else {
 		valid_url = is_supported_url(p);
 	}
-	if (!valid_url) {	//se l'estensione non é valida
+	if (!valid_url) {	//se l'estensione non ï¿½valida
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	}
 	q = strchr(object, '!');
-	if (q == NULL) {	//se non c'é "!" non é stato specificato il file che si vuole in streaming (mp3,mpg...)
+	if (q == NULL) {	//se non c'ï¿½"!" non ï¿½stato specificato il file che si vuole in streaming (mp3,mpg...)
 		send_reply(500, 0, rtsp);	/* Internal server error */
 		return ERR_NOERROR;
 	} else {
@@ -302,8 +302,10 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	if ((matching_descr->flags & SD_FL_MULTICAST) ) {	/*multicast*/
 		sp2->is_multicast_dad=0;
 		if (!(matching_descr->flags & SD_FL_MULTICAST_PORT) ) {	
-			sp2->s_rtp_fd = Sock_connect(matching_descr->multicast, g_strdup_printf("%d",ser_ports.RTP), &(sp2->rtp_fd), UDP, 0);
-			sp2->s_rtcp_fd_out = Sock_connect(matching_descr->multicast, g_strdup_printf("%d",ser_ports.RTCP), &(sp2->rtcp_fd_out), UDP, 0);
+			sp2->s_rtp_fd = Sock_connect(matching_descr->multicast, g_strdup_printf("%d",ser_ports.RTP), NULL, UDP, 0);
+			sp2->rtp_fd = get_fd(sp2->s_rtp_fd);
+			sp2->s_rtcp_fd_out = Sock_connect(matching_descr->multicast, g_strdup_printf("%d",ser_ports.RTCP), NULL, UDP, 0);
+			sp2->rtcp_fd_out = get_fd(sp2->s_rtcp_fd_out);
 			/*rtcp_fd_in not open for now for multicast sessions*/
 			//sp2->s_rtcp_fd_in = Sock_bind(NULL, g_strdup_printf("%d",cli_ports.RTCP), &(sp2->rtcp_fd_in), UDP, 0);
 
@@ -316,9 +318,12 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 			fnc_log(FNC_LOG_DEBUG,"\nSet up socket for multicast ok\n");
 		}
 	} else {/*unicast*/
-		sp2->s_rtp_fd = Sock_connect(get_remote_host(rtsp->s_fd), g_strdup_printf("%d",cli_ports.RTP), &(sp2->rtp_fd), UDP, 0);
-		sp2->s_rtcp_fd_out = Sock_connect(get_remote_host(rtsp->s_fd), g_strdup_printf("%d",cli_ports.RTCP), &(sp2->rtcp_fd_out), UDP, 0);
-		sp2->s_rtcp_fd_in = Sock_bind(NULL, g_strdup_printf("%d",ser_ports.RTCP), &(sp2->rtcp_fd_in), UDP, 0);
+		sp2->s_rtp_fd = Sock_connect(get_remote_host(rtsp->s_fd), g_strdup_printf("%d",cli_ports.RTP), NULL, UDP, 0);
+		sp2->rtp_fd = get_fd(sp2->s_rtp_fd);
+		sp2->s_rtcp_fd_out = Sock_connect(get_remote_host(rtsp->s_fd), g_strdup_printf("%d",cli_ports.RTCP), NULL, UDP, 0);
+		sp2->rtcp_fd_out = get_fd(sp2->s_rtcp_fd_out);
+		sp2->s_rtcp_fd_in = Sock_bind(NULL, g_strdup_printf("%d",ser_ports.RTCP), UDP, 0);
+		sp2->rtcp_fd_in = get_fd(sp2->s_rtcp_fd_in);
 	}	
 	
 	/*xxx*/

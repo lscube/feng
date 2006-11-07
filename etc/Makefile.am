@@ -9,7 +9,7 @@ fenice.conf: fenice.conf.in
 	cpp -I.. -P $(FENICE_CONF_FILE).in > $(FENICE_CONF_FILE)
 
 clean:
-	rm $(FENICE_CONF_FILE)
+	rm -f $(FENICE_CONF_FILE)
 
 install-data-local:
 	@if test -f $(FENICE_CONF_DIR)/$(FENICE_CONF_FILE); then \

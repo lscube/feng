@@ -7,7 +7,7 @@
  *
  *  Copyright (C) 2004 by
  * 
- *  - (LS)³ Team			<team@streaming.polito.it>	
+ *  - (LS) Team			<team@streaming.polito.it>	
  *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
  *	- Francesco Varano	<francesco.varano@polito.it>
  *	- Federico Ridolfo	<federico.ridolfo@polito.it>
@@ -48,22 +48,23 @@ void OMSstunserverActions(OMSStunServer *omsss)
 	uint8 buffer[STUN_MAX_MESSAGE_SIZE];
 	uint32 buffer_size = STUN_MAX_MESSAGE_SIZE;
 	uint32 ret = 0;
+	struct sockaddr_storage stg;
 
 	while (1) {
 		n = 0;
-		if ( (n = Sock_read( (omsss->sock[0]).sock, buffer, buffer_size)) > 0 ) { 
+		if ( (n = Sock_read( (omsss->sock[0]).sock, buffer, buffer_size, &stg)) > 0 ) { 
 			if ( (ret = parse_stun_message(buffer, n, &pkt_dev) ) != 0 ) {
 				binding_error_response(ret, omsss,0);
 			}
 			else
-				response(pkt_dev, omsss,0);
+				response(pkt_dev, omsss, 0, stg);
 		}
-		else if ( (n = Sock_read( (omsss->sock[2]).sock, buffer, buffer_size)) > 0 ) { 
+		else if ( (n = Sock_read( (omsss->sock[2]).sock, buffer, buffer_size, &stg)) > 0 ) { 
 			if ( (ret = parse_stun_message(buffer, n, &pkt_dev) ) != 0 ) {
 				binding_error_response(ret, omsss,2);
 			}
 			else
-				response(pkt_dev, omsss,2);
+				response(pkt_dev, omsss, 2, stg);
 		}
 		// Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
 		nanosleep(&ts, NULL);

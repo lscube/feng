@@ -64,8 +64,8 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, SD_descr *descr
 		sprintf(temp, "%d", sp2->cli_ports.RTCP);
 		strcat(r, temp);
 
-		sprintf(temp, ";source=%s", get_local_host(rtsp->s_fd));
-		strcat(r, temp);
+		/*sprintf(temp, ";source=%s", get_local_host(rtsp->s_fd));
+		strcat(r, temp);*/
 
 		strcat(r, ";server_port=");
 	} else {

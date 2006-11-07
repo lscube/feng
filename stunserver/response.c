@@ -7,7 +7,7 @@
  *
  *  Copyright (C) 2004 by
  * 
- *  - (LS)³ Team			<team@streaming.polito.it>	
+ *  - (LS) Team			<team@streaming.polito.it>	
  *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
  *	- Francesco Varano	<francesco.varano@polito.it>
  *	- Federico Ridolfo	<federico.ridolfo@polito.it>
@@ -37,7 +37,7 @@
 #include <fenice/types.h>
 #include <fenice/fnc_log.h>
 
-void response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omsss, uint32 idx_sock)
+void response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omsss, uint32 idx_sock, struct sockaddr_storage stg)
 {
 	if(ntohs((pkt_dev->stun_pkt).stun_hdr.msgtype) != BINDING_REQUEST) {
 		fnc_log(FNC_LOG_DEBUG,"send STUN_BAD_REQUEST\n");	
@@ -49,7 +49,7 @@ void response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omsss, uint32 idx_sock)
 	} 
 	else {
 		fnc_log(FNC_LOG_DEBUG,"send response to idx=%d\n",idx_sock);	
-		binding_response(pkt_dev,omsss,idx_sock);
+		binding_response(pkt_dev,omsss,idx_sock,stg);
 	}
 }
 

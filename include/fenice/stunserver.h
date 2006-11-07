@@ -7,7 +7,7 @@
  *
  *  Copyright (C) 2004 by
  * 
- *  - (LS)³ Team			<team@streaming.polito.it>	
+ *  - (LS) Team			<team@streaming.polito.it>	
  *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
  *	- Francesco Varano	<francesco.varano@polito.it>
  *	- Federico Ridolfo	<federico.ridolfo@polito.it>
@@ -66,8 +66,8 @@ void OMSstunserverActions(OMSStunServer *omsss);
 
 
 /*idx_sock is the index of the received sock*/
-void response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omsss, uint32 idx_sock);
-void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omsss, uint32 idx_sock);
+void response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omsss, uint32 idx_sock, struct sockaddr_storage stg);
+void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omsss, uint32 idx_sock, struct sockaddr_storage stg);
 void binding_error_response(uint32 error_code, OMSStunServer *omsss, uint32 idx_sock);
 uint32 get_local_s_addr( Sock * );
 uint32 get_remote_s_addr( Sock * );

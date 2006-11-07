@@ -65,7 +65,7 @@ int RTCP_handler(RTP_session *session)
     		}
 
 		if (FD_ISSET(session->rtcp_fd_out,&wset)) {
-        		if (Sock_write(session->s_rtcp_fd_out,session->rtcp_outbuffer,session->rtcp_outsize)<0) 
+        		if (Sock_write(session->s_rtcp_fd_out,session->rtcp_outbuffer,session->rtcp_outsize,NULL)<0) 
         			fnc_log(FNC_LOG_VERBOSE,"RTCP Packet Lost\n");
       		  	    		
         		session->rtcp_outsize=0;

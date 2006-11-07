@@ -7,7 +7,7 @@
  *
  *  Copyright (C) 2004 by
  * 
- *  - (LS)³ Team			<team@streaming.polito.it>	
+ *  - (LS) Team			<team@streaming.polito.it>	
  *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
  *	- Francesco Varano	<francesco.varano@polito.it>
  *	- Federico Ridolfo	<federico.ridolfo@polito.it>
@@ -34,6 +34,6 @@
 
 uint32 get_remote_s_addr( Sock *s)
 {
-return ntohl( ((struct sockaddr_in *)&(s->sock_stg))->sin_addr.s_addr);	
+return ntohl( ((struct sockaddr_in *)&(s->remote_stg))->sin_addr.s_addr);	
 }
 

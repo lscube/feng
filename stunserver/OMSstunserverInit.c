@@ -7,7 +7,7 @@
  *
  *  Copyright (C) 2004 by
  * 
- *  - (LS)³ Team			<team@streaming.polito.it>	
+ *  - (LS) Team			<team@streaming.polito.it>	
  *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
  *	- Francesco Varano	<francesco.varano@polito.it>
  *	- Federico Ridolfo	<federico.ridolfo@polito.it>
@@ -45,7 +45,6 @@ OMSStunServer *
 	OMSStunServerInit(char *addr1, char *port1,char *addr2,char *port2)
 {
 	OMSStunServer *omsss;
-	int *fd;
 	int i = 0;
 	int on = 1;
 	int nif = 0;
@@ -81,10 +80,10 @@ OMSStunServer *
 	if(omsss == NULL)
 		return NULL;
 
-	((omsss->sock)[0]).sock = Sock_bind (g_strdup(addr1),g_strdup(port1),fd,UDP,0);
-	((omsss->sock)[1]).sock = Sock_bind (g_strdup(addr2),g_strdup(port2),fd,UDP,0);
-	((omsss->sock)[2]).sock = Sock_bind (g_strdup(addr2),g_strdup(port1),fd,UDP,0);
-	((omsss->sock)[3]).sock = Sock_bind (g_strdup(addr1),g_strdup(port2),fd,UDP,0);
+	((omsss->sock)[0]).sock = Sock_bind (g_strdup(addr1),g_strdup(port1),UDP,0);
+	((omsss->sock)[1]).sock = Sock_bind (g_strdup(addr2),g_strdup(port2),UDP,0);
+	((omsss->sock)[2]).sock = Sock_bind (g_strdup(addr2),g_strdup(port1),UDP,0);
+	((omsss->sock)[3]).sock = Sock_bind (g_strdup(addr1),g_strdup(port2),UDP,0);
 	
 	for(i=0;i<4;i++) {
 		if ( ((omsss->sock)[i]).sock == NULL) {
@@ -92,7 +91,7 @@ OMSStunServer *
 			free(omsss);
 			return NULL;
 		}
-		if (Sock_set_props( get_fd(((omsss->sock)[i]).sock), FIONBIO, &on) < 0) { /*set to non-blocking*/
+		if (Sock_set_props(((omsss->sock)[i]).sock, FIONBIO, &on) < 0) { /*set to non-blocking*/
 			fnc_log(FNC_LOG_ERR,"ioctl() error.\n" );
 			free(omsss);
 			return NULL;

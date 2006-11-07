@@ -75,7 +75,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 		// There are RTSP packets to read in
 		memset(buffer,0,sizeof(buffer));
 		size=sizeof(buffer)-1;
-		n=Sock_read(rtsp->s_fd,buffer,size);
+		n=Sock_read(rtsp->s_fd,buffer,size, NULL);
 		if (n==0) {
 			return ERR_CONNECTION_CLOSE;
 		}
@@ -107,7 +107,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 	if (FD_ISSET(get_fd(rtsp->s_fd),&wset)) {						
 		// There are RTSP packets to send
 		if (rtsp->out_size>0) {
-			n=Sock_write(rtsp->s_fd,rtsp->out_buffer,rtsp->out_size);
+			n=Sock_write(rtsp->s_fd,rtsp->out_buffer,rtsp->out_size, NULL);
 			if (n<0) {
 				fnc_log(FNC_LOG_ERR,"tcp_write() error in rtsp_server()\n");        			
 				send_reply(500, NULL, rtsp);
@@ -131,7 +131,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 		
 		if (!p->started) {
 			
-			q->cur_state = READY_STATE; // é finita la riproduzione, passo in stato ready
+			q->cur_state = READY_STATE; // ï¿½finita la riproduzione, passo in stato ready
 			/*free della struttura rtp TODO*/	
 		
 		} else {
@@ -154,7 +154,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 				// /*x-x*/
     				//socklen_t peer_len=sizeof(p->rtcp_in_peer);
         			//if ((p->rtcp_insize=recvfrom(p->rtcp_fd_in, p->rtcp_inbuffer, sizeof(p->rtcp_inbuffer), 0, &(p->rtcp_in_peer), &peer_len))<0) {            	
-        			if ((Sock_read(p->s_rtcp_fd_in, p->rtcp_inbuffer, sizeof(p->rtcp_inbuffer)))<0) {            	
+        			if (Sock_read(p->s_rtcp_fd_in, p->rtcp_inbuffer, sizeof(p->rtcp_inbuffer), NULL) < 0) {
         				fnc_log(FNC_LOG_VERBOSE,"Input RTCP packet Lost\n");
         			}
         			else {

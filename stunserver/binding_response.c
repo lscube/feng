@@ -17,42 +17,43 @@ static uint32 __sa(STUNbool caddr, STUNbool cport, uint32 idx_socks, stun_atr **
 	if( cport && caddr ) {
 		sa = htonl( get_local_s_addr( ((omss->sock[idx_socks]).change_port_addr)) );
 		//source address
-		*atr = create_source_address(IPv4family, atoi(get_local_port((omss->sock[idx_socks]).change_port_addr)), sa);
+		*atr = create_source_address(IPv4family, get_local_port((omss->sock[idx_socks]).change_port_addr), sa);
 	}
 	else if( cport ) {
 		sa = htonl(  get_local_s_addr( ((omss->sock[idx_socks]).change_port)) );
 		//source address
-		*atr = create_source_address(IPv4family, atoi(get_local_port((omss->sock[idx_socks]).change_port)), sa);
+		*atr = create_source_address(IPv4family, get_local_port((omss->sock[idx_socks]).change_port), sa);
 	}
 	else if ( caddr ) {
 		sa = htonl( get_local_s_addr( ((omss->sock[idx_socks]).change_addr)) );
 		//source address
-		*atr = create_source_address(IPv4family, atoi(get_local_port((omss->sock[idx_socks]).change_addr)), sa);
+		*atr = create_source_address(IPv4family, get_local_port((omss->sock[idx_socks]).change_addr), sa);
 	}
 	else {
 		sa = htonl( get_local_s_addr( ((omss->sock[idx_socks]).sock)) ); 
 		//source address
-		*atr = create_source_address(IPv4family, atoi(get_local_port((omss->sock[idx_socks]).sock)), sa);
+		*atr = create_source_address(IPv4family, get_local_port((omss->sock[idx_socks]).sock), sa);
 	}
 	return sa;
 
 }
 
-static int32 send_binding_reponse(STUNbool caddr, STUNbool cport, uint32 idx_socks, OMSStunServer *omss, void *pkt, uint32 pkt_size)
+static int32 send_binding_reponse(STUNbool caddr, STUNbool cport, uint32 idx_socks,
+	OMSStunServer *omss, void *pkt, uint32 pkt_size, struct sockaddr_storage stg)
 {
 	int32 n = 0;
 
 	if( cport && caddr ) {
-		n = Sock_write( (omss->sock[idx_socks]).change_port_addr, pkt, pkt_size); 
+		n = Sock_write( (omss->sock[idx_socks]).change_port_addr, pkt, pkt_size, &stg); 
 	}
 	else if( cport ) {
-		n = Sock_write ( (omss->sock[idx_socks]).change_port, pkt, pkt_size);
+		n = Sock_write ( (omss->sock[idx_socks]).change_port, pkt, pkt_size, &stg);
 	}
 	else if ( caddr ) {
-		n = Sock_write( (omss->sock[idx_socks]).change_addr, pkt, pkt_size);
+		n = Sock_write( (omss->sock[idx_socks]).change_addr, pkt, pkt_size, &stg);
 	}
 	else {
-		n = Sock_write( (omss->sock[idx_socks]).sock, pkt, pkt_size);
+		n = Sock_write( (omss->sock[idx_socks]).sock, pkt, pkt_size, &stg);
 	}
 
 #if 0
@@ -65,9 +66,9 @@ static int32 send_binding_reponse(STUNbool caddr, STUNbool cport, uint32 idx_soc
 
 }
 
-void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omss, uint32 idx_socks)
+void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omss, uint32 idx_socks, struct sockaddr_storage stg)
 {
-	uint32 ma = htonl( get_remote_s_addr( (omss->sock[idx_socks]).sock ));
+	uint32 ma = ((struct sockaddr_in *)&stg)->sin_addr.s_addr;
 	uint32 sa, ca;
 	uint16 atrlen = 0;
 	uint32 wbytes = 0;
@@ -99,7 +100,7 @@ void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omss, uint32 idx
 	wbytes = sizeof(struct STUN_HEADER);
 		
 	//mapped address
-	atr = create_mapped_address(IPv4family, atoi(get_remote_port((omss->sock[idx_socks]).sock)), ma);
+	atr = create_mapped_address(IPv4family, ((struct sockaddr_in*)&stg)->sin_port, ma);
 	
 	atrlen = sizeof(struct STUN_ATR_ADDRESS) + SIZE_ATR_HDR;
 	
@@ -147,19 +148,19 @@ void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omss, uint32 idx
 	//changed address
 	if( cport && caddr ) {
 		ca = htonl( get_local_s_addr( (omss->sock[idx_socks]).change_port_addr ));
-		atr = create_changed_address(IPv4family, atoi(get_local_port((omss->sock[idx_socks]).change_port_addr)), ca);
+		atr = create_changed_address(IPv4family, get_local_port((omss->sock[idx_socks]).change_port_addr), ca);
 	}
 	else if( cport ) {
 		ca = htonl( get_local_s_addr( (omss->sock[idx_socks]).change_port ));
-		atr = create_changed_address(IPv4family, atoi(get_local_port((omss->sock[idx_socks]).change_port)), ca);
+		atr = create_changed_address(IPv4family, get_local_port((omss->sock[idx_socks]).change_port), ca);
 	}
 	else if ( caddr ) {
 		ca = htonl( get_local_s_addr( (omss->sock[idx_socks]).change_addr ));
-		atr = create_changed_address(IPv4family, atoi(get_local_port((omss->sock[idx_socks]).change_addr)), ca);
+		atr = create_changed_address(IPv4family, get_local_port((omss->sock[idx_socks]).change_addr), ca);
 	}
 	else {
 		ca = htonl( get_local_s_addr( (omss->sock[idx_socks]).sock ));
-		atr = create_changed_address(IPv4family, atoi(get_local_port((omss->sock[idx_socks]).sock)), ca);
+		atr = create_changed_address(IPv4family, get_local_port((omss->sock[idx_socks]).sock), ca);
 	}
 
 	//printf("flagAB = %d\n",ntohl(((struct STUN_ATR_CHANGE_REQUEST *)(((pkt_dev->stun_pkt).atrs[idx_ca])->atr))->flagsAB));
@@ -222,7 +223,7 @@ void binding_response(OMS_STUN_PKT_DEV *pkt_dev, OMSStunServer *omss, uint32 idx
 	stun_hdr->msglen = htons(msglen);
 	memcpy(pkt,stun_hdr,sizeof(struct STUN_HEADER));
 
-	send_binding_reponse(caddr, cport, idx_socks, omss, pkt, wbytes);
+	send_binding_reponse(caddr, cport, idx_socks, omss, pkt, wbytes, stg);
 
 
 }
