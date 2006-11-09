@@ -44,7 +44,7 @@
 
 
 #define DESCRCAT(x) { if ( (size_left -= x) < 0) return ERR_INPUT_PARAM; else cursor=descr+descr_size-size_left; }
-int sdp_session_descr(resource_name n, Sock *rtsp_sock/*int net_fd*/, char *descr, size_t descr_size)
+int sdp_session_descr(resource_name n, char *descr, size_t descr_size)
 {
 	/*x-x*/
 	//struct sockaddr_storage localaddr;
@@ -73,7 +73,7 @@ int sdp_session_descr(resource_name n, Sock *rtsp_sock/*int net_fd*/, char *desc
 	//	return ERR_INPUT_PARAM; // given socket is not valid
 	//if (getnameinfo((struct sockaddr *)&localaddr, localaddr_len, localhostname, sizeof(localhostname), NULL, 0, 0))
 	//	return ERR_INPUT_PARAM; // could not get address name or IP
-	if(get_local_hostname(rtsp_sock,localhostname,sizeof(localhostname))) {
+	if(get_local_hostname(localhostname,sizeof(localhostname))) {
 		fnc_log(FNC_LOG_ERR, "[SDP2] get_local_hostname %s\n", thefile);
 		return ERR_INPUT_PARAM; // could not get address name or IP
 	}
