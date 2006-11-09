@@ -36,6 +36,11 @@
 
 #include <fenice/bufferpool.h>
 
+#define RETURN(x)	do { \
+				OMSbuff_unlock(cons->buffer); \
+				return x; \
+			} while (0)
+
 /*! Check if buffer is empty for a given consumer. 
  *
  * Checks in this function are taken from <tt>OMSbuff_read()</tt> and not
@@ -47,21 +52,34 @@
  *
  * \see OMSbuff_read
  * */
-int OMSbuff_isempty(OMSConsumer *cons)
+int OMSbuff_isempty(OMSConsumer * cons)
 {
-	OMSSlot *last_read = cons->last_read_pos;
-	// OMSSlot *next = cons->read_pos->next;
-	OMSSlot *next = cons->read_pos;
+	OMSSlot *last_read;
+	OMSSlot *next;
 
-	if ( !next->refs || (next->slot_seq < cons->last_seq) ) {
+	OMSbuff_lock(cons->buffer);
+
+	OMSbuff_shm_refresh(cons->buffer);
+
+	last_read = OMStoSlot(cons->buffer, cons->last_read_pos);
+	next = &cons->buffer->slots[cons->read_pos];
+
+	if (!next->refs || (next->slot_seq < cons->last_seq)) {
 		// added some slots?
-		if ( last_read && last_read->next->refs && (last_read->next->slot_seq > cons->last_seq) )
-			return 0;
+		if (last_read && cons->buffer->slots[last_read->next].refs
+		    && (cons->buffer->slots[last_read->next].slot_seq >
+			cons->last_seq))
+			RETURN(0);
 		else
-			return 1;
-	} else if (last_read && ( last_read->next->slot_seq < next->slot_seq ) )
-			return 0;
+			RETURN(1);
+	} else if (last_read
+		   && (cons->buffer->slots[last_read->next].slot_seq <
+		       next->slot_seq))
+		RETURN(0);
+
+	OMSbuff_unlock(cons->buffer);
 
 	return 0;
 }
 
+#undef RETURN

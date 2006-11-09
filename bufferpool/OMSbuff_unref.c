@@ -31,18 +31,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
+
+#include <sys/mman.h>
+
 #include <fenice/bufferpool.h>
 #include <fenice/fnc_log.h>
 
-void OMSbuff_unref(OMSConsumer *cons)
+void OMSbuff_unref(OMSConsumer * cons)
 {
-	if(cons) {
-		if(cons->buffer->refs > 0) {
-			--(cons->buffer->refs);
+	if (cons) {
+		OMSbuff_lock(cons->buffer);
+		if (cons->buffer->control->refs > 0) {
+			--(cons->buffer->control->refs);
+//                      if ( msync(cons->buffer->control, sizeof(OMSControl), MS_ASYNC) )
+//                              printf("*** msync error\n");
+			OMSbuff_unlock(cons->buffer);
 			//Now consumer has to read all unread slots
-			while(!OMSbuff_gotreader(cons));
-		}
-			fnc_log(FNC_LOG_DEBUG, "Buffer ref (%d)\n", cons->buffer->refs);
-			free(cons);
+			while (!OMSbuff_gotreader(cons));
+		} else
+			OMSbuff_unlock(cons->buffer);
+
+		fnc_log(FNC_LOG_DEBUG, "Buffer ref (%d)\n",
+			cons->buffer->control->refs);
+		free(cons);
 	}
 }

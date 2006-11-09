@@ -34,24 +34,28 @@
 
 #include <stdlib.h>
 
+#include <sys/mman.h>
+
 #include <fenice/bufferpool.h>
 #include <fenice/fnc_log.h>
 
-void OMSbuff_free(OMSBuffer *buffer)
+void OMSbuff_free(OMSBuffer * buffer)
 {
-	OMSSlotAdded *added, *tmp;	
-
-	if (!buffer)
-		return;
-
-	added=buffer->added_head;
-	while(added){
-		tmp=added->next_added;
-		free(added);
-		added=tmp;
+	switch (buffer->type) {
+	case buff_shm:
+		OMSbuff_shm_unmap(buffer);
+		fnc_log(FNC_LOG_DEBUG, "Buffer in SHM unmapped \n");
+		break;
+	case buff_local:{
+			pthread_mutex_destroy(&buffer->control->syn);
+			free(buffer->control);
+			free(buffer->slots);
+			free(buffer);
+			fnc_log(FNC_LOG_DEBUG, "Buffer is freed \n");
+			break;
+		}
+	default:
+		break;
 	}
-	free(buffer);
-	fnc_log(FNC_LOG_DEBUG, "Buffer is freed \n");
-		
-}
 
+}

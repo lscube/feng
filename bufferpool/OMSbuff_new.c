@@ -37,27 +37,57 @@
 
 #include <fenice/bufferpool.h>
 
+#define OMSNEWBUFF_RET_ERR	do { \
+					free(slots); \
+					free(buffer); \
+					free(control); \
+					return NULL; \
+				} while (0)
+
 OMSBuffer *OMSbuff_new(uint32 buffer_size)
 {
-	OMSSlot *head;
-	OMSBuffer *buffer;
+	OMSSlot *slots = NULL;
+	OMSBuffer *buffer = NULL;
+	OMSControl *control = NULL;
 	uint32 index;
-	
-	if(!(head = (OMSSlot *)calloc(buffer_size, sizeof(OMSSlot))))
+	pthread_mutexattr_t mutex_attr;
+
+	if (!buffer_size)
 		return NULL;
-	for(index=0; index<buffer_size-1; index++)
-		(head[index]).next = &(head[index+1]);
-	
-	(head[index]).next=head; /*end of the list back to the head*/
-	buffer = (OMSBuffer *)malloc(sizeof(OMSBuffer));
-	buffer->write_pos = &(head[index]);
-	buffer->buffer_head = head;
-	buffer->added_head = NULL;
-	buffer->refs = 0;
+
+	if (!(slots = (OMSSlot *) calloc(buffer_size, sizeof(OMSSlot))))
+		OMSNEWBUFF_RET_ERR;
+	// *** slots initialization
+	for (index = 0; index < buffer_size - 1; index++)
+		(slots[index]).next = index + 1;
+	(slots[index]).next = 0;	/*end of the list back to the head */
+
+	// control struct allocation
+	if (!(control = malloc(sizeof(OMSControl))))
+		OMSNEWBUFF_RET_ERR;
+	control->write_pos = buffer_size - 1;
+	control->valid_read_pos = 0;	// buffer_size-1;
+
+	control->refs = 0;
+	control->nslots = buffer_size;
+
+	if (pthread_mutexattr_init(&mutex_attr))
+		OMSNEWBUFF_RET_ERR;
+	if (pthread_mutex_init(&control->syn, &mutex_attr))
+		OMSNEWBUFF_RET_ERR;
+	if (!(buffer = (OMSBuffer *) malloc(sizeof(OMSBuffer))))
+		OMSNEWBUFF_RET_ERR;
+	buffer->type = buff_local;
+	*buffer->filename = '\0';
 	// buffer->fd = -1;
 	// buffer->fd = NULL;
-	buffer->min_size = buffer_size-1;
+	buffer->known_slots = buffer_size;
+
+	// link all allocated structs
+	buffer->slots = slots;
+	buffer->control = control;
 
 	return buffer;
 }
 
+#undef OMSNEWBUFF_RET_ERR

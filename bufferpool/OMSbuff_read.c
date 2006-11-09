@@ -35,6 +35,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <sys/mman.h>
+
 #include <fenice/bufferpool.h>
 #include <fenice/utils.h>
 
@@ -55,21 +57,34 @@
  * 
  * */
 // OMSSlot *OMSbuff_read(OMSConsumer *cons)
-int32 OMSbuff_read(OMSConsumer *cons, uint32 *timestamp, uint8 *marker, uint8 *data, uint32 *data_size)
+int32 OMSbuff_read(OMSConsumer * cons, uint32 * timestamp, uint8 * marker,
+		   uint8 * data, uint32 * data_size)
 {
-	OMSSlot *last_read = cons->last_read_pos;
-	// OMSSlot *next = cons->read_pos->next;
-	OMSSlot *next = cons->read_pos;
+	OMSSlot *last_read;
+	OMSSlot *next;
 	uint32 cpy_size;
 
-	if ( !next->refs || (next->slot_seq < cons->last_seq) ) {
+	OMSbuff_lock(cons->buffer);
+
+	OMSbuff_shm_refresh(cons->buffer);
+
+	last_read = OMStoSlot(cons->buffer, cons->last_read_pos);	//we use OMStoSlot 'cause last_read could be NULL
+	next = &cons->buffer->slots[cons->read_pos];
+
+	if (!next->refs || (next->slot_seq < cons->last_seq)) {
 		// added some slots?
-		if ( last_read && last_read->next->refs && (last_read->next->slot_seq > cons->last_seq) )
-			next = last_read->next;
-		else
-			return -1; // NULL;
-	} else if (last_read && ( last_read->next->slot_seq < next->slot_seq ) )
-			next = last_read->next;
+		if (last_read && cons->buffer->slots[last_read->next].refs
+		    && (cons->buffer->slots[last_read->next].slot_seq >
+			cons->last_seq))
+			next = &cons->buffer->slots[last_read->next];
+		else {
+			OMSbuff_unlock(cons->buffer);
+			return -1;	// NULL;
+		}
+	} else if (last_read
+		   && (cons->buffer->slots[last_read->next].slot_seq <
+		       next->slot_seq))
+		next = &cons->buffer->slots[last_read->next];
 
 	cpy_size = omsbuff_min(*data_size, next->data_size);
 
@@ -78,7 +93,6 @@ int32 OMSbuff_read(OMSConsumer *cons, uint32 *timestamp, uint8 *marker, uint8 *d
 	cons->last_seq = next->slot_seq;
 	// cons->read_pos = next;
 
-	cons->last_read_pos = next;
 	cons->read_pos = next->next;
 
 	// cons->read_pos->refs--;
@@ -88,22 +102,13 @@ int32 OMSbuff_read(OMSConsumer *cons, uint32 *timestamp, uint8 *marker, uint8 *d
 	memcpy(data, next->data, cpy_size);
 	*data_size = cpy_size;
 
-	
+//      if ( msync(next, sizeof(OMSSlot), MS_ASYNC) )
+//      if ( msync(cons->buffer->slots, cons->buffer->known_slots * sizeof(OMSSlot), MS_ASYNC) )
+//              printf("*** msync error\n");
+	OMSbuff_unlock(cons->buffer);
+
+	cons->last_read_pos = OMStoSlotPtr(cons->buffer, next);
+
 	// return cons->read_pos;
-	return (cpy_size == next->data_size) ? 0 : 1; // next;
-
-#if 0 // shawill: old read
-	OMSSlot *read_pos = cons->read_pos;
-
-	if ( !read_pos->refs )
-		return NULL;
-
-	cons->read_pos->refs--;
-	
-	cons->read_pos = read_pos->next;
-
-	return read_pos;
-#endif
-		
+	return (cpy_size == next->data_size) ? 0 : 1;	// next;          
 }
-

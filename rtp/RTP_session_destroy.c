@@ -75,7 +75,7 @@ RTP_session *RTP_session_destroy(RTP_session *session)
 	RTP_release_port_pair(&(session->ser_ports));
 	// destroy consumer
 	OMSbuff_unref(session->cons);
-	if (session->current_media->pkt_buffer->refs==0) {
+	if (session->current_media->pkt_buffer->control->refs==0) {
 			session->current_media->pkt_buffer=NULL;
 			OMSbuff_free(buff);
 			// close file if it's not a pipe

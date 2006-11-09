@@ -34,23 +34,53 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+#include <sys/mman.h>
 
 #include <fenice/bufferpool.h>
+
+#ifndef OMSBUFF_REALLOC
+
 #include <fenice/fnc_log.h>
 
-OMSSlot *OMSbuff_slotadd(OMSBuffer *buffer, OMSSlot *prev)
+/*\brief internal function used to add a slot or, in case of shared memory, a page of slots
+ * (of OMSBUFF_SHM_PAGE size).
+ * WARNING: the function assumes that the caller (OMSbuff_write or OMSbuff_getslot) locked the buffer mutex
+ * \return the first OMSSlot of new added page of slots.
+ * */
+OMSSlot *OMSbuff_slotadd(OMSBuffer * buffer, OMSSlot * prev)
 {
-	OMSSlotAdded *added;
+	OMSSlot *added;
+	OMSSlotPtr prev_diff;
 
-	if (!(added = (OMSSlotAdded *)calloc(1,sizeof(OMSSlotAdded))))
-		return NULL;
+	switch (buffer->type) {
+	case buff_shm:
+		prev_diff = OMStoSlotPtr(buffer, prev);
+		added = OMSbuff_shm_addpage(buffer);
+		prev = &buffer->slots[prev_diff];
 
-	added->next = prev->next;
-	prev->next = (OMSSlot *)added;
+		buffer->slots[buffer->known_slots - 1].next = prev->next;	// last added slot in shm new page is linked to the prev->next in old queue
 
-	added->next_added = buffer->added_head;
-	buffer->added_head = added;
-	fnc_log(FNC_LOG_DEBUG,"slot added\n");
-	return (OMSSlot *)added;
+		fnc_log(FNC_LOG_DEBUG, "OMSSlots page added in SHM memory\n");
+		break;
+	case buff_local:
+	default:
+		if (!(added = calloc(1, sizeof(OMSSlotAdded))))
+			return NULL;
+		((OMSSlotAdded *) added)->next_added = buffer->added_slots;
+		buffer->added_slots = (OMSSlotAdded *) added;
+
+		added->next = prev->next;
+		fnc_log(FNC_LOG_DEBUG, "slot added\n");
+		break;
+	}
+
+	prev->next = OMStoSlotPtr(buffer, added);
+
+	return added;
 }
-
+#endif				// OMSBUFF_REALLOC

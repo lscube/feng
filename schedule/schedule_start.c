@@ -51,7 +51,8 @@ int32 schedule_start(int id,play_args *args)
 	if ((sched[id].rtp_session->cons = OMSbuff_ref(sched[id].rtp_session->current_media->pkt_buffer)) == NULL)
 			return ERR_ALLOC;
 
-	if (sched[id].rtp_session->current_media->pkt_buffer->refs==1) {	
+	if (sched[id].rtp_session->current_media->pkt_buffer->control->refs==1)
+        {	
 	/*If and only if this session is the first session related to this media_entry, then it runs here*/	
 		if (!args->playback_time_valid) {	
 			sched[id].rtp_session->current_media->mstart=mnow;
