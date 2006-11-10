@@ -35,6 +35,7 @@
 #include <fenice/rtcp.h>
 #include <fenice/rtp.h>
 
-int RTCP_get_pkt_lost(RTP_session *rtp_session) {
+int RTCP_get_pkt_lost(RTP_session * rtp_session)
+{
 	return rtp_session->rtcp_stats[i_client].pkt_lost;
 }
