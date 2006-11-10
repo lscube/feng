@@ -65,6 +65,6 @@ void add_client(RTSP_buffer **rtsp_list, Sock *s_fd)
 		}
 	}
 	RTSP_initserver(p,s_fd);
-	fnc_log(FNC_LOG_INFO,"Incoming RTSP connection accepted on socket: %d\n",get_fd(p->s_fd));
+	fnc_log(FNC_LOG_INFO,"Incoming RTSP connection accepted on socket: %d\n",Sock_fd(p->s_fd));
 }
 

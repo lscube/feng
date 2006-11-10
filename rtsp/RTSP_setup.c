@@ -303,9 +303,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		sp2->is_multicast_dad=0;
 		if (!(matching_descr->flags & SD_FL_MULTICAST_PORT) ) {	
 			sp2->s_rtp_fd = Sock_connect(matching_descr->multicast, g_strdup_printf("%d",ser_ports.RTP), NULL, UDP, 0);
-			sp2->rtp_fd = get_fd(sp2->s_rtp_fd);
+			sp2->rtp_fd = Sock_fd(sp2->s_rtp_fd);
 			sp2->s_rtcp_fd_out = Sock_connect(matching_descr->multicast, g_strdup_printf("%d",ser_ports.RTCP), NULL, UDP, 0);
-			sp2->rtcp_fd_out = get_fd(sp2->s_rtcp_fd_out);
+			sp2->rtcp_fd_out = Sock_fd(sp2->s_rtcp_fd_out);
 			/*rtcp_fd_in not open for now for multicast sessions*/
 			//sp2->s_rtcp_fd_in = Sock_bind(NULL, g_strdup_printf("%d",cli_ports.RTCP), &(sp2->rtcp_fd_in), UDP, 0);
 
@@ -319,11 +319,11 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		}
 	} else {/*unicast*/
 		sp2->s_rtp_fd = Sock_connect(get_remote_host(rtsp->s_fd), g_strdup_printf("%d",cli_ports.RTP), NULL, UDP, 0);
-		sp2->rtp_fd = get_fd(sp2->s_rtp_fd);
+		sp2->rtp_fd = Sock_fd(sp2->s_rtp_fd);
 		sp2->s_rtcp_fd_out = Sock_connect(get_remote_host(rtsp->s_fd), g_strdup_printf("%d",cli_ports.RTCP), NULL, UDP, 0);
-		sp2->rtcp_fd_out = get_fd(sp2->s_rtcp_fd_out);
+		sp2->rtcp_fd_out = Sock_fd(sp2->s_rtcp_fd_out);
 		sp2->s_rtcp_fd_in = Sock_bind(NULL, g_strdup_printf("%d",ser_ports.RTCP), UDP, 0);
-		sp2->rtcp_fd_in = get_fd(sp2->s_rtcp_fd_in);
+		sp2->rtcp_fd_in = Sock_fd(sp2->s_rtcp_fd_in);
 	}	
 	
 	/*xxx*/

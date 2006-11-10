@@ -36,7 +36,7 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include <unistd.h>
-#include <fenice/wsocket.h>
+#include <netembryo/wsocket.h>
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
@@ -60,8 +60,8 @@ void eventloop(Sock *m_fd)
 	if (conn_count!=-1)
 	{
 		FD_ZERO(&rset);
-		FD_SET(get_fd(m_fd),&rset);
-		if (select(get_fd(m_fd) + 1, &rset, NULL, NULL, &tv))
+		FD_SET(Sock_fd(m_fd),&rset);
+		if (select(Sock_fd(m_fd) + 1, &rset, NULL, NULL, &tv))
 			s_fd = Sock_accept(m_fd);
 	} // shawill: and... if not?
 

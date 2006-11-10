@@ -39,7 +39,7 @@
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
-#include <fenice/wsocket.h>
+#include <netembryo/wsocket.h>
 
 int rtsp_server(RTSP_buffer *rtsp)
 {	
@@ -62,16 +62,16 @@ int rtsp_server(RTSP_buffer *rtsp)
  	FD_ZERO(&wset);
 	t.tv_sec=0;
 	t.tv_usec=100000;
-	FD_SET(get_fd(rtsp->s_fd),&rset);  // fd is tcp connection socket and FD_SET adds this one to rset
+	FD_SET(Sock_fd(rtsp->s_fd),&rset);  // fd is tcp connection socket and FD_SET adds this one to rset
 	if (rtsp->out_size>0) {
-		FD_SET(get_fd(rtsp->s_fd),&wset); 
+		FD_SET(Sock_fd(rtsp->s_fd),&wset); 
 	}
 	if (select(MAX_FDS,&rset,&wset,0,&t)<0) {
 		fnc_log(FNC_LOG_ERR,"select error\n");			
 		send_reply(500, NULL, rtsp);
 		return ERR_GENERIC; //errore interno al server
 	}
-	if (FD_ISSET(get_fd(rtsp->s_fd),&rset)) {		
+	if (FD_ISSET(Sock_fd(rtsp->s_fd),&rset)) {		
 		// There are RTSP packets to read in
 		memset(buffer,0,sizeof(buffer));
 		size=sizeof(buffer)-1;
@@ -104,7 +104,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 			return ERR_NOERROR;
 		}
 	}	
-	if (FD_ISSET(get_fd(rtsp->s_fd),&wset)) {						
+	if (FD_ISSET(Sock_fd(rtsp->s_fd),&wset)) {						
 		// There are RTSP packets to send
 		if (rtsp->out_size>0) {
 			n=Sock_write(rtsp->s_fd,rtsp->out_buffer,rtsp->out_size, NULL);

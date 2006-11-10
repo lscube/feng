@@ -39,10 +39,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h> /*SOMAXCONN*/
 
-#ifdef WIN32
-#include <winsock2.h>
-#endif
-#include <fenice/wsocket.h>
+#include <netembryo/wsocket.h>
 
 #include <fenice/eventloop.h>
 #include <fenice/prefs.h>
@@ -116,7 +113,7 @@ int main(int argc, char **argv)
 
 	
 	m_fd = Sock_bind(NULL, port, TCP, wsocket_flag);
-	main_fd = get_fd(m_fd);
+	main_fd = Sock_fd(m_fd);
 	if(m_fd==NULL) {
 		fnc_log(FNC_LOG_ERR,"bind() error.\n" );
 		fprintf(stderr, "bind() error.\n" );
