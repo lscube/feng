@@ -7,7 +7,6 @@ librtp_la_SOURCES =	RTP_get_port_pair.c \
 			RTP_release_port_pair.c \
 			RTP_port_pool_init.c \
 			RTP_send_packet.c \
-			RTP_sendto.c \
 			RTP_session_destroy.c \
 			RTP_transport_close.c
 			

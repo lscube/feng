@@ -63,38 +63,9 @@ typedef enum {
 	rtcp_proto
 } rtp_protos;
 
-typedef struct {
-	uint16 RTP;
-	uint16 RTCP;
-} stream_pair;
-
 typedef struct _RTP_transport {
-	enum {
-		RTP_no_transport = 0,
-		RTP_rtp_avp,
-		RTP_rtp_avp_tcp,
-		RTP_rtp_avp_sctp
-	} type;
-	tsocket rtp_fd;
-	tsocket rtcp_fd_out;
-	tsocket rtcp_fd_in;
-	union {
-		struct {
-			struct sockaddr rtp_peer;
-			struct sockaddr rtcp_in_peer;
-			struct sockaddr rtcp_out_peer;
-			port_pair cli_ports;
-			port_pair ser_ports;
-			unsigned char is_multicast;
-		} udp;
-		struct {
-			stream_pair interleaved;
-		} tcp;
-		struct {
-			stream_pair streams;
-		} sctp;
-		// other trasports here
-	} u;
+	Sock *rtp_sock;
+	Sock *rtcp_sock;
 } RTP_transport;
 
 typedef struct _RTCP_stats {
@@ -195,7 +166,6 @@ RTP_session *RTP_session_destroy(RTP_session *);
 	// RTP_transport functions
 int RTP_transport_close(RTP_session *);
 	// low-level sent/receive packet functions depending on transport settings.
-ssize_t RTP_sendto(RTP_session *, rtp_protos, unsigned char *, ssize_t);
 ssize_t RTP_recv(RTP_session *, rtp_protos);
 
 #endif

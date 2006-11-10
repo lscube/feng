@@ -56,19 +56,17 @@ int RTCP_handler(RTP_session * session)
 		t.tv_usec = 100000;
 
 		if (session->rtcp_outsize > 0)
-			FD_SET(session->transport.rtcp_fd_out, &wset);
-		if (select(MAX_FDS, 0, &wset, 0, &t) < 0) {
+			FD_SET(Sock_fd(session->transport.rtcp_sock), &wset);
+		if (select(Sock_fd(session->transport.rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
 			fnc_log(FNC_LOG_ERR, "select error\n");
 			/*send_reply(500, NULL, rtsp); */
 			return ERR_GENERIC;	//errore interno al server
 		}
 
-		if (FD_ISSET(session->transport.rtcp_fd_out, &wset)) {
-			if (RTP_sendto
-			    (session, rtcp_proto, session->rtcp_outbuffer,
-			     session->rtcp_outsize) < 0)
+		if (FD_ISSET(Sock_fd(session->transport.rtcp_sock), &wset)) {
+			if (Sock_write(session->transport.rtcp_sock, session->rtcp_outbuffer,
+			     session->rtcp_outsize, NULL) < 0)
 				fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
-
 			session->rtcp_outsize = 0;
 			fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
 		}
