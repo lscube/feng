@@ -140,7 +140,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 		 	/*FD_ZERO(&wset);*//*See rtcp/RTCP_handler.c*/
         		t.tv_sec=0;
         		t.tv_usec=100000;
-			FD_SET(p->rtcp_fd_in,&rset);
+			FD_SET(p->rtcp_fd,&rset);
     			/*if (p->rtcp_outsize>0) {
     				FD_SET(p->rtcp_fd_out,&wset);
 	    		}*/
@@ -149,7 +149,7 @@ int rtsp_server(RTSP_buffer *rtsp)
 				send_reply(500, NULL, rtsp);
 	    			return ERR_GENERIC; //errore interno al server
     			}
-    			if (FD_ISSET(p->rtcp_fd_in,&rset)) {        	
+    			if (FD_ISSET(p->rtcp_fd,&rset)) {        	
 	    			// There are RTCP packets to read in
 				// /*x-x*/
     				//socklen_t peer_len=sizeof(p->rtcp_in_peer);

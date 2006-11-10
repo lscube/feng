@@ -53,39 +53,28 @@
 #include <fenice/utils.h>
 #include <fenice/bufferpool.h>
 
-RTP_session *RTP_session_destroy(RTP_session *session)
+RTP_session *RTP_session_destroy(RTP_session * session)
 {
 	RTP_session *next = session->next;
 	OMSBuffer *buff = session->current_media->pkt_buffer;
 	//struct stat fdstat;
 
+	RTP_transport_close(session);
 	//Release SD_flag using in multicast and unjoing the multicast group
-	if(session->sd_descr->flags & SD_FL_MULTICAST){
-		struct ip_mreq mreq;
-		mreq.imr_multiaddr.s_addr = inet_addr(session->sd_descr->multicast);
-		mreq.imr_interface.s_addr = INADDR_ANY;
-		setsockopt(session->rtp_fd, IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
-		session->sd_descr->flags &= ~SD_FL_MULTICAST_PORT; /*Release SD_FL_MULTICAST_PORT*/
-	}
+	// if(session->sd_descr->flags & SD_FL_MULTICAST){
 
-	close(session->rtp_fd);
-	close(session->rtcp_fd_in);
-	close(session->rtcp_fd_out);
-	// Release ports
-	RTP_release_port_pair(&(session->ser_ports));
 	// destroy consumer
 	OMSbuff_unref(session->cons);
-	if (session->current_media->pkt_buffer->control->refs==0) {
-			session->current_media->pkt_buffer=NULL;
-			OMSbuff_free(buff);
-			// close file if it's not a pipe
-			//fstat(session->current_media->fd, &fdstat);
-			//if ( !S_ISFIFO(fdstat.st_mode) )
-				mediaclose(session->current_media);
+	if (session->current_media->pkt_buffer->control->refs == 0) {
+		session->current_media->pkt_buffer = NULL;
+		OMSbuff_free(buff);
+		// close file if it's not a pipe
+		//fstat(session->current_media->fd, &fdstat);
+		//if ( !S_ISFIFO(fdstat.st_mode) )
+		mediaclose(session->current_media);
 	}
 	// Deallocate memory
 	free(session);
 
 	return next;
 }
-
