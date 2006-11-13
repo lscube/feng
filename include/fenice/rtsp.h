@@ -38,7 +38,7 @@
 #include <time.h>
 #include <config.h>
 #include <fenice/utils.h>
-#include <fenice/socket.h>
+#include <netembryo/wsocket.h>
 #include <fenice/rtp.h>
 #include <fenice/rtcp.h>
 #include <fenice/mediainfo.h>
@@ -66,10 +66,12 @@ typedef struct _RTSP_interleaved {
 			uint8 rtp_ch;
 			uint8 rtcp_ch;
 		} tcp;
+#ifdef HAVE_SCTP_FENICE
 		struct {
 			struct sctp_sndrcvinfo rtp;
 			struct sctp_sndrcvinfo rtcp;
 		} sctp;
+#endif
 	} proto;
 	struct _RTSP_interleaved *next;
 } RTSP_interleaved;
