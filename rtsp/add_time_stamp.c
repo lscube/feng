@@ -47,7 +47,8 @@ void add_time_stamp(char *b, int crlf)
 	 */
 	now = time(NULL);
 	t = gmtime(&now);
-	strftime(b + strlen(b), 38, "Date: %a, %d %b %Y %H:%M:%S GMT"RTSP_EL, t);
+	strftime(b + strlen(b), 38, "Date: %a, %d %b %Y %H:%M:%S GMT" RTSP_EL,
+		 t);
 	if (crlf)
 		strcat(b, "\r\n");	/* add a message header terminator (CRLF) */
 }

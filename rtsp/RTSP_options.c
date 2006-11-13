@@ -67,21 +67,20 @@ int RTSP_options(RTSP_buffer * rtsp)
 		}
 	}
 	cseq = rtsp->rtsp_cseq;
-	
+
 	sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, url, ver);
 
-	fnc_log(FNC_LOG_INFO,"%s %s %s ",method,url,ver);
+	fnc_log(FNC_LOG_INFO, "%s %s %s ", method, url, ver);
 	send_options_reply(rtsp, cseq);
 	// See User-Agent 
-	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
+	if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
 		char cut[strlen(p)];
-		strcpy(cut,p);
-		p=strstr(cut, "\n");
-		cut[strlen(cut)-strlen(p)-1]='\0';
-		fnc_log(FNC_LOG_CLIENT,"%s\n",cut);
-	}
-	else
-		fnc_log(FNC_LOG_CLIENT,"- \n");
+		strcpy(cut, p);
+		p = strstr(cut, "\n");
+		cut[strlen(cut) - strlen(p) - 1] = '\0';
+		fnc_log(FNC_LOG_CLIENT, "%s\n", cut);
+	} else
+		fnc_log(FNC_LOG_CLIENT, "- \n");
 
 	return ERR_NOERROR;
 }

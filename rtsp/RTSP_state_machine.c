@@ -53,7 +53,8 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 
 	if ((s = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
 		if (sscanf(s, "%254s %ld", trash, &session_id) != 2) {
-			fnc_log(FNC_LOG_INFO,"Invalid Session number in Session header\n");
+			fnc_log(FNC_LOG_INFO,
+				"Invalid Session number in Session header\n");
 			send_reply(454, 0, rtsp);	/* Session Not Found */
 			return;
 		}
@@ -86,10 +87,14 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 				break;
 			case RTSP_ID_PLAY:	/* method not valid this state. */
 			case RTSP_ID_PAUSE:
-				send_reply(455, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n", rtsp);
+				send_reply(455,
+					   "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n",
+					   rtsp);
 				break;
 			default:
-				send_reply(501, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n", rtsp);
+				send_reply(501,
+					   "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n",
+					   rtsp);
 				break;
 			}
 			break;
@@ -115,13 +120,17 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 			case RTSP_ID_OPTIONS:
 				break;
 			case RTSP_ID_PAUSE:	/* method not valid this state. */
-				send_reply(455, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n", rtsp);
+				send_reply(455,
+					   "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n",
+					   rtsp);
 				break;
 			case RTSP_ID_DESCRIBE:
 				RTSP_describe(rtsp);
 				break;
 			default:
-				send_reply(501, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n", rtsp);
+				send_reply(501,
+					   "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n",
+					   rtsp);
 				break;
 			}
 			break;
@@ -130,7 +139,8 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 			switch (method) {
 			case RTSP_ID_PLAY:
 				// Feature not supported
-				fnc_log(FNC_LOG_INFO,"UNSUPPORTED: Play while playing.\n");
+				fnc_log(FNC_LOG_INFO,
+					"UNSUPPORTED: Play while playing.\n");
 				send_reply(551, 0, rtsp);	/* Option not supported */
 				break;
 			case RTSP_ID_PAUSE:
@@ -155,7 +165,9 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 			break;
 		}		/* PLAY state */
 	default:{		/* invalid/unexpected current state. */
-			fnc_log(FNC_LOG_ERR,"State error: unknown state=%d, method code=%d\n", p->cur_state, method);
+			fnc_log(FNC_LOG_ERR,
+				"State error: unknown state=%d, method code=%d\n",
+				p->cur_state, method);
 		}
 		break;
 	}			/* end of current state switch */

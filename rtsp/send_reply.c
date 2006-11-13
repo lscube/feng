@@ -59,26 +59,28 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 
 	b = (char *) malloc(len);
 	if (b == NULL) {
-		fnc_log(FNC_LOG_ERR,"send_reply(): memory allocation error.\n");
+		fnc_log(FNC_LOG_ERR,
+			"send_reply(): memory allocation error.\n");
 		return ERR_ALLOC;
 	}
 	memset(b, 0, sizeof(b));
-	sprintf(b, "%s %d %s"RTSP_EL"CSeq: %d"RTSP_EL, RTSP_VER, err, get_stat(err), rtsp->rtsp_cseq);
+	sprintf(b, "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL, RTSP_VER, err,
+		get_stat(err), rtsp->rtsp_cseq);
 	//---patch coerenza con rfc in caso di errore
 	// strcat(b, "\r\n");
 	strcat(b, RTSP_EL);
 
 	res = bwrite(b, (unsigned short) strlen(b), rtsp);
 	free(b);
-	
+
 	sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, object, ver);
-	fnc_log(FNC_LOG_ERR,"%s %s %s %d - - ", method, object, ver, err);
-	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
+	fnc_log(FNC_LOG_ERR, "%s %s %s %d - - ", method, object, ver, err);
+	if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
 		char cut[strlen(p)];
-		strcpy(cut,p);
-		cut[strlen(cut)-1]='\0';
-		fnc_log(FNC_LOG_CLIENT,"%s",cut);
+		strcpy(cut, p);
+		cut[strlen(cut) - 1] = '\0';
+		fnc_log(FNC_LOG_CLIENT, "%s", cut);
 	}
-	
+
 	return res;
 }

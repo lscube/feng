@@ -45,7 +45,9 @@ int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
 	char r[1024];
 	char temp[30];
 	/* build a reply message */
-	sprintf(r, "%s %d %s"RTSP_EL"CSeq: %d"RTSP_EL"Server: %s/%s"RTSP_EL, RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
+	sprintf(r,
+		"%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
+		RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
 		VERSION);
 	add_time_stamp(r, 0);
 	strcat(r, "Session: ");
@@ -54,7 +56,7 @@ int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
 	// strcat(r, "\r\n\r\n");
 	strcat(r, RTSP_EL RTSP_EL);
 	bwrite(r, (unsigned short) strlen(r), rtsp);
-	fnc_log(FNC_LOG_CLIENT,"200 - - ");
+	fnc_log(FNC_LOG_CLIENT, "200 - - ");
 
 	return ERR_NOERROR;
 }

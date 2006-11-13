@@ -37,6 +37,7 @@
 void RTSP_discard_msg(RTSP_buffer * rtsp)
 {
 	int hlen, blen;
-	RTSP_msg_len(&hlen, &blen, rtsp);
-	RTSP_remove_msg(hlen + blen, rtsp);
+
+	if (RTSP_msg_len(rtsp, &hlen, &blen) > 0)
+		RTSP_remove_msg(hlen + blen, rtsp);
 }

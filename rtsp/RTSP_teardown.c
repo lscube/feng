@@ -80,9 +80,18 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 		return ERR_PARSE;
 	}
 	/* Validate the URL */
-	if (!parse_url(url, server, &port, object)) {
-		send_reply(400, 0, rtsp);	/* bad request */
+	switch (parse_url
+		(url, server, sizeof(server), &port, object, sizeof(object))) {
+	case 1:		// bad request
+		send_reply(400, 0, rtsp);
 		return ERR_PARSE;
+		break;
+	case -1:		// internal server error
+		send_reply(500, 0, rtsp);
+		return ERR_PARSE;
+		break;
+	default:
+		break;
 	}
 	if (strcmp(server, prefs_get_hostname()) != 0) {	/* Currently this feature is disabled. */
 		/* wrong server name */
@@ -131,20 +140,19 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 		return ERR_PARSE;
 	}
 
-	fnc_log(FNC_LOG_INFO,"TEARDOWN %s RTSP/1.0 ",url);
+	fnc_log(FNC_LOG_INFO, "TEARDOWN %s RTSP/1.0 ", url);
 	send_teardown_reply(rtsp, session_id, cseq);
 	// See User-Agent 
-	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
+	if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
 		char cut[strlen(p)];
-		strcpy(cut,p);
-		p=strstr(cut, "\n");
-		cut[strlen(cut)-strlen(p)-1]='\0';
-		fnc_log(FNC_LOG_CLIENT,"%s\n",cut);
-	}
-	else
-		fnc_log(FNC_LOG_CLIENT,"- \n");
+		strcpy(cut, p);
+		p = strstr(cut, "\n");
+		cut[strlen(cut) - strlen(p) - 1] = '\0';
+		fnc_log(FNC_LOG_CLIENT, "%s\n", cut);
+	} else
+		fnc_log(FNC_LOG_CLIENT, "- \n");
 
-	
+
 	if (strchr(object, '!'))	/*Compatibility with RealOne and RealPlayer */
 		filename = strchr(object, '!') + 1;
 	else
@@ -156,7 +164,8 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	rtp_curr = s->rtp_session;
 	while (rtp_curr != NULL) {
 		if (strcmp(rtp_curr->current_media->filename, filename) == 0
-		    || strcmp(rtp_curr->current_media->aggregate, filename) == 0) {
+		    || strcmp(rtp_curr->current_media->aggregate,
+			      filename) == 0) {
 			rtp_temp = rtp_curr;
 			if (rtp_prev != NULL)
 				rtp_prev->next = rtp_curr->next;
@@ -179,6 +188,6 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 		free(rtsp->session_list);
 		rtsp->session_list = NULL;
 	}
-	
+
 	return ERR_NOERROR;
 }

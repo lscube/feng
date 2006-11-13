@@ -41,19 +41,21 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format descr_format, char *descr)
+int send_describe_reply(RTSP_buffer * rtsp, char *object,
+			description_format descr_format, char *descr)
 {
 	char *r;		/* get reply message buffer pointer */
 	char *mb;		/* message body buffer pointer */
 	int mb_len;
 
-		
+
 	/* allocate buffer */
 	mb_len = 2048;
 	mb = malloc(mb_len);
 	r = malloc(mb_len + 1512);
 	if (!r || !mb) {
-		fnc_log(FNC_LOG_ERR,"send_describe_reply(): unable to allocate memory\n");
+		fnc_log(FNC_LOG_ERR,
+			"send_describe_reply(): unable to allocate memory\n");
 		send_reply(500, 0, rtsp);	/* internal server error */
 		if (r) {
 			free(r);
@@ -64,19 +66,22 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format des
 		return ERR_ALLOC;
 	}
 
-	/*describe*/
-	sprintf(r, "%s %d %s"RTSP_EL"CSeq: %d"RTSP_EL"Server: %s/%s"RTSP_EL, RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE, VERSION);
+	/*describe */
+	sprintf(r,
+		"%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
+		RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
+		VERSION);
 	add_time_stamp(r, 0);
 	switch (descr_format) {
 		// Add new formats here
-		case df_SDP_format:{
-			strcat(r, "Content-Type: application/sdp"RTSP_EL);
-		break;
+	case df_SDP_format:{
+			strcat(r, "Content-Type: application/sdp" RTSP_EL);
+			break;
 		}
 	}
-	// sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/"RTSP_EL, prefs_get_hostname(), object);
-	sprintf(r + strlen(r), "Content-Base: rtsp://%s/"RTSP_EL, prefs_get_hostname());
-	sprintf(r + strlen(r), "Content-Length: %d"RTSP_EL, strlen(descr));
+	sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/" RTSP_EL,
+		prefs_get_hostname(), object);
+	sprintf(r + strlen(r), "Content-Length: %d" RTSP_EL, strlen(descr));
 	// end of message
 	strcat(r, RTSP_EL);
 
@@ -86,8 +91,8 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format des
 
 	free(mb);
 	free(r);
-	
-	fnc_log(FNC_LOG_CLIENT,"200 %d %s ",strlen(descr),object);
-	
+
+	fnc_log(FNC_LOG_CLIENT, "200 %d %s ", strlen(descr), object);
+
 	return ERR_NOERROR;
 }

@@ -39,15 +39,16 @@
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
 
+// TODO handle wisely errors.
 void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 // This routine is from OMS.
 {
-	int eom;		/* end of message found */
-	int mb;			/* message body exists */
+	char eom;		/* end of message found */
+	char mb;		/* message body exists */
 	int tc;			/* terminator count */
 	int ws;			/* white space */
-	int ml;			/* total message length including any message body */
-	int bl;			/* message body length */
+	unsigned int ml;	/* total message length including any message body */
+	unsigned int bl;	/* message body length */
 	char c;			/* character */
 	char *p;
 
@@ -79,7 +80,9 @@ void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 		 * Otherwise, CRLF is the legal end-of-line marker for all HTTP/1.1
 		 * protocol compatible message elements.
 		 */
-		if ((tc > 2) || ((tc == 2) && (rtsp->in_buffer[ml] == rtsp->in_buffer[ml + 1])))
+		if ((tc > 2)
+		    || ((tc == 2)
+			&& (rtsp->in_buffer[ml] == rtsp->in_buffer[ml + 1])))
 			eom = 1;	/* must be the end of the message header */
 		ml += tc + ws;
 
@@ -94,7 +97,9 @@ void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 		 * a message body.
 		 */
 		if (!mb) {	/* content length token not yet encountered. */
-			if (!strncasecmp(&(rtsp->in_buffer[ml]), HDR_CONTENTLENGTH, sizeof(HDR_CONTENTLENGTH) - 1)) {
+			if (!strncasecmp
+			    (&(rtsp->in_buffer[ml]), HDR_CONTENTLENGTH,
+			     sizeof(HDR_CONTENTLENGTH) - 1)) {
 				mb = 1;	/* there is a message body. */
 				ml += sizeof(HDR_CONTENTLENGTH) - 1;
 				while (ml < rtsp->in_size) {
@@ -105,8 +110,10 @@ void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 						break;
 				}
 
-				if (sscanf(&(rtsp->in_buffer[ml]), "%d", &bl) != 1) {
-					fnc_log(FNC_LOG_FATAL,"invalid ContentLength encountered in message.");
+				if (sscanf(&(rtsp->in_buffer[ml]), "%u", &bl) !=
+				    1) {
+					fnc_log(FNC_LOG_FATAL,
+						"invalid ContentLength encountered in message.");
 					exit(-1);
 				}
 			}
@@ -115,7 +122,8 @@ void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 	}
 
 	if (ml > rtsp->in_size) {
-		fnc_log(FNC_LOG_FATAL,"buffer did not contain the entire RTSP message.");
+		fnc_log(FNC_LOG_FATAL,
+			"buffer did not contain the entire RTSP message.");
 		exit(-1);
 	}
 
@@ -126,6 +134,7 @@ void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 	 * However, it is tolerated here.
 	 */
 	*hdr_len = ml - bl;
-	for (tc = rtsp->in_size - ml, p = &(rtsp->in_buffer[ml]); tc && (*p == '\0'); p++, bl++, tc--);
+	for (tc = rtsp->in_size - ml, p = &(rtsp->in_buffer[ml]);
+	     tc && (*p == '\0'); p++, bl++, tc--);
 	*body_len = bl;
 }

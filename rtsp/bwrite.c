@@ -41,7 +41,8 @@
 int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
 {
 	if ((rtsp->out_size + len) > (int) sizeof(rtsp->out_buffer)) {
-		fnc_log(FNC_LOG_ERR,"bwrite(): not enough free space in out message buffer.\n");
+		fnc_log(FNC_LOG_ERR,
+			"bwrite(): not enough free space in out message buffer.\n");
 		return ERR_ALLOC;
 	}
 	memcpy(&(rtsp->out_buffer[rtsp->out_size]), buffer, len);

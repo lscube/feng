@@ -41,7 +41,7 @@
 #include <fenice/types.h>
 #include <fenice/fnc_log.h>
 
-uint32 send_redirect_3xx(RTSP_buffer *rtsp, char *object)
+uint32 send_redirect_3xx(RTSP_buffer * rtsp, char *object)
 {
 	char *r;		/* get reply message buffer pointer */
 	uint8 *mb;		/* message body buffer pointer */
@@ -49,15 +49,14 @@ uint32 send_redirect_3xx(RTSP_buffer *rtsp, char *object)
 	SD_descr *matching_descr;
 
 	if (enum_media(object, &matching_descr) != ERR_NOERROR) {
-		fnc_log(FNC_LOG_ERR,"SETUP request specified an object file which can be damaged.\n");
+		fnc_log(FNC_LOG_ERR,
+			"SETUP request specified an object file which can be damaged.\n");
 		send_reply(500, 0, rtsp);	/* Internal server error */
 		return ERR_NOERROR;
 	}
-
-
 	//if(!strcasecmp(matching_descr->twin,"NONE") || !strcasecmp(matching_descr->twin,"")){
-	if(!(matching_descr->flags & SD_FL_TWIN)){
-		send_reply(453,0,rtsp);
+	if (!(matching_descr->flags & SD_FL_TWIN)) {
+		send_reply(453, 0, rtsp);
 		return ERR_NOERROR;
 	}
 	/* allocate buffer */
@@ -65,7 +64,8 @@ uint32 send_redirect_3xx(RTSP_buffer *rtsp, char *object)
 	mb = malloc(mb_len);
 	r = malloc(mb_len + 1512);
 	if (!r || !mb) {
-		fnc_log(FNC_LOG_ERR,"send_redirect(): unable to allocate memory\n");
+		fnc_log(FNC_LOG_ERR,
+			"send_redirect(): unable to allocate memory\n");
 		send_reply(500, 0, rtsp);	/* internal server error */
 		if (r) {
 			free(r);
@@ -76,18 +76,21 @@ uint32 send_redirect_3xx(RTSP_buffer *rtsp, char *object)
 		return ERR_ALLOC;
 	}
 	/* build a reply message */
-	sprintf(r, "%s %d %s"RTSP_EL"CSeq: %d"RTSP_EL"Server: %s/%s"RTSP_EL, RTSP_VER, 302, get_stat(302), rtsp->rtsp_cseq, PACKAGE,VERSION);
-	sprintf(r + strlen(r), "Location: %s"RTSP_EL, matching_descr->twin);/*twin of the first media of the aggregate movie*/
+	sprintf(r,
+		"%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
+		RTSP_VER, 302, get_stat(302), rtsp->rtsp_cseq, PACKAGE,
+		VERSION);
+	sprintf(r + strlen(r), "Location: %s" RTSP_EL, matching_descr->twin);	/*twin of the first media of the aggregate movie */
 
 	strcat(r, RTSP_EL);
-	
+
 
 	bwrite(r, (unsigned short) strlen(r), rtsp);
 
 	free(mb);
 	free(r);
-	
-	fnc_log(FNC_LOG_VERBOSE,"REDIRECT response sent.\n");
+
+	fnc_log(FNC_LOG_VERBOSE, "REDIRECT response sent.\n");
 	return ERR_NOERROR;
 
 }

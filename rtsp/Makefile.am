@@ -6,12 +6,12 @@ librtsp_la_SOURCES =	RTSP_state_machine.c \
 			RTSP_handler.c \
 			RTSP_initserver.c \
 			RTSP_full_msg_rcvd.c \
-			RTSP_msg_len.c \
 			RTSP_remove_msg.c \
 			RTSP_valid_response_msg.c \
 			RTSP_discard_msg.c \
 			RTSP_validate_method.c \
 			RTSP_describe.c \
+			RTSP_send.c \
 			RTSP_setup.c \
 			RTSP_play.c \
 			RTSP_pause.c \

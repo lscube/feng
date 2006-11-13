@@ -39,7 +39,8 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rtsp)
+int RTSP_valid_response_msg(unsigned short *status, char *msg,
+			    RTSP_buffer * rtsp)
 // This routine is from OMS.
 {
 	char ver[32], trash[15];
@@ -51,15 +52,17 @@ int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rts
 	/* assuming "stat" may not be zero (probably faulty) */
 	stat = 0;
 
-	pcnt = sscanf(rtsp->in_buffer, " %31s %u %s %s %u\n%255s ", ver, &stat, trash, trash, &seq, msg);
+	pcnt =
+	    sscanf(rtsp->in_buffer, " %31s %u %s %s %u\n%255s ", ver, &stat,
+		   trash, trash, &seq, msg);
 
 	/* check for a valid response token. */
 	if (strncasecmp(ver, "RTSP/", 5))
-		return (0);	/* not a response message */
+		return 0;	/* not a response message */
 
 	/* confirm that at least the version, status code and sequence are there. */
 	if (pcnt < 3 || stat == 0)
-		return (0);	/* not a response message */
+		return 0;	/* not a response message */
 
 	/*
 	 * here is where code can be added to reject the message if the RTSP
@@ -68,10 +71,11 @@ int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rts
 
 	/* check if the sequence number is valid in this response message. */
 	if (rtsp->rtsp_cseq != seq + 1) {
-		fnc_log(FNC_LOG_ERR,"Invalid sequence number returned in response.\n");
+		fnc_log(FNC_LOG_ERR,
+			"Invalid sequence number returned in response.\n");
 		return ERR_GENERIC;
 	}
 
 	*status = stat;
-	return (1);
+	return 1;
 }

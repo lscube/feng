@@ -65,9 +65,18 @@ int RTSP_describe(RTSP_buffer * rtsp)
 		return ERR_NOERROR;
 	}
 	/* Validate the URL */
-	if (!parse_url(url, server, &port, object)) {
-		send_reply(400, 0, rtsp);	/* bad request */
+	switch (parse_url
+		(url, server, sizeof(server), &port, object, sizeof(object))) {
+	case 1:		// bad request
+		send_reply(400, 0, rtsp);
 		return ERR_NOERROR;
+		break;
+	case -1:		// internal server error
+		send_reply(500, 0, rtsp);
+		return ERR_NOERROR;
+		break;
+	default:
+		break;
 	}
 	if (strcmp(server, prefs_get_hostname()) != 0) {	/* Currently this feature is disabled. */
 		/* wrong server name */
@@ -142,25 +151,24 @@ int RTSP_describe(RTSP_buffer * rtsp)
 		return ERR_NOERROR;
 	}
 
-	if(max_connection()==ERR_GENERIC){
-		/*redirect*/
+	if (max_connection() == ERR_GENERIC) {
+		/*redirect */
 		return send_redirect_3xx(rtsp, object);
 	}
 
 
-	fnc_log(FNC_LOG_INFO,"DESCRIBE %s RTSP/1.0 ",url);
+	fnc_log(FNC_LOG_INFO, "DESCRIBE %s RTSP/1.0 ", url);
 	send_describe_reply(rtsp, object, descr_format, descr);
-	
+
 	// See User-Agent 
-	if ((p=strstr(rtsp->in_buffer, HDR_USER_AGENT))!=NULL) {
+	if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
 		char cut[strlen(p)];
-		strcpy(cut,p);
-		p=strstr(cut, "\n");
-		cut[strlen(cut)-strlen(p)-1]='\0';
-		fnc_log(FNC_LOG_CLIENT,"%s\n",cut);
-	}
-	else
-		fnc_log(FNC_LOG_CLIENT,"- \n");
+		strcpy(cut, p);
+		p = strstr(cut, "\n");
+		cut[strlen(cut) - strlen(p) - 1] = '\0';
+		fnc_log(FNC_LOG_CLIENT, "%s\n", cut);
+	} else
+		fnc_log(FNC_LOG_CLIENT, "- \n");
 
 	return ERR_NOERROR;
 }

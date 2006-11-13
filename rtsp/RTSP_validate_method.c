@@ -41,26 +41,26 @@
 /* Return -1 if something doesn't work in the request */
 int RTSP_validate_method(RTSP_buffer * rtsp)
 {
-	char method[32], hdr[15];
+	char method[32], hdr[16];
 	char object[256];
 	char ver[32];
 	unsigned int seq;
 	int pcnt;		/* parameter count */
-	int mid;
+	int mid = ERR_GENERIC;
 
 	*method = *object = '\0';
 	seq = 0;
 
 	/* parse first line of message header as if it were a request message */
 
-	pcnt = sscanf(rtsp->in_buffer, " %31s %255s %31s\n%s %u ", method, object, ver, hdr, &seq);
-	if (pcnt != 5) {
+	if ((pcnt =
+	     sscanf(rtsp->in_buffer, " %31s %255s %31s\n%15s %u ", method,
+		    object, ver, hdr, &seq)) != 5)
 		return ERR_GENERIC;
-	}
-	if (strstr(hdr, HDR_CSEQ) == NULL) {
+
+	if (!strstr(hdr, HDR_CSEQ))
 		return ERR_GENERIC;
-	}
-	mid = -1;
+
 	if (strcmp(method, RTSP_METHOD_DESCRIBE) == 0) {
 		mid = RTSP_ID_DESCRIBE;
 	}

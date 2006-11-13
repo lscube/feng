@@ -41,9 +41,8 @@ extern int num_conn;
 
 int max_connection()
 {
-	if(num_conn<=prefs_get_max_session())
+	if (num_conn <= prefs_get_max_session())
 		return ERR_NOERROR;
-	
+
 	return ERR_GENERIC;
 }
-
