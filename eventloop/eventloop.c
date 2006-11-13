@@ -15,6 +15,7 @@
  *	- Stefano Cau
  *	- Giuliano Emma
  *	- Stefano Oldrini
+ *	- Dario Gallucci	<dario.gallucci@gmail.com>
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,9 +35,9 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-#include <sys/select.h>
 #include <unistd.h>
 #include <netembryo/wsocket.h>
+#include <fenice/socket.h>
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
@@ -46,68 +47,101 @@
 
 int num_conn = 0;
 
-void eventloop(Sock *m_fd)
+void eventloop(tsocket main_fd, tsocket main_sctp_fd)
 {
-	static uint32 child_count=0;
+	static uint32 child_count = 0;
 	static int conn_count = 0;
-	Sock *s_fd = NULL;
-	static RTSP_buffer *rtsp_list=NULL;
-	RTSP_buffer *p=NULL;
+	tsocket max_fd, fd = -1;
+	static RTSP_buffer *rtsp_list = NULL;
+	RTSP_buffer *p = NULL;
+	RTSP_proto rtsp_proto;
 	uint32 fd_found;
-	fd_set rset;
-	struct timeval tv = {0, 0};
+	fd_set rset,wset;
 
-	if (conn_count!=-1)
-	{
-		FD_ZERO(&rset);
-		FD_SET(Sock_fd(m_fd),&rset);
-		if (select(Sock_fd(m_fd) + 1, &rset, NULL, NULL, &tv))
-			s_fd = Sock_accept(m_fd);
-	} // shawill: and... if not?
+	//Init of scheduler
+	FD_ZERO(&rset);
+	FD_ZERO(&wset);
 
-	// Handle a new connection
-	if (s_fd != NULL)
-	{
-		for (fd_found=0,p=rtsp_list; p!=NULL; p=p->next)
-			if (Sock_cmp(p->s_fd,s_fd)==0)
-			{				
-				fd_found=1;
-				break;
+	if (conn_count != -1) {
+		/* This is the process allowed for accepting new clients */
+		FD_SET(main_fd, &rset);
+		max_fd = main_fd;
+#ifdef HAVE_SCTP_FENICE
+		if (main_sctp_fd >= 0) {
+			FD_SET(main_sctp_fd, &rset);
+			max_fd = max(max_fd, main_sctp_fd);
+		}
+#endif
+	}
+
+	/* Add all sockets of all sessions to fd_sets */
+	for (p = rtsp_list; p; p = p->next) {
+		rtsp_set_fdsets(p, &max_fd, &rset, &wset, NULL);
+	}
+	/* Stay here and wait for something happens */
+	if (select(max_fd+1, &rset, &wset, NULL, NULL) < 0) {
+		fnc_log(FNC_LOG_ERR, "select error in eventloop().\n");
+		/* Maybe we have to force exit here*/
+		return;
+	}
+	/* transfer data for any RTSP sessions */
+	schedule_connections(&rtsp_list, &conn_count, &rset, &wset, NULL);
+	/* handle new connections */
+	if (conn_count != -1) {
+#ifdef HAVE_SCTP_FENICE
+		if (main_sctp_fd >= 0 && FD_ISSET(main_sctp_fd, &rset)) {
+			fd = sctp_accept(main_sctp_fd);
+			rtsp_proto = SCTP;
+		} else
+#endif
+		if (FD_ISSET(main_fd, &rset)) {
+			fd = tcp_accept(main_fd);
+			rtsp_proto = TCP;
+		}
+		// Handle a new connection
+		if (fd >= 0) {
+			for (fd_found = 0, p = rtsp_list; p != NULL; p = p->next)
+				if (p->fd == fd) {
+					fd_found = 1;
+					break;
+				}
+			if (!fd_found) {
+				if (conn_count < ONE_FORK_MAX_CONNECTION) {
+				++conn_count;
+				// ADD A CLIENT
+				add_client(&rtsp_list, fd, rtsp_proto);
+				} else {
+					if (fork() == 0) {
+						// I'm the child
+						++child_count;
+						RTP_port_pool_init
+						    (ONE_FORK_MAX_CONNECTION *
+						     child_count * 2 +
+						     RTP_DEFAULT_PORT);
+						if (schedule_init() == ERR_FATAL) {
+							fnc_log(FNC_LOG_FATAL,
+							"Can't start scheduler. "
+							"Server is aborting.\n");
+							return;
+						}
+						conn_count = 1;
+						rtsp_list = NULL;
+						add_client(&rtsp_list, fd, rtsp_proto);
+					} else {
+						// I'm the father
+						fd = -1;
+						conn_count = -1;
+						tcp_close(main_fd);
+#ifdef HAVE_SCTP_FENICE
+						if (main_sctp_fd >= 0)
+							sctp_close(main_sctp_fd);
+#endif
+					}
+				}
+				num_conn++;
+				fnc_log(FNC_LOG_INFO, "Connection reached: %d\n",
+					num_conn);
 			}
-		if (!fd_found)
-		{
-        		if (conn_count<ONE_FORK_MAX_CONNECTION)
-			{
-        			++conn_count;
-        			// ADD A CLIENT
-        			add_client(&rtsp_list,s_fd);
-        		}
-        		else
-			{
-				if (fork()==0)
-				{
-        				// I'm the child
-        				++child_count;
-        				RTP_port_pool_init(ONE_FORK_MAX_CONNECTION*child_count*2+RTP_DEFAULT_PORT);
-					if (schedule_init()==ERR_FATAL)
-					{
-                  				fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.\n");
-                  				return;
-                  			}        			
-        				conn_count=1;
-        				rtsp_list=NULL;
-        				add_client(&rtsp_list,s_fd);
-        			}
-        			else
-				{
-        				// I'm the father
-        				conn_count=-1;
-        				Sock_close(m_fd);				
-        			}					
-        		}
-			num_conn++;	
-			fnc_log(FNC_LOG_INFO,"Connections reached: %d\n",num_conn);
-        	}
-    	}
-	schedule_connections(&rtsp_list,&conn_count);
+		}
+	} // shawill: and... if not?  END OF "HANDLE NEW CONNECTIONS"
 }

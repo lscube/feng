@@ -36,35 +36,39 @@
 #include <string.h>
 
 #include <fenice/eventloop.h>
-#include <fenice/wsocket.h>
+#include <netembryo/wsocket.h>
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
 
-void add_client(RTSP_buffer **rtsp_list, Sock *s_fd)
+void add_client(RTSP_buffer ** rtsp_list, tsocket fd, RTSP_proto proto)
 {
-	RTSP_buffer *p=NULL,*pp=NULL;
+	RTSP_buffer *p = NULL, *pp = NULL;
 	// Add a client
-	if (*rtsp_list==NULL) {
-		if ( !(*rtsp_list=(RTSP_buffer*)calloc(1,sizeof(RTSP_buffer)) ) ) {
-			fnc_log(FNC_LOG_FATAL,"Could not alloc memory\n\n");
+	if (*rtsp_list == NULL) {
+		if (!
+		    (*rtsp_list =
+		     (RTSP_buffer *) calloc(1, sizeof(RTSP_buffer)))) { //FIXME
+			fnc_log(FNC_LOG_FATAL, "Could not alloc memory\n\n");
 			return;
 		}
-		p=*rtsp_list;
-	}
-	else {								
-		for (p=*rtsp_list; p!=NULL; p=p->next) {					
-			pp=p;
+		p = *rtsp_list;
+	} else {
+		for (p = *rtsp_list; p != NULL; p = p->next) {
+			pp = p;
 		}
-		if (pp!=NULL) {
-			if ( !(pp->next=(RTSP_buffer *)calloc(1,sizeof(RTSP_buffer)) ) ) {
-				fnc_log(FNC_LOG_FATAL,"Could not alloc memory\n");
+		if (pp != NULL) {
+			if (!
+			    (pp->next =
+			     (RTSP_buffer *) calloc(1, sizeof(RTSP_buffer)))) {
+				fnc_log(FNC_LOG_FATAL,
+					"Could not alloc memory\n");
 				return;
 			}
-			p=pp->next;
-			p->next=NULL;
+			p = pp->next;
+			p->next = NULL;
 		}
 	}
-	RTSP_initserver(p,s_fd);
-	fnc_log(FNC_LOG_INFO,"Incoming RTSP connection accepted on socket: %d\n",Sock_fd(p->s_fd));
+	RTSP_initserver(p, fd, proto);
+	fnc_log(FNC_LOG_INFO,
+		"Incoming RTSP connection accepted on socket: %d\n", p->fd);
 }
-
