@@ -47,16 +47,16 @@
 
 int num_conn = 0;
 
-void eventloop(tsocket main_fd, tsocket main_sctp_fd)
+void eventloop(Sock *main_sock, Sock *sctp_main_sock)
 {
 	static uint32 child_count = 0;
 	static int conn_count = 0;
-	tsocket max_fd, fd = -1;
+	int max_fd;
 	static RTSP_buffer *rtsp_list = NULL;
 	RTSP_buffer *p = NULL;
-	RTSP_proto rtsp_proto;
 	uint32 fd_found;
 	fd_set rset,wset;
+	Sock *client_sock;
 
 	//Init of scheduler
 	FD_ZERO(&rset);
@@ -64,12 +64,12 @@ void eventloop(tsocket main_fd, tsocket main_sctp_fd)
 
 	if (conn_count != -1) {
 		/* This is the process allowed for accepting new clients */
-		FD_SET(main_fd, &rset);
-		max_fd = main_fd;
+		FD_SET(Sock_fd(main_sock), &rset);
+		max_fd = Sock_fd(main_sock);
 #ifdef HAVE_SCTP_FENICE
-		if (main_sctp_fd >= 0) {
-			FD_SET(main_sctp_fd, &rset);
-			max_fd = max(max_fd, main_sctp_fd);
+		if (sctp_main_sock) {
+			FD_SET(Sock_fd(sctp_main_sock), &rset);
+			max_fd = max(max_fd, Sock_fd(sctp_main_sock));
 		}
 #endif
 	}
@@ -79,7 +79,7 @@ void eventloop(tsocket main_fd, tsocket main_sctp_fd)
 		rtsp_set_fdsets(p, &max_fd, &rset, &wset, NULL);
 	}
 	/* Stay here and wait for something happens */
-	if (select(max_fd+1, &rset, &wset, NULL, NULL) < 0) {
+	if (select(max_fd + 1, &rset, &wset, NULL, NULL) < 0) {
 		fnc_log(FNC_LOG_ERR, "select error in eventloop().\n");
 		/* Maybe we have to force exit here*/
 		return;
@@ -89,19 +89,17 @@ void eventloop(tsocket main_fd, tsocket main_sctp_fd)
 	/* handle new connections */
 	if (conn_count != -1) {
 #ifdef HAVE_SCTP_FENICE
-		if (main_sctp_fd >= 0 && FD_ISSET(main_sctp_fd, &rset)) {
-			fd = sctp_accept(main_sctp_fd);
-			rtsp_proto = SCTP;
+		if (sctp_main_sock && FD_ISSET(Sock_fd(sctp_main_sock), &rset)) {
+			client_sock = Sock_accept(sctp_main_sock);
 		} else
 #endif
-		if (FD_ISSET(main_fd, &rset)) {
-			fd = tcp_accept(main_fd);
-			rtsp_proto = TCP;
+		if (FD_ISSET(Sock_fd(main_sock), &rset)) {
+			client_sock = Sock_accept(main_sock);
 		}
 		// Handle a new connection
-		if (fd >= 0) {
+		if (client_sock) {
 			for (fd_found = 0, p = rtsp_list; p != NULL; p = p->next)
-				if (p->fd == fd) {
+				if (Sock_compare(client_sock, p->sock)) {
 					fd_found = 1;
 					break;
 				}
@@ -109,7 +107,7 @@ void eventloop(tsocket main_fd, tsocket main_sctp_fd)
 				if (conn_count < ONE_FORK_MAX_CONNECTION) {
 				++conn_count;
 				// ADD A CLIENT
-				add_client(&rtsp_list, fd, rtsp_proto);
+				add_client(&rtsp_list, client_sock);
 				} else {
 					if (fork() == 0) {
 						// I'm the child
@@ -126,15 +124,15 @@ void eventloop(tsocket main_fd, tsocket main_sctp_fd)
 						}
 						conn_count = 1;
 						rtsp_list = NULL;
-						add_client(&rtsp_list, fd, rtsp_proto);
+						add_client(&rtsp_list, client_sock);
 					} else {
 						// I'm the father
 						fd = -1;
 						conn_count = -1;
-						tcp_close(main_fd);
+						Sock_close(main_sock);
 #ifdef HAVE_SCTP_FENICE
-						if (main_sctp_fd >= 0)
-							sctp_close(main_sctp_fd);
+						if (sctp_main_sock)
+							Sock_close(sctp_main_sock);
 #endif
 					}
 				}

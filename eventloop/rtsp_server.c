@@ -54,13 +54,13 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 	uint16 *pkt_size = (uint16 *) & rtsp->out_buffer[2];
 #ifdef HAVE_SCTP_FENICE
 	struct sctp_sndrcvinfo sctp_info;
-	int flags, m = 0;
+	int m = 0;
 #endif
 
 	if (rtsp == NULL) {
 		return ERR_NOERROR;
 	}
-	if (FD_ISSET(rtsp->fd, wset)) { // first of all: there is some data to send?
+	if (FD_ISSET(Sock_fd(rtsp->sock), wset)) { // first of all: there is some data to send?
 		//char is_interlvd = rtsp->interleaved_size ? 1 : 0; 
 		// There are RTSP packets to send
 		if ( (n = RTSP_send(rtsp)) < 0) {
@@ -74,20 +74,18 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 		}
 #endif*/
 	}
-	if (FD_ISSET(rtsp->fd, rset)) {
+	if (FD_ISSET(Sock_fd(rtsp->sock), rset)) {
 		// There are RTSP or RTCP packets to read in
 		memset(buffer, 0, sizeof(buffer));
 		size = sizeof(buffer) - 1;
 #ifdef HAVE_SCTP_FENICE
-		if (rtsp->proto == SCTP) {
+		if (Sock_type(rtsp->sock) == SCTP) {
 			memset(&sctp_info, 0, sizeof(sctp_info));
-			flags = 0;
-			n = sctp_recvmsg(rtsp->fd, buffer, size, NULL, NULL,
-					 &sctp_info, &flags);
+			n = Sock_read(rtsp->sock, buffer, size, &sctp_info, 0);
 			m = sctp_info.sinfo_stream;
 		} else {	// RTSP protocol is TCP
 #endif	// HAVE_SCTP_FENICE
-			n = tcp_read(rtsp->fd, buffer, size);
+			n = Sock_read(rtsp->sock, buffer, size, NULL, 0);
 #ifdef HAVE_SCTP_FENICE
 		}
 #endif	// HAVE_SCTP_FENICE
@@ -101,7 +99,8 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 			return ERR_GENERIC;	//errore interno al server                           
 		}
 #ifdef HAVE_SCTP_FENICE
-		if (rtsp->proto == TCP || (rtsp->proto == SCTP && m == 0)) {
+		if (Sock_type(rtsp->sock) == TCP || (Sock_type(rtsp->sock) == SCTP
+						     && m == 0)) {
 #endif	// HAVE_SCTP_FENICE
 			if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
 				fnc_log(FNC_LOG_DEBUG,
@@ -115,7 +114,6 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 #endif
 			memcpy(&(rtsp->in_buffer[rtsp->in_size]), buffer, n);
 			rtsp->in_size += n;
-			//TODO: SCTP is packet aware! Change behaviour to reflect flags == MSG_EOR or not
 			if ((res = RTSP_handler(rtsp)) == ERR_GENERIC) {
 				fnc_log(FNC_LOG_ERR,
 					"Invalid input message.\n");
@@ -124,24 +122,15 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 #ifdef HAVE_SCTP_FENICE
 		} else {	/* if (rtsp->proto == SCTP && m != 0) */
 
-			for (p =
-			     (rtsp->session_list) ? rtsp->session_list->
-			     rtp_session : NULL;
-			     p && ((p->transport.u.sctp.streams.RTP == m)
-				   || (p->transport.u.sctp.streams.RTCP == m));
-			     p = p->next)
-				if (p) {
+			for (intlvd = rtsp->interleaved;
+			     intlvd && ((intlvd->proto.sctp.rtp.sinfo_stream == m)
+				|| (intlvd->proto.sctp.rtcp.sinfo_stream == m));
+			     intlvd = intlvd->next)
+				if (intlvd) {
 					if (m ==
-					    p->transport.u.sctp.streams.RTCP) {
-						if (sizeof(p->rtcp_inbuffer) >
-						    (unsigned)n) {
-							memcpy(p->rtcp_inbuffer,
-							       buffer, n);
-							p->rtcp_insize = n;
-						} else
-							fnc_log(FNC_LOG_DEBUG,
-								"Interleaved RTCP packet too big!.\n");
-						RTCP_recv_packet(p);
+					    intlvd->proto.sctp.rtcp.sinfo_stream) {
+						Sock_send(intlvd->rtcp_sock,
+							  buffer, n, NULL, 0);
 					} else {	// RTP pkt arrived: do nothing...
 						fnc_log(FNC_LOG_DEBUG,
 							"Interleaved RTP packet arrived for channel %d.\n",
@@ -152,34 +141,50 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 #endif	// HAVE_SCTP_FENICE
 	}
 	for (intlvd=rtsp->interleaved; intlvd && !rtsp->out_size; intlvd=intlvd->next) {
-		if ( FD_ISSET(intlvd->rtcp_fd, rset) ) {
-			if ( (n = read(intlvd->rtcp_fd, rtsp->out_buffer+4, sizeof(rtsp->out_buffer)-4)) < 0) {
-			// if ( (intlvd->out_size = read(intlvd->rtcp_fd, intlvd->out_buffer, sizeof(intlvd->out_buffer))) < 0) {
+		if ( FD_ISSET(Sock_fd(intlvd->rtcp_sock), rset) ) {
+			if ( (n = Sock_read(intlvd->rtcp_sock, rtsp->out_buffer+4, sizeof(rtsp->out_buffer)-4, NULL, 0)) < 0) {
 				fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
 				continue;
 			}
-			
-			rtsp->out_buffer[0] = '$';
-			rtsp->out_buffer[1] = (unsigned char) intlvd->proto.tcp.rtcp_ch;
-			*pkt_size = htons((uint16) n);
-			rtsp->out_size = n+4;
-			if ( (n = RTSP_send(rtsp)) < 0) {
-				send_reply(500, NULL, rtsp);
-				return ERR_GENERIC;// internal server error
+			switch (Sock_type(rtsp->sock)){
+			case TCP:
+				rtsp->out_buffer[0] = '$';
+				rtsp->out_buffer[1] = (unsigned char) intlvd->proto.tcp.rtcp_ch;
+				*pkt_size = htons((uint16) n);
+				rtsp->out_size = n+4;
+				if ( (n = RTSP_send(rtsp)) < 0) {
+					send_reply(500, NULL, rtsp);
+					return ERR_GENERIC;// internal server error
+				}
+				break;
+			case SCTP:
+				Sock_write(rtsp->sock, rtsp->out_buffer+4, n, &(intlvd->proto.sctp.rtcp), MSG_DONTWAIT | MSG_EOR | MSG_NOSIGNAL);
+				break;
+			default:
+				break;
 			}
-		} else if ( FD_ISSET(intlvd->rtp_fd, rset) ) {
-			if ( (n = read(intlvd->rtp_fd, rtsp->out_buffer+4, sizeof(rtsp->out_buffer)-4)) < 0) {
+		} else if ( FD_ISSET(Sock_fd(intlvd->rtp_sock), rset) ) {
+			if ( (n = Sock_read(intlvd->rtp_sock, rtsp->out_buffer+4, sizeof(rtsp->out_buffer)-4), NULL, 0) < 0) {
 			// if ( (n = read(intlvd->rtp_fd, intlvd->out_buffer, sizeof(intlvd->out_buffer))) < 0) {
 				fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
 				continue;
 			}
-			rtsp->out_buffer[0] = '$';
-			rtsp->out_buffer[1] = (unsigned char) intlvd->proto.tcp.rtp_ch;
-			*pkt_size = htons((uint16) n);
-			rtsp->out_size = n+4;
-			if ( (n = RTSP_send(rtsp)) < 0) {
-				send_reply(500, NULL, rtsp);
-				return ERR_GENERIC;// internal server error
+			switch (Sock_type(rtsp->sock)){
+			case TCP:
+				rtsp->out_buffer[0] = '$';
+				rtsp->out_buffer[1] = (unsigned char) intlvd->proto.tcp.rtp_ch;
+				*pkt_size = htons((uint16) n);
+				rtsp->out_size = n+4;
+				if ( (n = RTSP_send(rtsp)) < 0) {
+					send_reply(500, NULL, rtsp);
+					return ERR_GENERIC;// internal server error
+				}
+				break;
+			case SCTP:
+				Sock_write(rtsp->sock, rtsp->out_buffer+4, n, &(intlvd->proto.sctp.rtp), MSG_DONTWAIT | MSG_EOR | MSG_NOSIGNAL);
+				break;
+			default:
+				break;
 			}
 		}
 	}

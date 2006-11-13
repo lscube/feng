@@ -86,11 +86,11 @@ void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count,
 				}
 				// close localfds
 				for (intlvd=p->interleaved; intlvd; intlvd = intlvd->next) {
-					close(intlvd->rtp_fd);
-					close(intlvd->rtcp_fd);
+					Sock_close(intlvd->rtp_sock);
+					Sock_close(intlvd->rtcp_sock);
 				}
 				// wait for 
-				close(p->fd);
+				Sock_close(p->sock);
 				--*conn_count;
 				num_conn--;
 				// Release the RTSP_buffer

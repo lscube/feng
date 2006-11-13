@@ -50,17 +50,17 @@ void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset,
 		return;
 	}
 	// FD used for RTSP connection
-	FD_SET(rtsp->fd, rset);
-	*max_fd = max(*max_fd, rtsp->fd);
+	FD_SET(Sock_fd(rtsp->sock), rset);
+	*max_fd = max(*max_fd, Sock_fd(rtsp->sock));
 	if (rtsp->out_size > 0) {
-		FD_SET(rtsp->fd, wset);
+		FD_SET(Sock_fd(rtsp->sock), wset);
 	}
 	// Local FDS for interleaved trasmission
 	for (intlvd=rtsp->interleaved; intlvd; intlvd=intlvd->next) {
-		FD_SET(intlvd->rtp_fd, rset);
-		FD_SET(intlvd->rtcp_fd, rset);
-		*max_fd = max(*max_fd, intlvd->rtp_fd);
-		*max_fd = max(*max_fd, intlvd->rtcp_fd);
+		FD_SET(Sock_fd(intlvd->rtp_sock), rset);
+		FD_SET(Sock_fd(intlvd->rtcp_fd), rset);
+		*max_fd = max(*max_fd, Sock_fd(intlvd->rtp_fd));
+		*max_fd = max(*max_fd, Sock_fd(intlvd->rtcp_fd));
 	}
 	// RTCP input
 	for (q = rtsp->session_list, p = q ? q->rtp_session : NULL; p; p = p->next) {
@@ -68,9 +68,9 @@ void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset,
 		if (!p->started) {
 			q->cur_state = READY_STATE;	// �play finished, go to ready state
 			/* TODO: RTP struct to be freed */
-		} else if (p->transport.rtcp_fd_in >= 0) {
-			FD_SET(p->transport.rtcp_fd_in, rset);
-			*max_fd = max(*max_fd, p->transport.rtcp_fd_in);
+		} else if (p->transport.rtcp_sock && Sock_type(p->transport.rtcp_sock) == UDP) {
+			FD_SET(Sock_fd(p->transport.rtcp_sock), rset);
+			*max_fd = max(*max_fd, Sock_fd(p->transport.rtcp_sock));
 		}
 	}
 }
