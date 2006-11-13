@@ -37,10 +37,9 @@
 #include <fenice/rtsp.h>
 #include <fenice/socket.h>
 
-void RTSP_initserver(RTSP_buffer * rtsp, tsocket fd, RTSP_proto proto)
+void RTSP_initserver(RTSP_buffer * rtsp, Sock *rtsp_sock)
 {
-	rtsp->fd = fd;
-	rtsp->proto = proto;
+	rtsp->sock = rtsp_sock;
 	rtsp->session_list = (RTSP_session *) calloc(1, sizeof(RTSP_session));
 	rtsp->session_list->session_id = -1;
 }

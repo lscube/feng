@@ -58,30 +58,23 @@
 #define RTSP_RTP_AVP "RTP/AVP"
 
 
-//FIXME remove it
-typedef enum _RTSP_proto {
-	TCP,
-	SCTP
-} RTSP_proto;
-
 typedef struct _RTSP_interleaved {
-	int rtp_fd; //!< output rtp local socket 
-	int rtcp_fd; //!< output rtcp local socket
+	Sock *rtp_local;
+	Sock *rtcp_local;
 	union {
 		struct {
-			uint16 rtp_ch;
-			uint16 rtcp_ch;
+			uint8 rtp_ch;
+			uint8 rtcp_ch;
 		} tcp;
 		struct {
-			uint16 rtp_st;
-			uint16 rtcp_st;
+			struct sctp_sndrcvinfo rtp;
+			struct sctp_sndrcvinfo rtcp;
 		} sctp;
 	} proto;
 	struct _RTSP_interleaved *next;
 } RTSP_interleaved;
 
 typedef struct _RTSP_session {
-	//tsocket fd;
 	int cur_state;
 	int session_id;
 	RTP_session *rtp_session;
@@ -89,9 +82,8 @@ typedef struct _RTSP_session {
 } RTSP_session;
 
 typedef struct _RTSP_buffer {
-	tsocket fd;
-	RTSP_proto proto;
-	unsigned int port;
+	Sock *sock;
+	//unsigned int port;
 	// Buffers      
 	char in_buffer[RTSP_BUFFERSIZE];
 	size_t in_size;
@@ -148,7 +140,7 @@ void RTSP_remove_msg(int len, RTSP_buffer * rtsp);
 int RTSP_valid_response_msg(unsigned short *status, char *msg,
 			    RTSP_buffer * rtsp);
 int RTSP_validate_method(RTSP_buffer * rtsp);
-void RTSP_initserver(RTSP_buffer * rtsp, tsocket fd, RTSP_proto proto);
+void RTSP_initserver(RTSP_buffer * rtsp, Sock *rtsp_sock);
 
 	// DESCRIBE     
 int send_describe_reply(RTSP_buffer * rtsp, char *object,
