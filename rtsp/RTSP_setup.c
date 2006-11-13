@@ -44,7 +44,7 @@
 #include <arpa/inet.h>
 
 #include <fenice/rtsp.h>
-#include <fenice/socket.h>
+#include <netembryo/wsocket.h>
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include <fenice/multicast.h>
