@@ -57,10 +57,15 @@ void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset,
 	}
 	// Local FDS for interleaved trasmission
 	for (intlvd=rtsp->interleaved; intlvd; intlvd=intlvd->next) {
-		FD_SET(Sock_fd(intlvd->rtp_sock), rset);
-		FD_SET(Sock_fd(intlvd->rtcp_fd), rset);
-		*max_fd = max(*max_fd, Sock_fd(intlvd->rtp_fd));
-		*max_fd = max(*max_fd, Sock_fd(intlvd->rtcp_fd));
+		if (intlvd->rtp_local) {
+			FD_SET(Sock_fd(intlvd->rtp_local), rset);
+			*max_fd = max(*max_fd, Sock_fd(intlvd->rtp_local));
+		}
+		if (intlvd->rtcp_local) {
+			FD_SET(Sock_fd(intlvd->rtcp_local), rset);
+			*max_fd = max(*max_fd, Sock_fd(intlvd->rtcp_local));
+		}
+		
 	}
 	// RTCP input
 	for (q = rtsp->session_list, p = q ? q->rtp_session : NULL; p; p = p->next) {

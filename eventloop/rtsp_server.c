@@ -129,7 +129,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 				if (intlvd) {
 					if (m ==
 					    intlvd->proto.sctp.rtcp.sinfo_stream) {
-						Sock_send(intlvd->rtcp_sock,
+						Sock_write(intlvd->rtcp_local,
 							  buffer, n, NULL, 0);
 					} else {	// RTP pkt arrived: do nothing...
 						fnc_log(FNC_LOG_DEBUG,
@@ -141,8 +141,8 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 #endif	// HAVE_SCTP_FENICE
 	}
 	for (intlvd=rtsp->interleaved; intlvd && !rtsp->out_size; intlvd=intlvd->next) {
-		if ( FD_ISSET(Sock_fd(intlvd->rtcp_sock), rset) ) {
-			if ( (n = Sock_read(intlvd->rtcp_sock, rtsp->out_buffer+4, sizeof(rtsp->out_buffer)-4, NULL, 0)) < 0) {
+		if ( FD_ISSET(Sock_fd(intlvd->rtcp_local), rset) ) {
+			if ( (n = Sock_read(intlvd->rtcp_local, rtsp->out_buffer+4, sizeof(rtsp->out_buffer)-4, NULL, 0)) < 0) {
 				fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
 				continue;
 			}
@@ -157,14 +157,17 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 					return ERR_GENERIC;// internal server error
 				}
 				break;
+#ifdef HAVE_SCTP_FENICE
 			case SCTP:
-				Sock_write(rtsp->sock, rtsp->out_buffer+4, n, &(intlvd->proto.sctp.rtcp), MSG_DONTWAIT | MSG_EOR | MSG_NOSIGNAL);
+				memcpy(&sctp_info, &(intlvd->proto.sctp.rtcp), sizeof(struct sctp_sndrcvinfo));
+				Sock_write(rtsp->sock, rtsp->out_buffer+4, n, &sctp_info, MSG_DONTWAIT | MSG_EOR | MSG_NOSIGNAL);
 				break;
+#endif
 			default:
 				break;
 			}
-		} else if ( FD_ISSET(Sock_fd(intlvd->rtp_sock), rset) ) {
-			if ( (n = Sock_read(intlvd->rtp_sock, rtsp->out_buffer+4, sizeof(rtsp->out_buffer)-4), NULL, 0) < 0) {
+		} else if ( FD_ISSET(Sock_fd(intlvd->rtp_local), rset) ) {
+			if ( (n = Sock_read(intlvd->rtp_local, rtsp->out_buffer+4, sizeof(rtsp->out_buffer)-4, NULL, 0)) < 0) {
 			// if ( (n = read(intlvd->rtp_fd, intlvd->out_buffer, sizeof(intlvd->out_buffer))) < 0) {
 				fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
 				continue;
@@ -180,17 +183,20 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 					return ERR_GENERIC;// internal server error
 				}
 				break;
+#ifdef HAVE_SCTP_FENICE
 			case SCTP:
-				Sock_write(rtsp->sock, rtsp->out_buffer+4, n, &(intlvd->proto.sctp.rtp), MSG_DONTWAIT | MSG_EOR | MSG_NOSIGNAL);
+				memcpy(&sctp_info, &(intlvd->proto.sctp.rtp), sizeof(struct sctp_sndrcvinfo));
+				Sock_write(rtsp->sock, rtsp->out_buffer+4, n, &sctp_info, MSG_DONTWAIT | MSG_EOR | MSG_NOSIGNAL);
 				break;
+#endif
 			default:
 				break;
 			}
 		}
 	}
 	for (q = rtsp->session_list, p = q ? q->rtp_session : NULL; p; p = p->next) {
-		if ( (p->transport.rtcp_fd_in >= 0) && 
-				FD_ISSET(p->transport.rtcp_fd_in, rset)) {
+		if ( (p->transport.rtcp_sock) && 
+				FD_ISSET(Sock_fd(p->transport.rtcp_sock), rset)) {
 			// There are RTCP packets to read in
 			if (RTP_recv(p, rtcp_proto) < 0) {
 				fnc_log(FNC_LOG_VERBOSE,

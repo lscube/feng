@@ -34,8 +34,8 @@
 
  #include <fenice/rtp.h>
  
- int RTP_transport_close(RTP_session * session)
- {
+int RTP_transport_close(RTP_session * session) {
+/*
 	switch (session->transport.type) {
 	case RTP_rtp_avp:
 		if (session->transport.u.udp.is_multicast) {
@@ -45,7 +45,7 @@
 			mreq.imr_interface.s_addr = INADDR_ANY;
 			setsockopt(session->transport.rtp_fd, IPPROTO_IP,
 				   IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
-			session->sd_descr->flags &= ~SD_FL_MULTICAST_PORT;	/*Release SD_FL_MULTICAST_PORT */
+			session->sd_descr->flags &= ~SD_FL_MULTICAST_PORT;	//Release SD_FL_MULTICAST_PORT
 		}
 		// release ports
 		RTP_release_port_pair(&(session->transport.u.udp.ser_ports));
@@ -69,6 +69,9 @@
 	default:
 		break;
 	}
- 	
- 	return 0;
- }
+*/
+	Sock_close(session->transport.rtp_sock);
+	Sock_close(session->transport.rtcp_sock);
+
+	return 0;
+}

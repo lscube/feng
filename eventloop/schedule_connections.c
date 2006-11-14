@@ -37,7 +37,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <fenice/socket.h>
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
@@ -86,8 +85,8 @@ void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count,
 				}
 				// close localfds
 				for (intlvd=p->interleaved; intlvd; intlvd = intlvd->next) {
-					Sock_close(intlvd->rtp_sock);
-					Sock_close(intlvd->rtcp_sock);
+					Sock_close(intlvd->rtp_local);
+					Sock_close(intlvd->rtcp_local);
 				}
 				// wait for 
 				Sock_close(p->sock);

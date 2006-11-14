@@ -42,6 +42,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <glib.h>
+#include <glib/gprintf.h>
 
 #include <fenice/rtsp.h>
 #include <netembryo/wsocket.h>
@@ -65,30 +67,29 @@
 
 int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
-	char address[16];
+//	char address[16];
 	char object[255], server[255];
 	char url[255];
 	unsigned short port;
 	RTSP_session *rtsp_s;
 	RTP_session *rtp_s, *rtp_s_prec;
 	int SessionID = 0;
-//      port_pair cli_ports;
-//      port_pair ser_ports;
+	port_pair cli_ports;
+	port_pair ser_ports;
 	struct timeval now_tmp;
 	char *p /* = NULL */ ;
 	unsigned int start_seq, start_rtptime;
 	char transport_str[255];
 	media_entry *list, *matching_me, req;
-	struct sockaddr_storage rtsp_peer;
-	socklen_t namelen = sizeof(rtsp_peer);
+//	struct sockaddr_storage rtsp_peer;
 	unsigned long ssrc;
 	SD_descr *matching_descr;
 	unsigned char is_multicast_dad = 1;	//unicast and the first multicast
 	RTP_transport transport;
-	char *saved_ptr, *transport_tkn;
+	char *saved_ptr, *transport_tkn, *tmp;
 	int max_interlvd;
-	int sdpair[2];
-	RTSP_interleaved *intlvd;
+	Sock *sock_pair[2];
+	RTSP_interleaved *intlvd, *ilvd_s;
 
 	// init
 	memset(&req, 0, sizeof(req));
@@ -218,13 +219,13 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		return ERR_NOERROR;
 	}
 
-	if (getpeername(rtsp->fd, (struct sockaddr *) &rtsp_peer, &namelen) !=
+/*	if (getpeername(rtsp->fd, (struct sockaddr *) &rtsp_peer, &namelen) !=
 	    0) {
 		send_reply(415, 0, rtsp);	// Internal server error
 		return ERR_GENERIC;
-	}
+	}*/
 
-	transport.type = RTP_no_transport;
+//	transport.type = RTP_no_transport;
 	do {			// search a good transport string
 		if ((p = strstr(transport_tkn, RTSP_RTP_AVP))) {	// Transport: RTP/AVP
 			p += strlen(RTSP_RTP_AVP);
@@ -246,51 +247,39 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 						    "client_port"))) {
 						p = strstr(p, "=");
 						sscanf(p + 1, "%d",
-						       &(transport.u.udp.
-							 cli_ports.RTP));
+						       &(cli_ports.RTP));
 						p = strstr(p, "-");
 						sscanf(p + 1, "%d",
-						       &(transport.u.udp.
-							 cli_ports.RTCP));
+						       &(cli_ports.RTCP));
 					}
-					if (RTP_get_port_pair
-					    (&transport.u.udp.ser_ports) !=
+					if (RTP_get_port_pair(&ser_ports) !=
 					    ERR_NOERROR) {
 						send_reply(500, 0, rtsp);	/* Internal server error */
 						return ERR_GENERIC;
 					}
-					// strcpy(address, get_address());
-					udp_open(transport.u.udp.ser_ports.RTP, &transport.u.udp.rtp_peer, &transport.rtp_fd);	//bind
-					udp_open(transport.u.udp.ser_ports.RTCP, &transport.u.udp.rtcp_in_peer, &transport.rtcp_fd_in);	//bind
+					//UDP bind for outgoing RTP packets
+					tmp = g_strdup_printf("%d", ser_ports.RTP);
+					transport.rtp_sock = Sock_bind(NULL, tmp, UDP, 0);
+					g_free(tmp);
+					//UDP bind for outgoing RTCP packets
+					tmp = g_strdup_printf("%d", ser_ports.RTCP);
+					transport.rtcp_sock = Sock_bind(NULL, tmp, UDP, 0);
+					g_free(tmp);
 					//UDP connection for outgoing RTP packets
-					udp_connect(transport.u.udp.cli_ports.
-						    RTP,
-						    &transport.u.udp.rtp_peer,
-						    (*
-						     ((struct sockaddr_in
-						       *) (&rtsp_peer))).
-						    sin_addr.s_addr,
-						    &transport.rtp_fd);
+					tmp = g_strdup_printf("%d", cli_ports.RTP);
+					Sock_connect (get_remote_host(rtsp->sock), tmp, transport.rtp_sock, UDP, 0);
+					g_free(tmp);
 					//UDP connection for outgoing RTCP packets
-					transport.rtcp_fd_out = transport.rtcp_fd_in; 
-					udp_connect(transport.u.udp.cli_ports.
-						    RTCP,
-						    &transport.u.udp.
-						    rtcp_out_peer,
-						    (*
-						     ((struct sockaddr_in
-						       *) (&rtsp_peer))).
-						    sin_addr.s_addr,
-						    &transport.rtcp_fd_out);
-
-					transport.u.udp.is_multicast = 0;
+					tmp = g_strdup_printf("%d", cli_ports.RTCP);
+					Sock_connect (get_remote_host(rtsp->sock), tmp, transport.rtcp_sock, UDP, 0);
+					g_free(tmp);
+#if 0
+//Temporary disable multicast for netembryo
 				} else if (matching_descr->flags & SD_FL_MULTICAST) {	/*multicast */
 					// TODO: make the difference between only multicast allowed or unicast fallback allowed.
-					transport.u.udp.cli_ports.RTP =
-					    transport.u.udp.ser_ports.RTP =
+					cli_ports.RTP = ser_ports.RTP =
 					    matching_me->rtp_multicast_port;
-					transport.u.udp.cli_ports.RTCP =
-					    transport.u.udp.ser_ports.RTCP =
+					cli_ports.RTCP = ser_ports.RTCP =
 					    matching_me->rtp_multicast_port + 1;
 
 					is_multicast_dad = 0;
@@ -351,12 +340,11 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 						fnc_log(FNC_LOG_DEBUG,
 							"\nSet up socket for multicast ok\n");
 					}
+#endif //Temporary disable multicast for netembryo
 				} else
 					continue;
-
-				transport.type = RTP_rtp_avp;
 				break;	// found a valid transport
-			} else if (!strncmp(p, "/TCP", 4)) {	// Transport: RTP/AVP/TCP;interleaved=x-y // XXX still not finished
+			} else if (Sock_type(rtsp->sock) == TCP && !strncmp(p, "/TCP", 4)) {	// Transport: RTP/AVP/TCP;interleaved=x-y
 				
 				if ( !(intlvd = calloc(1, sizeof(RTSP_interleaved))) )
 					return ERR_GENERIC;
@@ -364,139 +352,121 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 				if ((p = strstr(transport_tkn, "interleaved"))) {
 					p = strstr(p, "=");
 					sscanf(p + 1, "%hu",
-					       &(transport.u.tcp.interleaved.
-						 RTP));
+					       &(intlvd->proto.tcp.rtp_ch));
 					if ((p = strstr(p, "-")))
 						sscanf(p + 1, "%hu",
-						       &(transport.u.tcp.
-							 interleaved.RTCP));
+						       &(intlvd->proto.tcp.rtcp_ch));
 					else
-						transport.u.tcp.interleaved.
-						    RTCP =
-						    transport.u.tcp.interleaved.
-						    RTP + 1;
-						    
-					if ( (transport.u.tcp.interleaved.RTP > 255) || (transport.u.tcp.interleaved.RTCP > 255) ) {
-						fnc_log(FNC_LOG_ERR, "Interleaved channel number suggested from client too high\n");
-						send_reply(400, "Interleaved channel number suggested from client too high", rtsp);
-						return ERR_GENERIC;
-					}
+						intlvd->proto.tcp.rtcp_ch =
+						    intlvd->proto.tcp.rtp_ch + 1;
 				} else {	// search for max used interleved channel.
 					max_interlvd = -1;
-					for (rtp_s =
-					     (rtsp->session_list) ? rtsp->
-					     session_list->rtp_session : NULL;
-					     rtp_s; rtp_s = rtp_s->next)
+					for (ilvd_s = (rtsp->interleaved);
+					     ilvd_s; ilvd_s = ilvd_s->next)
 						max_interlvd =
 						    max(max_interlvd,
-							(rtp_s->transport.
-							 type ==
-							 RTP_rtp_avp_tcp) ?
-							rtp_s->transport.u.tcp.
-							interleaved.RTCP : -1);
-					transport.u.tcp.interleaved.RTP =
+							ilvd_s->proto.tcp.rtcp_ch);
+					intlvd->proto.tcp.rtp_ch =
 					    max_interlvd + 1;
-					transport.u.tcp.interleaved.RTCP =
+					intlvd->proto.tcp.rtcp_ch =
 					    max_interlvd + 2;
-					    
-					if ( (transport.u.tcp.interleaved.RTP > 255) || (transport.u.tcp.interleaved.RTCP > 255) ) {
+				}
+				if ( (intlvd->proto.tcp.rtp_ch > 255) || (intlvd->proto.tcp.rtcp_ch > 255) ) {
 						fnc_log(FNC_LOG_ERR, "Interleaved channel number already reached max\n");
 						send_reply(500, "Interleaved channel number already reached max", rtsp);
+						free(intlvd);
 						return ERR_GENERIC;
-					}
 				}
-				
-				if ( !(intlvd = calloc(1, sizeof(RTSP_interleaved))) )
-					return ERR_ALLOC;
-				
-				intlvd->proto.tcp.rtp_ch = transport.u.tcp.interleaved.RTP;
-				intlvd->proto.tcp.rtcp_ch = transport.u.tcp.interleaved.RTCP;
-				
 				// RTP local sockpair
-				if ( socketpair(AF_LOCAL, SOCKPAIRTYPE, 0, sdpair) < 0) {
+				if ( Sock_socketpair(sock_pair) < 0) {
 					fnc_log(FNC_LOG_ERR, "Cannot create AF_LOCAL socketpair for rtp\n");
 					send_reply(500, 0, rtsp);
 					free(intlvd);
 					return ERR_GENERIC;
 				}
-				transport.rtp_fd = sdpair[0];
-				intlvd->rtp_fd = sdpair[1];
+				transport.rtp_sock = sock_pair[0];
+				intlvd->rtp_local = sock_pair[1];
 				// RTCP local sockpair
-				if ( socketpair(AF_LOCAL, SOCKPAIRTYPE, 0, sdpair) < 0) {
+				if ( Sock_socketpair(sock_pair) < 0) {
 					fnc_log(FNC_LOG_ERR, "Cannot create AF_LOCAL socketpair for rtcp\n");
 					send_reply(500, 0, rtsp);
-					close(transport.rtp_fd);
-					close(intlvd->rtp_fd);
+					Sock_close(transport.rtp_sock);
+					Sock_close(intlvd->rtp_local);
 					free(intlvd);
 					return ERR_GENERIC;
 				}
 				
-				transport.rtcp_fd_out = sdpair[0];
-				intlvd->rtcp_fd = sdpair[1];
-				
-				transport.rtcp_fd_in = -1;
+				transport.rtcp_sock = sock_pair[0];
+				intlvd->rtcp_local = sock_pair[1];
+
+				// copy stream number in rtp_transport struct
+				transport.rtp_ch = intlvd->proto.tcp.rtp_ch;
+				transport.rtcp_ch = intlvd->proto.tcp.rtcp_ch;
 				
 				// insert new interleaved stream in the list
 				intlvd->next = rtsp->interleaved;
 				rtsp->interleaved = intlvd;
 
-				transport.type = RTP_rtp_avp_tcp;
 				break;	// found a valid transport
 #ifdef HAVE_SCTP_FENICE
-			} else if (rtsp->proto == SCTP && !strncmp(p, "/SCTP", 5)) {	// Transport: RTP/AVP/SCTP;streams=x-y
+			} else if (Sock_type(rtsp->sock) == SCTP && !strncmp(p, "/SCTP", 5)) {	// Transport: RTP/AVP/SCTP;streams=x-y
+				
+				if ( !(intlvd = calloc(1, sizeof(RTSP_interleaved))) )
+					return ERR_GENERIC;
+
 				if ((p = strstr(transport_tkn, "streams"))) {
 					p = strstr(p, "=");
 					sscanf(p + 1, "%hu",
-					       &(transport.u.sctp.streams.RTP));
+					       &(intlvd->proto.sctp.rtp.sinfo_stream));
 					if ((p = strstr(p, "-")))
 						sscanf(p + 1, "%hu",
-						       &(transport.u.sctp.
-							 streams.RTCP));
+						       &(intlvd->proto.sctp.rtcp.sinfo_stream));
 					else
-						transport.u.sctp.streams.RTCP =
-						    transport.u.sctp.streams.
-						    RTP + 1;
+						intlvd->proto.sctp.rtcp.sinfo_stream =
+						    intlvd->proto.sctp.rtp.sinfo_stream + 1;
 				} else {	// search for max used stream.
 					max_interlvd = -1;
-					for (rtp_s =
-					     (rtsp->session_list) ? rtsp->
-					     session_list->rtp_session : NULL;
-					     rtp_s; rtp_s = rtp_s->next)
+					for (ilvd_s = (rtsp->interleaved);
+					     ilvd_s; rtp_s = ilvd_s->next)
 						max_interlvd =
 						    max(max_interlvd,
-							(rtp_s->transport.
-							 type ==
-							 RTP_rtp_avp_sctp) ?
-							rtp_s->transport.u.sctp.
-							streams.RTCP : -1);
-					transport.u.sctp.streams.RTP =
+							ilvd_s->proto.sctp.rtcp.sinfo_stream);
+					intlvd->proto.sctp.rtp.sinfo_stream =
 					    max_interlvd + 1;
-					transport.u.sctp.streams.RTCP =
+					intlvd->proto.sctp.rtcp.sinfo_stream =
 					    max_interlvd + 2;
 				}
 
-/*				// RTP local sockpair
-				if ( socketpair(AF_LOCAL, SOCKPAIRTYPE, 0, sdpair) < 0) {
+				// RTP local sockpair
+				if ( Sock_socketpair(sock_pair) < 0) {
 					fnc_log(FNC_LOG_ERR, "Cannot create AF_LOCAL socketpair for rtp\n");
 					send_reply(500, 0, rtsp);
+					free(intlvd);
 					return ERR_GENERIC;
 				}
-				transport.rtp_fd = sdpair[0];
+				transport.rtp_sock = sock_pair[0];
+				intlvd->rtp_local = sock_pair[1];
 				// RTCP local sockpair
-				if ( socketpair(AF_LOCAL, SOCKPAIRTYPE, 0, sdpair) < 0) {
+				if ( Sock_socketpair(sock_pair) < 0) {
 					fnc_log(FNC_LOG_ERR, "Cannot create AF_LOCAL socketpair for rtcp\n");
 					send_reply(500, 0, rtsp);
+					Sock_close(transport.rtp_sock);
+					Sock_close(intlvd->rtp_local);
+					free(intlvd);
 					return ERR_GENERIC;
-				}*/
-				transport.rtp_fd = rtsp->fd;
-
-				transport.rtcp_fd_out = rtsp->fd;
+				}
 				
-				transport.rtcp_fd_in = -1;
-				
-				// TODO: FINISH!!!
+				transport.rtcp_sock = sock_pair[0];
+				intlvd->rtcp_local = sock_pair[1];
 
-				transport.type = RTP_rtp_avp_sctp;
+				// copy stream number in rtp_transport struct
+				transport.rtp_ch = intlvd->proto.sctp.rtp.sinfo_stream;
+				transport.rtcp_ch = intlvd->proto.sctp.rtcp.sinfo_stream;
+				
+				// insert new interleaved stream in the list
+				intlvd->next = rtsp->interleaved;
+				rtsp->interleaved = intlvd;
+				
 				break;	// found a valid transport
 #endif
 			}
@@ -504,7 +474,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	} while ((transport_tkn = strtok_r(NULL, ",", &saved_ptr)));
 	// printf("rtp transport: %d\n", transport.type);
 
-	if (transport.type == RTP_no_transport) {
+	if (!transport.rtp_sock) {
 		// fnc_log(FNC_LOG_ERR,"Unsupported Transport\n");
 		send_reply(461, "Unsupported Transport", rtsp);	/* Bad Request */
 		return ERR_NOERROR;
@@ -556,21 +526,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	start_seq = rand();
 	start_rtptime = rand();
 #else
-	// start_seq = 1 + (int) (10.0 * rand() / (100000 + 1.0));
-	// start_rtptime = 1 + (int) (10.0 * rand() / (100000 + 1.0));
-#if 0
-	start_seq =
-	    1 +
-	    (unsigned int) ((float) (0xFFFF) *
-			    ((float) rand() / (float) RAND_MAX));
-	start_rtptime =
-	    1 +
-	    (unsigned int) ((float) (0xFFFFFFFF) *
-			    ((float) rand() / (float) RAND_MAX));
-#else
 	start_seq = 1 + (unsigned int) (rand() % (0xFFFF));
 	start_rtptime = 1 + (unsigned int) (rand() % (0xFFFFFFFF));
-#endif
 #endif
 	if (start_seq == 0) {
 		start_seq++;

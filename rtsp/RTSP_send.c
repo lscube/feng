@@ -44,7 +44,6 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
 	// char *buffer;
 #ifdef HAVE_SCTP_FENICE
 	struct sctp_sndrcvinfo sctp_info;
-	// int m = 0;
 #endif
 
  	if (!rtsp->out_size) {
@@ -54,80 +53,62 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
 
 	to_send = rtsp->out_size - rtsp->out_sent;
 		
-	// TODO: find che interleaved channel to be used and, in the TCP case, build the pkt.
-		
-	switch (rtsp->proto) {
-#ifdef HAVE_SCTP_FENICE
-	case SCTP: // TODO: choose right stream
-		memset(&sctp_info, 0, sizeof(sctp_info));
-		if ( (n = sctp_send(rtsp->fd, rtsp->out_buffer + rtsp->out_sent, to_send,
-							&sctp_info, MSG_DONTWAIT | MSG_NOSIGNAL)) < 0) {
-			fnc_log(FNC_LOG_ERR, "sctp_send() error in RTSP_send()\n");
-			return n;
+	if ( (n = Sock_write(rtsp->sock, rtsp->out_buffer + rtsp->out_sent, to_send,
+			     NULL, MSG_DONTWAIT | MSG_NOSIGNAL)) < 0) {
+		switch (errno) {
+			case EACCES:
+				fnc_log(FNC_LOG_ERR, "EACCES error\n");
+				break;
+			case EAGAIN:
+				fnc_log(FNC_LOG_ERR, "EAGAIN error\n");
+				break;
+			case EBADF:
+				fnc_log(FNC_LOG_ERR, "EBADF error\n");
+				break;
+			case ECONNRESET:
+				fnc_log(FNC_LOG_ERR, "ECONNRESET error\n");
+				break;
+			case EDESTADDRREQ:
+				fnc_log(FNC_LOG_ERR, "EDESTADDRREQ error\n");
+				break;
+			case EFAULT:
+				fnc_log(FNC_LOG_ERR, "EFAULT error\n");
+				break;
+			case EINTR:
+				fnc_log(FNC_LOG_ERR, "EINTR error\n");
+				break;
+			case EINVAL:
+				fnc_log(FNC_LOG_ERR, "EINVAL error\n");
+				break;
+			case EISCONN:
+				fnc_log(FNC_LOG_ERR, "EISCONN error\n");
+				break;
+			case EMSGSIZE:
+				fnc_log(FNC_LOG_ERR, "EMSGSIZE error\n");
+				break;
+			case ENOBUFS:
+				fnc_log(FNC_LOG_ERR, "ENOBUFS error\n");
+				break;
+			case ENOMEM:
+				fnc_log(FNC_LOG_ERR, "ENOMEM error\n");
+				break;
+			case ENOTCONN:
+				fnc_log(FNC_LOG_ERR, "ENOTCONN error\n");
+				break;
+			case ENOTSOCK:
+				fnc_log(FNC_LOG_ERR, "ENOTSOCK error\n");
+				break;
+			case EOPNOTSUPP:
+				fnc_log(FNC_LOG_ERR, "EOPNOTSUPP error\n");
+				break;
+			case EPIPE:
+				fnc_log(FNC_LOG_ERR, "EPIPE error\n");
+				break;
+			default:
+				break;
 		}
-		break;
-#endif // HAVE_SCTP_FENICE
-	case TCP:
-		if ( (n = send(rtsp->fd, rtsp->out_buffer + rtsp->out_sent, to_send, MSG_DONTWAIT | MSG_NOSIGNAL)) < 0) {
-			switch (errno) {
-				case EACCES:
-					fnc_log(FNC_LOG_ERR, "EACCES error\n");
-					break;
-				case EAGAIN:
-					fnc_log(FNC_LOG_ERR, "EAGAIN error\n");
-					break;
-				case EBADF:
-					fnc_log(FNC_LOG_ERR, "EBADF error\n");
-					break;
-				case ECONNRESET:
-					fnc_log(FNC_LOG_ERR, "ECONNRESET error\n");
-					break;
-				case EDESTADDRREQ:
-					fnc_log(FNC_LOG_ERR, "EDESTADDRREQ error\n");
-					break;
-				case EFAULT:
-					fnc_log(FNC_LOG_ERR, "EFAULT error\n");
-					break;
-				case EINTR:
-					fnc_log(FNC_LOG_ERR, "EINTR error\n");
-					break;
-				case EINVAL:
-					fnc_log(FNC_LOG_ERR, "EINVAL error\n");
-					break;
-				case EISCONN:
-					fnc_log(FNC_LOG_ERR, "EISCONN error\n");
-					break;
-				case EMSGSIZE:
-					fnc_log(FNC_LOG_ERR, "EMSGSIZE error\n");
-					break;
-				case ENOBUFS:
-					fnc_log(FNC_LOG_ERR, "ENOBUFS error\n");
-					break;
-				case ENOMEM:
-					fnc_log(FNC_LOG_ERR, "ENOMEM error\n");
-					break;
-				case ENOTCONN:
-					fnc_log(FNC_LOG_ERR, "ENOTCONN error\n");
-					break;
-				case ENOTSOCK:
-					fnc_log(FNC_LOG_ERR, "ENOTSOCK error\n");
-					break;
-				case EOPNOTSUPP:
-					fnc_log(FNC_LOG_ERR, "EOPNOTSUPP error\n");
-					break;
-				case EPIPE:
-					fnc_log(FNC_LOG_ERR, "EPIPE error\n");
-					break;
-				default:
-					break;
-			}
-			fnc_log(FNC_LOG_ERR, "send() error in RTSP_send()\n");
-			return n;
-		}
-		break;
-	default:
-		return ERR_GENERIC;
-		break;
+		fnc_log(FNC_LOG_ERR, "Sock_write() error in RTSP_send()\n");
+		return n;
 	}
 
 	if ( (rtsp->out_sent += n) == rtsp->out_size )

@@ -66,5 +66,28 @@ ssize_t RTP_recv(RTP_session * session, rtp_protos proto)
 	return session->rtcp_insize;
 */
 
-return -1;
+	Sock *s = session->transport.rtcp_sock;
+	struct sockaddr *sa_p = (struct sockaddr *)&(session->transport.last_stg);
+
+	if (proto == rtcp_proto) {
+		switch (s->socktype) {
+		case UDP:
+			session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
+					 sizeof(session->rtcp_inbuffer),
+					 sa_p, 0);
+			break;
+		case LOCAL:
+			session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
+					 sizeof(session->rtcp_inbuffer),
+					 NULL, 0);
+			break;
+		default:
+			session->rtcp_insize = -1;
+			break;
+		}
+	}
+	else
+		return -1;
+
+return session->rtcp_insize;
 }

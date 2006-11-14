@@ -37,7 +37,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <netembryo/wsocket.h>
-#include <fenice/socket.h>
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
 #include <fenice/rtsp.h>
@@ -127,8 +126,8 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
 						add_client(&rtsp_list, client_sock);
 					} else {
 						// I'm the father
-						fd = -1;
 						conn_count = -1;
+						Sock_close(client_sock);
 						Sock_close(main_sock);
 #ifdef HAVE_SCTP_FENICE
 						if (sctp_main_sock)

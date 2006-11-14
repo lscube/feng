@@ -63,8 +63,8 @@ typedef struct _RTSP_interleaved {
 	Sock *rtcp_local;
 	union {
 		struct {
-			uint8 rtp_ch;
-			uint8 rtcp_ch;
+			uint16 rtp_ch;
+			uint16 rtcp_ch;
 		} tcp;
 #ifdef HAVE_SCTP_FENICE
 		struct {

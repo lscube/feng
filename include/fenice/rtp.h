@@ -66,6 +66,8 @@ typedef enum {
 typedef struct _RTP_transport {
 	Sock *rtp_sock;
 	Sock *rtcp_sock;
+	struct sockaddr_storage last_stg;
+	uint16 rtp_ch, rtcp_ch;
 } RTP_transport;
 
 typedef struct _RTCP_stats {

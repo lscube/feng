@@ -125,7 +125,8 @@ int RTP_send_packet(RTP_session * session)
 		// if ((psize_sent=sendto(session->transport.u.udp.rtp_fd,packet,slot->data_size+hdr_size,0,&(session->transport.u.udp.rtp_peer),sizeof(session->transport.u.udp.rtp_peer)))<0){
 		if ((psize_sent =
 		     Sock_write(session->transport.rtp_sock, packet,
-				slot->data_size + hdr_size, NULL)) < 0) {
+				slot->data_size + hdr_size, NULL, MSG_DONTWAIT
+				| MSG_EOR)) < 0) {
 
 			fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
 		} else {

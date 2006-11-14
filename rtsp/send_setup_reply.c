@@ -46,8 +46,8 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session,
 {
 	char r[1024];
 	int w_pos = 0;
-	char temp[30];
-	char ttl[4];
+//	char temp[30];
+//	char ttl[4];
 	/* build a reply message */
 
 	sprintf(r,
@@ -65,8 +65,10 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session,
 	w_pos += sprintf(r + w_pos, "Session: %d" RTSP_EL, session->session_id);
 
 	w_pos += sprintf(r + w_pos, "Transport: ");
-	switch (rtp_s->transport.type) {
-	case RTP_rtp_avp:
+	switch (Sock_type(rtp_s->transport.rtp_sock)) {
+	case UDP:
+#if 0
+//Temporary disable of multicast code for netembro
 		// if (!(descr->flags & SD_FL_MULTICAST)) {
 		if (rtp_s->transport.u.udp.is_multicast) {
 			/*
@@ -80,6 +82,7 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session,
 				    "RTP/AVP;multicast;ttl=%d;destination=%s;port=",
 				    (int) DEFAULT_TTL, descr->multicast);
 		} else {
+#endif //Temporary disable of multicast code for netembro
 			/*
 			   strcat(r, "Transport: RTP/AVP;unicast;client_port=");
 			   sprintf(temp, "%d", rtp_s->transport.u.udp.cli_ports.RTP);
@@ -96,10 +99,12 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session,
 			w_pos +=
 			    sprintf(r + w_pos,
 				    "RTP/AVP;unicast;client_port=%d-%d;source=%s;server_port=",
-				    rtp_s->transport.u.udp.cli_ports.RTP,
-				    rtp_s->transport.u.udp.cli_ports.RTCP,
-				    get_address());
+				    get_remote_port(rtp_s->transport.rtp_sock),
+				    get_remote_port(rtp_s->transport.rtcp_sock),
+				    get_local_host(rtsp->sock));
+#if 0
 		}
+#endif
 		/*
 		   sprintf(temp, "%d", rtp_s->transport.u.udp.ser_ports.RTP);
 		   strcat(r, temp);
@@ -109,8 +114,8 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session,
 		 */
 		w_pos +=
 		    sprintf(r + w_pos, "%d-%d",
-			    rtp_s->transport.u.udp.ser_ports.RTP,
-			    rtp_s->transport.u.udp.ser_ports.RTCP);
+			    get_local_port(rtp_s->transport.rtp_sock),
+			    get_local_port(rtp_s->transport.rtcp_sock));
 
 #if 0
 		// if ((descr->flags & SD_FL_MULTICAST)) {
@@ -125,15 +130,17 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session,
 		}
 #endif
 		break;
-	case RTP_rtp_avp_tcp:
-		w_pos += sprintf(r + w_pos, "RTP/AVP/TCP;interleaved=%d-%d",
-				 rtp_s->transport.u.tcp.interleaved.RTP,
-				 rtp_s->transport.u.tcp.interleaved.RTCP);
-		break;
-	case RTP_rtp_avp_sctp:
-		w_pos += sprintf(r + w_pos, "RTP/AVP/SCTP;server_streams=%d-%d",
-				 rtp_s->transport.u.sctp.streams.RTP,
-				 rtp_s->transport.u.sctp.streams.RTCP);
+	case LOCAL:
+		if (Sock_type(rtsp->sock) == TCP) {
+			w_pos += sprintf(r + w_pos, "RTP/AVP/TCP;interleaved=%d-%d",
+				 rtp_s->transport.rtp_ch,
+				 rtp_s->transport.rtcp_ch);
+		}
+		else if (Sock_type(rtsp->sock) == SCTP) {
+			w_pos += sprintf(r + w_pos, "RTP/AVP/SCTP;server_streams=%d-%d",
+				 rtp_s->transport.rtp_ch,
+				 rtp_s->transport.rtcp_ch);
+		}
 		break;
 	default:
 		break;

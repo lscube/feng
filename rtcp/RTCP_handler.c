@@ -53,7 +53,7 @@ int RTCP_handler(RTP_session * session)
 		/*---------------SEE eventloop/rtsp_server.c-------*/
 		FD_ZERO(&wset);
 		t.tv_sec = 0;
-		t.tv_usec = 100000;
+		t.tv_usec = 1000;
 
 		if (session->rtcp_outsize > 0)
 			FD_SET(Sock_fd(session->transport.rtcp_sock), &wset);
@@ -65,7 +65,7 @@ int RTCP_handler(RTP_session * session)
 
 		if (FD_ISSET(Sock_fd(session->transport.rtcp_sock), &wset)) {
 			if (Sock_write(session->transport.rtcp_sock, session->rtcp_outbuffer,
-			     session->rtcp_outsize, NULL) < 0)
+			    session->rtcp_outsize, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
 				fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
 			session->rtcp_outsize = 0;
 			fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");

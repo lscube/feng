@@ -56,14 +56,13 @@ inline void fncheader(void); // defined in src/fncheader.c
 
 int main(int argc, char **argv)
 {
-	tsocket main_fd;
-	Sock *m_fd;
+	Sock *main_sock = NULL;
 	char *port;
 	int wsocket_flag=0;
         int on=1; /*setting non-blocking flag*/
 
 	// Fake timespec for fake nanosleep. See below.
-	struct timespec ts = { 0, 0 };
+	//struct timespec ts = { 0, 0 };
 
 	// printf("\n%s %s - Open Media Streaming Project - Politecnico di Torino\n\n", PACKAGE, VERSION);
 	fncheader();
@@ -95,7 +94,6 @@ int main(int argc, char **argv)
 
 	Sock_init();
 
-
 #if ENABLE_STUN
 	struct STUN_SERVER_IFCFG *cfg = (struct STUN_SERVER_IFCFG *)prefs_get_stuncfg();
 	
@@ -109,24 +107,20 @@ int main(int argc, char **argv)
 	}
 #endif //ENABLE_STUN
 
-
-
-	
-	m_fd = Sock_bind(NULL, port, TCP, wsocket_flag);
-	main_fd = Sock_fd(m_fd);
-	if(m_fd==NULL) {
-		fnc_log(FNC_LOG_ERR,"bind() error.\n" );
-		fprintf(stderr, "bind() error.\n" );
+	main_sock = Sock_bind(NULL, port, TCP, wsocket_flag);
+	if(!main_sock) {
+		fnc_log(FNC_LOG_ERR,"Sock_bind() error.\n" );
+		fprintf(stderr, "Sock_bind() error.\n" );
 		return 0;
 	}
 	
-	if (Sock_set_props(m_fd, FIONBIO, &on) < 0) { /*set to non-blocking*/
-		fnc_log(FNC_LOG_ERR,"ioctl() error.\n" );
+	if (Sock_set_props(main_sock, FIONBIO, &on) < 0) { /*set to non-blocking*/
+		fnc_log(FNC_LOG_ERR,"Sock_set_props() error.\n" );
 		return 0;
     	}
 
-	if(Sock_listen(m_fd,SOMAXCONN)) {
-		fnc_log(FNC_LOG_ERR,"listen() error.\n" );
+	if(Sock_listen(main_sock,SOMAXCONN)) {
+		fnc_log(FNC_LOG_ERR,"Sock_listen() error.\n" );
 		return 0;
 	}
 
@@ -143,8 +137,8 @@ int main(int argc, char **argv)
 	while (1) {
 		// Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
 		// See also schedule.c
-		nanosleep(&ts, NULL);
-		eventloop(m_fd);
+		//nanosleep(&ts, NULL);
+		eventloop(main_sock, NULL);
 	}
 	/* eventloop looks for incoming RTSP connections and generates for each
 	   all the information in the structures RTSP_list, RTP_list, and so on */

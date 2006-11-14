@@ -40,7 +40,7 @@
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
 
-void add_client(RTSP_buffer ** rtsp_list, tsocket fd, RTSP_proto proto)
+void add_client(RTSP_buffer ** rtsp_list, Sock *client_sock)
 {
 	RTSP_buffer *p = NULL, *pp = NULL;
 	// Add a client
@@ -68,7 +68,7 @@ void add_client(RTSP_buffer ** rtsp_list, tsocket fd, RTSP_proto proto)
 			p->next = NULL;
 		}
 	}
-	RTSP_initserver(p, fd, proto);
+	RTSP_initserver(p, client_sock);
 	fnc_log(FNC_LOG_INFO,
-		"Incoming RTSP connection accepted on socket: %d\n", p->fd);
+		"Incoming RTSP connection accepted on socket: %d\n", Sock_fd(client_sock));
 }
