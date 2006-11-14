@@ -55,7 +55,7 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
 	RTSP_buffer *p = NULL;
 	uint32 fd_found;
 	fd_set rset,wset;
-	Sock *client_sock;
+	Sock *client_sock = NULL;
 
 	//Init of scheduler
 	FD_ZERO(&rset);
@@ -79,7 +79,7 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
 	}
 	/* Stay here and wait for something happens */
 	if (select(max_fd + 1, &rset, &wset, NULL, NULL) < 0) {
-		fnc_log(FNC_LOG_ERR, "select error in eventloop().\n");
+		fnc_log(FNC_LOG_ERR, "select error in eventloop(). %s\n", strerror(errno));
 		/* Maybe we have to force exit here*/
 		return;
 	}
@@ -98,7 +98,7 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
 		// Handle a new connection
 		if (client_sock) {
 			for (fd_found = 0, p = rtsp_list; p != NULL; p = p->next)
-				if (Sock_compare(client_sock, p->sock)) {
+				if (!Sock_compare(client_sock, p->sock)) {
 					fd_found = 1;
 					break;
 				}
@@ -138,7 +138,9 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
 				num_conn++;
 				fnc_log(FNC_LOG_INFO, "Connection reached: %d\n",
 					num_conn);
-			}
+			} else
+				fnc_log(FNC_LOG_INFO, "Connection found: %d\n",
+					Sock_fd(client_sock));
 		}
 	} // shawill: and... if not?  END OF "HANDLE NEW CONNECTIONS"
 }
