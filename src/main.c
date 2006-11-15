@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 	printf("CTRL-C terminate the server.\n");
 	fnc_log(FNC_LOG_INFO,"Waiting for RTSP connections on port %s...\n", port);
 
-	Sock_init();
+	Sock_init(fnc_log);
 
 #if ENABLE_STUN
 	struct STUN_SERVER_IFCFG *cfg = (struct STUN_SERVER_IFCFG *)prefs_get_stuncfg();
