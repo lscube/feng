@@ -273,8 +273,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 					tmp = g_strdup_printf("%d", cli_ports.RTCP);
 					Sock_connect (get_remote_host(rtsp->sock), tmp, transport.rtcp_sock, UDP, 0);
 					g_free(tmp);
-#if 0
-//Temporary disable multicast for netembryo
 				} else if (matching_descr->flags & SD_FL_MULTICAST) {	/*multicast */
 					// TODO: make the difference between only multicast allowed or unicast fallback allowed.
 					cli_ports.RTP = ser_ports.RTP =
@@ -286,46 +284,17 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 					if (!
 					    (matching_descr->
 					     flags & SD_FL_MULTICAST_PORT)) {
-						struct in_addr inp;
-						unsigned char ttl = DEFAULT_TTL;
-						struct ip_mreq mreq;
-
-						mreq.imr_multiaddr.s_addr =
-						    inet_addr(matching_descr->
-							      multicast);
-						mreq.imr_interface.s_addr =
-						    INADDR_ANY;
-						setsockopt(transport.rtp_fd,
-							   IPPROTO_IP,
-							   IP_ADD_MEMBERSHIP,
-							   &mreq, sizeof(mreq));
-						setsockopt(transport.rtp_fd,
-							   IPPROTO_IP,
-							   IP_MULTICAST_TTL,
-							   &ttl, sizeof(ttl));
-
 						is_multicast_dad = 1;
-						strcpy(address,
-						       matching_descr->
-						       multicast);
 						//RTP outgoing packets
-						inet_aton(address, &inp);
-						udp_connect(transport.u.udp.
-							    ser_ports.RTP,
-							    &transport.u.udp.
-							    rtp_peer,
-							    inp.s_addr,
-							    &transport.rtp_fd);
+						tmp = g_strdup_printf("%d", cli_ports.RTP);
+						transport.rtp_sock = Sock_connect(matching_descr->multicast, tmp, NULL, UDP, 0);
+						g_free(tmp);
+						//RTCP incoming packets
+						//transport.rtcp_sock = Sock_bind(NULL, tmp, UDP, 0); //TODO: check if needed
 						//RTCP outgoing packets
-						inet_aton(address, &inp);
-						udp_connect(transport.u.udp.
-							    ser_ports.RTCP,
-							    &transport.u.udp.
-							    rtcp_out_peer,
-							    inp.s_addr,
-							    &transport.
-							    rtcp_fd_out);
-						//udp_open(transport.u.udp.ser_ports.RTCP, &(sp2->rtcp_in_peer), &(sp2->rtcp_fd_in));   //bind 
+						tmp = g_strdup_printf("%d", cli_ports.RTCP);
+						transport.rtcp_sock = Sock_connect(matching_descr->multicast, tmp, transport.rtcp_sock, UDP, 0);
+						g_free(tmp);
 
 						if (matching_me->next == NULL)
 							matching_descr->flags |=
@@ -333,14 +302,11 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 						matching_me->
 						    rtp_multicast_port =
-						    transport.u.udp.ser_ports.
-						    RTP;
-						transport.u.udp.is_multicast =
-						    1;
+						    cli_ports.RTP;
+
 						fnc_log(FNC_LOG_DEBUG,
 							"\nSet up socket for multicast ok\n");
 					}
-#endif //Temporary disable multicast for netembryo
 				} else
 					continue;
 				break;	// found a valid transport
