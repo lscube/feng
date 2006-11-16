@@ -73,7 +73,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
 			for (intlvd = rtsp->interleaved;
 			     intlvd && !((intlvd->proto.tcp.rtp_ch == m)
 				|| (intlvd->proto.tcp.rtcp_ch == m));
-			     intlvd = intlvd->next)
+			     intlvd = intlvd->next);
 			if (!intlvd) {	// session not found
 				fnc_log(FNC_LOG_DEBUG,
 					"Interleaved RTP or RTCP packet arrived for unknown channel (%d)... discarding.\n",

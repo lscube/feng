@@ -124,7 +124,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 			for (intlvd = rtsp->interleaved;
 			     intlvd && !((intlvd->proto.sctp.rtp.sinfo_stream == m)
 				|| (intlvd->proto.sctp.rtcp.sinfo_stream == m));
-			     intlvd = intlvd->next)
+			     intlvd = intlvd->next);
 				if (intlvd) {
 					if (m ==
 					    intlvd->proto.sctp.rtcp.sinfo_stream) {
