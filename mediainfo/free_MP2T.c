@@ -36,6 +36,7 @@
 #include <fenice/mpeg_ts.h>
 #include <fenice/utils.h>
 
-int free_MP2T (void * stat){
+int free_MP2T(void *stat)
+{
 	return ERR_NOERROR;
 }

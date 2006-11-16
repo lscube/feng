@@ -32,8 +32,8 @@
  *  
  * */
 
-#include <string.h> /*strcmp*/
-#include <stdlib.h> /*calloc*/
+#include <string.h>		/*strcmp */
+#include <stdlib.h>		/*calloc */
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 #include <fenice/mpeg4es.h>
@@ -44,6 +44,7 @@
 #include <fenice/mpeg_system.h>
 #include <fenice/mpeg_ts.h>
 #include <fenice/mpeg.h>
+#include <fenice/rtp_shm.h>
 #include <fenice/fnc_log.h>
 
 /*
@@ -51,53 +52,51 @@
  * 	\brief register pointer functions in order to load, read, free media bitstream.
  *	\param media_entry *me .
  */
-int register_media(media_entry *me){
-	if(strcmp(me->description.encoding_name,"MP4V-ES")==0){
-		me->media_handler = (media_fn *)calloc(1,sizeof(media_fn));
-		me->media_handler->free_media=free_MP4ES;		
-		me->media_handler->load_media=load_MP4ES;		
-		me->media_handler->read_media=read_MPEG4ES_video;		
-	}
-	else if(strcmp(me->description.encoding_name,"MPV")==0){
-		me->media_handler = (media_fn *)calloc(1,sizeof(media_fn));
-		me->media_handler->free_media=free_MPV;		
-		me->media_handler->load_media=load_MPV;		
-		me->media_handler->read_media=read_MPEG_video;		
-	}
-	else if(strcmp(me->description.encoding_name,"MPA")==0){
-		me->media_handler = (media_fn *)calloc(1,sizeof(media_fn));
-		me->media_handler->free_media=free_MPA;		
-		me->media_handler->load_media=load_MPA;		
-		me->media_handler->read_media=read_MP3;		
-	}
-	else if(strcmp(me->description.encoding_name,"GSM")==0){
-		me->media_handler = (media_fn *)calloc(1,sizeof(media_fn));
-		me->media_handler->free_media=free_GSM;		
-		me->media_handler->load_media=load_GSM;		
-		me->media_handler->read_media=read_GSM;		
-	}
-	else if(strcmp(me->description.encoding_name,"L16")==0){
-		me->media_handler = (media_fn *)calloc(1,sizeof(media_fn));
-		me->media_handler->free_media=free_L16;		
-		me->media_handler->load_media=load_L16;		
-		me->media_handler->read_media=read_PCM;		
-	}
-	else if(strcmp(me->description.encoding_name,"H26L")==0){
-		me->media_handler = (media_fn *)calloc(1,sizeof(media_fn));
-		me->media_handler->free_media=free_H26L;		
-		me->media_handler->load_media=load_H26L;		
-		me->media_handler->read_media=read_H26L;		
-	}
-	else if(strcmp(me->description.encoding_name,"MP2T")==0){
-		me->media_handler = (media_fn *)calloc(1,sizeof(media_fn));
-		me->media_handler->free_media=free_MP2T;		
-		me->media_handler->load_media=load_MP2T;		
-		me->media_handler->read_media=read_MPEG_ts;		
-	}
-	else{
-		fnc_log(FNC_LOG_ERR,"Encoding type not supported\n");
+int register_media(media_entry * me)
+{
+	if (strcmp(me->description.encoding_name, "MP4V-ES") == 0) {
+		me->media_handler = (media_fn *) calloc(1, sizeof(media_fn));
+		me->media_handler->free_media = free_MP4ES;
+		me->media_handler->load_media = load_MP4ES;
+		me->media_handler->read_media = read_MPEG4ES_video;
+	} else if (strcmp(me->description.encoding_name, "MPV") == 0) {
+		me->media_handler = (media_fn *) calloc(1, sizeof(media_fn));
+		me->media_handler->free_media = free_MPV;
+		me->media_handler->load_media = load_MPV;
+		me->media_handler->read_media = read_MPEG_video;
+	} else if (strcmp(me->description.encoding_name, "MPA") == 0) {
+		me->media_handler = (media_fn *) calloc(1, sizeof(media_fn));
+		me->media_handler->free_media = free_MPA;
+		me->media_handler->load_media = load_MPA;
+		me->media_handler->read_media = read_MP3;
+	} else if (strcmp(me->description.encoding_name, "GSM") == 0) {
+		me->media_handler = (media_fn *) calloc(1, sizeof(media_fn));
+		me->media_handler->free_media = free_GSM;
+		me->media_handler->load_media = load_GSM;
+		me->media_handler->read_media = read_GSM;
+	} else if (strcmp(me->description.encoding_name, "L16") == 0) {
+		me->media_handler = (media_fn *) calloc(1, sizeof(media_fn));
+		me->media_handler->free_media = free_L16;
+		me->media_handler->load_media = load_L16;
+		me->media_handler->read_media = read_PCM;
+	} else if (strcmp(me->description.encoding_name, "H26L") == 0) {
+		me->media_handler = (media_fn *) calloc(1, sizeof(media_fn));
+		me->media_handler->free_media = free_H26L;
+		me->media_handler->load_media = load_H26L;
+		me->media_handler->read_media = read_H26L;
+	} else if (strcmp(me->description.encoding_name, "MP2T") == 0) {
+		me->media_handler = (media_fn *) calloc(1, sizeof(media_fn));
+		me->media_handler->free_media = free_MP2T;
+		me->media_handler->load_media = load_MP2T;
+		me->media_handler->read_media = read_MPEG_ts;
+	} else if (strcmp(me->description.encoding_name, "RTP_SHM") == 0) {
+		me->media_handler = (media_fn *) calloc(1, sizeof(media_fn));
+		me->media_handler->free_media = free_RTP_SHM;
+		me->media_handler->load_media = load_RTP_SHM;
+		me->media_handler->read_media = NULL;	// read_RTP_SHM;            
+	} else {
+		fnc_log(FNC_LOG_ERR, "Encoding type not supported\n");
 		return ERR_UNSUPPORTED_PT;
 	}
 	return ERR_NOERROR;
 }
-

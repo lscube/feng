@@ -36,15 +36,13 @@
 #include <string.h>
 #include <fenice/mediainfo.h>
 
-int media_is_empty(media_entry *me)
+int media_is_empty(media_entry * me)
 {
-	if (me==NULL) {
+	if (me == NULL) {
 		return 1;
 	}
-	if (!(me->flags & ME_FILENAME)) { //non c'é il nome del file = non é stato specificato il media 
+	if (!(me->flags & ME_FILENAME)) {	//non c'ï¿½ il nome del file = non ï¿½ stato specificato il media 
 		return 1;
 	}
 	return 0;
 }
-
-

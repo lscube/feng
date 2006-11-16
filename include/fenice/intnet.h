@@ -35,27 +35,35 @@
 #ifndef _INTNETH
 #define _INTNETH
 
-	#include <fenice/rtp.h>
-	#include <fenice/rtcp.h>
+	/*#include <time.h>
+	   #include <sys/timeb.h>
+	   #include <sys/socket.h>
+	   #include <fenice/socket.h>
+	   #include <fenice/mediainfo.h>
+	 */
+#include <fenice/rtp.h>
+#include <fenice/rtcp.h>
 
-	/**************************************************Intelligent Network Functions*****************************************/	
-	
-	int stream_change(RTP_session *changing_session, int value);
-	int change_check(RTP_session *changing_session);
+	/**************************************************Intelligent Network Functions*****************************************/
 
-	int downgrade_GSM(RTP_session *changing_session);
-	int downgrade_L16(RTP_session *changing_session);
-	int downgrade_MP3(RTP_session *changing_session);
-	
-	int upgrade_GSM(RTP_session *changing_session);
-	int upgrade_MP3(RTP_session *changing_session);
+int stream_change(RTP_session * changing_session, int value);
+int change_check(RTP_session * changing_session);
 
-	int half_GSM(RTP_session *changing_session);
-	int half_L16(RTP_session *changing_session);
-	int half_MP3(RTP_session *changing_session);
-	
-	int priority_decrease(RTP_session *changing_session);
-	int priority_increase(RTP_session *changing_session);
+int downgrade_GSM(RTP_session * changing_session);
+int downgrade_L16(RTP_session * changing_session);
+int downgrade_MP3(RTP_session * changing_session);
+
+int upgrade_GSM(RTP_session * changing_session);
+int upgrade_MP3(RTP_session * changing_session);
+
+int half_GSM(RTP_session * changing_session);
+int half_L16(RTP_session * changing_session);
+int half_MP3(RTP_session * changing_session);
+
+int priority_decrease(RTP_session * changing_session);
+int priority_increase(RTP_session * changing_session);
+
+int stream_switch(RTP_session * changing_session, media_entry * new_media);
 
 	/**********************************************************************************************************************/
 #endif

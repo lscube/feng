@@ -36,6 +36,7 @@
 #include <fenice/gsm.h>
 #include <fenice/utils.h>
 
-int free_GSM (void * stat){
+int free_GSM(void *stat)
+{
 	return ERR_NOERROR;
 }

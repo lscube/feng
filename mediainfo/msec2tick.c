@@ -37,15 +37,14 @@
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 
-unsigned long msec2tick(double mtime,media_entry *me)
+inline long msec2tick(double mtime, media_entry * me)
 {
-	if (me->description.flags & MED_CLOCK_RATE) {
-		return me->description.clock_rate*mtime/1000;
-	}
-	else {
-		return ERR_GENERIC;
-	}
+	return (me->description.flags & MED_CLOCK_RATE) ? me->description.
+	    clock_rate * mtime / 1000 : ERR_GENERIC;
+	/*
+	   if (me->description.flags & MED_CLOCK_RATE)
+	   return me->description.clock_rate*mtime/1000;
+	   else
+	   return ERR_GENERIC;
+	 */
 }
-
-
-

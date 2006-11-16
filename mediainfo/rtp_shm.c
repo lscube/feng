@@ -1,5 +1,5 @@
 /* * 
- *  $Id$
+ *  $Id: rtp_shm.c 391 2006-09-27 13:43:01Z shawill $
  *  
  *  This file is part of Fenice
  *
@@ -32,51 +32,36 @@
  *  
  * */
 
-
-#ifndef _MPEG_SYSTEMH
-#define _MPEG_SYSTEMH
-
-#include <fenice/types.h>
 #include <fenice/mediainfo.h>
+#include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
-typedef struct {
-	unsigned int msb;
-	unsigned int scr;
-} SCR;
+int load_RTP_SHM(media_entry * p)
+{
+	fnc_log(FNC_LOG_DEBUG, "loading RTP_SHM...\n");
 
+	if (!(p->description.flags & MED_PKT_LEN)) {
+		if (!(p->description.flags & MED_FRAME_RATE)) {
+			return ERR_PARSE;
+		}
+		p->description.pkt_len =
+		    1 / (double) p->description.frame_rate * 1000;
+		p->description.flags |= MED_PKT_LEN;
+	}
+	p->description.delta_mtime = p->description.pkt_len;
+	return ERR_NOERROR;
+}
 
-typedef struct {
-	unsigned int msb;
-	unsigned int pts;
-} PTS;
-
-typedef struct {
-	unsigned char final_byte;
-	PTS pts;
-	PTS next_pts;
-	PTS dts;
-	PTS next_dts;
-	PTS pts_audio;
-	SCR scr;
-	unsigned int data_total;
-	int offset_flag;
-	int offset;
-	int new_dts;
-} static_MPEG_system;
-
-	/* reads pack header */
-int read_pack_head(uint8 *, uint32 * e, int fin, unsigned char *final_byte,
-		   SCR * scr);
-	/* reads packet header */
-int read_packet_head(uint8 *, uint32 *, int fin, unsigned char *final_byte,
-		     int *time_set, PTS * pts, PTS * dts, int *dts_present,
-		     PTS * pts_audio);
-	/* reads a packet */
-int read_packet(uint8 *, uint32 *, int fin, unsigned char *final_byte);
-
-	/*TODO: load_MPEGSYSTEM */
-int read_MPEG_system(media_entry * me, uint8 * buffer, uint32 * buffer_size,
-		     double *mtime, int *recallme, uint8 * marker);
-
-
+#if 0
+int read_RTP_SHM(media_entry * me, uint8 * data, uint32 * data_size,
+		 double *mtime, int *recallme, uint8 * marker)
+{
+//      fnc_log(FNC_LOG_DEBUG, "Shared memory got empty!\n");
+	return ERR_EOF;
+}
 #endif
+
+int free_RTP_SHM(void *stat)
+{
+	return 0;
+}

@@ -38,49 +38,50 @@
 #include <fenice/utils.h>
 #include <fenice/mediainfo.h>
 
-int enum_media(char *object,SD_descr **d)
+int enum_media(char *object, SD_descr ** d)
 {
-	static SD_descr *SD_global_list=NULL;
-	SD_descr *matching_descr=NULL,*descr_curr,*last_descr=NULL;
+	static SD_descr *SD_global_list = NULL;
+	SD_descr *matching_descr = NULL, *descr_curr, *last_descr = NULL;
 	int res;
-	
+
 	//test about the loading of current SD (is it done?)
-	for (descr_curr=SD_global_list; descr_curr && !matching_descr; descr_curr=descr_curr->next) {
-		if (strcmp(descr_curr->filename,object)==0)
-			matching_descr=descr_curr;
+	for (descr_curr = SD_global_list; descr_curr && !matching_descr;
+	     descr_curr = descr_curr->next) {
+		if (strcmp(descr_curr->filename, object) == 0)
+			matching_descr = descr_curr;
 		else
-	last_descr=descr_curr;
+			last_descr = descr_curr;
 	}
-	
+
 	if (!matching_descr) {
-	//.SD not found: update list
-	//the first time SD_global_list must be initialized
+		//.SD not found: update list
+		//the first time SD_global_list must be initialized
 		if (!SD_global_list) {
-			SD_global_list=(SD_descr*)calloc(1,sizeof(SD_descr));
+			SD_global_list =
+			    (SD_descr *) calloc(1, sizeof(SD_descr));
 			if (!SD_global_list) {
 				return ERR_ALLOC;
 			}
-			matching_descr=SD_global_list;			
-		}
-		else {
-			last_descr->next=(SD_descr*)calloc(1,sizeof(SD_descr));			
-			if(!(matching_descr=last_descr->next))
+			matching_descr = SD_global_list;
+		} else {
+			last_descr->next =
+			    (SD_descr *) calloc(1, sizeof(SD_descr));
+			if (!(matching_descr = last_descr->next))
 				return ERR_ALLOC;
-			
-		}	
-		strcpy(matching_descr->filename,object);
+
+		}
+		strcpy(matching_descr->filename, object);
 	}
-	res=parse_SD_file(object,matching_descr);
-	(*d)=matching_descr;
-	if (res!=ERR_NOERROR) {
-		if (!last_descr) //matching is the first
-			SD_global_list=SD_global_list->next;
+	res = parse_SD_file(object, matching_descr);
+	(*d) = matching_descr;
+	if (res != ERR_NOERROR) {
+		if (!last_descr)	//matching is the first
+			SD_global_list = SD_global_list->next;
 		else {
-			last_descr->next=matching_descr->next;
-		}	
+			last_descr->next = matching_descr->next;
+		}
 		free(matching_descr);
 		return res;
 	}
 	return ERR_NOERROR;
 }
-

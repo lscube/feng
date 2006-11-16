@@ -42,7 +42,9 @@ libmediainfo_la_SOURCES =	enum_media.c \
 				common_utils.c \
 				register_media.c \
 				mediaopen.c \
-				mediaclose.c
+				mediaclose.c \
+				rtp_shm.c \
+				tick2msec.c
 			
 			
 libmediainfo_la_LDFLAGS = -static

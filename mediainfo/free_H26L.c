@@ -36,11 +36,12 @@
 #include <fenice/h26l.h>
 #include <fenice/utils.h>
 
-int free_H26L (void * stat){
+int free_H26L(void *stat)
+{
 	static_H26L *s;
 
-	s=(static_H26L *) stat;
-	if(s==NULL)
+	s = (static_H26L *) stat;
+	if (s == NULL)
 		return ERR_ALLOC;
 	free(s);
 	return ERR_NOERROR;

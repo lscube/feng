@@ -33,34 +33,34 @@
  * */
 
 #include <unistd.h>
-/*#include <stdlib.h>*//*free*/
+																							      /*#include <stdlib.h> *//*free */
 #include <fenice/mediainfo.h>
 
 #define CLOSE_PIPE
 
-int mediaclose(media_entry *me)
+int mediaclose(media_entry * me)
 {
-	int ret=0;
+	int ret = 0;
 #ifndef CLOSE_PIPE
 	struct stat fdstat;
 	// close file if it's not a pipe
 	fstat(me->fd, &fdstat);
-	if ( !S_ISFIFO(fdstat.st_mode) ){
+	if (!S_ISFIFO(fdstat.st_mode)) {
 #endif
-		ret = close(me->fd);
+		if (me->fd > 0)
+			ret = close(me->fd);
 		me->fd = -1;
-		me->flags&=~ME_FD;
-		me->buff_size=0;
-		me->media_handler->free_media((void*) me->stat);	
-		me->stat=NULL;
+		me->flags &= ~ME_FD;
+		me->buff_size = 0;
+		me->media_handler->free_media((void *) me->stat);
+		me->stat = NULL;
 #ifndef CLOSE_PIPE
 	}
 #endif
 
-	// me->media_handler->free_media((void*) me->stat);	
-	/*do not release the media handler, because load_X is recalled only if .sd change*/
-	/*free(me->media_handler);*/
+	// me->media_handler->free_media((void*) me->stat);     
+	/*do not release the media handler, because load_X is recalled only if .sd change */
+	/*free(me->media_handler); */
 
 	return ret;
 }
-

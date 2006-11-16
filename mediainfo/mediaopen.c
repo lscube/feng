@@ -37,13 +37,14 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #include <fenice/mediainfo.h>
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 
-int mediaopen(media_entry *me)
+int mediaopen(media_entry * me)
 {
 	char thefile[256];
 	struct stat filestat;
@@ -51,35 +52,37 @@ int mediaopen(media_entry *me)
 
 	if (!(me->flags & ME_FILENAME))
 		return ERR_INPUT_PARAM;
-	
-	strcpy(thefile,prefs_get_serv_root());
-	strcat(thefile,me->filename);
+
+	snprintf(thefile, sizeof(thefile) - 1, "%s%s%s", prefs_get_serv_root(),
+		 (prefs_get_serv_root()[strlen(prefs_get_serv_root()) - 1] ==
+		  '/') ? "" : "/", me->filename);
 
 	fnc_log(FNC_LOG_DEBUG, "opening file %s...\n", thefile);
 
-	if ( me->description.msource == live ) {
+	if (me->description.msource == live) {
 		fnc_log(FNC_LOG_DEBUG, " Live stream... ");
 		stat(thefile, &filestat);
-		if ( S_ISFIFO(filestat.st_mode) ) {
+		if (S_ISFIFO(filestat.st_mode)) {
 			fnc_log(FNC_LOG_DEBUG, " IS_FIFO... ");
 			oflag |= O_NONBLOCK;
 		}
 	}
 
-	me->fd=open(thefile, oflag);
+	me->fd = open(thefile, oflag);
 
 #if 0
-	if ( (me->description.msource == live) && (!S_ISFIFO(filestat.st_mode)) ) {
+	if ((me->description.msource == live) && (!S_ISFIFO(filestat.st_mode))) {
 		fprintf(stderr, "illusion of live... ");
 		lseek(me->fd, 4, SEEK_END);
 	}
 #endif
 
-	if (me->fd==-1)
+	if (me->fd == -1) {
+		fnc_log(FNC_LOG_ERR, "Could not open %s", thefile);
 		return ERR_NOT_FOUND;
+	}
 
-	me->flags|=ME_FD;
+	me->flags |= ME_FD;
 
 	return me->fd;
 }
-

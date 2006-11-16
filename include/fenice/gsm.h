@@ -35,11 +35,12 @@
 #ifndef _GSMH
 #define _GSMH
 
-	#include <fenice/types.h>
-	#include <fenice/mediainfo.h>
+#include <fenice/types.h>
+#include <fenice/mediainfo.h>
 
-	int load_GSM (media_entry *me);
-	int read_GSM (media_entry *me, uint8 *buffer, uint32 *buffer_size, double *mtime, int *recallme, uint8 *marker);
-	int free_GSM (void * stat);
+int load_GSM(media_entry * me);
+int read_GSM(media_entry * me, uint8 * buffer, uint32 * buffer_size,
+	     double *mtime, int *recallme, uint8 * marker);
+int free_GSM(void *stat);
 
 #endif

@@ -36,15 +36,14 @@
 #include <string.h>
 #include <fenice/mediainfo.h>
 
-media_entry *default_selection_criterion(media_entry *list)
+media_entry *default_selection_criterion(media_entry * list)
 // Currently, return the default one
 {
 	media_entry *p;
-	for (p=list; p!=NULL; p=p->next) {
+	for (p = list; p != NULL; p = p->next) {
 		if (p->description.priority == 1) {
 			return p;
 		}
 	}
 	return list;
 }
-

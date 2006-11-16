@@ -35,48 +35,48 @@
 #ifndef _SCHEDULEH
 #define _SCHEDULEH
 
-	
-	#include <time.h>
-	#include <fenice/types.h>
-	#include <fenice/rtp.h>
-	#include <fenice/prefs.h>
-	#include <fenice/debug.h>
-	
 
-	typedef struct _play_args {
-    		struct tm playback_time;
-    		short playback_time_valid;
-    		float start_time;				// In secondi, anche frazionari
-    		short start_time_valid;	
-    		float end_time;
-    	} play_args;
+#include <time.h>
+#include <fenice/types.h>
+#include <fenice/rtp.h>
+#include <fenice/prefs.h>
+#include <fenice/debug.h>
 
-	typedef struct _schedule_list {
-		int valid;
-		RTP_session *rtp_session;
-		//RTSP_session *rtsp_session;
-		RTP_play_action play_action;
-	} schedule_list;	
-	
-	int schedule_init();
-	
-	#ifdef THREADED
-		void *schedule_do(void *nothing);
-	#endif
-	#ifdef SELECTED
-		void *schedule_do(void *nothing);
-	#endif
-	#ifdef POLLED
-		void schedule_do(int sig);
-	#endif
-	#ifdef SIGNALED
-		void schedule_do(int sig);
-	#endif
-	
-	int schedule_add(RTP_session *rtp_session/*,RTSP_session *rtsp_session*/);
-	int32 schedule_start(int id,play_args *args);
-	void schedule_stop(int id);
-	int schedule_remove(int id);
-	int schedule_resume(int id, play_args *args);
-	
+
+typedef struct _play_args {
+	struct tm playback_time;
+	short playback_time_valid;
+	float start_time;	// In secondi, anche frazionari
+	short start_time_valid;
+	float end_time;
+} play_args;
+
+typedef struct _schedule_list {
+	int valid;
+	RTP_session *rtp_session;
+	//RTSP_session *rtsp_session;
+	RTP_play_action play_action;
+} schedule_list;
+
+int schedule_init();
+
+#ifdef THREADED
+void *schedule_do(void *nothing);
+#endif
+#ifdef SELECTED
+void *schedule_do(void *nothing);
+#endif
+#ifdef POLLED
+void schedule_do(int sig);
+#endif
+#ifdef SIGNALED
+void schedule_do(int sig);
+#endif
+
+int schedule_add(RTP_session * rtp_session /*,RTSP_session *rtsp_session */ );
+int32 schedule_start(int id, play_args * args);
+void schedule_stop(int id);
+int schedule_remove(int id);
+int schedule_resume(int id, play_args * args);
+
 #endif

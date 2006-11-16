@@ -36,6 +36,7 @@
 #include <fenice/mp3.h>
 #include <fenice/utils.h>
 
-int free_MPA (void * stat){
+int free_MPA(void *stat)
+{
 	return ERR_NOERROR;
 }

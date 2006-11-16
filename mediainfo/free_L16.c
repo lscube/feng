@@ -36,6 +36,7 @@
 #include <fenice/pcm.h>
 #include <fenice/utils.h>
 
-int free_L16 (void * stat){
+int free_L16(void *stat)
+{
 	return ERR_NOERROR;
 }

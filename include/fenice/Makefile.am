@@ -27,6 +27,7 @@ noinst_HEADERS	=	bufferpool.h \
 			pcm.h \
 			prefs.h \
 			rtcp.h \
+			rtp_shm.h \
 			rtp.h \
 			rtpptdefs.h \
 			rtsp.h \

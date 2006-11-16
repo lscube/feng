@@ -38,25 +38,21 @@
 
 #include <config.h>
 #include <fenice/types.h>
-	
+
 
 #if ENABLE_VERBOSE
-	void dump_buffer(char *buffer);
-	#define VERBOSE
-#else
-#define dump_buffer(x)
+void dump_buffer(char *buffer);
+#define VERBOSE
 #endif
 #if ENABLE_DUMP
-	int dump_payload(uint8 *data_slot, uint32 data_size, uint8 char[255]);
-#else
-#define dump_payload(x, y, z)
+int dump_payload(uint8 * data_slot, uint32 data_size, uint8 fname[255]);
 #endif
 
 
-	#define DEBUG ENABLE_DEBUG
-//	#define POLLED 
-//	#define SIGNALED 
-	#define THREADED 
-//	#define SELECTED 
+#define DEBUG ENABLE_DEBUG
+//      #define POLLED 
+//      #define SIGNALED 
+#define THREADED
+//      #define SELECTED 
 
 #endif

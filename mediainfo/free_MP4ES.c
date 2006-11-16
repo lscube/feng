@@ -32,30 +32,31 @@
  *  
  * */
 
-#include <stdlib.h>/*free*/
+#include <stdlib.h>		/*free */
 
 #include <fenice/mpeg4es.h>
 #include <fenice/utils.h>
 
-int free_MP4ES (void *stat){
-	static_MPEG4_video_es *s;	
+int free_MP4ES(void *stat)
+{
+	static_MPEG4_video_es *s;
 
-	if(stat==NULL)
+	if (stat == NULL)
 		return ERR_ALLOC;
-	s=(static_MPEG4_video_es *) stat;
+	s = (static_MPEG4_video_es *) stat;
 
 	free(s->more_data);
-	s->more_data=NULL;
+	s->more_data = NULL;
 	free(s->ref1);
-	s->ref1=NULL;
+	s->ref1 = NULL;
 	free(s->ref2);
-	s->ref2=NULL;
-	s->fragmented=0;
-	s->final_byte=0x00;
-	s->data_read=0;
-	s->remained_data_size=0;
-	s->vop_coding_type=0;
-	s->vtir_bitlen=0;
-	
+	s->ref2 = NULL;
+	s->fragmented = 0;
+	s->final_byte = 0x00;
+	s->data_read = 0;
+	s->remained_data_size = 0;
+	s->vop_coding_type = 0;
+	s->vtir_bitlen = 0;
+
 	return ERR_NOERROR;
 }
