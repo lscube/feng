@@ -73,7 +73,7 @@ void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset,
 		if (!p->started) {
 			q->cur_state = READY_STATE;	// �play finished, go to ready state
 			/* TODO: RTP struct to be freed */
-		} else if (p->transport.rtcp_sock && Sock_type(p->transport.rtcp_sock) == UDP) {
+		} else if (p->transport.rtcp_sock) {
 			FD_SET(Sock_fd(p->transport.rtcp_sock), rset);
 			*max_fd = max(*max_fd, Sock_fd(p->transport.rtcp_sock));
 		}

@@ -83,7 +83,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 			memset(&sctp_info, 0, sizeof(sctp_info));
 			n = Sock_read(rtsp->sock, buffer, size, &sctp_info, 0);
 			m = sctp_info.sinfo_stream;
-			fnc_log(FNC_LOG_VERBOSE,
+			fnc_log(FNC_LOG_DEBUG,
 				"Sock_read() received %d bytes from sctp stream %d\n", n, m);
 		} else {	// RTSP protocol is TCP
 #endif	// HAVE_SCTP_FENICE
@@ -100,10 +100,8 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 			send_reply(500, NULL, rtsp);
 			return ERR_GENERIC;	//errore interno al server                           
 		}
-#ifdef HAVE_SCTP_FENICE
-		if (Sock_type(rtsp->sock) == TCP || (Sock_type(rtsp->sock) == SCTP
-						     && m == 0)) {
-#endif	// HAVE_SCTP_FENICE
+		if (Sock_type(rtsp->sock) == TCP ||
+			(Sock_type(rtsp->sock) == SCTP && m == 0)) {
 			if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
 				fnc_log(FNC_LOG_DEBUG,
 					"RTSP buffer overflow (input RTSP message is most likely invalid).\n");
@@ -121,11 +119,10 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 					"Invalid input message.\n");
 				return ERR_NOERROR;
 			}
-#ifdef HAVE_SCTP_FENICE
 		} else {	/* if (rtsp->proto == SCTP && m != 0) */
-
+#ifdef HAVE_SCTP_FENICE
 			for (intlvd = rtsp->interleaved;
-			     intlvd && ((intlvd->proto.sctp.rtp.sinfo_stream == m)
+			     intlvd && !((intlvd->proto.sctp.rtp.sinfo_stream == m)
 				|| (intlvd->proto.sctp.rtcp.sinfo_stream == m));
 			     intlvd = intlvd->next)
 				if (intlvd) {
@@ -139,8 +136,8 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 							m);
 					}
 				}
-		}
 #endif	// HAVE_SCTP_FENICE
+		}
 	}
 	for (intlvd=rtsp->interleaved; intlvd && !rtsp->out_size; intlvd=intlvd->next) {
 		if ( FD_ISSET(Sock_fd(intlvd->rtcp_local), rset) ) {
