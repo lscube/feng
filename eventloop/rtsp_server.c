@@ -83,6 +83,8 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 			memset(&sctp_info, 0, sizeof(sctp_info));
 			n = Sock_read(rtsp->sock, buffer, size, &sctp_info, 0);
 			m = sctp_info.sinfo_stream;
+			fnc_log(FNC_LOG_VERBOSE,
+				"Sock_read() received %d bytes from sctp stream %d\n", n, m);
 		} else {	// RTSP protocol is TCP
 #endif	// HAVE_SCTP_FENICE
 			n = Sock_read(rtsp->sock, buffer, size, NULL, 0);
@@ -94,7 +96,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 		}
 		if (n < 0) {
 			fnc_log(FNC_LOG_DEBUG,
-				"sctp_recvmsg() or tcp_read() error in rtsp_server()\n");
+				"Sock_read() error in rtsp_server()\n");
 			send_reply(500, NULL, rtsp);
 			return ERR_GENERIC;	//errore interno al server                           
 		}

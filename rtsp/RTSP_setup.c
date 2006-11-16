@@ -393,7 +393,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 				} else {	// search for max used stream.
 					max_interlvd = -1;
 					for (ilvd_s = (rtsp->interleaved);
-					     ilvd_s; rtp_s = ilvd_s->next)
+					     ilvd_s; ilvd_s = ilvd_s->next)
 						max_interlvd =
 						    max(max_interlvd,
 							ilvd_s->proto.sctp.rtcp.sinfo_stream);
