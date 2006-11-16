@@ -125,17 +125,19 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 			     intlvd && !((intlvd->proto.sctp.rtp.sinfo_stream == m)
 				|| (intlvd->proto.sctp.rtcp.sinfo_stream == m));
 			     intlvd = intlvd->next);
-				if (intlvd) {
-					if (m ==
-					    intlvd->proto.sctp.rtcp.sinfo_stream) {
-						Sock_write(intlvd->rtcp_local,
-							  buffer, n, NULL, 0);
-					} else {	// RTP pkt arrived: do nothing...
-						fnc_log(FNC_LOG_DEBUG,
-							"Interleaved RTP packet arrived for channel %d.\n",
-							m);
-					}
+			if (intlvd) {
+				if (m == intlvd->proto.sctp.rtcp.sinfo_stream) {
+					Sock_write(intlvd->rtcp_local, buffer, n, NULL, 0);
+				} else {	// RTP pkt arrived: do nothing...
+					fnc_log(FNC_LOG_DEBUG,
+						"Interleaved RTP packet arrived from stream %d.\n",
+						m);
 				}
+			} else {
+				fnc_log(FNC_LOG_DEBUG,
+					"Packet arrived from unknown stream (%d)... ignoring.\n",
+					m);
+			}
 #endif	// HAVE_SCTP_FENICE
 		}
 	}
