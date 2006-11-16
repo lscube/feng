@@ -24,7 +24,9 @@ libsafectype_la_SOURCES =	safe-ctype.c
 
 libsafectype_la_LDFLAGS = -static -lm
 
-libprefs_la_SOURCES =	prefs_init.c \
+libprefs_la_SOURCES = prefs.c
+
+#libprefs_la_SOURCES =	prefs_init.c \
 			prefs_get_serv_root.c \
 			prefs_get_hostname.c \
 			prefs_get_port.c \
@@ -85,9 +87,14 @@ if FENICE_VERBOSE
 fenice_LDADD += $(top_srcdir)/src/libdebug.la
 endif
 
+fenice_LDFLAGS =
+
+if FENICE_SCTP
+fenice_LDFLAGS += -lsctp
+endif
 
 if FENICE_EFENCE
-fenice_LDFLAGS = -lefence
+fenice_LDFLAGS += -lefence
 endif
 
 

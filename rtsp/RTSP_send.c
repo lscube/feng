@@ -42,9 +42,6 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
 	int n = 0;
 	size_t to_send;
 	// char *buffer;
-#ifdef HAVE_SCTP_FENICE
-	struct sctp_sndrcvinfo sctp_info;
-#endif
 
  	if (!rtsp->out_size) {
  		fnc_log(FNC_LOG_WARN, "RTSP_send called, but no data to be sent\n");

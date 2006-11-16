@@ -115,6 +115,8 @@ AC_ARG_ENABLE(errors,
 AC_ARG_ENABLE(optimize,
 [  --enable-optimize       enable/chose optimization level: none, poor, normal, full, super [[default=normal]]],,
 	enable_optimize="normal")
+AC_ARG_ENABLE(sctp,
+[  --enable-sctp            enable SCTP support [[default=autodetected]]],,         enable_sctp="yes")
 
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
@@ -206,6 +208,28 @@ if test "x$enable_ipv6" = "xyes"; then
 else
         AC_MSG_WARN([IPv6 disabled: check skipped.])
 fi
+
+dnl Check for SCTP support
+if test "$enable_sctp" = "yes"; then
+        AC_CHECK_TYPE(struct sctp_sndrcvinfo,
+		 AC_CHECK_LIB(sctp,sctp_recvmsg,
+				AC_DEFINE([HAVE_SCTP_FENICE], 1, [Define SCTP support]) \
+				AM_CONDITIONAL(FENICE_SCTP, [test "$enable_sctp" = "yes"]) \
+				sctp_msg="sctp enabled ................... : yes",
+				AC_MSG_WARN([SCTP not available]) \
+				AM_CONDITIONAL(FENICE_SCTP, [test "$enable_sctp" != "yes"]) \
+				sctp_msg="sctp enabled ................... : no"),
+		AC_MSG_WARN([SCTP not available]) \
+		AM_CONDITIONAL(FENICE_SCTP, [test "$enable_sctp" != "yes"]) \
+		sctp_msg="sctp enabled ................... : no",
+		[#include <netinet/sctp.h>])
+	
+else
+        AC_MSG_WARN([SCTP disabled: check skipped.])
+	AM_CONDITIONAL(FENICE_SCTP, [test "$enable_sctp" = "yes"])
+	sctp_msg="sctp enabled ................... : no"
+fi
+
 avformat_msg="libavformat enabled ............... : no"
 if test "x$enable_ffmpeg" = "xyes"; then
 	PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 50.5.0],
@@ -426,6 +450,7 @@ Fenice RTSP listening port ..... : $fenice_rtsp_port
 Byte order ..................... : this is a $BIGENDIAN machine
 $ssl_msg
 $stun_msg
+$sctp_msg
 $avformat_msg
 $debug_msg
 $efence_msg

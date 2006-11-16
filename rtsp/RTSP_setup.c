@@ -402,7 +402,13 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 					intlvd->proto.sctp.rtcp.sinfo_stream =
 					    max_interlvd + 2;
 				}
-
+				if ( !((intlvd->proto.sctp.rtp.sinfo_stream < MAX_SCTP_STREAMS)
+				    && (intlvd->proto.sctp.rtcp.sinfo_stream < MAX_SCTP_STREAMS)) ) {
+						fnc_log(FNC_LOG_ERR, "Stream id over limit\n");
+						send_reply(500, "Stream id over limit", rtsp);
+						free(intlvd);
+						return ERR_GENERIC;
+				}
 				// RTP local sockpair
 				if ( Sock_socketpair(sock_pair) < 0) {
 					fnc_log(FNC_LOG_ERR, "Cannot create AF_LOCAL socketpair for rtp\n");

@@ -56,10 +56,8 @@ inline void fncheader(void); // defined in src/fncheader.c
 
 int main(int argc, char **argv)
 {
-	Sock *main_sock = NULL;
+	Sock *main_sock = NULL, *sctp_main_sock = NULL;
 	char *port;
-	int wsocket_flag=0;
-        int on=1; /*setting non-blocking flag*/
 
 	// Fake timespec for fake nanosleep. See below.
 	//struct timespec ts = { 0, 0 };
@@ -70,8 +68,7 @@ int main(int argc, char **argv)
 	/*command_environment parses the command line and returns the number of error */
 	if (command_environment(argc, argv))
 		return 0;
-	/* prefs_get_port() reads the static var prefs and returns the port number */
-	port = g_strdup_printf("%d",prefs_get_port());
+	
 
 #ifdef WIN32
 	{
@@ -88,10 +85,6 @@ int main(int argc, char **argv)
 	}
 #endif
 
-
-	printf("CTRL-C terminate the server.\n");
-	fnc_log(FNC_LOG_INFO,"Waiting for RTSP connections on port %s...\n", port);
-
 	Sock_init(fnc_log);
 
 #if ENABLE_STUN
@@ -100,29 +93,53 @@ int main(int argc, char **argv)
 	if( cfg!= NULL) {
 		pthread_t thread;
 
-		fnc_log(FNC_LOG_DEBUG,"Trying to start OMSstunserver thread\n");
-		fnc_log(FNC_LOG_DEBUG,"stun parameters: %s,%s,%s,%s\n",cfg->a1,cfg->p1,cfg->a2,cfg->p2);
+		fnc_log(FNC_LOG_DEBUG, "Trying to start OMSstunserver thread\n");
+		fnc_log(FNC_LOG_DEBUG, "stun parameters: %s,%s,%s,%s\n",cfg->a1,cfg->p1,cfg->a2,cfg->p2);
 	
 		pthread_create(&thread,NULL,OMSstunserverStart,(void *)(cfg));
 	}
 #endif //ENABLE_STUN
+	
+	/* prefs_get_port() reads the static var prefs and returns the port number */
+	port = g_strdup_printf("%d", prefs_get_port());
+	main_sock = Sock_bind(NULL, port, TCP, 0);
+	g_free(port);
 
-	main_sock = Sock_bind(NULL, port, TCP, wsocket_flag);
 	if(!main_sock) {
-		fnc_log(FNC_LOG_ERR,"Sock_bind() error.\n" );
-		fprintf(stderr, "Sock_bind() error.\n" );
+		fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP.\n" );
+		fprintf(stderr, "[fatal] Sock_bind() error in main() for TCP.\n" );
 		return 0;
 	}
+
+	fprintf(stderr, "CTRL-C terminate the server.\n");
+	fnc_log(FNC_LOG_INFO, "Waiting for RTSP connections on port %s...\n", port);
 	
-	if (Sock_set_props(main_sock, FIONBIO, &on) < 0) { /*set to non-blocking*/
+/*	if (Sock_set_props(main_sock, FIONBIO, &on) < 0) { //set to non-blocking
 		fnc_log(FNC_LOG_ERR,"Sock_set_props() error.\n" );
 		return 0;
-    	}
+    	}*/
 
-	if(Sock_listen(main_sock,SOMAXCONN)) {
+	if(Sock_listen(main_sock, SOMAXCONN)) {
 		fnc_log(FNC_LOG_ERR,"Sock_listen() error.\n" );
 		return 0;
 	}
+
+#ifdef HAVE_SCTP_FENICE
+	if (prefs_get_sctp_port() >= 0) {
+		port = g_strdup_printf("%d", prefs_get_sctp_port());
+		sctp_main_sock = Sock_bind(NULL, port, SCTP, 0);
+		g_free(port);
+		if(!sctp_main_sock) {
+			fnc_log(FNC_LOG_ERR,"Sock_bind() error for SCTP.\n" );
+			fprintf(stderr, "[fatal] Sock_bind() error in main() for TCP.\n" );
+			return 0;
+		}
+		if(Sock_listen(sctp_main_sock, SOMAXCONN)) {
+			fnc_log(FNC_LOG_ERR,"Sock_listen() error.\n" );
+			return 0;
+		}
+	}
+#endif
 
 	/* next line: schedule_init() initialises the array of schedule_list sched 
 	   and creates the thread schedule_do() -> look at schedule.c */
@@ -138,7 +155,7 @@ int main(int argc, char **argv)
 		// Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
 		// See also schedule.c
 		//nanosleep(&ts, NULL);
-		eventloop(main_sock, NULL);
+		eventloop(main_sock, sctp_main_sock);
 	}
 	/* eventloop looks for incoming RTSP connections and generates for each
 	   all the information in the structures RTSP_list, RTP_list, and so on */
