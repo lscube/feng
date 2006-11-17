@@ -69,16 +69,19 @@ int parse_SD_file(char *object, SD_descr * sd_descr)
 
 	fnc_log(FNC_LOG_DEBUG, "Requested file is: %s\n", thefile);
 
+	if (stat(thefile, &data) < 0)
+		return ERR_NOT_FOUND;
+
+	if (sd_descr->last_change == data.st_ctime)	//date of last change
+		return ERR_NOERROR;	//.SD file is the same yet
+	else
+		sd_descr->last_change = data.st_ctime;
+
 	f = fopen(thefile, "r");
 	if (f == NULL) {
 		/* The file doesn't exist */
 		return ERR_NOT_FOUND;
 	}
-	stat(thefile, &data);
-	if (sd_descr->last_change == data.st_ctime)	//date of last change
-		return ERR_NOERROR;	//.SD file is the same yet
-	else
-		sd_descr->last_change = data.st_ctime;
 
 	// Start parsing
 	p = NULL;
