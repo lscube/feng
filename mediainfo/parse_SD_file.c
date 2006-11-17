@@ -102,6 +102,7 @@ int parse_SD_file(char *object, SD_descr * sd_descr)
 
 		}
 		if (feof(f)) {
+			fclose(f);
 			return ERR_NOERROR;
 		}
 		// Allocate an element in the list
@@ -109,6 +110,7 @@ int parse_SD_file(char *object, SD_descr * sd_descr)
 			sd_descr->me_list =
 			    (media_entry *) calloc(1, sizeof(media_entry));
 			if (sd_descr->me_list == NULL) {
+				fclose(f);
 				return ERR_ALLOC;
 			}
 			p = sd_descr->me_list;
@@ -116,6 +118,7 @@ int parse_SD_file(char *object, SD_descr * sd_descr)
 			p->next =
 			    (media_entry *) calloc(1, sizeof(media_entry));
 			if (p->next == NULL) {
+				fclose(f);
 				return ERR_ALLOC;
 			}
 			p = p->next;
@@ -278,10 +281,10 @@ int parse_SD_file(char *object, SD_descr * sd_descr)
 
 		}
 		if ((res = validate_stream(p, &sd_descr)) != ERR_NOERROR) {
+			fclose(f);
 			return res;
 		}
 	} while (!feof(f));
 	fclose(f);
 	return ERR_NOERROR;
 }
-
