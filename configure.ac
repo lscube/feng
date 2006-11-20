@@ -6,12 +6,6 @@ AM_INIT_AUTOMAKE(dist-bzip2 check-news)
 
 AC_PREFIX_PROGRAM(fenice)
 
-test "x$prefix" = x. || test "x$prefix" = xNONE && prefix=/usr/local
-test "x$exec_prefix" = xNONE && exec_prefix=$prefix
-test "x$sysconfdir" = 'x${prefix}/etc' && sysconfdir="/etc"
-test "x$localstatedir" = 'x${prefix}/var' && localstatedir="/var"
-test "x$mandir" = 'x${prefix}/man' && mandir="${prefix}/share/man"
-
 AM_CONFIG_HEADER(config.h)
 
 AC_ARG_WITH(rtsp-port,
