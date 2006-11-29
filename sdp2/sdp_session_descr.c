@@ -53,7 +53,7 @@ int sdp_session_descr(resource_name n, char *descr, size_t descr_size)
 	/*x-x*/
 	//struct sockaddr_storage localaddr;
 	//socklen_t localaddr_len = sizeof(localaddr);
-	char thefile[255], localhostname[NI_MAXHOST];
+	char localhostname[NI_MAXHOST];
 	struct passwd *pwitem=getpwuid(getuid());
 	gint64 size_left=descr_size;
 	char *cursor=descr;
@@ -63,15 +63,8 @@ int sdp_session_descr(resource_name n, char *descr, size_t descr_size)
 //	GList *m = NULL;
 //	MediaDescrList m_list;
 	guint i;
-
-	// temporary?
-//	strcpy(thefile, prefs_get_serv_root());
-//	strcat(thefile, n);
-	snprintf(thefile, sizeof(thefile) - 1, "%s%s%s", prefs_get_serv_root(),
-		 (prefs_get_serv_root()[strlen(prefs_get_serv_root()) - 1] ==
-		  '/') ? "" : "/", n);
 	
-	fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s\n", thefile);
+	fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s\n", n);
 	if ( !(r_descr=r_descr_get(prefs_get_serv_root(), n)) )
 		return ERR_NOT_FOUND;
 		
@@ -81,7 +74,7 @@ int sdp_session_descr(resource_name n, char *descr, size_t descr_size)
 	//if (getnameinfo((struct sockaddr *)&localaddr, localaddr_len, localhostname, sizeof(localhostname), NULL, 0, 0))
 	//	return ERR_INPUT_PARAM; // could not get address name or IP
 	if(get_local_hostname(localhostname,sizeof(localhostname))) {
-		fnc_log(FNC_LOG_ERR, "[SDP2] get_local_hostname %s\n", thefile);
+		fnc_log(FNC_LOG_ERR, "[SDP2] get_local_hostname\n");
 		return ERR_INPUT_PARAM; // could not get address name or IP
 	}
 	// v=

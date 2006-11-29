@@ -28,6 +28,7 @@
  *  
  * */
 
+#include <stdio.h>
 #include <string.h>
 
 #include <fenice/demuxer.h>
@@ -83,16 +84,20 @@ Resource *r_open(resource_name root, resource_name n)
 	Resource *r;
 	int dmx_idx;
 	InputStream *i_stream;
+	char mrl[255];
+	
+	snprintf(mrl, sizeof(mrl) - 1, "%s%s%s", root,
+		 (root[strlen(root) - 1] == '/') ? "" : "/", n);
 
-	if( !(i_stream=istream_open(n)) )
+	if( !(i_stream=istream_open(mrl)) )
 		return NULL;
 
 	if ( (dmx_idx=find_demuxer(i_stream))<0 ) {
-		fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer for resource %s\n", n);
+		fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer for resource %s\n", mrl);
 		return NULL;
 	}
 
-	fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource \"%s\"\n", demuxers[dmx_idx]->info->name, n);
+	fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource \"%s\"\n", demuxers[dmx_idx]->info->name, mrl);
 
 	// ----------- allocation of all data structures ---------------------------//
 	if( !(r = calloc(1, sizeof(Resource))) ) {
@@ -120,7 +125,8 @@ Resource *r_open(resource_name root, resource_name n)
 	// temporary track initialization:
 	r->num_tracks=0;
 	*/
-	r->info->mrl = g_strdup(n);
+	r->info->mrl = g_strdup(mrl);
+	r->info->name = g_strdup(n);
 	r->i_stream = i_stream;
 	r->demuxer=demuxers[dmx_idx];
 	// ------------------------------------------------------------------------//
@@ -334,12 +340,17 @@ void free_track(Track *t, Resource *r)
 ResourceDescr *r_descr_get(resource_root root, resource_name n)
 {
 	GList *cache_el;
+	char mrl[255];
+	
+	snprintf(mrl, sizeof(mrl) - 1, "%s%s%s", root,
+		 (root[strlen(root) - 1] == '/') ? "" : "/", n);
+	
 
-	if ( !(cache_el=r_descr_find(n)) ) {
+	if ( !(cache_el=r_descr_find(mrl)) ) {
 		Resource *r;
 		if ( !(r=r_open(root, n)) ) // shawill TODO: implement pre_open cache
 			return NULL;
-		cache_el=r_descr_find(n);
+		cache_el=r_descr_find(mrl);
 		r_close(r);
 	}
 	
