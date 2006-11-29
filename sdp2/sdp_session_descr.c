@@ -43,7 +43,11 @@
 #include "sdp_get_version.c"
 
 
-#define DESCRCAT(x) { if ( (size_left -= x) < 0) return ERR_INPUT_PARAM; else cursor=descr+descr_size-size_left; }
+#define DESCRCAT(x) do { \
+					 if ( (size_left -= x) < 0) \
+					 	return ERR_INPUT_PARAM; \
+					 	else cursor=descr+descr_size-size_left; \
+					 } while(0);
 int sdp_session_descr(resource_name n, char *descr, size_t descr_size)
 {
 	/*x-x*/
@@ -61,11 +65,14 @@ int sdp_session_descr(resource_name n, char *descr, size_t descr_size)
 	guint i;
 
 	// temporary?
-	strcpy(thefile, prefs_get_serv_root());
-	strcat(thefile, n);
+//	strcpy(thefile, prefs_get_serv_root());
+//	strcat(thefile, n);
+	snprintf(thefile, sizeof(thefile) - 1, "%s%s%s", prefs_get_serv_root(),
+		 (prefs_get_serv_root()[strlen(prefs_get_serv_root()) - 1] ==
+		  '/') ? "" : "/", n);
 	
 	fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s\n", thefile);
-	if ( !(r_descr=r_descr_get(thefile)) )
+	if ( !(r_descr=r_descr_get(prefs_get_serv_root(), n)) )
 		return ERR_NOT_FOUND;
 		
 	// get name of localhost

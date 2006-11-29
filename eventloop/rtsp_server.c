@@ -67,12 +67,12 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 			send_reply(500, NULL, rtsp);
 			return ERR_GENERIC;// internal server error
 		}
-/*#ifdef VERBOSE
-		 else if (!is_interlvd) {
+#ifdef VERBOSE
+		 else if (*rtsp->out_buffer != '$') {
 			fnc_log(FNC_LOG_VERBOSE, "OUTPUT_BUFFER was:\n");
 			dump_buffer(rtsp->out_buffer);
 		}
-#endif*/
+#endif
 	}
 	if (FD_ISSET(Sock_fd(rtsp->sock), rset)) {
 		// There are RTSP or RTCP packets to read in

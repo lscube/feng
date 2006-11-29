@@ -7,7 +7,7 @@
  *
  *  Copyright (C) 2004 by
  * 
- *  - (LS)³ Team			<team@streaming.polito.it>	
+ *  - (LS)ï¿½ Team			<team@streaming.polito.it>	
  *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
  *	- Francesco Varano	<francesco.varano@polito.it>
  *	- Federico Ridolfo	<federico.ridolfo@polito.it>
@@ -32,7 +32,11 @@
 #include <fenice/sdp2.h>
 #include <fenice/utils.h>
 
-#define DESCRCAT(x) { if ( (size_left -= x) < 0) return ERR_INPUT_PARAM; else cursor=descr+descr_size-size_left; }
+#define DESCRCAT(x) do { \
+						if ( (size_left -= x) < 0) \
+						return ERR_INPUT_PARAM; \
+						else cursor=descr+descr_size-size_left; \
+					} while(0);
 int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list, char *descr, uint32 descr_size)
 {
 	MediaDescr *m_descr = m_descr_list ? MEDIA_DESCR(m_descr_list) : NULL;

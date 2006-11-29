@@ -78,7 +78,7 @@ static void trackinfo_free(void *);
 // private functions for specific demuxer
 static int find_demuxer(InputStream *);
 
-Resource *r_open(resource_name n)
+Resource *r_open(resource_name root, resource_name n)
 {
 	Resource *r;
 	int dmx_idx;
@@ -331,13 +331,13 @@ void free_track(Track *t, Resource *r)
 	r->num_tracks--;
 }
 
-ResourceDescr *r_descr_get(resource_name n)
+ResourceDescr *r_descr_get(resource_root root, resource_name n)
 {
 	GList *cache_el;
 
 	if ( !(cache_el=r_descr_find(n)) ) {
 		Resource *r;
-		if ( !(r=r_open(n)) ) // shawill TODO: implement pre_open cache
+		if ( !(r=r_open(root, n)) ) // shawill TODO: implement pre_open cache
 			return NULL;
 		cache_el=r_descr_find(n);
 		r_close(r);

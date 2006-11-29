@@ -41,6 +41,7 @@
 #include <fenice/bufferpool.h>
 #include <fenice/sdp_grammar.h>
 
+#define resource_root char *
 #define resource_name char *
 /*
  * a resource_name can be a mkv, sd, program stream, avi, device ... 
@@ -195,7 +196,7 @@ typedef struct {
 // --- functions --- //
 
 // Resounces
-Resource *r_open(resource_name);/*open the resource: mkv, sd ...*/
+Resource *r_open(resource_root, resource_name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
 //msg_error get_resource_info(resource_name, ResourceInfo *);
 Selector *r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
@@ -211,7 +212,7 @@ Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 void free_track(Track *, Resource *);
 
 // Resources and Media descriptions
-ResourceDescr *r_descr_get(resource_name);
+ResourceDescr *r_descr_get(resource_root, resource_name);
 // ResourceDescr *r_descr_new(Resource *);
 // void r_descr_free(ResourceDescr *);
 /* --- functions implemented in descriptionAPI.c --- */
