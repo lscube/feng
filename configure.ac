@@ -1,10 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(fenice, 0.1.13)
+AC_INIT(feng, 0.1.13)
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(dist-bzip2 check-news)
 
-AC_PREFIX_PROGRAM(fenice)
+AC_PREFIX_PROGRAM(feng)
 
 AM_CONFIG_HEADER(config.h)
 
@@ -13,12 +13,12 @@ AC_ARG_WITH(rtsp-port,
 	with_rtsp_port=554)
 
 AC_ARG_WITH(config-file,
-[  --with-config-file      name for the configuration file in sysconfdir [[default=fenice.conf]]],,
-	with_config_file="fenice.conf")
+[  --with-config-file      name for the configuration file in sysconfdir [[default=feng.conf]]],,
+	with_config_file="feng.conf")
 
 AC_ARG_WITH(log-file,
-[  --with-log-file	   name for the log file [[default=/var/log/fenice.log]]],,
-	with_log_file="/var/log/fenice.log")
+[  --with-log-file	   name for the log file [[default=/var/log/feng.log]]],,
+	with_log_file="/var/log/feng.log")
 
 AC_ARG_WITH(max-session,
 [  --with-max-session      max number of incoming sessions [[default=100]]],,
@@ -40,7 +40,7 @@ AC_DEFUN([CHECK_SSL],
 [AC_MSG_CHECKING(if ssl is wanted)
 AC_ARG_WITH(ssl,
 [  --with-ssl enable ssl [will check /usr/local/ssl
-                            /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr. [Default certificate = /var/local/lib/fenice/certs/cert.pem]]
+                            /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr. [Default certificate = /var/local/lib/feng/certs/cert.pem]]
 ],
 [   AC_MSG_RESULT(yes)
     for dir in $withval /usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr; do
@@ -70,7 +70,7 @@ dnl     AC_DEFINE([HAVE_SSL],[0],[Disable SSl])
 dnl     AC_SUBST(HAVE_SSL)
 ],
 [
-    with_ssl="${localstatedir}/local/lib/fenice/certs/cert.pem"
+    with_ssl="${localstatedir}/local/lib/feng/certs/cert.pem"
     AC_MSG_RESULT(no)
 ])
 ])dnl netembryo
@@ -92,7 +92,7 @@ AC_ARG_ENABLE(efence,
 
 
 AC_ARG_ENABLE(verbose,
-[  --enable-verbose          make fenice verbose [[default=no]]],,
+[  --enable-verbose          make fe.ng verbose [[default=no]]],,
 	enable_verbose="no")
 
 AC_ARG_ENABLE(dump,
@@ -169,13 +169,13 @@ AC_CHECK_FUNCS(select socket gettimeofday uname getcwd getwd strcspn strdup strt
 AC_CHECK_FUNC(getaddrinfo)
 CHECK_SSL
 if test "x$with_ssl" = "xyes"; then
-        fenice_cert="${localstatedir}/local/lib/fenice/certs/cert.pem"
+        fenice_cert="${localstatedir}/local/lib/feng/certs/cert.pem"
 else
         fenice_cert=$with_ssl
 fi
 
 AC_SUBST(fenice_cert)
-fenice_state_dir=${localstatedir}/local/lib/fenice/certs
+fenice_state_dir=${localstatedir}/local/lib/feng/certs
 AC_SUBST(fenice_state_dir)
 
 dnl check if we have the generic struct for net addresses the has max possible size
@@ -183,7 +183,7 @@ AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 
 dnl CFLAGS=""
 
-AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Fenice (>1.10) uses Glib. Please install it (you need devel files).]),)
+AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Fe.NG uses Glib. Please install it (you need devel files).]),)
 
 
 stun_msg="stun enabled ................... : no";
@@ -275,7 +275,7 @@ if test "$enable_verbose" = "yes"; then
 	AM_CONDITIONAL(FENICE_VERBOSE, /bin/true)
 	AC_DEFINE(ENABLE_VERBOSE, 1,[verbosity enabled])
 	enable_verbose=yes
-	verbose_msg="   You chose fenice to be very verbose... who'll stop it talking now!!!"
+	verbose_msg="   You chose Fe.NG to be very verbose... who'll stop it talking now!!!"
 fi
 
 
@@ -375,29 +375,29 @@ if test -f svnrev.h; then
 	AC_DEFINE(FENICE_SVN, 1,[Define if this is a development (subversion) tree])
 fi
 
-AC_DEFINE_UNQUOTED(FENICE_MAX_SESSION_DEFAULT, $fenice_max_session, [Define max number of RTSP incoming sessions for Fenice])
+AC_DEFINE_UNQUOTED(FENICE_MAX_SESSION_DEFAULT, $fenice_max_session, [Define max number of RTSP incoming sessions for Fe.NG])
 
 AC_DEFINE_UNQUOTED(FENICE_RTSP_PORT_DEFAULT, $fenice_rtsp_port, [Define default RTSP listening port])
 dnl AC_DEFINE(FENICE_RTSP_PORT_ENV, "FENICE_RTSP_PORT",[Define the name for the ENV variable for RTSP listening port])
 
-AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT, $fenice_avroot_dir, [Define default directory for Fenice A/V resources])
-dnl AC_DEFINE(FENICE_AVROOT_DIR_ENV, "FENICE_AVROOT_DIR",[Define the name for the ENV variable for Fenice avroot dir])
+AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT, $fenice_avroot_dir, [Define default directory for Fe.NG A/V resources])
+dnl AC_DEFINE(FENICE_AVROOT_DIR_ENV, "FENICE_AVROOT_DIR",[Define the name for the ENV variable for Fe.NG avroot dir])
 
-AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT_STR, "$fenice_avroot_dir", [Define default directory string for Fenice A/V resources])
-dnl AC_DEFINE(FENICE_AVROOT_DIR_STR_ENV, "FENICE_AVROOT_DIR",[Define the name for the ENV variable for Fenice avroot dir string])
+AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT_STR, "$fenice_avroot_dir", [Define default directory string for Fe.NG A/V resources])
+dnl AC_DEFINE(FENICE_AVROOT_DIR_STR_ENV, "FENICE_AVROOT_DIR",[Define the name for the ENV variable for Fe.NG avroot dir string])
 
-AC_DEFINE_UNQUOTED(FENICE_CONF_FILE_DEFAULT, $fenice_conf_file, [Define default file for Fenice configuration])
-dnl AC_DEFINE(FENICE_CONF_FILE_ENV, "FENICE_CONF_FILE",[Define the name for the ENV variable for Fenice configuration file])
+AC_DEFINE_UNQUOTED(FENICE_CONF_FILE_DEFAULT, $fenice_conf_file, [Define default file for Fe.NG configuration])
+dnl AC_DEFINE(FENICE_CONF_FILE_ENV, "FENICE_CONF_FILE",[Define the name for the ENV variable for Fe.NG configuration file])
 
-AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT, $fenice_log_file, [Define default file for Fenice logger])
+AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT, $fenice_log_file, [Define default file for Fe.NG logger])
 
-AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT_STR, "$fenice_log_file", [Define default string for Fenice log file])
+AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT_STR, "$fenice_log_file", [Define default string for Fe.NG log file])
 
-AC_DEFINE_UNQUOTED(FENICE_CONF_DIR_DEFAULT, $fenice_conf_dir, [Define default directory for Fenice configuration])
-dnl AC_DEFINE(FENICE_CONF_DIR_ENV, "FENICE_CONF_DIR",[Define the name for the ENV variable for Fenice configuration dir])
+AC_DEFINE_UNQUOTED(FENICE_CONF_DIR_DEFAULT, $fenice_conf_dir, [Define default directory for Fe.NG configuration])
+dnl AC_DEFINE(FENICE_CONF_DIR_ENV, "FENICE_CONF_DIR",[Define the name for the ENV variable for Fe.NG configuration dir])
 
-AC_DEFINE_UNQUOTED(FENICE_CONF_PATH_DEFAULT_STR, "$fenice_conf_dir/$fenice_conf_file", [Define absolute path string for Fenice configuration file])
-dnl AC_DEFINE(FENICE_CONF_PATH_STR_ENV, "FENICE_CONF_PATH",[Define the name for the ENV variable for Fenice configuration file path string])
+AC_DEFINE_UNQUOTED(FENICE_CONF_PATH_DEFAULT_STR, "$fenice_conf_dir/$fenice_conf_file", [Define absolute path string for Fe.NG configuration file])
+dnl AC_DEFINE(FENICE_CONF_PATH_STR_ENV, "FENICE_CONF_PATH",[Define the name for the ENV variable for Fe.NG configuration file path string])
 
 dnl netembryo
 AC_DEFINE_UNQUOTED(FENICE_CERT_FILE_DEFAULT, $fenice_cert, [Define default file for Certificate (pem format)])
@@ -435,12 +435,12 @@ AC_OUTPUT
 
 AC_MSG_NOTICE([config files successfully generated!
  
-Fenice Install prefix .......... : $prefix
-Fenice Binary path ............. : $exec_prefix/bin/fenice
-Fenice Configuration path ...... : $fenice_conf_dir
-Fenice Log File ................ : $fenice_log_file
-Fenice Multimedia Files root ... : $fenice_avroot_dir
-Fenice RTSP listening port ..... : $fenice_rtsp_port
+Fe.NG Install prefix .......... : $prefix
+Fe.NG Binary path ............. : $exec_prefix/bin/feng
+Fe.NG Configuration path ...... : $fenice_conf_dir
+Fe.NG Log File ................ : $fenice_log_file
+Fe.NG Multimedia Files root ... : $fenice_avroot_dir
+Fe.NG RTSP listening port ..... : $fenice_rtsp_port
 Byte order ..................... : this is a $BIGENDIAN machine
 $ssl_msg
 $stun_msg
@@ -451,7 +451,7 @@ $efence_msg
 $verbose_msg
 $dump_msg
 
- 'make' will now compile Fenice and 'su -c make install' will install it.
+ 'make' will now compile Fe.NG and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.
 ])
 dnl

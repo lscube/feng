@@ -3,11 +3,11 @@
  *  
  *  This file is part of Fenice
  *
- *  Fenice -- Open Media Server
+ *  Fe.NG -- Fenice Next Generation streaming server
  *
  *  Copyright (C) 2004 by
  * 
- *  - (LS)³ Team			<team@streaming.polito.it>	
+ *  - (LS)ï¿½ Team			<team@streaming.polito.it>	
  *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
  *	- Francesco Varano	<francesco.varano@polito.it>
  *	- Federico Ridolfo	<federico.ridolfo@polito.it>

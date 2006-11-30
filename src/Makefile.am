@@ -49,14 +49,14 @@ endif
 #libplugins_la_LDFLAGS = -static
 #libplugins_la_LIBADD = @LIBLTDL@
 
-.NOTPARALLEL: fenice
+.NOTPARALLEL: feng
 	
-bin_PROGRAMS = fenice
+bin_PROGRAMS = feng
 
-fenice_SOURCES =	main.c \
+feng_SOURCES =	main.c \
 			fncheader.c
 
-fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
+feng_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/rtsp/librtsp.la \
 		$(top_srcdir)/sdp/libsdp.la \
 		$(top_srcdir)/sdp2/libsdp2.la \
@@ -71,11 +71,11 @@ fenice_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
 		$(top_srcdir)/multicast/libmulticast.la 
 
 if FENICE_STUN
-fenice_LDADD += $(top_srcdir)/stunserver/libstunserver.la \
+feng_LDADD += $(top_srcdir)/stunserver/libstunserver.la \
 		$(top_srcdir)/stun/libstun.la 
 endif
 		
-fenice_LDADD +=	$(top_srcdir)/wsocket/libwsocket.la \
+feng_LDADD +=	$(top_srcdir)/wsocket/libwsocket.la \
 		$(top_srcdir)/command_environment/libcommand.la \
 		$(top_srcdir)/src/libprefs.la \
 		$(top_srcdir)/src/libutils.la \
@@ -84,20 +84,20 @@ fenice_LDADD +=	$(top_srcdir)/wsocket/libwsocket.la \
 		$(top_srcdir)/md5/libmd5.la
 
 if FENICE_VERBOSE
-fenice_LDADD += $(top_srcdir)/src/libdebug.la
+feng_LDADD += $(top_srcdir)/src/libdebug.la
 endif
 
-fenice_LDFLAGS =
+feng_LDFLAGS =
 
 if FENICE_SCTP
-fenice_LDFLAGS += -lsctp
+feng_LDFLAGS += -lsctp
 endif
 
 if FENICE_EFENCE
-fenice_LDFLAGS += -lefence
+feng_LDFLAGS += -lefence
 endif
 
 
-fenice_LDADD += @GLIB_LIBS@
+feng_LDADD += @GLIB_LIBS@
 
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)
