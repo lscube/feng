@@ -37,7 +37,7 @@
 
 #include <fenice/utils.h>
 
-int get_UTC_time(struct tm *t,char *b)
+int get_utc(struct tm *t,char *b)
 {
 	char tmp[5];
 	if (strlen(b)<16) {

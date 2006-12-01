@@ -140,7 +140,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 			// Start playing at desired time
 			if (!time_taken) {
 				q = strchr(q, '=');
-				if (get_UTC_time(&(args.playback_time), q + 1)
+				if (get_utc(&(args.playback_time), q + 1)
 				    != ERR_NOERROR) {
 					memset(&(args.playback_time), 0,
 					       sizeof(args.playback_time));

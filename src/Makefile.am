@@ -9,7 +9,7 @@ endif
 libutils_la_SOURCES =	alloc_path_name.c \
 			NTP_time.c \
 			random32.c \
-			get_UTC_time.c \
+			get_utc.c \
 			get_field.c \
 			is_supported_url.c
 
