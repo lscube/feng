@@ -100,8 +100,11 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 			send_reply(500, NULL, rtsp);
 			return ERR_GENERIC;	//errore interno al server                           
 		}
-		if (Sock_type(rtsp->sock) == TCP ||
-			(Sock_type(rtsp->sock) == SCTP && m == 0)) {
+		if (Sock_type(rtsp->sock) == TCP
+#ifdef HAVE_SCTP_FENICE
+		    || (Sock_type(rtsp->sock) == SCTP&& m == 0)
+#endif	// HAVE_SCTP_FENICE 
+                        ) {
 			if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
 				fnc_log(FNC_LOG_DEBUG,
 					"RTSP buffer overflow (input RTSP message is most likely invalid).\n");
