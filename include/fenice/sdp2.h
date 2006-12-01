@@ -37,7 +37,6 @@
 
 #include <fenice/types.h>
 #include <fenice/demuxer.h>
-#include <fenice/wsocket.h>
 
 #include <config.h>
 #ifndef PACKAGE

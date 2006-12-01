@@ -38,7 +38,7 @@
 #include <fenice/multicast.h>
 /*x-x*/
 //#include <fenice/socket.h>
-#include <fenice/wsocket.h>
+#include <netembryo/wsocket.h>
 
 #include "sdp_get_version.c"
 
