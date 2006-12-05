@@ -48,7 +48,7 @@
 					 	return ERR_INPUT_PARAM; \
 					 	else cursor=descr+descr_size-size_left; \
 					 } while(0);
-int sdp_session_descr(resource_name n, char *descr, size_t descr_size)
+int sdp_session_descr(char *n, char *descr, size_t descr_size)
 {
 	/*x-x*/
 	//struct sockaddr_storage localaddr;

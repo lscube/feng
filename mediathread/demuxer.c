@@ -79,7 +79,7 @@ static void trackinfo_free(void *);
 // private functions for specific demuxer
 static int find_demuxer(InputStream *);
 
-Resource *r_open(resource_name root, resource_name n)
+Resource *r_open(char *root, char *n)
 {
 	Resource *r;
 	int dmx_idx;
@@ -203,7 +203,7 @@ void r_close_tracks(Selector *s)
 	free(s);
 }
 
-inline msg_error r_seek(Resource *r, long int time_sec)
+inline int r_seek(Resource *r, long int time_sec)
 {
 	return r->demuxer->seek(r,time_sec);
 }
@@ -337,7 +337,7 @@ void free_track(Track *t, Resource *r)
 	r->num_tracks--;
 }
 
-ResourceDescr *r_descr_get(resource_root root, resource_name n)
+ResourceDescr *r_descr_get(char *root, char *n)
 {
 	GList *cache_el;
 	char mrl[255];

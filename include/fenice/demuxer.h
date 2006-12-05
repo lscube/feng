@@ -41,8 +41,6 @@
 #include <fenice/bufferpool.h>
 #include <fenice/sdp_grammar.h>
 
-#define resource_root char *
-#define resource_name char *
 /*
  * a resource_name can be a mkv, sd, program stream, avi, device ... 
  * syntax could be: 
@@ -54,7 +52,7 @@
 #define msg_error int
 /*msg_error:*/
 #define	RESOURCE_OK 0 
-#define	RESOURCE__NOT_FOUND -1 
+#define	RESOURCE_NOT_FOUND -1 
 #define	RESOURCE_DAMAGED -2
 #define	RESOURCE_NOT_SEEKABLE -3
 #define	RESOURCE_TRACK_NOT_FOUND -4
@@ -196,12 +194,12 @@ typedef struct {
 // --- functions --- //
 
 // Resounces
-Resource *r_open(resource_root, resource_name);/*open the resource: mkv, sd ...*/
+Resource *r_open(char *root, char *name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
 //msg_error get_resource_info(resource_name, ResourceInfo *);
 Selector *r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
-inline msg_error r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
+inline int r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
 int r_changed(ResourceDescr *);
 
 // TrackList handling functions
@@ -212,7 +210,7 @@ Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 void free_track(Track *, Resource *);
 
 // Resources and Media descriptions
-ResourceDescr *r_descr_get(resource_root, resource_name);
+ResourceDescr *r_descr_get(char *root, char *name);
 // ResourceDescr *r_descr_new(Resource *);
 // void r_descr_free(ResourceDescr *);
 /* --- functions implemented in descriptionAPI.c --- */
