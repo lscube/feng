@@ -36,11 +36,18 @@
 #include <fenice/demuxer.h>
 #include <fenice/InputStream.h>
 
+/*
 typedef struct __MT_RESOURCE_ITEM {
 	Resource *resource;
 	pthread_mutex_t *mutex;
 	struct __MT_RESOURCE_ITEM *next;
 } mt_resource_item;
+*/
+
+typedef struct __MT_TRACKLIST_ITEM {
+	Track *track;
+	pthread_mutex_t mutex;
+} mt_tracklist_item;
 
 typedef struct __MT_EXCL_INS {
 	InputStream *i_stream;

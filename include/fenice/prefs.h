@@ -93,14 +93,16 @@ typedef struct _pref_record {
 		{ PREFS_HOSTNAME, STRING, "###", NULL } \
 	};
 
-#define SET_STRING_DATA(PREF_ID, PREF_DATA) \
+#define SET_STRING_DATA(PREF_ID, PREF_DATA) do { \
 		if (prefs[(PREF_ID)].data) free(prefs[(PREF_ID)].data); \
-		prefs[(PREF_ID)].data = strdup(PREF_DATA);
+		prefs[(PREF_ID)].data = strdup(PREF_DATA); \
+	} while (0)
 
-#define SET_INTEGER_DATA(PREF_ID, PREF_DATA) \
+#define SET_INTEGER_DATA(PREF_ID, PREF_DATA) do { \
 		if (prefs[(PREF_ID)].data) free(prefs[(PREF_ID)].data); \
 		prefs[(PREF_ID)].data = malloc(sizeof(int)); \
-		*((int *) prefs[(PREF_ID)].data) = (PREF_DATA);
+		*((int *) prefs[(PREF_ID)].data) = (PREF_DATA); \
+	} while (0)
 
 // Functions
 void prefs_init(char *fileconf);
