@@ -162,7 +162,8 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStr
 
 	memcpy(dst, &header, sizeof(header));
 
-	if ( (uint32)(ret = istream_read(mpa->pkt_len - 4, dst + 4, istream)) < mpa->pkt_len-4 )
+	if ( (ret = istream_read(istream, dst + 4, mpa->pkt_len - 4)) 
+                < mpa->pkt_len-4 )
 		return (ret>=0) ? MP_NOT_FULL_FRAME : ret;
 	
 	// (*timestamp)+=mpa->pkt_len; /*it was negative at the beginning so it is zero at the first time*/
@@ -417,7 +418,7 @@ static void mpa_info(mpa_data *mpa, MediaProperties *properties)
 static int mpa_read(uint32 nbytes, uint8 *buf, mpa_input *in)
 {
 	if (in->istream)
-		return istream_read(nbytes, buf, in->istream);
+		return istream_read(in->istream, buf, nbytes);
 	else if (in->src) {
 		uint32 to_cpy=min(nbytes, in->src_nbytes);
 

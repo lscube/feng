@@ -670,7 +670,7 @@ static int mpv_read(uint32 nbytes, uint8 *buf, mpv_input *in)
 	if (in->istream) 
 	{
 		//printf("Reading from file n_bytes=%d\n",nbytes);
-		return istream_read(nbytes, buf, in->istream);
+		return istream_read(in->istream, buf, nbytes);
 	}
 	else if (in->src) {
 		uint32 to_cpy=min(nbytes, in->src_nbytes);
