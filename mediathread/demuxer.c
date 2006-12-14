@@ -167,7 +167,7 @@ msg_error get_resource_info(resource_name n, ResourceInfo *r)
 Selector *r_open_tracks(Resource *r, char *track_name, Capabilities *capabilities)
 {
 	Selector *s;
-	Track *tracks[MAX_SEL_TRACKS];
+	//Track *tracks[MAX_SEL_TRACKS];
 	GList *track, *sel_tracks=NULL;
 
 	/*Capabilities aren't used yet. TODO*/
@@ -193,6 +193,13 @@ Selector *r_open_tracks(Resource *r, char *track_name, Capabilities *capabilitie
 	s->selected_index=0;/*TODO*/
 	//...
 	return s;
+}
+
+inline Track *r_selected_track(Selector *selector) {
+	if (!selector)
+		return NULL;
+
+	return g_list_nth_data(selector->tracks, selector->selected_index);
 }
 
 void r_close_tracks(Selector *s)
@@ -526,4 +533,6 @@ static void trackinfo_free(void *trackinfo)
 
 	g_free(trackinfo);
 }
+
+
 

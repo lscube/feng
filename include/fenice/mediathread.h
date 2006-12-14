@@ -31,6 +31,8 @@
 #ifndef __MEDIA_THREAD
 #define __MEDIA_THREAD
 
+#define ENABLE_MEDIATHREAD 0
+
 #include <pthread.h>
 
 #include <fenice/demuxer.h>
@@ -44,19 +46,17 @@ typedef struct __MT_RESOURCE_ITEM {
 } mt_resource_item;
 */
 
-typedef struct __MT_TRACKLIST_ITEM {
-	Track *track;
-	pthread_mutex_t mutex;
-} mt_tracklist_item;
-
 typedef struct __MT_EXCL_INS {
 	InputStream *i_stream;
 	struct __MT_EXCL_INS *next;
 } mt_excl_ins;
 
-Resource *resource_open(char *);
+int mt_add_track(Track *);
+int mt_rem_track(Track *);
+
+Resource *mt_resource_open(char *, char *);
 // ... resource_info();
-void resource_close(Resource *);
+void mt_resource_close(Resource *);
 // int resource_seek(Resource *, <abs time>);
 
 #endif // __MEDIA_THREAD

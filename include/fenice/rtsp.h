@@ -98,6 +98,8 @@ typedef struct _RTSP_buffer {
 	 * pkt with  MSG_MORE flag.
 	 * */
 	RTSP_interleaved *interleaved;
+	//mediathread resource
+	Resource *resource;
 	// Run-Time
 	unsigned int rtsp_cseq;
 	char descr[MAX_DESCR_LENGTH];	// La descrizione

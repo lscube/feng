@@ -198,6 +198,7 @@ Resource *r_open(char *root, char *name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
 //msg_error get_resource_info(resource_name, ResourceInfo *);
 Selector *r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
+inline Track *r_selected_track(Selector *);
 void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
 inline int r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
 int r_changed(ResourceDescr *);

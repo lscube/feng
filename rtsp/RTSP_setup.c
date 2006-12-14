@@ -52,12 +52,6 @@
 #include <fenice/multicast.h>
 #include <fenice/fnc_log.h>
 
-// #ifdef SOCK_SEQPACKET
-// #define SOCKPAIRTYPE SOCK_SEQPACKET
-// #else
-#define SOCKPAIRTYPE SOCK_DGRAM
-// #endif
-
 /*
  	****************************************************************
  	*			SETUP METHOD HANDLING
@@ -77,10 +71,18 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	port_pair cli_ports;
 	port_pair ser_ports;
 	struct timeval now_tmp;
-	char *p /* = NULL */ ;
+	char *p  /* = NULL */ ;
 	unsigned int start_seq, start_rtptime;
 	char transport_str[255];
+#if ENABLE_MEDIATHREAD
+	char trackname[255];
+	//mediathread pointers
+	Selector *track_sel;
+	Track *req_track;
+#else
+// TODO: delete mediainfo legacy
 	media_entry *list, *matching_me, req;
+#endif
 //	struct sockaddr_storage rtsp_peer;
 	unsigned long ssrc;
 	SD_descr *matching_descr;
@@ -92,7 +94,10 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	RTSP_interleaved *intlvd, *ilvd_s;
 
 	// init
+#if !ENABLE_MEDIATHREAD
+// TODO: delete mediainfo legacy
 	memset(&req, 0, sizeof(req));
+#endif
 	memset(&transport, 0, sizeof(transport));
 
 	// Parse the input message
@@ -140,6 +145,14 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	if (!(p = strchr(object, '!'))) {	//if '!' is not present then a file has not been specified
 		send_reply(500, 0, rtsp);	/* Internal server error */
 		return ERR_NOERROR;
+#if ENABLE_MEDIATHREAD
+	} else {
+		// SETUP resource!trackname
+		*p = '\0';
+		strcpy (trackname, p + 1);
+	}
+#else
+// TODO: delete mediainfo legacy
 	} else {
 		// SETUP name.sd!stream
 		strcpy(req.filename, p + 1);
@@ -147,6 +160,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 		*p = '\0';
 	}
+#endif
+	
 
 // ------------ START PATCH
 	{
@@ -171,16 +186,42 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 		// END 
 	}
 // ------------ END PATCH
+
+#if ENABLE_MEDIATHREAD
+	if (!rtsp->resource) {
+		if (!(rtsp->resource = mt_resource_open(prefs_get_serv_root(), object))) {
+			send_reply(404, 0, rtsp);	//TODO: Not found or Internal server error?
+			return ERR_NOERROR;
+		}
+	}
+
+	if (!(track_sel = r_open_tracks(rtsp->resource, trackname, NULL))) {
+		send_reply(404, 0, rtsp);	// Not found
+		return ERR_NOERROR;
+	}
+
+	if (!(req_track = r_selected_track(track_sel))) {
+		send_reply(500, 0, rtsp);	// Internal server error
+		return ERR_NOERROR;
+	}
+
+	if (mt_add_track(req_track)) {
+		send_reply(500, 0, rtsp);	// Internal server error
+		return ERR_NOERROR;
+	}
+#else
+// TODO: delete mediainfo legacy
 	if (enum_media(object, &matching_descr) != ERR_NOERROR) {
-		send_reply(500, 0, rtsp);	/* Internal server error */
+		send_reply(500, 0, rtsp);	// Internal server error
 		return ERR_NOERROR;
 	}
 	list = matching_descr->me_list;
 
 	if (get_media_entry(&req, list, &matching_me) == ERR_NOT_FOUND) {
-		send_reply(404, 0, rtsp);	/* Not found */
+		send_reply(404, 0, rtsp);	// Not found
 		return ERR_NOERROR;
 	}
+#endif
 	// Get the CSeq 
 	if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
 		send_reply(400, 0, rtsp);	/* Bad Request */
@@ -273,7 +314,10 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 					tmp = g_strdup_printf("%d", cli_ports.RTCP);
 					Sock_connect (get_remote_host(rtsp->sock), tmp, transport.rtcp_sock, UDP, 0);
 					g_free(tmp);
-				} else if (matching_descr->flags & SD_FL_MULTICAST) {	/*multicast */
+				}
+#if !ENABLE_MEDIATHREAD
+// TODO: multicast with mediathread
+				else if (matching_descr->flags & SD_FL_MULTICAST) {	//multicast 
 					// TODO: make the difference between only multicast allowed or unicast fallback allowed.
 					cli_ports.RTP = ser_ports.RTP =
 					    matching_me->rtp_multicast_port;
@@ -307,8 +351,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 						fnc_log(FNC_LOG_DEBUG,
 							"\nSet up socket for multicast ok\n");
 					}
-				} else
+				} else 
 					continue;
+#endif
 				break;	// found a valid transport
 			} else if (Sock_type(rtsp->sock) == TCP && !strncmp(p, "/TCP", 4)) {	// Transport: RTP/AVP/TCP;interleaved=x-y
 				
@@ -513,12 +558,15 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	rtp_s->current_media = (media_entry *) calloc(1, sizeof(media_entry));
 
 	// if(!(matching_descr->flags & SD_FL_MULTICAST_PORT)){
+#if !ENABLE_MEDIATHREAD
+	// TODO: multicast with mediathread
 	if (is_multicast_dad) {
 		if (mediacpy(&rtp_s->current_media, &matching_me)) {
-			send_reply(500, 0, rtsp);	/* Internal server error */
+			send_reply(500, 0, rtsp);	// Internal server error
 			return ERR_GENERIC;
 		}
 	}
+#endif
 
 	gettimeofday(&now_tmp, 0);
 	srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
@@ -531,7 +579,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	rtp_s->sd_descr = matching_descr;
 
 	rtp_s->sched_id = schedule_add(rtp_s);
-
+#if ENABLE_MEDIATHREAD
+	rtp_s->track_selector = track_sel;
+#endif
 
 	rtp_s->ssrc = ssrc;
 	// Setup the RTSP session       
