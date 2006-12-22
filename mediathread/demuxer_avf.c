@@ -137,6 +137,12 @@ static int init(Resource * r)
     AVFormatParameters ap;
     AVOption *opt;
     lavf_priv_t *priv= r->private_data
+    MediaProperties props_hints;
+
+// How to fill them?
+    MObject_init(MOBJECT(&props_hints));
+    MObject_0(MOBJECT(&props_hints), MediaProperties);
+
 
     memset(&ap, 0, sizeof(AVFormatParameters));
 // make avf use our stuff or not?
@@ -151,14 +157,12 @@ static int init(Resource * r)
     
     if(av_open_input_stream(&avfc, &priv->pb, r->i_stream->name,
                             priv->avif, &ap)<0) {
-//        mp_msg(MSGT_HEADER,MSGL_ERR,"LAVF_header: av_open_input_stream() failed\n");
         return ERR_ALLOC;//FIXME
     }
 
-    priv->avfc= avfc;
+    priv->avfc = avfc;
 
     if(av_find_stream_info(avfc) < 0){
-//        mp_msg(MSGT_HEADER,MSGL_ERR,"LAVF_header: av_find_stream_info() failed\n");
         return ERR_ALLOC;
     }
     
@@ -172,39 +176,29 @@ static int init(Resource * r)
     if(avfc->track       )
     if(avfc->genre    [0]) */
 
+    //make them pointers?
+    strncpy(trackinfo->title, avfc->title, 80);
+    strncpy(trackinfo->author, avfc->author, 80);
+
     for(i=0; i<avfc->nb_streams; i++){
         AVStream *st= avfc->streams[i];
         AVCodecContext *codec= st->codec;
+        trackinfo->id = i;
 
         switch(codec->codec_type){
         case CODEC_TYPE_AUDIO:{//alloc track?
+            if (!(track = add_track(r, &trackinfo, &props_hints)))
+    		return ERR_ALLOC;
             break;}
         case CODEC_TYPE_VIDEO:{//alloc track?
+            if (!(track = add_track(r, &trackinfo, &props_hints)))
+			return ERR_ALLOC;
             break;}
 
     return ERR_ALLOC;
 
     return RESOURCE_OK;
 }
-
-#if 0
-static int read_header(Resource * r, int idx, uint8_t **buf, int *len)
-{
-//Too simple?
-    lavf_priv_t *priv = r->private_data;
-//    Track *tr = g_list_nth_data(r->tracks, idx);
-    AVStream *stream;
-    
-    if (idx > priv->avfc->nbstreams) return RESOURCE_DAMAGED;
-
-    stream = priv->avfc->streams[idx];
-
-    *buf = stream->codec->extradata;
-    *len = stream->codec->extradata_size;
-
-    return RESOURCE_OK;
-}
-#endif
 
 static int read_packet(Resource * r)
 {
@@ -222,9 +216,9 @@ static int read_packet(Resource * r)
     for (tr= g_list_first(r->sel->tracks);
          tr !=NULL;
          tr = g_list_next(r->sel->tracks)) {
-        if (pkt.stream_index == tr->id) {
+        if (pkt.stream_index == tr->info->id) {
 // push it to the framer
-            stream = priv->avfc->streams[idx];    
+            stream = priv->avfc->streams[tr->info->id];
             ret = tr->parser->parse(tr->buffer, pkt.data, pkt.size,
                                     stream->codec->extradata,
                                     stream->codec->extradata_size);

@@ -90,6 +90,7 @@ typedef struct __TRACK_INFO {
 MObject_def(__TRACK_INFO)
 	char *mrl;
 	char name[255];
+        int id; // should it more generic?
 	int rtp_port;
 //	char *sdp_private; // moved in MediaParser.h
 	//start CC
