@@ -187,7 +187,7 @@ static int init(Resource * r)
     return RESOURCE_OK;
 }
 
-
+#if 0
 static int read_header(Resource * r, int idx, uint8_t **buf, int *len)
 {
 //Too simple?
@@ -204,12 +204,14 @@ static int read_header(Resource * r, int idx, uint8_t **buf, int *len)
 
     return RESOURCE_OK;
 }
+#endif
 
 static int read_packet(Resource * r)
 {
     int ret=-1;
     Track *tr;
     AVPacket pkt;
+    AVStream *stream;
     lavf_priv_t *priv = r->private_data;
 
 // get a packet
@@ -222,7 +224,10 @@ static int read_packet(Resource * r)
          tr = g_list_next(r->sel->tracks)) {
         if (pkt.stream_index == tr->id) {
 // push it to the framer
-            ret = tr->parser->parse(tr->buffer, pkt.data, pkt.size);
+            stream = priv->avfc->streams[idx];    
+            ret = tr->parser->parse(tr->buffer, pkt.data, pkt.size,
+                                    stream->codec->extradata,
+                                    stream->codec->extradata_size);
             break;
         }
     }
@@ -243,6 +248,10 @@ static int seek(Resource * r, long int time_msec)
 static int uninit(Resource * r)
 {
     lavf_priv_t* priv = r->private_data;
+
+// generic unint?
+
+// avf stuff
     if (priv) {
         if(priv->avfc) {
             av_close_input_file(priv->avfc); priv->avfc = NULL;
