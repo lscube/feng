@@ -69,6 +69,7 @@
 //! typedefs that give convenient names to GLists used
 typedef GList *TrackList;
 typedef GList *MediaDescrList;
+typedef GList *SelList
 typedef GPtrArray *MediaDescrListArray;
 
 //! Some macros to wrap GList functions
@@ -123,6 +124,7 @@ typedef struct __TRACK {
 typedef struct __SELECTOR {
 	// Track *tracks[MAX_SEL_TRACKS];	
 	TrackList tracks;
+        Track cur;
 	uint32 default_index;
 	uint32 selected_index;/**/
 	uint32 total; /*total tracks in selector*/
@@ -151,7 +153,7 @@ typedef struct __RESOURCE {
 	struct __DEMUXER *demuxer;
 	ResourceInfo *info;
 	// Track *tracks[MAX_TRACKS];
-	TrackList tracks;
+	SelList sel;
 	uint32 num_tracks;
 	void *private_data; /* private data of demuxer */
 } Resource;

@@ -186,13 +186,13 @@ static int init(Resource * r)
         trackinfo->id = i;
 
         switch(codec->codec_type){
-        case CODEC_TYPE_AUDIO:{//alloc track?
-            if (!(track = add_track(r, &trackinfo, &props_hints)))
-    		return ERR_ALLOC;
+            case CODEC_TYPE_AUDIO:{//alloc track?
+                if (!(track = add_track(r, &trackinfo, &props_hints)))
+                    return ERR_ALLOC;
             break;}
-        case CODEC_TYPE_VIDEO:{//alloc track?
-            if (!(track = add_track(r, &trackinfo, &props_hints)))
-			return ERR_ALLOC;
+            case CODEC_TYPE_VIDEO:{//alloc track?
+                if (!(track = add_track(r, &trackinfo, &props_hints)))
+		    return ERR_ALLOC;
             break;}
 
     return ERR_ALLOC;
@@ -203,7 +203,7 @@ static int init(Resource * r)
 static int read_packet(Resource * r)
 {
     int ret=-1;
-    Track *tr;
+    Selector *sel;
     AVPacket pkt;
     AVStream *stream;
     lavf_priv_t *priv = r->private_data;
@@ -213,13 +213,13 @@ static int read_packet(Resource * r)
         return EOF; //FIXME
 
 // for each track selected
-    for (tr= g_list_first(r->sel->tracks);
-         tr !=NULL;
-         tr = g_list_next(r->sel->tracks)) {
-        if (pkt.stream_index == tr->info->id) {
+    for (sel = g_list_first(r->sel);
+         sel !=NULL;
+         sel = g_list_next(r->sel)) {
+        if (pkt.stream_index == sel->cur->info->id) {
 // push it to the framer
-            stream = priv->avfc->streams[tr->info->id];
-            ret = tr->parser->parse(tr->buffer, pkt.data, pkt.size,
+            stream = priv->avfc->streams[sel->cur->info->id];
+            ret = sel->cur->parser->parse(sel->cur->buffer, pkt.data, pkt.size,
                                     stream->codec->extradata,
                                     stream->codec->extradata_size);
             break;
