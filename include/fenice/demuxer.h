@@ -93,10 +93,10 @@ MObject_def(__TRACK_INFO)
 	int rtp_port;
 //	char *sdp_private; // moved in MediaParser.h
 	//start CC
-	char commons_deed[255]; 
+	char commons_deed[255];
 	char rdf_page[255];
 	char title[80];
-	char author[80];	
+	char author[80];
 	// int tag_dim;    
 	//end CC
 } TrackInfo;
