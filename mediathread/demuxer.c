@@ -221,8 +221,13 @@ int r_changed(ResourceDescr *descr)
 	
 	if ( mrl_changed(descr->info->mrl, &descr->last_change) )
 		return 1;
-	for (/* m_descr=descr->media */; m_descr; m_descr=g_list_next(m_descr)) {
-		if ( mrl_changed(((MediaDescr *)m_descr->data)->info->mrl, &((MediaDescr *)m_descr->data)->last_change) )
+
+        for (/* m_descr=descr->media */;
+             m_descr;
+             m_descr=g_list_next(m_descr))
+        {
+		if ( mrl_changed(((MediaDescr *)m_descr->data)->info->mrl,
+                                 &((MediaDescr *)m_descr->data)->last_change) )
 			return 1;
 	}
 
@@ -402,11 +407,14 @@ static int find_demuxer(InputStream *i_stream)
 	int probed=-1;
 	char found=0; // flag for demuxer found.
 	int i; // index
-	char exts[128], *res_ext, *tkn; // temp string containing extensione served by probing demuxer.
+	char exts[128], *res_ext, *tkn; /* temp string containing extensione
+                                         * served by probing demuxer.
+                                         */
 
 	// First of all try that with matching extension: we use extension as a
 	// suggestion of resource type.
-	if ( (/* find resource name extension: */res_ext=strrchr(i_stream->name, '.')) && (res_ext++) ) {
+	if ( (/* find resource name extension: */
+                res_ext=strrchr(i_stream->name, '.')) && (res_ext++) ) {
 		// extension present
 		for (i=0; demuxers[i]; i++) {
 			strncpy(exts, demuxers[i]->info->extensions, sizeof(exts));
