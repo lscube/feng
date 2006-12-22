@@ -154,7 +154,9 @@ typedef struct __RESOURCE {
 	ResourceInfo *info;
 	// Track *tracks[MAX_TRACKS];
 	SelList sel;
-	uint32 num_tracks;
+        int num_sel;
+        TrackList tracks;
+	int num_tracks;
 	void *private_data; /* private data of demuxer */
 } Resource;
 
