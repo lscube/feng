@@ -137,11 +137,11 @@ static int init(Resource * r)
     AVFormatParameters ap;
     AVOption *opt;
     lavf_priv_t *priv= r->private_data
-    MediaProperties props_hints;
+    MediaProperties props;
 
 // How to fill them?
-    MObject_init(MOBJECT(&props_hints));
-    MObject_0(MOBJECT(&props_hints), MediaProperties);
+    MObject_init(MOBJECT(&props));
+    MObject_0(MOBJECT(&props), MediaProperties);
 
 
     memset(&ap, 0, sizeof(AVFormatParameters));
@@ -176,7 +176,7 @@ static int init(Resource * r)
     if(avfc->track       )
     if(avfc->genre    [0]) */
 
-    //make them pointers?
+    // make them pointers?
     strncpy(trackinfo->title, avfc->title, 80);
     strncpy(trackinfo->author, avfc->author, 80);
 
@@ -187,11 +187,23 @@ static int init(Resource * r)
 
         switch(codec->codec_type){
             case CODEC_TYPE_AUDIO:{//alloc track?
-                if (!(track = add_track(r, &trackinfo, &props_hints)))
+                // Some properties, add more?
+                props->bit_rate         = codec->bit_rate;
+                props->audio_channels   = codec->channels;
+                // Make props an int...
+                props->sample_rate      = codec->sample_rate;
+                props->bit_per_sample   = codec->bits_per_sample;
+                if (!(track = add_track(r, &trackinfo, &props)))
                     return ERR_ALLOC;
             break;}
             case CODEC_TYPE_VIDEO:{//alloc track?
-                if (!(track = add_track(r, &trackinfo, &props_hints)))
+                props->frame_rate   = st->frame_rate;
+                props->AspectRatio  = codec->width * 
+                                      codec->sample_aspect_ratio.num /
+                                      (float)(codec->height *
+                                              codec->sample_aspect_ratio.den);
+
+                if (!(track = add_track(r, &trackinfo, &props)))
 		    return ERR_ALLOC;
             break;}
 
