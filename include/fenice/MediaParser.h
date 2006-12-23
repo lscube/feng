@@ -73,7 +73,7 @@ MObject_def(__MEDIA_PROPERTIES)
 	uint32 DisplayWidth;
 	uint32 DisplayHeight;
 	uint32 DisplayUnit;
-	uint32 AspectRatio;	
+	uint32 AspectRatio;
 	uint8 *ColorSpace;
 	float GammaValue;
 	sdp_field_list sdp_private;
