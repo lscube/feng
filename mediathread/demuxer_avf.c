@@ -214,7 +214,7 @@ static int init(Resource * r)
 
 static int read_packet(Resource * r)
 {
-    int ret=-1;
+    int ret = -1;
     Selector *sel;
     AVPacket pkt;
     AVStream *stream;
@@ -231,7 +231,7 @@ static int read_packet(Resource * r)
         if (pkt.stream_index == sel->cur->info->id) {
 // push it to the framer
             stream = priv->avfc->streams[sel->cur->info->id];
-            ret = sel->cur->parser->parse(sel->cur->buffer, pkt.data, pkt.size,
+            ret = sel->cur->parser->parse(sel->cur, pkt.data, pkt.size,
                                     stream->codec->extradata,
                                     stream->codec->extradata_size);
             break;
@@ -255,15 +255,16 @@ static int uninit(Resource * r)
 {
     lavf_priv_t* priv = r->private_data;
 
-// generic unint?
-
 // avf stuff
     if (priv) {
         if(priv->avfc) {
             av_close_input_file(priv->avfc); priv->avfc = NULL;
         }
-        free(priv); demuxer->priv = NULL;
+        free(priv);
     }
+
+// generic unint
+    res_uninit( r );
 
     return RESOURCE_OK;
 }
