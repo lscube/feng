@@ -139,11 +139,6 @@ static int init(Resource * r)
     lavf_priv_t *priv= r->private_data
     MediaProperties props;
 
-// How to fill them?
-    MObject_init(MOBJECT(&props));
-    MObject_0(MOBJECT(&props), MediaProperties);
-
-
     memset(&ap, 0, sizeof(AVFormatParameters));
 // make avf use our stuff or not?
 //register_protocol(&fnc_protocol);
@@ -185,6 +180,13 @@ static int init(Resource * r)
         AVCodecContext *codec= st->codec;
         trackinfo->id = i;
 
+// XXX: Check!
+        MObject_init(MOBJECT(&props));
+        MObject_0(MOBJECT(&props), MediaProperties);
+
+        props->extradata = codec->extradata;
+        props->extradata_len = codec->extradata_size;
+
         switch(codec->codec_type){
             case CODEC_TYPE_AUDIO:{//alloc track?
                 // Some properties, add more?
@@ -202,10 +204,12 @@ static int init(Resource * r)
                                       codec->sample_aspect_ratio.num /
                                       (float)(codec->height *
                                               codec->sample_aspect_ratio.den);
-
+// addtrack must init the parser, the parser may need the extradata
                 if (!(track = add_track(r, &trackinfo, &props)))
 		    return ERR_ALLOC;
             break;}
+
+//Selection infrastructure missing...
 
     return ERR_ALLOC;
 

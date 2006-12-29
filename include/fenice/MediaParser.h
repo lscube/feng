@@ -76,6 +76,8 @@ MObject_def(__MEDIA_PROPERTIES)
 	uint32 AspectRatio;
 	uint8 *ColorSpace;
 	float GammaValue;
+        uint8 extradata;
+        long extradata_len;
 	sdp_field_list sdp_private;
 } MediaProperties;
 
