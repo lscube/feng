@@ -219,7 +219,11 @@ static int init(Resource * r)
 static int read_packet(Resource * r)
 {
     int ret = -1;
+#if 0
     Selector *sel;
+#else
+    TrackList *tr;
+#endif
     AVPacket pkt;
     AVStream *stream;
     lavf_priv_t *priv = r->private_data;
@@ -229,6 +233,7 @@ static int read_packet(Resource * r)
         return EOF; //FIXME
 
 // for each track selected
+#if 0
     for (sel = g_list_first(r->sel);
          sel !=NULL;
          sel = g_list_next(r->sel)) {
@@ -241,6 +246,21 @@ static int read_packet(Resource * r)
             break;
         }
     }
+#else
+    for (tr = g_list_first(r->tracks);
+         tr !=NULL;
+         tr = g_list_next(tr)) {
+        if (pkt.stream_index == TRACK(tr)->info->id) {
+// push it to the framer
+            stream = priv->avfc->streams[TRACK(tr)->info->id];
+            ret = sel->cur->parser->parse(TRACK(tr), pkt.data, pkt.size,
+                                    stream->codec->extradata,
+                                    stream->codec->extradata_size);
+            break;
+        }
+    }
+#endif
+
     av_free_packet(&pkt);
 
     return ret;
@@ -268,7 +288,7 @@ static int uninit(Resource * r)
     }
 
 // generic unint
-    res_uninit( r );
+    r_close(r);
 
     return RESOURCE_OK;
 }
