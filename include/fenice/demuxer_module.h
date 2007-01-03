@@ -41,10 +41,6 @@ static int probe(InputStream *);
  * */
 static int init(Resource *);
 
-/* read_header: ... shawill: XXX what is this?
- * */
-static int read_header(Resource *);
-
 /* read_packet: ...
  * */
 static int read_packet(Resource *);
@@ -62,7 +58,6 @@ static int uninit(Resource *);
 	&info, \
 	probe, \
 	init, \
-	read_header, \
 	read_packet, \
 	seek, \
 	uninit \
