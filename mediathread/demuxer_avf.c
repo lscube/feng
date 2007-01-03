@@ -34,7 +34,7 @@
 
 #include <fenice/demuxer_module.h>
 
-#include <ffmpeg/avformat.h>
+#include <avformat.h>
 
 static DemuxerInfo info = {
 	"Avformat Demuxer",
@@ -47,7 +47,7 @@ static DemuxerInfo info = {
 FNC_LIB_DEMUXER(avf);
 
 typedef struct lavf_priv{
-//    AVInputFormat *avif;
+    AVInputFormat *avif;
     AVFormatContext *avfc;
     ByteIOContext pb;
 //    int audio_streams;
@@ -109,6 +109,8 @@ static URLProtocol fnc_protocol = {
 };
 #endif
 
+#define PROBE_BUF_SIZE 2048
+
 static int probe(InputStream * i_stream)
 {
     AVProbeData avpd;
@@ -135,9 +137,11 @@ static int init(Resource * r)
 {
     AVFormatContext *avfc;
     AVFormatParameters ap;
-    AVOption *opt;
-    lavf_priv_t *priv= r->private_data
+    lavf_priv_t *priv= r->private_data;
     MediaProperties props;
+    Track *track;
+    TrackInfo trackinfo;
+    int i;
 
     memset(&ap, 0, sizeof(AVFormatParameters));
 // make avf use our stuff or not?
@@ -160,7 +164,10 @@ static int init(Resource * r)
     if(av_find_stream_info(avfc) < 0){
         return ERR_ALLOC;
     }
-    
+
+    MObject_init(MOBJECT(&trackinfo));
+    MObject_0(MOBJECT(&trackinfo), TrackInfo);
+
 /* throw it in the sdp?
     if(avfc->title    [0])
     if(avfc->author   [0])
@@ -172,35 +179,35 @@ static int init(Resource * r)
     if(avfc->genre    [0]) */
 
     // make them pointers?
-    strncpy(trackinfo->title, avfc->title, 80);
-    strncpy(trackinfo->author, avfc->author, 80);
+    strncpy(trackinfo.title, avfc->title, 80);
+    strncpy(trackinfo.author, avfc->author, 80);
 
     for(i=0; i<avfc->nb_streams; i++){
         AVStream *st= avfc->streams[i];
         AVCodecContext *codec= st->codec;
-        trackinfo->id = i;
+        trackinfo.id = i;
 
 // XXX: Check!
         MObject_init(MOBJECT(&props));
         MObject_0(MOBJECT(&props), MediaProperties);
 
-        props->extradata = codec->extradata;
-        props->extradata_len = codec->extradata_size;
+        props.extradata = codec->extradata;
+        props.extradata_len = codec->extradata_size;
 
         switch(codec->codec_type){
             case CODEC_TYPE_AUDIO:{//alloc track?
                 // Some properties, add more?
-                props->bit_rate         = codec->bit_rate;
-                props->audio_channels   = codec->channels;
+                props.bit_rate         = codec->bit_rate;
+                props.audio_channels   = codec->channels;
                 // Make props an int...
-                props->sample_rate      = codec->sample_rate;
-                props->bit_per_sample   = codec->bits_per_sample;
+                props.sample_rate      = codec->sample_rate;
+                props.bit_per_sample   = codec->bits_per_sample;
                 if (!(track = add_track(r, &trackinfo, &props)))
                     return ERR_ALLOC;
             break;}
             case CODEC_TYPE_VIDEO:{//alloc track?
-                props->frame_rate   = st->frame_rate;
-                props->AspectRatio  = codec->width * 
+                props.frame_rate   = av_q2d(st->r_frame_rate); //XXX check
+                props.AspectRatio  = codec->width * 
                                       codec->sample_aspect_ratio.num /
                                       (float)(codec->height *
                                               codec->sample_aspect_ratio.den);
@@ -208,10 +215,12 @@ static int init(Resource * r)
                 if (!(track = add_track(r, &trackinfo, &props)))
 		    return ERR_ALLOC;
             break;}
+        }
+    }
 
 //Selection infrastructure missing...
 
-    return ERR_ALLOC;
+//    return ERR_ALLOC;
 
     return RESOURCE_OK;
 }
@@ -222,7 +231,7 @@ static int read_packet(Resource * r)
 #if 0
     Selector *sel;
 #else
-    TrackList *tr;
+    TrackList tr;
 #endif
     AVPacket pkt;
     AVStream *stream;
@@ -253,7 +262,7 @@ static int read_packet(Resource * r)
         if (pkt.stream_index == TRACK(tr)->info->id) {
 // push it to the framer
             stream = priv->avfc->streams[TRACK(tr)->info->id];
-            ret = sel->cur->parser->parse(TRACK(tr), pkt.data, pkt.size,
+            ret = TRACK(tr)->parser->parse(TRACK(tr), pkt.data, pkt.size,
                                     stream->codec->extradata,
                                     stream->codec->extradata_size);
             break;
