@@ -27,7 +27,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
-
 #ifndef __MEDIAPARSERH
 #define __MEDIAPARSERH
 
@@ -76,7 +75,7 @@ MObject_def(__MEDIA_PROPERTIES)
 	uint32 AspectRatio;
 	uint8 *ColorSpace;
 	float GammaValue;
-        uint8 extradata;
+        uint8 *extradata;
         long extradata_len;
 	sdp_field_list sdp_private;
 } MediaProperties;
@@ -91,8 +90,11 @@ typedef struct __MEDIAPARSER {
 	int (*init)(MediaProperties *,void **); // shawill: TODO: specify right parameters
 	int (*get_frame)(uint8 *, uint32, double *, InputStream *, MediaProperties *, void *);
 	int (*packetize)(uint8 *, uint32 *, uint8 *, uint32, MediaProperties *, void *);
-        int (*parse)(Track *track, uint8 *data, long len,
-                     uint8 *extradata, long extradata_len);
+        int (*parse)(void *track, // workaround
+                     uint8 *data, 
+                     long len, 
+                     uint8 *extradata,
+                     long extradata_len);
 	int (*uninit)(void *); /* parser specific init function */
 } MediaParser;
 
