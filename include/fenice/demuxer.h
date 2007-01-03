@@ -69,7 +69,7 @@
 //! typedefs that give convenient names to GLists used
 typedef GList *TrackList;
 typedef GList *MediaDescrList;
-typedef GList *SelList
+typedef GList *SelList;
 typedef GPtrArray *MediaDescrListArray;
 
 //! Some macros to wrap GList functions
