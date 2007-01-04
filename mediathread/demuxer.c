@@ -93,32 +93,38 @@ Resource *r_open(char *root, char *n)
 		return NULL;
 
 	if ( (dmx_idx=find_demuxer(i_stream))<0 ) {
-		fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer for resource %s\n", mrl);
+		fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer"
+                                       "for resource %s\n", mrl);
 		return NULL;
 	}
 
-	fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource \"%s\"\n", demuxers[dmx_idx]->info->name, mrl);
+	fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource"
+                               "\"%s\"\n", demuxers[dmx_idx]->info->name, mrl);
 
-	// ----------- allocation of all data structures ---------------------------//
+// allocation of all data structures
+
 	if( !(r = calloc(1, sizeof(Resource))) ) {
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
 		istream_close(i_stream);
 		return NULL;
 	}
 
-#if 0 // we use MObject_new: that will alloc memory and exits the program if something goes wrong
+#if 0 
+// we use MObject_new: that will alloc memory and exits
+// the program if something goes wrong
 	if( !(r->info=calloc(1, sizeof(ResourceInfo))) ) { // init all infos
 		fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
 		istream_close(i_stream);
 		free(r);
 		return NULL;
 	}
-#endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
+#endif
+// we use MObject_new: that will alloc memory and exits the program
+// if something goes wrong
 	r->info = MObject_new0(ResourceInfo, 1);
 	MObject_destructor(r->info, resinfo_free);
-	// -------------------------------------------------------------------------//
-	// ----------------------- initializations ---------------------------------//
-	/* initialization non needed 'cause we use calloc
+
+/* initialization non needed 'cause we use calloc
 	r->private_data=NULL;
 	r->demuxer=NULL;
 	//initializate tracks??? TODO
@@ -129,7 +135,6 @@ Resource *r_open(char *root, char *n)
 	r->info->name = g_strdup(n);
 	r->i_stream = i_stream;
 	r->demuxer=demuxers[dmx_idx];
-	// ------------------------------------------------------------------------//
 
 	r->demuxer->init(r);
 
@@ -164,7 +169,8 @@ msg_error get_resource_info(resource_name n, ResourceInfo *r)
 }
 #endif // if 0
 
-Selector *r_open_tracks(Resource *r, char *track_name, Capabilities *capabilities)
+Selector *r_open_tracks(Resource *r, char *track_name, 
+                        Capabilities *capabilities) // RTSP_setup.c uses it !!
 {
 	Selector *s;
 	//Track *tracks[MAX_SEL_TRACKS];
@@ -178,8 +184,10 @@ Selector *r_open_tracks(Resource *r, char *track_name, Capabilities *capabilitie
 
 	if (!sel_tracks)
 		return NULL;
-	// now we reverse the order of the list to rebuild the resource tracks order
-	// Probably this is not so useful: I feel free to remove the instruction sooner or later...
+// now we reverse the order of the list to rebuild the resource tracks order
+// Probably this is not so useful: 
+// I feel free to remove the instruction sooner or later...
+
 	g_list_reverse(sel_tracks);
 	
 	if((s=(Selector*)malloc(sizeof(Selector)))==NULL) {
@@ -195,14 +203,15 @@ Selector *r_open_tracks(Resource *r, char *track_name, Capabilities *capabilitie
 	return s;
 }
 
-inline Track *r_selected_track(Selector *selector) {
+inline Track *r_selected_track(Selector *selector) // UNUSED
+{
 	if (!selector)
 		return NULL;
 
 	return g_list_nth_data(selector->tracks, selector->selected_index);
 }
 
-void r_close_tracks(Selector *s)
+void r_close_tracks(Selector *s) // UNUSED
 {
 	/*see r_close, what i have to do???*/
 	// free_track(s->tracks[s->selected_index]);
@@ -268,10 +277,12 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 	if( !(t=(Track *)calloc(1, sizeof(Track))) ) 
 		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
 	
-#if 0 // we use MObject_new: that will alloc memory and exits the program if something goes wrong
+#if 0 
+// we use MObject_new: that will alloc memory and exits the program if something goes wrong
 	if( !(t->info = calloc(1, sizeof(TrackInfo))) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems\n");
-#endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
+#endif 
+// we use MObject_new: that will alloc memory and exits the program if something goes wrong
 	if (info)
 		t->info = MObject_dup(info, sizeof(TrackInfo));
 	else
@@ -284,15 +295,17 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems\n");
 #endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
 	if (prop_hints)
-		t->properties = MObject_dup(prop_hints, sizeof(MediaProperties));
+		t->properties =
+                    MObject_dup(prop_hints, sizeof(MediaProperties));
 	else
 		t->properties = MObject_new0(MediaProperties, 1);
 
-	/* parser allocation no more needed.
-	 * we should now find the right media parser and link t->parse to the correspondig index
+/* parser allocation no more needed.
+ * we should now find the right media parser and link t->parse to the
+ * correspondig index
 	if( !(t->parser=add_media_parser()) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
-	*/
+ */
 
 	if( !(t->buffer=OMSbuff_new(OMSBUFFER_DEFAULT_DIM)) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
@@ -303,12 +316,12 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 	*/
 	/*t->i_stream=i_stream*/
 	if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
-		ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
+	    ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
 
 	if ( !(t->parser = mparser_find(t->properties->encoding_name)) )
-		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
+	    ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
 	if (t->parser->init(t->properties, &t->parser_private))
-		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n", t->properties->encoding_name);
+	    ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n", t->properties->encoding_name);
 #if 0
 	// shawill: just for parser trying:
 	{
@@ -320,10 +333,10 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 		t->parser->get_frame(tmp_dst, sizeof(tmp_dst), &timest, t->i_stream, t->properties, t->parser_private);
 	}
 #endif
-	
+
 	r->tracks = g_list_append(r->tracks, t);
 	r->num_tracks++;
-	
+
 	return t;
 }
 #undef ADD_TRACK_ERROR
@@ -353,10 +366,10 @@ ResourceDescr *r_descr_get(char *root, char *n)
 {
 	GList *cache_el;
 	char mrl[255];
-	
+
 	snprintf(mrl, sizeof(mrl) - 1, "%s%s%s", root,
 		 (root[strlen(root) - 1] == '/') ? "" : "/", n);
-	
+
 
 	if ( !(cache_el=r_descr_find(mrl)) ) {
 		Resource *r;
@@ -365,7 +378,7 @@ ResourceDescr *r_descr_get(char *root, char *n)
 		cache_el=r_descr_find(mrl);
 		r_close(r);
 	}
-	
+
 	return RESOURCE_DESCR(cache_el);
 }
 
@@ -378,8 +391,10 @@ static inline void ex_tracks_save(GList *tracks)
 
 static void ex_track_save(Track *track, gpointer *user_data)
 {
-	if ( track->i_stream && IS_ISEXCLUSIVE(track->i_stream) && !g_list_find(ex_tracks, track) )
-			ex_tracks = g_list_prepend(ex_tracks, track);
+	if ( track->i_stream                 &&
+             IS_ISEXCLUSIVE(track->i_stream) &&
+             !g_list_find(ex_tracks, track) )
+		ex_tracks = g_list_prepend(ex_tracks, track);
 }
 
 static inline void ex_track_remove(Track *track)
@@ -414,32 +429,41 @@ static int find_demuxer(InputStream *i_stream)
 	// First of all try that with matching extension: we use extension as a
 	// suggestion of resource type.
 	if ( (/* find resource name extension: */
-                res_ext=strrchr(i_stream->name, '.')) && (res_ext++) ) {
-		// extension present
-		for (i=0; demuxers[i]; i++) {
-			strncpy(exts, demuxers[i]->info->extensions, sizeof(exts));
-			for (tkn=strtok(exts, ","); tkn; tkn=strtok(NULL, ",")) {
-				if (!strcmp(tkn, res_ext)) {
-					fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: extension \"%s\" matches \"%s\" demuxer\n", res_ext, demuxers[i]->info->name);
-					if (demuxers[i]->probe(i_stream) == RESOURCE_OK) {
-						fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\" demuxer found\n", demuxers[i]->info->name);
-						found = 1;
-						break;
-					}
-				}
-			}
-			if (found)
-				break;
+            res_ext=strrchr(i_stream->name, '.')) && (res_ext++) ) {
+	    // extension present
+	    for (i=0; demuxers[i]; i++) {
+		strncpy(exts, demuxers[i]->info->extensions, sizeof(exts));
+
+		for (tkn=strtok(exts, ","); tkn; tkn=strtok(NULL, ",")) {
+		    if (!strcmp(tkn, res_ext)) {
+                        fnc_log(FNC_LOG_DEBUG, 
+                                "[MT] probing demuxer: extension \"%s\""
+                                "matches \"%s\" demuxer\n", res_ext,
+                                demuxers[i]->info->name);
+		        if (demuxers[i]->probe(i_stream) == RESOURCE_OK) {
+			    fnc_log(FNC_LOG_DEBUG,
+                                "[MT] probing demuxer: \"%s\" demuxer found\n",
+                                demuxers[i]->info->name);
+			    found = 1;
+			    break;
+		        }
+		    }
 		}
+		if (found) break;
+	    }
 	}
 	if (!found) {
-		for (i=0; demuxers[i]; i++) {
-			if ( (i!=probed) && (demuxers[i]->probe(i_stream) == RESOURCE_OK) ) {
-				fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\" demuxer found\n", demuxers[i]->info->name);
-				found = 1;
-				break;
-			}
+	    for (i=0; demuxers[i]; i++) {
+		if ((i!=probed) && 
+                    (demuxers[i]->probe(i_stream) == RESOURCE_OK) )
+                {
+		    fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\""
+                                           "demuxer found\n",
+                                           demuxers[i]->info->name);
+		    found = 1;
+		    break;
 		}
+	    }
 	}
 
 	return found ? i: -1;
