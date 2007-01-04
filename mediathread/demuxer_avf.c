@@ -44,7 +44,33 @@ static DemuxerInfo info = {
 	"mov, nut, mkv, mxf" // the others are a problem
 };
 
-FNC_LIB_DEMUXER(avf);
+
+
+
+// FNC_LIB_DEMUXER(avf);
+
+Demuxer fnc_demuxer_avf =
+{
+        &info,
+        probe,
+        init,
+        read_packet,
+        seek,
+        uninit
+};
+
+
+typedef struct id_tag {
+    const int id;
+    const char tag[11];
+} id_tag;
+
+const id_tag id_tags[] = {
+   { CODEC_ID_MPEG1VIDEO, "MPV" },
+   { CODEC_ID_MPEG2VIDEO, "MPV" },
+   { CODEC_ID_MP3, "MPA"},
+   { CODEC_ID_NONE, "NONE"} //XXX ...
+};
 
 typedef struct lavf_priv{
     AVInputFormat *avif;
@@ -54,6 +80,17 @@ typedef struct lavf_priv{
 //    int video_streams;
     int64_t last_pts; //Use it or not?
 } lavf_priv_t;
+
+static const char *tag_from_id(int id)
+{
+    id_tag *tags = id_tags;
+    while (tags->id != CODEC_ID_NONE) {
+        if (tags->id == id)
+            return tags->tag;
+        tags++;
+    } 
+    return NULL;
+}
 
 #if 0 //FIXME
 static int fnc_open(URLContext *h, const char *filename, int flags){
@@ -193,6 +230,8 @@ static int init(Resource * r)
 
         props.extradata = codec->extradata;
         props.extradata_len = codec->extradata_size;
+        // make them pointers?
+        strncpy(props.encoding_name, tag_from_id(codec->codec_id), 11);
 
         switch(codec->codec_type){
             case CODEC_TYPE_AUDIO:{//alloc track?
@@ -279,7 +318,7 @@ static int seek(Resource * r, long int time_msec)
 {
 //Too simple
     lavf_priv_t *priv = r->private_data;
-    av_seek_frame(priv->avfc, -1, time_msec, 0);
+    return av_seek_frame(priv->avfc, -1, time_msec, 0);
 
 //	return RESOURCE_NOT_SEEKABLE;
 }
