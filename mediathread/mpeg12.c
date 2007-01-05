@@ -296,19 +296,19 @@ int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, Med
 	uint8 *vsh_tmp;
 	mpv_input in = {NULL,src,src_nbytes};
 
-		
+
 	mpv=(mpv_data *)private_data;
 	mpv->vsh1->b=0;/*begining of slice*/
 	mpv->vsh1->e=0;/*end of slice*/
 
 	if (mpv->std == MPEG_2)  {
-		#if MPEG2VSHE
+#if MPEG2VSHE
 		count+= 8;
 		mpv->vsh1->t=1;
-		#else
+#else
 		count += 4;
 		mpv->vsh1->t=0;
-		#endif                               				/* bytes for the video specific header */
+#endif  /* bytes for the video specific header */
 	} else {
         	count += 4;
 		mpv->vsh1->t=0;
@@ -326,18 +326,18 @@ int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, Med
 		}
 		count++;
 		countsrc++;
-		
-		if(countsrc==4) 
-			if ( !(get_header(&header, &dst[count-4], mpv)) ) 
+
+		if(countsrc==4)
+			if ( !(get_header(&header, &dst[count-4], mpv)) )
 				mpv->vsh1->b=1;/*begining of slice*/
-	
+
 		if(mpv->is_fragmented) {
-			if ( !(get_header(&header, &src[countsrc], mpv)) ) 
+			if ( !(get_header(&header, &src[countsrc], mpv)) )
 				break;
 		}
-		
+
 	}
-	
+
 	if ( !(get_header(&header, &src[countsrc], mpv)) ) {
 		mpv->vsh1->e=1;/*end of slice*/
 		mpv->is_fragmented=0;
@@ -350,10 +350,17 @@ int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, Med
 	VSHCPY;
 	*dst_nbytes=count;
 
-	mpv->vsh1->s=0;/*RESET. sequence header is not present. SEQ_HEADER can be present only in the first pkt of a frame */ 
+	mpv->vsh1->s=0;/*RESET. sequence header is not present. SEQ_HEADER can be present only in the first pkt of a frame */
 
-	return countsrc; 
+	return countsrc;
 }
+
+int parse(void *track, uint8 *data, long len, uint8 *extradata, 
+                 long extradata_len)
+{
+    return 1; //XXX dummy!
+}
+
 
 int uninit(void *private_data)
 {

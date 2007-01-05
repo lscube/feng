@@ -186,7 +186,10 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
 	uint32 to_cpy, end_frm_dist;
 	// uint8 tmp[3];
 
-	if ( (mpa->fragmented) && (mpa->frag_src == src) && (mpa->frag_src_nbytes == src_nbytes) ) { // last frame was fragmented
+	if ( (mpa->fragmented)      &&
+             (mpa->frag_src == src) &&
+             (mpa->frag_src_nbytes == src_nbytes) )
+        { // last frame was fragmented
 		end_frm_dist = mpa->pkt_len - mpa->frag_offset;
 		to_cpy = min(end_frm_dist, (mpa->frag_src_nbytes-mpa->frag_offset));
 		src += mpa->frag_offset;
@@ -218,6 +221,13 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
 	
 	return ret+dst_offset;
 }
+
+int parse(void *track, uint8 *data, long len, uint8 *extradata, 
+                 long extradata_len)
+{
+    return 1; //XXX dummy!
+}
+
 
 static int uninit(void *private_data)
 {

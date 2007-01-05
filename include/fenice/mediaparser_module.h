@@ -67,6 +67,19 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStr
  * */
 static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data);
 
+/* parse: ...
+ *    args:
+ *       track: track whose bufferpool should be filled,
+ *       data: packet from the demuxer layer,
+ *       len: packet length,
+ *       extradata: codec configuration data,
+ *       extradata_len: extradata length.
+ *    return: ...
+ * */
+static int parse(void *track, uint8 *data, long len, uint8 *extradata, 
+                 long extradata_len);
+
+
 /* uninit: free the media parser structures.
  *    args:
  *       private_data: pointer to parser specific private data.
@@ -80,6 +93,7 @@ static int uninit(void *private_data); /*before call free_parser */
 	init, \
 	get_frame2, \
 	packetize, \
+        parse, \
 	uninit \
 }
 
