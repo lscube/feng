@@ -91,11 +91,12 @@ typedef struct __MEDIAPARSER {
 	int (*get_frame)(uint8 *, uint32, double *, InputStream *, MediaProperties *, void *);
 	int (*packetize)(uint8 *, uint32 *, uint8 *, uint32, MediaProperties *, void *);
         int (*parse)(void *track, // workaround
-                     uint8 *data, 
-                     long len, 
+                     double mtime,
+                     uint8 *data,
+                     long len,
                      uint8 *extradata,
                      long extradata_len);
-	int (*uninit)(void *); /* parser specific init function */
+	int (*uninit)(void *);
 } MediaParser;
 
 /*MediaParser Interface*/

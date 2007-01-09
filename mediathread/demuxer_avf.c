@@ -267,6 +267,7 @@ static int init(Resource * r)
 static int read_packet(Resource * r)
 {
     int ret = -1;
+    double mtime = 0;
 #if 0
     Selector *sel;
 #else
@@ -301,7 +302,10 @@ static int read_packet(Resource * r)
         if (pkt.stream_index == TRACK(tr)->info->id) {
 // push it to the framer
             stream = priv->avfc->streams[TRACK(tr)->info->id];
-            ret = TRACK(tr)->parser->parse(TRACK(tr), pkt.data, pkt.size,
+            if(pkt.pts != AV_NOPTS_VALUE)
+                    mtime = pkt.pts * av_q2d(stream->time_base);
+
+            ret = TRACK(tr)->parser->parse(TRACK(tr), mtime, pkt.data, pkt.size,
                                     stream->codec->extradata,
                                     stream->codec->extradata_size);
             break;
@@ -316,7 +320,7 @@ static int read_packet(Resource * r)
 
 static int seek(Resource * r, long int time_msec)
 {
-//Too simple
+//XXX check the timebase....
     lavf_priv_t *priv = r->private_data;
     return av_seek_frame(priv->avfc, -1, time_msec, 0);
 

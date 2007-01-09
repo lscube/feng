@@ -76,9 +76,8 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
  *       extradata_len: extradata length.
  *    return: ...
  * */
-static int parse(void *track, uint8 *data, long len, uint8 *extradata, 
-                 long extradata_len);
-
+static int parse(void *track, double mtime, uint8 *data, long len,
+                 uint8 *extradata, long extradata_len);
 
 /* uninit: free the media parser structures.
  *    args:
