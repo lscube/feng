@@ -30,7 +30,7 @@
 
 #include <stdio.h>
 #include <string.h>
-
+#include <fenice/demuxer.h>
 #include <fenice/MediaParser.h>
 #include <fenice/mediaparser_module.h>
 #include <fenice/utils.h>
@@ -225,7 +225,19 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
 int parse(void *track, double mtime, uint8 *data, long len, uint8 *extradata, 
                  long extradata_len)
 {
-    return 1; //XXX dummy!
+    Track *tr = (Track *)track;
+    int ret;
+    OMSSlot *slot;
+    uint32 dst_len = len + 4;
+    uint8 dst[dst_len];
+
+    ret = packetize(dst, &dst_len, data, len, tr->properties,
+              tr->private_data);
+    if (ret == ERR_NOERROR) {
+        ret = OMSbuff_write(tr->buffer, 0, mtime, 0, dst, dst_len);
+        if (ret) fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+    }
+    return ret;
 }
 
 
