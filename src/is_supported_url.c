@@ -36,7 +36,7 @@
 #include <string.h>
 
 int is_supported_url(char *p)
-// Add supported format extensions here
+// XXX KILL THIS ABOMINATION
 {
 	if (strcasecmp(p,".SD")==0) {	
 		return 1;
@@ -76,8 +76,8 @@ int is_supported_url(char *p)
 	}				
 	if (strcasecmp(p,".mp4")==0) {
 		return 1;
-	}				
-	if (strcasecmp(p,".xvid")==0) {
+	}
+	if (strcasecmp(p,".mov")==0) {
 		return 1;
 	}				
 	return 0;
