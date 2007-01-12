@@ -174,7 +174,7 @@ static int init(Resource * r)
 {
     AVFormatContext *avfc;
     AVFormatParameters ap;
-    lavf_priv_t *priv= r->private_data;
+    lavf_priv_t *priv =  av_mallocz(sizeof(lavf_priv_t));
     MediaProperties props;
     Track *track;
     TrackInfo trackinfo;
@@ -187,18 +187,24 @@ static int init(Resource * r)
     avfc = av_alloc_format_context();
     ap.prealloced_context = 1;
 
-    url_fopen(&priv->pb, r->i_stream->name, URL_RDONLY);
+    url_fopen(&priv->pb, r->info->mrl, URL_RDONLY);
 // same as before...
 //((URLContext*)(priv->pb.opaque))->priv_data = r->i_stream; 
     
-    if(av_open_input_stream(&avfc, &priv->pb, r->i_stream->name,
-                            priv->avif, &ap)<0) {
+//    if(av_open_input_stream(&avfc, &priv->pb, r->i_stream->name,
+//                            priv->avif, &ap)<0) {
+     if (av_open_input_file(&avfc, r->info->mrl, NULL, 0, &ap)) {
+        fnc_log(FNC_LOG_DEBUG, "[MT] Cannot open %s\n", r->info->mrl);
+        av_free(priv);
         return ERR_ALLOC;//FIXME
     }
 
+    r->private_data = priv;
     priv->avfc = avfc;
 
     if(av_find_stream_info(avfc) < 0){
+        fnc_log(FNC_LOG_DEBUG, "[MT] Cannot find streams in file %s\n",
+                r->i_stream->name);
         return ERR_ALLOC;
     }
 
@@ -223,6 +229,7 @@ static int init(Resource * r)
         AVStream *st= avfc->streams[i];
         AVCodecContext *codec= st->codec;
         trackinfo.id = i;
+        char *id = tag_from_id(codec->codec_id);
 
 // XXX: Check!
         MObject_init(MOBJECT(&props));
@@ -231,8 +238,16 @@ static int init(Resource * r)
         props.extradata = codec->extradata;
         props.extradata_len = codec->extradata_size;
         // make them pointers?
-        strncpy(props.encoding_name, tag_from_id(codec->codec_id), 11);
-
+        if (id) 
+        { 
+            strncpy(props.encoding_name, id, 11);
+            fnc_log(FNC_LOG_DEBUG, "[MT] Parsing AVStream %s\n",
+                    props.encoding_name);
+        } else {
+            fnc_log(FNC_LOG_DEBUG, "[MT] Cannot map stream id %d\n",
+                    codec->codec_id);
+            // goto err_alloc;
+        }
         switch(codec->codec_type){
             case CODEC_TYPE_AUDIO:{//alloc track?
                 // Some properties, add more?

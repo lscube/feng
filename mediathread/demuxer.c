@@ -37,10 +37,12 @@
 
 // global demuxer modules:
 extern Demuxer fnc_demuxer_sd;
+extern Demuxer fnc_demuxer_avf;
 
 // static array containing all the available demuxers:
 static Demuxer *demuxers[] = {
 	&fnc_demuxer_sd,
+        &fnc_demuxer_avf,
 	NULL
 };
 
@@ -437,7 +439,7 @@ static int find_demuxer(InputStream *i_stream)
 		for (tkn=strtok(exts, ","); tkn; tkn=strtok(NULL, ",")) {
 		    if (!strcmp(tkn, res_ext)) {
                         fnc_log(FNC_LOG_DEBUG, 
-                                "[MT] probing demuxer: extension \"%s\""
+                                "[MT] probing demuxer: extension \"%s\" "
                                 "matches \"%s\" demuxer\n", res_ext,
                                 demuxers[i]->info->name);
 		        if (demuxers[i]->probe(i_stream) == RESOURCE_OK) {
