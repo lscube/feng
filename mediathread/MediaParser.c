@@ -55,7 +55,7 @@ MediaParser *mparser_find(const char *encoding_name)
 			return media_parsers[i];
 		}
 	}
-
+        fnc_log(FNC_LOG_DEBUG, "[MT] Media Parser for %s not found\n", encoding_name);
 	return NULL;
 }
 
