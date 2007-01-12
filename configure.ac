@@ -349,62 +349,85 @@ AM_CONDITIONAL(HAVE_SOLARIS, test "x$have_solaris" = xyes)
 if ( test "x$enable_fhs23" = "xyes" ) && ( test -d /srv ) then
 	fenice_avroot_dir=/srv/$PACKAGE_NAME/avroot
 else
-	fenice_avroot_dir=$localstatedir/$PACKAGE_NAME/avroot
+	fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot)
+        fenice_avroot_dir=${fenice_avroot_dir//NONE}
 fi
 AC_SUBST(fenice_avroot_dir)
 
-fenice_max_session=$with_max_session
+fenice_max_session=$(eval echo $with_max_session)
 AC_SUBST(fenice_max_session)
 
-fenice_rtsp_port=$with_rtsp_port
+fenice_rtsp_port=$(eval echo $with_rtsp_port)
 AC_SUBST(fenice_rtsp_port)
 
-fenice_conf_file=$with_config_file
+fenice_conf_file=$(eval echo $with_config_file)
 AC_SUBST(fenice_conf_file)
 
-fenice_log_file=$with_log_file
+fenice_log_file=$(eval echo $with_log_file)
 AC_SUBST(fenice_log_file)
 
-fenice_conf_dir=$sysconfdir
+fenice_conf_dir=$(eval echo $sysconfdir)
+fenice_conf_dir=${fenice_conf_dir//NONE}
 AC_SUBST(fenice_conf_dir)
 
-fenice_docs_dir=$datadir/doc/$PACKAGE_NAME
+fenice_docs_dir=$(eval echo $datadir/doc/$PACKAGE_NAME)
 AC_SUBST(fenice_docs_dir)
 
 if test -f svnrev.h; then
 	AC_DEFINE(FENICE_SVN, 1,[Define if this is a development (subversion) tree])
 fi
 
-AC_DEFINE_UNQUOTED(FENICE_MAX_SESSION_DEFAULT, $fenice_max_session, [Define max number of RTSP incoming sessions for Fe.NG])
+AC_DEFINE_UNQUOTED(FENICE_MAX_SESSION_DEFAULT,
+                    $fenice_max_session,
+                    [Define max number of RTSP incoming sessions for Fe.NG])
 
-AC_DEFINE_UNQUOTED(FENICE_RTSP_PORT_DEFAULT, $fenice_rtsp_port, [Define default RTSP listening port])
-dnl AC_DEFINE(FENICE_RTSP_PORT_ENV, "FENICE_RTSP_PORT",[Define the name for the ENV variable for RTSP listening port])
+AC_DEFINE_UNQUOTED(FENICE_RTSP_PORT_DEFAULT,
+                    $fenice_rtsp_port,
+                    [Define default RTSP listening port])
 
-AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT, $fenice_avroot_dir, [Define default directory for Fe.NG A/V resources])
-dnl AC_DEFINE(FENICE_AVROOT_DIR_ENV, "FENICE_AVROOT_DIR",[Define the name for the ENV variable for Fe.NG avroot dir])
+AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT,
+                    $fenice_avroot_dir,
+                    [Define default directory for Fe.NG A/V resources])
 
-AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT_STR, "$fenice_avroot_dir", [Define default directory string for Fe.NG A/V resources])
-dnl AC_DEFINE(FENICE_AVROOT_DIR_STR_ENV, "FENICE_AVROOT_DIR",[Define the name for the ENV variable for Fe.NG avroot dir string])
+AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT_STR,
+                    "$fenice_avroot_dir",
+                    [Define default directory string for Fe.NG A/V resources])
 
-AC_DEFINE_UNQUOTED(FENICE_CONF_FILE_DEFAULT, $fenice_conf_file, [Define default file for Fe.NG configuration])
-dnl AC_DEFINE(FENICE_CONF_FILE_ENV, "FENICE_CONF_FILE",[Define the name for the ENV variable for Fe.NG configuration file])
+AC_DEFINE_UNQUOTED(FENICE_CONF_FILE_DEFAULT,
+                    $fenice_conf_file,
+                    [Define default file for Fe.NG configuration])
 
-AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT, $fenice_log_file, [Define default file for Fe.NG logger])
+AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT,
+                    $fenice_log_file,
+                    [Define default file for Fe.NG logger])
 
-AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT_STR, "$fenice_log_file", [Define default string for Fe.NG log file])
+AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT_STR,
+                    "$fenice_log_file",
+                    [Define default string for Fe.NG log file])
 
-AC_DEFINE_UNQUOTED(FENICE_CONF_DIR_DEFAULT, $fenice_conf_dir, [Define default directory for Fe.NG configuration])
-dnl AC_DEFINE(FENICE_CONF_DIR_ENV, "FENICE_CONF_DIR",[Define the name for the ENV variable for Fe.NG configuration dir])
+AC_DEFINE_UNQUOTED(FENICE_CONF_DIR_DEFAULT,
+                    $fenice_conf_dir,
+                    [Define default directory for Fe.NG configuration])
 
-AC_DEFINE_UNQUOTED(FENICE_CONF_PATH_DEFAULT_STR, "$fenice_conf_dir/$fenice_conf_file", [Define absolute path string for Fe.NG configuration file])
-dnl AC_DEFINE(FENICE_CONF_PATH_STR_ENV, "FENICE_CONF_PATH",[Define the name for the ENV variable for Fe.NG configuration file path string])
+AC_DEFINE_UNQUOTED(FENICE_CONF_PATH_DEFAULT_STR,
+                    "${fenice_conf_dir}/${fenice_conf_file}",
+                    [Define absolute path string for Fe.NG configuration file])
 
-dnl netembryo
-AC_DEFINE_UNQUOTED(FENICE_CERT_FILE_DEFAULT, $fenice_cert, [Define default file for Certificate (pem format)])
-AC_DEFINE_UNQUOTED(FENICE_CERT_FILE_DEFAULT_STR, "$fenice_cert", [Define default string file for Certificate (pem format])
-AC_DEFINE_UNQUOTED(FENICE_STATE_DIR, $fenice_state_dir, [Define default dir for Certificate (pem format)])
-AC_DEFINE_UNQUOTED(FENIC_STATE_DIR_STR, "$fenice_state_dir", [Define default string dir for Certificate (pem format)])
+dnl netembryo TO BE REMOVED!
+AC_DEFINE_UNQUOTED(FENICE_CERT_FILE_DEFAULT,
+                    $fenice_cert,
+                    [Define default file for Certificate (pem format)])
+AC_DEFINE_UNQUOTED(FENICE_CERT_FILE_DEFAULT_STR,
+                    "$fenice_cert",
+                    [Define default string file for Certificate (pem format])
 
+AC_DEFINE_UNQUOTED(FENICE_STATE_DIR,
+                    $fenice_state_dir,
+                    [Define default dir for Certificate (pem format)])
+
+AC_DEFINE_UNQUOTED(FENIC_STATE_DIR_STR,
+                    "$fenice_state_dir",
+                    [Define default string dir for Certificate (pem format)])
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([mediathread/Makefile])
@@ -436,7 +459,7 @@ AC_OUTPUT
 AC_MSG_NOTICE([config files successfully generated!
  
 Fe.NG Install prefix .......... : $prefix
-Fe.NG Binary path ............. : $exec_prefix/bin/feng
+Fe.NG Binary path ............. : $(eval echo $exec_prefix/bin/feng)
 Fe.NG Configuration path ...... : $fenice_conf_dir
 Fe.NG Log File ................ : $fenice_log_file
 Fe.NG Multimedia Files root ... : $fenice_avroot_dir
@@ -454,5 +477,4 @@ $dump_msg
  'make' will now compile Fe.NG and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.
 ])
-dnl
 
