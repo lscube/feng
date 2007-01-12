@@ -79,7 +79,7 @@ InputStream *istream_open(char *mrl)
         is->mmap_len = 0;
 #endif
 	if(open_mrl(mrl, is)!=ERR_NOERROR) {
-		fnc_log(FNC_LOG_ERR,"mrl not valid\n");
+		fnc_log(FNC_LOG_ERR," %s is not a valid mrl\n", mrl);
 		free(is);
 		return NULL;
 	}
