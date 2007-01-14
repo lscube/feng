@@ -47,6 +47,8 @@
 #define my_free(x) free(x)
 #endif
 
+//FIXME this code should be killed once we got time
+
 //! \return 0 if the URL is valid, 1 if the URL is not valid, -1 on internal error (some buffer too small)
 int parse_url(const char *url, char *server, size_t server_len,
 	      unsigned short *port, char *file_name, size_t file_name_len)
