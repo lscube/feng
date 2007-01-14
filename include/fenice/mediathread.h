@@ -46,10 +46,31 @@ typedef struct __MT_RESOURCE_ITEM {
 } mt_resource_item;
 */
 
+typedef enum __MT_EVENT_ID {
+	MT_EV_NOP,		//Fake event do nothing. ARGS= NULL;
+	MT_EV_BUFFER_LOW,	//Buffer needs to be filled. ARGS= OMS_buffer*, Track*
+	MT_EV_DATA_EOF,		//Track has no more data. ARGS= Track*
+	MT_EV_DATA_BOUND	//Track reached request bound. ARGS= Track*
+} mt_event_id;
+
+typedef struct __MT_EVENT_ITEM {
+	mt_event_id id;
+//	void *sender;
+	void **args;
+} mt_event_item;
+
 typedef struct __MT_EXCL_INS {
 	InputStream *i_stream;
 	struct __MT_EXCL_INS *next;
 } mt_excl_ins;
+
+void *mediathread(void *arg);
+
+int mt_add_event(mt_event_id, void **);
+inline int mt_process_event(mt_event_item *);
+inline void mt_disable_event(mt_event_item *);
+inline void mt_dispose_event(mt_event_item *);
+inline void mt_dispose_event_args(mt_event_id, void **);
 
 int mt_add_track(Track *);
 int mt_rem_track(Track *);
