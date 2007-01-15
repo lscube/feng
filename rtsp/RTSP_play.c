@@ -166,6 +166,21 @@ int RTSP_play(RTSP_buffer * rtsp)
         send_reply(400, 0, rtsp);    /* bad request */
         return ERR_NOERROR;
     }
+    // Pick the session matching the right session_id
+#if 0 
+    for (rtsp_sess = rtsp->session_list; rtsp_sess != NULL; rtsp_sess++)
+        if (rtsp_sess->session_id == session_id) break;
+    if (rtsp_sess == NULL) {
+    // XXX Fenice supports single session atm
+#else
+    if (((rtsp_sess = rtsp->session_list) == NULL) ||
+        (rtsp_sess->session_id != session_id))
+    {
+#endif
+        send_reply(454, 0, rtsp); // Session not found
+        return ERR_NOERROR;
+    }
+
     /* Extract the URL */
     if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
         send_reply(400, 0, rtsp);    /* bad request */
@@ -214,95 +229,63 @@ int RTSP_play(RTSP_buffer * rtsp)
     q = strchr(object, '!');
     if (q == NULL) {
         // PLAY <file.sd>
-        rtsp_sess = rtsp->session_list;
-        if (rtsp_sess != NULL) {
-            if (rtsp_sess->session_id == session_id) {
-                // Search for the RTP session
-                for (rtp_sess = rtsp_sess->rtp_session;
-                     rtp_sess != NULL;
-                     rtp_sess = rtp_sess->next) {
-                    if (rtp_sess->current_media->description.priority == 1) {
-                        // Start playing all the presentation
-                        if (!rtp_sess->started) {
-                            // Start new
-                            if (schedule_start (rtp_sess->sched_id, &args) ==
+            // Search for the RTP session
+            for (rtp_sess = rtsp_sess->rtp_session;
+                 rtp_sess != NULL;
+                 rtp_sess = rtp_sess->next) {
+                if (rtp_sess->current_media->description.priority == 1) {
+                // Start playing all the presentation
+                    if (!rtp_sess->started) {
+                        // Start new
+                        if (schedule_start (rtp_sess->sched_id, &args) ==
                                 ERR_ALLOC)
-                                return ERR_ALLOC;
+                            return ERR_ALLOC;
+                    } else {
+                        // Resume existing
+                        if (!rtp_sess->pause) {
+                        //  fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
                         } else {
-                            // Resume existing
-                            if (!rtp_sess->pause) {
-                                //              fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
-                            } else {
                                 schedule_resume (rtp_sess->sched_id, &args);
-                            }
                         }
                     }
                 }
+            }
+    } else {
+        if (url_is_file) {
+            // PLAY <file.sd>!<file>
+                // Search for the RTP session
+            for (rtp_sess = rtsp_sess->rtp_session; rtp_sess != NULL;
+                 rtp_sess = rtp_sess->next) {
+                if (strcmp (rtp_sess->current_media->filename,
+                            q + 1) == 0) {
+                    break;
+                }
+            }
+            if (rtp_sess != NULL) {
+                // FOUND. Start Playing
+                if (schedule_start (rtp_sess->sched_id, &args) == ERR_ALLOC)
+                    return ERR_ALLOC;
             } else {
                 send_reply(454, 0, rtsp);    // Session not found
                 return ERR_NOERROR;
             }
         } else {
-            send_reply(415, 0, rtsp);    // Internal server error
-            return ERR_GENERIC;
-        }
-    } else {
-        if (url_is_file) {
-            // PLAY <file.sd>!<file>                        
-            rtsp_sess = rtsp->session_list;
-            if (rtsp_sess != NULL) {
-                if (rtsp_sess->session_id != session_id) {
-                    send_reply(454, 0, rtsp);    // Session not found
-                    return ERR_NOERROR;
-                }
-                // Search for the RTP session
-                for (rtp_sess = rtsp_sess->rtp_session; rtp_sess != NULL;
-                     rtp_sess = rtp_sess->next) {
-                    if (strcmp
-                        (rtp_sess->current_media->filename,
-                         q + 1) == 0) {
-                        break;
-                    }
-                }
-                if (rtp_sess != NULL) {
-                    // FOUND. Start Playing
-                    if (schedule_start (rtp_sess->sched_id, &args) == ERR_ALLOC)
+            // PLAY <file.sd>!<aggr>
+                // It's an aggregate control. Play all the RTPs
+            for (rtp_sess = rtsp_sess->rtp_session; rtp_sess != NULL;
+                 rtp_sess = rtp_sess->next) {
+                if (!rtp_sess->started) {
+                    // Start new
+                    if (schedule_start(rtp_sess->sched_id, &args) == ERR_ALLOC)
                         return ERR_ALLOC;
                 } else {
-                    send_reply(454, 0, rtsp);    // Session not found
-                    return ERR_NOERROR;
-                }
-            } else {
-                send_reply(415, 0, rtsp);    // Internal server error
-                return ERR_GENERIC;
-            }
-        } else {
-            // PLAY <file.sd>!<aggr>
-            rtsp_sess = rtsp->session_list;
-            if (rtsp_sess != NULL) {
-                if (rtsp_sess->session_id != session_id) {
-                    send_reply(454, 0, rtsp);    // Session not found
-                    return ERR_NOERROR;
-                }
-                // It's an aggregate control. Play all the RTPs
-                for (rtp_sess = rtsp_sess->rtp_session; rtp_sess != NULL;
-                     rtp_sess = rtp_sess->next) {
-                    if (!rtp_sess->started) {
-                        // Start new
-                        if (schedule_start(rtp_sess->sched_id, &args) == ERR_ALLOC)
-                            return ERR_ALLOC;
+                    // Resume existing
+                    if (!rtp_sess->pause) {
+                    //fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
                     } else {
-                        // Resume existing
-                        if (!rtp_sess->pause) {
-                        //fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
-                        } else {
-                            schedule_resume(rtp_sess->sched_id, &args);
-                        }
+                        schedule_resume(rtp_sess->sched_id, &args);
                     }
                 }
-            } else {
-                send_reply(415, 0, rtsp);    // Internal server error
-                return ERR_GENERIC;
             }
         }
     }
