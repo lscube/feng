@@ -74,7 +74,7 @@ int sdp_session_descr(char *n, char *descr, size_t descr_size)
 	//if (getnameinfo((struct sockaddr *)&localaddr, localaddr_len, localhostname, sizeof(localhostname), NULL, 0, 0))
 	//	return ERR_INPUT_PARAM; // could not get address name or IP
 	if(get_local_hostname(localhostname,sizeof(localhostname))) {
-		fnc_log(FNC_LOG_ERR, "[SDP2] get_local_hostname\n");
+		fnc_log(FNC_LOG_ERR, "[SDP2] get_local_hostname failed\n");
 		return ERR_INPUT_PARAM; // could not get address name or IP
 	}
 	// v=
