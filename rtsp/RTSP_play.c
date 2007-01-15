@@ -57,8 +57,8 @@ int RTSP_play(RTSP_buffer * rtsp)
     unsigned short port;
     char *p = NULL, *q = NULL;
     long int session_id;
-    RTSP_session *ptr;
-    RTP_session *ptr2;
+    RTSP_session *rtsp_sess;
+    RTP_session *rtp_sess;
     play_args args;
     int time_taken = 0;
 
@@ -214,26 +214,26 @@ int RTSP_play(RTSP_buffer * rtsp)
     q = strchr(object, '!');
     if (q == NULL) {
         // PLAY <file.sd>
-        ptr = rtsp->session_list;
-        if (ptr != NULL) {
-            if (ptr->session_id == session_id) {
+        rtsp_sess = rtsp->session_list;
+        if (rtsp_sess != NULL) {
+            if (rtsp_sess->session_id == session_id) {
                 // Search for the RTP session
-                for (ptr2 = ptr->rtp_session;
-                     ptr2 != NULL;
-                     ptr2 = ptr2->next) {
-                    if (ptr2->current_media->description.priority == 1) {
+                for (rtp_sess = rtsp_sess->rtp_session;
+                     rtp_sess != NULL;
+                     rtp_sess = rtp_sess->next) {
+                    if (rtp_sess->current_media->description.priority == 1) {
                         // Start playing all the presentation
-                        if (!ptr2->started) {
+                        if (!rtp_sess->started) {
                             // Start new
-                            if (schedule_start (ptr2->sched_id, &args) ==
+                            if (schedule_start (rtp_sess->sched_id, &args) ==
                                 ERR_ALLOC)
                                 return ERR_ALLOC;
                         } else {
                             // Resume existing
-                            if (!ptr2->pause) {
+                            if (!rtp_sess->pause) {
                                 //              fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
                             } else {
-                                schedule_resume (ptr2->sched_id, &args);
+                                schedule_resume (rtp_sess->sched_id, &args);
                             }
                         }
                     }
@@ -249,24 +249,24 @@ int RTSP_play(RTSP_buffer * rtsp)
     } else {
         if (url_is_file) {
             // PLAY <file.sd>!<file>                        
-            ptr = rtsp->session_list;
-            if (ptr != NULL) {
-                if (ptr->session_id != session_id) {
+            rtsp_sess = rtsp->session_list;
+            if (rtsp_sess != NULL) {
+                if (rtsp_sess->session_id != session_id) {
                     send_reply(454, 0, rtsp);    // Session not found
                     return ERR_NOERROR;
                 }
                 // Search for the RTP session
-                for (ptr2 = ptr->rtp_session; ptr2 != NULL;
-                     ptr2 = ptr2->next) {
+                for (rtp_sess = rtsp_sess->rtp_session; rtp_sess != NULL;
+                     rtp_sess = rtp_sess->next) {
                     if (strcmp
-                        (ptr2->current_media->filename,
+                        (rtp_sess->current_media->filename,
                          q + 1) == 0) {
                         break;
                     }
                 }
-                if (ptr2 != NULL) {
+                if (rtp_sess != NULL) {
                     // FOUND. Start Playing
-                    if (schedule_start (ptr2->sched_id, &args) == ERR_ALLOC)
+                    if (schedule_start (rtp_sess->sched_id, &args) == ERR_ALLOC)
                         return ERR_ALLOC;
                 } else {
                     send_reply(454, 0, rtsp);    // Session not found
@@ -278,25 +278,25 @@ int RTSP_play(RTSP_buffer * rtsp)
             }
         } else {
             // PLAY <file.sd>!<aggr>
-            ptr = rtsp->session_list;
-            if (ptr != NULL) {
-                if (ptr->session_id != session_id) {
+            rtsp_sess = rtsp->session_list;
+            if (rtsp_sess != NULL) {
+                if (rtsp_sess->session_id != session_id) {
                     send_reply(454, 0, rtsp);    // Session not found
                     return ERR_NOERROR;
                 }
                 // It's an aggregate control. Play all the RTPs
-                for (ptr2 = ptr->rtp_session; ptr2 != NULL;
-                     ptr2 = ptr2->next) {
-                    if (!ptr2->started) {
+                for (rtp_sess = rtsp_sess->rtp_session; rtp_sess != NULL;
+                     rtp_sess = rtp_sess->next) {
+                    if (!rtp_sess->started) {
                         // Start new
-                        if (schedule_start(ptr2->sched_id, &args) == ERR_ALLOC)
+                        if (schedule_start(rtp_sess->sched_id, &args) == ERR_ALLOC)
                             return ERR_ALLOC;
                     } else {
                         // Resume existing
-                        if (!ptr2->pause) {
+                        if (!rtp_sess->pause) {
                         //fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
                         } else {
-                            schedule_resume(ptr2->sched_id, &args);
+                            schedule_resume(rtp_sess->sched_id, &args);
                         }
                     }
                 }
@@ -308,7 +308,7 @@ int RTSP_play(RTSP_buffer * rtsp)
     }
 
     fnc_log(FNC_LOG_INFO, "PLAY %s RTSP/1.0 ", url);
-    send_play_reply(rtsp, object, ptr);
+    send_play_reply(rtsp, object, rtsp_sess);
     // See User-Agent 
     if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
         char cut[strlen(p)];
