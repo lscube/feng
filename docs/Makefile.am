@@ -4,7 +4,10 @@ man_MANS = fenice.1
 
 EXTRA_DIST = 	$(man_MANS)
 
-all:
+all: $(man_MANS).ps.gz $(man_MANS).pdf $(man_MANS).html
+
+
+$(man_MANS).ps.gz:
 	@which groff >/dev/null 2>&1; \
 	if test $$? == 0 ; then \
 		echo -n "Creating Postscript..."; \
@@ -14,6 +17,8 @@ all:
 	else \
 		echo "ERROR! groff is not installed! I can't create PS file from man page!"; \
 	fi
+
+$(man_MANS).pdf:
 	@which ps2pdf >/dev/null 2>&1; \
 	if test $$? == 0 ; then \
 		echo -n "Creating Pdf..."; \
@@ -22,6 +27,8 @@ all:
 	else \
 		echo "ERROR! ps2pdf is not installed! I can't create PDF file from man page!"; \
 	fi
+
+$(man_MANS).html:
 	@which groff >/dev/null 2>&1; \
 	if test $$? == 0 ; then \
 		echo -n "Creating HTML..."; \
