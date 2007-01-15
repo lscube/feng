@@ -108,18 +108,6 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_PARSE;
 	}
-	p = strrchr(object, '.');
-	valid_url = 0;
-	if (p == NULL) {
-		send_reply(415, 0, rtsp);	/* Unsupported media type */
-		return ERR_PARSE;
-	} else {
-		valid_url = is_supported_url(p);
-	}
-	if (!valid_url) {
-		send_reply(415, 0, rtsp);	/* Unsupported media type */
-		return ERR_PARSE;
-	}
 	// Session
 	if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
 		if (sscanf(p, "%254s %ld", trash, &session_id) != 2) {
