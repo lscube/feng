@@ -67,7 +67,7 @@ int sdp_session_descr(char *n, char *descr, size_t descr_size)
 	fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s\n", n);
 	if ( !(r_descr=r_descr_get(prefs_get_serv_root(), n)) )
 		return ERR_NOT_FOUND;
-		
+
 	// get name of localhost
 	//if (getsockname(net_fd, (struct sockaddr *)&localaddr, &localaddr_len) < 0)
 	//	return ERR_INPUT_PARAM; // given socket is not valid
@@ -93,7 +93,7 @@ int sdp_session_descr(char *n, char *descr, size_t descr_size)
 	DESCRCAT(g_strlcat(cursor, localhostname, size_left))
 //	DESCRCAT(g_strlcat(cursor, get_address(), size_left))
    	DESCRCAT(g_strlcat(cursor, SDP2_EL, size_left))
-	
+
 	// s=
 	if (r_descr_name(r_descr))
 		DESCRCAT(g_snprintf(cursor, size_left, "s=%s"SDP2_EL, r_descr_name(r_descr)))
@@ -146,7 +146,7 @@ int sdp_session_descr(char *n, char *descr, size_t descr_size)
 					break;
 			}
 		}
-		
+
 	// media
 	m_descrs = r_descr_get_media(r_descr);
 
@@ -154,9 +154,9 @@ int sdp_session_descr(char *n, char *descr, size_t descr_size)
 //		printf("*** %d\n", i);
 		sdp_media_descr(r_descr, array_data(m_descrs)[i], cursor, size_left);
 	}
-   	
+
 	fnc_log(FNC_LOG_INFO, "\n[SDP2] description:\n%s\n", descr);
-	
+
 	return ERR_NOERROR;
 }
 #undef DESCRCAT
