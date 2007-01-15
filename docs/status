@@ -13,5 +13,5 @@ Containers
     Name        Status          Reference
 -   sd          To Be Updated   internal    Native configuration, 
                                             to be extended to support mappings
--   mov/mp4     Inexistent      ISO/IEC     14496-14
--   mkv         Inexistent      website     http://www.matroska.org/technical/specs/index.html
+-   mov/mp4     WIP             ISO/IEC     14496-14
+-   mkv         WIP             website     http://www.matroska.org/technical/specs/index.html
