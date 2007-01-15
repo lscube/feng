@@ -103,6 +103,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     // Parse the input message
 
     /* Get the URL */
+    fnc_log(FNC_LOG_DEBUG, "%s\n", rtsp->in_buffer);
     if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
         send_reply(400, 0, rtsp);    /* bad request */
         return ERR_NOERROR;
@@ -120,6 +121,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         default:
             break;
     }
+
     if (strcmp(server, prefs_get_hostname()) != 0) {
         /* Currently this feature is disabled. */
         /* wrong server name */
@@ -136,7 +138,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         send_reply(403, 0, rtsp);    /* Forbidden */
         return ERR_NOERROR;
     }
-
+// nonsense
+#if 0
     if (!(p = strrchr(object, '.'))) {    // if filename is without extension
         send_reply(415, 0, rtsp);    /* Unsupported media type */
         return ERR_NOERROR;
@@ -144,14 +147,18 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         send_reply(415, 0, rtsp);    /* Unsupported media type */
         return ERR_NOERROR;
     }
-    if (!(p = strchr(object, '!'))) {    //if '!' is not present then a file has not been specified
+#endif
+    if (!(p = strchr(object, '!'))) {
+    //if '!' is not present then a file has not been specified
         send_reply(500, 0, rtsp);    /* Internal server error */
         return ERR_NOERROR;
 #if ENABLE_MEDIATHREAD
     } else {
         // SETUP resource!trackname
-        *p = '\0';
         strcpy (trackname, p + 1);
+        // XXX Not really nice...
+        while (object != p) if (*--p == '/') break;
+        *p = '\0';
     }
 #else
 // TODO: delete mediainfo legacy
@@ -189,16 +196,20 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 #endif
 
 #if ENABLE_MEDIATHREAD
+    // it should parse the request giving us object!trackname
     if (!rtsp->resource) {
         if (!(rtsp->resource = mt_resource_open(prefs_get_serv_root(),
                                                 object))) {
-            send_reply(404, 0, rtsp);    //TODO: Not found or Internal server error?
+            send_reply(404, 0, rtsp);//TODO: Not found or Internal server error?
+            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", object);
             return ERR_NOERROR;
         }
     }
 
     if (!(track_sel = r_open_tracks(rtsp->resource, trackname, NULL))) {
         send_reply(404, 0, rtsp);    // Not found
+        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
+                trackname, object);
         return ERR_NOERROR;
     }
 
