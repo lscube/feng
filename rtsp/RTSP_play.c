@@ -77,48 +77,8 @@ int RTSP_play(RTSP_buffer * rtsp)
     args.playback_time_valid = 0;
     args.start_time_valid = 0;
     if ((p = strstr(rtsp->in_buffer, HDR_RANGE)) != NULL) {
-        q = strstr(p, "npt");
-        if (q == NULL) {
-            q = strstr(p, "smpte");
-            if (q == NULL) {
-                q = strstr(p, "clock");
-                if (q == NULL) {
-                    // No specific format. Assuming NeMeSI format.                                  
-                    if ((q = strstr(p, "time")) == NULL) {
-                        // Hour
-                        double t;
-                        q = strstr(p, ":");
-                        sscanf(q + 1, "%lf", &t);
-                        args.start_time = t * 60 * 60;
-                        // Min
-                        q = strstr(q + 1, ":");
-                        sscanf(q + 1, "%lf", &t);
-                        args.start_time += (t * 60);
-                        // Sec
-                        q = strstr(q + 1, ":");
-                        sscanf(q + 1, "%lf", &t);
-                        args.start_time += t;
-
-                        args.start_time_valid = 1;
-                    } else {
-                        args.start_time = 0;
-                        args.end_time = 0;
-                        time_taken = 1;
-                    }
-                } else {
-                    // FORMAT: clock
-                    // Currently unsupported. Using default.
-                    args.start_time = 0;
-                    args.end_time = 0;
-                }
-            } else {
-                // FORMAT: smpte                        
-                // Currently unsupported. Using default.
-                args.start_time = 0;
-                args.end_time = 0;
-            }
-        } else {
-            // FORMATO: npt
+        if ((q = strstr(p, "npt")) != NULL) {
+            // FORMAT: npt
             if ((q = strchr(q, '=')) == NULL) {
                 send_reply(400, 0, rtsp);    /* Bad Request */
                 return ERR_NOERROR;
@@ -131,7 +91,45 @@ int RTSP_play(RTSP_buffer * rtsp)
             if (sscanf(q + 1, "%f", &(args.end_time)) != 1) {
                 args.end_time = 0;
             }
+        } else
+
+        if ((q = strstr(p, "smpte")) != NULL) {
+        // FORMAT: smpte                        
+            // Currently unsupported. Using default.
+            args.start_time = 0;
+            args.end_time = 0;
+        } else
+
+        if ((q = strstr(p, "clock"))!= NULL) {
+        // FORMAT: clock
+            // Currently unsupported. Using default.
+            args.start_time = 0;
+            args.end_time = 0;
+        } else
+        // No specific format. Assuming NeMeSI format.
+        if ((q = strstr(p, "time")) == NULL) {
+            // Hour
+            double t;
+            q = strstr(p, ":");
+            sscanf(q + 1, "%lf", &t);
+            args.start_time = t * 60 * 60;
+            // Min
+            q = strstr(q + 1, ":");
+            sscanf(q + 1, "%lf", &t);
+            args.start_time += (t * 60);
+            // Sec
+            q = strstr(q + 1, ":");
+            sscanf(q + 1, "%lf", &t);
+            args.start_time += t;
+
+            args.start_time_valid = 1;
+        } else {
+            // no range defined but start time expressed?
+            args.start_time = 0;
+            args.end_time = 0;
+            time_taken = 1;
         }
+
         if ((q = strstr(p, "time")) == NULL) {
             // Start playing immediately
             memset(&(args.playback_time), 0,
@@ -175,10 +173,8 @@ int RTSP_play(RTSP_buffer * rtsp)
     }
     /* Validate the URL */
 
-
-
-    switch (parse_url
-        (url, server, sizeof(server), &port, object, sizeof(object))) {
+    switch (parse_url(url, server, sizeof(server), &port, object,
+            sizeof(object))) {
     case 1:        // bad request
         send_reply(400, 0, rtsp);
         return ERR_NOERROR;
@@ -190,11 +186,12 @@ int RTSP_play(RTSP_buffer * rtsp)
     default:
         break;
     }
-    if (strcmp(server, prefs_get_hostname()) != 0) {    /* Currently this feature is disabled. */
-        /* wrong server name */
-        //      fnc_log(FNC_LOG_ERR,"PLAY request specified an unknown server name.\n");
-        //      send_reply(404, 0 , rtsp); /* Not Found */
-        //      return ERR_NOERROR;
+    if (strcmp(server, prefs_get_hostname()) != 0) {
+    /* Currently this feature is disabled. */
+    /* wrong server name */
+    // fnc_log(FNC_LOG_ERR,"PLAY request specified an unknown server name.\n");
+    // send_reply(404, 0 , rtsp); /* Not Found */
+    // return ERR_NOERROR;
     }
     if (strstr(object, "../")) {
         /* disallow relative paths outside of current directory. */
@@ -221,29 +218,22 @@ int RTSP_play(RTSP_buffer * rtsp)
         if (ptr != NULL) {
             if (ptr->session_id == session_id) {
                 // Search for the RTP session
-                for (ptr2 = ptr->rtp_session; ptr2 != NULL;
+                for (ptr2 = ptr->rtp_session;
+                     ptr2 != NULL;
                      ptr2 = ptr2->next) {
-                    if (ptr2->current_media->description.
-                        priority == 1) {
+                    if (ptr2->current_media->description.priority == 1) {
                         // Start playing all the presentation
                         if (!ptr2->started) {
                             // Start new
-                            if (schedule_start
-                                (ptr2->sched_id,
-                                 &args) ==
+                            if (schedule_start (ptr2->sched_id, &args) ==
                                 ERR_ALLOC)
-                                return
-                                    ERR_ALLOC;
-
+                                return ERR_ALLOC;
                         } else {
                             // Resume existing
                             if (!ptr2->pause) {
                                 //              fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
                             } else {
-                                schedule_resume
-                                    (ptr2->
-                                     sched_id,
-                                     &args);
+                                schedule_resume (ptr2->sched_id, &args);
                             }
                         }
                     }
@@ -276,9 +266,7 @@ int RTSP_play(RTSP_buffer * rtsp)
                 }
                 if (ptr2 != NULL) {
                     // FOUND. Start Playing
-                    if (schedule_start
-                        (ptr2->sched_id,
-                         &args) == ERR_ALLOC)
+                    if (schedule_start (ptr2->sched_id, &args) == ERR_ALLOC)
                         return ERR_ALLOC;
                 } else {
                     send_reply(454, 0, rtsp);    // Session not found
@@ -301,18 +289,14 @@ int RTSP_play(RTSP_buffer * rtsp)
                      ptr2 = ptr2->next) {
                     if (!ptr2->started) {
                         // Start new
-                        if (schedule_start
-                            (ptr2->sched_id,
-                             &args) == ERR_ALLOC)
+                        if (schedule_start(ptr2->sched_id, &args) == ERR_ALLOC)
                             return ERR_ALLOC;
                     } else {
                         // Resume existing
                         if (!ptr2->pause) {
-                            //              fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
+                        //fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
                         } else {
-                            schedule_resume(ptr2->
-                                    sched_id,
-                                    &args);
+                            schedule_resume(ptr2->sched_id, &args);
                         }
                     }
                 }
