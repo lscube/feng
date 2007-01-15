@@ -43,12 +43,14 @@
 #include "sdp_get_version.c"
 
 
-#define DESCRCAT(x) do { \
-					 if ( (size_left -= x) < 0) \
-					 	return ERR_INPUT_PARAM; \
-					 	else cursor=descr+descr_size-size_left; \
-					 } while(0);
-int sdp_session_descr(char *n, char *descr, size_t descr_size)
+#define DESCRCAT(x) \
+    do { \
+        if ( (size_left -= x) < 0) \
+	    return ERR_INPUT_PARAM; \
+    	else cursor=descr+descr_size-size_left; \
+    } while(0);
+
+int sdp_session_descr(char *name, char *descr, size_t descr_size)
 {
 	/*x-x*/
 	//struct sockaddr_storage localaddr;
@@ -64,8 +66,8 @@ int sdp_session_descr(char *n, char *descr, size_t descr_size)
 //	MediaDescrList m_list;
 	guint i;
 	
-	fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s\n", n);
-	if ( !(r_descr=r_descr_get(prefs_get_serv_root(), n)) )
+	fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s\n", name);
+	if ( !(r_descr=r_descr_get(prefs_get_serv_root(), name)) )
 		return ERR_NOT_FOUND;
 
 	// get name of localhost
@@ -133,7 +135,7 @@ int sdp_session_descr(char *n, char *descr, size_t descr_size)
 	// k=
 	// a=
 	// control attribute. We should look if aggregate metod is supported?
-	DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s"SDP2_EL, n))
+	DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s"SDP2_EL, name))
 	// other private data
 	if ( (sdp_private=r_descr_sdp_private(r_descr)) )
 		for (sdp_private = list_first(sdp_private); sdp_private; sdp_private = list_next(sdp_private)) {
