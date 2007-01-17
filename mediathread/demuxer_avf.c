@@ -62,14 +62,17 @@ Demuxer fnc_demuxer_avf =
 
 typedef struct id_tag {
     const int id;
+    const int pt;
     const char tag[11];
 } id_tag;
 
+
+//FIXME this should be simplified!
 const id_tag id_tags[] = {
-   { CODEC_ID_MPEG1VIDEO, "MPV" },
-   { CODEC_ID_MPEG2VIDEO, "MPV" },
-   { CODEC_ID_MP3, "MPA"},
-   { CODEC_ID_NONE, "NONE"} //XXX ...
+   { CODEC_ID_MPEG1VIDEO, 32, "MPV" },
+   { CODEC_ID_MPEG2VIDEO, 32, "MPV" },
+   { CODEC_ID_MP3, 14, "MPA"},
+   { CODEC_ID_NONE, 0, "NONE"} //XXX ...
 };
 
 typedef struct lavf_priv{
@@ -92,6 +95,16 @@ static const char *tag_from_id(int id)
     return NULL;
 }
 
+static int pt_from_id(int id)
+{
+    id_tag *tags = id_tags;
+    while (tags->id != CODEC_ID_NONE) {
+        if (tags->id == id)
+            return tags->pt;
+        tags++;
+    } 
+    return 0;
+}
 #if 0 //FIXME
 static int fnc_open(URLContext *h, const char *filename, int flags){
     return 0;
@@ -195,8 +208,7 @@ static int init(Resource * r)
 //                            priv->avif, &ap)<0) {
      if (av_open_input_file(&avfc, r->info->mrl, NULL, 0, &ap)) {
         fnc_log(FNC_LOG_DEBUG, "[MT] Cannot open %s\n", r->info->mrl);
-        av_free(priv);
-        return ERR_ALLOC;//FIXME
+        goto err_alloc;
     }
 
     r->private_data = priv;
@@ -205,7 +217,7 @@ static int init(Resource * r)
     if(av_find_stream_info(avfc) < 0){
         fnc_log(FNC_LOG_DEBUG, "[MT] Cannot find streams in file %s\n",
                 r->i_stream->name);
-        return ERR_ALLOC;
+        goto err_alloc;
     }
 
     MObject_init(MOBJECT(&trackinfo));
@@ -241,42 +253,48 @@ static int init(Resource * r)
         if (id) 
         { 
             strncpy(props.encoding_name, id, 11);
+            props.payload_type = pt_from_id(codec->codec_id);
             fnc_log(FNC_LOG_DEBUG, "[MT] Parsing AVStream %s\n",
                     props.encoding_name);
         } else {
             fnc_log(FNC_LOG_DEBUG, "[MT] Cannot map stream id %d\n",
                     codec->codec_id);
-            // goto err_alloc;
+            goto err_alloc;
         }
         switch(codec->codec_type){
             case CODEC_TYPE_AUDIO:{//alloc track?
+                props.media_type       = MP_audio;
                 // Some properties, add more?
                 props.bit_rate         = codec->bit_rate;
                 props.audio_channels   = codec->channels;
                 // Make props an int...
                 props.sample_rate      = codec->sample_rate;
                 props.bit_per_sample   = codec->bits_per_sample;
+                snprintf(trackinfo.name, sizeof(trackinfo.name), "%d", i);
                 if (!(track = add_track(r, &trackinfo, &props)))
-                    return ERR_ALLOC;
+                    goto err_alloc;
             break;}
             case CODEC_TYPE_VIDEO:{//alloc track?
+                props.media_type   = MP_video;
                 props.frame_rate   = av_q2d(st->r_frame_rate); //XXX check
                 props.AspectRatio  = codec->width * 
                                       codec->sample_aspect_ratio.num /
                                       (float)(codec->height *
                                               codec->sample_aspect_ratio.den);
 // addtrack must init the parser, the parser may need the extradata
+                snprintf(trackinfo.name,sizeof(trackinfo.name),"%d",i);
                 if (!(track = add_track(r, &trackinfo, &props)))
-		    return ERR_ALLOC;
-            break;}
+		    goto err_alloc;
+                break;}
         }
     }
 
-//Selection infrastructure missing...
-
 //    return ERR_ALLOC;
-
     return RESOURCE_OK;
+
+err_alloc:
+    av_freep(&priv);
+    return ERR_ALLOC;
 }
 
 static int read_packet(Resource * r)
@@ -333,7 +351,7 @@ static int read_packet(Resource * r)
     return ret;
 }
 
-static int seek(Resource * r, long int time_msec)
+static int seek(Resource * r, int64_t time_msec)
 {
 //XXX check the timebase....
     lavf_priv_t *priv = r->private_data;

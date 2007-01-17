@@ -178,7 +178,7 @@ typedef struct __DEMUXER {
 	int (*probe)(InputStream *);
 	int (*init)(Resource *);
 	int (*read_packet)(Resource *);
-	int (*seek)(Resource *, long int time_sec);
+	int (*seek)(Resource *, int64_t time_sec);
 	int (*uninit)(Resource *);
 	//...
 } Demuxer;
