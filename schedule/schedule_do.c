@@ -73,7 +73,7 @@ void schedule_do(int sig)
 do {
 #endif    
 #ifdef SELECTED    
-do{
+do {
     t.tv_sec=0;
     t.tv_usec=26122;
     FD_ZERO(&rs);
@@ -91,45 +91,44 @@ do{
                 gettimeofday(&now,NULL);
                 mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
 
-                if (mnow >= sched[i].rtp_session->current_media->mstart) {
-                    if (mnow - sched[i].rtp_session->mprev_tx_time >=
+                if (mnow >= sched[i].rtp_session->current_media->mstart &&
+                    mnow - sched[i].rtp_session->mprev_tx_time >=
                         sched[i].rtp_session->current_media->description.pkt_len) 
-                    {
+                {
 
-                        stream_change(sched[i].rtp_session,
-                            change_check(sched[i].rtp_session));
+                    stream_change(sched[i].rtp_session,
+                        change_check(sched[i].rtp_session));
 
-                        RTCP_handler(sched[i].rtp_session);
-                        /*if RTCP_handler return ERR_GENERIC what do i have to do?*/
+                    RTCP_handler(sched[i].rtp_session);
+                /*if RTCP_handler return ERR_GENERIC what do i have to do?*/
 
-                        // Send an RTP packet
-                        res = sched[i].play_action(sched[i].rtp_session);
-                        if (res != ERR_NOERROR) {
-                            if (res==ERR_EOF) {
-                                if((sched[i].rtp_session)->current_media->description.msource==live){
+                // Send an RTP packet
+                    res = sched[i].play_action(sched[i].rtp_session);
+                    switch (res) {
+                        case ERR_NOERROR: // All fine
+                            break;
+                        case ERR_EOF:
+                            if(sched[i].rtp_session->current_media->description.msource==live) {
                                     fnc_log(FNC_LOG_WARN,"Pipe empty!\n");
-                                } else {
-                                        fnc_log(FNC_LOG_INFO,"Stream Finished\n");
-                                        schedule_stop(i);
-                                }
-                            }
-                            else if(res==ERR_ALLOC) {
-                                fnc_log(FNC_LOG_FATAL,"Upss, FATAL ERROR ALLOC!!\n");
+                            } else {
+                                    fnc_log(FNC_LOG_INFO,"Stream Finished\n");
                                     schedule_stop(i);
                             }
-#if DEBUG
-                            else
-                                fnc_log(FNC_LOG_WARN,"Packet Lost\n");
-#endif
-                                /*continue;*/
-                        }
-                        sched[i].rtp_session->mprev_tx_time
-                            += sched[i].rtp_session->current_media->description.pkt_len;
-                        }
+                            break;
+                        case ERR_ALLOC:
+                            fnc_log(FNC_LOG_WARN,"Cannot allocate memory!!\n");
+                            schedule_stop(i);
+                            break;
+                        default:
+                            fnc_log(FNC_LOG_WARN,"Packet Lost\n");
+                            break;
                     }
+
+                    sched[i].rtp_session->mprev_tx_time
+                        += sched[i].rtp_session->current_media->description.pkt_len;
                 }
-                
-                
+            }
+
         } else if (sched[i].rtp_session) {
             if(sched[i].rtp_session->is_multicast_dad) {
                 /*unicast always is a multicast_dad*/
