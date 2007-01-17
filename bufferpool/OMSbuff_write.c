@@ -49,7 +49,7 @@
  * it's set calculating 'prev_seq+1'.
  *  \return ERR_NOERROR or ERR_ALLOC
  *  */
-int32 OMSbuff_write(OMSBuffer * buffer, uint64 seq, uint32 timestamp,
+int OMSbuff_write(OMSBuffer * buffer, uint64 seq, uint32 timestamp,
 		    uint8 marker, uint8 * data, uint32 data_size)
 {
 	OMSSlot *slot = &buffer->slots[buffer->control->write_pos];

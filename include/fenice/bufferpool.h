@@ -133,10 +133,10 @@ typedef struct _OMSAggregate {
 OMSBuffer *OMSbuff_new(uint32);
 OMSConsumer *OMSbuff_ref(OMSBuffer *);
 void OMSbuff_unref(OMSConsumer *);
-int32 OMSbuff_read(OMSConsumer *, uint32 *, uint8 *, uint8 *, uint32 *);
+int OMSbuff_read(OMSConsumer *, uint32 *, uint8 *, uint8 *, uint32 *);
 OMSSlot *OMSbuff_getreader(OMSConsumer *);
-int32 OMSbuff_gotreader(OMSConsumer *);
-int32 OMSbuff_write(OMSBuffer *, uint64, uint32, uint8, uint8 *, uint32);
+int OMSbuff_gotreader(OMSConsumer *);
+int OMSbuff_write(OMSBuffer *, uint64, uint32, uint8, uint8 *, uint32);
 OMSSlot *OMSbuff_getslot(OMSBuffer *);
 OMSSlot *OMSbuff_addpage(OMSBuffer *, OMSSlot *);
 //OMSSlot *OMSbuff_slotadd(OMSBuffer *, OMSSlot *);
