@@ -43,17 +43,16 @@ void usage()
 	return;
 }
 
-uint32 command_environment(int argc, char **argv)
+int command_environment(int argc, char **argv)
 {
 
 	static const char short_options[] = "r:p:c:v";
 	//"m:a:f:n:b:z:T:B:q:o:S:I:r:M:4:2:Q:X:D:g:G:v:V:F:N:tpdsZHOcCPK:E:R:";
 
 	int n;
-	uint32 nerr = 0;	/*number of error */
-	uint32 config_file_not_present = 1;
-	uint32 view_log = 0;
-	uint32 flag = 0;	/*0 to show help */
+	int nerr = 0;	/*number of error */
+	int config_file_not_present = 1;
+	int view_log = 0, flag = 0;	/*0 to show help */
 //#ifdef HAVE_GETOPT_LONG
 	static struct option long_options[] = {
 		{"config-file", 1, 0, 'c'},
@@ -96,14 +95,14 @@ uint32 command_environment(int argc, char **argv)
 			break;
 		case '?':
 			flag = 0;
-			nerr++;
+			nerr=1;
 			break;
 		default:
-			nerr++;
+			nerr=1;
 		}
 	}
 	if (!flag) {
-		nerr++;
+		nerr=1;
 		usage();
 	} else if (config_file_not_present)
 		prefs_init(NULL);

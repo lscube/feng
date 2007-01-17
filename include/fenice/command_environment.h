@@ -8,5 +8,5 @@
 #include <fenice/fnc_log.h>
 #include <fenice/types.h>
 
-uint32 command_environment(int, char **);
+int command_environment(int, char **);
 #endif
