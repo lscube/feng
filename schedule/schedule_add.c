@@ -44,7 +44,7 @@ int schedule_add(RTP_session *rtp_session/*,RTSP_session *rtsp_session*/)
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
         if (!sched[i].valid) {
             sched[i].valid=1;
-            sched[i].rtp_sessioni = rtp_session;
+            sched[i].rtp_session = rtp_session;
             //sched[i].rtsp_session=rtsp_session;
             if(rtp_session->is_multicast_dad)
                 sched[i].play_action = RTP_send_packet;
