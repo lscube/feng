@@ -44,16 +44,18 @@ extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 int schedule_resume(int id, play_args *args)
 {
     struct timeval now;
-    double mnow;
+    double mnow, 
+           pkt_len = (double)
+                    sched[id].rtp_session->current_media->description.pkt_len;
 
     gettimeofday(&now,NULL);
 
-    mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
+    mnow = (double)now.tv_sec*1000+(double)now.tv_usec/1000;
 
     sched[id].rtp_session->current_media->mstart_offset 
         += sched[id].rtp_session->current_media->mtime 
          - sched[id].rtp_session->current_media->mstart 
-         + (double) sched[id].rtp_session->current_media->description.pkt_len;
+         + pkt_len;
 
     if (args->start_time_valid)
         sched[id].rtp_session->current_media->play_offset =
@@ -61,7 +63,7 @@ int schedule_resume(int id, play_args *args)
 
     sched[id].rtp_session->current_media->mstart = mnow;
     sched[id].rtp_session->current_media->mtime =
-    sched[id].rtp_session->mprev_tx_time = mnow - (double) sched[id].rtp_session->current_media->description.pkt_len;
+    sched[id].rtp_session->mprev_tx_time = mnow - pkt_len;
     sched[id].rtp_session->pause=0;
 
     return ERR_NOERROR;
