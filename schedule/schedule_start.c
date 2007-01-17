@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,39 +42,42 @@
 
 extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
-int32 schedule_start(int id,play_args *args)
+int32 schedule_start(int id, play_args *args)
 {
-	struct timeval now;
-	double mnow;	
-	gettimeofday(&now,NULL);
-	mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
-	if ((sched[id].rtp_session->cons = OMSbuff_ref(sched[id].rtp_session->current_media->pkt_buffer)) == NULL)
-			return ERR_ALLOC;
+    struct timeval now;
+    double mnow;
 
-	if (sched[id].rtp_session->current_media->pkt_buffer->control->refs==1)
-        {	
-	/*If and only if this session is the first session related to this media_entry, then it runs here*/	
-		if (!args->playback_time_valid) {	
-			sched[id].rtp_session->current_media->mstart=mnow;
-		}
-		else {
-			sched[id].rtp_session->current_media->mstart=mktime(&(args->playback_time));
-		}
-	
-		sched[id].rtp_session->current_media->mtime = mnow /*- sched[id].rtp_session->current_media->description.pkt_len*/;
-		sched[id].rtp_session->current_media->mstart_offset = args->start_time*1000;
-		sched[id].rtp_session->current_media->play_offset=args->start_time*1000;/*TODO:chicco. For Random Access*/
-		//sched[id].rtp_session->current_media->data_chunk = 0;
-	}
-	sched[id].rtp_session->mprev_tx_time = mnow /*- sched[id].rtp_session->current_media->description.pkt_len*/;
-	sched[id].rtp_session->pause=0;
-	sched[id].rtp_session->started=1;
-	sched[id].rtp_session->MinimumReached=0;
-	sched[id].rtp_session->MaximumReached=0;
-	sched[id].rtp_session->PreviousCount=0;
-	sched[id].rtp_session->rtcp_stats[i_client].RR_received=0;
-	sched[id].rtp_session->rtcp_stats[i_client].SR_received=0;
-	return ERR_NOERROR;
+    gettimeofday(&now,NULL);
+    mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
+    sched[id].rtp_session->cons = 
+        OMSbuff_ref(sched[id].rtp_session->current_media->pkt_buffer);
+
+    if (sched[id].rtp_session->cons == NULL)
+        return ERR_ALLOC;
+
+/* Iff this session is the first session related to this media_entry,
+ * then it runs here
+ * */
+    if (sched[id].rtp_session->current_media->pkt_buffer->control->refs==1) {
+        if (!args->playback_time_valid) {
+            sched[id].rtp_session->current_media->mstart = mnow;
+        } else {
+            sched[id].rtp_session->current_media->mstart = 
+                mktime(&(args->playback_time));
+        }
+        sched[id].rtp_session->current_media->mtime = mnow;
+        sched[id].rtp_session->current_media->mstart_offset = 
+            args->start_time*1000;
+        sched[id].rtp_session->current_media->play_offset =
+            args->start_time*1000;
+    }
+    sched[id].rtp_session->mprev_tx_time = mnow;
+    sched[id].rtp_session->pause = 0;
+    sched[id].rtp_session->started = 1;
+    sched[id].rtp_session->MinimumReached = 0;
+    sched[id].rtp_session->MaximumReached = 0;
+    sched[id].rtp_session->PreviousCount = 0;
+    sched[id].rtp_session->rtcp_stats[i_client].RR_received = 0;
+    sched[id].rtp_session->rtcp_stats[i_client].SR_received = 0;
+    return ERR_NOERROR;
 }
-
-

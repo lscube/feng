@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,24 +41,28 @@
 
 extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
-int schedule_resume(int id,play_args *args)
+int schedule_resume(int id, play_args *args)
 {
-	struct timeval now;
-	double mnow;	
+    struct timeval now;
+    double mnow;
 
-	gettimeofday(&now,NULL);
-	
-	mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;		
-	sched[id].rtp_session->current_media->mstart_offset += sched[id].rtp_session->current_media->mtime - sched[id].rtp_session->current_media->mstart + (double) sched[id].rtp_session->current_media->description.pkt_len;
-	
-	
-	if (args->start_time_valid)
-		sched[id].rtp_session->current_media->play_offset=args->start_time*1000;/*TODO:Federico. For Random Access*/
-		
-	sched[id].rtp_session->current_media->mstart = mnow;
-	sched[id].rtp_session->current_media->mtime = sched[id].rtp_session->mprev_tx_time = mnow - (double) sched[id].rtp_session->current_media->description.pkt_len;
-	sched[id].rtp_session->pause=0;
-	
-	return ERR_NOERROR;
+    gettimeofday(&now,NULL);
+
+    mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
+
+    sched[id].rtp_session->current_media->mstart_offset 
+        += sched[id].rtp_session->current_media->mtime 
+         - sched[id].rtp_session->current_media->mstart 
+         + (double) sched[id].rtp_session->current_media->description.pkt_len;
+
+    if (args->start_time_valid)
+        sched[id].rtp_session->current_media->play_offset =
+            args->start_time*1000;/*TODO:Federico. For Random Access*/
+
+    sched[id].rtp_session->current_media->mstart = mnow;
+    sched[id].rtp_session->current_media->mtime =
+    sched[id].rtp_session->mprev_tx_time = mnow - (double) sched[id].rtp_session->current_media->description.pkt_len;
+    sched[id].rtp_session->pause=0;
+
+    return ERR_NOERROR;
 }
-

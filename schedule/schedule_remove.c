@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,14 +41,7 @@ extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 int schedule_remove(int id)
 {
-	sched[id].valid=0;
-#if 0
-	while (schedule_semaphore (id) == red);
-	if(sched[id].rtp_session->is_multicast_dad){/*unicast always is a multicast_dad*/
-		RTP_session_destroy(sched[id].rtp_session);
-		sched[id].rtp_session = NULL;
-		fprintf(stderr, "rtp session closed\n");
-	}
-#endif // #if 0
-	return ERR_NOERROR;
+    sched[id].valid=0;
+
+    return ERR_NOERROR;
 }

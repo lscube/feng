@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,19 +40,19 @@ extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 int schedule_add(RTP_session *rtp_session/*,RTSP_session *rtsp_session*/)
 {
-	int i;
-	for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
-		if (!sched[i].valid) {
-			sched[i].valid=1;
-			sched[i].rtp_session=rtp_session;
-			//sched[i].rtsp_session=rtsp_session;
-			if(rtp_session->is_multicast_dad)
-				sched[i].play_action=RTP_send_packet;
-			return i;
-		}
-	}
-	// if (i >= MAX_SESSION) {
-		return ERR_GENERIC;
-	// }
+    int i;
+    for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
+        if (!sched[i].valid) {
+            sched[i].valid=1;
+            sched[i].rtp_sessioni = rtp_session;
+            //sched[i].rtsp_session=rtsp_session;
+            if(rtp_session->is_multicast_dad)
+                sched[i].play_action = RTP_send_packet;
+            return i;
+        }
+    }
+    // if (i >= MAX_SESSION) {
+    return ERR_GENERIC;
+    // }
 }
 

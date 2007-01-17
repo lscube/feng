@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,14 +38,12 @@
 
 extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
-
 void schedule_stop(int id)
 {
-	sched[id].rtp_session->pause=1;
-	sched[id].rtp_session->started=0;			
-	//sched[id].rtsp_session->cur_state=READY_STATE;
-	
-	RTCP_send_packet(sched[id].rtp_session,SR);
-	RTCP_send_packet(sched[id].rtp_session,BYE);
-}
+    sched[id].rtp_session->pause=1;
+    sched[id].rtp_session->started=0;            
+    //sched[id].rtsp_session->cur_state=READY_STATE;
 
+    RTCP_send_packet(sched[id].rtp_session,SR);
+    RTCP_send_packet(sched[id].rtp_session,BYE);
+}
