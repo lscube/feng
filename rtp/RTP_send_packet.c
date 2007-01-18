@@ -52,6 +52,16 @@
 #include <fenice/debug.h>
 #endif
 
+#if ENABLE_MEDIATHREAD
+#include <fenice/mediathread.h>
+
+static inline int event_buffer_low(Track *src) {
+	void **args = g_new0(void *, 1);
+	args[0] = src;
+	return mt_add_event(MT_EV_BUFFER_LOW, args);
+}
+#endif
+
 int RTP_send_packet(RTP_session * session)
 {
 	unsigned char *packet = NULL;
@@ -63,7 +73,15 @@ int RTP_send_packet(RTP_session * session)
 	OMSSlot *slot = NULL;
 	ssize_t psize_sent = 0;
 
+
 	if (!(slot = OMSbuff_getreader(session->cons))) {
+#if ENABLE_MEDIATHREAD
+		if ((res = event_buffer_low(session->track_selector->
+					    default_index)) != ERR_NOERROR) {
+			fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low\n");
+			return res;
+		}
+#else
 		//This operation runs only if producer writes the slot
 		//session->current_media->mtime += session->current_media->description.delta_mtime; //emma  
 		//session->current_media->mtime+=session->current_media->description.pkt_len;     // old scheduler
@@ -80,6 +98,7 @@ int RTP_send_packet(RTP_session * session)
 //              session->current_media->mtime += session->current_media->description.delta_mtime; //emma  
 		session->cons->frames++;
 		slot = OMSbuff_getreader(session->cons);
+#endif
 	} else			/*This runs if the consumer reads slot written in another RTP session */
 		s_time = slot->timestamp - session->cons->firstts;
 #if 0
@@ -164,6 +183,11 @@ int RTP_send_packet(RTP_session * session)
 		if ((nextts = OMSbuff_nextts(session->cons)) >= 0)
 			nextts -= session->cons->firstts;
 		// fnc_log(FNC_LOG_DEBUG, "*** current time=%f - next time=%f\n\n", s_time, nextts);
+#if ENABLE_MEDIATHREAD
+		if (nextts == -1) {
+			event_buffer_low(session->track_selector->default_index);
+		}
+#endif
 		if ((nextts == -1) || (nextts != s_time)) {
 			// fnc_log(FNC_LOG_DEBUG, "*** time on\n");
 			if (session->current_media->description.delta_mtime)
