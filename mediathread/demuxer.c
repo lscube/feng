@@ -229,17 +229,17 @@ inline int r_seek(Resource *r, long int time_sec)
 int r_changed(ResourceDescr *descr)
 {
 	GList *m_descr=g_list_first(descr->media);
-	
+
 	if ( mrl_changed(descr->info->mrl, &descr->last_change) )
 		return 1;
 
         for (/* m_descr=descr->media */;
-             m_descr;
+             m_descr && MEDIA_DESCR(m_descr)->info->mrl;
              m_descr=g_list_next(m_descr))
         {
-		if ( mrl_changed(((MediaDescr *)m_descr->data)->info->mrl,
-                                 &((MediaDescr *)m_descr->data)->last_change) )
-			return 1;
+	    if (mrl_changed(MEDIA_DESCR(m_descr)->info->mrl,
+                            &(MEDIA_DESCR(m_descr)->last_change)))
+	        return 1;
 	}
 
 	return 0;
@@ -312,11 +312,6 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 	if( !(t->buffer=OMSbuff_new(OMSBUFFER_DEFAULT_DIM)) )
 		ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
 
-	/* using calloc this initializzation is not needed.
-	t->track_name[0]='\0';
-	t->i_stream=NULL;
-	*/
-	/*t->i_stream=i_stream*/
 	if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
 	    ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
 
