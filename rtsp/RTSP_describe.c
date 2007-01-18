@@ -59,12 +59,13 @@ int RTSP_describe(RTSP_buffer * rtsp)
 	char descr[MAX_DESCR_LENGTH];
 
 
-	/* Extract la URL */
+	/* Extract the URL */
 	if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
 		send_reply(400, 0, rtsp);	/* bad request */
 		return ERR_NOERROR;
 	}
 	/* Validate the URL */
+
 	switch (parse_url
 		(url, server, sizeof(server), &port, object, sizeof(object))) {
 	case 1:		// bad request
@@ -93,6 +94,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
+#if 0
 	p = strrchr(object, '.');
 	valid_url = 0;
 	if (p == NULL) {
@@ -105,6 +107,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
 	}
+#endif
 	// Disallow Header REQUIRE
 	if (strstr(rtsp->in_buffer, HDR_REQUIRE)) {
 		send_reply(551, 0, rtsp);	/* Option not supported */
