@@ -86,7 +86,7 @@ typedef struct lavf_priv{
 
 static const char *tag_from_id(int id)
 {
-    id_tag *tags = id_tags;
+    const id_tag *tags = id_tags;
     while (tags->id != CODEC_ID_NONE) {
         if (tags->id == id)
             return tags->tag;
@@ -97,7 +97,7 @@ static const char *tag_from_id(int id)
 
 static int pt_from_id(int id)
 {
-    id_tag *tags = id_tags;
+    const id_tag *tags = id_tags;
     while (tags->id != CODEC_ID_NONE) {
         if (tags->id == id)
             return tags->pt;
@@ -241,7 +241,7 @@ static int init(Resource * r)
         AVStream *st= avfc->streams[i];
         AVCodecContext *codec= st->codec;
         trackinfo.id = i;
-        char *id = tag_from_id(codec->codec_id);
+        const char *id = tag_from_id(codec->codec_id);
 
 // XXX: Check!
         MObject_init(MOBJECT(&props));
