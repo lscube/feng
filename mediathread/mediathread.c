@@ -50,14 +50,11 @@ void *mediathread(void *arg) {
 		pthread_mutex_unlock(&el_mutex);
 
 		while (el_cur) {
-			pthread_mutex_lock(&el_mutex);
-			el_prev = g_list_previous(el_cur);
-			pthread_mutex_unlock(&el_mutex);
-
 			mt_process_event(el_cur->data);
 			mt_dispose_event(el_cur->data);
 
 			pthread_mutex_lock(&el_mutex);
+			el_prev = g_list_previous(el_cur);
 			el_head = g_list_delete_link(el_head, el_cur);
 			pthread_mutex_unlock(&el_mutex);
 
@@ -92,6 +89,8 @@ inline int mt_process_event(mt_event_item *ev) {
 	if (!ev)
 		return ERR_GENERIC;
 	switch (ev->id) {
+		case MT_EV_BUFFER_LOW:
+			break;
 		default:
 			break;
 	}

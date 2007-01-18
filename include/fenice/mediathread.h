@@ -31,7 +31,7 @@
 #ifndef __MEDIA_THREAD
 #define __MEDIA_THREAD
 
-#define ENABLE_MEDIATHREAD 0
+#define ENABLE_MEDIATHREAD 1
 
 #include <pthread.h>
 
@@ -48,7 +48,7 @@ typedef struct __MT_RESOURCE_ITEM {
 
 typedef enum __MT_EVENT_ID {
 	MT_EV_NOP,		//Fake event do nothing. ARGS= NULL;
-	MT_EV_BUFFER_LOW,	//Buffer needs to be filled. ARGS= OMS_buffer*, Track*
+	MT_EV_BUFFER_LOW,	//Buffer needs to be filled. ARGS= Track*
 	MT_EV_DATA_EOF,		//Track has no more data. ARGS= Track*
 	MT_EV_DATA_BOUND	//Track reached request bound. ARGS= Track*
 } mt_event_id;
