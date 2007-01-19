@@ -110,17 +110,205 @@ typedef struct {
 	uint32 src_nbytes;
 } mpa_input;
 
-static int mpa_read(uint32, uint8 *, mpa_input *);
-static uint32 dec_synchsafe_int(uint8 [4]);
-// static int mpa_read_id3v2(id3v2_hdr *, InputStream *, mpa_data *); // for now only skipped.
-static int mpa_read_id3v2(id3v2_hdr *, mpa_input *, mpa_data *); // for now only skipped.
-// static int mpa_sync(uint32 *, InputStream *, mpa_data *);
-static int mpa_sync(uint32 *, mpa_input *, mpa_data *);
-static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_data *mpa);
-#ifdef DEBUG
+static int mpa_read(uint32 nbytes, uint8 *buf, mpa_input *in)
+{
+	if (in->istream)
+		return istream_read(in->istream, buf, nbytes);
+	else if (in->src) {
+		uint32 to_cpy=min(nbytes, in->src_nbytes);
+
+		if (buf)
+			memcpy(buf, in->src, to_cpy);
+		in->src += to_cpy;
+		in->src_nbytes -= to_cpy;
+		return to_cpy;
+	} else
+		return ERR_EOF;
+}
+
+static uint32 dec_synchsafe_int(uint8 encoded[4])
+{
+	const unsigned char bitsused = 7;
+	uint32 decoded =/*(uint32)*/encoded[0] & MASK(bitsused);
+	unsigned i;
+
+	for (i=1; i<sizeof(encoded); i++) {
+		decoded <<= bitsused;
+		decoded |= encoded[i] & MASK(bitsused);
+	}
+
+	return decoded;
+}
+
+static int mpa_read_id3v2(id3v2_hdr *id3hdr, mpa_input *in, mpa_data *mpa)
+{
+	uint32 tagsize;
+	int ret;
+
+	tagsize=dec_synchsafe_int(id3hdr->size);
+
+	// if ( (ret=istream_read(tagsize, NULL, i_stream)) != (int)tagsize )
+	if ( (ret=mpa_read(tagsize, NULL, in)) != (int)tagsize )
+		return (ret<0) ? ERR_PARSE : ERR_EOF;
+
+	return 0;
+}
+
+#if DEBUG
 // debug function to diplay MPA header information
-static void mpa_info(mpa_data *, MediaProperties *);
+static void mpa_info(mpa_data *mpa, MediaProperties *properties)
+{
+	switch (mpa->id) {
+		case MPA_MPEG_1:
+			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG1\n");
+			break;
+		case MPA_MPEG_2:
+			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG2\n");
+			break;
+		case MPA_MPEG_2_5:
+			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG2.5\n");
+			break;
+		default:
+			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG reserved (bad)\n");
+			return;
+			break;
+	}
+	switch (mpa->layer) {
+		case MPA_LAYER_I:
+			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer I\n");
+			break;
+		case MPA_LAYER_II:
+			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer II\n");
+			break;
+		case MPA_LAYER_III:
+			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer III\n");
+			break;
+		default:
+			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer reserved (bad)\n");
+			return;
+			break;
+	}
+	fnc_log(FNC_LOG_DEBUG, "[MPA] bitrate: %d; sample rate: %3.0f; pkt_len: %d\n", properties->bit_rate, properties->sample_rate, mpa->pkt_len);
+}
 #endif // DEBUG
+static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_data *mpa)
+{
+	int RowIndex,ColIndex;
+	uint8 *buff_data = (uint8 * )&header;
+	int padding;
+	int BitrateMatrix[16][5] = BITRATEMATRIX;
+	float SRateMatrix[4][3] = SRATEMATRIX;
+
+	if ( !MPA_IS_SYNC(buff_data) ) return -1; /*syncword not found*/
+
+	mpa->id = (buff_data[1] & 0x18) >> 3;
+	mpa->layer = (buff_data[1] & 0x06) >> 1;
+
+	switch (mpa->id<< 2 | mpa->layer) {
+		case MPA_MPEG_1<<2|MPA_LAYER_I:		// MPEG 1 layer I
+			ColIndex = 0;
+			break;
+		case MPA_MPEG_1<<2|MPA_LAYER_II:	// MPEG 1 layer II
+			ColIndex = 1;
+			break;
+		case MPA_MPEG_1<<2|MPA_LAYER_III:	// MPEG 1 layer III
+			ColIndex = 2;
+			break;
+		case MPA_MPEG_2<<2|MPA_LAYER_I:		// MPEG 2 layer I
+		case MPA_MPEG_2_5<<2|MPA_LAYER_I:	// MPEG 2.5 layer I
+			ColIndex = 3;
+			break;
+		case MPA_MPEG_2<<2|MPA_LAYER_II:	// MPEG 2 layer II
+		case MPA_MPEG_2<<2|MPA_LAYER_III:	// MPEG 2 layer III
+		case MPA_MPEG_2_5<<2|MPA_LAYER_II:	// MPEG 2.5 layer II
+		case MPA_MPEG_2_5<<2|MPA_LAYER_III:	// MPEG 2.5 layer III
+			ColIndex = 4;
+			break;
+		default: return -1; break;
+	}
+	
+	RowIndex = (buff_data[2] & 0xf0) >> 4;
+	if (RowIndex == 0xF) // bad bitrate
+		return -1;
+	if (RowIndex == 0) // free bitrate: not supported
+		return -1;
+	properties->bit_rate = BitrateMatrix[RowIndex][ColIndex];
+
+	switch (mpa->id) {
+		case MPA_MPEG_1: ColIndex = 0; break;
+		case MPA_MPEG_2: ColIndex = 1; break;
+		case MPA_MPEG_2_5: ColIndex = 2; break;
+		default:
+			return -1;
+			break;
+	}
+
+	RowIndex = (buff_data[2] & 0x0c) >> 2;
+	if (RowIndex == 3) // reserved
+		return -1;
+	properties->sample_rate = SRateMatrix[RowIndex][ColIndex];
+
+	// padding
+	padding = (buff_data[2] & 0x02) >> 1;
+
+	// packet len
+	if (mpa->layer == MPA_LAYER_I) { // layer 1
+		mpa->frame_size = 384;
+		mpa->pkt_len=((12 * properties->bit_rate)/properties->sample_rate + padding)* 4;
+	} else { // layer 2 or 3
+		mpa->frame_size = 1152;
+		mpa->pkt_len= 144 * properties->bit_rate /properties->sample_rate + padding;
+	}
+	
+#if DEBUG
+	mpa_info(mpa, properties);
+#endif // DEBUG
+	
+	return 0;// count; /*return 4*/
+}
+
+static int mpa_sync(uint32 *header, mpa_input *in, mpa_data *mpa)
+{
+	uint8 *sync_w = (uint8 *)header;
+	int ret;
+
+	// if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
+	if ( (ret=mpa_read(4, sync_w, in)) != 4 )
+		return (ret<0) ? ERR_PARSE : ERR_EOF;
+
+	if (!mpa->probed) {
+		/*look if ID3 tag is present*/
+		if (!memcmp(sync_w, "ID3", 3)) { // ID3 tag present
+			id3v2_hdr id3hdr;
+
+			// fnc_log(FNC_LOG_DEBUG, "ID3v2 tag present in %s\n", i_stream->name);
+
+			memcpy(&id3hdr, sync_w, 4);
+			// if ( (ret = istream_read(ID3v2_HDRLEN - 4, &id3hdr.rev, i_stream)) != ID3v2_HDRLEN - 4 )
+			if ( (ret = mpa_read(ID3v2_HDRLEN - 4, &id3hdr.rev, in)) != ID3v2_HDRLEN - 4 )
+				return (ret<0) ? ERR_PARSE : ERR_EOF;
+			// if ( (ret=mpa_read_id3v2(&id3hdr, i_stream, mpa)) )
+			if ( (ret=mpa_read_id3v2(&id3hdr, in, mpa)) )
+				return ret;
+			// if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
+			if ( (ret=mpa_read(4, sync_w, in)) != 4 )
+				return (ret<0) ? ERR_PARSE : ERR_EOF;
+		}
+	}
+	while ( !MPA_IS_SYNC(sync_w) ) {
+		*header >>= 8;
+		// sync_w[0]=sync_w[1];
+		// sync_w[1]=sync_w[2];
+		// sync_w[2]=sync_w[3];
+
+		// if ( (ret=istream_read(1, &sync_w[3], i_stream)) != 1 )
+		if ( (ret=mpa_read(1, &sync_w[3], in)) != 1 )
+			return (ret<0) ? ERR_PARSE : ERR_EOF;
+		fnc_log(FNC_LOG_DEBUG, "[MPA] sync: %X%X%X%X\n", sync_w[0], sync_w[1], sync_w[2], sync_w[3]);
+	}
+
+	return 0;
+}
 
 static int init(MediaProperties *properties, void **private_data) 
 {
@@ -247,209 +435,4 @@ static int uninit(void *private_data)
 	return 0;
 }
 
-// internal functions
-
-static uint32 dec_synchsafe_int(uint8 encoded[4])
-{
-	const unsigned char bitsused = 7;
-	uint32 decoded =/*(uint32)*/encoded[0] & MASK(bitsused);
-	unsigned i;
-
-	for (i=1; i<sizeof(encoded); i++) {
-		decoded <<= bitsused;
-		decoded |= encoded[i] & MASK(bitsused);
-	}
-
-	return decoded;
-}
-
-// for the moment we just skip the ID3v2 tag.
-// static int mpa_read_id3v2(id3v2_hdr *id3hdr, InputStream *i_stream, mpa_data *mpa)
-static int mpa_read_id3v2(id3v2_hdr *id3hdr, mpa_input *in, mpa_data *mpa)
-{
-	uint32 tagsize;
-	int ret;
-
-	tagsize=dec_synchsafe_int(id3hdr->size);
-
-	// if ( (ret=istream_read(tagsize, NULL, i_stream)) != (int)tagsize )
-	if ( (ret=mpa_read(tagsize, NULL, in)) != (int)tagsize )
-		return (ret<0) ? ERR_PARSE : ERR_EOF;
-
-	return 0;
-}
-
-// static int mpa_sync(uint32 *header, InputStream *i_stream, mpa_data *mpa)
-static int mpa_sync(uint32 *header, mpa_input *in, mpa_data *mpa)
-{
-	uint8 *sync_w = (uint8 *)header;
-	int ret;
-
-	// if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
-	if ( (ret=mpa_read(4, sync_w, in)) != 4 )
-		return (ret<0) ? ERR_PARSE : ERR_EOF;
-
-	if (!mpa->probed) {
-		/*look if ID3 tag is present*/
-		if (!memcmp(sync_w, "ID3", 3)) { // ID3 tag present
-			id3v2_hdr id3hdr;
-
-			// fnc_log(FNC_LOG_DEBUG, "ID3v2 tag present in %s\n", i_stream->name);
-
-			memcpy(&id3hdr, sync_w, 4);
-			// if ( (ret = istream_read(ID3v2_HDRLEN - 4, &id3hdr.rev, i_stream)) != ID3v2_HDRLEN - 4 )
-			if ( (ret = mpa_read(ID3v2_HDRLEN - 4, &id3hdr.rev, in)) != ID3v2_HDRLEN - 4 )
-				return (ret<0) ? ERR_PARSE : ERR_EOF;
-			// if ( (ret=mpa_read_id3v2(&id3hdr, i_stream, mpa)) )
-			if ( (ret=mpa_read_id3v2(&id3hdr, in, mpa)) )
-				return ret;
-			// if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
-			if ( (ret=mpa_read(4, sync_w, in)) != 4 )
-				return (ret<0) ? ERR_PARSE : ERR_EOF;
-		}
-	}
-	while ( !MPA_IS_SYNC(sync_w) ) {
-		*header >>= 8;
-		// sync_w[0]=sync_w[1];
-		// sync_w[1]=sync_w[2];
-		// sync_w[2]=sync_w[3];
-
-		// if ( (ret=istream_read(1, &sync_w[3], i_stream)) != 1 )
-		if ( (ret=mpa_read(1, &sync_w[3], in)) != 1 )
-			return (ret<0) ? ERR_PARSE : ERR_EOF;
-		fnc_log(FNC_LOG_DEBUG, "[MPA] sync: %X%X%X%X\n", sync_w[0], sync_w[1], sync_w[2], sync_w[3]);
-	}
-
-	return 0;
-}
-
-static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_data *mpa)
-{
-	int RowIndex,ColIndex;
-	uint8 *buff_data = (uint8 * )&header;
-	int padding;
-	int BitrateMatrix[16][5] = BITRATEMATRIX;
-	float SRateMatrix[4][3] = SRATEMATRIX;
-
-	if ( !MPA_IS_SYNC(buff_data) ) return -1; /*syncword not found*/
-
-	mpa->id = (buff_data[1] & 0x18) >> 3;
-	mpa->layer = (buff_data[1] & 0x06) >> 1;
-
-	switch (mpa->id<< 2 | mpa->layer) {
-		case MPA_MPEG_1<<2|MPA_LAYER_I:		// MPEG 1 layer I
-			ColIndex = 0;
-			break;
-		case MPA_MPEG_1<<2|MPA_LAYER_II:	// MPEG 1 layer II
-			ColIndex = 1;
-			break;
-		case MPA_MPEG_1<<2|MPA_LAYER_III:	// MPEG 1 layer III
-			ColIndex = 2;
-			break;
-		case MPA_MPEG_2<<2|MPA_LAYER_I:		// MPEG 2 layer I
-		case MPA_MPEG_2_5<<2|MPA_LAYER_I:	// MPEG 2.5 layer I
-			ColIndex = 3;
-			break;
-		case MPA_MPEG_2<<2|MPA_LAYER_II:	// MPEG 2 layer II
-		case MPA_MPEG_2<<2|MPA_LAYER_III:	// MPEG 2 layer III
-		case MPA_MPEG_2_5<<2|MPA_LAYER_II:	// MPEG 2.5 layer II
-		case MPA_MPEG_2_5<<2|MPA_LAYER_III:	// MPEG 2.5 layer III
-			ColIndex = 4;
-			break;
-		default: return -1; break;
-	}
-	
-	RowIndex = (buff_data[2] & 0xf0) >> 4;
-	if (RowIndex == 0xF) // bad bitrate
-		return -1;
-	if (RowIndex == 0) // free bitrate: not supported
-		return -1;
-	properties->bit_rate = BitrateMatrix[RowIndex][ColIndex];
-
-	switch (mpa->id) {
-		case MPA_MPEG_1: ColIndex = 0; break;
-		case MPA_MPEG_2: ColIndex = 1; break;
-		case MPA_MPEG_2_5: ColIndex = 2; break;
-		default:
-			return -1;
-			break;
-	}
-
-	RowIndex = (buff_data[2] & 0x0c) >> 2;
-	if (RowIndex == 3) // reserved
-		return -1;
-	properties->sample_rate = SRateMatrix[RowIndex][ColIndex];
-
-	// padding
-	padding = (buff_data[2] & 0x02) >> 1;
-
-	// packet len
-	if (mpa->layer == MPA_LAYER_I) { // layer 1
-		mpa->frame_size = 384;
-		mpa->pkt_len=((12 * properties->bit_rate)/properties->sample_rate + padding)* 4;
-	} else { // layer 2 or 3
-		mpa->frame_size = 1152;
-		mpa->pkt_len= 144 * properties->bit_rate /properties->sample_rate + padding;
-	}
-	
-#if DEBUG
-	mpa_info(mpa, properties);
-#endif // DEBUG
-	
-	return 0;// count; /*return 4*/
-}
-
-#if DEBUG
-// debug function to diplay MPA header information
-static void mpa_info(mpa_data *mpa, MediaProperties *properties)
-{
-	switch (mpa->id) {
-		case MPA_MPEG_1:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG1\n");
-			break;
-		case MPA_MPEG_2:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG2\n");
-			break;
-		case MPA_MPEG_2_5:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG2.5\n");
-			break;
-		default:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG reserved (bad)\n");
-			return;
-			break;
-	}
-	switch (mpa->layer) {
-		case MPA_LAYER_I:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer I\n");
-			break;
-		case MPA_LAYER_II:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer II\n");
-			break;
-		case MPA_LAYER_III:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer III\n");
-			break;
-		default:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer reserved (bad)\n");
-			return;
-			break;
-	}
-	fnc_log(FNC_LOG_DEBUG, "[MPA] bitrate: %d; sample rate: %3.0f; pkt_len: %d\n", properties->bit_rate, properties->sample_rate, mpa->pkt_len);
-}
-#endif // DEBUG
-
-static int mpa_read(uint32 nbytes, uint8 *buf, mpa_input *in)
-{
-	if (in->istream)
-		return istream_read(in->istream, buf, nbytes);
-	else if (in->src) {
-		uint32 to_cpy=min(nbytes, in->src_nbytes);
-
-		if (buf)
-			memcpy(buf, in->src, to_cpy);
-		in->src += to_cpy;
-		in->src_nbytes -= to_cpy;
-		return to_cpy;
-	} else
-		return ERR_EOF;
-}
 
