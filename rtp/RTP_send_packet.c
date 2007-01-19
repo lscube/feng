@@ -47,14 +47,13 @@
 #include <fenice/utils.h>
 #include <fenice/bufferpool.h>
 #include <fenice/fnc_log.h>
+#include <fenice/mediathread.h>
 
 #if ENABLE_DUMP
 #include <fenice/debug.h>
 #endif
 
 #if ENABLE_MEDIATHREAD
-#include <fenice/mediathread.h>
-
 static inline int event_buffer_low(Track *src) {
 	void **args = g_new0(void *, 1);
 	args[0] = src;
@@ -73,6 +72,7 @@ int RTP_send_packet(RTP_session * session)
 	OMSSlot *slot = NULL;
 	ssize_t psize_sent = 0;
 
+	fnc_log(FNC_LOG_DEBUG, "Trying to send a RTP packet\n");
 
 	if (!(slot = OMSbuff_getreader(session->cons))) {
 #if ENABLE_MEDIATHREAD

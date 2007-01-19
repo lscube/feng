@@ -44,6 +44,8 @@ void *mediathread(void *arg) {
 	GList *el_cur, *el_prev;
 	struct timespec ts = {0, 0};
 
+	fnc_log(FNC_LOG_DEBUG, "Mediathread started\n");
+
 	while(1) {
 		pthread_mutex_lock(&el_mutex);
 		el_cur = g_list_last(el_head);
@@ -88,6 +90,9 @@ int mt_add_event(mt_event_id id, void **args) {
 inline int mt_process_event(mt_event_item *ev) {
 	if (!ev)
 		return ERR_GENERIC;
+
+	fnc_log(FNC_LOG_DEBUG, "Processing event: %#x\n", ev->id);
+
 	switch (ev->id) {
 		case MT_EV_BUFFER_LOW:
 			break;
@@ -149,9 +154,9 @@ int mt_add_track(Track *t) {
 	return ERR_NOERROR;
 }
 
-static gint mt_comp_func(gconstpointer element, gconstpointer track) {
+/*static gint mt_comp_func(gconstpointer element, gconstpointer track) {
 	return ((const Track *)element != (Track *)track);
-}
+}*/
 
 int mt_rem_track(Track *t) {
 /*	GList *tl_ptr;

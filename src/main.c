@@ -46,6 +46,7 @@
 #include <fenice/schedule.h>
 #include <fenice/utils.h>
 #include <fenice/command_environment.h>
+#include <fenice/mediathread.h>
 #include <glib.h>
 #include <glib/gprintf.h>
 
@@ -99,6 +100,16 @@ int main(int argc, char **argv)
 		pthread_create(&thread,NULL,OMSstunserverStart,(void *)(cfg));
 	}
 #endif //ENABLE_STUN
+
+#if ENABLE_MEDIATHREAD
+	{
+		pthread_t mth;
+
+		fnc_log(FNC_LOG_DEBUG, "Starting mediathread...\n");
+
+		pthread_create(&mth, NULL, mediathread, NULL);
+	}
+#endif
 	
 	/* prefs_get_port() reads the static var prefs and returns the port number */
 	port = g_strdup_printf("%d", prefs_get_port());
