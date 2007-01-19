@@ -106,23 +106,6 @@ typedef struct {
     uint32 src_nbytes;
 } mpv_input;
 
-//FIXME remove those protos
-static int get_header(uint32 *header, uint8* src, mpv_data *mpv);
-static int mpv_sync(uint32 *header, mpv_input *in, mpv_data *mpv);
-
-static int seq_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
-static int seq_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
-static int read_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
-static int gop_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
-static int ext_and_user_data(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
-static int picture_coding_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
-static int picture_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
-static int slice(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv);
-
-static int next_start_code2(uint8 *dst, uint32 dst_remained, mpv_input *in); 
-
-static int mpv_read(uint32 nbytes, uint8 *buf, mpv_input *in);
-
 static float FrameRateCode[] = {
         0.000,
         23.976,
@@ -160,6 +143,324 @@ static float AspectRatioCode[] = {
         1.2015, /*  14              1,2015                                  */
         0.0000  /*  15              reserved                                */
     };
+
+static int mpv_read(uint32 nbytes, uint8 *buf, mpv_input *in)
+{
+    if (in->istream)
+    {
+        //printf("Reading from file n_bytes=%d\n",nbytes);
+        return istream_read(in->istream, buf, nbytes);
+    }
+    else if (in->src) {
+        uint32 to_cpy=min(nbytes, in->src_nbytes);
+
+        if (buf)
+            memcpy(buf, in->src, to_cpy);
+        in->src += to_cpy;
+        in->src_nbytes -= to_cpy;
+
+        return to_cpy;
+    } else 
+        return ERR_EOF;
+    
+}
+
+static int get_header(uint32 *header, uint8* src, mpv_data *mpv)
+{
+    uint8 *sync_w = (uint8 *)header;
+    int ret;
+    mpv_input in = {NULL, src, 4};
+
+    if ( (ret=mpv_read(4, sync_w, &in)) != 4 ) 
+        return (ret<0) ? ERR_PARSE : ERR_EOF;
+    
+    while ( !MPV_IS_SYNC(sync_w) ) {
+        return ERR_PARSE;
+    }
+
+    return 0;
+}
+
+static int mpv_sync(uint32 *header, mpv_input *in, mpv_data *mpv)
+{
+    uint8 *sync_w = (uint8 *)header;
+    int ret;
+
+    if ( (ret=mpv_read(4, sync_w, in)) != 4 ) 
+        return (ret<0) ? ERR_PARSE : ERR_EOF;
+    
+    while ( !MPV_IS_SYNC(sync_w) ) {
+        SHIFT_RIGHT(*header,8);
+        if ( (ret=mpv_read(1, &sync_w[3], in)) != 1 ) 
+            return (ret<0) ? ERR_PARSE : ERR_EOF;
+    }
+
+    return 0;
+}
+
+static int next_start_code2(uint8 *dst, uint32 dst_remained, mpv_input *in)
+{
+    int count=0;
+    int ret;
+    uint8 sync_w[4];
+
+    if ( (ret=mpv_read(4, sync_w, in)) != 4 ) 
+        return (ret<0) ? ERR_PARSE : ERR_EOF;
+    
+    while ( !MPV_IS_SYNC(sync_w) ) {
+        dst[count]=sync_w[0];
+        //printf("count=%d - dst[count] =%X - sync_w=%X%X%X%X\n",count,dst[count],sync_w[0],sync_w[1],sync_w[2],sync_w[3]);
+        count++;
+        sync_w[0]=sync_w[1];
+        sync_w[1]=sync_w[2];
+        sync_w[2]=sync_w[3];
+        if ( (ret=mpv_read(1, &sync_w[3], in)) != 1 ) 
+            return (ret<0) ? ERR_PARSE : ERR_EOF;
+    }
+    
+    memcpy(&dst[count],sync_w,4);
+    count+=4;
+
+    return count;
+
+}
+
+static int seq_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+    int count=0;
+
+    /*---------------------*/
+    count=next_start_code2(dst, dst_remained, in);
+
+    /*---------------------*/
+    return count;
+
+}
+
+static int read_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+    int count=0;
+
+    /*---------------------*/
+    count=next_start_code2(dst, dst_remained, in);
+
+    /*---------------------*/
+    return count;
+
+}
+
+static int ext_and_user_data(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+    int count=0;
+
+    /*---------------------*/
+    count=next_start_code2(dst, dst_remained, in);
+
+    /*---------------------*/
+    return count;
+
+}
+
+static int slice(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+    int count=0;
+
+    /*---------------------*/
+    count=next_start_code2(dst, dst_remained, in);
+
+    /*---------------------*/
+    return count;
+
+}
+
+static int seq_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+    int count=0,ret;
+    uint32 header;
+    uint32 off;
+    int bt;
+
+    /*---------------------*/
+    count=next_start_code2(dst, dst_remained, in);
+    if(count < 0)
+        return count;
+    dst_remained-=count;
+    
+    off=0;
+    properties->PixelWidth=get_field(dst,12,&off);
+    off=12;
+    properties->PixelHeight=get_field(dst,12,&off);
+    off=24;
+    properties->AspectRatio=AspectRatioCode[get_field(dst,4,&off)];    
+    off=28;
+    properties->frame_rate=FrameRateCode[get_field(dst,4,&off)];
+    off=32;
+    bt=get_field(dst,18,&off);
+    properties->bit_rate=(bt<262144)?(400*bt):0; /*if 0 -> VBR*/
+    
+    /*---------------------*/
+    if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
+        return ret;
+
+    if(header == EXT_START_CODE) {/*MPEG_2*/
+        mpv->std=MPEG_2;
+        bt=seq_ext(&dst[count], dst_remained, in, properties, mpv);
+        if(bt<0)
+            return bt;
+        count+=bt;
+    }
+    else mpv->std=MPEG_1;
+
+    return count;
+}
+
+static int gop_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+    int count=0, ret,off,bt;
+    uint32 header;
+
+    /*---------------------*/
+    count=next_start_code2(dst, dst_remained, in);
+    dst_remained-=count;
+
+    off=1;
+    mpv->hours=get_field(dst,5,&off);
+    off=6;
+    mpv->minutes=get_field(dst,6,&off);
+    off=13;
+    mpv->seconds=get_field(dst,6,&off);
+    off=19;
+    mpv->pictures=get_field(dst,6,&off);
+
+    /*---------------------*/
+    if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
+        return ret;
+    
+    if(header == EXT_START_CODE) {
+        bt=read_ext(&dst[count], dst_remained, in, properties, mpv);
+        if(bt<0)
+            return bt;
+        count+=bt;
+    }
+
+    return count;
+}
+
+static int picture_coding_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+    int count=0, ret,off,bt;
+    uint32 header;
+
+    /*---------------------*/
+    count=next_start_code2(dst, dst_remained, in);
+    dst_remained-=count;
+
+    off=4;
+    mpv->vsh2->f00=get_field(dst,4,&off);
+    off=8;
+    mpv->vsh2->f01=get_field(dst,4,&off);
+    off=12;
+    mpv->vsh2->f10=get_field(dst,4,&off);
+    off=16;
+    mpv->vsh2->f11=get_field(dst,4,&off);
+    off=20;
+    mpv->vsh2->dc=get_field(dst,2,&off);
+    off=22;
+    mpv->vsh2->ps=get_field(dst,2,&off);
+    off=24;
+    mpv->vsh2->t=get_field(dst,1,&off);
+    off=25;
+    mpv->vsh2->p=get_field(dst,1,&off);
+    off=26;
+    mpv->vsh2->c=get_field(dst,1,&off);
+    off=27;
+    mpv->vsh2->q=get_field(dst,1,&off);
+    off=28;
+    mpv->vsh2->v=get_field(dst,1,&off);
+    off=29;
+    mpv->vsh2->a=get_field(dst,1,&off);
+    off=30;
+    mpv->vsh2->r=get_field(dst,1,&off);
+    off=31;
+    mpv->vsh2->h=get_field(dst,1,&off);
+    off=32;
+    mpv->vsh2->g=get_field(dst,1,&off);
+    off=33;
+    mpv->vsh2->d=get_field(dst,1,&off);
+
+
+    /*---------------------*/
+    
+    if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
+        return ret;
+
+    if(header == EXT_START_CODE) {
+        bt=ext_and_user_data(&dst[count], dst_remained, in, properties, mpv);
+        if(bt<0)
+            return bt;
+        count+=bt;
+    }
+
+    return count;
+
+}
+
+static int picture_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+{
+    int count=0, ret,off,bt;
+    uint32 header;
+
+    /*---------------------*/
+    count=next_start_code2(dst, dst_remained, in);
+    dst_remained-=count;
+
+    off=0;
+    mpv->vsh1->mbz=0; /*unused*/
+    mpv->vsh1->tr=mpv->temp_ref=get_field(dst,10,&off);
+    
+    mpv->vsh1->an=0;/*TODO*/ 
+    mpv->vsh1->n=0;/*TODO*/ 
+    
+    off=10;
+    mpv->vsh1->p=mpv->picture_coding_type=get_field(dst,3,&off);
+    
+    if(mpv->picture_coding_type == 2 || mpv->picture_coding_type == 3) {
+        off=29;
+        mpv->vsh1->ffv=get_field(dst,1,&off);
+        off=30;
+        mpv->vsh1->ffc=get_field(dst,3,&off);
+    }
+    else {
+    
+        mpv->vsh1->ffv=0;
+        mpv->vsh1->ffc=0;
+    }
+
+    if(mpv->picture_coding_type == 3) {
+        off=33;
+        mpv->vsh1->fbv=get_field(dst,1,&off);
+        off=34;
+        mpv->vsh1->bfc=get_field(dst,3,&off);
+    } 
+    else {
+    
+        mpv->vsh1->fbv=0;
+        mpv->vsh1->bfc=0;
+    }
+    
+    /*---------------------*/
+    if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
+        return ret;
+
+    if(header == EXT_START_CODE) {
+        bt=picture_coding_ext(&dst[count], dst_remained, in, properties, mpv);
+        if(bt<0)
+            return bt;
+        count+=bt;
+    }
+
+    return count;
+}
 
 /*mediaparser_module interface implementation*/
 int init(MediaProperties *properties, void **private_data)
@@ -386,323 +687,4 @@ int uninit(void *private_data)
 }
 
 
-static int get_header(uint32 *header, uint8* src, mpv_data *mpv)
-{
-    uint8 *sync_w = (uint8 *)header;
-    int ret;
-    mpv_input in = {NULL, src, 4};
-
-    if ( (ret=mpv_read(4, sync_w, &in)) != 4 ) 
-        return (ret<0) ? ERR_PARSE : ERR_EOF;
-    
-    while ( !MPV_IS_SYNC(sync_w) ) {
-        return ERR_PARSE;
-    }
-
-    return 0;
-}
-
-static int mpv_sync(uint32 *header, mpv_input *in, mpv_data *mpv)
-{
-    uint8 *sync_w = (uint8 *)header;
-    int ret;
-
-    if ( (ret=mpv_read(4, sync_w, in)) != 4 ) 
-        return (ret<0) ? ERR_PARSE : ERR_EOF;
-    
-    while ( !MPV_IS_SYNC(sync_w) ) {
-        SHIFT_RIGHT(*header,8);
-        if ( (ret=mpv_read(1, &sync_w[3], in)) != 1 ) 
-            return (ret<0) ? ERR_PARSE : ERR_EOF;
-    }
-
-    return 0;
-}
-
-static int next_start_code2(uint8 *dst, uint32 dst_remained, mpv_input *in)
-{
-    int count=0;
-    int ret;
-    uint8 sync_w[4];
-
-    if ( (ret=mpv_read(4, sync_w, in)) != 4 ) 
-        return (ret<0) ? ERR_PARSE : ERR_EOF;
-    
-    while ( !MPV_IS_SYNC(sync_w) ) {
-        dst[count]=sync_w[0];
-        //printf("count=%d - dst[count] =%X - sync_w=%X%X%X%X\n",count,dst[count],sync_w[0],sync_w[1],sync_w[2],sync_w[3]);
-        count++;
-        sync_w[0]=sync_w[1];
-        sync_w[1]=sync_w[2];
-        sync_w[2]=sync_w[3];
-        if ( (ret=mpv_read(1, &sync_w[3], in)) != 1 ) 
-            return (ret<0) ? ERR_PARSE : ERR_EOF;
-    }
-    
-    memcpy(&dst[count],sync_w,4);
-    count+=4;
-
-    return count;
-
-}
-
-static int seq_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
-{
-    int count=0,ret;
-    uint32 header;
-    uint32 off;
-    int bt;
-
-    /*---------------------*/
-    count=next_start_code2(dst, dst_remained, in);
-    if(count < 0)
-        return count;
-    dst_remained-=count;
-    
-    off=0;
-    properties->PixelWidth=get_field(dst,12,&off);
-    off=12;
-    properties->PixelHeight=get_field(dst,12,&off);
-    off=24;
-    properties->AspectRatio=AspectRatioCode[get_field(dst,4,&off)];    
-    off=28;
-    properties->frame_rate=FrameRateCode[get_field(dst,4,&off)];
-    off=32;
-    bt=get_field(dst,18,&off);
-    properties->bit_rate=(bt<262144)?(400*bt):0; /*if 0 -> VBR*/
-    
-    /*---------------------*/
-    if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
-        return ret;
-
-    if(header == EXT_START_CODE) {/*MPEG_2*/
-        mpv->std=MPEG_2;
-        bt=seq_ext(&dst[count], dst_remained, in, properties, mpv);
-        if(bt<0)
-            return bt;
-        count+=bt;
-    }
-    else mpv->std=MPEG_1;
-
-    return count;
-}
-
-static int seq_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
-{
-    int count=0;
-
-    /*---------------------*/
-    count=next_start_code2(dst, dst_remained, in);
-
-    /*---------------------*/
-    return count;
-
-}
-
-static int read_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
-{
-    int count=0;
-
-    /*---------------------*/
-    count=next_start_code2(dst, dst_remained, in);
-
-    /*---------------------*/
-    return count;
-
-}
-
-
-static int ext_and_user_data(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
-{
-    int count=0;
-
-    /*---------------------*/
-    count=next_start_code2(dst, dst_remained, in);
-
-    /*---------------------*/
-    return count;
-
-}
-
-static int gop_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
-{
-    int count=0, ret,off,bt;
-    uint32 header;
-
-    /*---------------------*/
-    count=next_start_code2(dst, dst_remained, in);
-    dst_remained-=count;
-
-    off=1;
-    mpv->hours=get_field(dst,5,&off);
-    off=6;
-    mpv->minutes=get_field(dst,6,&off);
-    off=13;
-    mpv->seconds=get_field(dst,6,&off);
-    off=19;
-    mpv->pictures=get_field(dst,6,&off);
-
-    /*---------------------*/
-    if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
-        return ret;
-    
-    if(header == EXT_START_CODE) {
-        bt=read_ext(&dst[count], dst_remained, in, properties, mpv);
-        if(bt<0)
-            return bt;
-        count+=bt;
-    }
-
-    return count;
-}
-
-static int picture_coding_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
-{
-    int count=0, ret,off,bt;
-    uint32 header;
-
-    /*---------------------*/
-    count=next_start_code2(dst, dst_remained, in);
-    dst_remained-=count;
-
-    off=4;
-    mpv->vsh2->f00=get_field(dst,4,&off);
-    off=8;
-    mpv->vsh2->f01=get_field(dst,4,&off);
-    off=12;
-    mpv->vsh2->f10=get_field(dst,4,&off);
-    off=16;
-    mpv->vsh2->f11=get_field(dst,4,&off);
-    off=20;
-    mpv->vsh2->dc=get_field(dst,2,&off);
-    off=22;
-    mpv->vsh2->ps=get_field(dst,2,&off);
-    off=24;
-    mpv->vsh2->t=get_field(dst,1,&off);
-    off=25;
-    mpv->vsh2->p=get_field(dst,1,&off);
-    off=26;
-    mpv->vsh2->c=get_field(dst,1,&off);
-    off=27;
-    mpv->vsh2->q=get_field(dst,1,&off);
-    off=28;
-    mpv->vsh2->v=get_field(dst,1,&off);
-    off=29;
-    mpv->vsh2->a=get_field(dst,1,&off);
-    off=30;
-    mpv->vsh2->r=get_field(dst,1,&off);
-    off=31;
-    mpv->vsh2->h=get_field(dst,1,&off);
-    off=32;
-    mpv->vsh2->g=get_field(dst,1,&off);
-    off=33;
-    mpv->vsh2->d=get_field(dst,1,&off);
-
-
-    /*---------------------*/
-    
-    if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
-        return ret;
-
-    if(header == EXT_START_CODE) {
-        bt=ext_and_user_data(&dst[count], dst_remained, in, properties, mpv);
-        if(bt<0)
-            return bt;
-        count+=bt;
-    }
-
-    return count;
-
-}
-
-static int picture_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
-{
-    int count=0, ret,off,bt;
-    uint32 header;
-
-    /*---------------------*/
-    count=next_start_code2(dst, dst_remained, in);
-    dst_remained-=count;
-
-    off=0;
-    mpv->vsh1->mbz=0; /*unused*/
-    mpv->vsh1->tr=mpv->temp_ref=get_field(dst,10,&off);
-    
-    mpv->vsh1->an=0;/*TODO*/ 
-    mpv->vsh1->n=0;/*TODO*/ 
-    
-    off=10;
-    mpv->vsh1->p=mpv->picture_coding_type=get_field(dst,3,&off);
-    
-    if(mpv->picture_coding_type == 2 || mpv->picture_coding_type == 3) {
-        off=29;
-        mpv->vsh1->ffv=get_field(dst,1,&off);
-        off=30;
-        mpv->vsh1->ffc=get_field(dst,3,&off);
-    }
-    else {
-    
-        mpv->vsh1->ffv=0;
-        mpv->vsh1->ffc=0;
-    }
-
-    if(mpv->picture_coding_type == 3) {
-        off=33;
-        mpv->vsh1->fbv=get_field(dst,1,&off);
-        off=34;
-        mpv->vsh1->bfc=get_field(dst,3,&off);
-    } 
-    else {
-    
-        mpv->vsh1->fbv=0;
-        mpv->vsh1->bfc=0;
-    }
-    
-    /*---------------------*/
-    if ( (ret=get_header(&header, &dst[count-4], mpv)) ) 
-        return ret;
-
-    if(header == EXT_START_CODE) {
-        bt=picture_coding_ext(&dst[count], dst_remained, in, properties, mpv);
-        if(bt<0)
-            return bt;
-        count+=bt;
-    }
-
-    return count;
-
-}
-
-static int slice(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
-{
-    int count=0;
-
-    /*---------------------*/
-    count=next_start_code2(dst, dst_remained, in);
-
-    /*---------------------*/
-    return count;
-
-}
-
-static int mpv_read(uint32 nbytes, uint8 *buf, mpv_input *in)
-{
-    if (in->istream)
-    {
-        //printf("Reading from file n_bytes=%d\n",nbytes);
-        return istream_read(in->istream, buf, nbytes);
-    }
-    else if (in->src) {
-        uint32 to_cpy=min(nbytes, in->src_nbytes);
-
-        if (buf)
-            memcpy(buf, in->src, to_cpy);
-        in->src += to_cpy;
-        in->src_nbytes -= to_cpy;
-
-        return to_cpy;
-    } else 
-        return ERR_EOF;
-    
-}
 
