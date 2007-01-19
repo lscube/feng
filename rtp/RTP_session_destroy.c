@@ -56,7 +56,9 @@
 RTP_session *RTP_session_destroy(RTP_session * session)
 {
 	RTP_session *next = session->next;
+#if !ENABLE_MEDIATHREAD
 	OMSBuffer *buff = session->current_media->pkt_buffer;
+#endif
 	//struct stat fdstat;
 
 	RTP_transport_close(session);
@@ -65,6 +67,7 @@ RTP_session *RTP_session_destroy(RTP_session * session)
 
 	// destroy consumer
 	OMSbuff_unref(session->cons);
+#if !ENABLE_MEDIATHREAD
 	if (session->current_media->pkt_buffer->control->refs == 0) {
 		session->current_media->pkt_buffer = NULL;
 		OMSbuff_free(buff);
@@ -73,6 +76,7 @@ RTP_session *RTP_session_destroy(RTP_session * session)
 		//if ( !S_ISFIFO(fdstat.st_mode) )
 		mediaclose(session->current_media);
 	}
+#endif
 	// Deallocate memory
 	free(session);
 
