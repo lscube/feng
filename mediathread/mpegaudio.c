@@ -404,7 +404,7 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
 	memcpy(dst, &mpa_header, sizeof(mpa_header));
 
 	ret = mpa_read(&in, dst+sizeof(mpa_header)+dst_offset, to_cpy);
-	
+
 	return ret+dst_offset;
 }
 
@@ -412,17 +412,23 @@ int parse(void *track, double mtime, uint8 *data, long len, uint8 *extradata,
                  long extradata_len)
 {
     Track *tr = (Track *)track;
+    mpa_data *mpa=(mpa_data *)tr->private_data;
     int ret;
     OMSSlot *slot;
-    uint32 dst_len = len + 4;
+    uint32 dst_len = len + 4; //mpegaudio can be fragmented but not collated
     uint8 dst[dst_len];
-
-    ret = packetize(dst, &dst_len, data, len, tr->properties,
-              tr->private_data);
-    if (ret == ERR_NOERROR) {
-        ret = OMSbuff_write(tr->buffer, 0, mtime, 0, dst, dst_len);
-        if (ret) fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
-    }
+    do {
+        // dst_len remains unchanged...
+        ret = packetize(dst, &dst_len, data, len, tr->properties,
+                  tr->private_data);
+        if (ret > 0) {
+            ret = OMSbuff_write(tr->buffer, 0, mtime, 0, dst, dst_len);
+            if (ret) { 
+                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                return ret;
+            }
+        }
+    } while (mpa->fragmented);
     return ret;
 }
 
