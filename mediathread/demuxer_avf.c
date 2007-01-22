@@ -44,11 +44,8 @@ static DemuxerInfo info = {
 	"mov, nut, mkv, mxf" // the others are a problem
 };
 
-
-
-
-// FNC_LIB_DEMUXER(avf);
-
+FNC_LIB_DEMUXER(avf);
+/*
 Demuxer fnc_demuxer_avf =
 {
         &info,
@@ -58,14 +55,13 @@ Demuxer fnc_demuxer_avf =
         seek,
         uninit
 };
-
+*/
 
 typedef struct id_tag {
     const int id;
     const int pt;
     const char tag[11];
 } id_tag;
-
 
 //FIXME this should be simplified!
 const id_tag id_tags[] = {
@@ -105,7 +101,9 @@ static int pt_from_id(int id)
     } 
     return 0;
 }
-#if 0 //FIXME
+
+#if 0
+//if we want to use inputstream we need to implement some more functions...
 static int fnc_open(URLContext *h, const char *filename, int flags){
     return 0;
 }
