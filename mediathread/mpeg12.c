@@ -144,7 +144,7 @@ static float AspectRatioCode[] = {
         0.0000  /*  15              reserved                                */
     };
 
-static int mpv_read(uint32 nbytes, uint8 *buf, mpv_input *in)
+static int mpv_read(mpv_input *in, uint8 *buf, uint32 nbytes)
 {
     if (in->istream)
     {
@@ -171,7 +171,7 @@ static int get_header(uint32 *header, uint8* src, mpv_data *mpv)
     int ret;
     mpv_input in = {NULL, src, 4};
 
-    if ( (ret=mpv_read(4, sync_w, &in)) != 4 ) 
+    if ( (ret=mpv_read(&in, sync_w, 4)) != 4 ) 
         return (ret<0) ? ERR_PARSE : ERR_EOF;
     
     while ( !MPV_IS_SYNC(sync_w) ) {
@@ -186,12 +186,12 @@ static int mpv_sync(uint32 *header, mpv_input *in, mpv_data *mpv)
     uint8 *sync_w = (uint8 *)header;
     int ret;
 
-    if ( (ret=mpv_read(4, sync_w, in)) != 4 ) 
+    if ( (ret=mpv_read(in, sync_w, 4)) != 4 ) 
         return (ret<0) ? ERR_PARSE : ERR_EOF;
     
     while ( !MPV_IS_SYNC(sync_w) ) {
         SHIFT_RIGHT(*header,8);
-        if ( (ret=mpv_read(1, &sync_w[3], in)) != 1 ) 
+        if ( (ret=mpv_read(in, &sync_w[3], 1)) != 1 ) 
             return (ret<0) ? ERR_PARSE : ERR_EOF;
     }
 
@@ -204,7 +204,7 @@ static int next_start_code2(uint8 *dst, uint32 dst_remained, mpv_input *in)
     int ret;
     uint8 sync_w[4];
 
-    if ( (ret=mpv_read(4, sync_w, in)) != 4 ) 
+    if ( (ret=mpv_read(in, sync_w, 4)) != 4 ) 
         return (ret<0) ? ERR_PARSE : ERR_EOF;
     
     while ( !MPV_IS_SYNC(sync_w) ) {
@@ -214,7 +214,7 @@ static int next_start_code2(uint8 *dst, uint32 dst_remained, mpv_input *in)
         sync_w[0]=sync_w[1];
         sync_w[1]=sync_w[2];
         sync_w[2]=sync_w[3];
-        if ( (ret=mpv_read(1, &sync_w[3], in)) != 1 ) 
+        if ( (ret=mpv_read(in, &sync_w[3], 1)) != 1 ) 
             return (ret<0) ? ERR_PARSE : ERR_EOF;
     }
     
@@ -617,7 +617,7 @@ int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, Med
     }
 
     while(countsrc < src_nbytes && count < *dst_nbytes) {
-        if ( (ret=mpv_read(1, &dst[count], &in)) != 1 ) {
+        if ( (ret=mpv_read(&in, &dst[count], 1)) != 1 ) {
             mpv->vsh1->e=1;/*end of slice*/
             mpv->is_fragmented=0;
             VSHCPY;
@@ -637,7 +637,6 @@ int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, Med
             if ( !(get_header(&header, &src[countsrc], mpv)) )
                 break;
         }
-
     }
 
     if ( !(get_header(&header, &src[countsrc], mpv)) ) {
