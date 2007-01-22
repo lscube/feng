@@ -110,7 +110,7 @@ typedef struct {
 	uint32 src_nbytes;
 } mpa_input;
 
-static int mpa_read(uint32 nbytes, uint8 *buf, mpa_input *in)
+static int mpa_read(mpa_input *in, uint8 *buf, uint32 nbytes)
 {
 	if (in->istream)
 		return istream_read(in->istream, buf, nbytes);
@@ -147,8 +147,7 @@ static int mpa_read_id3v2(id3v2_hdr *id3hdr, mpa_input *in, mpa_data *mpa)
 
 	tagsize=dec_synchsafe_int(id3hdr->size);
 
-	// if ( (ret=istream_read(tagsize, NULL, i_stream)) != (int)tagsize )
-	if ( (ret=mpa_read(tagsize, NULL, in)) != (int)tagsize )
+	if ( (ret=mpa_read(in, NULL, tagsize)) != (int)tagsize )
 		return (ret<0) ? ERR_PARSE : ERR_EOF;
 
 	return 0;
@@ -272,8 +271,7 @@ static int mpa_sync(uint32 *header, mpa_input *in, mpa_data *mpa)
 	uint8 *sync_w = (uint8 *)header;
 	int ret;
 
-	// if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
-	if ( (ret=mpa_read(4, sync_w, in)) != 4 )
+	if ( (ret=mpa_read(in, sync_w, 4)) != 4 )
 		return (ret<0) ? ERR_PARSE : ERR_EOF;
 
 	if (!mpa->probed) {
@@ -285,13 +283,13 @@ static int mpa_sync(uint32 *header, mpa_input *in, mpa_data *mpa)
 
 			memcpy(&id3hdr, sync_w, 4);
 			// if ( (ret = istream_read(ID3v2_HDRLEN - 4, &id3hdr.rev, i_stream)) != ID3v2_HDRLEN - 4 )
-			if ( (ret = mpa_read(ID3v2_HDRLEN - 4, &id3hdr.rev, in)) != ID3v2_HDRLEN - 4 )
+			if ( (ret = mpa_read(in, &id3hdr.rev,ID3v2_HDRLEN - 4)) != ID3v2_HDRLEN - 4 )
 				return (ret<0) ? ERR_PARSE : ERR_EOF;
 			// if ( (ret=mpa_read_id3v2(&id3hdr, i_stream, mpa)) )
 			if ( (ret=mpa_read_id3v2(&id3hdr, in, mpa)) )
 				return ret;
 			// if ( (ret=istream_read(4, sync_w, i_stream)) != 4 )
-			if ( (ret=mpa_read(4, sync_w, in)) != 4 )
+			if ( (ret=mpa_read(in, sync_w, 4)) != 4 )
 				return (ret<0) ? ERR_PARSE : ERR_EOF;
 		}
 	}
@@ -302,7 +300,7 @@ static int mpa_sync(uint32 *header, mpa_input *in, mpa_data *mpa)
 		// sync_w[2]=sync_w[3];
 
 		// if ( (ret=istream_read(1, &sync_w[3], i_stream)) != 1 )
-		if ( (ret=mpa_read(1, &sync_w[3], in)) != 1 )
+		if ( (ret=mpa_read(in, &sync_w[3], 4)) != 1 )
 			return (ret<0) ? ERR_PARSE : ERR_EOF;
 		fnc_log(FNC_LOG_DEBUG, "[MPA] sync: %X%X%X%X\n", sync_w[0], sync_w[1], sync_w[2], sync_w[3]);
 	}
@@ -405,7 +403,7 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
 	// rtp MPA sub-header
 	memcpy(dst, &mpa_header, sizeof(mpa_header));
 
-	ret = mpa_read(to_cpy, dst+sizeof(mpa_header)+dst_offset, &in);
+	ret = mpa_read(&in, dst+sizeof(mpa_header)+dst_offset, to_cpy);
 	
 	return ret+dst_offset;
 }
