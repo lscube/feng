@@ -288,7 +288,7 @@ static int open_mrl_st_file(InputStream *is)
 
 	if (!(*is->name))
 		return ERR_INPUT_PARAM;
-	
+
 	fnc_log(FNC_LOG_DEBUG, "opening file %s...\n", is->name);
 
 	// TODO: handle pipe
