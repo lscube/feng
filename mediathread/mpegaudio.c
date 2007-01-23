@@ -385,7 +385,7 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
 			mpa->frag_offset += to_cpy;
 		mpa_header = mpa->frag_offset & 0x00FF;
 	} else { // last frame wasn't fragmented
-		if ( (ret=mpa_sync(&header, &in, mpa)) )
+		if ( (ret = mpa_sync(&header, &in, mpa)) )
 			return ret;
 		// mpa_header = 0; // already initialized
 		memcpy(dst + 4, &header, sizeof(header));
@@ -404,8 +404,11 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
 	memcpy(dst, &mpa_header, sizeof(mpa_header));
 
 	ret = mpa_read(&in, dst+sizeof(mpa_header)+dst_offset, to_cpy);
-
-	return ret+dst_offset;
+        if (ret == to_cpy) {
+            *dst_nbytes = ret + dst_offset;
+            ret = 0;
+        } else ret = ERR_PARSE;
+	return ret;
 }
 
 int parse(void *track, double mtime, uint8 *data, long len, uint8 *extradata, 
@@ -418,7 +421,8 @@ int parse(void *track, double mtime, uint8 *data, long len, uint8 *extradata,
     uint32 dst_len = len + 4; //mpegaudio can be fragmented but not collated
     uint8 dst[dst_len];
     do {
-        // dst_len remains unchanged...
+        // dst_len remains unchanged,
+        // the return value is either EOF or the size
         ret = packetize(dst, &dst_len, data, len, tr->properties,
                   tr->private_data);
         if (ret > 0) {
@@ -427,6 +431,7 @@ int parse(void *track, double mtime, uint8 *data, long len, uint8 *extradata,
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
                 return ret;
             }
+            dst_len = len + 4;
         }
     } while (mpa->fragmented);
     return ret;
