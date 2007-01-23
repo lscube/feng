@@ -59,11 +59,13 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStr
 /* packetize: ...
  *    args:
  *       dst: destination memory slot,
- *       dst_nbytes: number of bytes of *dest memory area,
+ *       dst_nbytes: number of bytes of *dest memory area, byte written 
  *       src: source memory slot,
  *       src_nbytes: number of bytes of *source memory area,
  *       void *properties: private data specific for each media parser.
- *    return: ...
+ *    return:  0 on success;
+ *            >0 means that the source buffer isn't fully consumed (fragmentation)
+ *            <0 something got wrong
  * */
 static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data);
 
