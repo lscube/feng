@@ -57,6 +57,7 @@ MObject_def(__MEDIA_PROPERTIES)
 	uint32 clock_rate;
 	char encoding_name[11];
 	MediaType media_type;
+        double mtime;
 	// Audio specific properties:
 	float sample_rate;/*SamplingFrequency*/
 	float OutputSamplingFrequency;
@@ -91,7 +92,6 @@ typedef struct __MEDIAPARSER {
 	int (*get_frame)(uint8 *, uint32, double *, InputStream *, MediaProperties *, void *);
 	int (*packetize)(uint8 *, uint32 *, uint8 *, uint32, MediaProperties *, void *);
         int (*parse)(void *track, // workaround
-                     double mtime,
                      uint8 *data,
                      long len,
                      uint8 *extradata,

@@ -298,7 +298,6 @@ err_alloc:
 static int read_packet(Resource * r)
 {
     int ret = -1;
-    double mtime = 0;
 #if 0
     Selector *sel;
 #else
@@ -333,10 +332,11 @@ static int read_packet(Resource * r)
         if (pkt.stream_index == TRACK(tr)->info->id) {
 // push it to the framer
             stream = priv->avfc->streams[TRACK(tr)->info->id];
-            if(pkt.pts != AV_NOPTS_VALUE)
-                    mtime = pkt.pts * av_q2d(stream->time_base);
+            if(pkt.pts != AV_NOPTS_VALUE) 
+                TRACK(tr)->properties->mtime = 
+                    pkt.pts * av_q2d(stream->time_base);
 
-            ret = TRACK(tr)->parser->parse(TRACK(tr), mtime, pkt.data, pkt.size,
+            ret = TRACK(tr)->parser->parse(TRACK(tr), pkt.data, pkt.size,
                                     stream->codec->extradata,
                                     stream->codec->extradata_size);
             break;

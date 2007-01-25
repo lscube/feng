@@ -657,7 +657,7 @@ int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, Med
     return mpv->is_fragmented;
 }
 
-int parse(void *track, double mtime, uint8 *data, long len, uint8 *extradata,
+int parse(void *track, uint8 *data, long len, uint8 *extradata,
           long extradata_len)
 {
     Track *tr = (Track *)track;
@@ -671,7 +671,8 @@ int parse(void *track, double mtime, uint8 *data, long len, uint8 *extradata,
         ret = packetize(dst, &dst_len, data, len, tr->properties,
                   tr->private_data);
         if (ret >= 0) {
-            if (OMSbuff_write(tr->buffer, 0, mtime, 0, dst, dst_len)) { 
+            if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0,
+                              dst, dst_len)) {
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
                 return ERR_ALLOC;
             }
