@@ -42,7 +42,7 @@
 
 extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
-int32 schedule_start(int id, play_args *args)
+int schedule_start(int id, play_args *args)
 {
     struct timeval now;
     double mnow;

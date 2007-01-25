@@ -74,7 +74,7 @@ void schedule_do(int sig);
 #endif
 
 int schedule_add(RTP_session * rtp_session /*,RTSP_session *rtsp_session */ );
-int32 schedule_start(int id, play_args * args);
+int schedule_start(int id, play_args * args);
 void schedule_stop(int id);
 int schedule_remove(int id);
 int schedule_resume(int id, play_args * args);
