@@ -38,7 +38,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <math.h>
-#include <fenice/mediainfo.h>
+//#include <fenice/mediainfo.h>
 #include <fenice/types.h>
 #ifdef WIN32
 #define strncasecmp(s1,s2,len)  _strnicmp(s1,s2,len)

@@ -88,6 +88,8 @@ int mt_add_event(mt_event_id id, void **args) {
 }
 
 inline int mt_process_event(mt_event_item *ev) {
+	Track *t;
+
 	if (!ev)
 		return ERR_GENERIC;
 
@@ -95,6 +97,9 @@ inline int mt_process_event(mt_event_item *ev) {
 
 	switch (ev->id) {
 		case MT_EV_BUFFER_LOW:
+			t = ev->args[0];
+			fnc_log(FNC_LOG_DEBUG, "Filling buffer for track %p\n", t);
+			
 			break;
 		default:
 			break;

@@ -226,6 +226,9 @@ int RTSP_play(RTSP_buffer * rtsp)
     } else {
         url_is_file = is_supported_url(p);
     }
+#if ENABLE_MEDIATHREAD
+#warning No Play Method!
+#else
     q = strchr(object, '!');
     if (q == NULL) {
         // PLAY <file.sd>
@@ -289,6 +292,7 @@ int RTSP_play(RTSP_buffer * rtsp)
             }
         }
     }
+#endif
 
     fnc_log(FNC_LOG_INFO, "PLAY %s RTSP/1.0 ", url);
     send_play_reply(rtsp, object, rtsp_sess);

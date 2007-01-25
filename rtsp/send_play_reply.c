@@ -46,6 +46,8 @@ int send_play_reply(RTSP_buffer * rtsp, char *object,
 	char r[1024];
 	char temp[30];
 	RTP_session *p = rtsp_session->rtp_session;
+	Track *t = TRACK(g_list_nth(p->track_selector->tracks,
+				    p->track_selector->default_index));
 	/* build a reply message */
 	sprintf(r,
 		"%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
@@ -66,7 +68,7 @@ int send_play_reply(RTSP_buffer * rtsp, char *object,
 		// TODO: we MUST be sure to send the correct url 
 		sprintf(r + strlen(r), "rtsp://%s/%s/%s!%s",
 			prefs_get_hostname(), p->sd_filename, p->sd_filename,
-			p->current_media->filename);
+			t->info->name);
 		strcat(r, ";");
 		sprintf(r + strlen(r), "seq=%u;rtptime=%u", p->start_seq,
 			p->start_rtptime);

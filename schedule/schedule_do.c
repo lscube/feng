@@ -38,7 +38,7 @@
 
 #include <pthread.h>
 #include <fenice/schedule.h>
-#include <fenice/intnet.h>
+//#include <fenice/intnet.h>
 #include <fenice/rtcp.h>
 #include <fenice/utils.h>
 #include <fenice/debug.h>
@@ -90,15 +90,20 @@ do {
             if (!sched[i].rtp_session->pause) {
                 gettimeofday(&now,NULL);
                 mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
-
+#if ENABLE_MEDIATHREAD
+#warning Write mt equivalent
+#else
                 if (mnow >= sched[i].rtp_session->current_media->mstart &&
                     mnow - sched[i].rtp_session->mprev_tx_time >=
-                        sched[i].rtp_session->current_media->description.pkt_len) 
+                        sched[i].rtp_session->current_media->description.pkt_len)
+#endif
                 {
-
+#if ENABLE_MEDIATHREAD
+#warning Write mt equivalent
+#else
                     stream_change(sched[i].rtp_session,
                         change_check(sched[i].rtp_session));
-
+#endif
                     RTCP_handler(sched[i].rtp_session);
                 /*if RTCP_handler return ERR_GENERIC what do i have to do?*/
 
@@ -108,7 +113,7 @@ do {
                         case ERR_NOERROR: // All fine
                             break;
                         case ERR_EOF:
-                            if(sched[i].rtp_session->current_media->description.msource==live) {
+                            if(r_selected_track(sched[i].rtp_session->track_selector)->msource==live) {
                                     fnc_log(FNC_LOG_WARN,"Pipe empty!\n");
                             } else {
                                     fnc_log(FNC_LOG_INFO,"Stream Finished\n");
@@ -123,9 +128,12 @@ do {
                             fnc_log(FNC_LOG_WARN,"Packet Lost\n");
                             break;
                     }
-
+#if ENABLE_MEDIATHREAD
+#warning Write mt equivalent
+#else
                     sched[i].rtp_session->mprev_tx_time
                         += sched[i].rtp_session->current_media->description.pkt_len;
+#endif
                 }
             }
 

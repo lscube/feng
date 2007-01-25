@@ -71,13 +71,13 @@ int RTP_send_packet(RTP_session * session)
 	double nextts;
 	OMSSlot *slot = NULL;
 	ssize_t psize_sent = 0;
+	Track *t = r_selected_track(session->track_selector);
 
 	fnc_log(FNC_LOG_DEBUG, "Trying to send a RTP packet\n");
 
 	if (!(slot = OMSbuff_getreader(session->cons))) {
 #if ENABLE_MEDIATHREAD
-		if ((res = event_buffer_low(session->track_selector->
-					    default_index)) != ERR_NOERROR) {
+		if ((res = event_buffer_low(t)) != ERR_NOERROR) {
 			fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low\n");
 			return res;
 		}
@@ -119,13 +119,18 @@ int RTP_send_packet(RTP_session * session)
 		r.extension = 0;
 		r.csrc_len = 0;
 		r.marker = slot->marker;
+#if ENABLE_MEDIATHREAD
+		r.payload = t->properties->payload_type;
+#else
 		r.payload = session->current_media->description.payload_type;
+#endif
 //              r.seq_no = htons(session->seq++ + session->start_seq);
 		r.seq_no = htons(slot->slot_seq + session->start_seq - 1);
 		r.timestamp =
 		    htonl(session->start_rtptime +
-			  msec2tick(slot->timestamp,
-				    session->current_media) -
+#warning Temporary
+			  (slot->timestamp * 1000 /
+			   t->properties->clock_rate) -
 			  session->cons->firstts);
 		r.ssrc = htonl(session->ssrc);
 #if HAVE_ALLOCA
@@ -183,13 +188,12 @@ int RTP_send_packet(RTP_session * session)
 		if ((nextts = OMSbuff_nextts(session->cons)) >= 0)
 			nextts -= session->cons->firstts;
 		// fnc_log(FNC_LOG_DEBUG, "*** current time=%f - next time=%f\n\n", s_time, nextts);
-#if ENABLE_MEDIATHREAD
-		if (nextts == -1) {
-			event_buffer_low(session->track_selector->default_index);
-		}
-#endif
+
 		if ((nextts == -1) || (nextts != s_time)) {
 			// fnc_log(FNC_LOG_DEBUG, "*** time on\n");
+#if ENABLE_MEDIATHREAD
+			event_buffer_low(t);
+#else
 			if (session->current_media->description.delta_mtime)
 				session->current_media->mtime += session->current_media->description.delta_mtime;	//emma
 //                      else if (nextts > 0)
@@ -198,6 +202,7 @@ int RTP_send_packet(RTP_session * session)
 			else
 				session->current_media->mtime +=
 				    session->current_media->description.pkt_len;
+#endif
 			slot = NULL;
 			session->cons->frames--;
 		} else

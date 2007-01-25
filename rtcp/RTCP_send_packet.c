@@ -49,6 +49,7 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
 	unsigned char *pkt = NULL;
 	RTCP_header hdr;
 	uint32 pkt_size = 0, hdr_s = 0;
+	Track *t = r_selected_track(session->track_selector);
 
 	hdr.version = 2;
 	hdr.padding = 0;
@@ -75,8 +76,8 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
 			    htonl((unsigned int) ((double) ntp_time.tv_sec +
 						  (double) ntp_time.tv_usec /
 						  1000000.) *
-				  session->current_media->description.
-				  clock_rate + session->start_rtptime);
+				  t->properties->clock_rate +
+				  session->start_rtptime);
 
 			hdr_sr.pkt_count =
 			    session->rtcp_stats[i_server].pkt_count;

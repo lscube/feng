@@ -88,12 +88,10 @@ typedef struct __INPUTSTREAM {
 	Cache *cache;
 	int fd;
 	//... properties for file, net or device 
-#ifdef HAVE_MMAP
 	int mmap_on;
         void *mmap_base;
         void *mmap_curr;
         size_t mmap_len;
-#endif
 	istream_flags flags;
 } InputStream;
 

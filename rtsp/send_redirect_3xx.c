@@ -43,6 +43,9 @@
 
 uint32 send_redirect_3xx(RTSP_buffer * rtsp, char *object)
 {
+#if ENABLE_MEDIATHREAD
+#warning Write mt equivalent
+#else
 	char *r;		/* get reply message buffer pointer */
 	uint8 *mb;		/* message body buffer pointer */
 	uint32 mb_len;
@@ -91,6 +94,7 @@ uint32 send_redirect_3xx(RTSP_buffer * rtsp, char *object)
 	free(r);
 
 	fnc_log(FNC_LOG_VERBOSE, "REDIRECT response sent.\n");
+#endif
 	return ERR_NOERROR;
 
 }

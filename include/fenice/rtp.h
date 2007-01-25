@@ -42,7 +42,7 @@
 #include <sys/socket.h>
 #include <netembryo/wsocket.h>
 #include <fenice/mediathread.h>
-#include <fenice/mediainfo.h>
+//#include <fenice/mediainfo.h>
 #include <fenice/bufferpool.h>
 #include <fenice/types.h>
 #include <fenice/prefs.h>
@@ -113,11 +113,11 @@ typedef struct _RTP_session {
 
 	unsigned int seq;
 	unsigned int ssrc;
-//              port_pair ser_ports;
-//              port_pair cli_ports;
+//	port_pair ser_ports;
+//	port_pair cli_ports;
 	char sd_filename[255];
-	media_entry *current_media;
-	SD_descr *sd_descr;
+//	media_entry *current_media;
+//	SD_descr *sd_descr;
 
 	//mediathread - TODO: find better placement
 	Selector *track_selector;

@@ -552,11 +552,12 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     }
     rtp_s->pause = 1;
     strcpy(rtp_s->sd_filename, object);
+#if !ENABLE_MEDIATHREAD
     /*xxx */
     rtp_s->current_media = calloc(1, sizeof(media_entry));
 
     // if(!(matching_descr->flags & SD_FL_MULTICAST_PORT)){
-#if !ENABLE_MEDIATHREAD
+
     // TODO: multicast with mediathread
     if (is_multicast_dad) {
         if (mediacpy(&rtp_s->current_media, &matching_me)) {
@@ -572,14 +573,14 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     rtp_s->start_seq = start_seq;
     memcpy(&rtp_s->transport, &transport, sizeof(transport));
     rtp_s->is_multicast_dad = is_multicast_dad;
-
-    /*xxx */
-    rtp_s->sd_descr = matching_descr;
-
-    rtp_s->sched_id = schedule_add(rtp_s);
 #if ENABLE_MEDIATHREAD
     rtp_s->track_selector = track_sel;
+#else
+    /*xxx */
+    rtp_s->sd_descr = matching_descr;
 #endif
+    rtp_s->sched_id = schedule_add(rtp_s);
+
 
     rtp_s->ssrc = ssrc;
     // Setup the RTSP session

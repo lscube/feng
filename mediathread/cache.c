@@ -30,6 +30,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <fenice/InputStream.h>
 #include <fenice/utils.h>

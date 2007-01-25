@@ -41,7 +41,7 @@
 #include <netembryo/wsocket.h>
 #include <fenice/rtp.h>
 #include <fenice/rtcp.h>
-#include <fenice/mediainfo.h>
+//#include <fenice/mediainfo.h>
 #include <fenice/schedule.h>
 
 #define RTSP_BUFFERSIZE 4096

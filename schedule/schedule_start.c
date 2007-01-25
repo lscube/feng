@@ -46,23 +46,28 @@ int32 schedule_start(int id, play_args *args)
 {
     struct timeval now;
     double mnow;
+    RTP_session *session;
 
     gettimeofday(&now,NULL);
     mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
-    sched[id].rtp_session->cons = 
-        OMSbuff_ref(sched[id].rtp_session->current_media->pkt_buffer);
+    session = sched[id].rtp_session;
+    session->cons =
+        OMSbuff_ref(r_selected_track(session->track_selector)->buffer);
 
-    if (sched[id].rtp_session->cons == NULL)
+    if (session->cons == NULL)
         return ERR_ALLOC;
 
 /* Iff this session is the first session related to this media_entry,
  * then it runs here
  * */
-    if (sched[id].rtp_session->current_media->pkt_buffer->control->refs==1) {
+    if (r_selected_track(session->track_selector)->buffer->control->refs == 1) {
+#if ENABLE_MEDIATHREAD
+#warning Check mt equivalent!
+#else
         if (!args->playback_time_valid) {
-            sched[id].rtp_session->current_media->mstart = mnow;
+            session->current_media->mstart = mnow;
         } else {
-            sched[id].rtp_session->current_media->mstart = 
+            session->current_media->mstart =
                 mktime(&(args->playback_time));
         }
         sched[id].rtp_session->current_media->mtime = mnow;
@@ -70,14 +75,15 @@ int32 schedule_start(int id, play_args *args)
             args->start_time*1000;
         sched[id].rtp_session->current_media->play_offset =
             args->start_time*1000;
+#endif
     }
-    sched[id].rtp_session->mprev_tx_time = mnow;
-    sched[id].rtp_session->pause = 0;
-    sched[id].rtp_session->started = 1;
-    sched[id].rtp_session->MinimumReached = 0;
-    sched[id].rtp_session->MaximumReached = 0;
-    sched[id].rtp_session->PreviousCount = 0;
-    sched[id].rtp_session->rtcp_stats[i_client].RR_received = 0;
-    sched[id].rtp_session->rtcp_stats[i_client].SR_received = 0;
+    session->mprev_tx_time = mnow;
+    session->pause = 0;
+    session->started = 1;
+    session->MinimumReached = 0;
+    session->MaximumReached = 0;
+    session->PreviousCount = 0;
+    session->rtcp_stats[i_client].RR_received = 0;
+    session->rtcp_stats[i_client].SR_received = 0;
     return ERR_NOERROR;
 }

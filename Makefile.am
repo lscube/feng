@@ -9,8 +9,8 @@ SUBDIRS =	bufferpool \
 		eventloop \
 		rtp \
 		rtcp \
-		intnet \
-		rtsp 
+		rtsp
+#		intnet
 
 if FENICE_STUN
 SUBDIRS +=	stunserver \
@@ -18,15 +18,14 @@ SUBDIRS +=	stunserver \
 
 endif
 
-SUBDIRS +=	mediainfo \
-		sdp \
-		sdp2 \
+SUBDIRS +=	sdp2 \
 		schedule \
 		src \
 		docs \
 		etc \
 		avroot
-		
+#		mediainfo
+#		sdp
 
 EXTRA_DIST = 	include \
 		config \

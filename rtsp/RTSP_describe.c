@@ -35,10 +35,10 @@
 #include <stdio.h>
 #include <string.h>
 
+//#include <fenice/sdp.h>
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
-#include <fenice/sdp.h>
 #include <fenice/sdp2.h>
 #include <fenice/fnc_log.h>
 
@@ -54,7 +54,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
 	char *p;
 	unsigned short port;
 	char url[255];
-	media_entry media, req;
+//	media_entry media, req;
 	description_format descr_format = df_SDP_format;	// shawill put to some default
 	char descr[MAX_DESCR_LENGTH];
 
@@ -137,14 +137,14 @@ int RTSP_describe(RTSP_buffer * rtsp)
 	}
 
 
-	memset(&media, 0, sizeof(media));
-	memset(&req, 0, sizeof(req));
-	req.flags = ME_DESCR_FORMAT;
-	req.descr_format = descr_format;
-	if ( sdp_session_descr(object, descr, sizeof(descr)) ) // shawill tries for sdp2 lib
+//	memset(&media, 0, sizeof(media));
+//	memset(&req, 0, sizeof(req));
+//	req.flags = ME_DESCR_FORMAT;
+//	req.descr_format = descr_format;
+	if (res = sdp_session_descr(object, descr, sizeof(descr)) ) // shawill tries for sdp2 lib
 		fnc_log(FNC_LOG_ERR,"[SDP2] error\n");
 //		return ERR_GENERIC;
-	res = get_media_descr(object, &req, &media, descr);
+//	res = get_media_descr(object, &req, &media, descr);
 	if (res == ERR_NOT_FOUND) {
 		send_reply(404, 0, rtsp);	// Not found
 		return ERR_NOERROR;

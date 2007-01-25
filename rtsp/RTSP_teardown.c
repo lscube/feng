@@ -146,8 +146,9 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	else
 		filename = object;
 
-
-
+#if ENABLE_MEDIATHREAD
+#warning No Teardown Method!
+#else
 	// Release all URI RTP session
 	rtp_curr = s->rtp_session;
 	while (rtp_curr != NULL) {
@@ -168,6 +169,7 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 			rtp_curr = rtp_curr->next;
 		}
 	}
+#endif
 
 	if (s->rtp_session == NULL) {
 		// Close connection

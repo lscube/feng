@@ -43,6 +43,9 @@ extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 int schedule_resume(int id, play_args *args)
 {
+#if ENABLE_MEDIATHREAD
+#warning Write mt equivalent
+#else
     struct timeval now;
     double mnow, 
            pkt_len = (double)
@@ -64,6 +67,7 @@ int schedule_resume(int id, play_args *args)
     sched[id].rtp_session->current_media->mstart = mnow;
     sched[id].rtp_session->current_media->mtime =
     sched[id].rtp_session->mprev_tx_time = mnow - pkt_len;
+#endif
     sched[id].rtp_session->pause=0;
 
     return ERR_NOERROR;

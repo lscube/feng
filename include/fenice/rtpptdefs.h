@@ -36,7 +36,7 @@
 #define __RTP_PT_DEFS_H
 
 	#include <config.h>
-	#include <fenice/mediainfo.h>
+//	#include <fenice/mediainfo.h>
 
 	#ifndef GLOBAL_RTP_DEFS
 	#define RTP_DEFS_EXTERN extern
@@ -51,7 +51,7 @@
 	        int ClockRate;      // In Hz
         	short Channels;
 	        int BitPerSample;
-	        media_coding Type;  // FRAME/SAMPLE
+	        MediaCodingType Type;  // FRAME/SAMPLE
 	        float PktLen;       // In msec
 	} RTP_static_payload;	
 	
