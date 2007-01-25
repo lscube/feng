@@ -377,8 +377,10 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
              (mpa->frag_src_nbytes == src_nbytes) )
         { // last frame was fragmented
 		end_frm_dist = mpa->pkt_len - mpa->frag_offset;
-		to_cpy = min(end_frm_dist, (mpa->frag_src_nbytes-mpa->frag_offset));
-		src += mpa->frag_offset;
+		to_cpy = min(end_frm_dist, (mpa->frag_src_nbytes - 
+                                            mpa->frag_offset));
+		in.src += mpa->frag_offset;
+                in.src_nbytes -= mpa->frag_offset;
 		if (to_cpy==end_frm_dist)
 			mpa->fragmented=0;
 		else
@@ -406,16 +408,15 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
 	ret = mpa_read(&in, dst+sizeof(mpa_header)+dst_offset, to_cpy);
         if (ret == to_cpy) {
             *dst_nbytes = ret + dst_offset;
-            ret = 0;
+            ret = mpa->fragmented;
         } else ret = ERR_PARSE;
 	return ret;
 }
 
 int parse(void *track, double mtime, uint8 *data, long len, uint8 *extradata, 
-                 long extradata_len)
+          long extradata_len)
 {
     Track *tr = (Track *)track;
-    mpa_data *mpa=(mpa_data *)tr->private_data;
     int ret;
     OMSSlot *slot;
     uint32 dst_len = len + 4; //mpegaudio can be fragmented but not collated
@@ -425,15 +426,14 @@ int parse(void *track, double mtime, uint8 *data, long len, uint8 *extradata,
         // the return value is either EOF or the size
         ret = packetize(dst, &dst_len, data, len, tr->properties,
                   tr->private_data);
-        if (ret > 0) {
-            ret = OMSbuff_write(tr->buffer, 0, mtime, 0, dst, dst_len);
-            if (ret) { 
+        if (ret >= 0) {
+            if (OMSbuff_write(tr->buffer, 0, mtime, 0, dst, dst_len)) { 
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
-                return ret;
+                return ERR_ALLOC;
             }
             dst_len = len + 4;
         }
-    } while (mpa->fragmented);
+    } while (ret);
     return ret;
 }
 

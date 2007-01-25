@@ -97,6 +97,7 @@ typedef struct _MPV_DATA {
     unsigned int pictures;
     unsigned int temp_ref; /* pictures'count mod 1024*/
     unsigned int picture_coding_type;
+    unsigned int countsrc;
     standard std;
 } mpv_data;
 
@@ -592,14 +593,12 @@ int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *is
 
 int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
 {
-    int ret=0, count=0,countsrc=0;
-    uint32 header;
-    mpv_data *mpv;
+    mpv_data *mpv = (mpv_data *)private_data;
+    mpv_input in = {NULL, src + mpv->countsrc, src_nbytes - mpv->countsrc};
+    int ret = 0, count = 0, i = 0;
     uint8 *vsh_tmp;
-    mpv_input in = {NULL,src,src_nbytes};
+    uint32 header;
 
-
-    mpv=(mpv_data *)private_data;
     mpv->vsh1->b=0;/*begining of slice*/
     mpv->vsh1->e=0;/*end of slice*/
 
@@ -616,34 +615,36 @@ int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, Med
         mpv->vsh1->t=0;
     }
 
-    while(countsrc < src_nbytes && count < *dst_nbytes) {
-        if ( (ret=mpv_read(&in, &dst[count], 1)) != 1 ) {
+    while(mpv->countsrc < src_nbytes && count < *dst_nbytes) {
+        if ( (ret = mpv_read(&in, &dst[count], 1)) != 1 ) {
             mpv->vsh1->e=1;/*end of slice*/
             mpv->is_fragmented=0;
+            mpv->countsrc = 0;
             VSHCPY;
             *dst_nbytes=count;
             //return countsrc; 
             //return (ret<0) ? ERR_PARSE : ERR_EOF;
-            return ERR_EOF;
+            return ret; // 0 or EOF
         }
         count++;
-        countsrc++;
+        mpv->countsrc++;
+        i++;
 
-        if(countsrc==4)
+        if(i==4)
             if ( !(get_header(&header, &dst[count-4], mpv)) )
                 mpv->vsh1->b=1;/*begining of slice*/
 
         if(mpv->is_fragmented) {
-            if ( !(get_header(&header, &src[countsrc], mpv)) )
+            if ( !(get_header(&header, src + mpv->countsrc, mpv)) )
                 break;
         }
     }
 
-    if ( !(get_header(&header, &src[countsrc], mpv)) ) {
+    if ( !(get_header(&header, src + mpv->countsrc, mpv)) ) {
         mpv->vsh1->e=1;/*end of slice*/
         mpv->is_fragmented=0;
-    }
-    else {
+        mpv->countsrc = 0;
+    } else {
         mpv->vsh1->e=0;/*end of slice*/
         mpv->is_fragmented=1;
     }
@@ -653,24 +654,30 @@ int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, Med
 
     mpv->vsh1->s=0;/*RESET. sequence header is not present. SEQ_HEADER can be present only in the first pkt of a frame */
 
-    return countsrc;
+    return mpv->is_fragmented;
 }
 
 int parse(void *track, double mtime, uint8 *data, long len, uint8 *extradata,
-                 long extradata_len)
+          long extradata_len)
 {
     Track *tr = (Track *)track;
     int ret;
     OMSSlot *slot;
-    uint32 dst_len = len + 4;
+    uint32 dst_len = len + 4; //mpegaudio can be fragmented but not collated
     uint8 dst[dst_len];
-
-    ret = packetize(dst, &dst_len, data, len, tr->properties,
-              tr->private_data);
-    if (ret == ERR_NOERROR) {
-        ret = OMSbuff_write(tr->buffer, 0, mtime, 0, dst, dst_len);
-        if (ret) fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
-    }
+    do {
+        // dst_len remains unchanged,
+        // the return value is either EOF or the size
+        ret = packetize(dst, &dst_len, data, len, tr->properties,
+                  tr->private_data);
+        if (ret >= 0) {
+            if (OMSbuff_write(tr->buffer, 0, mtime, 0, dst, dst_len)) { 
+                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                return ERR_ALLOC;
+            }
+            dst_len = len + 4;
+        }
+    } while (ret);
     return ret;
 }
 
