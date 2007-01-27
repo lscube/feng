@@ -57,7 +57,8 @@ MObject_def(__MEDIA_PROPERTIES)
 	uint32 clock_rate;
 	char encoding_name[11];
 	MediaType media_type;
-        double mtime;
+        double mtime;    //FIXME Move to bufferpool
+        double duration; //FIXME Move to bufferpool
 	// Audio specific properties:
 	float sample_rate;/*SamplingFrequency*/
 	float OutputSamplingFrequency;
