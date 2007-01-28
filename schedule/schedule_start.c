@@ -47,12 +47,13 @@ int schedule_start(int id, play_args *args)
     struct timeval now;
     double mnow;
     RTP_session *session;
+    Track *tr = r_selected_track(session->track_selector);
 
     gettimeofday(&now,NULL);
     mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
     session = sched[id].rtp_session;
     session->cons =
-        OMSbuff_ref(r_selected_track(session->track_selector)->buffer);
+        OMSbuff_ref(tr->buffer);
 
     if (session->cons == NULL)
         return ERR_ALLOC;
@@ -60,7 +61,7 @@ int schedule_start(int id, play_args *args)
 /* Iff this session is the first session related to this media_entry,
  * then it runs here
  * */
-    if (r_selected_track(session->track_selector)->buffer->control->refs == 1) {
+    if (tr->buffer->control->refs == 1) {
 #if ENABLE_MEDIATHREAD
 #warning Check mt equivalent!
 #else
