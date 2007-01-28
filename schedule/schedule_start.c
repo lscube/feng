@@ -63,7 +63,11 @@ int schedule_start(int id, play_args *args)
  * */
     if (tr->buffer->control->refs == 1) {
 #if ENABLE_MEDIATHREAD
-#warning Check mt equivalent!
+        if (!args->playback_time_valid) {
+            session->start_time = mnow;
+        } else {
+            session->start_time = mktime(&(args->playback_time));
+        }
 #else
         if (!args->playback_time_valid) {
             session->current_media->mstart = mnow;
@@ -78,7 +82,7 @@ int schedule_start(int id, play_args *args)
             args->start_time*1000;
 #endif
     }
-    session->mprev_tx_time = mnow;
+    session->prev_tx_time = mnow;
     session->pause = 0;
     session->started = 1;
     session->MinimumReached = 0;

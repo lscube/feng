@@ -91,13 +91,13 @@ typedef struct _RTP_session {
 	int rtcp_insize;
 	unsigned char rtcp_outbuffer[RTCP_BUFFERSIZE];
 	uint32 rtcp_outsize;
-	/*      
-	   //these time vars now are in media_entry structure
-	   double mtime;
-	   double mstart;
-	   double mstart_offset; */
+	
+        //these time vars now are now back here
+	//double mtime;
+	double start_time;
+	//double mstart_offset; 
 
-	double mprev_tx_time;
+	double prev_tx_time;
 	unsigned int PreviousCount;
 	short MinimumReached;
 	short MaximumReached;

@@ -44,17 +44,14 @@ extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 int schedule_resume(int id, play_args *args)
 {
 #if ENABLE_MEDIATHREAD
-#warning Write mt equivalent
-#else
     struct timeval now;
-    double mnow, 
-           pkt_len = (double)
-                    sched[id].rtp_session->current_media->description.pkt_len;
+    Track *tr = r_selected_track(sched[id].rtp_session->track_selector);
+    double mnow, pkt_len = tr->properties->duration;
 
     gettimeofday(&now,NULL);
 
     mnow = (double)now.tv_sec*1000+(double)now.tv_usec/1000;
-
+/*
     sched[id].rtp_session->current_media->mstart_offset 
         += sched[id].rtp_session->current_media->mtime 
          - sched[id].rtp_session->current_media->mstart 
@@ -62,11 +59,12 @@ int schedule_resume(int id, play_args *args)
 
     if (args->start_time_valid)
         sched[id].rtp_session->current_media->play_offset =
-            args->start_time*1000;/*TODO:Federico. For Random Access*/
+            args->start_time*1000;
+    */
 
-    sched[id].rtp_session->current_media->mstart = mnow;
-    sched[id].rtp_session->current_media->mtime =
-    sched[id].rtp_session->mprev_tx_time = mnow - pkt_len;
+    sched[id].rtp_session->start_time = mnow;
+//    sched[id].rtp_session->current_media->mtime =
+    sched[id].rtp_session->prev_tx_time = mnow - pkt_len;
 #endif
     sched[id].rtp_session->pause=0;
 

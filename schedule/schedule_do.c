@@ -88,10 +88,16 @@ do {
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
         if (sched[i].valid) {
             if (!sched[i].rtp_session->pause) {
+                Track *tr = 
+                    r_selected_track(sched[i].rtp_session->track_selector);
+
                 gettimeofday(&now,NULL);
                 mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
 #if ENABLE_MEDIATHREAD
-#warning Write mt equivalent
+//FIXME replace
+                if (mnow >= sched[i].rtp_session->start_time &&
+                    mnow - sched[i].rtp_session->prev_tx_time >=
+                        tr->properties->duration);
 #else
                 if (mnow >= sched[i].rtp_session->current_media->mstart &&
                     mnow - sched[i].rtp_session->mprev_tx_time >=
