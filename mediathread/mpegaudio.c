@@ -425,7 +425,7 @@ int parse(void *track, uint8 *data, long len, uint8 *extradata,
         // dst_len remains unchanged,
         // the return value is either EOF or the size
         ret = packetize(dst, &dst_len, data, len, tr->properties,
-                  tr->private_data);
+                  tr->parser_private);
         if (ret >= 0) {
             if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0,
                               dst, dst_len)) { 
