@@ -46,14 +46,12 @@ int schedule_start(int id, play_args *args)
 {
     struct timeval now;
     double mnow;
-    RTP_session *session;
+    RTP_session *session = sched[id].rtp_session;
     Track *tr = r_selected_track(session->track_selector);
 
     gettimeofday(&now,NULL);
     mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
-    session = sched[id].rtp_session;
-    session->cons =
-        OMSbuff_ref(tr->buffer);
+    session->cons = OMSbuff_ref(tr->buffer);
 
     if (session->cons == NULL)
         return ERR_ALLOC;
