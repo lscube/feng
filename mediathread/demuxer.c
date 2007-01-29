@@ -333,7 +333,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
         t->parser->get_frame(tmp_dst, sizeof(tmp_dst), &timest, t->i_stream, t->properties, t->parser_private);
     }
 #endif
-
+    t->parent = r;
     r->tracks = g_list_append(r->tracks, t);
     r->num_tracks++;
 

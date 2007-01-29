@@ -84,6 +84,32 @@ typedef struct __CAPABILITIES {
 
 } Capabilities;
 
+MObject_def(__RESOURCE_INFO)
+	char *mrl;
+	char *name;
+	char *description;
+	char *descrURI;
+	char *email;
+	char *phone;
+	sdp_field_list sdp_private;
+	// char mrl[255];
+	char twin[255];
+	char multicast[16];
+	char ttl[4];
+} ResourceInfo;
+
+typedef struct __RESOURCE {
+	InputStream *i_stream;
+	struct __DEMUXER *demuxer;
+	ResourceInfo *info;
+	// Track *tracks[MAX_TRACKS];
+	SelList sel;
+        int num_sel;
+        TrackList tracks;
+	int num_tracks;
+	void *private_data; /* private data of demuxer */
+} Resource;
+
 #if 0 // define MObject with MObject_def
 typedef struct __TRACK_INFO {
 	MOBJECT_COMMONS; // MObject commons MUST be the first field
@@ -115,6 +141,7 @@ typedef struct __TRACK {
 	OMSBuffer *buffer;
 	media_source msource;
 	MediaProperties *properties; /* track properties */
+        Resource *parent;
 	/* private data is managed by specific media parser: from allocation to deallocation
 	 * track MUST NOT do anything on this pointer! */ 
 	void *private_data;
@@ -134,31 +161,7 @@ typedef struct __SELECTOR {
 typedef struct __RESOURCE_INFO {
 	MOBJECT_COMMONS; // MObject commons MUST be the first field
 #endif
-MObject_def(__RESOURCE_INFO)
-	char *mrl;
-	char *name;
-	char *description;
-	char *descrURI;
-	char *email;
-	char *phone;
-	sdp_field_list sdp_private;
-	// char mrl[255];
-	char twin[255];
-	char multicast[16];
-	char ttl[4];
-} ResourceInfo;
 
-typedef struct __RESOURCE {
-	InputStream *i_stream;
-	struct __DEMUXER *demuxer;
-	ResourceInfo *info;
-	// Track *tracks[MAX_TRACKS];
-	SelList sel;
-        int num_sel;
-        TrackList tracks;
-	int num_tracks;
-	void *private_data; /* private data of demuxer */
-} Resource;
 
 typedef struct {
 	/*name of demuxer module*/
