@@ -88,7 +88,7 @@ int mt_add_event(mt_event_id id, void **args) {
 }
 
 inline int mt_process_event(mt_event_item *ev) {
-	Track *t;
+	
 
 	if (!ev)
 		return ERR_GENERIC;
@@ -96,11 +96,17 @@ inline int mt_process_event(mt_event_item *ev) {
 	fnc_log(FNC_LOG_DEBUG, "Processing event: %#x\n", ev->id);
 
 	switch (ev->id) {
-		case MT_EV_BUFFER_LOW:
-			t = ev->args[0];
+		case MT_EV_BUFFER_LOW: {
+			Track *t = ev->args[0];
+			Resource *r = t->parent;
+
 			fnc_log(FNC_LOG_DEBUG, "Filling buffer for track %p\n", t);
-			
+
+			r->demuxer->read_packet(r);
+			//FIXME: Add sd support
+
 			break;
+		}
 		default:
 			break;
 	}
