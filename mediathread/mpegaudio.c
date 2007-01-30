@@ -300,7 +300,7 @@ static int mpa_sync(uint32 *header, mpa_input *in, mpa_data *mpa)
 		// sync_w[2]=sync_w[3];
 
 		// if ( (ret=istream_read(1, &sync_w[3], i_stream)) != 1 )
-		if ( (ret=mpa_read(in, &sync_w[3], 4)) != 1 )
+		if ( (ret=mpa_read(in, &sync_w[3], 1)) != 1 )
 			return (ret<0) ? ERR_PARSE : ERR_EOF;
 		fnc_log(FNC_LOG_DEBUG, "[MPA] sync: %X%X%X%X\n", sync_w[0], sync_w[1], sync_w[2], sync_w[3]);
 	}
@@ -372,26 +372,27 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
 	uint32 to_cpy, end_frm_dist;
 	// uint8 tmp[3];
 
-	if ( (mpa->fragmented)      &&
-             (mpa->frag_src == src) &&
-             (mpa->frag_src_nbytes == src_nbytes) )
+	if (mpa->fragmented)
         { // last frame was fragmented
+        fnc_log(FNC_LOG_DEBUG, "[mp3]Fragment\n");
 		end_frm_dist = mpa->pkt_len - mpa->frag_offset;
 		to_cpy = min(end_frm_dist, (mpa->frag_src_nbytes - 
                                             mpa->frag_offset));
 		in.src += mpa->frag_offset;
                 in.src_nbytes -= mpa->frag_offset;
 		if (to_cpy==end_frm_dist)
-			mpa->fragmented=0;
+			mpa->fragmented = 0;
 		else
 			mpa->frag_offset += to_cpy;
 		mpa_header = mpa->frag_offset & 0x00FF;
 	} else { // last frame wasn't fragmented
-		if ( (ret = mpa_sync(&header, &in, mpa)) )
+	        do {
+	    	    if ( (ret = mpa_sync(&header, &in, mpa)) )
 			return ret;
-		// mpa_header = 0; // already initialized
+		    ret=mpa_decode_header(header, properties, mpa);
+	        } while(ret);
 		memcpy(dst + 4, &header, sizeof(header));
-		dst_offset+=4;
+		dst_offset += 4;
 		to_cpy = min(mpa->pkt_len, *dst_nbytes);
 		if (to_cpy<mpa->pkt_len) {
 			mpa->fragmented = 1;
@@ -426,6 +427,9 @@ int parse(void *track, uint8 *data, long len, uint8 *extradata,
         // the return value is either EOF or the size
         ret = packetize(dst, &dst_len, data, len, tr->properties,
                   tr->parser_private);
+        fnc_log(FNC_LOG_DEBUG, "[mp3]Packetized %d bytes out of %d\n",
+                dst_len, len+4);
+
         if (ret >= 0) {
             if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0,
                               dst, dst_len)) { 
