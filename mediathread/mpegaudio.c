@@ -389,11 +389,13 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
 	        do {
 	    	    if ( (ret = mpa_sync(&header, &in, mpa)) )
 			return ret;
-		    ret=mpa_decode_header(header, properties, mpa);
+		    ret = mpa_decode_header(header, properties, mpa);
 	        } while(ret);
 		memcpy(dst + 4, &header, sizeof(header));
 		dst_offset += 4;
 		to_cpy = min(mpa->pkt_len, *dst_nbytes);
+                printf ("len %d, bytes %d, to_cpy %d\n", mpa->pkt_len,
+                        *dst_nbytes, to_cpy);
 		if (to_cpy<mpa->pkt_len) {
 			mpa->fragmented = 1;
 			mpa->frag_src = src;
@@ -401,12 +403,14 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
 			mpa->frag_offset = to_cpy;
 		} else
 			mpa->fragmented = 0;
+                to_cpy -=4;
 	}
 
 	// rtp MPA sub-header
 	memcpy(dst, &mpa_header, sizeof(mpa_header));
 
-	ret = mpa_read(&in, dst+sizeof(mpa_header)+dst_offset, to_cpy);
+	ret = mpa_read(&in, dst + sizeof(mpa_header) + dst_offset, to_cpy);
+        printf ("ret %d, to_cpy %d\n", ret, to_cpy);
         if (ret == to_cpy) {
             *dst_nbytes = ret + dst_offset;
             ret = mpa->fragmented;
@@ -427,8 +431,8 @@ int parse(void *track, uint8 *data, long len, uint8 *extradata,
         // the return value is either EOF or the size
         ret = packetize(dst, &dst_len, data, len, tr->properties,
                   tr->parser_private);
-        fnc_log(FNC_LOG_DEBUG, "[mp3]Packetized %d bytes out of %d\n",
-                dst_len, len+4);
+        fnc_log(FNC_LOG_DEBUG, "[mp3]Packetized %d bytes out of %d ||%d\n",
+                dst_len, len, ret);
 
         if (ret >= 0) {
             if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0,
@@ -438,7 +442,8 @@ int parse(void *track, uint8 *data, long len, uint8 *extradata,
             }
             dst_len = len + 4;
         }
-    } while (ret);
+    } while (ret>0);
+    fnc_log(FNC_LOG_DEBUG, "[mp3]Frame completed\n");
     return ret;
 }
 
