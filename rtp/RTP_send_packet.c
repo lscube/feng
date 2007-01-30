@@ -73,7 +73,7 @@ int RTP_send_packet(RTP_session * session)
 	ssize_t psize_sent = 0;
 	Track *t = r_selected_track(session->track_selector);
 
-	fnc_log(FNC_LOG_DEBUG, "Trying to send a RTP packet\n");
+	fnc_log(FNC_LOG_VERBOSE, "Trying to send a RTP packet\n");
 
 	if (!(slot = OMSbuff_getreader(session->cons))) {
 #if ENABLE_MEDIATHREAD
