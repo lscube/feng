@@ -218,41 +218,64 @@ int RTSP_play(RTSP_buffer * rtsp)
         send_reply(403, 0, rtsp);    /* Forbidden */
         return ERR_NOERROR;
     }
-    p = strrchr(object, '.');
-    url_is_file = 0;
-    if (p == NULL) {
-        send_reply(415, 0, rtsp);    /* Unsupported media type */
-        return ERR_NOERROR;
-    } else {
-        url_is_file = is_supported_url(p);
-    }
 #if ENABLE_MEDIATHREAD
-#warning No Play Method!
+    if (!(q = strchr(object, '!'))) {
+        //if '!' is not present then a file has not been specified
+        // aggregate content requested
+        for (rtp_sess = rtsp_sess->rtp_session;
+             rtp_sess != NULL;
+             rtp_sess = rtp_sess->next)
+        {
+            // Start playing all the presentation
+            if (!rtp_sess->started) {
+                // Start new
+                if (schedule_start (rtp_sess->sched_id, &args) == ERR_ALLOC)
+                    return ERR_ALLOC;
+            } else {
+                // Resume existing
+                if (!rtp_sess->pause) {
+                //  fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
+                } else {
+                    schedule_resume (rtp_sess->sched_id, &args);
+                }
+            }
+        }
+    } else {
+        // FIXME complete with the other stuff
+        send_reply(500, 0, rtsp);    /* Internal server error */
+        return ERR_NOERROR;
+        
+        // resource!trackname
+//        strcpy (trackname, q + 1);
+        // XXX Not really nice...
+        while (object != q) if (*--q == '/') break;
+        *q = '\0';
+    }
 #else
     q = strchr(object, '!');
     if (q == NULL) {
         // PLAY <file.sd>
-            // Search for the RTP session
-            for (rtp_sess = rtsp_sess->rtp_session;
-                 rtp_sess != NULL;
-                 rtp_sess = rtp_sess->next) {
-                if (rtp_sess->current_media->description.priority == 1) {
-                // Start playing all the presentation
-                    if (!rtp_sess->started) {
-                        // Start new
-                        if (schedule_start (rtp_sess->sched_id, &args) ==
-                                ERR_ALLOC)
-                            return ERR_ALLOC;
+        // Search for the RTP session
+        for (rtp_sess = rtsp_sess->rtp_session;
+             rtp_sess != NULL;
+             rtp_sess = rtp_sess->next) {
+            if (rtp_sess->current_media->description.priority == 1) {
+            // Start playing all the presentation
+                if (!rtp_sess->started) {
+                    // Start new
+                    if (schedule_start (rtp_sess->sched_id, &args) ==
+                            ERR_ALLOC)
+                        return ERR_ALLOC;
+                } else {
+                    // Resume existing
+                    if (!rtp_sess->pause) {
+                    //  fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
                     } else {
-                        // Resume existing
-                        if (!rtp_sess->pause) {
-                        //  fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
-                        } else {
-                                schedule_resume (rtp_sess->sched_id, &args);
-                        }
+                            schedule_resume (rtp_sess->sched_id, &args);
                     }
                 }
             }
+        }
     } else {
         if (url_is_file) {
             // PLAY <file.sd>!<file>
