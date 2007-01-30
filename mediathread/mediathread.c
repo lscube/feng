@@ -44,7 +44,7 @@ void *mediathread(void *arg) {
 	GList *el_cur, *el_prev;
 	struct timespec ts = {0, 0};
 
-	fnc_log(FNC_LOG_DEBUG, "Mediathread started\n");
+	fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started\n");
 
 	while(1) {
 		pthread_mutex_lock(&el_mutex);
@@ -72,7 +72,7 @@ int mt_add_event(mt_event_id id, void **args) {
 	mt_event_item *item;
 
 	if (!(item = g_new0(mt_event_item, 1))) {
-		fnc_log(FNC_LOG_FATAL, "Allocation failure in mt_create_event()\n");
+		fnc_log(FNC_LOG_FATAL, "[MT] Allocation failure in mt_create_event()\n");
 		return ERR_GENERIC;
 	}
 
@@ -88,25 +88,45 @@ int mt_add_event(mt_event_id id, void **args) {
 }
 
 inline int mt_process_event(mt_event_item *ev) {
-	
 
 	if (!ev)
 		return ERR_GENERIC;
 
-	fnc_log(FNC_LOG_DEBUG, "Processing event: %#x\n", ev->id);
+	fnc_log(FNC_LOG_DEBUG, "[MT] Processing event: %#x\n", ev->id);
 
 	switch (ev->id) {
-		case MT_EV_BUFFER_LOW: {
+		case MT_EV_BUFFER_LOW:
+		{
 			Track *t = ev->args[0];
 			Resource *r = t->parent;
 
-			fnc_log(FNC_LOG_DEBUG, "Filling buffer for track %p\n", t);
+			fnc_log(FNC_LOG_DEBUG, "[MT] Filling buffer for track %p\n", t);
 
-			r->demuxer->read_packet(r);
-			//FIXME: Add sd support
-
-			break;
+			switch (r->demuxer->read_packet(r)) {
+				case RESOURCE_OK:
+					fnc_log(FNC_LOG_DEBUG, "[MT] Done!\n");
+					break;
+				case RESOURCE_NOT_PARSEABLE:
+				{
+					static uint8 buffer[MT_BUFFERSIZE];
+					int n;
+					if((n = t->parser->get_frame(buffer, MT_BUFFERSIZE,
+					    &(t->properties->mtime), t->i_stream,
+					    t->properties, t->parser_private)) > 0) {
+						fnc_log(FNC_LOG_DEBUG, "[MT] Timestamp: %f!\n",t->properties->mtime);
+						t->parser->parse(t, buffer, (long) n, NULL, 0);
+					}
+					fnc_log(FNC_LOG_DEBUG, "[MT] Done legacy!\n");
+				}
+					break;
+				default:
+					fnc_log(FNC_LOG_FATAL,
+						"[MT] read_packet() error.\n");
+					break;
+			}
 		}
+			break;
+
 		default:
 			break;
 	}

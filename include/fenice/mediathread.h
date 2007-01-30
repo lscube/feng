@@ -38,6 +38,8 @@
 #include <fenice/demuxer.h>
 #include <fenice/InputStream.h>
 
+#define MT_BUFFERSIZE 8192
+
 /*
 typedef struct __MT_RESOURCE_ITEM {
 	Resource *resource;
