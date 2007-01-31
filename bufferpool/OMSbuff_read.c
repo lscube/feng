@@ -57,7 +57,7 @@
  * 
  * */
 // OMSSlot *OMSbuff_read(OMSConsumer *cons)
-int32 OMSbuff_read(OMSConsumer * cons, uint32 * timestamp, uint8 * marker,
+int OMSbuff_read(OMSConsumer * cons, uint32 * timestamp, uint8 * marker,
 		   uint8 * data, uint32 * data_size)
 {
 	OMSSlot *last_read;
