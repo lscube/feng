@@ -72,8 +72,6 @@ int RTP_send_packet(RTP_session * session)
 	ssize_t psize_sent = 0;
 	Track *t = r_selected_track(session->track_selector);
 
-	fnc_log(FNC_LOG_VERBOSE, "Trying to send a RTP packet\n");
-
 	if (!(slot = OMSbuff_getreader(session->cons))) {
 #if ENABLE_MEDIATHREAD
 		if ((res = event_buffer_low(t)) != ERR_NOERROR) {
@@ -126,10 +124,7 @@ int RTP_send_packet(RTP_session * session)
 		r.seq_no = htons(slot->slot_seq + session->start_seq - 1);
 		r.timestamp =
 		    htonl(session->start_rtptime +
-#warning Temporary
-			  (slot->timestamp * 1000 /
-			   t->properties->clock_rate));
-		fnc_log(FNC_LOG_DEBUG, "[RTP] start_rtptime: %x Timestamp: %f clock_rate: %u, result: %x\n", session->start_rtptime, slot->timestamp, t->properties->clock_rate, r.timestamp);
+			  (slot->timestamp * t->properties->clock_rate));
 		r.ssrc = htonl(session->ssrc);
 #if HAVE_ALLOCA
 		packet = (unsigned char *) alloca(slot->data_size + hdr_size);

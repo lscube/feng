@@ -92,7 +92,7 @@ inline int mt_process_event(mt_event_item *ev) {
 	if (!ev)
 		return ERR_GENERIC;
 
-	fnc_log(FNC_LOG_DEBUG, "[MT] Processing event: %#x\n", ev->id);
+	fnc_log(FNC_LOG_VERBOSE, "[MT] Processing event: %#x\n", ev->id);
 
 	switch (ev->id) {
 		case MT_EV_BUFFER_LOW:
@@ -100,11 +100,11 @@ inline int mt_process_event(mt_event_item *ev) {
 			Track *t = ev->args[0];
 			Resource *r = t->parent;
 
-			fnc_log(FNC_LOG_DEBUG, "[MT] Filling buffer for track %p\n", t);
+			fnc_log(FNC_LOG_VERBOSE, "[MT] Filling buffer for track %p\n", t);
 
 			switch (r->demuxer->read_packet(r)) {
 				case RESOURCE_OK:
-					fnc_log(FNC_LOG_DEBUG, "[MT] Done!\n");
+					fnc_log(FNC_LOG_VERBOSE, "[MT] Done!\n");
 					break;
 				case RESOURCE_NOT_PARSEABLE:
 				{
@@ -116,11 +116,11 @@ inline int mt_process_event(mt_event_item *ev) {
 						fnc_log(FNC_LOG_DEBUG, "[MT] Timestamp: %f!\n",t->properties->mtime);
 						t->parser->parse(t, buffer, (long) n, NULL, 0);
 					}
-					fnc_log(FNC_LOG_DEBUG, "[MT] Done legacy!\n");
+					fnc_log(FNC_LOG_VERBOSE, "[MT] Done legacy!\n");
 				}
 					break;
 				default:
-					fnc_log(FNC_LOG_FATAL,
+					fnc_log(FNC_LOG_ERR,
 						"[MT] read_packet() error.\n");
 					break;
 			}

@@ -353,7 +353,7 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStr
 		return (ret>=0) ? MP_NOT_FULL_FRAME : ret;
 	
 	// (*timestamp)+=mpa->pkt_len; /*it was negative at the beginning so it is zero at the first time*/
-	*timestamp = mpa->time * FNC_TIMESCALE;
+	*timestamp = mpa->time;
 	mpa->time += (double)mpa->frame_size/(double)properties->sample_rate;
 	fnc_log(FNC_LOG_DEBUG, "[MPA] time: %fs\n", mpa->time);
 
