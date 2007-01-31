@@ -74,7 +74,8 @@ int OMSbuff_write(OMSBuffer * buffer, uint64 seq, uint32 timestamp,
         } else {
             slot = &buffer->slots[slot->next];
             // write_pos reaches valid_read_pos, we "push" it
-            if ((valid_read_pos->slot_seq)
+            /* TODO: Verify if needed
+	    if ((valid_read_pos->slot_seq)
                 && (valid_read_pos == slot)) {
                 for (ts = valid_read_pos->timestamp;
                      (buffer->slots[valid_read_pos->next].
@@ -85,7 +86,7 @@ int OMSbuff_write(OMSBuffer * buffer, uint64 seq, uint32 timestamp,
                      &buffer->slots[valid_read_pos->next]);
                 buffer->control->valid_read_pos =
                     OMStoSlotPtr(buffer, valid_read_pos);
-            }
+            } */
         }
 
         memcpy(slot->data, data, data_size);
