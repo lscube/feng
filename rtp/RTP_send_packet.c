@@ -67,7 +67,6 @@ int RTP_send_packet(RTP_session * session)
 	unsigned int hdr_size = 0;
 	RTP_header r;		// 12 bytes
 	int res = ERR_GENERIC;
-	double s_time;
 	double nextts;
 	OMSSlot *slot = NULL;
 	ssize_t psize_sent = 0;
@@ -99,8 +98,7 @@ int RTP_send_packet(RTP_session * session)
 		session->cons->frames++;
 		slot = OMSbuff_getreader(session->cons);
 #endif
-	} else			/*This runs if the consumer reads slot written in another RTP session */
-		s_time = slot->timestamp - session->cons->firstts;
+	}
 #if 0
 	if (s_time > session->current_media->mtime) {	// time for pkt still not arrived
 		session->current_media->mtime = s_time;
@@ -129,9 +127,9 @@ int RTP_send_packet(RTP_session * session)
 		r.timestamp =
 		    htonl(session->start_rtptime +
 #warning Temporary
-			  (slot->timestamp * 1000 /
-			   t->properties->clock_rate) -
-			  session->cons->firstts);
+			  (slot->timestamp * 10000 /
+			   t->properties->clock_rate));
+		fnc_log(FNC_LOG_DEBUG, "[RTP] start_rtptime: %u Timestamp: %f clock_rate: %u, result: %x\n", session->start_rtptime, slot->timestamp, t->properties->clock_rate, r.timestamp);
 		r.ssrc = htonl(session->ssrc);
 #if HAVE_ALLOCA
 		packet = (unsigned char *) alloca(slot->data_size + hdr_size);
@@ -185,11 +183,10 @@ int RTP_send_packet(RTP_session * session)
 #endif
 		OMSbuff_gotreader(session->cons);
 
-		if ((nextts = OMSbuff_nextts(session->cons)) >= 0)
-			nextts -= session->cons->firstts;
+		nextts = OMSbuff_nextts(session->cons);
 		// fnc_log(FNC_LOG_DEBUG, "*** current time=%f - next time=%f\n\n", s_time, nextts);
 
-		if ((nextts == -1) || (nextts != s_time)) {
+		if (nextts == -1) {
 			// fnc_log(FNC_LOG_DEBUG, "*** time on\n");
 #if ENABLE_MEDIATHREAD
 			event_buffer_low(t);

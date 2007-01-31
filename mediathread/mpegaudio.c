@@ -415,7 +415,7 @@ int parse(void *track, uint8 *data, long len, uint8 *extradata,
     if (mtu >= len + 4) {
         memset (dst, 0, 4);
         memcpy (dst + 4, data, len);
-        if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0,
+        if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                               dst, len + 4)) {
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
                 return ERR_ALLOC;
@@ -430,7 +430,7 @@ int parse(void *track, uint8 *data, long len, uint8 *extradata,
             offset = htonl(offset & 0xffff);
             memcpy (dst, &offset, 4);
 
-            if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0,
+            if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                   dst, min(mtu, rem) + 4)) { 
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
                 return ERR_ALLOC;
