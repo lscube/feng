@@ -336,7 +336,7 @@ static int read_packet(Resource * r)
             stream = priv->avfc->streams[TRACK(tr)->info->id];
             if(pkt.pts != AV_NOPTS_VALUE) 
                 TRACK(tr)->properties->mtime = 
-                    pkt.pts * av_q2d(stream->time_base) * FNC_TIMESCALE;
+                    pkt.pts * av_q2d(stream->time_base);
 
             ret = TRACK(tr)->parser->parse(TRACK(tr), pkt.data, pkt.size,
                                     stream->codec->extradata,
