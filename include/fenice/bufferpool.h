@@ -41,6 +41,8 @@
 #ifndef _BUFFERPOOLH
 #define _BUFFERPOOLH
 
+// #define USE_VALID_READ_POS
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -74,23 +76,37 @@
 
 typedef ptrdiff_t OMSSlotPtr;
 
+#if 0 // we don't need such define anymore
 #define OMSSLOT_COMMON	uint16 refs; \
 			uint64 slot_seq; /* monotone identifier of slot (NOT RTP seq) */ \
 			double timestamp; \
 			double sendts; /* send time of pkt */ \
+			uint32 rtp_time; /* if != 0 it contains the calculated rtp timestamp */ \
 			uint8 data[OMSSLOT_DATASIZE]; \
 			uint32 data_size; \
 			uint8 marker; \
 			ptrdiff_t next;
+#endif
 
 typedef struct _OMSslot {
-OMSSLOT_COMMON} OMSSlot;
+	uint16 refs;
+	uint64 slot_seq; /* monotone identifier of slot (NOT RTP seq) */
+	double timestamp;
+	double sendts; /* send time of pkt */
+	uint32 rtp_time; // if != 0 it contains the calculated rtp timestamp
+	uint8 data[OMSSLOT_DATASIZE];
+	uint32 data_size;
+	uint8 marker;
+	ptrdiff_t next;
+} OMSSlot;
 
 typedef struct _OMSControl {
 	uint16 refs;		/*! n.Consumers that share the buffer */
 	uint32 nslots;
 	OMSSlotPtr write_pos;	/*! last write position */
+#ifdef USE_VALID_READ_POS
 	OMSSlotPtr valid_read_pos;	/*! valid read position for new consumers */
+#endif // USE_VALID_READ_POS
 	pthread_mutex_t syn;
 } OMSControl;
 
@@ -118,7 +134,8 @@ typedef struct _OMSconsumer {
 	uint64 last_seq;
 	OMSBuffer *buffer;
 	int32 frames;
-	double firstts;
+	int32 first_rtpseq;
+	int64 first_rtptime;
 	// pthread_mutex_t mutex;
 } OMSConsumer;
 
@@ -133,10 +150,10 @@ typedef struct _OMSAggregate {
 OMSBuffer *OMSbuff_new(uint32);
 OMSConsumer *OMSbuff_ref(OMSBuffer *);
 void OMSbuff_unref(OMSConsumer *);
-int OMSbuff_read(OMSConsumer *, uint32 *, uint8 *, uint8 *, uint32 *);
+int32 OMSbuff_read(OMSConsumer *, uint32 *, uint8 *, uint8 *, uint32 *);
 OMSSlot *OMSbuff_getreader(OMSConsumer *);
-int OMSbuff_gotreader(OMSConsumer *);
-int OMSbuff_write(OMSBuffer *, uint64, uint32, uint8, uint8 *, uint32);
+int32 OMSbuff_gotreader(OMSConsumer *);
+int32 OMSbuff_write(OMSBuffer *, uint64, double, uint32, uint8, uint8 *, uint32);
 OMSSlot *OMSbuff_getslot(OMSBuffer *);
 OMSSlot *OMSbuff_addpage(OMSBuffer *, OMSSlot *);
 //OMSSlot *OMSbuff_slotadd(OMSBuffer *, OMSSlot *);

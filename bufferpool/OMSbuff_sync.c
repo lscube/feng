@@ -36,6 +36,7 @@
 
 int OMSbuff_sync(OMSAggregate * aggr)
 {
+#ifdef USE_VALID_READ_POS
 	double max_ts = 0;
 	double curr_ts, next_ts;
 	OMSAggregate *curr;
@@ -69,6 +70,6 @@ int OMSbuff_sync(OMSAggregate * aggr)
 			    timestamp;
 		}
 	}
-
+#endif // USE_VALID_READ_POS
 	return 0;
 }

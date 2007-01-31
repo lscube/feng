@@ -1,7 +1,7 @@
 /* This header is just for keeping track of current SVN revision.
  * If this file is present in the sources tree then this is a development SVN
  * version.
- * Thu Nov 30 12:53:12 CET 2006
+ * Wed Jan 31 15:13:59 CET 2007
  * */
 
 #ifndef __SVNREV_H

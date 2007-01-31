@@ -186,7 +186,9 @@ OMSBuffer *OMSbuff_shm_create(char *shm_name, uint32 buffer_size)
 	slots[index].refs = 0;	// last slot not yet initialized if for cycle.
 
 	control->write_pos = buffer_size - 1;
+#ifdef USE_VALID_READ_POS
 	control->valid_read_pos = 0;	// buffer_size-1;
+#endif // USE_VALID_READ_POS
 
 	if (!(buffer = (OMSBuffer *) malloc(sizeof(OMSBuffer)))) {
 		munmap(slots, control->nslots * sizeof(OMSSlot));

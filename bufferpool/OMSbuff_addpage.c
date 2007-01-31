@@ -54,8 +54,8 @@ OMSSlot *OMSbuff_addpage(OMSBuffer * buffer, OMSSlot * prev)
 		buffer->slots[buffer->known_slots - 1].next = prev->next;	// last added slot in shm new page is linked to the prev->next in old queue
 
 		fnc_log(FNC_LOG_DEBUG,
-			"OMSSlots page added in SHM memory (%u slots)\n",
-			buffer->known_slots);
+			"OMSSlots page added in SHM memory (%u slots - %s)\n",
+			buffer->known_slots, buffer->filename);
 		break;
 	case buff_local:
 		prev_diff = prev - buffer->slots;

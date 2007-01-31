@@ -49,19 +49,27 @@
  * it's set calculating 'prev_seq+1'.
  *  \return ERR_NOERROR or ERR_ALLOC
  *  */
-int OMSbuff_write(OMSBuffer * buffer, uint64 seq, uint32 timestamp,
-            uint8 marker, uint8 * data, uint32 data_size)
+int32 OMSbuff_write(OMSBuffer * buffer, uint64 seq, double timestamp,
+           uint32 rtp_time, uint8 marker, uint8 * data, uint32 data_size)
 {
-    OMSSlot *slot = &buffer->slots[buffer->control->write_pos];
-    uint64 curr_seq = slot->slot_seq;
-    OMSSlot *valid_read_pos =
-        &buffer->slots[buffer->control->valid_read_pos];
+    OMSSlot *slot; // = &buffer->slots[buffer->control->write_pos];
+    uint64 curr_seq; // = slot->slot_seq;
+#ifdef USE_VALID_READ_POS
+    OMSSlot *valid_read_pos;
+       // = &buffer->slots[buffer->control->valid_read_pos];
     double ts;
+#endif // USE_VALID_READ_POS
 
     OMSbuff_lock(buffer);
 
     if (OMSbuff_shm_refresh(buffer))
         return ERR_ALLOC;
+
+#ifdef USE_VALID_READ_POS
+	valid_read_pos = &buffer->slots[buffer->control->valid_read_pos];
+#endif // USE_VALID_READ_POS
+	slot = &buffer->slots[buffer->control->write_pos];
+	curr_seq = slot->slot_seq;
 
     if (buffer->slots[slot->next].data == data) {
         slot = &buffer->slots[slot->next];
@@ -73,8 +81,8 @@ int OMSbuff_write(OMSBuffer * buffer, uint64 seq, uint32 timestamp,
             }
         } else {
             slot = &buffer->slots[slot->next];
+#ifdef USE_VALID_READ_POS
             // write_pos reaches valid_read_pos, we "push" it
-            /* TODO: Verify if needed
 	    if ((valid_read_pos->slot_seq)
                 && (valid_read_pos == slot)) {
                 for (ts = valid_read_pos->timestamp;
@@ -86,13 +94,15 @@ int OMSbuff_write(OMSBuffer * buffer, uint64 seq, uint32 timestamp,
                      &buffer->slots[valid_read_pos->next]);
                 buffer->control->valid_read_pos =
                     OMStoSlotPtr(buffer, valid_read_pos);
-            } */
+            }
+#endif // USE_VALID_READ_POS
         }
 
         memcpy(slot->data, data, data_size);
     }
 
     slot->timestamp = timestamp;
+    slot->rtp_time = rtp_time;
     slot->marker = marker;
     slot->data_size = data_size;
 

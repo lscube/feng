@@ -67,8 +67,10 @@ OMSSlot *OMSbuff_getreader(OMSConsumer * cons)
 		       next->slot_seq))
 		next = &cons->buffer->slots[last_read->next];
 
-	if (cons->firstts == -1)
-		cons->firstts = next->timestamp;
+	if (cons->first_rtpseq == -1)
+		cons->first_rtpseq = next->slot_seq;
+	if (cons->first_rtptime == -1)
+		cons->first_rtptime = next->rtp_time;
 
 	OMSbuff_unlock(cons->buffer);
 	return next;

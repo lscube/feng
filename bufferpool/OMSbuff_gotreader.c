@@ -47,7 +47,7 @@
  *
  * \return 1 on error, 0 otherwise
  * */
-int OMSbuff_gotreader(OMSConsumer * cons)
+int32 OMSbuff_gotreader(OMSConsumer * cons)
 {
 	OMSSlot *last_read;
 	OMSSlot *next;

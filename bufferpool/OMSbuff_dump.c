@@ -91,8 +91,8 @@ void OMSbuff_dump(OMSConsumer * cons, OMSBuffer * buffer)
 		fprintf(dump_file, "Consumer\n");
 		fprintf(dump_file, " last_seq:            %llu\n",
 			cons->last_seq);
-		fprintf(dump_file, " firstts:             %3.2f\n",
-			cons->firstts);
+		fprintf(dump_file, " first_rtptime:             %3.2f\n",
+			cons->first_rtptime);
 		fprintf(dump_file, " frames:              %d\n", cons->frames);
 	}
 	for (i = 0; i < buffer->known_slots; i++) {

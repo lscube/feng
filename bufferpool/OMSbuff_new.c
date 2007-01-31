@@ -68,7 +68,9 @@ OMSBuffer *OMSbuff_new(uint32 buffer_size)
         OMSNEWBUFF_RET_ERR;
 
     control->write_pos = buffer_size - 1;
+#ifdef USE_VALID_READ_POS
     control->valid_read_pos = 0;    // buffer_size-1;
+#endif // USE_VALID_READ_POS
 
     control->refs = 0;
     control->nslots = buffer_size;

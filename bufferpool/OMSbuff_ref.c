@@ -56,11 +56,14 @@ OMSConsumer *OMSbuff_ref(OMSBuffer * buffer)
 	cons->last_read_pos = -1;	// OMStoSlotPtr(buffer, NULL);
 	cons->buffer = buffer;
 	cons->frames = 0;
-	cons->firstts = -1;
+	cons->first_rtpseq = -1;
+	cons->first_rtptime = -1;
 
 	OMSbuff_lock(buffer);
-//      cons->read_pos = buffer->slots[buffer->control->write_pos].next;
-//      cons->last_seq = buffer->slots[buffer->control->write_pos].slot_seq;
+#ifndef USE_VALID_READ_POS
+	cons->read_pos = buffer->slots[buffer->control->write_pos].next;
+	cons->last_seq = buffer->slots[buffer->control->write_pos].slot_seq;
+#else // USE_VALID_READ_POS
 	cons->read_pos = buffer->control->valid_read_pos;	// buffer->slots[buffer->control->valid_read_pos].next;
 	cons->last_seq = 0;	// buffer->slots[buffer->control->valid_read_pos].slot_seq;
 
@@ -70,6 +73,8 @@ OMSConsumer *OMSbuff_ref(OMSBuffer * buffer)
 			buffer->slots[i].refs++;
 		buffer->slots[i].refs++;
 	}
+#endif // USE_VALID_READ_POS
+
 	// printf("ref at position %d (write_pos @ %d)\n", cons->read_pos, buffer->control->write_pos);
 	buffer->control->refs++;
 
