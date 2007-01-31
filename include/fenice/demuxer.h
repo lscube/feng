@@ -60,6 +60,7 @@
 /*...*/
 #define MAX_TRACKS 20	
 #define MAX_SEL_TRACKS 5
+#define FNC_TIMESCALE 1000.0
 
 //! Macros that take the data part of a GList element and cast to correct type
 #define RESOURCE(x) ((Resource *)x->data)

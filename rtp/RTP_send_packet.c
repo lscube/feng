@@ -127,9 +127,9 @@ int RTP_send_packet(RTP_session * session)
 		r.timestamp =
 		    htonl(session->start_rtptime +
 #warning Temporary
-			  (slot->timestamp * 10000 /
+			  (slot->timestamp * 1000 /
 			   t->properties->clock_rate));
-		fnc_log(FNC_LOG_DEBUG, "[RTP] start_rtptime: %u Timestamp: %f clock_rate: %u, result: %x\n", session->start_rtptime, slot->timestamp, t->properties->clock_rate, r.timestamp);
+		fnc_log(FNC_LOG_DEBUG, "[RTP] start_rtptime: %x Timestamp: %f clock_rate: %u, result: %x\n", session->start_rtptime, slot->timestamp, t->properties->clock_rate, r.timestamp);
 		r.ssrc = htonl(session->ssrc);
 #if HAVE_ALLOCA
 		packet = (unsigned char *) alloca(slot->data_size + hdr_size);
