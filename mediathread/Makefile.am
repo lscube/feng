@@ -13,6 +13,7 @@ libmediath_la_SOURCES =	cache.c \
 			mediathread.c \
 			mediautils.c \
 			mpeg12.c \
+			h264.c \
 			mpegaudio.c 
 			
 			
