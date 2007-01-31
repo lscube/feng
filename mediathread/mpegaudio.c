@@ -363,11 +363,8 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStr
 // packet fragmentation supported
 static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
 {
-	mpa_input in={ NULL, src, src_nbytes };
-	uint32 header, mpa_header=0;
-	mpa_data *mpa=(mpa_data *)private_data;
-	int ret;
-	uint32 dst_offset=0;
+	uint32 mpa_header = 0;
+	mpa_data *mpa = (mpa_data *)private_data;
 
 	uint32 to_cpy, end_frm_dist;
 	// uint8 tmp[3];
@@ -375,76 +372,74 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
 	if (mpa->fragmented)
         { // last frame was fragmented
         fnc_log(FNC_LOG_DEBUG, "[mp3]Fragment\n");
-		end_frm_dist = mpa->pkt_len - mpa->frag_offset;
+		end_frm_dist = src_nbytes - mpa->frag_offset;
 		to_cpy = min(end_frm_dist, (mpa->frag_src_nbytes - 
                                             mpa->frag_offset));
-		in.src += mpa->frag_offset;
-                in.src_nbytes -= mpa->frag_offset;
 		if (to_cpy==end_frm_dist)
 			mpa->fragmented = 0;
 		else
 			mpa->frag_offset += to_cpy;
 		mpa_header = mpa->frag_offset & 0x00FF;
 	} else { // last frame wasn't fragmented
-	        do {
-	    	    if ( (ret = mpa_sync(&header, &in, mpa)) )
-			return ret;
-		    ret = mpa_decode_header(header, properties, mpa);
-	        } while(ret);
-		memcpy(dst + 4, &header, sizeof(header));
-		dst_offset += 4;
-		to_cpy = min(mpa->pkt_len, *dst_nbytes);
-                printf ("len %d, bytes %d, to_cpy %d\n", mpa->pkt_len,
-                        *dst_nbytes, to_cpy);
-		if (to_cpy<mpa->pkt_len) {
+		to_cpy = min(src_nbytes, *dst_nbytes);
+		if (to_cpy<src_nbytes) {
 			mpa->fragmented = 1;
 			mpa->frag_src = src;
 			mpa->frag_src_nbytes = src_nbytes;
-			mpa->frag_offset = to_cpy;
-		} else
+			mpa->frag_offset += to_cpy;
+		} else {
 			mpa->fragmented = 0;
-                to_cpy -=4;
+                        mpa->frag_offset = 0;
+                }
 	}
 
 	// rtp MPA sub-header
 	memcpy(dst, &mpa_header, sizeof(mpa_header));
 
-	ret = mpa_read(&in, dst + sizeof(mpa_header) + dst_offset, to_cpy);
-        printf ("ret %d, to_cpy %d\n", ret, to_cpy);
-        if (ret == to_cpy) {
-            *dst_nbytes = ret + dst_offset;
-            ret = mpa->fragmented;
-        } else ret = ERR_PARSE;
-	return ret;
+	memcpy(src + mpa->frag_offset, dst + sizeof(mpa_header), to_cpy);
+
+        *dst_nbytes = to_cpy + sizeof(mpa_header);
+        return mpa->fragmented;
 }
 
 int parse(void *track, uint8 *data, long len, uint8 *extradata, 
           long extradata_len)
 {
     Track *tr = (Track *)track;
-    int ret;
     OMSSlot *slot;
-    uint32 dst_len = len + 4; //mpegaudio can be fragmented but not collated
-    uint8 dst[dst_len];
-    do {
-        // dst_len remains unchanged,
-        // the return value is either EOF or the size
-        ret = packetize(dst, &dst_len, data, len, tr->properties,
-                  tr->parser_private);
-        fnc_log(FNC_LOG_DEBUG, "[mp3]Packetized %d bytes out of %d ||%d\n",
-                dst_len, len, ret);
+    uint32_t mtu = len + 4, rem; //FIXME get it from SETUP
+    int32_t offset;
+    uint8 dst[mtu];
+    rem = len;
 
-        if (ret >= 0) {
+    if (mtu >= len + 4) {
+        memset (dst, 0, 4);
+        memcpy (dst + 4, data, len);
+        if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0,
+                              dst, len + 4)) {
+                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                return ERR_ALLOC;
+        }
+        fnc_log(FNC_LOG_DEBUG, "[mp3] no frags\n");
+    } else {
+        do {
+            offset = rem - mtu;
+            if (offset & 0xffff0000) return ERR_ALLOC;
+            rem -= mtu;
+            memcpy (dst + 4, data + offset, min(mtu, rem));
+            offset = htonl(offset & 0xffff);
+            memcpy (dst, &offset, 4);
+
             if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0,
-                              dst, dst_len)) { 
+                                  dst, min(mtu, rem) + 4)) { 
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
                 return ERR_ALLOC;
             }
-            dst_len = len + 4;
-        }
-    } while (ret>0);
+            fnc_log(FNC_LOG_DEBUG, "[mp3] frags\n");
+        } while (rem - mtu > 0);
+    }
     fnc_log(FNC_LOG_DEBUG, "[mp3]Frame completed\n");
-    return ret;
+    return ERR_NOERROR;
 }
 
 
