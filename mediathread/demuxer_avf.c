@@ -244,7 +244,7 @@ static int init(Resource * r)
 // XXX: Check!
         MObject_init(MOBJECT(&props));
         MObject_0(MOBJECT(&props), MediaProperties);
-
+        props.clock_rate = 90000; //Default
         props.extradata = codec->extradata;
         props.extradata_len = codec->extradata_size;
         // make them pointers?
@@ -341,6 +341,8 @@ static int read_packet(Resource * r)
             ret = TRACK(tr)->parser->parse(TRACK(tr), pkt.data, pkt.size,
                                     stream->codec->extradata,
                                     stream->codec->extradata_size);
+            fnc_log(FNC_LOG_DEBUG, "[MT] Parsing track %s\n",
+                    TRACK(tr)->info->name);
             break;
         }
     }
