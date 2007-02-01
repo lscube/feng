@@ -34,7 +34,7 @@
 
 #include <glib.h>
 
-typedef enum {empty_field, fmtp} sdp_field_types;
+typedef enum {empty_field, fmtp, rtpmap} sdp_field_types;
 
 typedef GList *sdp_field_list;
 
