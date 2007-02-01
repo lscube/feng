@@ -37,11 +37,13 @@
 // global media parsers modules:
 extern MediaParser fnc_mediaparser_mpv;
 extern MediaParser fnc_mediaparser_mpa;
+extern MediaParser fnc_mediaparser_h264;
 
 // static array containing all the available media parsers:
 static MediaParser *media_parsers[] = {
 	&fnc_mediaparser_mpv,
 	&fnc_mediaparser_mpa,
+	&fnc_mediaparser_h264,
 	NULL
 };
 

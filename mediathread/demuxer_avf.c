@@ -67,6 +67,7 @@ typedef struct id_tag {
 const id_tag id_tags[] = {
    { CODEC_ID_MPEG1VIDEO, 32, "MPV" },
    { CODEC_ID_MPEG2VIDEO, 32, "MPV" },
+   { CODEC_ID_H264, 96, "H264" },
    { CODEC_ID_MP3, 14, "MPA"},
    { CODEC_ID_NONE, 0, "NONE"} //XXX ...
 };
@@ -209,7 +210,6 @@ static int init(Resource * r)
         goto err_alloc;
     }
 
-    r->private_data = priv;
     priv->avfc = avfc;
 
     if(av_find_stream_info(avfc) < 0){
@@ -289,12 +289,13 @@ static int init(Resource * r)
         }
     }
 
-//    return ERR_ALLOC;
+    r->private_data = priv;
+
     return RESOURCE_OK;
 
 err_alloc:
     av_freep(&priv);
-    return ERR_ALLOC;
+    return ERR_PARSE;
 }
 
 static int read_packet(Resource * r)

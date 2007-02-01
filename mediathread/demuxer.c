@@ -138,7 +138,10 @@ Resource *r_open(char *root, char *n)
     r->i_stream = i_stream;
     r->demuxer = demuxers[dmx_idx];
 
-    r->demuxer->init(r);
+    if (r->demuxer->init(r)) {
+        r_close(r);
+        return NULL;
+    }
 
     // search for exclusive tracks: should be done track per track?
     ex_tracks_save(r->tracks);
@@ -156,8 +159,8 @@ void r_close(Resource *r)
         r->info = NULL;
         if(r->private_data!=NULL)
             free(r->private_data);
-
-        g_list_foreach(r->tracks, (GFunc)free_track, r);
+        if(r->tracks)
+            g_list_foreach(r->tracks, (GFunc)free_track, r);
 
         free(r);
     }
