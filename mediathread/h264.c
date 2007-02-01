@@ -61,6 +61,13 @@ static inline int nal_header(uint8_t header)
 
 static int init(MediaProperties *properties, void **private_data)
 {
+    sdp_field *sdp_private = g_new(sdp_field, 1);
+
+    sdp_private->type = rtpmap;
+    sdp_private->field = g_strdup_printf ("H264/%d",properties->clock_rate);
+
+    properties->sdp_private =
+        g_list_prepend(properties->sdp_private, sdp_private);
 
     INIT_PROPS
 
@@ -97,7 +104,27 @@ static int parse(void *track, uint8 *data, long len, uint8 *extradata,
     int32_t offset;
     uint8 dst[mtu];
     rem = len;
+    int is_avc = 0;
 
+    // which bitstream? Should I move it at init time?
+#if 0
+    if (extradata_len>0 && extradata && extradata[0]==1) //avc?
+    {
+        if (extradata_len < 7) {
+            return ERR_PARSE;
+        } else {
+            is_avc = 1;
+            // decode the nal lenght size
+        }
+    } else { // something unknown
+        return ERR_PARSE;
+    }
+    // not avc, let's packet nals!
+
+    // decode current nal size
+
+    // packet it
+#endif
     // single NAL, not fragmented, straight copy.
     if (mtu >= len) {
         if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
