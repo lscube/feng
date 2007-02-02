@@ -40,6 +40,11 @@ static MediaParserInfo info = {
 
 FNC_LIB_MEDIAPARSER(h264);
 
+typedef struct {
+	int is_avc;
+	uint8_t *packet;
+	unsigned int len;
+} h264_priv;
 
 /* Parse the nal header and return the nal type or ERR_PARSE if doesn't match
  *
@@ -62,6 +67,15 @@ static inline int nal_header(uint8_t header)
 static int init(MediaProperties *properties, void **private_data)
 {
     sdp_field *sdp_private = g_new(sdp_field, 1);
+    h264_priv *priv = malloc(sizeof(h264_priv));
+
+    if (!priv) return ERR_ALLOC;
+
+    if(properties->extradata && properties->extradata[0] == 1) {
+        if (properties->extradata_len < 7) goto err_alloc;
+        priv->is_avc = 1;
+        //FIXME Fill the fmtp with the data....
+    }
 
     sdp_private->type = rtpmap;
     sdp_private->field = g_strdup_printf ("H264/%d",properties->clock_rate);
@@ -71,7 +85,12 @@ static int init(MediaProperties *properties, void **private_data)
 
     INIT_PROPS
 
+    *private_data = priv;
     return ERR_NOERROR;
+
+    err_alloc:
+    free(priv);
+    return ERR_ALLOC;
 }
 
 static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp,
@@ -98,70 +117,59 @@ static int parse(void *track, uint8 *data, long len, uint8 *extradata,
                  long extradata_len)
 {
     Track *tr = (Track *)track;
+    h264_priv *priv = tr->parser_private;
     OMSSlot *slot;
     uint32_t mtu = len + 4, rem; //FIXME get it from SETUP
     double nal_time; // see page 9 and 7.4.1.2
     int32_t offset;
-    uint8 dst[mtu];
+    uint8 dst[mtu], *p, *q;
     rem = len;
-    int is_avc = 0;
 
-    // which bitstream? Should I move it at init time?
-#if 0
-    if (extradata_len>0 && extradata && extradata[0]==1) //avc?
-    {
-        if (extradata_len < 7) {
-            return ERR_PARSE;
-        } else {
-            is_avc = 1;
-            // decode the nal lenght size
+    if (priv->is_avc) return ERR_PARSE; //FIXME not supported yet
+
+    //seek to the first startcode
+    for (p = data; p<data + len - 3;p++) {
+        if (p[0] == 0 && p[1] == 0 && p[2] == 1) {
+            p+=3;
+            break;
         }
-    } else { // something unknown
-        return ERR_PARSE;
     }
-    // not avc, let's packet nals!
+    if (p >= data + len - 3) return ERR_PARSE;
 
-    // decode current nal size
+    while (1) {
+    //seek to the next startcode [0 0 1]
+    for (q = p; q<data+len-3;q++) {
+        if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
+            q+=3;
+            break;
+        }
+    }
 
-    // packet it
-#endif
-    // single NAL, not fragmented, straight copy.
-    if (mtu >= len) {
+    if (q >= data + len - 3) break;
+
+    if (mtu >= q - p) {
         if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                              data, len)) {
+                              p, q - p)) {
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
                 return ERR_ALLOC;
         }
         fnc_log(FNC_LOG_DEBUG, "[h264] single NAL\n");
     } else {
     // single NAL, to be fragmented, FU-A and FU-B
-        return ERR_PARSE; // broken for now
-        do {
-            uint8_t indicator, header;  // FU common headers
-            uint16_t don;               // FU-B don header
-            int header_size = 2;            // 2 - FU-A | 4 - FU-B
+        fnc_log(FNC_LOG_DEBUG, "[h264] frags\n");
+        return ERR_PARSE; //FIXME broken for now
+    }
 
-            // If interleaved the use FU-B for the first frag
-            // Otherwise use FU-A
-            // We do not support interleaved h264 yet!
-            indicator = data[0]&0xe0|28; // [F|NRI|Type = 28]
+    p = q;
 
-//            memcpy (dst + , data + offset, min(mtu, rem));
-            header = (1<<7)|             // S bit : Start
-                     (1<<6)|             // E bit : End
-                     28;                  // Type = 28
-            
-            dst[0] = indicator;
-            dst[1] = header;
-            memcpy(dst+header_size, data, min(mtu, rem));
-            if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                                  dst, min(mtu, rem) + header_size)) { 
+    }
+    // last NAL
+    if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
+                              p, len - (p - data))) {
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
                 return ERR_ALLOC;
-            }
-            fnc_log(FNC_LOG_DEBUG, "[h264] frags\n");
-        } while (rem - mtu > 0);
     }
+
     fnc_log(FNC_LOG_DEBUG, "[h264]Frame completed\n");
     return ERR_NOERROR;
 }
