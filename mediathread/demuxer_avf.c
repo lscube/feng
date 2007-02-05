@@ -199,6 +199,8 @@ static int init(Resource * r)
     avfc = av_alloc_format_context();
     ap.prealloced_context = 1;
 
+    avfc->flags |= AVFMT_FLAG_GENPTS;
+
     url_fopen(&priv->pb, r->info->mrl, URL_RDONLY);
 // same as before...
 //((URLContext*)(priv->pb.opaque))->priv_data = r->i_stream; 
@@ -335,9 +337,14 @@ static int read_packet(Resource * r)
         if (pkt.stream_index == TRACK(tr)->info->id) {
 // push it to the framer
             stream = priv->avfc->streams[TRACK(tr)->info->id];
-            if(pkt.pts != AV_NOPTS_VALUE) 
+            if(pkt.pts != AV_NOPTS_VALUE) {
                 TRACK(tr)->properties->mtime = 
                     pkt.pts * av_q2d(stream->time_base);
+                fnc_log(FNC_LOG_DEBUG, "[MT] timestamp %f",
+                        TRACK(tr)->properties->mtime);
+            } else {
+                fnc_log(FNC_LOG_DEBUG, "[MT] missing timestamp");
+            }
 
             ret = TRACK(tr)->parser->parse(TRACK(tr), pkt.data, pkt.size,
                                     stream->codec->extradata,
