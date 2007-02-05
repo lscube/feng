@@ -147,7 +147,26 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 		filename = object;
 
 #if ENABLE_MEDIATHREAD
-#warning No Teardown Method!
+	// Release all URI RTP session
+	rtp_curr = s->rtp_session;
+	while (rtp_curr != NULL) {
+		if (strcmp(r_selected_track(rtp_curr->track_selector)->info->name, filename) == 0
+		    || strcmp(r_selected_track(rtp_curr->track_selector)->parent->info->name,
+			      filename) == 0) {
+			rtp_temp = rtp_curr;
+			if (rtp_prev != NULL)
+				rtp_prev->next = rtp_curr->next;
+			else
+				s->rtp_session = rtp_curr->next;
+			rtp_curr = rtp_curr->next;
+			// Release the scheduler entry
+			schedule_remove(rtp_temp->sched_id);
+			// Close connections
+		} else {
+			rtp_prev = rtp_curr;
+			rtp_curr = rtp_curr->next;
+		}
+	}
 #else
 	// Release all URI RTP session
 	rtp_curr = s->rtp_session;
@@ -177,6 +196,11 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 		// Release the RTSP session
 		free(rtsp->session_list);
 		rtsp->session_list = NULL;
+#if ENABLE_MEDIATHREAD
+		//Close the resource
+		r_close(rtsp->resource);
+		rtsp->resource = NULL;
+#endif
 	}
 
 	return ERR_NOERROR;
