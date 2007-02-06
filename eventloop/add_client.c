@@ -42,33 +42,28 @@
 
 void add_client(RTSP_buffer ** rtsp_list, Sock *client_sock)
 {
-	RTSP_buffer *p = NULL, *pp = NULL;
+	RTSP_buffer *p = NULL, *pp = NULL, *new = NULL;
+
+	if (!(new = (RTSP_buffer *) calloc(1, sizeof(RTSP_buffer)))) {
+		fnc_log(FNC_LOG_FATAL, "Could not alloc memory in add_client()\n");
+		return;
+	}
+
 	// Add a client
 	if (*rtsp_list == NULL) {
-		if (!
-		    (*rtsp_list =
-		     (RTSP_buffer *) calloc(1, sizeof(RTSP_buffer)))) { //FIXME
-			fnc_log(FNC_LOG_FATAL, "Could not alloc memory\n\n");
-			return;
-		}
-		p = *rtsp_list;
+		*rtsp_list = new;
 	} else {
 		for (p = *rtsp_list; p != NULL; p = p->next) {
 			pp = p;
 		}
 		if (pp != NULL) {
-			if (!
-			    (pp->next =
-			     (RTSP_buffer *) calloc(1, sizeof(RTSP_buffer)))) {
-				fnc_log(FNC_LOG_FATAL,
-					"Could not alloc memory\n");
-				return;
-			}
-			p = pp->next;
-			p->next = NULL;
+			pp->next = new;
+			new->next = NULL;
 		}
 	}
-	RTSP_initserver(p, client_sock);
+
+	RTSP_initserver(new, client_sock);
+
 	fnc_log(FNC_LOG_INFO,
 		"Incoming RTSP connection accepted on socket: %d\n", Sock_fd(client_sock));
 }
