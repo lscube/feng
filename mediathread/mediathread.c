@@ -37,6 +37,8 @@
 #include <fenice/utils.h>
 #include <time.h>
 
+#define EVENT(x) ((mt_event_item *)(x->data))
+
 static GList *el_head = NULL;
 static pthread_mutex_t el_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -52,10 +54,10 @@ void *mediathread(void *arg) {
 		pthread_mutex_unlock(&el_mutex);
 
 		while (el_cur) {
-			mt_process_event(el_cur->data);
-			mt_dispose_event(el_cur->data);
+			mt_process_event(EVENT(el_cur));
 
 			pthread_mutex_lock(&el_mutex);
+			mt_dispose_event(EVENT(el_cur));
 			el_prev = g_list_previous(el_cur);
 			el_head = g_list_delete_link(el_head, el_cur);
 			pthread_mutex_unlock(&el_mutex);
@@ -72,12 +74,21 @@ int mt_add_event(mt_event_id id, void **args) {
 	mt_event_item *item;
 
 	if (!(item = g_new0(mt_event_item, 1))) {
+		mt_dispose_event_args(id, args);
 		fnc_log(FNC_LOG_FATAL, "[MT] Allocation failure in mt_create_event()\n");
 		return ERR_GENERIC;
 	}
 
+	if (pthread_mutex_init(&item->lock, NULL)) {
+		mt_dispose_event_args(id, args);
+		g_free(item);
+		fnc_log(FNC_LOG_FATAL, "[MT] Mutex creation failure in mt_create_event()\n");
+		return ERR_GENERIC;
+	}
+
+	fnc_log(FNC_LOG_VERBOSE, "[MT] Created event: %#x\n", item);
+
 	item->id = id;
-//	item->sender = sender;
 	item->args = args;
 
 	pthread_mutex_lock(&el_mutex);
@@ -92,12 +103,14 @@ inline int mt_process_event(mt_event_item *ev) {
 	if (!ev)
 		return ERR_GENERIC;
 
+	pthread_mutex_lock(&ev->lock);
+
 	fnc_log(FNC_LOG_VERBOSE, "[MT] Processing event: %#x\n", ev->id);
 
 	switch (ev->id) {
 		case MT_EV_BUFFER_LOW:
 		{
-			Track *t = ev->args[0];
+			Track *t = ev->args[1];
 			Resource *r = t->parent;
 
 			fnc_log(FNC_LOG_VERBOSE, "[MT] Filling buffer for track %p\n", t);
@@ -120,7 +133,7 @@ inline int mt_process_event(mt_event_item *ev) {
 				}
 					break;
 				default:
-					fnc_log(FNC_LOG_ERR,
+					fnc_log(FNC_LOG_VERBOSE,
 						"[MT] read_packet() error.\n");
 					break;
 			}
@@ -130,20 +143,30 @@ inline int mt_process_event(mt_event_item *ev) {
 		default:
 			break;
 	}
+	pthread_mutex_unlock(&ev->lock);
 	return ERR_NOERROR;
 }
 
 inline void mt_disable_event(mt_event_item *ev) {
 	if (!ev)
 		return;
-	mt_dispose_event_args(ev->id, ev->args);
+
+	fnc_log(FNC_LOG_VERBOSE, "[MT] Disabling event: %#x\n", ev);
+
+	pthread_mutex_lock(&ev->lock);
+	if (ev->args)
+		mt_dispose_event_args(ev->id, ev->args);
 	ev->id = MT_EV_NOP;
+	ev->args = NULL;
+	pthread_mutex_unlock(&ev->lock);
 }
 
 inline void mt_dispose_event(mt_event_item *ev) {
 	if (!ev)
 		return;
-	mt_dispose_event_args(ev->id, ev->args);
+	if (ev->args)
+		mt_dispose_event_args(ev->id, ev->args);
+	pthread_mutex_destroy(&ev->lock);
 	g_free(ev);
 }
 
@@ -205,5 +228,33 @@ int mt_rem_track(Track *t) {
 
 	g_list_free_1(tl_ptr);
 */
+	return ERR_NOERROR;
+}
+
+inline int event_buffer_low(void *sender, Track *src) {
+	void **args = g_new(void *, 2);
+	args[0] = sender;
+	args[1] = src;
+	return mt_add_event(MT_EV_BUFFER_LOW, args);
+}
+
+int mt_disable_events(void *sender) {
+	GList *el_cur;
+
+	pthread_mutex_lock(&el_mutex);
+
+	for(el_cur = el_head; el_cur; el_cur = g_list_next(el_cur)) {
+		switch (EVENT(el_cur)->id) {
+			case MT_EV_BUFFER_LOW:
+				if (EVENT(el_cur)->args[0] == sender) {
+					mt_disable_event(EVENT(el_cur));
+				}
+				break;
+			default:
+				break;
+		}
+	}
+	pthread_mutex_unlock(&el_mutex);
+
 	return ERR_NOERROR;
 }

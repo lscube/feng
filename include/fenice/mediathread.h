@@ -40,6 +40,8 @@
 
 #define MT_BUFFERSIZE 8192
 
+
+
 /*
 typedef struct __MT_RESOURCE_ITEM {
 	Resource *resource;
@@ -57,8 +59,8 @@ typedef enum __MT_EVENT_ID {
 
 typedef struct __MT_EVENT_ITEM {
 	mt_event_id id;
-//	void *sender;
-	void **args;
+	void **args;		//! args[0] = sender
+	pthread_mutex_t lock;
 } mt_event_item;
 
 typedef struct __MT_EXCL_INS {
@@ -68,14 +70,17 @@ typedef struct __MT_EXCL_INS {
 
 void *mediathread(void *arg);
 
-int mt_add_event(mt_event_id, void **);
+int mt_add_event(mt_event_id, void **args);
 inline int mt_process_event(mt_event_item *);
 inline void mt_disable_event(mt_event_item *);
 inline void mt_dispose_event(mt_event_item *);
-inline void mt_dispose_event_args(mt_event_id, void **);
+inline void mt_dispose_event_args(mt_event_id, void **args);
 
 int mt_add_track(Track *);
 int mt_rem_track(Track *);
+
+inline int event_buffer_low(void *sender, Track *src);
+int mt_disable_events(void *sender);
 
 Resource *mt_resource_open(char *, char *);
 // ... resource_info();

@@ -53,14 +53,6 @@
 #include <fenice/debug.h>
 #endif
 
-#if ENABLE_MEDIATHREAD
-static inline int event_buffer_low(Track *src) {
-	void **args = g_new0(void *, 1);
-	args[0] = src;
-	return mt_add_event(MT_EV_BUFFER_LOW, args);
-}
-#endif
-
 int RTP_send_packet(RTP_session * session)
 {
 	unsigned char *packet = NULL;
@@ -74,7 +66,7 @@ int RTP_send_packet(RTP_session * session)
 
 	if (!(slot = OMSbuff_getreader(session->cons))) {
 #if ENABLE_MEDIATHREAD
-		if ((res = event_buffer_low(t)) != ERR_NOERROR) {
+		if ((res = event_buffer_low(session, t)) != ERR_NOERROR) {
 			fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low\n");
 			return res;
 		}
@@ -184,7 +176,7 @@ int RTP_send_packet(RTP_session * session)
 		if (nextts == -1) {
 			// fnc_log(FNC_LOG_DEBUG, "*** time on\n");
 #if ENABLE_MEDIATHREAD
-			event_buffer_low(t);
+			event_buffer_low(session, t);
 #else
 			if (session->current_media->description.delta_mtime)
 				session->current_media->mtime += session->current_media->description.delta_mtime;	//emma
