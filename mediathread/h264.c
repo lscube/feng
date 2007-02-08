@@ -30,7 +30,6 @@
 #include <fenice/mediaparser_module.h>
 #include <fenice/utils.h>
 #include <fenice/types.h>
-#include <ffmpeg/avutil.h>
 #include <string.h>
 
 static MediaParserInfo info = {
@@ -38,14 +37,15 @@ static MediaParserInfo info = {
     MP_video
 };
 
-
 FNC_LIB_MEDIAPARSER(h264);
 
 typedef struct {
 	int is_avc;
-	uint8_t *packet;
-	unsigned int len;
-        unsigned int nal_length_size;
+	uint8_t *packet; //holds the incomplete packet
+	unsigned int len; // incomplete packet length
+        unsigned int nal_length_size; // used in avc to 
+        uint8_t **sps;  // NULL terminated array of pointers to the extradata
+        uint8_t **pps;  // idem
 } h264_priv;
 
 /* Parse the nal header and return the nal type or ERR_PARSE if doesn't match
@@ -58,6 +58,8 @@ typedef struct {
  *
  */
 
+#define RB16(x) ((((uint8_t*)(x))[0] << 8) | ((uint8_t*)(x))[1])
+
 static inline int nal_header(uint8_t header)
 {
     if (header >>7) return ERR_PARSE;   // F bit set to 1
@@ -69,7 +71,7 @@ static inline int nal_header(uint8_t header)
 static int init(MediaProperties *properties, void **private_data)
 {
     sdp_field *sdp_private = g_new(sdp_field, 1);
-    h264_priv *priv = malloc(sizeof(h264_priv));
+    h264_priv *priv = calloc(1,sizeof(h264_priv));
 
     if (!priv) return ERR_ALLOC;
 
@@ -78,29 +80,35 @@ static int init(MediaProperties *properties, void **private_data)
         int i, cnt, nalsize;
         if (properties->extradata_len < 7) goto err_alloc;
         // Shamelessly taken from ffmpeg
-/*
         priv->is_avc = 1;
         priv->nal_length_size = 2;
         cnt = *(p+5) & 0x1f; // Number of sps
+        priv->sps = malloc((cnt + 1) * sizeof(char *));
+        if (!priv->sps) goto err_alloc;
         p += 6;
         for (i = 0; i < cnt; i++) {
-            nalsize = AV_RB16(p) + 2;
-            if(decode_nal_units(h, p, nalsize) < 0) {
-                goto err_alloc;
-            }
+            if (p > properties->extradata + properties->extradata_len)
+                goto err_sps;
+            nalsize = RB16(p) + 2; //buf_size
+            fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
+            priv->sps[i] = p;
             p += nalsize;
         }
+        priv->sps[i] = NULL;
         // Decode pps from avcC
         cnt = *(p++); // Number of pps
+        priv->pps = malloc((cnt + 1) * sizeof(char *));
+        if (!priv->sps) goto err_sps;
+        fnc_log(FNC_LOG_DEBUG, "[h264] pps %d\n", cnt);
         for (i = 0; i < cnt; i++) {
-            nalsize = AV_RB16(p) + 2;
-            if(decode_nal_units(h, p, nalsize)  != nalsize) {
-                av_log(avctx, AV_LOG_ERROR, "Decoding pps %d from avcC failed\n", i);
-                return -1;
-            }
+            if (p > properties->extradata + properties->extradata_len)
+                goto err_pps;
+            nalsize = RB16(p) + 2;
+            fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
+            priv->pps[i] = p;
             p += nalsize;
         }
-*/
+        priv->pps[i] = NULL;
         priv->nal_length_size = (properties->extradata[4]&0x03)+1;
         //FIXME Fill the fmtp with the data....
     }
@@ -116,8 +124,12 @@ static int init(MediaProperties *properties, void **private_data)
     *private_data = priv;
     return ERR_NOERROR;
 
+    err_pps:
+        free(priv->pps);
+    err_sps:
+        free(priv->sps);
     err_alloc:
-    free(priv);
+        free(priv);
     return ERR_ALLOC;
 }
 
@@ -154,7 +166,44 @@ static int parse(void *track, uint8 *data, long len, uint8 *extradata,
     uint8 dst[mtu], *p, *q;
     rem = len;
 
-    if (priv->is_avc) { //FIXME prepend the extradata nals before!
+    if (priv->is_avc) {
+        uint8_t **sps = priv->sps;
+
+        //FIXME it's ugly, should only happen on frame I and could
+        //be done in a better way...
+        while (sps[1]) {
+            if (mtu >= sps[1] - sps[0]) {
+                if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
+                                      sps[0], sps[1] - sps[0])) {
+                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                        return ERR_ALLOC;
+                }
+                fnc_log(FNC_LOG_DEBUG, "[h264] single NAL\n");
+            } else {
+            // single NAL, to be fragmented, FU-A and FU-B
+                fnc_log(FNC_LOG_DEBUG, "[h264] frags\n");
+                return ERR_PARSE; //FIXME broken for now
+            }
+            sps++;
+        }
+
+        sps = priv->pps;
+        while (sps[1]) {
+            if (mtu >= sps[1] - sps[0]) {
+                if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
+                                      sps[0], sps[1] - sps[0])) {
+                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                        return ERR_ALLOC;
+                }
+                fnc_log(FNC_LOG_DEBUG, "[h264] single NAL\n");
+            } else {
+            // single NAL, to be fragmented, FU-A and FU-B
+                fnc_log(FNC_LOG_DEBUG, "[h264] frags\n");
+                return ERR_PARSE; //FIXME broken for now
+            }
+            sps++;
+        }
+
         while (1) {
             if(index >= len) break;
             //get the nal size
@@ -205,6 +254,7 @@ static int parse(void *track, uint8 *data, long len, uint8 *extradata,
             if (q >= data + len - 3) break;
 
             if (mtu >= q - p) {
+                fnc_log(FNC_LOG_DEBUG, "Sending NAL %d \n",p[0]&0x1f);
                 if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       p, q - p)) {
                         fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
