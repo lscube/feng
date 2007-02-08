@@ -60,6 +60,8 @@ typedef struct {
 
 #define RB16(x) ((((uint8_t*)(x))[0] << 8) | ((uint8_t*)(x))[1])
 
+char *av_base64_encode(uint8_t * src, int len);
+
 static inline int nal_header(uint8_t header)
 {
     if (header >>7) return ERR_PARSE;   // F bit set to 1
@@ -67,16 +69,16 @@ static inline int nal_header(uint8_t header)
     return (header & 0x1f);             // Type
 }
 
-
 static int init(MediaProperties *properties, void **private_data)
 {
-    sdp_field *sdp_private = g_new(sdp_field, 1);
+    sdp_field *sdp_private;
     h264_priv *priv = calloc(1,sizeof(h264_priv));
+    char *sprop, *buf, *out;
+    uint8_t *p = properties->extradata, *q;
 
     if (!priv) return ERR_ALLOC;
 
     if(properties->extradata && properties->extradata[0] == 1) {
-        uint8_t *p = properties->extradata;
         int i, cnt, nalsize;
         if (properties->extradata_len < 7) goto err_alloc;
         // Shamelessly taken from ffmpeg
@@ -111,8 +113,48 @@ static int init(MediaProperties *properties, void **private_data)
         priv->pps[i] = NULL;
         priv->nal_length_size = (properties->extradata[4]&0x03)+1;
         //FIXME Fill the fmtp with the data....
+    } else {
+
+    for (q = p; q < p + properties->extradata_len - 3; q++) {
+        if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
+            q += 3;
+            break;
+        }
     }
 
+    if (q >= properties->extradata + properties->extradata_len - 3)
+        goto err_alloc; // just one sps and no pps is wrong?
+    buf = av_base64_encode(p, q - p);
+    sprop = g_strdup_printf("sprop-parameter-sets=%s", buf);
+    av_free(buf);
+    p = q;
+
+    // Ugly, to be factorized in something saner.
+    while (1) {
+        //seek to the next startcode [0 0 1]
+            for (q = p; q < p + properties->extradata_len - 3; q++) {
+                if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
+                    q += 3;
+                    break;
+                }
+            }
+            if (q >= properties->extradata + properties->extradata_len - 3)
+                break;
+            buf = av_base64_encode(p, q - p);
+            out = g_strdup_printf("%s,%s",sprop, buf);
+            av_free(buf);
+            free(sprop);
+            sprop = out;
+            p = q;
+    }
+    sdp_private = g_new(sdp_field, 1);
+    sdp_private->type = fmtp;
+    sdp_private->field = sprop;
+    properties->sdp_private =
+        g_list_prepend(properties->sdp_private, sdp_private);
+    }
+
+    sdp_private = g_new(sdp_field, 1);
     sdp_private->type = rtpmap;
     sdp_private->field = g_strdup_printf ("H264/%d",properties->clock_rate);
 
