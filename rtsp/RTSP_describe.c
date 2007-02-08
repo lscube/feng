@@ -49,7 +49,7 @@
 */
 int RTSP_describe(RTSP_buffer * rtsp)
 {
-	int valid_url, res;
+	int res;
 	char object[255], server[255], trash[255];
 	char *p;
 	unsigned short port;
@@ -94,20 +94,6 @@ int RTSP_describe(RTSP_buffer * rtsp)
 		send_reply(403, 0, rtsp);	/* Forbidden */
 		return ERR_NOERROR;
 	}
-#if 0
-	p = strrchr(object, '.');
-	valid_url = 0;
-	if (p == NULL) {
-		send_reply(415, 0, rtsp);	/* Unsupported media type */
-		return ERR_NOERROR;
-	} else {
-		valid_url = is_supported_url(p);
-	}
-	if (!valid_url) {
-		send_reply(415, 0, rtsp);	/* Unsupported media type */
-		return ERR_NOERROR;
-	}
-#endif
 	// Disallow Header REQUIRE
 	if (strstr(rtsp->in_buffer, HDR_REQUIRE)) {
 		send_reply(551, 0, rtsp);	/* Option not supported */
@@ -158,7 +144,6 @@ int RTSP_describe(RTSP_buffer * rtsp)
 		/*redirect */
 		return send_redirect_3xx(rtsp, object);
 	}
-
 
 	fnc_log(FNC_LOG_INFO, "DESCRIBE %s RTSP/1.0 ", url);
 	send_describe_reply(rtsp, object, descr_format, descr);

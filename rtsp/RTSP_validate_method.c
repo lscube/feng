@@ -46,6 +46,7 @@ int RTSP_validate_method(RTSP_buffer * rtsp)
 	char ver[32];
 	unsigned int seq;
 	int pcnt;		/* parameter count */
+        char *p;
 	int mid = ERR_GENERIC;
 
 	*method = *object = '\0';
@@ -54,11 +55,18 @@ int RTSP_validate_method(RTSP_buffer * rtsp)
 	/* parse first line of message header as if it were a request message */
 
 	if ((pcnt =
-	     sscanf(rtsp->in_buffer, " %31s %255s %31s\n%15s %u ", method,
-		    object, ver, hdr, &seq)) != 5)
+	     sscanf(rtsp->in_buffer, " %31s %255s %31s ", method,
+		    object, ver, hdr, &seq)) != 3)
 		return ERR_GENERIC;
 
-	if (!strstr(hdr, HDR_CSEQ))
+        p = rtsp->in_buffer;
+
+        while ((p = strstr(p,"\n"))) {
+            if ((pcnt = sscanf(p, " %15s %u ", hdr, &seq)) == 2)
+                    if (strstr(hdr, HDR_CSEQ)) break;
+            p++;
+        }
+	if (p == NULL)
 		return ERR_GENERIC;
 
 	if (strcmp(method, RTSP_METHOD_DESCRIBE) == 0) {

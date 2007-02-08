@@ -138,16 +138,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         send_reply(403, 0, rtsp);    /* Forbidden */
         return ERR_NOERROR;
     }
-// nonsense
-#if 0
-    if (!(p = strrchr(object, '.'))) {    // if filename is without extension
-        send_reply(415, 0, rtsp);    /* Unsupported media type */
-        return ERR_NOERROR;
-    } else if (!is_supported_url(p)) {    //if filename's extension is not valid
-        send_reply(415, 0, rtsp);    /* Unsupported media type */
-        return ERR_NOERROR;
-    }
-#endif
     if (!(p = strchr(object, '!'))) {
     //if '!' is not present then a file has not been specified
         send_reply(500, 0, rtsp);    /* Internal server error */
@@ -283,7 +273,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     do {            // search a good transport string
         if ((p = strstr(transport_tkn, RTSP_RTP_AVP))) {// Transport: RTP/AVP
             p += strlen(RTSP_RTP_AVP);
-            if (!*p || (*p == ';') || (*p == ' ')) {
+            if (!*p || (*p == ';') || (*p == ' ') || (!strncmp(p, "/UDP", 4))) {
                 if (strstr(transport_tkn, "unicast")) {
                     if ((p = strstr(transport_tkn, "client_port"))) {
                         p = strstr(p, "=");
@@ -514,15 +504,39 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         if (session_id == 0) {
             session_id++;
         }
+#if 0 // To support multiple session per socket...
+        // XXX Paranoia make sure we have a connection limit set elsewhere...
+        while (rtsp_session_from_id(rtsp, session_id))
+#ifdef WIN32
+            session_id = rand();
+#else
+            session_id = 1 + (int) (10.0 * rand() / (100000 + 1.0));
+#endif
+
+#endif
     }
 
     // Add an RTSP session if necessary
     // XXX Append a new session if one isn't present already!
+#if 1
     if (!rtsp->session_list) {
         rtsp->session_list = calloc(1, sizeof(RTSP_session));
     }
     rtsp_s = rtsp->session_list;
-
+#else // To support multiple session per socket...
+    if (!rtsp->session_list) {
+        rtsp->session_list = calloc(1, sizeof(RTSP_session));
+        rtsp_s = rtsp->session_list;
+    } else {
+        RTSP_session *rtsp_s_prec;
+        for (rtsp_s = rtsp->session_list; rtsp_s != NULL;
+             rtsp_s = rtsp_s->next) {
+            rtsp_s_prec = rtsp_s;
+        }
+        rtsp_s_prec->next = calloc(1, sizeof(RTP_session));
+        rtsp_s = rtsp_s_prec->next;
+    }
+#endif
     // Setup the RTP session
     if (rtsp->session_list->rtp_session == NULL) {
         rtsp->session_list->rtp_session = calloc(1, sizeof(RTP_session));

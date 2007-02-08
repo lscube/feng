@@ -10,8 +10,7 @@ libutils_la_SOURCES =	alloc_path_name.c \
 			NTP_time.c \
 			random32.c \
 			get_utc.c \
-			get_field.c \
-			is_supported_url.c
+			get_field.c
 
 libutils_la_LDFLAGS = -static -lm
 

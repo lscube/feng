@@ -52,7 +52,6 @@ int RTSP_pause(RTSP_buffer * rtsp)
 	char *p;
 	RTSP_session *s;
 	RTP_session *r;
-	int valid_url;
 	char object[255], server[255], trash[255];
 	unsigned short port;
 	char url[255];
@@ -104,18 +103,10 @@ int RTSP_pause(RTSP_buffer * rtsp)
 	}
 
 	p = strrchr(strtok(object, "!"), '.');
-	valid_url = 0;
 	if (p == NULL) {
 		send_reply(415, 0, rtsp);	/* Unsupported media type */
 		return ERR_NOERROR;
-	} else {
-
-		valid_url = is_supported_url(p);
-	}
-	if (!valid_url) {
-		send_reply(415, 0, rtsp);	/* Unsupported media type */
-		return ERR_NOERROR;
-	}
+        }
 	// Session
 	if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
 		if (sscanf(p, "%254s %ld", trash, &session_id) != 2) {

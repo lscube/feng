@@ -176,7 +176,30 @@ char *get_stat(int err);
 int send_reply(int err, char *addon, RTSP_buffer * rtsp);
 int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp);
 void add_time_stamp(char *b, int crlf);
-// low level funcntions
+// low level functions
 ssize_t RTSP_send(RTSP_buffer * rtsp);
+#if 0 // To support multiple session per socket...
+static inline RTSP_session *rtsp_session_from_id(RTSP_buffer *rtsp,
+                                                 int session_id )
+{
+    RTSP_session *rtsp_sess;
 
+    for (rtsp_sess = rtsp->session_list;
+         rtsp_sess != NULL;
+         rtsp_sess = rtsp_sess->next)
+            if (rtsp_sess->session_id == session_id) break;
+
+    return rtsp_sess;
+}
+static inline rtsp_session_list_free( RTSP_buffer *rtsp )
+{
+    RTSP_session *cur, *tmp;
+    for (cur = rtsp->session_list;
+         cur != NULL;) {
+         tmp = cur;
+         cur = cur->next;
+         free(tmp);
+    }
+}
+#endif 
 #endif
