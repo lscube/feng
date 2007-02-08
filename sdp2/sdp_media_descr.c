@@ -109,6 +109,7 @@ int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list,
                             g_snprintf(cursor, size_left, "a=fmtp:%u %s"SDP2_EL,
                                         m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl)),
                                         SDP_FIELD(sdp_private)->field))
+                    break;
                     case rtpmap:
                         DESCRCAT(
                             g_snprintf(cursor, size_left, "a=rtpmap:%u %s"SDP2_EL,
