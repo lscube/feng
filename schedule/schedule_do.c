@@ -61,7 +61,6 @@ void schedule_do(int sig)
 #endif
 {
     int i=0,res=ERR_GENERIC;
-    struct timeval now;
     double mnow;
     // Fake timespec for fake nanosleep. See below.
     struct timespec ts = {0,0};
@@ -90,14 +89,11 @@ do {
             if (!sched[i].rtp_session->pause) {
                 Track *tr = 
                     r_selected_track(sched[i].rtp_session->track_selector);
-
-                gettimeofday(&now,NULL);
-                mnow=(double)now.tv_sec*1000+(double)now.tv_usec/1000;
+                mnow = gettimeinseconds();
 #if ENABLE_MEDIATHREAD
-//FIXME replace
                 if (mnow >= sched[i].rtp_session->start_time &&
                     mnow - sched[i].rtp_session->prev_tx_time >=
-                        tr->properties->duration);
+                        tr->properties->duration)
 #else
                 if (mnow >= sched[i].rtp_session->current_media->mstart &&
                     mnow - sched[i].rtp_session->mprev_tx_time >=
@@ -105,7 +101,7 @@ do {
 #endif
                 {
 #if ENABLE_MEDIATHREAD
-#warning Write mt equivalent
+//TODO DSC will be implemented WAY later.
 #else
                     stream_change(sched[i].rtp_session,
                         change_check(sched[i].rtp_session));
@@ -135,7 +131,8 @@ do {
                             break;
                     }
 #if ENABLE_MEDIATHREAD
-#warning Write mt equivalent
+                    sched[i].rtp_session->prev_tx_time +=
+                        tr->properties->duration;
 #else
                     sched[i].rtp_session->mprev_tx_time
                         += sched[i].rtp_session->current_media->description.pkt_len;

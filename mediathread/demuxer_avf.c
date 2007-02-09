@@ -269,7 +269,7 @@ static int init(Resource * r)
                 props.audio_channels = codec->channels;
                 // Make props an int...
                 props.sample_rate    = codec->sample_rate;
-                props.duration       = 1 / props.sample_rate * 1000;//XXX check
+                props.duration       = 1 / props.sample_rate;//XXX check
                 props.bit_per_sample   = codec->bits_per_sample;
                 snprintf(trackinfo.name, sizeof(trackinfo.name), "%d", i);
                 if (!(track = add_track(r, &trackinfo, &props)))
@@ -277,8 +277,9 @@ static int init(Resource * r)
             break;}
             case CODEC_TYPE_VIDEO:{//alloc track?
                 props.media_type   = MP_video;
-                props.frame_rate   = av_q2d(st->r_frame_rate); //XXX check
-                props.duration     = 1 / props.frame_rate * 1000; //XXX check
+                props.bit_rate     = codec->bit_rate;
+                props.frame_rate   = av_q2d(st->r_frame_rate);
+                props.duration     = 1 / props.frame_rate; //XXX check
                 props.AspectRatio  = codec->width * 
                                       codec->sample_aspect_ratio.num /
                                       (float)(codec->height *
@@ -340,11 +341,19 @@ static int read_packet(Resource * r)
             if(pkt.pts != AV_NOPTS_VALUE) {
                 TRACK(tr)->properties->mtime = 
                     pkt.pts * av_q2d(stream->time_base);
-                fnc_log(FNC_LOG_DEBUG, "[MT] timestamp %f",
+                fnc_log(FNC_LOG_DEBUG, "[MT] timestamp %f\n",
                         TRACK(tr)->properties->mtime);
             } else {
                 fnc_log(FNC_LOG_DEBUG, "[MT] missing timestamp");
             }
+            if (pkt.duration)
+                TRACK(tr)->properties->duration = pkt.duration * 
+                    av_q2d(stream->time_base);
+            else
+                TRACK(tr)->properties->duration = 
+                    (double)pkt.size/(TRACK(tr)->properties->bit_rate/8);
+            fnc_log(FNC_LOG_DEBUG, "[MT] packet duration %f\n",
+                TRACK(tr)->properties->duration );
 
             ret = TRACK(tr)->parser->parse(TRACK(tr), pkt.data, pkt.size,
                                     stream->codec->extradata,

@@ -62,7 +62,6 @@ int RTP_send_packet(RTP_session * session)
     double nextts;
     OMSSlot *slot = NULL;
     ssize_t psize_sent = 0;
-    struct timespec time = {0, 27000000};
     Track *t = r_selected_track(session->track_selector);
 
     if (!(slot = OMSbuff_getreader(session->cons))) {
@@ -73,7 +72,6 @@ int RTP_send_packet(RTP_session * session)
     }
 
     while (slot) {
-        nanosleep(&time, NULL);
         hdr_size = sizeof(r);
         r.version = 2;
         r.padding = 0;
@@ -133,14 +131,15 @@ int RTP_send_packet(RTP_session * session)
 
         nextts = OMSbuff_nextts(session->cons);
         // fnc_log(FNC_LOG_DEBUG, "*** current time=%f - next time=%f\n\n", s_time, nextts);
-
-        if (nextts == -1) {
+        if (nextts < 0) {
             // fnc_log(FNC_LOG_DEBUG, "*** time on\n");
             event_buffer_low(session, t);
             slot = NULL;
             session->cons->frames--;
         } else {
             slot = OMSbuff_getreader(session->cons);
+            if( OMSbuff_nextts(session->cons) < 0)
+                event_buffer_low(session, t);
         }
     }
 

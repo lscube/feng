@@ -44,13 +44,10 @@ extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 int schedule_resume(int id, play_args *args)
 {
 #if ENABLE_MEDIATHREAD
-    struct timeval now;
     Track *tr = r_selected_track(sched[id].rtp_session->track_selector);
     double mnow, pkt_len = tr->properties->duration;
 
-    gettimeofday(&now,NULL);
-
-    mnow = (double)now.tv_sec*1000+(double)now.tv_usec/1000;
+    mnow = gettimeinseconds();
 /*
     sched[id].rtp_session->current_media->mstart_offset 
         += sched[id].rtp_session->current_media->mtime 

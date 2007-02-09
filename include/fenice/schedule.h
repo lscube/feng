@@ -79,4 +79,10 @@ void schedule_stop(int id);
 int schedule_remove(int id);
 int schedule_resume(int id, play_args * args);
 
+static inline double gettimeinseconds(void) {
+    struct timeval now;
+    gettimeofday(&now,NULL);
+    return (double)now.tv_sec + (double)now.tv_usec/1000000.0;
+}
+
 #endif
