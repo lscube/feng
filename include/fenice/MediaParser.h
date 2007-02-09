@@ -51,10 +51,10 @@ typedef struct {
 	MOBJECT_COMMONS; // MObject commons MUST be the first field
 #endif
 MObject_def(__MEDIA_PROPERTIES)
-	int32 bit_rate; /*average if VBR or -1 is not usefull*/
+	int bit_rate; /*average if VBR or -1 is not usefull*/
 	MediaCodingType coding_type;
-	uint32 payload_type;
-	uint32 clock_rate;
+	int payload_type;
+	unsigned int clock_rate;
 	char encoding_name[11];
 	MediaType media_type;
         double mtime;    //FIXME Move to bufferpool   //time is in seconds
@@ -62,22 +62,22 @@ MObject_def(__MEDIA_PROPERTIES)
 	// Audio specific properties:
 	float sample_rate;/*SamplingFrequency*/
 	float OutputSamplingFrequency;
-	short audio_channels;
-	uint32 bit_per_sample;/*BitDepth*/
+	int audio_channels;
+	int bit_per_sample;/*BitDepth*/
 	// Video specific properties:
-	uint32 frame_rate;
+	int frame_rate;
 	// more specific video information
-	uint32 FlagInterlaced;
+	int FlagInterlaced;
 	//short StereoMode;
-	uint32 PixelWidth;
-	uint32 PixelHeight;
-	uint32 DisplayWidth;
-	uint32 DisplayHeight;
-	uint32 DisplayUnit;
-	uint32 AspectRatio;
-	uint8 *ColorSpace;
+	unsigned int PixelWidth;
+	unsigned int PixelHeight;
+	unsigned int DisplayWidth;
+	unsigned int DisplayHeight;
+	unsigned int DisplayUnit;
+	unsigned int AspectRatio;
+	uint8_t *ColorSpace;
 	float GammaValue;
-        uint8 *extradata;
+        uint8_t *extradata;
         long extradata_len;
 	sdp_field_list sdp_private;
 } MediaProperties;
