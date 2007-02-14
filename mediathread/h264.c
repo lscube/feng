@@ -115,38 +115,51 @@ static int init(MediaProperties *properties, void **private_data)
         //FIXME Fill the fmtp with the data....
     } else {
 
-    for (q = p; q < p + properties->extradata_len - 3; q++) {
-        if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
-            q += 3;
-            break;
+        for (q = p; q < p + properties->extradata_len - 3; q++) {
+            if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
+                q += 3;
+                break;
+            }
         }
-    }
 
-    if (q >= properties->extradata + properties->extradata_len - 3)
-        goto err_alloc; // just one sps and no pps is wrong?
-    buf = av_base64_encode(p, q - p);
-    sprop = g_strdup_printf("sprop-parameter-sets=%s", buf);
-    av_free(buf);
-    p = q;
+        if (q >= properties->extradata + properties->extradata_len - 3)
+            goto err_alloc; // just one sps and no pps is wrong?
+
+        p = q; // sps start;
+
+        for (; q < p + properties->extradata_len - 3; q++) {
+            if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
+                // sps end;
+                break;
+            }
+        }
+
+        //FIXME I'm abusing memory
+        // profile-level-id aka the first 3 bytes from sps
+        out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
+                                p[0], p[1], p[2]);
+
+        buf = av_base64_encode(p, q - p);
+        sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
+        g_free(out);
+        av_free(buf);
+        p = q + 3;
 
     // Ugly, to be factorized in something saner.
-    while (1) {
-        //seek to the next startcode [0 0 1]
-            for (q = p; q < p + properties->extradata_len - 3; q++) {
+        while (p < properties->extradata + properties->extradata_len) {
+            //seek to the next startcode [0 0 1]
+            for (q = p; q < p + properties->extradata_len - 3; q++) 
                 if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
-                    q += 3;
                     break;
                 }
-            }
-            if (q >= properties->extradata + properties->extradata_len - 3)
-                break;
             buf = av_base64_encode(p, q - p);
             out = g_strdup_printf("%s,%s",sprop, buf);
             av_free(buf);
-            free(sprop);
+            g_free(sprop);
             sprop = out;
-            p = q;
-    }
+            p = q + 3;
+        }
+
     sdp_private = g_new(sdp_field, 1);
     sdp_private->type = fmtp;
     sdp_private->field = sprop;
@@ -209,43 +222,6 @@ static int parse(void *track, uint8 *data, long len, uint8 *extradata,
     rem = len;
 
     if (priv->is_avc) {
-        uint8_t **sps = priv->sps;
-
-        //FIXME it's ugly, should only happen on frame I and could
-        //be done in a better way...
-        while (sps[1]) {
-            if (mtu >= sps[1] - sps[0]) {
-                if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                                      sps[0], sps[1] - sps[0])) {
-                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
-                        return ERR_ALLOC;
-                }
-                fnc_log(FNC_LOG_DEBUG, "[h264] single NAL\n");
-            } else {
-            // single NAL, to be fragmented, FU-A and FU-B
-                fnc_log(FNC_LOG_DEBUG, "[h264] frags\n");
-                return ERR_PARSE; //FIXME broken for now
-            }
-            sps++;
-        }
-
-        sps = priv->pps;
-        while (sps[1]) {
-            if (mtu >= sps[1] - sps[0]) {
-                if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                                      sps[0], sps[1] - sps[0])) {
-                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
-                        return ERR_ALLOC;
-                }
-                fnc_log(FNC_LOG_DEBUG, "[h264] single NAL\n");
-            } else {
-            // single NAL, to be fragmented, FU-A and FU-B
-                fnc_log(FNC_LOG_DEBUG, "[h264] frags\n");
-                return ERR_PARSE; //FIXME broken for now
-            }
-            sps++;
-        }
-
         while (1) {
             if(index >= len) break;
             //get the nal size
