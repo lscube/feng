@@ -38,33 +38,36 @@
 
 void usage()
 {
-	fprintf(stderr, "fenice [--config-file | -c <config_file>] [ --view-err | -v ]\n \
-			 --view-err enables stderr output\n\n");
+    fprintf(stderr,
+	    "fenice --config-file | -c <config_file> [ --view-err | -v ] [ --syslog | -s ] \n --view-err enables stderr output\n --syslog uses syslog facility\n");
 	return;
 }
 
 int command_environment(int argc, char **argv)
 {
 
-	static const char short_options[] = "r:p:c:v";
+	static const char short_options[] = "r:p:c:vds";
 	//"m:a:f:n:b:z:T:B:q:o:S:I:r:M:4:2:Q:X:D:g:G:v:V:F:N:tpdsZHOcCPK:E:R:";
 
 	int n;
 	int nerr = 0;	/*number of error */
 	int config_file_not_present = 1;
-	int view_log = 0, flag = 0;	/*0 to show help */
+	int view_log = FNC_LOG_FILE;
+	int flag = 0;	/*0 to show help */
 //#ifdef HAVE_GETOPT_LONG
 	static struct option long_options[] = {
 		{"config-file", 1, 0, 'c'},
 		{"view-err", 0, 0, 'v'},
 		{"rtsp-port", 1, 0, 'p'},
 		{"avroot-dir", 1, 0, 'r'},
+		{"syslog", 0, 0, 's'},
 		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
 	};
 
 
-	while ((n = getopt_long(argc, argv, short_options, long_options, NULL)) != -1)
+	while ((n = getopt_long(argc, argv, short_options, long_options, NULL))
+                != -1)
 //#else
 //    while( (n=getopt(argc,argv,short_options)) != -1)
 //#endif
@@ -82,7 +85,7 @@ int command_environment(int argc, char **argv)
 			   a static variable prefs */
 			break;
 		case 'v':
-			view_log=1;			
+			view_log = FNC_LOG_OUT;
 			break;
 		case 'p':
 
@@ -93,24 +96,24 @@ int command_environment(int argc, char **argv)
 		case ':':
 			fprintf(stderr, "Missing parameter to option!");
 			break;
+                case 's':
+                        view_log = FNC_LOG_SYS;
+                        break;
 		case '?':
 			flag = 0;
-			nerr=1;
+			nerr++;
 			break;
 		default:
-			nerr=1;
+			nerr++;
 		}
 	}
 	if (!flag) {
-		nerr=1;
+		nerr++;
 		usage();
 	} else if (config_file_not_present)
 		prefs_init(NULL);
 
-	if(view_log)
-		fnc_log_init(prefs_get_log(), FNC_LOG_OUT);
-	else 
-		fnc_log_init(prefs_get_log(), FNC_LOG_SYS);
+	fnc_log_init(prefs_get_log(), view_log);
 
 	return nerr;
 }

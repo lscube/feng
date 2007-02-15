@@ -39,8 +39,9 @@
 #include <config.h>
 #include <stdarg.h>
 
-#define FNC_LOG_OUT 0
-#define FNC_LOG_SYS 1
+enum {  FNC_LOG_OUT,
+        FNC_LOG_SYS,
+        FNC_LOG_FILE };
 
 	//level
 #define FNC_LOG_FATAL 0
