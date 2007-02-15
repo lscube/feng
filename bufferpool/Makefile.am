@@ -24,5 +24,5 @@ libbufferpool_la_SOURCES = 	fnc_ipc_name.c \
 				OMSbuff_getreader.c \
 				OMSbuff_gotreader.c
 
-libbufferpool_la_LDFLAGS = -static -lrt
+libbufferpool_la_LDFLAGS = -static $(SHM_LIB)
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)
