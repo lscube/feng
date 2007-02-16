@@ -85,7 +85,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 #endif
 //    struct sockaddr_storage rtsp_peer;
     unsigned long ssrc;
-    SD_descr *matching_descr;
+    SD_descr *matching_descr = NULL;
     unsigned char is_multicast_dad = 1;    //unicast and the first multicast
     RTP_transport transport;
     char *saved_ptr, *transport_tkn, *tmp;
