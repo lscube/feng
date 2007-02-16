@@ -220,8 +220,8 @@ if test "$enable_sctp" = "yes"; then
 				])], [
 		AC_MSG_WARN([SCTP not available])
 		AM_CONDITIONAL(FENICE_SCTP, [test "$enable_sctp" != "yes"])
-		sctp_msg="sctp enabled ................... : no",
-		[#include <netinet/sctp.h>]])
+		sctp_msg="sctp enabled ................... : no"],
+	[#include <netinet/sctp.h>])
 	
 else
         AC_MSG_WARN([SCTP disabled: check skipped.])
