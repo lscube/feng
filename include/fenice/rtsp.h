@@ -45,7 +45,8 @@
 #include <fenice/schedule.h>
 
 #define RTSP_BUFFERSIZE 4096
-#define INTERLEAVED_BUFFERSIZE 4096
+#define RTSP_RESERVED 1024
+//#define INTERLEAVED_BUFFERSIZE 4096
 
 	/* FIXME move rtsp states to an enum? */
 #define INIT_STATE      0
