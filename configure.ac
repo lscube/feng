@@ -130,9 +130,6 @@ AC_PROG_LIBTOOL
 LIBTOOL="$LIBTOOL --silent"
 AC_SUBST([LIBTOOL_DEPS])
 
-dnl Check for Endianess
-dnl AC_C_BIGENDIAN
-dnl netembryo
 AC_C_BIGENDIAN([BIGENDIAN="Big Endian"] AC_DEFINE([WORDS_BIGENDIAN], 1, [Define if manchine is big-endian]),[BIGENDIAN="Little Endian"] )
 
 dnl Checks for libraries.
@@ -169,16 +166,17 @@ AC_CHECK_FUNCS(select socket gettimeofday uname getcwd getwd strcspn strdup strt
 AC_CHECK_FUNC(getaddrinfo)
 CHECK_SSL
 if test "x$with_ssl" = "xyes"; then
-        fenice_cert="${localstatedir}/local/lib/feng/certs/cert.pem"
+        fenice_cert=$(eval echo ${localstatedir}/local/lib/feng/certs/cert.pem)
 else
         fenice_cert=$with_ssl
 fi
+AC_SUBST(fenice_cert)
 
 AC_CHECK_LIB([c], [shm_open], [SHM_LIB=], 
 	[AC_CHECK_LIB([rt], [shm_open], [SHM_LIB=-lrt])])
+AC_SUBST(SHM_LIB)
 
-AC_SUBST(fenice_cert)
-fenice_state_dir=${localstatedir}/local/lib/feng/certs
+fenice_state_dir=$(eval echo ${localstatedir}/local/lib/feng/certs)
 AC_SUBST(fenice_state_dir)
 
 dnl check if we have the generic struct for net addresses the has max possible size
