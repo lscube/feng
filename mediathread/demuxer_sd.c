@@ -80,7 +80,7 @@ static int init(Resource * r)
 {
     char keyword[80], line[256], sparam[10];
     Track *track;
-    FlagsData *me;
+    FlagsData me;
     char object[255], server[255];
     unsigned short port;
     int res;
@@ -170,7 +170,7 @@ static int init(Resource * r)
                 sscanf(line, "%*s%10s", props_hints.encoding_name);
             } else if (!strcasecmp(keyword, SD_PRIORITY)) {
                 // SD_PRIORITY // shawill XXX: probably to be moved in properties or infos
-                sscanf(line, "%*s %d\n", &me->data.priority);
+                sscanf(line, "%*s %d\n", &me.data.priority);
             } else if (!strcasecmp(keyword, SD_BITRATE)) {
                 // SD_BITRATE
                 sscanf(line, "%*s %d\n", &props_hints.bit_rate);
@@ -185,7 +185,7 @@ static int init(Resource * r)
                 sscanf(line, "%*s %hd\n", &props_hints.audio_channels);
             } else if (!strcasecmp(keyword, SD_AGGREGATE)) {
                 // SD_AGGREGATE
-                sscanf(line, "%*s%50s", me->data.aggregate);
+                sscanf(line, "%*s%50s", me.data.aggregate);
             } else if (!strcasecmp(keyword, SD_SAMPLE_RATE)) {
                 // SD_SAMPLE_RATE
                 sscanf(line, "%*s%f", &props_hints.sample_rate);
@@ -194,7 +194,7 @@ static int init(Resource * r)
                 sscanf(line, "%*s%u", &props_hints.bit_per_sample);
             } else if (!strcasecmp(keyword, SD_FRAME_LEN)) {
                 // SD_FRAME_LEN
-                sscanf(line, "%*s%d", &me->data.frame_len);
+                sscanf(line, "%*s%d", &me.data.frame_len);
             } else if (!strcasecmp(keyword, SD_CODING_TYPE)) {
                 // SD_CODING_TYPE
                 sscanf(line, "%*s%10s", sparam);
@@ -204,13 +204,13 @@ static int init(Resource * r)
                     props_hints.coding_type = mc_sample;
             } else if (!strcasecmp(keyword, SD_PKT_LEN)) {
                 // SD_PKT_LEN
-                sscanf(line, "%*s%f", &me->data.pkt_len);
+                sscanf(line, "%*s%f", &me.data.pkt_len);
             } else if (!strcasecmp(keyword, SD_FRAME_RATE)) {
                 // SD_FRAME_RATE
                 sscanf(line, "%*s%u", &props_hints.frame_rate);
             } else if (!strcasecmp(keyword, SD_BYTE_PER_PCKT)) {
                 // SD_BYTE_PER_PCKT
-                sscanf(line, "%*s%d", &me->data.byte_per_pckt);
+                sscanf(line, "%*s%d", &me.data.byte_per_pckt);
             } else if (!strcasecmp(keyword, SD_MEDIA_SOURCE)) {
                 // SD_MEDIA_SOURCE
                 sscanf(line, "%*s%10s", sparam);
@@ -253,7 +253,7 @@ static int init(Resource * r)
             return ERR_ALLOC;
 
 #if 0
-        if (me->description_flags & MED_ENCODING_NAME) {
+        if (me.description_flags & MED_ENCODING_NAME) {
             // MediaProperties *prop = &props_hints;
             // shawill: init parser functions in another way
             // set_media_entity(track->parser->parser_type,track->parser->parser_type->encoding_name);
@@ -286,13 +286,13 @@ static int init(Resource * r)
                 prop->sample_rate = sample_rate;    /*SamplingFrequency */
                 prop->audio_channels = audio_channels;
                 prop->bit_per_sample = bit_per_sample;    /*BitDepth */
-                if (me->description_flags & MED_BITRATE)
+                if (me.description_flags & MED_BITRATE)
                     prop->bit_rate = bit_rate;    /*average if VBR or -1 is not usefull */
-                if (me->description_flags & MED_CODING_TYPE)
+                if (me.description_flags & MED_CODING_TYPE)
                     prop->coding_type = coding_type;
-                if (me->description_flags & MED_PAYLOAD_TYPE)
+                if (me.description_flags & MED_PAYLOAD_TYPE)
                     prop->payload_type = payload_type;
-                if (me->description_flags & MED_CLOCK_RATE)
+                if (me.description_flags & MED_CLOCK_RATE)
                     prop->clock_rate = clock_rate;
 
                 // shawill: done in add_media_parser:
@@ -302,13 +302,13 @@ static int init(Resource * r)
                 // video_spec_prop *prop;
                 // prop = calloc(1, sizeof(video_spec_prop));   
                 // prop->frame_rate;
-                if (me->description_flags & MED_BITRATE)
+                if (me.description_flags & MED_BITRATE)
                     prop->bit_rate = bit_rate;    /*average if VBR or -1 is not usefull */
-                if (me->description_flags & MED_CODING_TYPE)
+                if (me.description_flags & MED_CODING_TYPE)
                     prop->coding_type = coding_type;
-                if (me->description_flags & MED_PAYLOAD_TYPE)
+                if (me.description_flags & MED_PAYLOAD_TYPE)
                     prop->payload_type = payload_type;
-                if (me->description_flags & MED_CLOCK_RATE)
+                if (me.description_flags & MED_CLOCK_RATE)
                     prop->clock_rate = clock_rate;
 
                 // shawill: done in add_media_parser:
