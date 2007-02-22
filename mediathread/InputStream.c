@@ -65,10 +65,11 @@ InputStream *istream_open(char *mrl)
 {
 	InputStream *is;
 
-	if ( !(is=(InputStream *)malloc(sizeof(InputStream))) ) {
+	if ( !(is=(InputStream *)calloc(1, sizeof(InputStream))) ) {
 		fnc_log(FNC_LOG_FATAL,"Could not allocate memory for InputStream\n");
 		return NULL;
 	}
+/* Not needed due to calloc 
 	// is->name[0] = '\0';
 	is->flags=IS_FLAGS_INIT;
 	is->cache=NULL;
@@ -77,7 +78,8 @@ InputStream *istream_open(char *mrl)
         is->mmap_base = NULL;
         is->mmap_curr = NULL;
         is->mmap_len = 0;
-#endif
+#endif */
+	is->fd = -1;
 	if(open_mrl(mrl, is)!=ERR_NOERROR) {
 		fnc_log(FNC_LOG_ERR," %s is not a valid mrl\n", mrl);
 		free(is);
