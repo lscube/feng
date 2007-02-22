@@ -70,22 +70,6 @@ int main(int argc, char **argv)
 	if (command_environment(argc, argv))
 		return 0;
 	
-
-#ifdef WIN32
-	{
-		int err;
-		unsigned short wVersionRequested;
-		WSADATA wsaData;
-		wVersionRequested = MAKEWORD(1, 1);
-		err = WSAStartup(wVersionRequested, &wsaData);
-		if (err != 0) {
-			fnc_log(FNC_LOG_ERR,"Could not detect Windows socket support.\n");
-			fnc_log(FNC_LOG_ERR,"Make sure WINSOCK.DLL is installed.\n");
-			return 1;
-		}
-	}
-#endif
-
 	Sock_init(fnc_log);
 
 #if ENABLE_STUN
@@ -114,24 +98,25 @@ int main(int argc, char **argv)
 	/* prefs_get_port() reads the static var prefs and returns the port number */
 	port = g_strdup_printf("%d", prefs_get_port());
 	main_sock = Sock_bind(NULL, port, TCP, 0);
-	g_free(port);
 
 	if(!main_sock) {
-		fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP.\n" );
-		fprintf(stderr, "[fatal] Sock_bind() error in main() for TCP.\n" );
+		fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP port %s.\n", port);
+		fprintf(stderr, "[fatal] Sock_bind() error in main() for TCP port %s.\n", port);
+		g_free(port);
 		return 0;
 	}
 
-	fprintf(stderr, "CTRL-C terminate the server.\n");
-	fnc_log(FNC_LOG_INFO, "Waiting for RTSP connections on port %s...\n", port);
-	
-/*	if (Sock_set_props(main_sock, FIONBIO, &on) < 0) { //set to non-blocking
-		fnc_log(FNC_LOG_ERR,"Sock_set_props() error.\n" );
+	fnc_log(FNC_LOG_INFO, "Waiting for RTSP connections on TCP port %s...\n", port);
+	g_free(port);
+
+/* Not needed with improved scheduler
+	 if (Sock_set_props(main_sock, FIONBIO, &on) < 0) { //set to non-blocking
+		fnc_log(FNC_LOG_ERR,"Sock_set_props() error.\n");
 		return 0;
     	}*/
 
 	if(Sock_listen(main_sock, SOMAXCONN)) {
-		fnc_log(FNC_LOG_ERR,"Sock_listen() error.\n" );
+		fnc_log(FNC_LOG_ERR,"Sock_listen() error.\n");
 		return 0;
 	}
 
@@ -139,12 +124,17 @@ int main(int argc, char **argv)
 	if (prefs_get_sctp_port() >= 0) {
 		port = g_strdup_printf("%d", prefs_get_sctp_port());
 		sctp_main_sock = Sock_bind(NULL, port, SCTP, 0);
-		g_free(port);
+
 		if(!sctp_main_sock) {
-			fnc_log(FNC_LOG_ERR,"Sock_bind() error for SCTP.\n" );
-			fprintf(stderr, "[fatal] Sock_bind() error in main() for TCP.\n" );
+			fnc_log(FNC_LOG_ERR,"Sock_bind() error for SCTP port %s.\n", port);
+			fprintf(stderr, "[fatal] Sock_bind() error in main() for SCTP port %s.\n", port);
+			g_free(port);
 			return 0;
 		}
+
+		fnc_log(FNC_LOG_INFO, "Waiting for RTSP connections on SCTP port %s...\n", port);
+	        g_free(port);
+
 		if(Sock_listen(sctp_main_sock, SOMAXCONN)) {
 			fnc_log(FNC_LOG_ERR,"Sock_listen() error.\n" );
 			return 0;
@@ -152,12 +142,15 @@ int main(int argc, char **argv)
 	}
 #endif
 
+	fprintf(stderr, "CTRL-C terminate the server.\n");
+
 	/* next line: schedule_init() initialises the array of schedule_list sched 
 	   and creates the thread schedule_do() -> look at schedule.c */
 	if (schedule_init() == ERR_FATAL) {
-		fnc_log(FNC_LOG_FATAL,"Fatal: Can't start scheduler. Server is aborting.\n");
+		fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.\n");
 		return 0;
 	}
+
 	RTP_port_pool_init(RTP_DEFAULT_PORT);
 	/* puts in the global variable port_pool[MAX_SESSION] all the RTP usable ports
 	   from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
@@ -170,10 +163,6 @@ int main(int argc, char **argv)
 	}
 	/* eventloop looks for incoming RTSP connections and generates for each
 	   all the information in the structures RTSP_list, RTP_list, and so on */
-
-#ifdef WIN32
-	WSACleanup();
-#endif
 
 	return 0;
 }
