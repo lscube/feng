@@ -56,7 +56,7 @@ int RTSP_validate_method(RTSP_buffer * rtsp)
 
 	if ((pcnt =
 	     sscanf(rtsp->in_buffer, " %31s %255s %31s ", method,
-		    object, ver, hdr, &seq)) != 3)
+		    object, ver)) != 3)
 		return ERR_GENERIC;
 
         p = rtsp->in_buffer;

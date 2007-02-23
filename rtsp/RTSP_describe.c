@@ -127,7 +127,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
 //	memset(&req, 0, sizeof(req));
 //	req.flags = ME_DESCR_FORMAT;
 //	req.descr_format = descr_format;
-	if (res = sdp_session_descr(object, descr, sizeof(descr)) ) // shawill tries for sdp2 lib
+	if ((res = sdp_session_descr(object, descr, sizeof(descr)))) // shawill tries for sdp2 lib
 		fnc_log(FNC_LOG_ERR,"[SDP2] error\n");
 //		return ERR_GENERIC;
 //	res = get_media_descr(object, &req, &media, descr);
