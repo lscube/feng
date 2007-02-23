@@ -68,7 +68,7 @@ typedef enum {
 	df_SDP_format = 0
 } description_format;
 
-typedef enum {
+/*typedef enum {
 	SD_FL_TWIN = 1,
 	SD_FL_MULTICAST = 2,
 	SD_FL_MULTICAST_PORT = 4
@@ -83,7 +83,7 @@ typedef struct _SD_descr {
 	char multicast[16];
 	char ttl[4];
 	char twin[255];
-} SD_descr;
+} SD_descr;*/
 #endif
 
 #endif // __MEDIAUTILS_H

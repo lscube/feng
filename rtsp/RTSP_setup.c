@@ -82,10 +82,10 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 #else
 // TODO: delete mediainfo legacy
     media_entry *list, *matching_me, req;
+    SD_descr *matching_descr = NULL;
 #endif
 //    struct sockaddr_storage rtsp_peer;
-    unsigned long ssrc;
-    SD_descr *matching_descr = NULL;
+    unsigned int ssrc = 0;
     unsigned char is_multicast_dad = 1;    //unicast and the first multicast
     RTP_transport transport;
     char *saved_ptr, *transport_tkn, *tmp;
@@ -602,7 +602,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     *new_session = rtsp_s;
 
     fnc_log(FNC_LOG_INFO, "SETUP %s RTSP/1.0 ", url);
-    send_setup_reply(rtsp, rtsp_s, matching_descr, rtp_s);
+    send_setup_reply(rtsp, rtsp_s, rtp_s);
     // See User-Agent 
     if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
         char cut[strlen(p)];

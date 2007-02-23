@@ -155,8 +155,7 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object,
 uint32 send_redirect_3xx(RTSP_buffer *, char *);
 
 	// SETUP
-int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session,
-		     SD_descr * descr, RTP_session * sp2);
+int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_session * sp2);
 
 	// TEARDOWN
 int send_teardown_reply(RTSP_buffer * rtsp, long session_id, long cseq);
