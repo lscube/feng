@@ -175,7 +175,7 @@ static int probe(InputStream * i_stream)
     avpd.buf= buf;
     avpd.buf_size= PROBE_BUF_SIZE;
     avif = av_probe_input_format(&avpd, 1);
-    if(avif){
+    if(avif == NULL){
         return RESOURCE_DAMAGED;
     }
 
