@@ -164,7 +164,7 @@ static int probe(InputStream * i_stream)
 {
     AVProbeData avpd;
     uint8_t buf[PROBE_BUF_SIZE];
-    lavf_priv_t *priv;
+    AVInputFormat *avif;
 
     av_register_all();
 
@@ -174,8 +174,8 @@ static int probe(InputStream * i_stream)
     avpd.filename= i_stream->name;
     avpd.buf= buf;
     avpd.buf_size= PROBE_BUF_SIZE;
-    priv->avif = av_probe_input_format(&avpd, 1);
-    if(!priv->avif){
+    avif = av_probe_input_format(&avpd, 1);
+    if(avif){
         return RESOURCE_DAMAGED;
     }
 
@@ -262,24 +262,24 @@ static int init(Resource * r)
             goto err_alloc;
         }
         switch(codec->codec_type){
-            case CODEC_TYPE_AUDIO:{//alloc track?
+            case CODEC_TYPE_AUDIO:
                 props.media_type     = MP_audio;
                 // Some properties, add more?
                 props.bit_rate       = codec->bit_rate;
                 props.audio_channels = codec->channels;
                 // Make props an int...
                 props.sample_rate    = codec->sample_rate;
-                props.duration       = 1 / props.sample_rate;//XXX check
+                props.duration       = 1 / props.sample_rate;
                 props.bit_per_sample   = codec->bits_per_sample;
                 snprintf(trackinfo.name, sizeof(trackinfo.name), "%d", i);
                 if (!(track = add_track(r, &trackinfo, &props)))
                     goto err_alloc;
-            break;}
-            case CODEC_TYPE_VIDEO:{//alloc track?
+            break;
+            case CODEC_TYPE_VIDEO:
                 props.media_type   = MP_video;
                 props.bit_rate     = codec->bit_rate;
                 props.frame_rate   = av_q2d(st->r_frame_rate);
-                props.duration     = 1 / props.frame_rate; //XXX check
+                props.duration     = 1 / props.frame_rate;
                 props.AspectRatio  = codec->width * 
                                       codec->sample_aspect_ratio.num /
                                       (float)(codec->height *
@@ -288,7 +288,13 @@ static int init(Resource * r)
                 snprintf(trackinfo.name,sizeof(trackinfo.name),"%d",i);
                 if (!(track = add_track(r, &trackinfo, &props)))
 		    goto err_alloc;
-                break;}
+            break;
+            case CODEC_TYPE_DATA:
+            case CODEC_TYPE_UNKNOWN:
+            case CODEC_TYPE_SUBTITLE: //XXX import subtitle work!
+            case CODEC_TYPE_NB:
+                fnc_log(FNC_LOG_DEBUG, "[MT] codec type unsupported\n");
+            break;
         }
     }
 
