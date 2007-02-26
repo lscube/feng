@@ -100,25 +100,11 @@ AC_ARG_ENABLE(dump,
 			  (this will involve --enable-verbose) [[default=no]]],,
 	enable_dump="no")
 
-AC_ARG_ENABLE(warnings,
-[  --enable-warnings       enable/choose gcc warnings level: none, normal, pedantic [[default=none]]],,
-	enable_warnings="none")
 AC_ARG_ENABLE(errors,
 [  --enable-errors         make gcc warnings behave like errors: none, normal, pedantic [[default=none]]],,
 	enable_errors="none")
-AC_ARG_ENABLE(optimize,
-[  --enable-optimize       enable/chose optimization level: none, poor, normal, full, super [[default=normal]]],,
-	enable_optimize="normal")
 AC_ARG_ENABLE(sctp,
 [  --enable-sctp            enable SCTP support [[default=autodetected]]],,         enable_sctp="yes")
-
-AC_PROG_CC
-AC_PROG_GCC_TRADITIONAL
-AC_PROG_CPP
-AC_PROG_AWK
-AC_PROG_INSTALL
-AC_PROG_LN_S
-AC_PROG_MAKE_SET
 
 dnl Check for LibTool Dynamic Loading
 m4_undefine([AC_PROG_CXX])
@@ -226,17 +212,24 @@ else
 	AM_CONDITIONAL(FENICE_SCTP, [test "$enable_sctp" = "yes"])
 	sctp_msg="sctp enabled ................... : no"
 fi
-
 avformat_msg="libavformat enabled ............... : no"
+avutil_msg="libavutil enabled .............. : no"
 if test "x$enable_ffmpeg" = "xyes"; then
 	PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 50.5.0],
-        [LIBAVFORMAT_DEMUXER=demuxer_lavf.c,
-         AC_DEFINE(HAVE_AVFORMAT,,[Define if libavformat support is available])
-         ],[LIBAVFORMAT_DEMUXER=])
+        [AC_DEFINE(HAVE_AVFORMAT,,[Define if libavformat support is available])
+         avformat_msg="libavformat enabled ............ : yes"
+         ])
          CFLAGS="$CFLAGS $LIBAVFORMAT_CFLAGS"
          LIBS="$LIBS $LIBAVFORMAT_LIBS"
-         avformat_msg="libavformat enabled ............ : yes"
+        PKG_CHECK_MODULES(LIBAVUTIL,[libavutil >= 49.4.0],
+        [AC_DEFINE(HAVE_AVUTIL,,[Define if libavutil support is available])
+         avutil_msg="libavutil enabled .............. : yes"],
+         [avutil_msg="libavutil enabled .............. : no, using internal"])
+         CFLAGS="$CFLAGS $LIBAVUTIL_CFLAGS"
+         LIBS="$LIBS $LIBAVUTIL_LIBS"
 fi
+
+AM_CONDITIONAL(FENICE_FFMPEG, [test "$enable_ffmpeg" = "yes"])
 
 ssl_msg="libssl found ................... : no"
 if test x_$found_ssl == x_yes; then
@@ -253,13 +246,14 @@ fi
 
 AM_CONDITIONAL(FENICE_DEBUG, /bin/false)
 if test "$enable_debug" = "yes"; then
-	CFLAGS="$CFLAGS -g -ggdb"
+	CFLAGS="$CFLAGS -g -ggdb -Wall"
 	AM_CONDITIONAL(FENICE_DEBUG, /bin/true)
 	AC_DEFINE(ENABLE_DEBUG, 1,[Debug enabled])
 	debug_msg="
    Debuging flags enabled: welcome developer!!!"
 else
 	AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
+	CFLAGS="$CFLAGS -O2 -Wall"
 fi
 
 AM_CONDITIONAL(FENICE_DUMP, /bin/false)
@@ -281,19 +275,6 @@ if test "$enable_verbose" = "yes"; then
 	verbose_msg="   You chose Fe.NG to be very verbose... who'll stop it talking now!!!"
 fi
 
-
-case "$enable_warnings" in
-	pedantic)
-		CFLAGS="$CFLAGS -W -Wall -pedantic"
-	;;
-	normal | yes)
-		CFLAGS="$CFLAGS -W -Wall"
-	;;
-	none | *)
-		CFLAGS="$CFLAGS"
-	;;
-esac
-
 case "$enable_errors" in
 	pedantic)
 		CFLAGS="$CFLAGS -pedantic-errors -Werror"
@@ -305,49 +286,6 @@ case "$enable_errors" in
 		CFLAGS="$CFLAGS"
 	;;
 esac
-
-case "$enable_optimize" in
-	poor)
-		CFLAGS="$CFLAGS -O1" 
-	;;
-	full)
-		CFLAGS="$CFLAGS -O3"
-	;;
-	super)
-		CFLAGS="$CFLAGS -O3 -funroll-loops -fstrength-reduce -fomit-frame-pointer -ffast-math -malign-functions=2 -malign-jumps=2 -malign-loops=2"
-	;;
-	none)
-		CFLAGS="$CFLAGS"
-	;;
-	normal | *)
-		CFLAGS="$CFLAGS -O2"
-	;;
-esac
-
-
-ARCH_DEFINES=""
-case "$host" in 
-	i386-*-* | i486-*-* | i586-*-* | i686-*-* | i86pc-*-*)
-		CFLAGS="$CFLAGS -march=i386"
-		ARCH_DEFINES="-DI386_ASSEM"
-		arch_type=ix86
-	;;
-	ppc-*-*)
-		arch_type=ppc
-	;;
-	*-hpux-*)
-		ARCH_DEFINES="-DHPUX"
-	;;
-	*-sun-*)
-		have_solaris=yes
-	;;
-esac
-
-
-AC_SUBST(ARCH_DEFINES)
-AM_CONDITIONAL(ARCH_X86, test "x$arch_type" = "xix86")
-AM_CONDITIONAL(ARCH_PPC, test "x$arch_type" = "xppc")
-AM_CONDITIONAL(HAVE_SOLARIS, test "x$have_solaris" = xyes)
 
 if ( test "x$enable_fhs23" = "xyes" ) && ( test -d /srv ) then
 	fenice_avroot_dir=/srv/$PACKAGE_NAME/avroot
@@ -472,6 +410,7 @@ $ssl_msg
 $stun_msg
 $sctp_msg
 $avformat_msg
+$avutil_msg
 $debug_msg
 $efence_msg
 $verbose_msg
