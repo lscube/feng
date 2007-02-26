@@ -292,7 +292,7 @@ static int init(Resource * r)
             case CODEC_TYPE_DATA:
             case CODEC_TYPE_UNKNOWN:
             case CODEC_TYPE_SUBTITLE: //XXX import subtitle work!
-            case CODEC_TYPE_NB:
+            default:
                 fnc_log(FNC_LOG_DEBUG, "[MT] codec type unsupported\n");
             break;
         }
