@@ -35,6 +35,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/unistd.h>
@@ -134,7 +135,23 @@ inline int istream_read(InputStream *is, uint8 *buf, uint32 nbytes)
 #endif
 	    return read_c(nbytes, buf, &is->cache, is->fd, is->type);
     } else
-    return ERR_ALLOC;
+        return ERR_ALLOC;
+}
+
+/*! InputStream reset function
+ * Move the pointer to begin of file
+ * */
+inline int istream_reset(InputStream *is)
+{
+    if (is) {
+#ifdef HAVE_MMAP
+        if (is->mmap_on)
+            return (int) (is->mmap_curr = 0);
+        else
+#endif
+            return (int) lseek(is->fd, 0, SEEK_SET);
+    } else
+        return ERR_ALLOC;
 }
 
 stream_type parse_mrl(char *mrl, char **resource_name)
@@ -167,6 +184,8 @@ stream_type parse_mrl(char *mrl, char **resource_name)
 
 	return res;
 }
+
+
 
 /*! \brief The function just returns the last change time of given mrl.
  * \return modification time of mrl or 0 if not guessable.

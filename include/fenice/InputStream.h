@@ -101,6 +101,7 @@ InputStream *istream_open(char *mrl);
 void istream_close(InputStream *);
 
 inline int istream_read(InputStream *is, uint8 *buf, uint32 nbytes); 
+inline int istream_reset(InputStream *is);
 stream_type parse_mrl(char *mrl, char **resource_name);
 time_t mrl_mtime(char *mrl);
 int mrl_changed(char *mrl, time_t *last_change);
