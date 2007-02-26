@@ -96,7 +96,7 @@ Resource *r_open(char *root, char *n)
 
     if ( (dmx_idx = find_demuxer(i_stream))<0 ) {
         fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer"
-                                       "for resource %s\n", mrl);
+                                       " for resource %s\n", mrl);
         return NULL;
     }
 
