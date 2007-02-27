@@ -109,6 +109,7 @@ static int init(MediaProperties *properties, void **private_data)
     sdp_field *sdp_private;
     h264_priv *priv = calloc(1,sizeof(h264_priv));
     char *sprop, *buf, *out;
+    int buf_len =  properties->extradata_len * 4 / 3 + 12;
     uint8_t *p = properties->extradata, *q;
 
     if (!priv) return ERR_ALLOC;
@@ -120,34 +121,54 @@ static int init(MediaProperties *properties, void **private_data)
         priv->is_avc = 1;
         priv->nal_length_size = 2;
         cnt = *(p+5) & 0x1f; // Number of sps
-        priv->sps = malloc((cnt + 1) * sizeof(char *));
-        if (!priv->sps) goto err_alloc;
         p += 6;
+
+        buf = g_malloc(buf_len);
+
+        if (buf == NULL) goto err_alloc;
+
         for (i = 0; i < cnt; i++) {
             if (p > properties->extradata + properties->extradata_len)
                 goto err_sps;
             nalsize = RB16(p) + 2; //buf_size
             fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
-            priv->sps[i] = p;
+            if (i==0) {
+                out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
+                                p[0], p[1], p[2]);
+                buf = av_base64_encode(buf, buf_len, p, nalsize);
+                sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
+                g_free(out);
+            } else {
+                buf = av_base64_encode(buf, buf_len, p, nalsize);
+                out = g_strdup_printf("%s,%s", sprop, buf);
+                g_free(sprop);
+                sprop = out;
+            }
             p += nalsize;
         }
-        priv->sps[i] = NULL;
         // Decode pps from avcC
         cnt = *(p++); // Number of pps
-        priv->pps = malloc((cnt + 1) * sizeof(char *));
-        if (!priv->sps) goto err_sps;
         fnc_log(FNC_LOG_DEBUG, "[h264] pps %d\n", cnt);
+
         for (i = 0; i < cnt; i++) {
             if (p > properties->extradata + properties->extradata_len)
                 goto err_pps;
             nalsize = RB16(p) + 2;
             fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
-            priv->pps[i] = p;
+            buf = av_base64_encode(buf, buf_len, p, nalsize);
+            out = g_strdup_printf("%s,%s",sprop, buf);
+            g_free(sprop);
+            sprop = out;
             p += nalsize;
         }
-        priv->pps[i] = NULL;
         priv->nal_length_size = (properties->extradata[4]&0x03)+1;
         //FIXME Fill the fmtp with the data....
+        sdp_private = g_new(sdp_field, 1);
+        sdp_private->type = fmtp;
+        sdp_private->field = sprop;
+        properties->sdp_private =
+            g_list_prepend(properties->sdp_private, sdp_private);
+
     } else {
 
         for (q = p; q < p + properties->extradata_len - 3; q++) {
@@ -199,7 +220,7 @@ static int init(MediaProperties *properties, void **private_data)
             sprop = out;
             p = q + 3;
         }
-
+// factorize out if is working...
         sdp_private = g_new(sdp_field, 1);
         sdp_private->type = fmtp;
         sdp_private->field = sprop;
