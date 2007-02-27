@@ -4,7 +4,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(dist-bzip2 check-news)
 
-AC_PREFIX_PROGRAM(feng)
+AC_PREFIX_DEFAULT("/usr")
 
 AM_CONFIG_HEADER(config.h)
 
