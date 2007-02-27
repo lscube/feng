@@ -12,7 +12,8 @@ libmediath_la_SOURCES =	cache.c \
 			mediathread.c \
 			mediautils.c \
 			mpeg12.c \
-			mpegaudio.c 
+			mpegaudio.c \
+			demuxer_ds.c
 
 if FENICE_FFMPEG
 libmediath_la_SOURCES += demuxer_avf.c \

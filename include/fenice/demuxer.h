@@ -93,6 +93,7 @@ MObject_def(__RESOURCE_INFO)
 	char *email;
 	char *phone;
 	sdp_field_list sdp_private;
+	double duration;
 	// char mrl[255];
 	char twin[255];
 	char multicast[16];
@@ -103,7 +104,8 @@ typedef struct __RESOURCE {
 	InputStream *i_stream;
 	struct __DEMUXER *demuxer;
 	ResourceInfo *info;
-	// Track *tracks[MAX_TRACKS];
+	double (*timescaler)(struct __RESOURCE *, double);
+        struct __RESOURCE *edl;
 	SelList sel;
         int num_sel;
         TrackList tracks;

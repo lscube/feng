@@ -182,6 +182,10 @@ static int probe(InputStream * i_stream)
     return RESOURCE_OK;
 }
 
+static double avf_timescaler (Resource *r, double res_time) {
+    return res_time;
+}
+
 static int init(Resource * r)
 {
     AVFormatContext *avfc;
@@ -299,7 +303,7 @@ static int init(Resource * r)
     }
 
     r->private_data = priv;
-
+    r->timescaler = avf_timescaler;
     return RESOURCE_OK;
 
 err_alloc:
@@ -345,8 +349,8 @@ static int read_packet(Resource * r)
 // push it to the framer
             stream = priv->avfc->streams[TRACK(tr)->info->id];
             if(pkt.pts != AV_NOPTS_VALUE) {
-                TRACK(tr)->properties->mtime = 
-                    pkt.pts * av_q2d(stream->time_base);
+                TRACK(tr)->properties->mtime = r->timescaler (r,
+                    pkt.pts * av_q2d(stream->time_base));
                 fnc_log(FNC_LOG_DEBUG, "[MT] timestamp %f\n",
                         TRACK(tr)->properties->mtime);
             } else {

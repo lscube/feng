@@ -37,11 +37,13 @@
 
 // global demuxer modules:
 extern Demuxer fnc_demuxer_sd;
+extern Demuxer fnc_demuxer_ds;
 extern Demuxer fnc_demuxer_avf;
 
 // static array containing all the available demuxers:
 static Demuxer *demuxers[] = {
     &fnc_demuxer_sd,
+    &fnc_demuxer_ds,
     &fnc_demuxer_avf,
     NULL
 };

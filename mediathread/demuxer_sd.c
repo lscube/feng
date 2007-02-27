@@ -61,11 +61,6 @@ typedef struct __FLAGS_DATA {
     } data;
 } FlagsData;
 
-// private functions definition:
-static int validate_audio_track(Track *);
-static int validate_video_track(Track *);
-static int validate_track(Resource *);
-
 static int probe(InputStream * i_stream)
 {
     char *ext;
@@ -332,10 +327,12 @@ static int init(Resource * r)
     return RESOURCE_OK;
 }
 
+/*
 static int read_header(Resource * r)
 {
     return RESOURCE_OK;
 }
+*/
 
 static int read_packet(Resource * r)
 {
