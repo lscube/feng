@@ -114,7 +114,7 @@ static double edl_timescaler (Resource * r, double res_time) {
     if (res_time >= item->end) {
         ((edl_priv_data *) r->edl->private_data)->move_to_next = 1;
     }
-    return res_time + item->offset;
+    return res_time + item->offset - item->begin;
 }
 
 static int init(Resource * r)
