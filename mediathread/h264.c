@@ -46,8 +46,6 @@ typedef struct {
 	uint8_t *packet; //holds the incomplete packet
 	unsigned int len; // incomplete packet length
         unsigned int nal_length_size; // used in avc to 
-        uint8_t **sps;  // NULL terminated array of pointers to the extradata
-        uint8_t **pps;  // idem
 } h264_priv;
 
 /* Parse the nal header and return the nal type or ERR_PARSE if doesn't match
@@ -73,7 +71,7 @@ static int init(MediaProperties *properties, void **private_data)
 {
     sdp_field *sdp_private;
     h264_priv *priv = calloc(1,sizeof(h264_priv));
-    char *sprop, *buf, *out;
+    char *sprop = NULL, *buf, *out;
 //    int buf_len =  properties->extradata_len * 4 / 3 + 12;
     uint8_t *p = properties->extradata, *q;
 
@@ -94,7 +92,7 @@ static int init(MediaProperties *properties, void **private_data)
 
         for (i = 0; i < cnt; i++) {
             if (p > properties->extradata + properties->extradata_len)
-                goto err_sps;
+                goto err_sprop;
             nalsize = RB16(p) + 2; //buf_size
             fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
             if (i==0) {
@@ -119,7 +117,7 @@ static int init(MediaProperties *properties, void **private_data)
 
         for (i = 0; i < cnt; i++) {
             if (p > properties->extradata + properties->extradata_len)
-                goto err_pps;
+                goto err_sprop;
             nalsize = RB16(p) + 2;
             fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
             buf = av_base64_encode(p, nalsize);
@@ -211,12 +209,10 @@ static int init(MediaProperties *properties, void **private_data)
 
     return ERR_NOERROR;
 
-    err_pps:
-        free(priv->pps);
-    err_sps:
-        free(priv->sps);
-    err_out:
-        g_free(out);
+//    err_out:
+//        g_free(out);
+    err_sprop:
+        if (sprop) g_free(sprop);
     err_alloc:
         free(priv);
     return ERR_ALLOC;
@@ -226,7 +222,6 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp,
                       InputStream *istream, MediaProperties *properties,
                       void *private_data)
 {
-
 
 return ERR_PARSE;
 }
