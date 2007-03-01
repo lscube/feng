@@ -31,44 +31,9 @@
 #include <fenice/utils.h>
 #include <fenice/types.h>
 #include <string.h>
+ 
+char *av_base64_encode(uint8_t * src, int len);
 
-#ifdef HAVE_AVUTIL
-#include <ffmpeg/base64.h>
-#else
-static inline char *av_base64_encode(char *out, int out_len, uint8_t * src, int len)
-{
-    static const char b64[] =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    char *dst;
-    unsigned i_bits = 0;
-    int i_shift = 0;
-    int bytes_remaining = len;
-
-    if (len < UINT_MAX / 4 && out_len > (len * 4 / 3 + 12) && out) {
-        dst = out;
-    } else
-        return NULL;
-
-    if (len) {                  // special edge case, what should we really do here?
-        while (bytes_remaining) {
-            i_bits = (i_bits << 8) + *src++;
-            bytes_remaining--;
-            i_shift += 8;
-
-            do {
-                *dst++ = b64[(i_bits << 6 >> i_shift) & 0x3f];
-                i_shift -= 6;
-            } while (i_shift > 6 || (bytes_remaining == 0 && i_shift > 0));
-        }
-        while ((dst - out) & 3)
-            *dst++ = '=';
-    }
-    *dst = '\0';
-
-    return out;
-}
-
-#endif
 static MediaParserInfo info = {
     "H264",
     MP_video
@@ -109,7 +74,7 @@ static int init(MediaProperties *properties, void **private_data)
     sdp_field *sdp_private;
     h264_priv *priv = calloc(1,sizeof(h264_priv));
     char *sprop, *buf, *out;
-    int buf_len =  properties->extradata_len * 4 / 3 + 12;
+//    int buf_len =  properties->extradata_len * 4 / 3 + 12;
     uint8_t *p = properties->extradata, *q;
 
     if (!priv) return ERR_ALLOC;
@@ -123,9 +88,9 @@ static int init(MediaProperties *properties, void **private_data)
         cnt = *(p+5) & 0x1f; // Number of sps
         p += 6;
 
-        buf = g_malloc(buf_len);
+//        buf = g_malloc(buf_len);
 
-        if (buf == NULL) goto err_alloc;
+//        if (buf == NULL) goto err_alloc;
 
         for (i = 0; i < cnt; i++) {
             if (p > properties->extradata + properties->extradata_len)
@@ -135,13 +100,15 @@ static int init(MediaProperties *properties, void **private_data)
             if (i==0) {
                 out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
                                 p[0], p[1], p[2]);
-                buf = av_base64_encode(buf, buf_len, p, nalsize);
+                buf = av_base64_encode(p, nalsize);
                 sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
                 g_free(out);
+                av_free(buf);
             } else {
-                buf = av_base64_encode(buf, buf_len, p, nalsize);
+                buf = av_base64_encode(p, nalsize);
                 out = g_strdup_printf("%s,%s", sprop, buf);
                 g_free(sprop);
+                av_free(buf);
                 sprop = out;
             }
             p += nalsize;
@@ -155,9 +122,10 @@ static int init(MediaProperties *properties, void **private_data)
                 goto err_pps;
             nalsize = RB16(p) + 2;
             fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
-            buf = av_base64_encode(buf, buf_len, p, nalsize);
+            buf = av_base64_encode(p, nalsize);
             out = g_strdup_printf("%s,%s",sprop, buf);
             g_free(sprop);
+            av_free(buf);
             sprop = out;
             p += nalsize;
         }
@@ -195,15 +163,15 @@ static int init(MediaProperties *properties, void **private_data)
         out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
                                 p[0], p[1], p[2]);
         //way upper bound
-        buf = g_malloc(properties->extradata_len * 4 / 3 + 12);
+//        buf = g_malloc(properties->extradata_len * 4 / 3 + 12);
 
-        if (buf == NULL) goto err_out;
+//        if (buf == NULL) goto err_out;
 
-        buf = av_base64_encode(buf, properties->extradata_len * 4 / 3 + 12,
-                               p, q - p);
+        buf = av_base64_encode(p, q - p);
 
         sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
         g_free(out);
+        av_free(buf);
         p = q + 3;
 
     // Ugly, to be factorized in something saner.
@@ -213,10 +181,10 @@ static int init(MediaProperties *properties, void **private_data)
                 if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
                     break;
                 }
-            buf = av_base64_encode(buf, properties->extradata_len * 4 / 3 + 12,
-                                   p, q - p);
+            buf = av_base64_encode(p, q - p);
             out = g_strdup_printf("%s,%s",sprop, buf);
             g_free(sprop);
+            av_free(buf);
             sprop = out;
             p = q + 3;
         }
@@ -239,7 +207,7 @@ static int init(MediaProperties *properties, void **private_data)
 
     *private_data = priv;
 
-    g_free(buf);
+//    g_free(buf);
 
     return ERR_NOERROR;
 
