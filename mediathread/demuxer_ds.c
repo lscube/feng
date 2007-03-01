@@ -66,7 +66,7 @@ typedef struct __EDL_PRIV {
 static int probe(InputStream * i_stream)
 {
     char *ext;
-    uint8 buffer[80], string[80];
+    char buffer[80], string[80];
     int version, n;
 
     // Check filename extension
@@ -74,7 +74,7 @@ static int probe(InputStream * i_stream)
         return RESOURCE_DAMAGED;
     }
     // Read begin of file
-    if (istream_read(i_stream, buffer, 79) <= 0) {
+    if (istream_read(i_stream, (uint8 *) buffer, 79) <= 0) {
         return RESOURCE_DAMAGED;
     }
     buffer[79] = '\0';
