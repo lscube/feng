@@ -93,7 +93,8 @@ static int init(MediaProperties *properties, void **private_data)
         for (i = 0; i < cnt; i++) {
             if (p > properties->extradata + properties->extradata_len)
                 goto err_sprop;
-            nalsize = RB16(p) + 2; //buf_size
+            nalsize = RB16(p); //buf_size
+            p += 2;
             fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
             if (i==0) {
                 out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
@@ -118,7 +119,8 @@ static int init(MediaProperties *properties, void **private_data)
         for (i = 0; i < cnt; i++) {
             if (p > properties->extradata + properties->extradata_len)
                 goto err_sprop;
-            nalsize = RB16(p) + 2;
+            nalsize = RB16(p);
+            p += 2;
             fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
             buf = av_base64_encode(p, nalsize);
             out = g_strdup_printf("%s,%s",sprop, buf);
