@@ -265,7 +265,7 @@ static int parse(void *track, uint8 *data, long len, uint8 *extradata,
                     continue;
                 } else {
                     fnc_log(FNC_LOG_ERR, "AVC: nal size %d\n", nalsize);
-                    return ERR_PARSE;
+                    break;
                 }
             }
             if (mtu >= nalsize) {
