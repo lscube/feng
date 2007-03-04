@@ -5,7 +5,7 @@ FENICE_DOCS_DIR_HOWTO = $(DESTDIR)@fenice_docs_dir@/howto
 install-data-local:
 	
 	$(INSTALL) -m 755 -d $(FENICE_DOCS_DIR_HOWTO)
-	$(INSTALL_DATA) *.html $(FENICE_DOCS_DIR_HOWTO)
+	$(INSTALL_DATA) $(srcdir)/*.html $(FENICE_DOCS_DIR_HOWTO)
 
 uninstall-local:
 	rm -rf $(FENICE_DOCS_DIR_HOWTO)

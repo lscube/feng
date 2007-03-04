@@ -6,7 +6,7 @@ EXTRA_DIST = $(FENICE_TEST_FILES)
 
 install-data-local:
 	$(INSTALL) -m 755 -d $(FENICE_AVROOT_DIR)
-	$(INSTALL_DATA) $(FENICE_TEST_FILES) $(FENICE_AVROOT_DIR)
+	$(INSTALL_DATA) $(srcdir)/$(FENICE_TEST_FILES) $(FENICE_AVROOT_DIR)
 
 uninstall-local:
 	@echo -n "Removing A/V Test Files...";\
