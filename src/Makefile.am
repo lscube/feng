@@ -1,4 +1,4 @@
-feniceincludedir = $(top_srcdir)/include
+feniceincludedir = ../include
 
 noinst_LTLIBRARIES = liblog.la libsafectype.la libutils.la libprefs.la
 
@@ -55,35 +55,35 @@ bin_PROGRAMS = feng
 feng_SOURCES =	main.c \
 			fncheader.c
 
-feng_LDADD =	$(top_srcdir)/eventloop/libeventloop.la \
-		$(top_srcdir)/rtsp/librtsp.la \
-		$(top_srcdir)/sdp2/libsdp2.la \
-		$(top_srcdir)/schedule/libschedule.la \
-		$(top_srcdir)/rtcp/librtcp.la \
-		$(top_srcdir)/rtp/librtp.la \
-		$(top_srcdir)/mediathread/libmediath.la \
-		$(top_srcdir)/bufferpool/libbufferpool.la \
-		$(top_srcdir)/xmlparser/libxmlparser.la \
-		$(top_srcdir)/multicast/libmulticast.la
-#		$(top_srcdir)/intnet/libintnet.la
-#		$(top_srcdir)/mediainfo/libmediainfo.la
-#		$(top_srcdir)/sdp/libsdp.la
+feng_LDADD =	../eventloop/libeventloop.la \
+		../rtsp/librtsp.la \
+		../sdp2/libsdp2.la \
+		../schedule/libschedule.la \
+		../rtcp/librtcp.la \
+		../rtp/librtp.la \
+		../mediathread/libmediath.la \
+		../bufferpool/libbufferpool.la \
+		../multicast/libmulticast.la
+#		../xmlparser/libxmlparser.la
+#		../intnet/libintnet.la
+#		../mediainfo/libmediainfo.la
+#		../sdp/libsdp.la
 
 if FENICE_STUN
-feng_LDADD += $(top_srcdir)/stunserver/libstunserver.la \
-		$(top_srcdir)/stun/libstun.la 
+feng_LDADD += ../stunserver/libstunserver.la \
+		../stun/libstun.la 
 endif
 		
-feng_LDADD +=	$(top_srcdir)/wsocket/libwsocket.la \
-		$(top_srcdir)/command_environment/libcommand.la \
-		$(top_srcdir)/src/libprefs.la \
-		$(top_srcdir)/src/libutils.la \
-		$(top_srcdir)/src/liblog.la \
-		$(top_srcdir)/src/libsafectype.la \
-		$(top_srcdir)/md5/libmd5.la
+feng_LDADD +=	../wsocket/libwsocket.la \
+		../command_environment/libcommand.la \
+		../src/libprefs.la \
+		../src/libutils.la \
+		../src/liblog.la \
+		../src/libsafectype.la \
+		../md5/libmd5.la
 
 if FENICE_VERBOSE
-feng_LDADD += $(top_srcdir)/src/libdebug.la
+feng_LDADD += ../src/libdebug.la
 endif
 
 feng_LDFLAGS =
@@ -99,4 +99,4 @@ endif
 
 feng_LDADD += @GLIB_LIBS@
 
-INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)
+INCLUDES = -I$(feniceincludedir) -I..

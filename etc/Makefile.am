@@ -6,7 +6,7 @@ EXTRA_DIST = $(FENICE_CONF_FILE).in
 all: feng.conf
 
 feng.conf: feng.conf.in
-	cpp -I.. -P $(FENICE_CONF_FILE).in > $(FENICE_CONF_FILE)
+	cpp -I.. -P $(srcdir)/$(FENICE_CONF_FILE).in > $(FENICE_CONF_FILE)
 
 clean:
 	rm -f $(FENICE_CONF_FILE)
@@ -21,4 +21,4 @@ install-data-local:
 		fi; \
 		cp feng.conf $(FENICE_CONF_DIR); \
 	fi
-		
+		    
