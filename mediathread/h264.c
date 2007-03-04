@@ -130,12 +130,6 @@ static int init(MediaProperties *properties, void **private_data)
             p += nalsize;
         }
         priv->nal_length_size = (properties->extradata[4]&0x03)+1;
-        //FIXME Fill the fmtp with the data....
-        sdp_private = g_new(sdp_field, 1);
-        sdp_private->type = fmtp;
-        sdp_private->field = sprop;
-        properties->sdp_private =
-            g_list_prepend(properties->sdp_private, sdp_private);
 
     } else {
 
@@ -188,13 +182,13 @@ static int init(MediaProperties *properties, void **private_data)
             sprop = out;
             p = q + 3;
         }
-// factorize out if is working...
-        sdp_private = g_new(sdp_field, 1);
-        sdp_private->type = fmtp;
-        sdp_private->field = sprop;
-        properties->sdp_private =
-            g_list_prepend(properties->sdp_private, sdp_private);
     }
+
+    sdp_private = g_new(sdp_field, 1);
+    sdp_private->type = fmtp;
+    sdp_private->field = sprop;
+    properties->sdp_private =
+        g_list_prepend(properties->sdp_private, sdp_private);
 
     sdp_private = g_new(sdp_field, 1);
     sdp_private->type = rtpmap;
