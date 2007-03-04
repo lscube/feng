@@ -327,6 +327,7 @@ static int parse(void *track, uint8 *data, long len, uint8 *extradata,
 
 static int uninit(void *private_data)
 {
-
-return ERR_NOERROR;
+    //that's all?
+    if (private_data) free(private_data);
+    return ERR_NOERROR;
 }
