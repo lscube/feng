@@ -273,7 +273,7 @@ static int init(Resource * r)
                 props.audio_channels = codec->channels;
                 // Make props an int...
                 props.sample_rate    = codec->sample_rate;
-                props.duration       = (double)1 / props.sample_rate;
+                props.duration       = (double)1 / codec->sample_rate;
                 props.bit_per_sample   = codec->bits_per_sample;
                 snprintf(trackinfo.name, sizeof(trackinfo.name), "%d", i);
                 if (!(track = add_track(r, &trackinfo, &props)))
@@ -326,28 +326,14 @@ static int read_packet(Resource * r)
 // get a packet
     if(av_read_frame(priv->avfc, &pkt) < 0)
         return EOF; //FIXME
-
-// for each track selected
-#if 0
-    for (sel = g_list_first(r->sel);
-         sel !=NULL;
-         sel = g_list_next(r->sel)) {
-        if (pkt.stream_index == sel->cur->info->id) {
-// push it to the framer
-            stream = priv->avfc->streams[sel->cur->info->id];
-            ret = sel->cur->parser->parse(sel->cur, pkt.data, pkt.size,
-                                    stream->codec->extradata,
-                                    stream->codec->extradata_size);
-            break;
-        }
-    }
-#else
     for (tr = g_list_first(r->tracks);
          tr !=NULL;
          tr = g_list_next(tr)) {
         if (pkt.stream_index == TRACK(tr)->info->id) {
 // push it to the framer
             stream = priv->avfc->streams[TRACK(tr)->info->id];
+            fnc_log(FNC_LOG_DEBUG, "[MT] Parsing track %s\n",
+                    TRACK(tr)->info->name);
             if(pkt.pts != AV_NOPTS_VALUE) {
                 TRACK(tr)->properties->mtime = r->timescaler (r,
                     pkt.pts * av_q2d(stream->time_base));
@@ -356,33 +342,38 @@ static int read_packet(Resource * r)
             } else {
                 fnc_log(FNC_LOG_DEBUG, "[MT] missing timestamp");
             }
+
             if (pkt.duration) {
                 TRACK(tr)->properties->duration = pkt.duration * 
                     av_q2d(stream->time_base);
+            } else { // welcome to the wonderland ehm, hackland...
+                switch (stream->codec->codec_id) {
+                    case CODEC_ID_MP2:
+                    case CODEC_ID_MP3:
+                        TRACK(tr)->properties->duration = 1152.0/
+                                TRACK(tr)->properties->sample_rate;
+                        break;
+                    default: break;
+                }
             }
 
-            fnc_log(FNC_LOG_DEBUG, "[MT] packet duration %f, bitrate %f\n",
-                TRACK(tr)->properties->duration,
-                TRACK(tr)->properties->bit_rate );
+            fnc_log(FNC_LOG_DEBUG, "[MT] packet duration %f\n",
+                TRACK(tr)->properties->duration);
 
             ret = TRACK(tr)->parser->parse(TRACK(tr), pkt.data, pkt.size,
                                     stream->codec->extradata,
                                     stream->codec->extradata_size);
-            fnc_log(FNC_LOG_DEBUG, "[MT] Parsing track %s\n",
-                    TRACK(tr)->info->name);
             break;
         }
     }
-#endif
 
     av_free_packet(&pkt);
 
     return ret;
 }
-// time_msec has to be in timebase units!
+
 static int seek(Resource * r, double time_sec)
 {
-//XXX check the timebase....
     int flags = 0;
     int64_t time_msec = time_sec * AV_TIME_BASE;
     AVFormatContext *fc = ((lavf_priv_t *)r->private_data)->avfc;
