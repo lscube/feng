@@ -47,7 +47,7 @@ static int read_packet(Resource *);
 
 /* seek: ...
  * */
-static int seek(Resource *, int64_t time_sec);
+static int seek(Resource *, double time_sec);
 
 /* uninit: ...
  * */

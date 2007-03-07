@@ -380,10 +380,11 @@ static int read_packet(Resource * r)
     return ret;
 }
 // time_msec has to be in timebase units!
-static int seek(Resource * r, int64_t time_msec)
+static int seek(Resource * r, double time_sec)
 {
 //XXX check the timebase....
     int flags = 0;
+    int64_t time_msec = time_sec * AV_TIME_BASE;
     AVFormatContext *fc = ((lavf_priv_t *)r->private_data)->avfc;
     if (fc->start_time != AV_NOPTS_VALUE)
         time_msec += fc->start_time;
