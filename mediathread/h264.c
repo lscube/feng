@@ -67,121 +67,133 @@ static inline int nal_header(uint8_t header)
     return (header & 0x1f);             // Type
 }
 
+static char *encode_avc1_header(uint8_t *p, unsigned int len)
+{
+    int i, cnt, nalsize;
+    uint8_t *q = p;
+    char *sprop = NULL, *out, *buf;
+    cnt = *(p+5) & 0x1f; // Number of sps
+    p += 6;
+
+    for (i = 0; i < cnt; i++) {
+        if (p > q + len)
+            goto err_sprop;
+        nalsize = RB16(p); //buf_size
+        p += 2;
+        fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
+        if (i == 0) {
+            out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
+                                  p[0], p[1], p[2]);
+            buf = av_base64_encode(p, nalsize);
+            sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
+            g_free(out);
+            av_free(buf);
+        } else {
+            buf = av_base64_encode(p, nalsize);
+            out = g_strdup_printf("%s,%s", sprop, buf);
+            g_free(sprop);
+            av_free(buf);
+            sprop = out;
+        }
+        p += nalsize;
+    }
+    // Decode pps from avcC
+    cnt = *(p++); // Number of pps
+    fnc_log(FNC_LOG_DEBUG, "[h264] pps %d\n", cnt);
+
+    for (i = 0; i < cnt; i++) {
+        if (p > q + len)
+            goto err_sprop;
+        nalsize = RB16(p);
+        p += 2;
+        fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
+        buf = av_base64_encode(p, nalsize);
+        out = g_strdup_printf("%s,%s",sprop, buf);
+        g_free(sprop);
+        av_free(buf);
+        sprop = out;
+        p += nalsize;
+    }
+    return sprop;
+
+    err_sprop:
+        if (sprop) g_free(sprop);
+    return NULL;
+}
+
+static char *encode_header(uint8_t *p, unsigned int len)
+{
+    uint8_t *q, *m = p;
+    char *sprop = NULL, *out, *buf;
+
+    for (q = p; q < m + len - 3; q++) {
+        if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
+            q += 3;
+            break;
+        }
+    }
+
+    if (q >= m + len - 3)
+        return NULL;
+
+    p = q; // sps start;
+
+    for (; q < m + len - 3; q++) {
+        if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
+            // sps end;
+            break;
+        }
+    }
+
+    //FIXME I'm abusing memory
+    // profile-level-id aka the first 3 bytes from sps
+    out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
+                            p[0], p[1], p[2]);
+
+    buf = av_base64_encode(p, q - p);
+
+    sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
+    g_free(out);
+    av_free(buf);
+    p = q + 3;
+
+    while (p < m + len) {
+        //seek to the next startcode [0 0 1]
+        for (q = p; q < m + len - 3; q++) 
+            if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
+                break;
+            }
+        buf = av_base64_encode(p, q - p);
+        out = g_strdup_printf("%s,%s",sprop, buf);
+        g_free(sprop);
+        av_free(buf);
+        sprop = out;
+        p = q + 3;
+    }
+
+    return sprop;
+}
+
 static int init(MediaProperties *properties, void **private_data)
 {
     sdp_field *sdp_private;
     h264_priv *priv = calloc(1,sizeof(h264_priv));
-    char *sprop = NULL, *buf, *out;
+    char *sprop = NULL;
 //    int buf_len =  properties->extradata_len * 4 / 3 + 12;
-    uint8_t *p = properties->extradata, *q;
 
     if (!priv) return ERR_ALLOC;
 
     if(properties->extradata && properties->extradata[0] == 1) {
-        int i, cnt, nalsize;
-        if (properties->extradata_len < 7) goto err_alloc;
-        // Shamelessly taken from ffmpeg
+	if (properties->extradata_len < 7) goto err_alloc;
+	priv->nal_length_size = (properties->extradata[4]&0x03)+1;
         priv->is_avc = 1;
-        priv->nal_length_size = 2;
-        cnt = *(p+5) & 0x1f; // Number of sps
-        p += 6;
-
-//        buf = g_malloc(buf_len);
-
-//        if (buf == NULL) goto err_alloc;
-
-        for (i = 0; i < cnt; i++) {
-            if (p > properties->extradata + properties->extradata_len)
-                goto err_sprop;
-            nalsize = RB16(p); //buf_size
-            p += 2;
-            fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
-            if (i==0) {
-                out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
-                                p[0], p[1], p[2]);
-                buf = av_base64_encode(p, nalsize);
-                sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
-                g_free(out);
-                av_free(buf);
-            } else {
-                buf = av_base64_encode(p, nalsize);
-                out = g_strdup_printf("%s,%s", sprop, buf);
-                g_free(sprop);
-                av_free(buf);
-                sprop = out;
-            }
-            p += nalsize;
-        }
-        // Decode pps from avcC
-        cnt = *(p++); // Number of pps
-        fnc_log(FNC_LOG_DEBUG, "[h264] pps %d\n", cnt);
-
-        for (i = 0; i < cnt; i++) {
-            if (p > properties->extradata + properties->extradata_len)
-                goto err_sprop;
-            nalsize = RB16(p);
-            p += 2;
-            fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
-            buf = av_base64_encode(p, nalsize);
-            out = g_strdup_printf("%s,%s",sprop, buf);
-            g_free(sprop);
-            av_free(buf);
-            sprop = out;
-            p += nalsize;
-        }
-        priv->nal_length_size = (properties->extradata[4]&0x03)+1;
-
+        sprop = encode_avc1_header(properties->extradata,
+                                   properties->extradata_len);
+        if (sprop == NULL) goto err_alloc;
     } else {
-
-        for (q = p; q < p + properties->extradata_len - 3; q++) {
-            if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
-                q += 3;
-                break;
-            }
-        }
-
-        if (q >= properties->extradata + properties->extradata_len - 3)
-            goto err_alloc; // just one sps and no pps is wrong?
-
-        p = q; // sps start;
-
-        for (; q < p + properties->extradata_len - 3; q++) {
-            if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
-                // sps end;
-                break;
-            }
-        }
-
-        //FIXME I'm abusing memory
-        // profile-level-id aka the first 3 bytes from sps
-        out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
-                                p[0], p[1], p[2]);
-        //way upper bound
-//        buf = g_malloc(properties->extradata_len * 4 / 3 + 12);
-
-//        if (buf == NULL) goto err_out;
-
-        buf = av_base64_encode(p, q - p);
-
-        sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
-        g_free(out);
-        av_free(buf);
-        p = q + 3;
-
-    // Ugly, to be factorized in something saner.
-        while (p < properties->extradata + properties->extradata_len) {
-            //seek to the next startcode [0 0 1]
-            for (q = p; q < p + properties->extradata_len - 3; q++) 
-                if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
-                    break;
-                }
-            buf = av_base64_encode(p, q - p);
-            out = g_strdup_printf("%s,%s",sprop, buf);
-            g_free(sprop);
-            av_free(buf);
-            sprop = out;
-            p = q + 3;
-        }
+        sprop = encode_header(properties->extradata,
+                              properties->extradata_len);
+        if (sprop == NULL) goto err_alloc;
     }
 
     sdp_private = g_new(sdp_field, 1);
@@ -201,14 +213,8 @@ static int init(MediaProperties *properties, void **private_data)
 
     *private_data = priv;
 
-//    g_free(buf);
-
     return ERR_NOERROR;
 
-//    err_out:
-//        g_free(out);
-    err_sprop:
-        if (sprop) g_free(sprop);
     err_alloc:
         free(priv);
     return ERR_ALLOC;
