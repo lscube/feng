@@ -170,7 +170,7 @@ static int init(Resource * r)
         }
         //seek to begin
         if (begin)
-            resource->demuxer->seek(resource, begin));
+            resource->demuxer->seek(resource, begin);
         edl_head = g_list_prepend(edl_head, item);
         // Use first resource for tracks
         if(!r->tracks) {
