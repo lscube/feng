@@ -54,6 +54,7 @@ typedef struct __EDL_ITEM_ELEM {
     double offset;	//from begin of list
     double begin;	//in seconds
     double end;
+    int first_ts;	//init to 0, set to 1 when have begin timestamp
 } edl_item_elem;
 
 typedef struct __EDL_PRIV {
@@ -98,6 +99,8 @@ static inline edl_item_elem *edl_active_res (void *private_data) {
 }
 
 static void destroy_list_data(gpointer elem, gpointer unused) {
+    edl_item_elem *item = (edl_item_elem *) elem;
+    r_close(item->r);
     g_free(elem);
 }
 
@@ -110,6 +113,10 @@ static double edl_timescaler (Resource * r, double res_time) {
     if (!item) {
         fnc_log(FNC_LOG_FATAL, "NULL edl item: This shouldn't happen\n");
         return HUGE_VAL;
+    }
+    if (item->first_ts) {
+        item->begin = res_time;
+        item->first_ts = 0;
     }
     if (res_time >= item->end) {
         ((edl_priv_data *) r->edl->private_data)->move_to_next = 1;
@@ -153,6 +160,7 @@ static int init(Resource * r)
         // set edl properties
         item->r = resource;
         item->begin = begin;
+        item->first_ts = 1;
         item->end = end;
         item->offset = r_offset;
         if (resource->info->duration && (end - begin) > resource->info->duration) {
