@@ -170,7 +170,7 @@ static int init(Resource * r)
         }
         //seek to begin
         if (begin)
-            resource->demuxer->seek(resource, (int64_t) (begin * 1000));
+            resource->demuxer->seek(resource, begin));
         edl_head = g_list_prepend(edl_head, item);
         // Use first resource for tracks
         if(!r->tracks) {
@@ -248,7 +248,7 @@ static int read_packet(Resource * r)
     return res;
 }
 
-static int seek(Resource * r, int64_t time_msec)
+static int seek(Resource * r, double time_sec)
 {
     return RESOURCE_NOT_SEEKABLE;
 }

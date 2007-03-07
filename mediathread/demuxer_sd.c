@@ -339,7 +339,7 @@ static int read_packet(Resource * r)
     return RESOURCE_NOT_PARSEABLE;
 }
 
-static int seek(Resource * r, int64_t time_msec)
+static int seek(Resource * r, double time_sec)
 {
     return RESOURCE_NOT_SEEKABLE;
 }
