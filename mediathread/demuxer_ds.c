@@ -164,7 +164,7 @@ static int init(Resource * r)
         item->end = end;
         item->offset = r_offset;
         if (resource->info->duration && (end - begin) > resource->info->duration) {
-            r_offset += resource->info->duration;
+            r_offset += resource->info->duration - begin;
         } else {
             r_offset += end - begin;
         }
