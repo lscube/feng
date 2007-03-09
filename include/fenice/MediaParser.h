@@ -106,5 +106,8 @@ MediaParser *add_media_parser(void);
 MediaParser *mparser_find(const char *);
 void mparser_unreg(MediaParser *, void *);
 // int set_media_entity(MediaParserType *, char *encoding_name);
+
+#define DEFAULT_MTU 1440
+
 #endif
 
