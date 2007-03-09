@@ -44,7 +44,7 @@
 //#include <fenice/mediainfo.h>
 #include <fenice/schedule.h>
 
-#define RTSP_BUFFERSIZE 4096
+#define RTSP_BUFFERSIZE 16384
 #define RTSP_RESERVED 1024
 //#define INTERLEAVED_BUFFERSIZE 4096
 
