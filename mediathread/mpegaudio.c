@@ -407,7 +407,7 @@ int parse(void *track, uint8 *data, long len, uint8 *extradata,
 {
     Track *tr = (Track *)track;
     OMSSlot *slot;
-    uint32_t mtu = len + 4, rem; //FIXME get it from SETUP
+    uint32_t rem, mtu = DEFAULT_MTU; //FIXME get it from SETUP
     int32_t offset;
     uint8 dst[mtu];
     rem = len;
