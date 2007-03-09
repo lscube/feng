@@ -31,7 +31,7 @@
 #include <fenice/utils.h>
 #include <fenice/types.h>
 #include <string.h>
- 
+#include <stdio.h> 
 char *av_base64_encode(uint8_t * src, int len);
 
 static MediaParserInfo info = {
@@ -48,7 +48,7 @@ typedef struct {
         unsigned int nal_length_size; // used in avc to 
 } h264_priv;
 
-/* Parse the nal header and return the nal type or ERR_PARSE if doesn't match
+/* Generic Nal header
  *
  *  +---------------+
  *  |0|1|2|3|4|5|6|7|
@@ -57,10 +57,16 @@ typedef struct {
  *  +---------------+
  *
  */
-
+/*  FU header
+ *  +---------------+
+ *  |0|1|2|3|4|5|6|7|
+ *  +-+-+-+-+-+-+-+-+
+ *  |S|E|R|  Type   |
+ *  +---------------+
+ */
 #define RB16(x) ((((uint8_t*)(x))[0] << 8) | ((uint8_t*)(x))[1])
 
-static inline int nal_header(uint8_t header)
+static inline int nal_type(uint8_t header)
 {
     if (header >>7) return ERR_PARSE;   // F bit set to 1
     // (header & 0x60)>>5               // NRI we don't care much yet
@@ -245,12 +251,11 @@ static int parse(void *track, uint8 *data, long len, uint8 *extradata,
     Track *tr = (Track *)track;
     h264_priv *priv = tr->parser_private;
     OMSSlot *slot;
-    uint32_t mtu = len + 4, rem; //FIXME get it from SETUP
+    uint32_t mtu = DEFAULT_MTU; //FIXME get it from SETUP
     double nal_time; // see page 9 and 7.4.1.2
     int32_t offset;
     int i, nalsize = 0, index = 0;
     uint8 dst[mtu], *p, *q;
-    rem = len;
 
     if (priv->is_avc) {
         while (1) {
@@ -277,9 +282,35 @@ static int parse(void *track, uint8 *data, long len, uint8 *extradata,
                 fnc_log(FNC_LOG_DEBUG, "[h264] single NAL\n");
             } else {
             // single NAL, to be fragmented, FU-A and FU-B
+                int start=1, stop=0, frag_len, frag_size = nalsize;
+                uint8_t fu_header, buf[mtu];
                 fnc_log(FNC_LOG_DEBUG, "[h264] frags\n");
+                p = data + index;
+                buf[0] = (p[0] & 0xe0) | 28; // fu_indicator
+                fu_header = p[0] & 0x1f;
+                p++;
+                while(frag_size>0) {
+                    buf[1] = fu_header;
+                    if (start) {
+                        start = 0;
+                        buf[1] = fu_header | (1<<7);
+                    }
+                    frag_len = min(mtu-2, frag_size);
+                    if (frag_len == frag_size) {
+                        buf[1] = fu_header | (1<<6);
+                    }   
+                    memcpy(buf + 2, p, frag_len);
+                    frag_size -= frag_len;
+                    p += frag_len;
+                    if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime,
+                                      0, 0, buf, frag_len + 2)) {
+                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                        return ERR_ALLOC;
+                    }
+                }
                 return ERR_PARSE; //FIXME broken for now
             }
+            index += nalsize;
         }
     } else {
         //seek to the first startcode
@@ -313,7 +344,8 @@ static int parse(void *track, uint8 *data, long len, uint8 *extradata,
             } else {
             // single NAL, to be fragmented, FU-A and FU-B
                 fnc_log(FNC_LOG_DEBUG, "[h264] frags\n");
-                return ERR_PARSE; //FIXME broken for now
+                //FU-A
+                
             }
 
             p = q;
