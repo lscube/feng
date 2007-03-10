@@ -155,22 +155,22 @@ static char *encode_avc1_header(uint8_t *p, unsigned int len)
 
 static char *encode_header(uint8_t *p, unsigned int len)
 {
-    uint8_t *q, *m = p;
+    uint8_t *q, *end = p + len;
     char *sprop = NULL, *out, *buf;
 
-    for (q = p; q < m + len - 3; q++) {
+    for (q = p; q < end - 3; q++) {
         if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
             q += 3;
             break;
         }
     }
 
-    if (q >= m + len - 3)
+    if (q >= end - 3)
         return NULL;
 
     p = q; // sps start;
 
-    for (; q < m + len - 3; q++) {
+    for (; q < end - 3; q++) {
         if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
             // sps end;
             break;
@@ -189,10 +189,11 @@ static char *encode_header(uint8_t *p, unsigned int len)
     av_free(buf);
     p = q + 3;
 
-    while (p < m + len) {
+    while (p < end) {
         //seek to the next startcode [0 0 1]
-        for (q = p; q < m + len; q++)
-            if (q == m + len || (q[0] == 0 && q[1] == 0 && q[2] == 1)) {
+        for (q = p; q < end; q++)
+            if (end - q <= 3) continue; // last nal
+            if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
                 break;
             }
         buf = av_base64_encode(p, q - p);
