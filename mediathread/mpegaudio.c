@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <netinet/in.h>
 #include <fenice/demuxer.h>
 #include <fenice/MediaParser.h>
 #include <fenice/mediaparser_module.h>

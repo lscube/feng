@@ -112,7 +112,6 @@ typedef struct mpeg4 {
 } static_MPEG4_video_es;
 
 
-int get_field(uint8 * d, uint32 bits, uint32 * offset);
 int parse_visual_object_sequence(static_MPEG4_video_es *, uint8 *, uint32 *,
 				 int fin);
 int parse_visual_object(uint8 * data, uint32 * data_size, int fin);
