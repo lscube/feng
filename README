@@ -2,39 +2,46 @@
 
 BEWARE: work in progress status, the codebase is being updated
 
-########## Don't expect anything to build right now ##########
-
 -----------------------------------------
 Sparse notes on A/V Resources management.
 -----------------------------------------
 
-* Default dir for A/V files is /var/fenice/avroot.
+* Default dir for A/V files is /var/feng/avroot.
 * Default RTSP port is 554.
 
 * For every A/V resource you need
   
-  1) Either separate files for audio (MP3) and video (MPEG-1,2), or a
-     libavformat compatible container (mov/mp4 suggested)
-  2) a Source Description (.sd) file for resource description to map the
-     different sources.
+  1)  Either separate files for audio (MP3) and video (MPEG-1,2), or a
+      libavformat compatible container (mov/mp4 suggested)
+  2a) Optionally a Source Description (.sd) file for resource description
+      to map the different sources.
+  2b) Optionally an editlist (.ds for now) file that allows you to do a
+      simple collage of resources. (the resources MUST be seekable)
   
   Streming clients must be invoked with, e.g:
   	
-	$ mystreamingclient rtsp://streamingserver/myvideo.sd
+	$ streamingclient rtsp://streamingserver/content
 
-  or similar. 
-  You can't request plain files as you would expect from a webserver.
-  
-  See test files in avroot dir for examples.
+  or similar.
+  You can request plain files as you would expect from a webserver.
 
-* You can do live streaming using a named-pipe:
+  The test files in avroot dir show a simple sd an ds and you can directly ask
+  for the single audio and single video
+
+* You can do live streaming in two ways:
+ 
+ - (poor's man way) using a named-pipe:
 
   1) Create a named-pipe (e.g., mkfifo live.mp3),
-  2) create an .sd file with the named-pipe as audio content, then
-  3) feed named-pipe with live-encoded mp3 data.
+  2) create a .sd file with the named-pipe as audio content, then
+  3) feed named-pipe with live-encoded elementary stream data.
 
-  You may use the felix companion tool to ease the live stream management.
+ - (warmly suggested way) using felix and shared memory:
+
+  1) prepare a felix start script or just launch felix
+  2) create a .sd file with the stream tags
+  3) feed felix.
 
 * Suggested encoding tools:
-  Video: mjpegtools' mpeg2enc, ffmpeg
-  Audio: lame, ffmpeg
+  Video: vlc, gst, ffmpeg
+  Audio: vlc, gst, ffmpeg
