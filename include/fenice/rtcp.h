@@ -107,7 +107,7 @@ typedef struct _RTCP_header_SDES {
 	unsigned int ssrc;
 	unsigned char attr_name;
 	unsigned char len;
-} RTCP_header_SDES;
+} __attribute__((__packed__)) RTCP_header_SDES;
 
 typedef struct _RTCP_header_BYE {
 	unsigned int ssrc;

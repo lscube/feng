@@ -130,12 +130,11 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
 			}
 			hdr.count = 1;
 			hdr_sdes.ssrc = htonl(session->ssrc);
-			hdr_sdes.attr_name = htonl(1);	// 1=CNAME
-			hdr_sdes.len = htonl(name_s);
+			hdr_sdes.attr_name = CNAME;	// 1=CNAME
+			hdr_sdes.len = name_s;
 			memcpy(pkt, &hdr, hdr_s);
 			memcpy(pkt + hdr_s, &hdr_sdes, hdr_sdes_s);
 			memcpy(pkt + hdr_s + hdr_sdes_s, name, name_s);
-
 
 			//fprintf(stderr,"pkt_size=%d,hdr_s=%d,hdr_sdes_s=%d,name_s=%d\n",pkt_size,hdr_s,hdr_sdes_s,name_s);
 
