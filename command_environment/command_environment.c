@@ -38,8 +38,12 @@
 
 void usage()
 {
-    fprintf(stderr,
-        "fenice --config-file | -c <config_file> [ --view-err | -v ] [ --syslog | -s ] \n --view-err enables stderr output\n --syslog uses syslog facility\n");
+    fprintf(stdout,
+        "fenice [options] \n"
+        "--help\t\t| -h | -? \tshow this message\n"
+        "--config\t| -c <config> \tspecify configuration file\n"
+        "--verbose\t| -v \t\toutput to standar error (debug)\n"
+        "--syslog\t| -s \t\tuse syslog facility\n");
     return;
 }
 
@@ -51,15 +55,12 @@ int command_environment(int argc, char **argv)
 
     int n;
     int nerr = 0;    /*number of error */
-    int config_file_not_present = 1;
+    int config_file = 0;
     int view_log = FNC_LOG_FILE;
-    int flag = 0;    /*0 to show help */
 //#ifdef HAVE_GETOPT_LONG
     static struct option long_options[] = {
-        {"config-file", 1, 0, 'c'},
-        {"view-err", 0, 0, 'v'},
-        {"rtsp-port", 1, 0, 'p'},
-        {"avroot-dir", 1, 0, 'r'},
+        {"config", 1, 0, 'c'},
+        {"verbose", 0, 0, 'v'},
         {"syslog", 0, 0, 's'},
         {"help", 0, 0, '?'},
         {0, 0, 0, 0}
@@ -72,46 +73,32 @@ int command_environment(int argc, char **argv)
 //    while( (n=getopt(argc,argv,short_options)) != -1)
 //#endif
     {
-        flag = 1;
         switch (n) {
         case 0:    /* Flag setting handled by getopt-long */
             break;
-
         case 'c':
-            // = atoi(optarg);
             prefs_init(optarg);
-            config_file_not_present = 0;
-            /* prefs_init() loads root directory, port, hostname and domain name on
-               a static variable prefs */
+            config_file = 1;
             break;
         case 'v':
             view_log = FNC_LOG_OUT;
             break;
-        case 'p':
-
+        case 's':
+            view_log = FNC_LOG_SYS;
             break;
-        case 'r':
-
-            break;
-        case ':':
-            fprintf(stderr, "Missing parameter to option!");
-            break;
-                case 's':
-                        view_log = FNC_LOG_SYS;
-                        break;
         case '?':
-            flag = 0;
-            nerr++;
+            usage();
+            return 1;
             break;
         default:
-            nerr++;
+            break;
         }
     }
-    if (!flag) {
-        nerr++;
+    if (nerr) {
         usage();
-    } else if (config_file_not_present)
-        prefs_init(NULL);
+    } else {
+        if (!config_file) prefs_init(NULL);
+    }
 
     fnc_log_init(prefs_get_log(), view_log);
 
