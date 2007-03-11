@@ -92,7 +92,6 @@ typedef struct _RTSP_buffer {
 	size_t in_size;
 	char out_buffer[RTSP_BUFFERSIZE + MAX_DESCR_LENGTH];
 	size_t out_size;
-	size_t out_sent;
 	/* vars for interleaved data:
 	 * interleaved pkts will be present only at the beginning of out_buffer.
 	 * this size is used to remenber how much data should be grouped in one

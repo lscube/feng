@@ -39,77 +39,72 @@
  
 ssize_t RTSP_send(RTSP_buffer * rtsp)
 {
-	int n = 0;
-	size_t to_send;
-	// char *buffer;
+    int n = 0;
 
- 	if (!rtsp->out_size) {
- 		fnc_log(FNC_LOG_WARN, "RTSP_send called, but no data to be sent\n");
- 		return 0;
- 	}
+    if (!rtsp->out_size) {
+        fnc_log(FNC_LOG_WARN, "RTSP_send called, but no data to be sent\n");
+        return 0;
+    }
 
-	to_send = rtsp->out_size - rtsp->out_sent;
-		
-	if ( (n = Sock_write(rtsp->sock, rtsp->out_buffer + rtsp->out_sent, to_send,
-			     NULL, MSG_DONTWAIT | MSG_NOSIGNAL)) < 0) {
-		switch (errno) {
-			case EACCES:
-				fnc_log(FNC_LOG_ERR, "EACCES error\n");
-				break;
-			case EAGAIN:
-				fnc_log(FNC_LOG_ERR, "EAGAIN error\n");
-                                return 0; // Don't close socket if tx buffer is full!
-				break;
-			case EBADF:
-				fnc_log(FNC_LOG_ERR, "EBADF error\n");
-				break;
-			case ECONNRESET:
-				fnc_log(FNC_LOG_ERR, "ECONNRESET error\n");
-				break;
-			case EDESTADDRREQ:
-				fnc_log(FNC_LOG_ERR, "EDESTADDRREQ error\n");
-				break;
-			case EFAULT:
-				fnc_log(FNC_LOG_ERR, "EFAULT error\n");
-				break;
-			case EINTR:
-				fnc_log(FNC_LOG_ERR, "EINTR error\n");
-				break;
-			case EINVAL:
-				fnc_log(FNC_LOG_ERR, "EINVAL error\n");
-				break;
-			case EISCONN:
-				fnc_log(FNC_LOG_ERR, "EISCONN error\n");
-				break;
-			case EMSGSIZE:
-				fnc_log(FNC_LOG_ERR, "EMSGSIZE error\n");
-				break;
-			case ENOBUFS:
-				fnc_log(FNC_LOG_ERR, "ENOBUFS error\n");
-				break;
-			case ENOMEM:
-				fnc_log(FNC_LOG_ERR, "ENOMEM error\n");
-				break;
-			case ENOTCONN:
-				fnc_log(FNC_LOG_ERR, "ENOTCONN error\n");
-				break;
-			case ENOTSOCK:
-				fnc_log(FNC_LOG_ERR, "ENOTSOCK error\n");
-				break;
-			case EOPNOTSUPP:
-				fnc_log(FNC_LOG_ERR, "EOPNOTSUPP error\n");
-				break;
-			case EPIPE:
-				fnc_log(FNC_LOG_ERR, "EPIPE error\n");
-				break;
-			default:
-				break;
-		}
-		fnc_log(FNC_LOG_ERR, "Sock_write() error in RTSP_send()\n");
-		return n;
-	}
-
-	if ( (rtsp->out_sent += n) == rtsp->out_size )
-		rtsp->out_sent = rtsp->out_size = 0;
-	return n;
+    if ( (n = Sock_write(rtsp->sock, rtsp->out_buffer, rtsp->out_size,
+          NULL, MSG_DONTWAIT | MSG_NOSIGNAL)) < 0) {
+        switch (errno) {
+            case EACCES:
+                fnc_log(FNC_LOG_ERR, "EACCES error\n");
+                break;
+            case EAGAIN:
+                fnc_log(FNC_LOG_ERR, "EAGAIN error\n");
+                return 0; // Don't close socket if tx buffer is full!
+                break;
+            case EBADF:
+                fnc_log(FNC_LOG_ERR, "EBADF error\n");
+                break;
+            case ECONNRESET:
+                fnc_log(FNC_LOG_ERR, "ECONNRESET error\n");
+                break;
+            case EDESTADDRREQ:
+                fnc_log(FNC_LOG_ERR, "EDESTADDRREQ error\n");
+                break;
+            case EFAULT:
+                fnc_log(FNC_LOG_ERR, "EFAULT error\n");
+                break;
+            case EINTR:
+                fnc_log(FNC_LOG_ERR, "EINTR error\n");
+                break;
+            case EINVAL:
+                fnc_log(FNC_LOG_ERR, "EINVAL error\n");
+                break;
+            case EISCONN:
+                fnc_log(FNC_LOG_ERR, "EISCONN error\n");
+                break;
+            case EMSGSIZE:
+                fnc_log(FNC_LOG_ERR, "EMSGSIZE error\n");
+                break;
+            case ENOBUFS:
+                fnc_log(FNC_LOG_ERR, "ENOBUFS error\n");
+                break;
+            case ENOMEM:
+                fnc_log(FNC_LOG_ERR, "ENOMEM error\n");
+                break;
+            case ENOTCONN:
+                fnc_log(FNC_LOG_ERR, "ENOTCONN error\n");
+                break;
+            case ENOTSOCK:
+                fnc_log(FNC_LOG_ERR, "ENOTSOCK error\n");
+                break;
+            case EOPNOTSUPP:
+                fnc_log(FNC_LOG_ERR, "EOPNOTSUPP error\n");
+                break;
+            case EPIPE:
+                fnc_log(FNC_LOG_ERR, "EPIPE error\n");
+                break;
+            default:
+                break;
+        }
+        fnc_log(FNC_LOG_ERR, "Sock_write() error in RTSP_send()\n");
+        return n;
+    }
+    //remove tx bytes from buffer
+    memmove(rtsp->out_buffer, rtsp->out_buffer + n, (rtsp->out_size -= n));
+    return n;
 }
