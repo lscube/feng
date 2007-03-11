@@ -1,0 +1,102 @@
+.TH Feng 1 "March 11, 2007" "Feng Streaming Server" "LScube Project"
+.SH NAME
+\fBFeng\fP \- multimedia streaming server
+.SH SYNOPSIS
+.B feng
+.RI -c " config"
+.RI -s
+.RI -v
+.RI -h
+.SH DESCRIPTION
+This manual page documents briefly the \fBFeng\fP streaming server.
+.PP
+\fBFeng\fP is a multimedia streaming server compliant with the IETF's
+standards for real\-time streaming of multimedia contents over Internet.
+\fBFeng\fP implements RTSP \- Real\-Time Streaming Protocol (RFC2326) and
+RTP/RTCP \- Real\-Time Transport Protocol/RTP Control Protocol (RFC3550)
+supporting the RTP Profile for Audio and Video Conferences with Minimal Control
+(RFC3551).
+.br
+\fBFeng\fP supports the following encoding standards:
+.sp 1
+.RS
+.I Audio
+.IP
+\(bu
+MP3 (MPEG-1 Layer III) (RFC3119).
+.RE
+.sp 1
+.RS
+.I Video
+.IP
+\(bu
+H264 (RFC3984).
+.IP
+.RE
+.sp 1
+\fBFeng\fP is capable of live streaming using external real\-time audio/video
+encoders such as lame, ffmpeg or vlc, even capturing audio and video
+streams from live-recording remote hosts (with Felix \- Feng Live eXtender).
+.PP
+.SH OPTIONS
+This program follow the usual GNU command line syntax, with long
+options starting with two dashes (`-').
+A summary of options is included below.
+.TP
+.BI "\-c, \-\-config " config
+Uses the directives in the file \fIconfig\fP
+on startup. See CONFIGURATION for details.
+.TP
+.BI "\-s, \-\-syslog "
+Uses the standard system logger facility instead of writing a logfile.
+.TP
+.BI "\-v, \-\-verbose "
+Outputs messages to standard error, useful for debug purposes.
+
+.SH CONFIGURATION
+\fBFeng\fP's configuration files are plain-text documents. A line starting
+with a # is a comment. Directives are in the format
+.sp 1
+.RS
+keyword=value
+.RE
+.sp 1
+\fBFeng\fP supports the following keywords:
+.TP
+.B avroot
+Path to the directory containing the multimedia files and the \fIsource
+descrption\fP (.sd) files. \fINote\fP that audio/video resources must be
+de-multiplexed, i.e.  audio and video streams must be available as two or more
+different files: they will be aggregated via source description (.sd) file.
+.sp 1
+Please see on-line documentation for examples of .sd files.
+.TP
+.B port
+TCP port for incoming RTSP connections. IANA assigned to RTSP services the Well
+Known Port \fI554\fP (root privileges required) and the Registered Port
+\fI8554\fP (user privileges sufficient).
+.TP
+.B max_session
+Max number of sessions handled before sending a \fI453 \- Not Enough
+Bandwidth\fP error or a \fI3xx \- Redirection\fP error.
+.TP
+.B log_file
+Log filename including the full path.
+.SH SEE ALSO
+\fIOn-line Documentation\fP
+.TP
+.BR "Feng How-To":
+.UH
+http://streaming.polito.it/documentation/
+.sp 1
+.PP
+.SH AUTHORS
+\fBFeng\fP was written by \fBLScube Team\fP.
+.PP
+This manual page was written by \fBLScube Team\fP <team@streaming.polito.it>.
+.PP
+Please check 
+.UH
+http://streaming.polito.it/team
+for further details.
+
