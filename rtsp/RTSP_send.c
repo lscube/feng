@@ -58,6 +58,7 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
 				break;
 			case EAGAIN:
 				fnc_log(FNC_LOG_ERR, "EAGAIN error\n");
+                                return 0; // Don't close socket if tx buffer is full!
 				break;
 			case EBADF:
 				fnc_log(FNC_LOG_ERR, "EBADF error\n");
