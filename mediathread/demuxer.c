@@ -136,7 +136,7 @@ Resource *r_open(char *root, char *n)
     r->num_tracks=0;
     */
     r->info->mrl = g_strdup(mrl);
-    r->info->name = g_strdup(n);
+    r->info->name = g_path_get_basename(n);
     r->i_stream = i_stream;
     r->demuxer = demuxers[dmx_idx];
 
