@@ -36,14 +36,14 @@
 #include <getopt.h>
 #include <fenice/command_environment.h>
 
-void usage()
+void usage(char *name)
 {
     fprintf(stdout,
-        "fenice [options] \n"
+        "%s [options] \n"
         "--help\t\t| -h | -? \tshow this message\n"
         "--config\t| -c <config> \tspecify configuration file\n"
         "--verbose\t| -v \t\toutput to standar error (debug)\n"
-        "--syslog\t| -s \t\tuse syslog facility\n");
+        "--syslog\t| -s \t\tuse syslog facility\n", name);
     return;
 }
 
@@ -87,7 +87,7 @@ int command_environment(int argc, char **argv)
             view_log = FNC_LOG_SYS;
             break;
         case '?':
-            usage();
+            usage(argv[0]);
             return 1;
             break;
         default:
@@ -95,12 +95,12 @@ int command_environment(int argc, char **argv)
         }
     }
     if (nerr) {
-        usage();
+        usage(argv[0]);
     } else {
         if (!config_file) prefs_init(NULL);
     }
 
-    fnc_log_init(prefs_get_log(), view_log);
+    fnc_log_init(prefs_get_log(), view_log, argv[0]);
 
     return nerr;
 }

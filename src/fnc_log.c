@@ -156,20 +156,20 @@ static void fnc_syslog(int level, const char *fmt, ...)
 #endif
 
 /*Set fnc_log as fprintf on file or syslog or stderr*/
-void fnc_log_init(char* name, int out)
+void fnc_log_init(char *file, int out, char *name)
 {
     fnc_log = fnc_errlog;
     switch (out) {
         case FNC_LOG_SYS:
 #if HAVE_SYSLOG_H
-            openlog("feng ", LOG_PID /*| LOG_PERROR*/, LOG_DAEMON);
+            openlog(name, LOG_PID /*| LOG_PERROR*/, LOG_DAEMON);
             fnc_log = fnc_syslog;
 #else
             fd = stderr;
 #endif
             break;
         case FNC_LOG_FILE:
-            if ((fd = fopen(name, "a+")) == NULL) fd = stderr;
+            if ((fd = fopen(file, "a+")) == NULL) fd = stderr;
             break;
         case FNC_LOG_OUT:
             fd = stderr;

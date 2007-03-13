@@ -55,6 +55,6 @@ enum {  FNC_LOG_OUT,
 
 extern void (*fnc_log) (int level, const char *fmt, ...);
 
-void fnc_log_init(char *name, int out);
+void fnc_log_init(char *file, int out, char *name);
 
 #endif
