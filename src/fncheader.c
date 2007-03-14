@@ -52,7 +52,7 @@ inline void fncheader(void)
 	if ( (tkn=strchr(svnrev, '$')) )
 		*tkn = '\0';
 #endif
-	printf("\n%s - Fenice Next Generation %s %s\n (LS)cube Project - Politecnico di Torino\n", PACKAGE, VERSION, svnrev);
+	printf("\n%s - Fenice Next Generation %s %s\n LScube Project - Politecnico di Torino\n", PACKAGE, VERSION, svnrev);
 	// nmsprintf(NMSML_ALWAYS, "\n"NMSCLR_BLUE_BOLD"%s - %s -- release %s %s(%s)\n\n"NMSCLR_DEFAULT, PROG_NAME, PROG_DESCR, VERSION, svnrev, VERSION_NAME);
 }
 

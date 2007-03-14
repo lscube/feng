@@ -41,8 +41,9 @@ void usage(char *name)
     fprintf(stdout,
         "%s [options] \n"
         "--help\t\t| -h | -? \tshow this message\n"
-        "--config\t| -c <config> \tspecify configuration file\n"
+        "--config\t| -f <config> \tspecify configuration file\n"
         "--verbose\t| -v \t\toutput to standar error (debug)\n"
+        "--version\t| -V \t\tprint version and exit\n"
         "--syslog\t| -s \t\tuse syslog facility\n", name);
     return;
 }
@@ -50,7 +51,7 @@ void usage(char *name)
 int command_environment(int argc, char **argv)
 {
 
-    static const char short_options[] = "r:p:c:vds";
+    static const char short_options[] = "f:vVs";
     //"m:a:f:n:b:z:T:B:q:o:S:I:r:M:4:2:Q:X:D:g:G:v:V:F:N:tpdsZHOcCPK:E:R:";
 
     int n;
@@ -59,8 +60,9 @@ int command_environment(int argc, char **argv)
     int view_log = FNC_LOG_FILE;
 //#ifdef HAVE_GETOPT_LONG
     static struct option long_options[] = {
-        {"config", 1, 0, 'c'},
+        {"config", 1, 0, 'f'},
         {"verbose", 0, 0, 'v'},
+        {"version", 0, 0, 'V'},
         {"syslog", 0, 0, 's'},
         {"help", 0, 0, '?'},
         {0, 0, 0, 0}
@@ -76,7 +78,7 @@ int command_environment(int argc, char **argv)
         switch (n) {
         case 0:    /* Flag setting handled by getopt-long */
             break;
-        case 'c':
+        case 'f':
             prefs_init(optarg);
             config_file = 1;
             break;
@@ -88,6 +90,7 @@ int command_environment(int argc, char **argv)
             break;
         case '?':
             usage(argv[0]);
+	case 'V':
             return 1;
             break;
         default:
