@@ -71,10 +71,15 @@ different files: they will be aggregated via source description (.sd) file.
 .sp 1
 Please see on-line documentation for examples of .sd files.
 .TP
-.B port
+.B tcp_port
 TCP port for incoming RTSP connections. IANA assigned to RTSP services the Well
 Known Port \fI554\fP (root privileges required) and the Registered Port
 \fI8554\fP (user privileges sufficient).
+.TP
+.B sctp_port
+SCTP port for incoming RTSP connections. IANA assigned to RTSP services the Well
+Known Port \fI554\fP (root privileges required) and the Registered Port
+\fI8554\fP (user privileges sufficient). By default is set to -1 (disabled).
 .TP
 .B max_session
 Max number of sessions handled before sending a \fI453 \- Not Enough
