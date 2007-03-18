@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,112 +57,109 @@ inline void fncheader(void); // defined in src/fncheader.c
 
 int main(int argc, char **argv)
 {
-	Sock *main_sock = NULL, *sctp_main_sock = NULL;
-	char *port;
+    Sock *main_sock = NULL, *sctp_main_sock = NULL;
+    char *port;
 
-	// Fake timespec for fake nanosleep. See below.
-	//struct timespec ts = { 0, 0 };
+    /* Print version and other useful info */
+    fncheader();
 
-	// printf("\n%s %s - Open Media Streaming Project - Politecnico di Torino\n\n", PACKAGE, VERSION);
-	fncheader();
-
-	/*command_environment parses the command line and returns the number of error */
-	if (command_environment(argc, argv))
-		return 0;
-	
-	Sock_init(fnc_log);
+    /* parses the command line */
+    if (command_environment(argc, argv))
+        return 0;
+    
+    Sock_init(fnc_log);
 
 #if ENABLE_STUN
-	struct STUN_SERVER_IFCFG *cfg = (struct STUN_SERVER_IFCFG *)prefs_get_stuncfg();
-	
-	if( cfg!= NULL) {
-		pthread_t thread;
+    struct STUN_SERVER_IFCFG *cfg =
+        (struct STUN_SERVER_IFCFG *)prefs_get_stuncfg();
+    
+    if( cfg!= NULL) {
+        pthread_t thread;
 
-		fnc_log(FNC_LOG_DEBUG, "Trying to start OMSstunserver thread\n");
-		fnc_log(FNC_LOG_DEBUG, "stun parameters: %s,%s,%s,%s\n",cfg->a1,cfg->p1,cfg->a2,cfg->p2);
-	
-		pthread_create(&thread,NULL,OMSstunserverStart,(void *)(cfg));
-	}
+        fnc_log(FNC_LOG_DEBUG, "Trying to start OMSstunserver thread\n");
+        fnc_log(FNC_LOG_DEBUG, "stun parameters: %s,%s,%s,%s\n", 
+                                cfg->a1, cfg->p1, cfg->a2, cfg->p2);
+    
+        pthread_create(&thread,NULL,OMSstunserverStart,(void *)(cfg));
+    }
 #endif //ENABLE_STUN
 
 #if ENABLE_MEDIATHREAD
-	{
-		pthread_t mth;
+    { //XXX
+        pthread_t mth;
 
-		fnc_log(FNC_LOG_DEBUG, "Starting mediathread...\n");
+        fnc_log(FNC_LOG_DEBUG, "Starting mediathread...\n");
 
-		pthread_create(&mth, NULL, mediathread, NULL);
-	}
+        pthread_create(&mth, NULL, mediathread, NULL);
+    }
 #endif
-	
-	/* prefs_get_port() reads the static var prefs and returns the port number */
-	port = g_strdup_printf("%d", prefs_get_port());
-	main_sock = Sock_bind(NULL, port, TCP, 0);
+    
+    /* Bind to the defined listening port */
+    port = g_strdup_printf("%d", prefs_get_port());
+    main_sock = Sock_bind(NULL, port, TCP, 0);
 
-	if(!main_sock) {
-		fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP port %s.\n", port);
-		fprintf(stderr, "[fatal] Sock_bind() error in main() for TCP port %s.\n", port);
-		g_free(port);
-		return 0;
-	}
+    if(!main_sock) {
+        fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP port %s.\n", port);
+        fprintf(stderr, "[fatal] Sock_bind() error in main() for TCP port %s.\n", port);
+        g_free(port);
+        return 0;
+    }
 
-	fnc_log(FNC_LOG_INFO, "Waiting for RTSP connections on TCP port %s...\n", port);
-	g_free(port);
+    fnc_log(FNC_LOG_INFO, "Waiting for RTSP connections on TCP port %s...\n",
+            port);
+    g_free(port);
 
-/* Not needed with improved scheduler
-	 if (Sock_set_props(main_sock, FIONBIO, &on) < 0) { //set to non-blocking
-		fnc_log(FNC_LOG_ERR,"Sock_set_props() error.\n");
-		return 0;
-    	}*/
-
-	if(Sock_listen(main_sock, SOMAXCONN)) {
-		fnc_log(FNC_LOG_ERR,"Sock_listen() error.\n");
-		return 0;
-	}
+    if(Sock_listen(main_sock, SOMAXCONN)) {
+        fnc_log(FNC_LOG_ERR,"Sock_listen() error.\n");
+        return 0;
+    }
 
 #ifdef HAVE_SCTP_FENICE
-	if (prefs_get_sctp_port() >= 0) {
-		port = g_strdup_printf("%d", prefs_get_sctp_port());
-		sctp_main_sock = Sock_bind(NULL, port, SCTP, 0);
+    if (prefs_get_sctp_port() >= 0) {
+        port = g_strdup_printf("%d", prefs_get_sctp_port());
+        sctp_main_sock = Sock_bind(NULL, port, SCTP, 0);
 
-		if(!sctp_main_sock) {
-			fnc_log(FNC_LOG_ERR,"Sock_bind() error for SCTP port %s.\n", port);
-			fprintf(stderr, "[fatal] Sock_bind() error in main() for SCTP port %s.\n", port);
-			g_free(port);
-			return 0;
-		}
+        if(!sctp_main_sock) {
+            fnc_log(FNC_LOG_ERR,"Sock_bind() error for SCTP port %s.\n", port);
+            fprintf(stderr, "[fatal] Sock_bind() error in main() for SCTP port %s.\n", port);
+            g_free(port);
+            return 0;
+        }
 
-		fnc_log(FNC_LOG_INFO, "Waiting for RTSP connections on SCTP port %s...\n", port);
-	        g_free(port);
+        fnc_log(FNC_LOG_INFO,
+                "Waiting for RTSP connections on SCTP port %s...\n", port);
+        g_free(port);
 
-		if(Sock_listen(sctp_main_sock, SOMAXCONN)) {
-			fnc_log(FNC_LOG_ERR,"Sock_listen() error.\n" );
-			return 0;
-		}
-	}
+        if(Sock_listen(sctp_main_sock, SOMAXCONN)) {
+            fnc_log(FNC_LOG_ERR,"Sock_listen() error.\n" );
+            return 0;
+        }
+    }
 #endif
 
-	fprintf(stderr, "CTRL-C terminate the server.\n");
+    fprintf(stderr, "CTRL-C terminate the server.\n");
 
-	/* next line: schedule_init() initialises the array of schedule_list sched 
-	   and creates the thread schedule_do() -> look at schedule.c */
-	if (schedule_init() == ERR_FATAL) {
-		fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.\n");
-		return 0;
-	}
+    /* Initialises the array of schedule_list sched and creates the thread
+     * schedule_do() -> look at schedule.c */
+    if (schedule_init() == ERR_FATAL) {
+        fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.\n");
+        return 0;
+    }
 
-	RTP_port_pool_init(RTP_DEFAULT_PORT);
-	/* puts in the global variable port_pool[MAX_SESSION] all the RTP usable ports
-	   from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
+    /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
+     * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
 
-	while (1) {
-		// Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
-		// See also schedule.c
-		//nanosleep(&ts, NULL);
-		eventloop(main_sock, sctp_main_sock);
-	}
-	/* eventloop looks for incoming RTSP connections and generates for each
-	   all the information in the structures RTSP_list, RTP_list, and so on */
+    RTP_port_pool_init(RTP_DEFAULT_PORT);
 
-	return 0;
+    while (1) {
+    /* Fake waiting. Break the while loop to achieve fair kernel
+     * (re)scheduling and fair CPU loads. See also schedule.c 
+        nanosleep(&ts, NULL); */
+    /* eventloop looks for incoming RTSP connections and generates for each
+       all the information in the structures RTSP_list, RTP_list, and so on */
+
+        eventloop(main_sock, sctp_main_sock);
+    }
+
+    return 0;
 }
