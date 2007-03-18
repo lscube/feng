@@ -32,8 +32,42 @@
 #include <fenice/types.h>
 #include <string.h>
 #include <stdio.h> 
-char *av_base64_encode(uint8_t * src, int len);
+#ifdef HAVE_AVUTIL
+#include <ffmpeg/base64.h>
+#else
+static inline char *av_base64_encode(char * buf, int buf_len,
+                                     uint8_t * src, int len)
+{
+    static const char b64[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    char *ret, *dst;
+    unsigned i_bits = 0;
+    int i_shift = 0;
+    int bytes_remaining = len;
 
+    if (len >= UINT_MAX / 4 ||
+        buf_len < len * 4 / 3 + 12)
+        return NULL;
+    ret = dst = buf;
+    if (len) {  // special edge case, what should we really do here?
+        while (bytes_remaining) {
+            i_bits = (i_bits << 8) + *src++;
+            bytes_remaining--;
+            i_shift += 8;
+
+            do {
+                *dst++ = b64[(i_bits << 6 >> i_shift) & 0x3f];
+                i_shift -= 6;
+            } while (i_shift > 6 || (bytes_remaining == 0 && i_shift > 0));
+        }
+        while ((dst - ret) & 3)
+            *dst++ = '=';
+    }
+    *dst = '\0';
+
+    return ret;
+}
+#endif
 static MediaParserInfo info = {
     "H264",
     MP_video
@@ -42,10 +76,10 @@ static MediaParserInfo info = {
 FNC_LIB_MEDIAPARSER(h264);
 
 typedef struct {
-	int is_avc;
-	uint8_t *packet; //holds the incomplete packet
-	unsigned int len; // incomplete packet length
-        unsigned int nal_length_size; // used in avc to 
+    int is_avc;
+    uint8_t *packet; //holds the incomplete packet
+    unsigned int len; // incomplete packet length
+    unsigned int nal_length_size; // used in avc to 
 } h264_priv;
 
 /* Generic Nal header
@@ -101,30 +135,28 @@ static int frag_fu_a(uint8_t *nal, int fragsize, int mtu,
 
 static char *encode_avc1_header(uint8_t *p, unsigned int len)
 {
-    int i, cnt, nalsize;
+    int i, cnt, nalsize, buf_len = len * 4 / 3 + 12;
     uint8_t *q = p;
-    char *sprop = NULL, *out, *buf;
+    char *sprop = NULL, *out, *buf = g_malloc(buf_len);
     cnt = *(p+5) & 0x1f; // Number of sps
     p += 6;
 
     for (i = 0; i < cnt; i++) {
         if (p > q + len)
-            goto err_sprop;
+            goto err_alloc;
         nalsize = RB16(p); //buf_size
         p += 2;
         fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
         if (i == 0) {
             out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
                                   p[0], p[1], p[2]);
-            buf = av_base64_encode(p, nalsize);
+            av_base64_encode(buf, buf_len, p, nalsize);
             sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
             g_free(out);
-            av_free(buf);
         } else {
-            buf = av_base64_encode(p, nalsize);
+            av_base64_encode(buf, buf_len, p, nalsize);
             out = g_strdup_printf("%s,%s", sprop, buf);
             g_free(sprop);
-            av_free(buf);
             sprop = out;
         }
         p += nalsize;
@@ -135,28 +167,31 @@ static char *encode_avc1_header(uint8_t *p, unsigned int len)
 
     for (i = 0; i < cnt; i++) {
         if (p > q + len)
-            goto err_sprop;
+            goto err_alloc;
         nalsize = RB16(p);
         p += 2;
         fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
-        buf = av_base64_encode(p, nalsize);
+        av_base64_encode(buf, buf_len, p, nalsize);
         out = g_strdup_printf("%s,%s",sprop, buf);
         g_free(sprop);
-        av_free(buf);
         sprop = out;
         p += nalsize;
     }
+
+    g_free(buf);
+
     return sprop;
 
-    err_sprop:
+    err_alloc:
+        g_free(buf);
         if (sprop) g_free(sprop);
     return NULL;
 }
 
 static char *encode_header(uint8_t *p, unsigned int len)
 {
-    uint8_t *q, *end = p + len;
-    char *sprop = NULL, *out, *buf;
+    uint8_t *q, *end = p + len, buf_len = len * 4 / 3 + 12;
+    char *sprop = NULL, *out, *buf = g_malloc(buf_len = len * 4 / 3 + 12);
 
     for (q = p; q < end - 3; q++) {
         if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
@@ -182,11 +217,10 @@ static char *encode_header(uint8_t *p, unsigned int len)
     out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
                             p[0], p[1], p[2]);
 
-    buf = av_base64_encode(p, q - p);
+    av_base64_encode(buf, buf_len, p, q - p);
 
     sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
     g_free(out);
-    av_free(buf);
     p = q + 3;
 
     while (p < end) {
@@ -196,13 +230,14 @@ static char *encode_header(uint8_t *p, unsigned int len)
             if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
                 break;
             }
-        buf = av_base64_encode(p, q - p);
+        av_base64_encode(buf, buf_len, p, q - p);
         out = g_strdup_printf("%s,%s",sprop, buf);
         g_free(sprop);
-        av_free(buf);
         sprop = out;
         p = q + 3;
     }
+
+    g_free(buf);
 
     return sprop;
 }
