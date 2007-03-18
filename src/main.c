@@ -58,6 +58,7 @@ inline void fncheader(void); // defined in src/fncheader.c
 int main(int argc, char **argv)
 {
     Sock *main_sock = NULL, *sctp_main_sock = NULL;
+    pthread_t mth;
     char *port;
 
     /* Print version and other useful info */
@@ -84,23 +85,18 @@ int main(int argc, char **argv)
     }
 #endif //ENABLE_STUN
 
-#if ENABLE_MEDIATHREAD
-    { //XXX
-        pthread_t mth;
-
-        fnc_log(FNC_LOG_DEBUG, "Starting mediathread...\n");
-
-        pthread_create(&mth, NULL, mediathread, NULL);
-    }
-#endif
+    fnc_log(FNC_LOG_DEBUG, "Starting mediathread...");
+    pthread_create(&mth, NULL, mediathread, NULL);
     
     /* Bind to the defined listening port */
     port = g_strdup_printf("%d", prefs_get_port());
     main_sock = Sock_bind(NULL, port, TCP, 0);
 
     if(!main_sock) {
-        fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP port %s.\n", port);
-        fprintf(stderr, "[fatal] Sock_bind() error in main() for TCP port %s.\n", port);
+        fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP port %s.", port);
+        fprintf(stderr,
+                "[fatal] Sock_bind() error in main() for TCP port %s.\n",
+                port);
         g_free(port);
         return 0;
     }
@@ -110,7 +106,7 @@ int main(int argc, char **argv)
     g_free(port);
 
     if(Sock_listen(main_sock, SOMAXCONN)) {
-        fnc_log(FNC_LOG_ERR,"Sock_listen() error.\n");
+        fnc_log(FNC_LOG_ERR,"Sock_listen() error.");
         return 0;
     }
 
@@ -120,29 +116,29 @@ int main(int argc, char **argv)
         sctp_main_sock = Sock_bind(NULL, port, SCTP, 0);
 
         if(!sctp_main_sock) {
-            fnc_log(FNC_LOG_ERR,"Sock_bind() error for SCTP port %s.\n", port);
-            fprintf(stderr, "[fatal] Sock_bind() error in main() for SCTP port %s.\n", port);
+            fnc_log(FNC_LOG_ERR,"Sock_bind() error for SCTP port %s.", port);
+            fprintf(stderr,
+                    "[fatal] Sock_bind() error in main() for SCTP port %s.\n",
+                    port);
             g_free(port);
             return 0;
         }
 
         fnc_log(FNC_LOG_INFO,
-                "Waiting for RTSP connections on SCTP port %s...\n", port);
+                "Waiting for RTSP connections on SCTP port %s...", port);
         g_free(port);
 
         if(Sock_listen(sctp_main_sock, SOMAXCONN)) {
-            fnc_log(FNC_LOG_ERR,"Sock_listen() error.\n" );
+            fnc_log(FNC_LOG_ERR,"Sock_listen() error." );
             return 0;
         }
     }
 #endif
 
-    fprintf(stderr, "CTRL-C terminate the server.\n");
-
     /* Initialises the array of schedule_list sched and creates the thread
      * schedule_do() -> look at schedule.c */
     if (schedule_init() == ERR_FATAL) {
-        fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.\n");
+        fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.");
         return 0;
     }
 
