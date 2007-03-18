@@ -43,8 +43,7 @@ CREATE_PREFS_DATA;
 
 void prefs_init(char *fileconf)
 {
-    FILE *f;
-    char opened = 0;
+    FILE *f = NULL;
     char line[256];
     char *p, *q, *cont;
     int l;
@@ -52,18 +51,22 @@ void prefs_init(char *fileconf)
 
     prefs_use_default(PREFS_ALL);
 
-    if ((f = fopen(fileconf, "rt")) == NULL) {
-        printf("Error opening file %s, trying default (%s):\n",
-               fileconf, FENICE_CONF_PATH_DEFAULT_STR);
-        if ((f = fopen(FENICE_CONF_PATH_DEFAULT_STR, "rt")) == NULL) {
-            printf
-                ("Error opening default file, using internal defaults:\n");
-        } else
-            opened = 1;
-    } else
-        opened = 1;
+    if (fileconf) {
+        if ((f = fopen(fileconf, "rt")) == NULL) {
+            fprintf(stderr,
+                    "Error opening file %s, trying default (%s):",
+                    fileconf, FENICE_CONF_PATH_DEFAULT_STR);
+        }
+    }
 
-    if (opened) {
+    if (!f) {
+        if ((f = fopen(FENICE_CONF_PATH_DEFAULT_STR, "rt")) == NULL) {
+            fprintf(stderr,
+                "Error opening default file, using internal defaults.");
+        }
+    }
+
+    if (f) {
         do {
             cont = fgets(line, 80, f);
             if (cont && line[0] != '#') {
@@ -99,7 +102,7 @@ void prefs_init(char *fileconf)
         line[l] = '.';
     }
     SET_STRING_DATA(PREFS_HOSTNAME, line);
-
+#if ENABLE_DEBUG
     printf("\n");
     printf("\tavroot directory is: %s\n", prefs_get_serv_root());
     printf("\thostname is: %s\n", prefs_get_hostname());
@@ -111,6 +114,7 @@ void prefs_init(char *fileconf)
 #endif
     printf("\tlog file is: %s\n", prefs_get_log());
     printf("\n");
+#endif
 }
 
 void prefs_use_default(pref_id index)
