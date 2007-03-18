@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 
     /* parses the command line */
     if (command_environment(argc, argv))
-        return 0;
+        return 1;
     
     Sock_init(fnc_log);
 
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
                 "[fatal] Sock_bind() error in main() for TCP port %s.\n",
                 port);
         g_free(port);
-        return 0;
+        return 1;
     }
 
     fnc_log(FNC_LOG_INFO, "Waiting for RTSP connections on TCP port %s...\n",
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
 
     if(Sock_listen(main_sock, SOMAXCONN)) {
         fnc_log(FNC_LOG_ERR,"Sock_listen() error.");
-        return 0;
+        return 1;
     }
 
 #ifdef HAVE_SCTP_FENICE
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
                     "[fatal] Sock_bind() error in main() for SCTP port %s.\n",
                     port);
             g_free(port);
-            return 0;
+            return 1;
         }
 
         fnc_log(FNC_LOG_INFO,
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 
         if(Sock_listen(sctp_main_sock, SOMAXCONN)) {
             fnc_log(FNC_LOG_ERR,"Sock_listen() error." );
-            return 0;
+            return 1;
         }
     }
 #endif
@@ -143,7 +143,7 @@ int main(int argc, char **argv)
      * schedule_do() -> look at schedule.c */
     if (schedule_init() == ERR_FATAL) {
         fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.");
-        return 0;
+        return 1;
     }
 
     /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
