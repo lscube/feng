@@ -6,9 +6,9 @@
  *  NeMeSI -- NEtwork MEdia Streamer I
  *
  *  Copyright (C) 2001 by
- *  	
- *  	Giampaolo "mancho" Mancini - manchoz@inwind.it
- *	Francesco "shawill" Varano - shawill@infinto.it
+ *      
+ *      Giampaolo "mancho" Mancini - manchoz@inwind.it
+ *    Francesco "shawill" Varano - shawill@infinto.it
  *
  *  NeMeSI is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  *  
  * */
 
-/* From RFC 1889 */
+/* From RFC 1889 Appendix A.6 */
 
 #include <sys/time.h>
 #include <sys/utsname.h>
@@ -37,46 +37,46 @@
 #include <fenice/md5.h>
 #include <fenice/types.h>
 
-static uint32 md_32(char *string, int length)
+static uint32_t md_32(char *string, int length)
 {
-	MD5_CTX context;
-	union {
-		char c[16];
-		uint32 x[4];
-	} digest;
-	uint32 r;
-	int i;
+    MD5_CTX context;
+    union {
+        char c[16];
+        uint32_t x[4];
+    } digest;
+    uint32_t r;
+    int i;
 
-	MD5Init(&context);
-	MD5Update(&context, string, length);
-	MD5Final((unsigned char *)&digest, &context);
-	r=0;
-	for (i=0; i<3; i++)
-		r ^= digest.x[i];
-	return r;
+    MD5Init(&context);
+    MD5Update(&context, string, length);
+    MD5Final((unsigned char *)&digest, &context);
+    r = 0;
+    for (i = 0; i < 3; i++)
+        r ^= digest.x[i];
+    return r;
 }
 
-uint32 random32(int type)
+uint32_t random32(int type)
 {
-	struct {
-		int type;
-		struct timeval tv;
-		clock_t cpu;
-		pid_t pid;
-		uint32 hid;
-		uid_t uid;
-		gid_t gid;
-		struct utsname name;
-	} s;
+    struct {
+        int type;
+        struct timeval tv;
+        clock_t cpu;
+        pid_t pid;
+        uint32_t hid;
+        uid_t uid;
+        gid_t gid;
+        struct utsname name;
+    } s;
 
-	gettimeofday(&s.tv, NULL);
-	uname(&s.name);
-	s.type=type;
-	s.cpu=clock();
-	s.pid=getpid();
-	s.hid=gethostid();
-	s.uid=getuid();
-	s.gid=getgid();
+    gettimeofday(&s.tv, NULL);
+    uname(&s.name);
+    s.type = type;
+    s.cpu  = clock();
+    s.pid  = getpid();
+    s.hid  = gethostid();
+    s.uid  = getuid();
+    s.gid  = getgid();
 
-	return md_32((char *)&s, sizeof(s));
+    return md_32((char *)&s, sizeof(s));
 }
