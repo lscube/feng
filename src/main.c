@@ -53,7 +53,22 @@
 #include <fenice/stunserver.h>
 #include <pthread.h>
 
-inline void fncheader(void); // defined in src/fncheader.c
+#if ENABLE_STUN
+static void enable_stun(void)
+{
+    struct STUN_SERVER_IFCFG *cfg = prefs_get_stuncfg();
+
+    if( cfg!= NULL) {
+        pthread_t thread;
+
+        fnc_log(FNC_LOG_DEBUG, "Trying to start OMSstunserver thread\n");
+        fnc_log(FNC_LOG_DEBUG, "stun parameters: %s,%s,%s,%s\n", 
+                                cfg->a1, cfg->p1, cfg->a2, cfg->p2);
+
+        pthread_create(&thread,NULL,OMSstunserverStart,(void *)(cfg));
+    }
+}
+#endif
 
 int main(int argc, char **argv)
 {
@@ -71,18 +86,7 @@ int main(int argc, char **argv)
     Sock_init(fnc_log);
 
 #if ENABLE_STUN
-    struct STUN_SERVER_IFCFG *cfg =
-        (struct STUN_SERVER_IFCFG *)prefs_get_stuncfg();
-    
-    if( cfg!= NULL) {
-        pthread_t thread;
-
-        fnc_log(FNC_LOG_DEBUG, "Trying to start OMSstunserver thread\n");
-        fnc_log(FNC_LOG_DEBUG, "stun parameters: %s,%s,%s,%s\n", 
-                                cfg->a1, cfg->p1, cfg->a2, cfg->p2);
-    
-        pthread_create(&thread,NULL,OMSstunserverStart,(void *)(cfg));
-    }
+    enable_stun();
 #endif //ENABLE_STUN
 
     fnc_log(FNC_LOG_DEBUG, "Starting mediathread...");
@@ -148,9 +152,7 @@ int main(int argc, char **argv)
     RTP_port_pool_init(RTP_DEFAULT_PORT);
 
     while (1) {
-    /* Fake waiting. Break the while loop to achieve fair kernel
-     * (re)scheduling and fair CPU loads. See also schedule.c 
-        nanosleep(&ts, NULL); */
+
     /* eventloop looks for incoming RTSP connections and generates for each
        all the information in the structures RTSP_list, RTP_list, and so on */
 

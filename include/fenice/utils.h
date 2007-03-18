@@ -147,6 +147,7 @@ char *alloc_path_name(char *base_path, char *file_path);
 float NTP_time(time_t t);
 int get_utc(struct tm *t, char *b);
 int get_field(uint8_t * d, uint32_t bits, uint32_t * offset);
+void fncheader(void);
 
 //XXX check and maybe use something saner...
 #ifndef min

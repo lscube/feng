@@ -42,7 +42,7 @@
 #include <svnrev.h>
 #endif
 
-inline void fncheader(void)
+void fncheader(void)
 {
 	char svnrev[32] = "";
 #ifdef SVNREV
