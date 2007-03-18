@@ -58,7 +58,7 @@ int command_environment(int argc, char **argv)
     int nerr = 0;    /*number of error */
     int config_file = 0;
     int view_log = FNC_LOG_FILE;
-//#ifdef HAVE_GETOPT_LONG
+
     static struct option long_options[] = {
         {"config", 1, 0, 'f'},
         {"verbose", 0, 0, 'v'},
@@ -68,12 +68,8 @@ int command_environment(int argc, char **argv)
         {0, 0, 0, 0}
     };
 
-
     while ((n = getopt_long(argc, argv, short_options, long_options, NULL))
                 != -1)
-//#else
-//    while( (n=getopt(argc,argv,short_options)) != -1)
-//#endif
     {
         switch (n) {
         case 0:    /* Flag setting handled by getopt-long */
@@ -97,6 +93,8 @@ int command_environment(int argc, char **argv)
             break;
         }
     }
+
+    //XXX what about using basename(3) ?;
     if (nerr) {
         usage(argv[0]);
     } else {
