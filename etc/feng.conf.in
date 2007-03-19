@@ -1,7 +1,9 @@
 #include <config.h>
+## default configuration
 root=FENICE_AVROOT_DIR_DEFAULT
 tcp_port=FENICE_RTSP_PORT_DEFAULT
 sctp_port=-1
 max_session=FENICE_MAX_SESSION_DEFAULT
 log_file=FENICE_LOG_FILE_DEFAULT
-
+## user=feng
+## group=feng

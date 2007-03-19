@@ -53,9 +53,11 @@ typedef enum _pref_id {
     PREFS_SCTP_PORT,
     PREFS_MAX_SESSION,
     PREFS_LOG,
-    PREFS_HOSTNAME, /// Insert other preferences before this one
-    PREFS_LAST, /// For prefs_use_default()
-    PREFS_ALL
+    PREFS_HOSTNAME, 
+    PREFS_USER,
+    PREFS_GROUP,
+    PREFS_LAST, /// Insert other preferences before this one
+    PREFS_ALL  /// For prefs_use_default()
 } pref_id;
 
     // Sync with the first preference in enum _pref_id
@@ -82,7 +84,9 @@ typedef struct _pref_record {
         { PREFS_SCTP_PORT, INTEGER, "sctp_port", NULL }, \
         { PREFS_MAX_SESSION, INTEGER, "max_session", NULL }, \
         { PREFS_LOG, STRING, "log_file", NULL }, \
-        { PREFS_HOSTNAME, STRING, "###", NULL } \
+        { PREFS_HOSTNAME, STRING, "###", NULL }, \
+        { PREFS_USER, STRING, "user", NULL }, \
+        { PREFS_GROUP, STRING, "group", NULL } \
     };
 
 #define SET_STRING_DATA(PREF_ID, PREF_DATA) do { \

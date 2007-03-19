@@ -38,6 +38,9 @@
 #include <config.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h> /*SOMAXCONN*/
+#include <pwd.h>
+#include <grp.h>
+#include <errno.h>
 
 #include <netembryo/wsocket.h>
 
@@ -75,6 +78,7 @@ int main(int argc, char **argv)
     Sock *main_sock = NULL, *sctp_main_sock = NULL;
     pthread_t mth;
     char *port;
+    char *id;
 
     /* Print version and other useful info */
     fncheader();
@@ -138,6 +142,38 @@ int main(int argc, char **argv)
         }
     }
 #endif
+    
+    /*
+     * Drop privs to a specified user
+     * */
+    id = get_pref(PREFS_USER);
+    if (id) {
+        struct passwd *pw = getpwnam(id);
+        if (pw) {
+            if (setuid(pw->pw_uid) < 0)
+                fnc_log(FNC_LOG_WARN,
+                    "Cannot setuid to user %s, %s",
+                    id, strerror(errno));
+        } else {
+            fnc_log(FNC_LOG_WARN,
+                    "Cannot setuid to user %s, %s",
+                    id, strerror(errno));
+        }
+    }
+    id = get_pref(PREFS_GROUP);
+    if (id) {
+        struct group *gr = getgrnam(id);
+        if (gr) {
+            if (setgid(gr->gr_gid) < 0)
+                fnc_log(FNC_LOG_WARN,
+                    "Cannot setuid to user %s, %s",
+                    id, strerror(errno));
+        } else {
+            fnc_log(FNC_LOG_WARN,
+                    "Cannot setuid to user %s, %s",
+                    id, strerror(errno));
+        }
+    }
 
     /* Initialises the array of schedule_list sched and creates the thread
      * schedule_do() -> look at schedule.c */

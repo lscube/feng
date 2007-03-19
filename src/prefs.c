@@ -107,6 +107,8 @@ void prefs_init(char *fileconf)
     printf("\tavroot directory is: %s\n", prefs_get_serv_root());
     printf("\thostname is: %s\n", prefs_get_hostname());
     printf("\trtsp listening port for TCP is: %d\n", prefs_get_port());
+    printf("\trunning as: %s:%s\n",
+           (char*)get_pref(PREFS_USER), (char*)get_pref(PREFS_GROUP));
 #ifdef HAVE_SCTP_FENICE
     if (prefs_get_sctp_port() > 0)
         printf("\trtsp listening port for SCTP is: %d\n",
@@ -147,6 +149,7 @@ void prefs_use_default(pref_id index)
         SET_INTEGER_DATA(PREFS_SCTP_PORT, -1);
         SET_INTEGER_DATA(PREFS_MAX_SESSION, FENICE_MAX_SESSION_DEFAULT);
         SET_STRING_DATA(PREFS_LOG, FENICE_LOG_FILE_DEFAULT_STR);
+        //USER and GROUP are unset by default
         break;
     default:
         break;
