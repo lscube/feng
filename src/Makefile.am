@@ -25,15 +25,6 @@ libsafectype_la_LDFLAGS = -static -lm
 
 libprefs_la_SOURCES = prefs.c
 
-#libprefs_la_SOURCES =	prefs_init.c \
-			prefs_get_serv_root.c \
-			prefs_get_hostname.c \
-			prefs_get_port.c \
-			prefs_get_max_session.c \
-			prefs_get_log.c \
-			prefs_get_stuncfg.c \
-			prefs_use_default.c
-
 libprefs_la_LDFLAGS = -static
 
 if FENICE_VERBOSE
