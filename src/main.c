@@ -156,7 +156,7 @@ int main(int argc, char **argv)
                     id, strerror(errno));
         } else {
             fnc_log(FNC_LOG_WARN,
-                    "Cannot setuid to user %s, %s",
+                    "Cannot get user %s id, %s",
                     id, strerror(errno));
         }
     }
@@ -166,11 +166,11 @@ int main(int argc, char **argv)
         if (gr) {
             if (setgid(gr->gr_gid) < 0)
                 fnc_log(FNC_LOG_WARN,
-                    "Cannot setuid to user %s, %s",
+                    "Cannot setgid to user %s, %s",
                     id, strerror(errno));
         } else {
             fnc_log(FNC_LOG_WARN,
-                    "Cannot setuid to user %s, %s",
+                    "Cannot get group %s id, %s",
                     id, strerror(errno));
         }
     }
