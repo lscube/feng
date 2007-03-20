@@ -37,7 +37,7 @@
 #include <fenice/utils.h>
 #include <fenice/mediautils.h>
 #include <fenice/InputStream.h>
-#include <fenice/MediaParser.h>
+#include <fenice/mediaparser.h>
 #include <fenice/bufferpool.h>
 #include <fenice/sdp_grammar.h>
 
@@ -122,7 +122,7 @@ MObject_def(__TRACK_INFO)
 	char name[255];
         int id; // should it more generic?
 	int rtp_port;
-//	char *sdp_private; // moved in MediaParser.h
+//	char *sdp_private; // moved in mediaparser.h
 	//start CC
 	char commons_deed[255];
 	char rdf_page[255];

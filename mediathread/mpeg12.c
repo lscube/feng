@@ -32,7 +32,7 @@
 #include <fenice/mpeg.h>
 #include <fenice/demuxer.h>
 #include <fenice/fnc_log.h>
-#include <fenice/MediaParser.h>
+#include <fenice/mediaparser.h>
 #include <fenice/mediaparser_module.h>
 #include <fenice/utils.h>
 #include <fenice/types.h>

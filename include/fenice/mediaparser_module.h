@@ -32,7 +32,7 @@
 #define __MEDIAPARSER_MODULE_H
 
 #include <fenice/types.h>
-#include <fenice/MediaParser.h>
+#include <fenice/mediaparser.h>
 #include <fenice/InputStream.h>
 
 #define INIT_PROPS properties->media_type = info.media_type;

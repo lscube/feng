@@ -14,7 +14,7 @@ noinst_HEADERS	=	bufferpool.h \
 			md5global.h \
 			md5.h \
 			mediainfo.h \
-			MediaParser.h \
+			mediaparser.h \
 			mediaparser_module.h \
 			mediathread.h \
 			mediautils.h \

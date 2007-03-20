@@ -30,7 +30,7 @@
 
 #include <string.h>
 
-#include <fenice/MediaParser.h>
+#include <fenice/mediaparser.h>
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
