@@ -6,11 +6,11 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,19 +33,19 @@
 
 #include <fenice/types.h>
 
-#define CACHE_FILE_SIZE 65536
-#define CACHE_NET_SIZE 65536
-#define CACHE_PIPE_SIZE 4096
-#define CACHE_DEVICE_SIZE 4096
-#define CACHE_DEFAULT_SIZE 65536
+#define CACHE_FILE_SIZE     65536
+#define CACHE_NET_SIZE      65536
+#define CACHE_PIPE_SIZE      4096
+#define CACHE_DEVICE_SIZE    4096
+#define CACHE_DEFAULT_SIZE  65536
 
 #define FNC_PROTO_SEPARATOR "://"
 
-#define FNC_FILE	"file"
-// #define FNC_PIPE	"pipe"
-#define FNC_UDP		"udp"
-#define FNC_TCP		"tcp"
-#define FNC_DEV		"dev" // it will survive to tomorrow?
+#define FNC_FILE       "file"
+// #define FNC_PIPE    "pipe"
+#define FNC_UDP        "udp"
+#define FNC_TCP        "tcp"
+#define FNC_DEV        "dev" // it will survive to tomorrow?
 // ... devices, ...
 
 #define DEFAULT_ST_TYPE st_file
@@ -55,11 +55,11 @@
 #endif // min
 
 typedef struct __CACHE {
-	uint8 *cache;
-	uint32 max_cache_size;
-	uint32 cache_size;
-	uint32 bytes_left;
-	int (*read_data)(int /*fd*/, void * /*buf*/, size_t /*nbytes*/); /*can be: read, read_from_net, read_from_device*/
+    uint8 *cache;
+    uint32 max_cache_size;
+    uint32 cache_size;
+    uint32 bytes_left;
+    int (*read_data)(int /*fd*/, void * /*buf*/, size_t /*nbytes*/); /*can be: read, read_from_net, read_from_device*/
 } Cache;
 
 typedef enum { st_unknown=-1, st_file=0, st_net, st_pipe, st_device} stream_type;
@@ -75,24 +75,24 @@ void flush_cache(Cache *c);
 void free_cache(Cache *c); 
 
 typedef enum { // XXX: all initialized to a power of 2 number.
-	IS_FLAGS_INIT = 0,
-	IS_EXCLUSIVE=1 // if set, input stream can be opened only once at a time.
+    IS_FLAGS_INIT = 0,
+    IS_EXCLUSIVE=1 // if set, input stream can be opened only once at a time.
 } istream_flags;
 
-#define IS_ISINIT(is)	is->flags & IS_FLAGS_INIT
-#define IS_ISEXCLUSIVE(is)	is->flags & IS_EXCLUSIVE
+#define IS_ISINIT(is)    is->flags & IS_FLAGS_INIT
+#define IS_ISEXCLUSIVE(is)    is->flags & IS_EXCLUSIVE
 
 typedef struct __INPUTSTREAM {
-	char name[255];
-	stream_type type;
-	Cache *cache;
-	int fd;
-	//... properties for file, net or device 
-	int mmap_on;
-        void *mmap_base;
-        void *mmap_curr;
-        size_t mmap_len;
-	istream_flags flags;
+    char name[255];
+    stream_type type;
+    Cache *cache;
+    int fd;
+    //... properties for file, net or device 
+    int mmap_on;
+    void *mmap_base;
+    void *mmap_curr;
+    size_t mmap_len;
+    istream_flags flags;
 } InputStream;
 
 
