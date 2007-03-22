@@ -44,7 +44,7 @@
 #include <fenice/schedule.h>
 #include <fenice/bufferpool.h>
 #include <fenice/fnc_log.h>
-
+#include <glib.h>
 /*
      ****************************************************************
      *            TEARDOWN METHOD HANDLING
@@ -57,7 +57,6 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     char *p;
     RTSP_session *s;
     RTP_session *rtp_curr, *rtp_prev = NULL, *rtp_temp;
-    int valid_url;
     char object[255], server[255], trash[255], *filename;
     unsigned short port;
     char url[255];
@@ -146,6 +145,8 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     else
         filename = object;
 
+    filename = g_path_get_basename(filename);
+
     // Release all URI RTP session
     rtp_curr = s->rtp_session;
     while (rtp_curr != NULL) {
@@ -180,5 +181,8 @@ int RTSP_teardown(RTSP_buffer * rtsp)
         free(rtsp->session_list);
         rtsp->session_list = NULL;
     }
+
+    g_free(filename);
+
     return ERR_NOERROR;
 }
