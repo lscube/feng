@@ -36,45 +36,22 @@
 #include <fenice/rtp.h>
 #include <time.h>
 #include <fenice/utils.h>
-#ifdef THREADED
 #include <pthread.h>
-#endif
 
 schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 int schedule_init()
 {    
     int i;
-#ifdef THREADED
     pthread_t thread;
-#endif    
-#ifdef SIGNALED
-    struct itimerval value;
-#endif
-#ifdef SELECTED
-    pthread_t t;
-#endif
 
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
         sched[i].rtp_session=NULL;
         sched[i].play_action=NULL;
         sched[i].valid=0;
     }
-#ifdef SIGNALED
-    if (signal(SIGALRM,schedule_do)==SIG_ERR) {
-        return ERR_FATAL;
-    }
-    value.it_interval.tv_sec=0;
-    value.it_interval.tv_usec=5000;
-    value.it_value.tv_sec=0;
-    value.it_value.tv_usec=value.it_interval.tv_usec;    
-    setitimer(ITIMER_REAL,&value,0);
-#endif
-#ifdef THREADED
+
     pthread_create(&thread,NULL,schedule_do,0);
-#endif
-#ifdef SELECTED
-    pthread_create(&thread,NULL,schedule_do,0);
-#endif
+
     return ERR_NOERROR;
 }

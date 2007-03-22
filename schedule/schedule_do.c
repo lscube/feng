@@ -33,12 +33,10 @@
  * */
 
 #include <stdio.h>
-// #include <time.h>
 #include <sys/time.h>
 
 #include <pthread.h>
 #include <fenice/schedule.h>
-//#include <fenice/intnet.h>
 #include <fenice/rtcp.h>
 #include <fenice/utils.h>
 #include <fenice/debug.h>
@@ -47,41 +45,14 @@
 extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 extern int stop_schedule;
 
-#ifdef SELECTED    
 void *schedule_do(void *nothing)
-#endif
-#ifdef THREADED
-void *schedule_do(void *nothing)
-#endif
-#ifdef POLLED
-void schedule_do(int sig)
-#endif
-#ifdef SIGNALED
-void schedule_do(int sig)
-#endif
 {
     int i=0,res=ERR_GENERIC;
     double mnow;
     // Fake timespec for fake nanosleep. See below.
     struct timespec ts = {0,0};
-#ifdef SELECTED
-    struct timeval t;
-    fd_set rs;
-#endif    
-#ifdef THREADED
 do {
-#endif    
-#ifdef SELECTED    
-do {
-    t.tv_sec=0;
-    t.tv_usec=26122;
-    FD_ZERO(&rs);
-    if (select(0,&rs,&rs,&rs,&t)<0) {
-        fnc_log(FNC_LOG_FATAL,"failed!\n");
-    }
-#endif
     // Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
-    // See also main.c
     nanosleep(&ts, NULL);
 
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
@@ -124,33 +95,23 @@ do {
                             fnc_log(FNC_LOG_WARN,"Packet Lost\n");
                             break;
                     }
-#if ENABLE_MEDIATHREAD
                     sched[i].rtp_session->prev_tx_time +=
                         tr->properties->duration;
-#else
-                    sched[i].rtp_session->mprev_tx_time
-                        += sched[i].rtp_session->current_media->description.pkt_len;
-#endif
                 }
             }
 
         } else if (sched[i].rtp_session) {
             if(sched[i].rtp_session->is_multicast_dad) {
                 /*unicast always is a multicast_dad*/
-                // fprintf(stderr, "rtp session not valid, but still present...\n");
                 RTP_session_destroy(sched[i].rtp_session);
                 sched[i].rtp_session = NULL;
                 fnc_log(FNC_LOG_INFO, "rtp session closed\n");
             }
         }
     }
-#ifdef THREADED
 } while (!stop_schedule);
-stop_schedule=0;
-return ERR_NOERROR;
-#endif
-#ifdef SELECTED
-} while (1);
-#endif
+
+    stop_schedule=0;
+    return ERR_NOERROR;
 }
 

@@ -47,7 +47,7 @@
 typedef struct _play_args {
 	struct tm playback_time;
 	short playback_time_valid;
-	float start_time;	// In secondi, anche frazionari
+	float start_time;	//! time in seconds
 	short start_time_valid;
 	float end_time;
 } play_args;
@@ -61,18 +61,7 @@ typedef struct _schedule_list {
 
 int schedule_init();
 
-#ifdef THREADED
 void *schedule_do(void *nothing);
-#endif
-#ifdef SELECTED
-void *schedule_do(void *nothing);
-#endif
-#ifdef POLLED
-void schedule_do(int sig);
-#endif
-#ifdef SIGNALED
-void schedule_do(int sig);
-#endif
 
 int schedule_add(RTP_session * rtp_session /*,RTSP_session *rtsp_session */ );
 int schedule_start(int id, play_args * args);
