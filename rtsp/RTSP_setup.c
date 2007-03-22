@@ -61,7 +61,6 @@
 
 int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
-//    char address[16];
     char object[255], server[255];
     char url[255];
     unsigned short port;
@@ -74,17 +73,10 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     char *p  /* = NULL */ ;
     unsigned int start_seq, start_rtptime;
     char transport_str[255];
-#if ENABLE_MEDIATHREAD
     char trackname[255];
     //mediathread pointers
     Selector *track_sel;
     Track *req_track;
-#else
-// TODO: delete mediainfo legacy
-    media_entry *list, *matching_me, req;
-    SD_descr *matching_descr = NULL;
-#endif
-//    struct sockaddr_storage rtsp_peer;
     unsigned int ssrc = 0;
     unsigned char is_multicast_dad = 1;    //unicast and the first multicast
     RTP_transport transport;
@@ -94,10 +86,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     RTSP_interleaved *intlvd, *ilvd_s;
 
     // init
-#if !ENABLE_MEDIATHREAD
-// TODO: delete mediainfo legacy
-    memset(&req, 0, sizeof(req));
-#endif
     memset(&transport, 0, sizeof(transport));
 
     // Parse the input message
@@ -142,7 +130,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     //if '!' is not present then a file has not been specified
         send_reply(500, 0, rtsp);    /* Internal server error */
         return ERR_NOERROR;
-#if ENABLE_MEDIATHREAD
     } else {
         // SETUP resource!trackname
         strcpy (trackname, p + 1);
@@ -150,81 +137,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         while (object != p) if (*--p == '/') break;
         *p = '\0';
     }
-#else
-// TODO: delete mediainfo legacy
-    } else {
-        // SETUP name.sd!stream
-        strcpy(req.filename, p + 1);
-        req.flags |= ME_FILENAME;
 
-        *p = '\0';
-    }
-#endif
-
-#if 0 //cruft!
-    {
-        char temp[255];
-        char *pd = NULL;
-
-        strcpy(temp, object);
-#if 0
-        printf("%s\n", object);
-        // BEGIN 
-        // if ( (p = strstr(temp, "/")) ) {
-        if ((p = strchr(temp, '/'))) {
-            strcpy(object, p + 1);    // CRITIC. 
-        }
-        printf("%s\n", temp);
-#endif
-        // pd = strstr(p, ".sd");       // this part is usefull in order to
-        pd = strstr(temp, ".sd");
-        if ((p = strstr(pd + 1, ".sd"))) {    // have compatibility with RealOne
-            strcpy(object, pd + 4);    // CRITIC. 
-        }        //Note: It's a critic part
-        // END 
-    }
-#endif
-
-#if ENABLE_MEDIATHREAD
-    // it should parse the request giving us object!trackname
-    if (!rtsp->resource) {
-        if (!(rtsp->resource = mt_resource_open(prefs_get_serv_root(),
-                                                object))) {
-            send_reply(404, 0, rtsp);//TODO: Not found or Internal server error?
-            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", object);
-            return ERR_NOERROR;
-        }
-    }
-
-    if (!(track_sel = r_open_tracks(rtsp->resource, trackname, NULL))) {
-        send_reply(404, 0, rtsp);    // Not found
-        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
-                trackname, object);
-        return ERR_NOERROR;
-    }
-
-    if (!(req_track = r_selected_track(track_sel))) {
-        send_reply(500, 0, rtsp);    // Internal server error
-        return ERR_NOERROR;
-    }
-
-    if (mt_add_track(req_track)) {
-        send_reply(500, 0, rtsp);    // Internal server error
-        return ERR_NOERROR;
-    }
-#else
-// TODO: delete mediainfo legacy
-    if (enum_media(object, &matching_descr) != ERR_NOERROR) {
-        send_reply(500, 0, rtsp);    // Internal server error
-        return ERR_NOERROR;
-    }
-    list = matching_descr->me_list;
-
-    if (get_media_entry(&req, list, &matching_me) == ERR_NOT_FOUND) {
-        send_reply(404, 0, rtsp);    // Not found
-        return ERR_NOERROR;
-    }
-#endif
     // Get the CSeq 
     if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
         send_reply(400, 0, rtsp);    /* Bad Request */
@@ -235,12 +148,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
             return ERR_NOERROR;
         }
     }
-    /*if ((p = strstr(rtsp->in_buffer, "ssrc")) != NULL) {
-       p = strchr(p, '=');
-       sscanf(p + 1, "%lu", &ssrc);
-       } else { */
+
     ssrc = random32(0);
-    //}
 
     // Start parsing the Transport header
     if ((p = strstr(rtsp->in_buffer, HDR_TRANSPORT)) == NULL) {
@@ -253,7 +162,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         send_reply(400, 0, rtsp);    /* Bad Request */
         return ERR_NOERROR;
     }
-    // printf("transport: %s\n", transport_str); // XXX tmp.
 
     // tokenize the coma seaparated list of transport settings:
     if (!(transport_tkn = strtok_r(transport_str, ",", &saved_ptr))) {
@@ -304,7 +212,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
                                   transport.rtcp_sock, UDP, 0);
                     g_free(tmp);
                 }
-#if !ENABLE_MEDIATHREAD
+#if 0
 // TODO: multicast with mediathread
                 else if (matching_descr->flags & SD_FL_MULTICAST) {    //multicast 
                     // TODO: make the difference between only multicast allowed or unicast fallback allowed.
@@ -537,7 +445,35 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         rtsp_s = rtsp_s_prec->next;
     }
 #endif
-    // Setup the RTP session
+
+    // it should parse the request giving us object!trackname
+    if (!rtsp_s->resource) {
+        if (!(rtsp_s->resource = mt_resource_open(prefs_get_serv_root(),
+                                                object))) {
+            send_reply(404, 0, rtsp);//TODO: Not found or Internal server error?
+            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", object);
+            return ERR_NOERROR;
+        }
+    }
+
+    if (!(track_sel = r_open_tracks(rtsp_s->resource, trackname, NULL))) {
+        send_reply(404, 0, rtsp);    // Not found
+        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
+                trackname, object);
+        return ERR_NOERROR;
+    }
+
+    if (!(req_track = r_selected_track(track_sel))) {
+        send_reply(500, 0, rtsp);    // Internal server error
+        return ERR_NOERROR;
+    }
+
+    if (mt_add_track(req_track)) {
+        send_reply(500, 0, rtsp);    // Internal server error
+        return ERR_NOERROR;
+    }
+
+// Setup the RTP session
     if (rtsp->session_list->rtp_session == NULL) {
         rtsp->session_list->rtp_session = calloc(1, sizeof(RTP_session));
         rtp_s = rtsp->session_list->rtp_session;
@@ -566,8 +502,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     }
     rtp_s->pause = 1;
     strcpy(rtp_s->sd_filename, object);
-#if !ENABLE_MEDIATHREAD
-    /*xxx */
+#if 0 //MULTICAST
+    /*XXX */
     rtp_s->current_media = calloc(1, sizeof(media_entry));
 
     // if(!(matching_descr->flags & SD_FL_MULTICAST_PORT)){
@@ -587,12 +523,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     rtp_s->start_seq = start_seq;
     memcpy(&rtp_s->transport, &transport, sizeof(transport));
     rtp_s->is_multicast_dad = is_multicast_dad;
-#if ENABLE_MEDIATHREAD
     rtp_s->track_selector = track_sel;
-#else
-    /*xxx */
-    rtp_s->sd_descr = matching_descr;
-#endif
     rtp_s->sched_id = schedule_add(rtp_s);
 
 
