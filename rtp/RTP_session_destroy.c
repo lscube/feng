@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,10 +34,6 @@
 
 #include <config.h>
 
-/*#if HAVE_ALLOCA_H
-#include <alloca.h>
-#endif*/
-
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -55,30 +51,15 @@
 
 RTP_session *RTP_session_destroy(RTP_session * session)
 {
-	RTP_session *next = session->next;
-#if !ENABLE_MEDIATHREAD
-	OMSBuffer *buff = session->current_media->pkt_buffer;
-#endif
-	//struct stat fdstat;
+    RTP_session *next = session->next;
 
-	RTP_transport_close(session);
-	//Release SD_flag using in multicast and unjoing the multicast group
-	// if(session->sd_descr->flags & SD_FL_MULTICAST){
+    RTP_transport_close(session);
 
-	// destroy consumer
-	OMSbuff_unref(session->cons);
-#if !ENABLE_MEDIATHREAD
-	if (session->current_media->pkt_buffer->control->refs == 0) {
-		session->current_media->pkt_buffer = NULL;
-		OMSbuff_free(buff);
-		// close file if it's not a pipe
-		//fstat(session->current_media->fd, &fdstat);
-		//if ( !S_ISFIFO(fdstat.st_mode) )
-		mediaclose(session->current_media);
-	}
-#endif
-	// Deallocate memory
-	free(session);
+    // destroy consumer
+    OMSbuff_unref(session->cons);
 
-	return next;
+    // Deallocate memory
+    free(session);
+
+    return next;
 }
