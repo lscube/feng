@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <fenice/command_environment.h>
+#include <glib.h>
 
 void usage(char *name)
 {
