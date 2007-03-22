@@ -58,6 +58,7 @@ int command_environment(int argc, char **argv)
     int nerr = 0;    /*number of error */
     int config_file = 0;
     int view_log = FNC_LOG_FILE;
+    char *progname = g_path_get_basename(argv[0]);
 
     static struct option long_options[] = {
         {"config", 1, 0, 'f'},
@@ -85,8 +86,9 @@ int command_environment(int argc, char **argv)
             view_log = FNC_LOG_SYS;
             break;
         case '?':
-            usage(argv[0]);
+            usage(progname);
 	case 'V':
+            g_free(progname);
             return 1;
             break;
         default:
@@ -94,14 +96,15 @@ int command_environment(int argc, char **argv)
         }
     }
 
-    //XXX what about using basename(3) ?;
     if (nerr) {
-        usage(argv[0]);
+        usage(progname);
     } else {
         if (!config_file) prefs_init(NULL);
     }
 
-    fnc_log_init(prefs_get_log(), view_log, argv[0]);
+    fnc_log_init(prefs_get_log(), view_log, progname);
+
+    g_free(progname);
 
     return nerr;
 }
