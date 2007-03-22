@@ -78,7 +78,6 @@ static int init(Resource * r)
     FlagsData me;
     char object[255], server[255];
     unsigned short port;
-    int res;
     char content_base[256] = "", *separator, track_file[256];
 
     media_source msource = stored;
@@ -177,7 +176,7 @@ static int init(Resource * r)
                 sscanf(line, "%*s %u\n", &props_hints.clock_rate);
             } else if (!strcasecmp(keyword, SD_AUDIO_CHANNELS)) {
                 // SD_AUDIO_CHANNELS
-                sscanf(line, "%*s %hd\n", &props_hints.audio_channels);
+                sscanf(line, "%*s %d\n", &props_hints.audio_channels);
             } else if (!strcasecmp(keyword, SD_AGGREGATE)) {
                 // SD_AGGREGATE
                 sscanf(line, "%*s%50s", me.data.aggregate);
