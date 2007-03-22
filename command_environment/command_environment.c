@@ -105,7 +105,7 @@ int command_environment(int argc, char **argv)
 
     fnc_log_init(prefs_get_log(), view_log, progname);
 
-    g_free(progname);
+    // g_free(progname); syslog needs this buffer!
 
     return nerr;
 }
