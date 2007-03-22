@@ -65,7 +65,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     char url[255];
     unsigned short port;
     RTSP_session *rtsp_s;
-    RTP_session *rtp_s, *rtp_s_prec;
+    RTP_session *rtp_s;
     int session_id = 0;
     port_pair cli_ports;
     port_pair ser_ports;
@@ -77,7 +77,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     //mediathread pointers
     Selector *track_sel;
     Track *req_track;
-    unsigned int ssrc = 0;
     unsigned char is_multicast_dad = 1;    //unicast and the first multicast
     RTP_transport transport;
     char *saved_ptr, *transport_tkn, *tmp;
@@ -148,8 +147,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
             return ERR_NOERROR;
         }
     }
-
-    ssrc = random32(0);
 
     // Start parsing the Transport header
     if ((p = strstr(rtsp->in_buffer, HDR_TRANSPORT)) == NULL) {
@@ -478,14 +475,13 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         rtsp->session_list->rtp_session = calloc(1, sizeof(RTP_session));
         rtp_s = rtsp->session_list->rtp_session;
     } else {
-        for (rtp_s = rtsp_s->rtp_session; rtp_s != NULL;
-             rtp_s = rtp_s->next) {
-            rtp_s_prec = rtp_s;
-        }
-        rtp_s_prec->next = calloc(1, sizeof(RTP_session));
-        rtp_s = rtp_s_prec->next;
+        rtp_s = rtsp_s->rtp_session;
+        while (rtp_s->next !=  NULL) {
+            rtp_s = rtp_s->next;
+        };
+        rtp_s->next = calloc(1, sizeof(RTP_session));
+        rtp_s = rtp_s->next;
     }
-
 
 #ifdef WIN32
     start_seq = rand();
@@ -527,7 +523,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     rtp_s->sched_id = schedule_add(rtp_s);
 
 
-    rtp_s->ssrc = ssrc;
+    rtp_s->ssrc = random32(0);
     // Setup the RTSP session
     rtsp_s->session_id = session_id;
     *new_session = rtsp_s;
