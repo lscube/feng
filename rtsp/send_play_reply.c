@@ -66,7 +66,7 @@ int send_play_reply(RTSP_buffer * rtsp, char *object,
 		// strcat(r, object);
 		// TODO: we MUST be sure to send the correct url 
 		sprintf(r + strlen(r), "rtsp://%s/%s/%s!%s",
-			prefs_get_hostname(), p->sd_filename, p->sd_filename,
+			prefs_get_hostname(), p->sd_filename, t->parent->info->name,
 			t->info->name);
 		strcat(r, ";");
 		sprintf(r + strlen(r), "seq=%u;rtptime=%u", p->start_seq,
