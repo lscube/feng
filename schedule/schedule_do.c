@@ -90,17 +90,11 @@ do {
                 Track *tr = 
                     r_selected_track(sched[i].rtp_session->track_selector);
                 mnow = gettimeinseconds();
-#if ENABLE_MEDIATHREAD
                 if (mnow >= sched[i].rtp_session->start_time &&
                     mnow - sched[i].rtp_session->prev_tx_time >=
                         tr->properties->duration)
-#else
-                if (mnow >= sched[i].rtp_session->current_media->mstart &&
-                    mnow - sched[i].rtp_session->mprev_tx_time >=
-                        sched[i].rtp_session->current_media->description.pkt_len)
-#endif
                 {
-#if ENABLE_MEDIATHREAD
+#if 1
 //TODO DSC will be implemented WAY later.
 #else
                     stream_change(sched[i].rtp_session,
