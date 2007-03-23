@@ -55,8 +55,12 @@ RTP_session *RTP_session_destroy(RTP_session * session)
 
     RTP_transport_close(session);
 
+    // Close track selector
+    r_close_tracks(session->track_selector);
+
     // destroy consumer
     OMSbuff_unref(session->cons);
+
 
     // Deallocate memory
     free(session);
