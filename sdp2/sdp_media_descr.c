@@ -95,7 +95,7 @@ int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list,
     // other sdp private data
     for (tmp_mdl = list_first(m_descr_list); tmp_mdl;
          tmp_mdl = list_next(tmp_mdl))
-        if (sdp_private = m_descr_sdp_private(MEDIA_DESCR(tmp_mdl)))
+        if ((sdp_private = m_descr_sdp_private(MEDIA_DESCR(tmp_mdl))))
             for (sdp_private = list_first(sdp_private); sdp_private;
                  sdp_private = list_next(sdp_private)) {
                 switch (SDP_FIELD(sdp_private)->type) {
