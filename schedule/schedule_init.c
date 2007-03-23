@@ -46,12 +46,13 @@ int schedule_init()
     pthread_t thread;
 
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
-        sched[i].rtp_session=NULL;
-        sched[i].play_action=NULL;
-        sched[i].valid=0;
+        sched[i].rtp_session = NULL;
+        sched[i].play_action = NULL;
+        sched[i].valid = 0;
+        pthread_mutex_init(&sched[i].mux, NULL);
     }
 
-    pthread_create(&thread,NULL,schedule_do,0);
+    pthread_create(&thread, NULL, schedule_do, 0);
 
     return ERR_NOERROR;
 }

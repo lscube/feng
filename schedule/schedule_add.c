@@ -35,24 +35,26 @@
 #include <fenice/schedule.h>
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
-int schedule_add(RTP_session *rtp_session/*,RTSP_session *rtsp_session*/)
+int schedule_add(RTP_session *rtp_session)
 {
     int i;
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
+    pthread_mutex_lock(&sched[i].mux);
         if (!sched[i].valid) {
-            sched[i].valid=1;
+            sched[i].valid = 1;
             sched[i].rtp_session = rtp_session;
-            //sched[i].rtsp_session=rtsp_session;
             if(rtp_session->is_multicast_dad)
                 sched[i].play_action = RTP_send_packet;
+            pthread_mutex_unlock(&sched[i].mux);
             return i;
         }
+    pthread_mutex_unlock(&sched[i].mux);
     }
     // if (i >= MAX_SESSION) {
     return ERR_GENERIC;
     // }
 }
-

@@ -56,7 +56,9 @@ do {
     nanosleep(&ts, NULL);
 
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
-        if (sched[i].valid) {
+        pthread_mutex_lock(&sched[i].mux);
+            if (sched[i].valid) {
+
             if (!sched[i].rtp_session->pause) {
                 Track *tr = 
                     r_selected_track(sched[i].rtp_session->track_selector);
@@ -99,15 +101,8 @@ do {
                         tr->properties->duration;
                 }
             }
-
-        } else if (sched[i].rtp_session) {
-            if(sched[i].rtp_session->is_multicast_dad) {
-                /*unicast always is a multicast_dad*/
-                RTP_session_destroy(sched[i].rtp_session);
-                sched[i].rtp_session = NULL;
-                fnc_log(FNC_LOG_INFO, "rtp session closed\n");
-            }
         }
+        pthread_mutex_unlock(&sched[i].mux);
     }
 } while (!stop_schedule);
 

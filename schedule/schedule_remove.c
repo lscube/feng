@@ -36,12 +36,20 @@
 
 #include <fenice/schedule.h>
 #include <fenice/utils.h>
+#include <fenice/fnc_log.h>
 
 extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 int schedule_remove(int id)
 {
-    sched[id].valid=0;
-
+    pthread_mutex_lock(&sched[id].mux);
+    sched[id].valid = 0;
+    if (sched[id].rtp_session) {
+    //    if(sched[i].rtp_session->is_multicast_dad) {
+        RTP_session_destroy(sched[id].rtp_session);
+        sched[id].rtp_session = NULL;
+        fnc_log(FNC_LOG_INFO, "rtp session closed\n");
+    }
+    pthread_mutex_unlock(&sched[id].mux);
     return ERR_NOERROR;
 }

@@ -161,6 +161,7 @@ int RTSP_teardown(RTSP_buffer * rtsp)
                 rtp_prev->next = rtp_curr->next;
             else
                 s->rtp_session = rtp_curr->next;
+
             rtp_curr = rtp_curr->next;
 
             // Release the scheduler entry
@@ -175,9 +176,8 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     }
 
     if (s->rtp_session == NULL) {
-        // Close connection
-        //close(s->fd);
         // Release the RTSP session
+        r_close(rtsp->session_list->resource);
         free(rtsp->session_list);
         rtsp->session_list = NULL;
     }
