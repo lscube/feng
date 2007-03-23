@@ -247,7 +247,6 @@ static int init(MediaProperties *properties, void **private_data)
     sdp_field *sdp_private;
     h264_priv *priv = calloc(1,sizeof(h264_priv));
     char *sprop = NULL;
-//    int buf_len =  properties->extradata_len * 4 / 3 + 12;
 
     if (!priv) return ERR_ALLOC;
 
