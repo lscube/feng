@@ -389,9 +389,11 @@ static int uninit(Resource * r)
 
 // avf stuff
     if (priv) {
-        if(priv->avfc) {
-            av_close_input_file(priv->avfc); priv->avfc = NULL;
+        if (priv->avfc) {
+            av_close_input_file(priv->avfc);
+            priv->avfc = NULL;
         }
+        url_fclose(&priv->pb);
         free(priv);
         r->private_data = NULL;
     }
