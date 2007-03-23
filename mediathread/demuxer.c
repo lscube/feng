@@ -352,6 +352,7 @@ void free_track(Track *t, Resource *r)
         return;
 
     MObject_unref(MOBJECT(t->info));
+    MObject_unref(MOBJECT(t->properties));
     mparser_unreg(t->parser, t->private_data);
     OMSbuff_free(t->buffer);
 
