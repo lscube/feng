@@ -393,10 +393,8 @@ static int uninit(Resource * r)
             av_close_input_file(priv->avfc); priv->avfc = NULL;
         }
         free(priv);
+        r->private_data = NULL;
     }
-
-// generic unint
-    r_close(r);
 
     return RESOURCE_OK;
 }

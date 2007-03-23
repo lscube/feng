@@ -159,8 +159,8 @@ void r_close(Resource *r)
         istream_close(r->i_stream);
         MObject_unref(MOBJECT(r->info));
         r->info = NULL;
-        if(r->private_data!=NULL)
-            free(r->private_data);
+        r->demuxer->uninit(r);
+
         if(r->tracks)
             g_list_foreach(r->tracks, (GFunc)free_track, r);
 
@@ -354,10 +354,7 @@ void free_track(Track *t, Resource *r)
     MObject_unref(MOBJECT(t->info));
     mparser_unreg(t->parser, t->private_data);
     OMSbuff_free(t->buffer);
-#if 0 // private data is not under Track jurisdiction!
-    free(t->private_data);
-#endif
-    // t->calculate_timestamp=NULL; /*TODO*/
+
     if ( t->i_stream && IS_ISEXCLUSIVE(t->i_stream) )
         ex_track_remove(t);
 
