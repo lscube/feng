@@ -66,347 +66,9 @@ static GList *descr_cache=NULL;
 
 /*! Private functions for exclusive tracks.
  * */
-static inline void ex_tracks_save(GList *);
-static void ex_track_save(Track *, gpointer *);
-static inline void ex_track_remove(Track *);
-// static void ex_tracks_free(Track *[], uint32);
-
-static gint cache_cmp(gconstpointer, gconstpointer);
 #define r_descr_find(mrl) g_list_find_custom(descr_cache, mrl, cache_cmp)
-static void r_descr_cache_update(Resource *);
-static ResourceDescr *r_descr_new(Resource *);
-static void r_descr_free(ResourceDescr *);
-
-static void resinfo_free(void *);
-static void trackinfo_free(void *);
 
 // private functions for specific demuxer
-static int find_demuxer(InputStream *);
-
-Resource *r_open(char *root, char *n)
-{
-    Resource *r;
-    int dmx_idx;
-    InputStream *i_stream;
-    char mrl[255];
-    
-    snprintf(mrl, sizeof(mrl) - 1, "%s%s%s", root,
-         (root[strlen(root) - 1] == '/') ? "" : "/", n);
-
-    if( !(i_stream = istream_open(mrl)) )
-        return NULL;
-
-    if ( (dmx_idx = find_demuxer(i_stream))<0 ) {
-        fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer"
-                                       " for resource %s\n", mrl);
-        return NULL;
-    }
-
-    fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource"
-                               "\"%s\"\n", demuxers[dmx_idx]->info->name, mrl);
-
-// allocation of all data structures
-
-    if( !(r = calloc(1, sizeof(Resource))) ) {
-        fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-        istream_close(i_stream);
-        return NULL;
-    }
-
-#if 0 
-// we use MObject_new: that will alloc memory and exits
-// the program if something goes wrong
-    if( !(r->info=calloc(1, sizeof(ResourceInfo))) ) { // init all infos
-        fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-        istream_close(i_stream);
-        free(r);
-        return NULL;
-    }
-#endif
-// we use MObject_new: that will alloc memory and exits the program
-// if something goes wrong
-    r->info = MObject_new0(ResourceInfo, 1);
-    MObject_destructor(r->info, resinfo_free);
-
-/* initialization non needed 'cause we use calloc
-    r->private_data=NULL;
-    r->demuxer=NULL;
-    //initializate tracks??? TODO
-    // temporary track initialization:
-    r->num_tracks=0;
-    */
-    r->info->mrl = g_strdup(mrl);
-    r->info->name = g_path_get_basename(n);
-    r->i_stream = i_stream;
-    r->demuxer = demuxers[dmx_idx];
-
-    if (r->demuxer->init(r)) {
-        r_close(r);
-        return NULL;
-    }
-
-    // search for exclusive tracks: should be done track per track?
-    ex_tracks_save(r->tracks);
-    // update the Description cache
-    r_descr_cache_update(r);
-    
-    return r;
-}
-
-void r_close(Resource *r)
-{
-    if(r) {
-        istream_close(r->i_stream);
-        MObject_unref(MOBJECT(r->info));
-        r->info = NULL;
-        r->demuxer->uninit(r);
-
-        if(r->tracks)
-            g_list_foreach(r->tracks, (GFunc)free_track, r);
-
-        free(r);
-    }
-}
-
-#if 0 // not implemented... use r_descr_...
-msg_error get_resource_info(resource_name n, ResourceInfo *r)
-{
-    //...
-    return RESOURCE_OK;
-}
-#endif // if 0
-
-Selector *r_open_tracks(Resource *r, char *track_name, 
-                        Capabilities *capabilities) // RTSP_setup.c uses it !!
-{
-    Selector *s;
-    //Track *tracks[MAX_SEL_TRACKS];
-    GList *track, *sel_tracks=NULL;
-
-    /*Capabilities aren't used yet. TODO*/
-
-    for (track=g_list_first(r->tracks); track; track=g_list_next(track))
-        if( !strcmp(TRACK(track)->info->name, track_name) ){
-            sel_tracks = g_list_prepend(sel_tracks, TRACK(track));
-        }
-    if (!sel_tracks)
-        return NULL;
-// now we reverse the order of the list to rebuild the resource tracks order
-// Probably this is not so useful: 
-// I feel free to remove the instruction sooner or later...
-
-//    sel_tracks = g_list_reverse(sel_tracks);
-    
-    if((s=(Selector*)malloc(sizeof(Selector)))==NULL) {
-        fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-        return NULL;
-    }
-
-    s->tracks = sel_tracks;
-    s->total = g_list_length(sel_tracks);
-    s->default_index = 0;/*TODO*/
-    s->selected_index = 0;/*TODO*/
-    //...
-    return s;
-}
-
-inline Track *r_selected_track(Selector *selector) // UNUSED
-{
-    if (!selector)
-        return NULL;
-
-    return g_list_nth_data(selector->tracks, selector->selected_index);
-}
-
-void r_close_tracks(Selector *s) // UNUSED
-{
-    /*see r_close, what i have to do???*/
-    // free_track(s->tracks[s->selected_index]);
-    /*shawill: probably we must free only selector data*/
-    free(s);
-}
-
-inline int r_seek(Resource *r, long int time_sec)
-{
-    return r->demuxer->seek(r,time_sec);
-}
-
-int r_changed(ResourceDescr *descr)
-{
-    GList *m_descr = g_list_first(descr->media);
-
-    if ( mrl_changed(descr->info->mrl, &descr->last_change) )
-        return 1;
-
-    for (/* m_descr=descr->media */;
-         m_descr && MEDIA_DESCR(m_descr)->info->mrl;
-         m_descr=g_list_next(m_descr))
-    {
-        if (mrl_changed(MEDIA_DESCR(m_descr)->info->mrl,
-                        &(MEDIA_DESCR(m_descr)->last_change)))
-            return 1;
-    }
-
-    return 0;
-}
-
-/*
-Resource *init_resource(resource_name name)
-{
-    Resource *r;
-    //...
-    return r;
-}
-*/
-
-/*! Add track to resource tree.  This function adds a new track data struct to
- * resource tree. It used by specific demuxer function in order to obtain the
- * struct to fill.
- * \param r pointer to resource.
- * \return pointer to newly allocated track struct.
- * */
-#define ADD_TRACK_ERROR(level, ...) \
-    { \
-        fnc_log(level, __VA_ARGS__); \
-        MObject_unref(MOBJECT(t->info)); \
-        MObject_unref(MOBJECT(t->properties)); \
-        free_track(t, r); \
-        return NULL; \
-    }
-
-Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
-{
-    Track *t;
-
-    // TODO: search first of all in exclusive tracks
-
-    if(r->num_tracks>=MAX_TRACKS)
-        return NULL;
-
-    if( !(t=(Track *)calloc(1, sizeof(Track))) ) 
-        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
-    
-#if 0 
-// we use MObject_new: that will alloc memory and exits the program if something goes wrong
-    if( !(t->info = calloc(1, sizeof(TrackInfo))) )
-        ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems\n");
-#endif 
-// we use MObject_new: that will alloc memory and exits the program if something goes wrong
-    if (info)
-        t->info = MObject_dup(info, sizeof(TrackInfo));
-    else
-        t->info = MObject_new0(TrackInfo, 1);
-
-    MObject_destructor(t->info, trackinfo_free);
-
-
-#if 0 // we use MObject_new: that will alloc memory and exits the program if something goes wrong
-    if( !(t->properties = malloc(sizeof(MediaProperties))) )
-        ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems\n");
-#endif // we use MObject_new: that will alloc memory and exits the program if something goes wrong
-    if (prop_hints)
-        t->properties = MObject_dup(prop_hints, sizeof(MediaProperties));
-    else
-        t->properties = MObject_new0(MediaProperties, 1);
-
-/* parser allocation no more needed.
- * we should now find the right media parser and link t->parse to the
- * correspondig index
-    if( !(t->parser=add_media_parser()) )
-        ADD_TRACK_ERROR(FNC_LOG_FATAL,"Memory allocation problems.\n");
- */
-
-    if( !(t->buffer = OMSbuff_new(OMSBUFFER_DEFAULT_DIM)) )
-        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
-
-    if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
-        ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
-
-    if ( !(t->parser = mparser_find(t->properties->encoding_name)) )
-        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
-    if (t->parser->init(t->properties, &t->parser_private))
-        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
-                                        t->properties->encoding_name);
-#if 0
-    // shawill: just for parser trying:
-    {
-        uint8 tmp_dst[512];
-        double timest;
-
-        fnc_log(FNC_LOG_DEBUG, "[MT] demuxer sd init done\n");
-
-        t->parser->get_frame(tmp_dst, sizeof(tmp_dst), &timest, t->i_stream, t->properties, t->parser_private);
-    }
-#endif
-    t->parent = r;
-    r->tracks = g_list_append(r->tracks, t);
-    r->num_tracks++;
-
-    return t;
-}
-#undef ADD_TRACK_ERROR
-
-void free_track(Track *t, Resource *r)
-{
-    if (!t)
-        return;
-
-    MObject_unref(MOBJECT(t->info));
-    MObject_unref(MOBJECT(t->properties));
-    mparser_unreg(t->parser, t->private_data);
-    OMSbuff_free(t->buffer);
-
-    if ( t->i_stream && IS_ISEXCLUSIVE(t->i_stream) )
-        ex_track_remove(t);
-
-    istream_close(t->i_stream);
-
-    r->tracks = g_list_remove(r->tracks, t);
-    free(t);
-    r->num_tracks--;
-}
-
-ResourceDescr *r_descr_get(char *root, char *n)
-{
-    GList *cache_el;
-    char mrl[255];
-
-    snprintf(mrl, sizeof(mrl) - 1, "%s%s%s", root,
-         (root[strlen(root) - 1] == '/') ? "" : "/", n);
-
-
-    if ( !(cache_el=r_descr_find(mrl)) ) {
-        Resource *r;
-        if ( !(r = r_open(root, n)) ) // shawill TODO: implement pre_open cache
-            return NULL;
-        cache_el = r_descr_find(mrl);
-        r_close(r);
-    }
-
-    return RESOURCE_DESCR(cache_el);
-}
-
-// --- static functions --- //
-
-static inline void ex_tracks_save(GList *tracks)
-{
-    g_list_foreach(tracks, (GFunc)ex_track_save, NULL);
-}
-
-static void ex_track_save(Track *track, gpointer *user_data)
-{
-    if ( track->i_stream                 &&
-         IS_ISEXCLUSIVE(track->i_stream) &&
-         !g_list_find(ex_tracks, track)     )
-        ex_tracks = g_list_prepend(ex_tracks, track);
-}
-
-static inline void ex_track_remove(Track *track)
-{
-    ex_tracks = g_list_remove(ex_tracks, track);
-}
-
-// private funcions for specific demuxer
 
 /*! This function finds the correct demuxer for the given
  * <tt>resource_name</tt>.
@@ -417,7 +79,6 @@ static inline void ex_track_remove(Track *track)
  * \return the index of the valid demuxer in the list or -1 if it could not be
  * found.
  * */
-// static int find_demuxer(resource_name n)
 static int find_demuxer(InputStream *i_stream)
 {
     // this int will contain the index of the demuxer already probed second
@@ -470,36 +131,29 @@ static int find_demuxer(InputStream *i_stream)
     return found ? i: -1;
 }
 
+static void ex_track_save(Track *track, gpointer *user_data)
+{
+    if ( track->i_stream                 &&
+         IS_ISEXCLUSIVE(track->i_stream) &&
+         !g_list_find(ex_tracks, track)     )
+        ex_tracks = g_list_prepend(ex_tracks, track);
+}
+
+static inline void ex_tracks_save(GList *tracks)
+{
+    g_list_foreach(tracks, (GFunc)ex_track_save, NULL);
+}
+
+static inline void ex_track_remove(Track *track)
+{
+    ex_tracks = g_list_remove(ex_tracks, track);
+}
+
+
 // --- Description Cache management --- //
 static gint cache_cmp(gconstpointer a, gconstpointer b)
 {
     return strcmp( ((ResourceDescr *)a)->info->mrl, (const char *)b );
-}
-
-static void r_descr_cache_update(Resource *r)
-{
-    GList *cache_el;
-    ResourceDescr *r_descr=NULL;
-
-    if ( ( cache_el = r_descr_find(r->info->mrl) ) ) {
-        r_descr = RESOURCE_DESCR(cache_el);
-        // TODO free ResourceDescr
-        descr_cache = g_list_remove_link(descr_cache, cache_el);
-        if (r_changed(r_descr)) {
-            r_descr_free(r_descr);
-            r_descr=NULL;
-        }
-    }
-    if (!r_descr)
-        r_descr = r_descr_new(r);
-
-    descr_cache=g_list_prepend(descr_cache, r_descr);
-
-    if (g_list_length(descr_cache)>MAX_DESCR_CACHE_SIZE) {
-        cache_el = g_list_last(descr_cache);
-        r_descr_free(RESOURCE_DESCR(cache_el));
-        descr_cache = g_list_delete_link(descr_cache, cache_el);
-    }
 }
 
 static ResourceDescr *r_descr_new(Resource *r)
@@ -550,6 +204,32 @@ static void r_descr_free(ResourceDescr *descr)
     g_free(descr);
 }
 
+static void r_descr_cache_update(Resource *r)
+{
+    GList *cache_el;
+    ResourceDescr *r_descr=NULL;
+
+    if ( ( cache_el = r_descr_find(r->info->mrl) ) ) {
+        r_descr = RESOURCE_DESCR(cache_el);
+        // TODO free ResourceDescr
+        descr_cache = g_list_remove_link(descr_cache, cache_el);
+        if (r_changed(r_descr)) {
+            r_descr_free(r_descr);
+            r_descr=NULL;
+        }
+    }
+    if (!r_descr)
+        r_descr = r_descr_new(r);
+
+    descr_cache=g_list_prepend(descr_cache, r_descr);
+
+    if (g_list_length(descr_cache)>MAX_DESCR_CACHE_SIZE) {
+        cache_el = g_list_last(descr_cache);
+        r_descr_free(RESOURCE_DESCR(cache_el));
+        descr_cache = g_list_delete_link(descr_cache, cache_el);
+    }
+}
+
 static void resinfo_free(void *resinfo)
 {
     if (!resinfo)
@@ -569,4 +249,268 @@ static void trackinfo_free(void *trackinfo)
 
     g_free(trackinfo);
 }
+
+static void free_sdp_field(sdp_field *sdp, void *unused)
+{
+    if (!sdp)
+        return;
+    if (sdp->field)
+    {
+        g_free(sdp->field);
+    }
+    g_free(sdp);
+}
+
+static void properties_free(void *properties)
+{
+    MediaProperties *props = properties;
+
+    if (!props)
+        return;
+    if (props->sdp_private)
+        g_list_foreach(props->sdp_private, (GFunc)free_sdp_field, NULL);
+
+    g_free(props);
+}
+
+Resource *r_open(char *root, char *n)
+{
+    Resource *r;
+    int dmx_idx;
+    InputStream *i_stream;
+    char mrl[255];
+    
+    snprintf(mrl, sizeof(mrl) - 1, "%s%s%s", root,
+         (root[strlen(root) - 1] == '/') ? "" : "/", n);
+
+    if( !(i_stream = istream_open(mrl)) )
+        return NULL;
+
+    if ( (dmx_idx = find_demuxer(i_stream))<0 ) {
+        fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer"
+                                       " for resource %s\n", mrl);
+        return NULL;
+    }
+
+    fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource"
+                               "\"%s\"\n", demuxers[dmx_idx]->info->name, mrl);
+
+// allocation of all data structures
+
+    if( !(r = calloc(1, sizeof(Resource))) ) {
+        fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+        istream_close(i_stream);
+        return NULL;
+    }
+
+// we use MObject_new: that will alloc memory and exits the program
+// if something goes wrong
+    r->info = MObject_new0(ResourceInfo, 1);
+    MObject_destructor(r->info, resinfo_free);
+
+    r->info->mrl = g_strdup(mrl);
+    r->info->name = g_path_get_basename(n);
+    r->i_stream = i_stream;
+    r->demuxer = demuxers[dmx_idx];
+
+    if (r->demuxer->init(r)) {
+        r_close(r);
+        return NULL;
+    }
+
+    // search for exclusive tracks: should be done track per track?
+    ex_tracks_save(r->tracks);
+
+    r_descr_cache_update(r);
+
+    return r;
+}
+
+void free_track(Track *t, Resource *r)
+{
+    if (!t)
+        return;
+
+    MObject_unref(MOBJECT(t->info));
+    MObject_unref(MOBJECT(t->properties));
+    mparser_unreg(t->parser, t->private_data);
+    OMSbuff_free(t->buffer);
+
+    if ( t->i_stream && IS_ISEXCLUSIVE(t->i_stream) )
+        ex_track_remove(t);
+
+    istream_close(t->i_stream);
+
+    r->tracks = g_list_remove(r->tracks, t);
+    free(t);
+    r->num_tracks--;
+}
+
+void r_close(Resource *r)
+{
+    if(r) {
+        istream_close(r->i_stream);
+        MObject_unref(MOBJECT(r->info));
+        r->info = NULL;
+        r->demuxer->uninit(r);
+
+        if(r->tracks)
+            g_list_foreach(r->tracks, (GFunc)free_track, r);
+
+        free(r);
+    }
+}
+
+Selector *r_open_tracks(Resource *r, char *track_name, 
+                        Capabilities *capabilities) // RTSP_setup.c uses it !!
+{
+    Selector *s;
+    //Track *tracks[MAX_SEL_TRACKS];
+    GList *track, *sel_tracks=NULL;
+
+    /*Capabilities aren't used yet. TODO*/
+
+    for (track=g_list_first(r->tracks); track; track=g_list_next(track))
+        if( !strcmp(TRACK(track)->info->name, track_name) ){
+            sel_tracks = g_list_prepend(sel_tracks, TRACK(track));
+        }
+    if (!sel_tracks)
+        return NULL;
+// now we reverse the order of the list to rebuild the resource tracks order
+// Probably this is not so useful: 
+// I feel free to remove the instruction sooner or later...
+
+//    sel_tracks = g_list_reverse(sel_tracks);
+    
+    if((s=(Selector*)malloc(sizeof(Selector)))==NULL) {
+        fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
+        return NULL;
+    }
+
+    s->tracks = sel_tracks;
+    s->total = g_list_length(sel_tracks);
+    s->default_index = 0;/*TODO*/
+    s->selected_index = 0;/*TODO*/
+    //...
+    return s;
+}
+
+inline Track *r_selected_track(Selector *selector) // UNUSED
+{
+    if (!selector)
+        return NULL;
+
+    return g_list_nth_data(selector->tracks, selector->selected_index);
+}
+
+void r_close_tracks(Selector *s) // UNUSED
+{
+    free(s);
+}
+
+inline int r_seek(Resource *r, long int time_sec)
+{
+    return r->demuxer->seek(r,time_sec);
+}
+
+int r_changed(ResourceDescr *descr)
+{
+    GList *m_descr = g_list_first(descr->media);
+
+    if ( mrl_changed(descr->info->mrl, &descr->last_change) )
+        return 1;
+
+    for (/* m_descr=descr->media */;
+         m_descr && MEDIA_DESCR(m_descr)->info->mrl;
+         m_descr=g_list_next(m_descr))
+    {
+        if (mrl_changed(MEDIA_DESCR(m_descr)->info->mrl,
+                        &(MEDIA_DESCR(m_descr)->last_change)))
+            return 1;
+    }
+
+    return 0;
+}
+
+/*! Add track to resource tree.  This function adds a new track data struct to
+ * resource tree. It used by specific demuxer function in order to obtain the
+ * struct to fill.
+ * \param r pointer to resource.
+ * \return pointer to newly allocated track struct.
+ * */
+#define ADD_TRACK_ERROR(level, ...) \
+    { \
+        fnc_log(level, __VA_ARGS__); \
+        MObject_unref(MOBJECT(t->info)); \
+        MObject_unref(MOBJECT(t->properties)); \
+        free_track(t, r); \
+        return NULL; \
+    }
+
+Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
+{
+    Track *t;
+
+    // TODO: search first of all in exclusive tracks
+
+    if(r->num_tracks>=MAX_TRACKS)
+        return NULL;
+
+    if( !(t=(Track *)calloc(1, sizeof(Track))) ) 
+        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
+    
+    if (info)
+        t->info = MObject_dup(info, sizeof(TrackInfo));
+    else
+        t->info = MObject_new0(TrackInfo, 1);
+
+    MObject_destructor(t->info, trackinfo_free);
+
+    if (prop_hints)
+        t->properties = MObject_dup(prop_hints, sizeof(MediaProperties));
+    else
+        t->properties = MObject_new0(MediaProperties, 1);
+
+    MObject_destructor(t->properties, properties_free);
+
+    if( !(t->buffer = OMSbuff_new(OMSBUFFER_DEFAULT_DIM)) )
+        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
+
+    if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
+        ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
+
+    if ( !(t->parser = mparser_find(t->properties->encoding_name)) )
+        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
+    if (t->parser->init(t->properties, &t->parser_private))
+        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
+                                        t->properties->encoding_name);
+    t->parent = r;
+    r->tracks = g_list_append(r->tracks, t);
+    r->num_tracks++;
+
+    return t;
+}
+#undef ADD_TRACK_ERROR
+
+
+ResourceDescr *r_descr_get(char *root, char *n)
+{
+    GList *cache_el;
+    char mrl[255];
+
+    snprintf(mrl, sizeof(mrl) - 1, "%s%s%s", root,
+         (root[strlen(root) - 1] == '/') ? "" : "/", n);
+
+
+    if ( !(cache_el=r_descr_find(mrl)) ) {
+        Resource *r;
+        if ( !(r = r_open(root, n)) ) // shawill TODO: implement pre_open cache
+            return NULL;
+        cache_el = r_descr_find(mrl);
+        r_close(r);
+    }
+
+    return RESOURCE_DESCR(cache_el);
+}
+
 
