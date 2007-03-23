@@ -46,7 +46,7 @@ int send_play_reply(RTSP_buffer * rtsp, char *object,
 	char r[1024];
 	char temp[30];
 	RTP_session *p = rtsp_session->rtp_session;
-	Track *t = r_selected_track(p->track_selector);
+	Track *t;
 	/* build a reply message */
 	sprintf(r,
 		"%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
@@ -62,6 +62,7 @@ int send_play_reply(RTSP_buffer * rtsp, char *object,
 	// strcat(r, object);
 	// strcat(r, ";");
 	do {
+		t = r_selected_track(p->track_selector);
 		strcat(r, "url=");
 		// strcat(r, object);
 		// TODO: we MUST be sure to send the correct url 
