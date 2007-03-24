@@ -41,14 +41,12 @@
 #include <fenice/utils.h>
 
 #include <fenice/schedule.h>
-#include <fenice/types.h>
-
 
 int num_conn = 0;
 
 void eventloop(Sock *main_sock, Sock *sctp_main_sock)
 {
-    static uint32 child_count = 0;
+    static uint32_t child_count = 0;
     static int conn_count = 0;
     int max_fd;
     static RTSP_buffer *rtsp_list = NULL;

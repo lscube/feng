@@ -38,8 +38,6 @@
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
 
-
-
 void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset, 
     fd_set * wset, fd_set * xset) {
     RTSP_session *q = NULL;

@@ -39,9 +39,6 @@
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
 
-
-
-
 int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 {
     int size;
@@ -227,8 +224,5 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
          * } */
     }
     
-#ifdef POLLED
-    schedule_do(0);
-#endif
     return ERR_NOERROR;
 }

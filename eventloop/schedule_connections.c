@@ -39,10 +39,9 @@
 
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
-
-
 #include <fenice/schedule.h>
 #include <fenice/bufferpool.h>
+
 int stop_schedule = 0;
 extern int num_conn;
 
@@ -105,7 +104,7 @@ void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count,
                 // Release the scheduler if necessary
                 if (p == NULL && *conn_count < 0) {
                     fnc_log(FNC_LOG_DEBUG,
-                        "Fermo il thread\n");
+                        "Thread stopped\n");
                     stop_schedule = 1;
                 }
             } else {
