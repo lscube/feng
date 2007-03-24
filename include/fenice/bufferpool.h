@@ -55,6 +55,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <limits.h>
+#include <stdio.h>
 
 //XXX remove them
 #define omsbuff_min(x,y) ((x) < (y) ? (x) : (y))
