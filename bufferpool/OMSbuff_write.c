@@ -34,7 +34,7 @@
 
 #include <sys/mman.h>
 
-#include <stdio.h>
+
 #include <string.h>
 #include <fenice/utils.h>
 #include <fenice/bufferpool.h>

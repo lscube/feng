@@ -37,7 +37,7 @@
 #endif
 
 #if ENABLE_DUMPBUFF
-#include <stdio.h>
+
 #include <time.h>
 
 #include <fenice/bufferpool.h>

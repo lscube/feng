@@ -32,8 +32,8 @@
  *  
  * */
 
-#include <stdio.h>
-#include <stdlib.h>
+
+
 
 #include <fenice/bufferpool.h>
 

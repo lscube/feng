@@ -32,7 +32,7 @@
  *  
  * */
 
-#include <stdio.h>
+
 
 #include <fenice/bufferpool.h>
 
