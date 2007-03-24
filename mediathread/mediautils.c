@@ -6,11 +6,11 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,72 +33,56 @@
 #include <glib.h>
 
 #include <fenice/mediautils.h>
-
 void *MObject_malloc(size_t size)
 {
-	MObject *new_obj;
-	
-	new_obj = g_malloc(size);
-	new_obj->refs=1;
-	MObject_destructor(new_obj, g_free);
+    MObject *new_obj;
+    
+    new_obj = g_malloc(size);
+    new_obj->refs=1;
+    MObject_destructor(new_obj, g_free);
 
-	return new_obj;
+    return new_obj;
 }
 
 void *MObject_calloc(size_t size)
 {
-	MObject *new_obj;
-	
-	new_obj = g_malloc0(size);
-	new_obj->refs=1;
-	MObject_destructor(new_obj, g_free);
+    MObject *new_obj;
+    
+    new_obj = g_malloc0(size);
+    new_obj->refs=1;
+    MObject_destructor(new_obj, g_free);
 
-	return new_obj;
+    return new_obj;
 }
-
-#if 0
-inline void *MObject_alloca(size_t size)
-{
-	MObject *new_obj;
-
-	new_obj = g_alloca(size);
-	new_obj->refs=1;
-	// we don't need desctructor for alloca
-	new_obj->destructor = NULL;
-	printf("!!!obj = %p; size = %d; hdr size = %d\n", new_obj, size, new_obj->data-(char *)new_obj);
-
-	return new_obj;
-}
-#endif
 
 void *MObject_dup(void *obj, size_t size)
 {
-	MObject *new_obj;
+    MObject *new_obj;
 
-	if ( (new_obj = g_memdup(obj, size)) )
-		new_obj->refs=1;
+    if ( (new_obj = g_memdup(obj, size)) )
+        new_obj->refs=1;
 
-	return new_obj;
+    return new_obj;
 }
 
 void MObject_init(MObject *obj)
 {
-	obj->refs = 1;
-	obj->destructor = NULL;
+    obj->refs = 1;
+    obj->destructor = NULL;
 }
 
 void MObject_zero(MObject *obj, size_t size)
 {
-	size_t obj_hdr_size;
+    size_t obj_hdr_size;
 
-	// set to zero object data part
-	obj_hdr_size = obj->data - (char *)obj;
-	memset(obj->data, 0, size-obj_hdr_size);
+    // set to zero object data part
+    obj_hdr_size = obj->data - (char *)obj;
+    memset(obj->data, 0, size-obj_hdr_size);
 }
 
 void MObject_unref(MObject *mobject)
 {
-	if ( mobject && !--mobject->refs && mobject->destructor)
-		mobject->destructor(mobject);
+    if ( mobject && !--mobject->refs && mobject->destructor)
+        mobject->destructor(mobject);
 }
 
