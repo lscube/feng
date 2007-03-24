@@ -45,12 +45,12 @@
             return NULL; \
         } while (0)
 
-OMSBuffer *OMSbuff_new(uint32 buffer_size)
+OMSBuffer *OMSbuff_new(uint32_t buffer_size)
 {
     OMSSlot *slots = NULL;
     OMSBuffer *buffer = NULL;
     OMSControl *control = NULL;
-    uint32 index;
+    uint32_t index;
     pthread_mutexattr_t mutex_attr;
 
     if (!buffer_size)

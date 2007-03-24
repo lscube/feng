@@ -50,7 +50,8 @@
 #endif
 
 #include <fenice/fnc_log.h>
-#include <fenice/types.h>
+#include <sys/types.h>
+#include <stdint.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -82,20 +83,20 @@
 typedef ptrdiff_t OMSSlotPtr;
 
 typedef struct _OMSslot {
-    uint16 refs;
-    uint64 slot_seq; /*! monotone identifier of slot (NOT RTP seq) */
+    uint16_t refs;
+    uint64_t slot_seq; /*! monotone identifier of slot (NOT RTP seq) */
     double timestamp;
     double sendts; /*! send time of pkt */
-    uint32 rtp_time; // if != 0 it contains the calculated rtp timestamp
-    uint8 data[OMSSLOT_DATASIZE];
-    uint32 data_size;
-    uint8 marker;
+    uint32_t rtp_time; // if != 0 it contains the calculated rtp timestamp
+    uint8_t data[OMSSLOT_DATASIZE];
+    uint32_t data_size;
+    uint8_t marker;
     ptrdiff_t next;
 } OMSSlot;
 
 typedef struct _OMSControl {
-    uint16 refs;        /*! n.Consumers that share the buffer */
-    uint32 nslots;
+    uint16_t refs;        /*! n.Consumers that share the buffer */
+    uint32_t nslots;
     OMSSlotPtr write_pos;    /*! last write position */
 #ifdef USE_VALID_READ_POS
     OMSSlotPtr valid_read_pos;    /*! valid read position for new consumers */
@@ -118,7 +119,7 @@ typedef struct _OMSbuffer {
     OMSBufferType type;    //! whether buffer is on shared memory or not;
     OMSControl *control;
     OMSSlot *slots;        /*! Buffer head */
-    uint32 known_slots;    /*!< last known number of slots.
+    uint32_t known_slots;    /*!< last known number of slots.
                                 This member is only useful for SHM buffer. */
     char filename[PATH_MAX]; //! SHM object file
     // int fd; /*! pointer to File descriptor of incoming data*/
@@ -128,11 +129,11 @@ typedef struct _OMSconsumer {
     OMSSlotPtr read_pos;         /*! read position */
     OMSSlotPtr last_read_pos;    /*! last read position.
                                     used for managing the slot addition */
-    uint64 last_seq;
+    uint64_t last_seq;
     OMSBuffer *buffer;
-    int32 frames;
-    int32 first_rtpseq;
-    int64 first_rtptime;
+    int32_t frames;
+    int32_t first_rtpseq;
+    int64_t first_rtptime;
     // pthread_mutex_t mutex;
 } OMSConsumer;
 
@@ -145,13 +146,13 @@ typedef struct _OMSAggregate {
 } OMSAggregate;
 
 /*! API definitions*/
-OMSBuffer *OMSbuff_new(uint32);
+OMSBuffer *OMSbuff_new(uint32_t);
 OMSConsumer *OMSbuff_ref(OMSBuffer *);
 void OMSbuff_unref(OMSConsumer *);
-int OMSbuff_read(OMSConsumer *, uint32 *, uint8 *, uint8 *, uint32 *);
+int OMSbuff_read(OMSConsumer *, uint32_t *, uint8_t *, uint8_t *, uint32_t *);
 OMSSlot *OMSbuff_getreader(OMSConsumer *);
 int OMSbuff_gotreader(OMSConsumer *);
-int OMSbuff_write(OMSBuffer *, uint64, double, uint32, uint8, uint8 *, uint32);
+int OMSbuff_write(OMSBuffer *, uint64_t, double, uint32_t, uint8_t, uint8_t *, uint32_t);
 OMSSlot *OMSbuff_getslot(OMSBuffer *);
 OMSSlot *OMSbuff_addpage(OMSBuffer *, OMSSlot *);
 //OMSSlot *OMSbuff_slotadd(OMSBuffer *, OMSSlot *);
@@ -161,7 +162,7 @@ int OMSbuff_isempty(OMSConsumer *);
 double OMSbuff_nextts(OMSConsumer *);
 
 // Shared Memory Bufferpool
-OMSBuffer *OMSbuff_shm_create(char *, uint32);
+OMSBuffer *OMSbuff_shm_create(char *, uint32_t);
 OMSBuffer *OMSbuff_shm_map(char *);
 OMSSlot *OMSbuff_shm_addpage(OMSBuffer *);
 int OMSbuff_shm_remap(OMSBuffer *);

@@ -52,13 +52,13 @@
  * Fenice is just the "consumer" of a shared memory object, while the producer is some other object like felix.
  * */
  // TODO: unlink on error
-OMSBuffer *OMSbuff_shm_create(char *shm_name, uint32 buffer_size)
+OMSBuffer *OMSbuff_shm_create(char *shm_name, uint32_t buffer_size)
 {
     OMSBuffer *buffer;
     OMSSlot *slots;
     OMSControl *control;
     int fd, shm_open_errno;
-    uint32 index;
+    uint32_t index;
     char *shm_file_name;
     pthread_mutexattr_t mutex_attr;
 
