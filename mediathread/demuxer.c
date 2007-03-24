@@ -376,11 +376,6 @@ Selector *r_open_tracks(Resource *r, char *track_name,
         }
     if (!sel_tracks)
         return NULL;
-// now we reverse the order of the list to rebuild the resource tracks order
-// Probably this is not so useful: 
-// I feel free to remove the instruction sooner or later...
-
-//    sel_tracks = g_list_reverse(sel_tracks);
     
     if((s=(Selector*)malloc(sizeof(Selector)))==NULL) {
         fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
