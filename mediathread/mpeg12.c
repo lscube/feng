@@ -42,7 +42,6 @@ static MediaParserInfo info = {
     MP_video
 };
 
-FNC_LIB_MEDIAPARSER(mpv);
 
 /*see ISO/IEC 11172-2:1993 and ISO/IEC 13818-2:1995 (E)*/
 /*prefix*/
@@ -464,30 +463,22 @@ static int picture_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaPro
 }
 
 /*mediaparser_module interface implementation*/
-int init(MediaProperties *properties, void **private_data)
+static int mpv_init(MediaProperties *properties, void **private_data)
 {
-//    sdp_field *sdp_private;
-    
     mpv_data *mpeg_video;
+
     *private_data = calloc(1, sizeof(mpv_data));
     mpeg_video = (mpv_data *)(*private_data);
     mpeg_video->vsh1 = calloc(1,sizeof(video_spec_head1));
     mpeg_video->vsh2 = calloc(1,sizeof(video_spec_head2));
     mpeg_video->is_buffered=0;/*false*/
-#if 0 // trial for sdp private fields
-    sdp_private = g_new(sdp_field, 1);
-    
-    sdp_private->type = fmtp;
-    sdp_private->field = g_strdup("example of sdp private struct");
-        
-    properties->sdp_private=g_list_prepend(properties->sdp_private, sdp_private);
-#endif // trial for sdp private fields
+
     INIT_PROPS
 
     return 0;
 }
 
-int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data)
+static int mpv_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data)
 {
     uint32 count=0, header;
     int ret=0;
@@ -591,7 +582,7 @@ int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *is
 
 #endif //MPEG2VSHE
 
-int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
+static int mpv_packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
 {
     mpv_data *mpv = (mpv_data *)private_data;
     mpv_input in = {NULL, src + mpv->countsrc, src_nbytes - mpv->countsrc};
@@ -657,7 +648,7 @@ int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, Med
     return mpv->is_fragmented;
 }
 
-int parse(void *track, uint8 *data, long len, uint8 *extradata,
+static int mpv_parse(void *track, uint8 *data, long len, uint8 *extradata,
           long extradata_len)
 {
     Track *tr = (Track *)track;
@@ -668,7 +659,7 @@ int parse(void *track, uint8 *data, long len, uint8 *extradata,
     do {
         // dst_len remains unchanged,
         // the return value is either EOF or the size
-        ret = packetize(dst, &dst_len, data, len, tr->properties,
+        ret = mpv_packetize(dst, &dst_len, data, len, tr->properties,
                   tr->parser_private);
         if (ret >= 0) {
             if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
@@ -683,7 +674,7 @@ int parse(void *track, uint8 *data, long len, uint8 *extradata,
 }
 
 
-int uninit(void *private_data)
+int mpv_uninit(void *private_data)
 {
     mpv_data *mpeg_video;
     mpeg_video=(mpv_data *)private_data;
@@ -693,5 +684,4 @@ int uninit(void *private_data)
     return 0;
 }
 
-
-
+FNC_LIB_MEDIAPARSER(mpv);

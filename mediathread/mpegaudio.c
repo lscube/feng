@@ -44,8 +44,6 @@ static MediaParserInfo info = {
 	MP_audio
 };
 
-FNC_LIB_MEDIAPARSER(mpa);
-
 #define ID3v2_HDRLEN 10 // basic header lenght for id3 tag
 
 // inspired by id3lib
@@ -309,27 +307,20 @@ static int mpa_sync(uint32 *header, mpa_input *in, mpa_data *mpa)
 	return 0;
 }
 
-static int init(MediaProperties *properties, void **private_data) 
+static int mpa_init(MediaProperties *properties, void **private_data) 
 {
 //	sdp_field *sdp_private;
 	
 	if ( !(*private_data = calloc (1, sizeof(mpa_data))) )
 		return ERR_ALLOC;
-#if 0 // trial for sdp private fields
-	sdp_private = g_new(sdp_field, 1);
-	
-	sdp_private->type = fmtp;
-	sdp_private->field = g_strdup("example of sdp private struct");
-		
-	properties->sdp_private=g_list_prepend(properties->sdp_private, sdp_private);
-#endif // trial for sdp private fields
-	INIT_PROPS
+
+        INIT_PROPS
 
 	return 0;
 }
 
 // at the moment get_frame do not support packet fragmentation
-static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data) 
+static int mpa_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data) 
 {
 	mpa_input in={istream, NULL, 0};
 	mpa_data *mpa;
@@ -362,7 +353,7 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStr
 }
 
 // packet fragmentation supported
-static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
+static int mpa_packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
 {
 	uint32 mpa_header = 0;
 	mpa_data *mpa = (mpa_data *)private_data;
@@ -403,7 +394,7 @@ static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbyt
         return mpa->fragmented;
 }
 
-int parse(void *track, uint8 *data, long len, uint8 *extradata, 
+static int mpa_parse(void *track, uint8 *data, long len, uint8 *extradata, 
           long extradata_len)
 {
     Track *tr = (Track *)track;
@@ -444,10 +435,11 @@ int parse(void *track, uint8 *data, long len, uint8 *extradata,
 }
 
 
-static int uninit(void *private_data)
+static int mpa_uninit(void *private_data)
 {
 	free(private_data);
 	return 0;
 }
 
+FNC_LIB_MEDIAPARSER(mpa);
 

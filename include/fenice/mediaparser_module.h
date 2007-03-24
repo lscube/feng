@@ -37,65 +37,14 @@
 
 #define INIT_PROPS properties->media_type = info.media_type;
 
-/* init: inizialize the module
- *    arg:
- *       properties; pointer of allocated struct to fill with properties
- *       private_data: private data of parser will be, if needed, linked to this pointer (double)
- *    return: 0 on success, non-zero otherwise.
- * */
-
-static int init(MediaProperties *properties, void **private_data);
-/* get_frame: parse one frame from media bitstream.
- *    args:
- *       dst: destination memory slot,
- *       dst_nbytes: number of bytes of *dest memory area,
- *       timestamp; return value for timestap of read frame
- *       void *properties: private data specific for each media parser.
- *       istream: InputStream of source Elementary Stream,
- *    return: ...
- * */
-static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data);
-
-/* packetize: ...
- *    args:
- *       dst: destination memory slot,
- *       dst_nbytes: number of bytes of *dest memory area, byte written 
- *       src: source memory slot,
- *       src_nbytes: number of bytes of *source memory area,
- *       void *properties: private data specific for each media parser.
- *    return:  0 on success;
- *            >0 means that the source buffer isn't fully consumed (fragmentation)
- *            <0 something got wrong
- * */
-static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data);
-
-/* parse: ...
- *    args:
- *       track: track whose bufferpool should be filled,
- *       data: packet from the demuxer layer,
- *       len: packet length,
- *       extradata: codec configuration data,
- *       extradata_len: extradata length.
- *    return: ...
- * */
-static int parse(void *track, uint8 *data, long len,
-                 uint8 *extradata, long extradata_len);
-
-/* uninit: free the media parser structures.
- *    args:
- *       private_data: pointer to parser specific private data.
- *    return: void.
- * */
-static int uninit(void *private_data); /*before call free_parser */
-
 #define FNC_LIB_MEDIAPARSER(x) MediaParser fnc_mediaparser_##x =\
 {\
 	&info, \
-	init, \
-	get_frame2, \
-	packetize, \
-        parse, \
-	uninit \
+	x##_init, \
+	x##_get_frame2, \
+	x##_packetize, \
+        x##_parse, \
+	x##_uninit \
 }
 
 #endif // __MEDIAPARSER_MODULE_H

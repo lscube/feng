@@ -89,13 +89,44 @@ typedef struct {
 
 typedef struct __MEDIAPARSER {
     MediaParserInfo *info;
-    int (*init)(MediaProperties *,void **); // shawill: TODO: specify right parameters
-    int (*get_frame)(uint8 *, uint32, double *, InputStream *,
-                     MediaProperties *, void *);
-    int (*packetize)(uint8 *, uint32 *, uint8 *, uint32, MediaProperties *, void *);
-    int (*parse)(void *track, uint8 *data, long len, uint8 *extradata,
+/*! init: inizialize the module
+ *    
+ *  @param properties: pointer of allocated struct to fill with properties
+ *  @param private_data: private data of parser will be, if needed, linked to this pointer (double)
+ *  @return: 0 on success, non-zero otherwise.
+ * */
+    int (*init)(MediaProperties *properties, void **private_data);
+/*! get_frame: parse one frame from media bitstream.
+ *
+ *  @param dst: destination memory slot,
+ *  @param dst_nbytes: number of bytes of *dest memory area,
+ *  @param timestamp; return value for timestap of read frame
+ *  @param void *properties: private data specific for each media parser.
+ *  @param istream: InputStream of source Elementary Stream,
+ *  @return: 0 on success, non zero otherwise.
+ * */
+    int (*get_frame)(uint8_t *dst, uint32_t dst_nbytes, double *timestamp,
+                     InputStream *istream, MediaProperties *properties,
+                     void *private_data);
+/*! packetize: DEPRECATED*/
+    int (*packetize)(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data);
+/*! parse: take a single elementary unit of the codec stream and prepare the rtp payload out of it.
+ *
+ *  @param track: track whose bufferpool should be filled,
+ *  @param data: packet from the demuxer layer,
+ *  @param len: packet length,
+ *  @param extradata: codec configuration data,
+ *  @param extradata_len: extradata length.
+ *  @return: 0 on success, non zero otherwise.
+ * */
+    int (*parse)(void *track, uint8_t *data, long len, uint8_t *extradata,
                  long extradata_len);
-    int (*uninit)(void *);
+/*! uninit: free the media parser structures.
+ *  
+ *  @param private_data: pointer to parser specific private data.
+ *  @return: 0 on success, non zero otherwise
+ * */
+    int (*uninit)(void *private_data);
 } MediaParser;
 
 /*MediaParser Interface*/

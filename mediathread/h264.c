@@ -73,13 +73,11 @@ static MediaParserInfo info = {
     MP_video
 };
 
-FNC_LIB_MEDIAPARSER(h264);
-
 typedef struct {
     int is_avc;
     uint8_t *packet; //holds the incomplete packet
     unsigned int len; // incomplete packet length
-    unsigned int nal_length_size; // used in avc to 
+    unsigned int nal_length_size; // used in avc 
 } h264_priv;
 
 /* Generic Nal header
@@ -242,10 +240,10 @@ static char *encode_header(uint8_t *p, unsigned int len)
     return sprop;
 }
 
-static int init(MediaProperties *properties, void **private_data)
+static int h264_init(MediaProperties *properties, void **private_data)
 {
     sdp_field *sdp_private;
-    h264_priv *priv = calloc(1,sizeof(h264_priv));
+    h264_priv *priv = calloc(1, sizeof(h264_priv));
     char *sprop = NULL;
 
     if (!priv) return ERR_ALLOC;
@@ -287,7 +285,7 @@ static int init(MediaProperties *properties, void **private_data)
     return ERR_ALLOC;
 }
 
-static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp,
+static int h264_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp,
                       InputStream *istream, MediaProperties *properties,
                       void *private_data)
 {
@@ -295,7 +293,7 @@ static int get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp,
 return ERR_PARSE;
 }
 
-static int packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
+static int h264_packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
 {
 
 return ERR_PARSE;
@@ -306,15 +304,13 @@ return ERR_PARSE;
 //  - fragmenting
 //  - feed a single NAL as is.
 
-static int parse(void *track, uint8 *data, long len, uint8 *extradata,
+static int h264_parse(void *track, uint8 *data, long len, uint8 *extradata,
                  long extradata_len)
 {
     Track *tr = (Track *)track;
     h264_priv *priv = tr->parser_private;
-//    OMSSlot *slot;
     uint32_t mtu = DEFAULT_MTU; //FIXME get it from SETUP
 //    double nal_time; // see page 9 and 7.4.1.2
-//    int32_t offset;
     int i, nalsize = 0, index = 0, ret;
     uint8_t *p, *q;
 
@@ -411,9 +407,12 @@ static int parse(void *track, uint8 *data, long len, uint8 *extradata,
     return ERR_NOERROR;
 }
 
-static int uninit(void *private_data)
+static int h264_uninit(void *private_data)
 {
     //that's all?
     if (private_data) free(private_data);
     return ERR_NOERROR;
 }
+
+FNC_LIB_MEDIAPARSER(h264);
+
