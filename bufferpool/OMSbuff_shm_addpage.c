@@ -43,7 +43,7 @@
 #include <sys/mman.h>
 
 #include <fenice/bufferpool.h>
-#include <fenice/fnc_log.h>
+
 
 /*!\brief This function adds shared memory page of slots.
  * The function remaps the shared memory according to the new size, but

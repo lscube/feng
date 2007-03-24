@@ -42,7 +42,7 @@
 #include <sys/mman.h>
 
 #include <fenice/bufferpool.h>
-#include <fenice/fnc_log.h>
+
 
 #define FILE_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 

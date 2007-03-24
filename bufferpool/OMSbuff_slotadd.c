@@ -45,7 +45,7 @@
 
 #ifndef OMSBUFF_REALLOC
 
-#include <fenice/fnc_log.h>
+
 
 /*\brief internal function used to add a slot or, in case of shared memory, a page of slots
  * (of OMSBUFF_SHM_PAGE size).

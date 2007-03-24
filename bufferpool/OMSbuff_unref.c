@@ -35,7 +35,7 @@
 #include <sys/mman.h>
 
 #include <fenice/bufferpool.h>
-#include <fenice/fnc_log.h>
+
 
 void OMSbuff_unref(OMSConsumer * cons)
 {

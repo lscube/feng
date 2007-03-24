@@ -49,6 +49,7 @@
 #include <config.h>
 #endif
 
+#include <fenice/fnc_log.h>
 #include <fenice/types.h>
 #include <pthread.h>
 #include <stdlib.h>

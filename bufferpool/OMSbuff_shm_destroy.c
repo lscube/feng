@@ -36,7 +36,7 @@
 #include <errno.h>
 
 #include <fenice/bufferpool.h>
-#include <fenice/fnc_log.h>
+
 
 /*! \brief This function destroys the shared memory object.
  * Firstly it unlinks the shm objects referenced in buffer and

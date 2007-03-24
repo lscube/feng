@@ -43,7 +43,7 @@
 #include <sys/mman.h>
 
 #include <fenice/bufferpool.h>
-#include <fenice/fnc_log.h>
+
 #include <fenice/utils.h>
 
 OMSBuffer *OMSbuff_shm_map(char *shm_name)

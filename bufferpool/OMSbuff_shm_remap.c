@@ -42,7 +42,7 @@
 #include <sys/mman.h>
 
 #include <fenice/bufferpool.h>
-#include <fenice/fnc_log.h>
+
 
 /*!\brief This function remaps shared memory slots in case that the slots queue size is changed.
  * The function only remap the shared memory according to the new size, but it does not do anything

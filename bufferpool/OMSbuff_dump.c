@@ -41,7 +41,6 @@
 #include <time.h>
 
 #include <fenice/bufferpool.h>
-#include <fenice/fnc_log.h>
 
 #define LOG_FORMAT "%d/%b/%Y:%H:%M:%S %z"
 #define MAX_LEN_DATE 30

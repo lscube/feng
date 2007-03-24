@@ -38,7 +38,7 @@
 #include <sys/mman.h>
 
 #include <fenice/bufferpool.h>
-#include <fenice/fnc_log.h>
+
 
 /* ! Add and return a new consumer reference to the buffer,
  * \return NULL if an error occurs*/

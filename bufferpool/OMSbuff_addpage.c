@@ -33,7 +33,6 @@
  * */
 
 #include <fenice/bufferpool.h>
-#include <fenice/fnc_log.h>
 
 /*\brief internal function used to add a page of slots (of OMSBUFF_MEM_PAGE size).
  * WARNING: the function assumes that the caller (OMSbuff_write or OMSbuff_getslot) locked the buffer mutex
