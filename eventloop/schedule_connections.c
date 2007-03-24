@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,73 +47,73 @@ int stop_schedule = 0;
 extern int num_conn;
 
 void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count, 
-	fd_set * rset, fd_set * wset, fd_set * xset)
+    fd_set * rset, fd_set * wset, fd_set * xset)
 {
-	int res;
-	RTSP_buffer *p = *rtsp_list, *pp = NULL;
-	RTP_session *r = NULL, *t = NULL;
-	RTSP_interleaved *intlvd;
+    int res;
+    RTSP_buffer *p = *rtsp_list, *pp = NULL;
+    RTP_session *r = NULL, *t = NULL;
+    RTSP_interleaved *intlvd;
 
-	while (p != NULL) {
-		if ((res = rtsp_server(p, rset, wset, xset)) != ERR_NOERROR) {
-			if (res == ERR_CONNECTION_CLOSE || res == ERR_GENERIC) {
-				// The connection is closed
-				if (res == ERR_CONNECTION_CLOSE)
-					fnc_log(FNC_LOG_INFO,
-						"RTSP connection closed by client.\n");
-				else
-					fnc_log(FNC_LOG_INFO,
-						"RTSP connection closed by server.\n");
+    while (p != NULL) {
+        if ((res = rtsp_server(p, rset, wset, xset)) != ERR_NOERROR) {
+            if (res == ERR_CONNECTION_CLOSE || res == ERR_GENERIC) {
+                // The connection is closed
+                if (res == ERR_CONNECTION_CLOSE)
+                    fnc_log(FNC_LOG_INFO,
+                        "RTSP connection closed by client.\n");
+                else
+                    fnc_log(FNC_LOG_INFO,
+                        "RTSP connection closed by server.\n");
 
-				if (p->session_list != NULL) {	//if client truncated RTSP connection before sending TEARDOWN: error
-					r = p->session_list->rtp_session;
-					// Release all RTP sessions
-					while (r != NULL) {
-						// if (r->current_media->pkt_buffer);
-						// Release the scheduler entry
-						t = r->next;
-						schedule_remove(r->sched_id);
-						r = t;
-					}
-					// Close connection                     
-					//close(p->session_list->fd);
-					// Release the RTSP session
-					free(p->session_list);
-					p->session_list = NULL;
-					fnc_log(FNC_LOG_WARN,
-						"WARNING! RTSP connection truncated before ending operations.\n");
-				}
-				// close localfds
-				for (intlvd=p->interleaved; intlvd; intlvd = intlvd->next) {
-					Sock_close(intlvd->rtp_local);
-					Sock_close(intlvd->rtcp_local);
-				}
-				// wait for 
-				Sock_close(p->sock);
-				--*conn_count;
-				num_conn--;
-				// Release the RTSP_buffer
-				if (p == *rtsp_list) {
-					*rtsp_list = p->next;
-					free(p);
-					p = *rtsp_list;
-				} else {
-					pp->next = p->next;
-					free(p);
-					p = pp->next;
-				}
-				// Release the scheduler if necessary
-				if (p == NULL && *conn_count < 0) {
-					fnc_log(FNC_LOG_DEBUG,
-						"Fermo il thread\n");
-					stop_schedule = 1;
-				}
-			} else {
-				p = p->next;
-			}
-		} else {
-			pp = p;
-			p = p->next;
-		}
-	}
+                if (p->session_list != NULL) {    //if client truncated RTSP connection before sending TEARDOWN: error
+                    r = p->session_list->rtp_session;
+                    // Release all RTP sessions
+                    while (r != NULL) {
+                        // if (r->current_media->pkt_buffer);
+                        // Release the scheduler entry
+                        t = r->next;
+                        schedule_remove(r->sched_id);
+                        r = t;
+                    }
+                    // Close connection                     
+                    //close(p->session_list->fd);
+                    // Release the RTSP session
+                    free(p->session_list);
+                    p->session_list = NULL;
+                    fnc_log(FNC_LOG_WARN,
+                        "WARNING! RTSP connection truncated before ending operations.\n");
+                }
+                // close localfds
+                for (intlvd=p->interleaved; intlvd; intlvd = intlvd->next) {
+                    Sock_close(intlvd->rtp_local);
+                    Sock_close(intlvd->rtcp_local);
+                }
+                // wait for 
+                Sock_close(p->sock);
+                --*conn_count;
+                num_conn--;
+                // Release the RTSP_buffer
+                if (p == *rtsp_list) {
+                    *rtsp_list = p->next;
+                    free(p);
+                    p = *rtsp_list;
+                } else {
+                    pp->next = p->next;
+                    free(p);
+                    p = pp->next;
+                }
+                // Release the scheduler if necessary
+                if (p == NULL && *conn_count < 0) {
+                    fnc_log(FNC_LOG_DEBUG,
+                        "Fermo il thread\n");
+                    stop_schedule = 1;
+                }
+            } else {
+                p = p->next;
+            }
+        } else {
+            pp = p;
+            p = p->next;
+        }
+    }
 }

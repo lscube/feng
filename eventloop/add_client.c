@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,28 +42,28 @@
 
 void add_client(RTSP_buffer ** rtsp_list, Sock *client_sock)
 {
-	RTSP_buffer *p = NULL, *pp = NULL, *new = NULL;
+    RTSP_buffer *p = NULL, *pp = NULL, *new = NULL;
 
-	if (!(new = (RTSP_buffer *) calloc(1, sizeof(RTSP_buffer)))) {
-		fnc_log(FNC_LOG_FATAL, "Could not alloc memory in add_client()\n");
-		return;
-	}
+    if (!(new = (RTSP_buffer *) calloc(1, sizeof(RTSP_buffer)))) {
+        fnc_log(FNC_LOG_FATAL, "Could not alloc memory in add_client()\n");
+        return;
+    }
 
-	// Add a client
-	if (*rtsp_list == NULL) {
-		*rtsp_list = new;
-	} else {
-		for (p = *rtsp_list; p != NULL; p = p->next) {
-			pp = p;
-		}
-		if (pp != NULL) {
-			pp->next = new;
-			new->next = NULL;
-		}
-	}
+    // Add a client
+    if (*rtsp_list == NULL) {
+        *rtsp_list = new;
+    } else {
+        for (p = *rtsp_list; p != NULL; p = p->next) {
+            pp = p;
+        }
+        if (pp != NULL) {
+            pp->next = new;
+            new->next = NULL;
+        }
+    }
 
-	RTSP_initserver(new, client_sock);
+    RTSP_initserver(new, client_sock);
 
-	fnc_log(FNC_LOG_INFO,
-		"Incoming RTSP connection accepted on socket: %d\n", Sock_fd(client_sock));
+    fnc_log(FNC_LOG_INFO,
+        "Incoming RTSP connection accepted on socket: %d\n", Sock_fd(client_sock));
 }
