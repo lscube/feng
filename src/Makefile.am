@@ -6,8 +6,7 @@ if FENICE_VERBOSE
 noinst_LTLIBRARIES += libdebug.la
 endif
 
-libutils_la_SOURCES =	alloc_path_name.c \
-			NTP_time.c \
+libutils_la_SOURCES =	NTP_time.c \
 			random32.c \
 			get_utc.c \
 			get_field.c
