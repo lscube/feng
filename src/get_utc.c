@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,32 +37,32 @@
 
 #include <fenice/utils.h>
 
-int get_utc(struct tm *t,char *b)
+int get_utc(struct tm *t, char *b)
 {
-	char tmp[5];
-	if (strlen(b)<16) {
-		return ERR_GENERIC;
-	}
-	// Data
-	strncpy(tmp,b,4);
-	tmp[4]='\0';
-	sscanf(tmp,"%d",&(t->tm_year));
-	strncpy(tmp,b+4,2);
-	tmp[2]='\0';
-	sscanf(tmp,"%d",&(t->tm_mon));
-	strncpy(tmp,b+6,2);
-	tmp[2]='\0';
-	sscanf(tmp,"%d",&(t->tm_mday));	
-	// Ora	
-	strncpy(tmp,b+9,2);
-	tmp[2]='\0';
-	sscanf(tmp,"%d",&(t->tm_hour));	
-	strncpy(tmp,b+11,2);
-	tmp[2]='\0';
-	sscanf(tmp,"%d",&(t->tm_min));	
-	strncpy(tmp,b+13,2);
-	tmp[2]='\0';
-	sscanf(tmp,"%d",&(t->tm_sec));		
-	return ERR_NOERROR;
+    char tmp[5];
+    if (strlen(b)<16) {
+        return ERR_GENERIC;
+    }
+    // Date
+    strncpy(tmp,b,4);
+    tmp[4]='\0';
+    sscanf(tmp,"%d",&(t->tm_year));
+    strncpy(tmp,b+4,2);
+    tmp[2]='\0';
+    sscanf(tmp,"%d",&(t->tm_mon));
+    strncpy(tmp,b+6,2);
+    tmp[2]='\0';
+    sscanf(tmp,"%d",&(t->tm_mday));    
+    // Time
+    strncpy(tmp,b+9,2);
+    tmp[2]='\0';
+    sscanf(tmp,"%d",&(t->tm_hour));    
+    strncpy(tmp,b+11,2);
+    tmp[2]='\0';
+    sscanf(tmp,"%d",&(t->tm_min));    
+    strncpy(tmp,b+13,2);
+    tmp[2]='\0';
+    sscanf(tmp,"%d",&(t->tm_sec));        
+    return ERR_NOERROR;
 }
 

@@ -45,7 +45,7 @@ void dump_buffer(char *buffer);
 #define VERBOSE
 #endif
 #if ENABLE_DUMP
-int dump_payload(uint8 * data_slot, uint32 data_size, uint8 fname[255]);
+int dump_payload(uint8_t * data_slot, uint32_t data_size, uint8 fname[255]);
 #endif
 
 
