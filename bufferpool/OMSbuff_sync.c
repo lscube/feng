@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,39 +37,39 @@
 int OMSbuff_sync(OMSAggregate * aggr)
 {
 #ifdef USE_VALID_READ_POS
-	double max_ts = 0;
-	double curr_ts, next_ts;
-	OMSAggregate *curr;
+    double max_ts = 0;
+    double curr_ts, next_ts;
+    OMSAggregate *curr;
 
-	for (curr = aggr; curr; curr = curr->next) {
-		max_ts =
-		    omsbuff_max(max_ts,
-				curr->buffer->slots[curr->buffer->control->
-						    valid_read_pos].timestamp);
-	}
+    for (curr = aggr; curr; curr = curr->next) {
+        max_ts =
+            omsbuff_max(max_ts,
+                curr->buffer->slots[curr->buffer->control->
+                            valid_read_pos].timestamp);
+    }
 
-	for (curr = aggr; curr; curr = curr->next) {
-		curr_ts =
-		    curr->buffer->slots[curr->buffer->control->valid_read_pos].
-		    timestamp;
-		next_ts =
-		    curr->buffer->slots[curr->buffer->
-					slots[curr->buffer->control->
-					      valid_read_pos].next].timestamp;
-		while (abs(max_ts - curr_ts) > abs(max_ts - next_ts)) {
-			curr->buffer->control->valid_read_pos =
-			    curr->buffer->slots[curr->buffer->control->
-						valid_read_pos].next;
-			curr_ts =
-			    curr->buffer->slots[curr->buffer->control->
-						valid_read_pos].timestamp;
-			next_ts =
-			    curr->buffer->slots[curr->buffer->
-						slots[curr->buffer->control->
-						      valid_read_pos].next].
-			    timestamp;
-		}
-	}
+    for (curr = aggr; curr; curr = curr->next) {
+        curr_ts =
+            curr->buffer->slots[curr->buffer->control->valid_read_pos].
+            timestamp;
+        next_ts =
+            curr->buffer->slots[curr->buffer->
+                    slots[curr->buffer->control->
+                          valid_read_pos].next].timestamp;
+        while (abs(max_ts - curr_ts) > abs(max_ts - next_ts)) {
+            curr->buffer->control->valid_read_pos =
+                curr->buffer->slots[curr->buffer->control->
+                        valid_read_pos].next;
+            curr_ts =
+                curr->buffer->slots[curr->buffer->control->
+                        valid_read_pos].timestamp;
+            next_ts =
+                curr->buffer->slots[curr->buffer->
+                        slots[curr->buffer->control->
+                              valid_read_pos].next].
+                timestamp;
+        }
+    }
 #endif // USE_VALID_READ_POS
-	return 0;
+    return 0;
 }

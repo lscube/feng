@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,49 +44,49 @@
  */
 OMSSlot *OMSbuff_getslot(OMSBuffer * buffer)
 {
-	OMSSlot *slot; // = &buffer->slots[buffer->control->write_pos];	// lock not needed here
-	// uint64 curr_seq = slot->slot_seq;
+    OMSSlot *slot; // = &buffer->slots[buffer->control->write_pos];    // lock not needed here
+    // uint64 curr_seq = slot->slot_seq;
 #ifdef USE_VALID_READ_POS
-	OMSSlot *valid_read_pos;
-	// = &buffer->slots[buffer->control->valid_read_pos];
-	double ts;
+    OMSSlot *valid_read_pos;
+    // = &buffer->slots[buffer->control->valid_read_pos];
+    double ts;
 #endif // USE_VALID_READ_POS
 
-	OMSbuff_lock(buffer);
+    OMSbuff_lock(buffer);
 
-	if (OMSbuff_shm_refresh(buffer))
-		return NULL;
-	
-	slot = &buffer->slots[buffer->control->write_pos];
+    if (OMSbuff_shm_refresh(buffer))
+        return NULL;
+    
+    slot = &buffer->slots[buffer->control->write_pos];
 #ifdef USE_VALID_READ_POS
-	valid_read_pos= &buffer->slots[buffer->control->valid_read_pos];
+    valid_read_pos= &buffer->slots[buffer->control->valid_read_pos];
 #endif // USE_VALID_READ_POS
 
-	if (buffer->slots[slot->next].refs > 0) {
-		// printf("must add slot\n");
-		if (!(slot = OMSbuff_addpage(buffer, slot))) {
-			OMSbuff_unlock(buffer);
-			return NULL;
-		}
-	} else {
-		slot = &buffer->slots[slot->next];
+    if (buffer->slots[slot->next].refs > 0) {
+        // printf("must add slot\n");
+        if (!(slot = OMSbuff_addpage(buffer, slot))) {
+            OMSbuff_unlock(buffer);
+            return NULL;
+        }
+    } else {
+        slot = &buffer->slots[slot->next];
 #ifdef USE_VALID_READ_POS
-		// write_pos reaches valid_read_pos, we "push" it
-		if ((valid_read_pos->slot_seq) && (valid_read_pos == slot)) {
-			for (ts = valid_read_pos->timestamp;
-			     /*(buffer->slots[valid_read_pos->next].slot_seq) && \ */
-			     (valid_read_pos->slot_seq <
-			      buffer->slots[valid_read_pos->next].slot_seq)
-			     && (ts == valid_read_pos->timestamp);
-			     ts = valid_read_pos->timestamp, valid_read_pos =
-			     &buffer->slots[valid_read_pos->next]);
-			buffer->control->valid_read_pos =
-			    OMStoSlotPtr(buffer, valid_read_pos);
-		}
+        // write_pos reaches valid_read_pos, we "push" it
+        if ((valid_read_pos->slot_seq) && (valid_read_pos == slot)) {
+            for (ts = valid_read_pos->timestamp;
+                 /*(buffer->slots[valid_read_pos->next].slot_seq) && \ */
+                 (valid_read_pos->slot_seq <
+                  buffer->slots[valid_read_pos->next].slot_seq)
+                 && (ts == valid_read_pos->timestamp);
+                 ts = valid_read_pos->timestamp, valid_read_pos =
+                 &buffer->slots[valid_read_pos->next]);
+            buffer->control->valid_read_pos =
+                OMStoSlotPtr(buffer, valid_read_pos);
+        }
 #endif // USE_VALID_READ_POS
-	}
+    }
 
-	OMSbuff_unlock(buffer);
+    OMSbuff_unlock(buffer);
 
-	return slot;
+    return slot;
 }

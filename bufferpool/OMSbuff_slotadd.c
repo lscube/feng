@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,33 +54,33 @@
  * */
 OMSSlot *OMSbuff_slotadd(OMSBuffer * buffer, OMSSlot * prev)
 {
-	OMSSlot *added;
-	OMSSlotPtr prev_diff;
+    OMSSlot *added;
+    OMSSlotPtr prev_diff;
 
-	switch (buffer->type) {
-	case buff_shm:
-		prev_diff = OMStoSlotPtr(buffer, prev);
-		added = OMSbuff_shm_addpage(buffer);
-		prev = &buffer->slots[prev_diff];
+    switch (buffer->type) {
+    case buff_shm:
+        prev_diff = OMStoSlotPtr(buffer, prev);
+        added = OMSbuff_shm_addpage(buffer);
+        prev = &buffer->slots[prev_diff];
 
-		buffer->slots[buffer->known_slots - 1].next = prev->next;	// last added slot in shm new page is linked to the prev->next in old queue
+        buffer->slots[buffer->known_slots - 1].next = prev->next;    // last added slot in shm new page is linked to the prev->next in old queue
 
-		fnc_log(FNC_LOG_DEBUG, "OMSSlots page added in SHM memory\n");
-		break;
-	case buff_local:
-	default:
-		if (!(added = calloc(1, sizeof(OMSSlotAdded))))
-			return NULL;
-		((OMSSlotAdded *) added)->next_added = buffer->added_slots;
-		buffer->added_slots = (OMSSlotAdded *) added;
+        fnc_log(FNC_LOG_DEBUG, "OMSSlots page added in SHM memory\n");
+        break;
+    case buff_local:
+    default:
+        if (!(added = calloc(1, sizeof(OMSSlotAdded))))
+            return NULL;
+        ((OMSSlotAdded *) added)->next_added = buffer->added_slots;
+        buffer->added_slots = (OMSSlotAdded *) added;
 
-		added->next = prev->next;
-		fnc_log(FNC_LOG_DEBUG, "slot added\n");
-		break;
-	}
+        added->next = prev->next;
+        fnc_log(FNC_LOG_DEBUG, "slot added\n");
+        break;
+    }
 
-	prev->next = OMStoSlotPtr(buffer, added);
+    prev->next = OMStoSlotPtr(buffer, added);
 
-	return added;
+    return added;
 }
-#endif				// OMSBUFF_REALLOC
+#endif                // OMSBUFF_REALLOC

@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,37 +41,37 @@
  * */
 OMSSlot *OMSbuff_getreader(OMSConsumer * cons)
 {
-	OMSSlot *last_read;
-	OMSSlot *next;
+    OMSSlot *last_read;
+    OMSSlot *next;
 
-	OMSbuff_lock(cons->buffer);
+    OMSbuff_lock(cons->buffer);
 
-	// TODO: if it fails?
-	OMSbuff_shm_refresh(cons->buffer);
+    // TODO: if it fails?
+    OMSbuff_shm_refresh(cons->buffer);
 
-	last_read = OMStoSlot(cons->buffer, cons->last_read_pos);
-	next = &cons->buffer->slots[cons->read_pos];
+    last_read = OMStoSlot(cons->buffer, cons->last_read_pos);
+    next = &cons->buffer->slots[cons->read_pos];
 
-	if (!next->refs || (next->slot_seq < cons->last_seq)) {
-		// added some slots?
-		if (last_read && cons->buffer->slots[last_read->next].refs &&
-		    (cons->buffer->slots[last_read->next].slot_seq >
-		     cons->last_seq))
-			next = &cons->buffer->slots[last_read->next];
-		else {
-			OMSbuff_unlock(cons->buffer);
-			return NULL;
-		}
-	} else if (last_read
-		   && (cons->buffer->slots[last_read->next].slot_seq <
-		       next->slot_seq))
-		next = &cons->buffer->slots[last_read->next];
+    if (!next->refs || (next->slot_seq < cons->last_seq)) {
+        // added some slots?
+        if (last_read && cons->buffer->slots[last_read->next].refs &&
+            (cons->buffer->slots[last_read->next].slot_seq >
+             cons->last_seq))
+            next = &cons->buffer->slots[last_read->next];
+        else {
+            OMSbuff_unlock(cons->buffer);
+            return NULL;
+        }
+    } else if (last_read
+           && (cons->buffer->slots[last_read->next].slot_seq <
+               next->slot_seq))
+        next = &cons->buffer->slots[last_read->next];
 
-	if (cons->first_rtpseq == -1)
-		cons->first_rtpseq = next->slot_seq;
-	if (cons->first_rtptime == -1)
-		cons->first_rtptime = next->rtp_time;
+    if (cons->first_rtpseq == -1)
+        cons->first_rtpseq = next->slot_seq;
+    if (cons->first_rtptime == -1)
+        cons->first_rtptime = next->rtp_time;
 
-	OMSbuff_unlock(cons->buffer);
-	return next;
+    OMSbuff_unlock(cons->buffer);
+    return next;
 }

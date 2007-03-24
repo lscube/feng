@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,21 +41,21 @@
 
 void OMSbuff_free(OMSBuffer * buffer)
 {
-	switch (buffer->type) {
-	case buff_shm:
-		OMSbuff_shm_unmap(buffer);
-		fnc_log(FNC_LOG_DEBUG, "Buffer in SHM unmapped \n");
-		break;
-	case buff_local:{
-			pthread_mutex_destroy(&buffer->control->syn);
-			free(buffer->control);
-			free(buffer->slots);
-			free(buffer);
-			fnc_log(FNC_LOG_DEBUG, "Buffer is freed \n");
-			break;
-		}
-	default:
-		break;
-	}
+    switch (buffer->type) {
+    case buff_shm:
+        OMSbuff_shm_unmap(buffer);
+        fnc_log(FNC_LOG_DEBUG, "Buffer in SHM unmapped \n");
+        break;
+    case buff_local:{
+            pthread_mutex_destroy(&buffer->control->syn);
+            free(buffer->control);
+            free(buffer->slots);
+            free(buffer);
+            fnc_log(FNC_LOG_DEBUG, "Buffer is freed \n");
+            break;
+        }
+    default:
+        break;
+    }
 
 }

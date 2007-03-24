@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,20 +39,20 @@
 
 void OMSbuff_unref(OMSConsumer * cons)
 {
-	if (cons) {
-		OMSbuff_lock(cons->buffer);
-		if (cons->buffer->control->refs > 0) {
-			--(cons->buffer->control->refs);
+    if (cons) {
+        OMSbuff_lock(cons->buffer);
+        if (cons->buffer->control->refs > 0) {
+            --(cons->buffer->control->refs);
 //                      if ( msync(cons->buffer->control, sizeof(OMSControl), MS_ASYNC) )
 //                              printf("*** msync error\n");
-			OMSbuff_unlock(cons->buffer);
-			//Now consumer has to read all unread slots
-			while (!OMSbuff_gotreader(cons));
-		} else
-			OMSbuff_unlock(cons->buffer);
+            OMSbuff_unlock(cons->buffer);
+            //Now consumer has to read all unread slots
+            while (!OMSbuff_gotreader(cons));
+        } else
+            OMSbuff_unlock(cons->buffer);
 
-		fnc_log(FNC_LOG_DEBUG, "Buffer ref (%d)\n",
-			cons->buffer->control->refs);
-		free(cons);
-	}
+        fnc_log(FNC_LOG_DEBUG, "Buffer ref (%d)\n",
+            cons->buffer->control->refs);
+        free(cons);
+    }
 }

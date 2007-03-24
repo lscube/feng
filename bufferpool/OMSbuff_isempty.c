@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,10 +36,10 @@
 
 #include <fenice/bufferpool.h>
 
-#define RETURN(x)	do { \
-				OMSbuff_unlock(cons->buffer); \
-				return x; \
-			} while (0)
+#define RETURN(x)    do { \
+                OMSbuff_unlock(cons->buffer); \
+                return x; \
+            } while (0)
 
 /*! Check if buffer is empty for a given consumer. 
  *
@@ -54,32 +54,32 @@
  * */
 int OMSbuff_isempty(OMSConsumer * cons)
 {
-	OMSSlot *last_read;
-	OMSSlot *next;
+    OMSSlot *last_read;
+    OMSSlot *next;
 
-	OMSbuff_lock(cons->buffer);
+    OMSbuff_lock(cons->buffer);
 
-	OMSbuff_shm_refresh(cons->buffer);
+    OMSbuff_shm_refresh(cons->buffer);
 
-	last_read = OMStoSlot(cons->buffer, cons->last_read_pos);
-	next = &cons->buffer->slots[cons->read_pos];
+    last_read = OMStoSlot(cons->buffer, cons->last_read_pos);
+    next = &cons->buffer->slots[cons->read_pos];
 
-	if (!next->refs || (next->slot_seq < cons->last_seq)) {
-		// added some slots?
-		if (last_read && cons->buffer->slots[last_read->next].refs
-		    && (cons->buffer->slots[last_read->next].slot_seq >
-			cons->last_seq))
-			RETURN(0);
-		else
-			RETURN(1);
-	} else if (last_read
-		   && (cons->buffer->slots[last_read->next].slot_seq <
-		       next->slot_seq))
-		RETURN(0);
+    if (!next->refs || (next->slot_seq < cons->last_seq)) {
+        // added some slots?
+        if (last_read && cons->buffer->slots[last_read->next].refs
+            && (cons->buffer->slots[last_read->next].slot_seq >
+            cons->last_seq))
+            RETURN(0);
+        else
+            RETURN(1);
+    } else if (last_read
+           && (cons->buffer->slots[last_read->next].slot_seq <
+               next->slot_seq))
+        RETURN(0);
 
-	OMSbuff_unlock(cons->buffer);
+    OMSbuff_unlock(cons->buffer);
 
-	return 0;
+    return 0;
 }
 
 #undef RETURN

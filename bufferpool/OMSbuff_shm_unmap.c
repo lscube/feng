@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,20 +39,20 @@
 
 int OMSbuff_shm_unmap(OMSBuffer * buffer)
 {
-	int slots_err;
-	int control_err;
+    int slots_err;
+    int control_err;
 
-	if (buffer->type != buff_shm) {
-		fnc_log(FNC_LOG_ERR,
-			"Bufferpool desn't seems to be a Shared Memory object");
-		return 1;
-	}
+    if (buffer->type != buff_shm) {
+        fnc_log(FNC_LOG_ERR,
+            "Bufferpool desn't seems to be a Shared Memory object");
+        return 1;
+    }
 
-	if ((slots_err =
-	     munmap(buffer->slots, buffer->control->nslots * sizeof(OMSSlot))))
-		fnc_log(FNC_LOG_ERR, "Error unmapping OMSSlots SHM object\n");
-	if ((control_err = munmap(buffer->control, sizeof(OMSControl))))
-		fnc_log(FNC_LOG_ERR, "Error unmapping OMSControl SHM object\n");
+    if ((slots_err =
+         munmap(buffer->slots, buffer->control->nslots * sizeof(OMSSlot))))
+        fnc_log(FNC_LOG_ERR, "Error unmapping OMSSlots SHM object\n");
+    if ((control_err = munmap(buffer->control, sizeof(OMSControl))))
+        fnc_log(FNC_LOG_ERR, "Error unmapping OMSControl SHM object\n");
 
-	return slots_err ? slots_err : control_err;
+    return slots_err ? slots_err : control_err;
 }

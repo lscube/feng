@@ -66,10 +66,10 @@ int OMSbuff_write(OMSBuffer * buffer, uint64 seq, double timestamp,
         return ERR_ALLOC;
 
 #ifdef USE_VALID_READ_POS
-	valid_read_pos = &buffer->slots[buffer->control->valid_read_pos];
+    valid_read_pos = &buffer->slots[buffer->control->valid_read_pos];
 #endif // USE_VALID_READ_POS
-	slot = &buffer->slots[buffer->control->write_pos];
-	curr_seq = slot->slot_seq;
+    slot = &buffer->slots[buffer->control->write_pos];
+    curr_seq = slot->slot_seq;
 
     if (buffer->slots[slot->next].data == data) {
         slot = &buffer->slots[slot->next];
@@ -83,7 +83,7 @@ int OMSbuff_write(OMSBuffer * buffer, uint64 seq, double timestamp,
             slot = &buffer->slots[slot->next];
 #ifdef USE_VALID_READ_POS
             // write_pos reaches valid_read_pos, we "push" it
-	    if ((valid_read_pos->slot_seq)
+        if ((valid_read_pos->slot_seq)
                 && (valid_read_pos == slot)) {
                 for (ts = valid_read_pos->timestamp;
                      (buffer->slots[valid_read_pos->next].
