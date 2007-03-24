@@ -36,9 +36,9 @@
 #include <string.h>
 
 #include <fenice/eventloop.h>
-#include <netembryo/wsocket.h>
-#include <fenice/rtsp.h>
-#include <fenice/fnc_log.h>
+
+
+
 
 void add_client(RTSP_buffer ** rtsp_list, Sock *client_sock)
 {

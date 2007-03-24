@@ -36,13 +36,13 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <netembryo/wsocket.h>
+
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
-#include <fenice/rtsp.h>
+
 #include <fenice/schedule.h>
 #include <fenice/types.h>
-#include <fenice/fnc_log.h>
+
 
 int num_conn = 0;
 

@@ -39,8 +39,8 @@
 
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
-#include <fenice/rtsp.h>
-#include <fenice/fnc_log.h>
+
+
 #include <fenice/schedule.h>
 #include <fenice/bufferpool.h>
 int stop_schedule = 0;

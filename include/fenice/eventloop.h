@@ -36,6 +36,7 @@
 #define _EVENTLOOPH
 
 #include <netembryo/wsocket.h>
+#include <fenice/fnc_log.h>
 #include <fenice/rtsp.h>
 
 #define MAX_FDS 800

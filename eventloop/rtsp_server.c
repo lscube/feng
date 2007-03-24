@@ -38,9 +38,9 @@
 
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
-#include <fenice/rtsp.h>
-#include <fenice/fnc_log.h>
-#include <netembryo/wsocket.h>
+
+
+
 
 int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
 {

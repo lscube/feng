@@ -37,8 +37,8 @@
 
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
-#include <fenice/rtsp.h>
-#include <fenice/fnc_log.h>
+
+
 
 void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset, 
     fd_set * wset, fd_set * xset) {
