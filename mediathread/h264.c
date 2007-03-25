@@ -6,7 +6,7 @@
  *  Fenice -- Open Media Server
  *  h264 parser based on rfc 3984
  *
- *  Copyright (C) 2007 by Luca Barbato <lu_zero@gentoo.org
+ *  Copyright (C) 2007 by Luca Barbato <lu_zero@gentoo.org>
  *
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,10 +28,7 @@
 #include <fenice/fnc_log.h>
 #include <fenice/mediaparser.h>
 #include <fenice/mediaparser_module.h>
-#include <fenice/utils.h>
-#include <fenice/types.h>
-#include <string.h>
-#include <stdio.h> 
+
 #ifdef HAVE_AVUTIL
 #include <ffmpeg/base64.h>
 #else
