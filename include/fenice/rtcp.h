@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,72 +38,72 @@
 #include <fenice/rtp.h>
 
 typedef enum {
-	SR = 200,
-	RR = 201,
-	SDES = 202,
-	BYE = 203,
-	APP = 204
+    SR = 200,
+    RR = 201,
+    SDES = 202,
+    BYE = 203,
+    APP = 204
 } rtcp_pkt_type;
 
 typedef enum {
-	CNAME = 1,
-	NAME = 2,
-	EMAIL = 3,
-	PHONE = 4,
-	LOC = 5,
-	TOOL = 6,
-	NOTE = 7,
-	PRIV = 8
+    CNAME = 1,
+    NAME = 2,
+    EMAIL = 3,
+    PHONE = 4,
+    LOC = 5,
+    TOOL = 6,
+    NOTE = 7,
+    PRIV = 8
 } rtcp_info;
 
 typedef struct _RTCP_header {
 #if (BYTE_ORDER == LITTLE_ENDIAN)
-	unsigned int count:5;	//< SC or RC
-	unsigned int padding:1;
-	unsigned int version:2;
+    unsigned int count:5;    //< SC or RC
+    unsigned int padding:1;
+    unsigned int version:2;
 #elif (BYTE_ORDER == BIG_ENDIAN)
-	unsigned int version:2;
-	unsigned int padding:1;
-	unsigned int count:5;	//< SC or RC
+    unsigned int version:2;
+    unsigned int padding:1;
+    unsigned int count:5;    //< SC or RC
 #else
 #error Neither big nor little
 #endif
-	unsigned int pt:8;
-	unsigned int length:16;
+    unsigned int pt:8;
+    unsigned int length:16;
 } RTCP_header;
 
 typedef struct _RTCP_header_SR {
-	unsigned int ssrc;
-	unsigned int ntp_timestampH;
-	unsigned int ntp_timestampL;
-	unsigned int rtp_timestamp;
-	unsigned int pkt_count;
-	unsigned int octet_count;
+    unsigned int ssrc;
+    unsigned int ntp_timestampH;
+    unsigned int ntp_timestampL;
+    unsigned int rtp_timestamp;
+    unsigned int pkt_count;
+    unsigned int octet_count;
 } RTCP_header_SR;
 
 typedef struct _RTCP_header_RR {
-	unsigned int ssrc;
+    unsigned int ssrc;
 } RTCP_header_RR;
 
 typedef struct _RTCP_header_SR_report_block {
-	unsigned long ssrc;
-	unsigned char fract_lost;
-	unsigned char pck_lost[3];
-	unsigned int h_seq_no;
-	unsigned int jitter;
-	unsigned int last_SR;
-	unsigned int delay_last_SR;
+    unsigned long ssrc;
+    unsigned char fract_lost;
+    unsigned char pck_lost[3];
+    unsigned int h_seq_no;
+    unsigned int jitter;
+    unsigned int last_SR;
+    unsigned int delay_last_SR;
 } RTCP_header_SR_report_block;
 
 typedef struct _RTCP_header_SDES {
-	unsigned int ssrc;
-	unsigned char attr_name;
-	unsigned char len;
+    unsigned int ssrc;
+    unsigned char attr_name;
+    unsigned char len;
 } __attribute__((__packed__)) RTCP_header_SDES;
 
 typedef struct _RTCP_header_BYE {
-	unsigned int ssrc;
-	unsigned char length;
+    unsigned int ssrc;
+    unsigned char length;
 } RTCP_header_BYE;
 
 int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type);
