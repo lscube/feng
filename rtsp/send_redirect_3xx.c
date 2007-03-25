@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,55 +48,55 @@ uint32 send_redirect_3xx(RTSP_buffer * rtsp, char *object)
         send_reply(500, 0, rtsp);       /* Internal server error */
         return ERR_NOERROR;
 #else
-	char *r;		/* get reply message buffer pointer */
-	uint8 *mb;		/* message body buffer pointer */
-	uint32 mb_len;
-	SD_descr *matching_descr;
+    char *r;        /* get reply message buffer pointer */
+    uint8 *mb;        /* message body buffer pointer */
+    uint32 mb_len;
+    SD_descr *matching_descr;
 
-	if (enum_media(object, &matching_descr) != ERR_NOERROR) {
-		fnc_log(FNC_LOG_ERR,
-			"SETUP request specified an object file which can be damaged.\n");
-		send_reply(500, 0, rtsp);	/* Internal server error */
-		return ERR_NOERROR;
-	}
-	//if(!strcasecmp(matching_descr->twin,"NONE") || !strcasecmp(matching_descr->twin,"")){
-	if (!(matching_descr->flags & SD_FL_TWIN)) {
-		send_reply(453, 0, rtsp);
-		return ERR_NOERROR;
-	}
-	/* allocate buffer */
-	mb_len = 2048;
-	mb = malloc(mb_len);
-	r = malloc(mb_len + 1512);
-	if (!r || !mb) {
-		fnc_log(FNC_LOG_ERR,
-			"send_redirect(): unable to allocate memory\n");
-		send_reply(500, 0, rtsp);	/* internal server error */
-		if (r) {
-			free(r);
-		}
-		if (mb) {
-			free(mb);
-		}
-		return ERR_ALLOC;
-	}
-	/* build a reply message */
-	sprintf(r,
-		"%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
-		RTSP_VER, 302, get_stat(302), rtsp->rtsp_cseq, PACKAGE,
-		VERSION);
-	sprintf(r + strlen(r), "Location: %s" RTSP_EL, matching_descr->twin);	/*twin of the first media of the aggregate movie */
+    if (enum_media(object, &matching_descr) != ERR_NOERROR) {
+        fnc_log(FNC_LOG_ERR,
+            "SETUP request specified an object file which can be damaged.\n");
+        send_reply(500, 0, rtsp);    /* Internal server error */
+        return ERR_NOERROR;
+    }
+    //if(!strcasecmp(matching_descr->twin,"NONE") || !strcasecmp(matching_descr->twin,"")){
+    if (!(matching_descr->flags & SD_FL_TWIN)) {
+        send_reply(453, 0, rtsp);
+        return ERR_NOERROR;
+    }
+    /* allocate buffer */
+    mb_len = 2048;
+    mb = malloc(mb_len);
+    r = malloc(mb_len + 1512);
+    if (!r || !mb) {
+        fnc_log(FNC_LOG_ERR,
+            "send_redirect(): unable to allocate memory\n");
+        send_reply(500, 0, rtsp);    /* internal server error */
+        if (r) {
+            free(r);
+        }
+        if (mb) {
+            free(mb);
+        }
+        return ERR_ALLOC;
+    }
+    /* build a reply message */
+    sprintf(r,
+        "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
+        RTSP_VER, 302, get_stat(302), rtsp->rtsp_cseq, PACKAGE,
+        VERSION);
+    sprintf(r + strlen(r), "Location: %s" RTSP_EL, matching_descr->twin);    /*twin of the first media of the aggregate movie */
 
-	strcat(r, RTSP_EL);
+    strcat(r, RTSP_EL);
 
 
-	bwrite(r, (unsigned short) strlen(r), rtsp);
+    bwrite(r, (unsigned short) strlen(r), rtsp);
 
-	free(mb);
-	free(r);
+    free(mb);
+    free(r);
 
-	fnc_log(FNC_LOG_VERBOSE, "REDIRECT response sent.\n");
+    fnc_log(FNC_LOG_VERBOSE, "REDIRECT response sent.\n");
 #endif
-	return ERR_NOERROR;
+    return ERR_NOERROR;
 
 }

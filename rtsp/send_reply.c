@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,45 +42,45 @@
 
 int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 {
-	unsigned int len;
-	char *b;
-	char *p;
-	int res;
-	char method[32];
-	char object[256];
-	char ver[32];
+    unsigned int len;
+    char *b;
+    char *p;
+    int res;
+    char method[32];
+    char object[256];
+    char ver[32];
 
 
-	if (addon != NULL) {
-		len = 256 + strlen(addon);
-	} else {
-		len = 256;
-	}
+    if (addon != NULL) {
+        len = 256 + strlen(addon);
+    } else {
+        len = 256;
+    }
 
-	b = (char *) malloc(len);
-	if (b == NULL) {
-		fnc_log(FNC_LOG_ERR,
-			"send_reply(): memory allocation error.\n");
-		return ERR_ALLOC;
-	}
-	memset(b, 0, sizeof(b));
-	sprintf(b, "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL, RTSP_VER, err,
-		get_stat(err), rtsp->rtsp_cseq);
-	//---patch coerenza con rfc in caso di errore
-	// strcat(b, "\r\n");
-	strcat(b, RTSP_EL);
+    b = (char *) malloc(len);
+    if (b == NULL) {
+        fnc_log(FNC_LOG_ERR,
+            "send_reply(): memory allocation error.\n");
+        return ERR_ALLOC;
+    }
+    memset(b, 0, sizeof(b));
+    sprintf(b, "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL, RTSP_VER, err,
+        get_stat(err), rtsp->rtsp_cseq);
+    //---patch coerenza con rfc in caso di errore
+    // strcat(b, "\r\n");
+    strcat(b, RTSP_EL);
 
-	res = bwrite(b, (unsigned short) strlen(b), rtsp);
-	free(b);
+    res = bwrite(b, (unsigned short) strlen(b), rtsp);
+    free(b);
 
-	sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, object, ver);
-	fnc_log(FNC_LOG_ERR, "%s %s %s %d - - ", method, object, ver, err);
-	if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
-		char cut[strlen(p)];
-		strcpy(cut, p);
-		cut[strlen(cut) - 1] = '\0';
-		fnc_log(FNC_LOG_CLIENT, "%s", cut);
-	}
+    sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, object, ver);
+    fnc_log(FNC_LOG_ERR, "%s %s %s %d - - ", method, object, ver, err);
+    if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
+        char cut[strlen(p)];
+        strcpy(cut, p);
+        cut[strlen(cut) - 1] = '\0';
+        fnc_log(FNC_LOG_CLIENT, "%s", cut);
+    }
 
-	return res;
+    return res;
 }

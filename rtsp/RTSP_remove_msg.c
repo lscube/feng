@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,10 +38,10 @@
 
 void RTSP_remove_msg(int len, RTSP_buffer * rtsp)
 {
-	rtsp->in_size -= len;
-	if (rtsp->in_size && len) {	/* discard the message from the in_buffer. */
-		memmove(rtsp->in_buffer, &(rtsp->in_buffer[len]),
-			RTSP_BUFFERSIZE - len);
-		memset(&(rtsp->in_buffer[len]), 0, RTSP_BUFFERSIZE - len);
-	}
+    rtsp->in_size -= len;
+    if (rtsp->in_size && len) {    /* discard the message from the in_buffer. */
+        memmove(rtsp->in_buffer, &(rtsp->in_buffer[len]),
+            RTSP_BUFFERSIZE - len);
+        memset(&(rtsp->in_buffer[len]), 0, RTSP_BUFFERSIZE - len);
+    }
 }

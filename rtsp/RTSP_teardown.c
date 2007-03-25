@@ -176,7 +176,7 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     }
 
     if (s->rtp_session == NULL) {
-	// Release mediathread resource
+    // Release mediathread resource
         mt_resource_close(rtsp->session_list->resource);
         // Release the RTSP session
         free(rtsp->session_list);

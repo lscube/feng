@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,17 +38,17 @@
 
 void add_time_stamp(char *b, int crlf)
 {
-	struct tm *t;
-	time_t now;
+    struct tm *t;
+    time_t now;
 
-	/*
-	 * concatenates a null terminated string with a
-	 * time stamp in the format of "Date: 23 Jan 1997 15:35:06 GMT"
-	 */
-	now = time(NULL);
-	t = gmtime(&now);
-	strftime(b + strlen(b), 38, "Date: %a, %d %b %Y %H:%M:%S GMT" RTSP_EL,
-		 t);
-	if (crlf)
-		strcat(b, "\r\n");	/* add a message header terminator (CRLF) */
+    /*
+     * concatenates a null terminated string with a
+     * time stamp in the format of "Date: 23 Jan 1997 15:35:06 GMT"
+     */
+    now = time(NULL);
+    t = gmtime(&now);
+    strftime(b + strlen(b), 38, "Date: %a, %d %b %Y %H:%M:%S GMT" RTSP_EL,
+         t);
+    if (crlf)
+        strcat(b, "\r\n");    /* add a message header terminator (CRLF) */
 }

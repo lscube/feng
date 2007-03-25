@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,13 +40,13 @@
 
 int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
 {
-	if ((rtsp->out_size + len) > (int) sizeof(rtsp->out_buffer)) {
-		fnc_log(FNC_LOG_ERR,
-			"bwrite(): not enough free space in out message buffer.\n");
-		return ERR_ALLOC;
-	}
-	memcpy(&(rtsp->out_buffer[rtsp->out_size]), buffer, len);
-	rtsp->out_buffer[rtsp->out_size + len] = '\0';
-	rtsp->out_size += len;
-	return ERR_NOERROR;
+    if ((rtsp->out_size + len) > (int) sizeof(rtsp->out_buffer)) {
+        fnc_log(FNC_LOG_ERR,
+            "bwrite(): not enough free space in out message buffer.\n");
+        return ERR_ALLOC;
+    }
+    memcpy(&(rtsp->out_buffer[rtsp->out_size]), buffer, len);
+    rtsp->out_buffer[rtsp->out_size + len] = '\0';
+    rtsp->out_size += len;
+    return ERR_NOERROR;
 }
