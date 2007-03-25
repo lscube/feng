@@ -6,15 +6,15 @@
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Eugenio Menegatti 	<m.eu@libero.it>
- *	- Stefano Cau
- *	- Giuliano Emma
- *	- Stefano Oldrini
+ *      
+ *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
+ *    - Francesco Varano    <francesco.varano@polito.it>
+ *    - Marco Penno        <marco.penno@polito.it>
+ *    - Federico Ridolfo    <federico.ridolfo@polito.it>
+ *    - Eugenio Menegatti     <m.eu@libero.it>
+ *    - Stefano Cau
+ *    - Giuliano Emma
+ *    - Stefano Oldrini
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,28 +37,28 @@
 
 ssize_t RTP_recv(RTP_session * session, rtp_protos proto)
 {
-	Sock *s = session->transport.rtcp_sock;
-	struct sockaddr *sa_p = (struct sockaddr *)&(session->transport.last_stg);
+    Sock *s = session->transport.rtcp_sock;
+    struct sockaddr *sa_p = (struct sockaddr *)&(session->transport.last_stg);
 
-	if (proto == rtcp_proto) {
-		switch (s->socktype) {
-		case UDP:
-			session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
-					 sizeof(session->rtcp_inbuffer),
-					 sa_p, 0);
-			break;
-		case LOCAL:
-			session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
-					 sizeof(session->rtcp_inbuffer),
-					 NULL, 0);
-			break;
-		default:
-			session->rtcp_insize = -1;
-			break;
-		}
-	}
-	else
-		return -1;
+    if (proto == rtcp_proto) {
+        switch (s->socktype) {
+        case UDP:
+            session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
+                     sizeof(session->rtcp_inbuffer),
+                     sa_p, 0);
+            break;
+        case LOCAL:
+            session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
+                     sizeof(session->rtcp_inbuffer),
+                     NULL, 0);
+            break;
+        default:
+            session->rtcp_insize = -1;
+            break;
+        }
+    }
+    else
+        return -1;
 
 return session->rtcp_insize;
 }
