@@ -102,6 +102,7 @@ static void fnc_errlog(int level, const char *fmt, ...)
     if(!no_print) {
         va_start(args, fmt);
         vfprintf(fd, fmt, args);
+        fprintf(fd, "\n");
         va_end(args);
         fflush(fd);
     }
