@@ -33,7 +33,7 @@
  * */
 
 #include <fenice/rtcp.h>
-#include <fenice/rtp.h>
+
 
 int RTCP_get_pkt_lost(RTP_session * rtp_session)
 {

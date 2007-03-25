@@ -33,7 +33,7 @@
  * */
 
 #include <fenice/rtcp.h>
-#include <fenice/rtp.h>
+
 
 unsigned int RTCP_get_jitter(RTP_session * rtp_session)
 {

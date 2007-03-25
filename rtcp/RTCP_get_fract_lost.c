@@ -33,7 +33,7 @@
  * */
 
 #include <fenice/rtcp.h>
-#include <fenice/rtp.h>
+
 
 float RTCP_get_fract_lost(RTP_session * rtp_session)
 {

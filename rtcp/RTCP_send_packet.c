@@ -37,7 +37,7 @@
 #include <string.h>
 
 #include <fenice/rtcp.h>
-#include <fenice/rtp.h>
+
 #include <fenice/utils.h>
 #include <fenice/types.h>
 #include <fenice/fnc_log.h>

@@ -34,7 +34,7 @@
 
 #include <fenice/eventloop.h>
 #include <fenice/rtcp.h>
-#include <fenice/rtp.h>
+
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
