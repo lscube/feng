@@ -24,8 +24,6 @@ SUBDIRS +=	sdp2 \
 		docs \
 		etc \
 		avroot
-#		mediainfo
-#		sdp
 
 EXTRA_DIST = 	include \
 		config \
