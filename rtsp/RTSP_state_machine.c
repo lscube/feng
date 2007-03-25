@@ -32,14 +32,10 @@
  *  
  * */
 
-#include <stdio.h>
-#include <string.h>
-
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-/* macchina a stati dell'rtsp */
 void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 {
     /*
@@ -75,9 +71,6 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
                 }
                 break;
             case RTSP_ID_TEARDOWN:
-                // if (RTSP_teardown(rtsp) == ERR_NOERROR) { // shawill
-                // p->cur_state = INIT_STATE;
-                // }
                 RTSP_teardown(rtsp);
                 break;
             case RTSP_ID_OPTIONS:
@@ -112,9 +105,6 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
                 }
                 break;
             case RTSP_ID_TEARDOWN:
-                // if (RTSP_teardown(rtsp) == ERR_NOERROR) { // shawill
-                // p->cur_state = INIT_STATE;
-                // }
                 RTSP_teardown(rtsp);
                 break;
             case RTSP_ID_OPTIONS:
@@ -149,9 +139,6 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
                 }
                 break;
             case RTSP_ID_TEARDOWN:
-                // if (RTSP_teardown(rtsp) == ERR_NOERROR) { // shawill
-                // p->cur_state = INIT_STATE;
-                // }
                 RTSP_teardown(rtsp);
                 break;
             case RTSP_ID_OPTIONS:

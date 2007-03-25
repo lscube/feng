@@ -32,14 +32,8 @@
  *  
  * */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <netinet/in.h>
 
 #include <fenice/rtsp.h>
-#include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include <fenice/schedule.h>
 #include <fenice/bufferpool.h>

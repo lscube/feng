@@ -32,12 +32,7 @@
  *  
  * */
 
-#include <stdio.h>
-#include <string.h>
-
-#include <config.h>
 #include <fenice/rtsp.h>
-#include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
 int send_teardown_reply(RTSP_buffer * rtsp, long session_id, long cseq)
@@ -52,7 +47,6 @@ int send_teardown_reply(RTSP_buffer * rtsp, long session_id, long cseq)
     strcat(r, "Session: ");
     sprintf(temp, "%ld", session_id);
     strcat(r, temp);
-    // strcat(r, "\r\n\r\n");
     strcat(r, RTSP_EL RTSP_EL);
     bwrite(r, (unsigned short) strlen(r), rtsp);
 

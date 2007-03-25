@@ -32,11 +32,7 @@
  *  
  * */
 
-#include <stdio.h>
-#include <string.h>
-
 #include <fenice/rtsp.h>
-#include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
 int RTSP_valid_response_msg(unsigned short *status, char *msg,

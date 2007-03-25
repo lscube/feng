@@ -32,13 +32,7 @@
  *  
  * */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
-#include <config.h>
 #include <fenice/rtsp.h>
-#include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
 int send_describe_reply(RTSP_buffer * rtsp, char *object,

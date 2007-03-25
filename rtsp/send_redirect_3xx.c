@@ -32,16 +32,10 @@
  *  
  * */
 
-#include <stdio.h>
-#include <string.h>
-#include <config.h>
-
 #include <fenice/rtsp.h>
-#include <fenice/utils.h>
-#include <fenice/types.h>
 #include <fenice/fnc_log.h>
 
-uint32 send_redirect_3xx(RTSP_buffer * rtsp, char *object)
+int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
 {
 #if ENABLE_MEDIATHREAD
 #warning Write mt equivalent

@@ -32,12 +32,7 @@
  *  
  * */
 
-#include <stdio.h>
-#include <string.h>
-
-#include <config.h>
 #include <fenice/rtsp.h>
-#include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
 int send_play_reply(RTSP_buffer * rtsp, char *object,
@@ -57,14 +52,10 @@ int send_play_reply(RTSP_buffer * rtsp, char *object,
     sprintf(temp, "%d", rtsp_session->session_id);
     strcat(r, temp);
     strcat(r, RTSP_EL);
-    // strcat(r, "RTP-info: url=");
     strcat(r, "RTP-info: ");
-    // strcat(r, object);
-    // strcat(r, ";");
     do {
         t = r_selected_track(p->track_selector);
         strcat(r, "url=");
-        // strcat(r, object);
         // TODO: we MUST be sure to send the correct url 
         sprintf(r + strlen(r), "rtsp://%s/%s/%s!%s",
             prefs_get_hostname(), p->sd_filename, t->parent->info->name,
@@ -75,7 +66,6 @@ int send_play_reply(RTSP_buffer * rtsp, char *object,
         if (p->next != NULL) {
             strcat(r, ",");
         } else {
-            // strcat(r, "\r\n\r\n");
             strcat(r, RTSP_EL);
         }
         p = p->next;

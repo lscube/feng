@@ -32,12 +32,7 @@
  *  
  * */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
 #include <fenice/rtsp.h>
-#include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
 int send_reply(int err, char *addon, RTSP_buffer * rtsp)

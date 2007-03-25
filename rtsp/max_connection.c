@@ -33,9 +33,7 @@
  * */
 
 #include <fenice/rtsp.h>
-#include <fenice/types.h>
 #include <fenice/prefs.h>
-#include <fenice/eventloop.h>
 
 extern int num_conn;
 

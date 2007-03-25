@@ -32,10 +32,7 @@
  *  
  * */
 
-#include <string.h>
-
 #include <fenice/rtsp.h>
-#include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
 int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)

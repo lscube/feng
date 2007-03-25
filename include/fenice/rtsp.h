@@ -152,7 +152,7 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object,
 			description_format descr_format, char *descr);
 
 	// REDIRECT 3xx
-uint32 send_redirect_3xx(RTSP_buffer *, char *);
+int send_redirect_3xx(RTSP_buffer *, char *);
 
 	// SETUP
 int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_session * sp2);

@@ -32,13 +32,11 @@
  *  
  * */
 
-#include <stdio.h>
-#include <string.h>
-
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 
-/* Return -1 if something doesn't work in the request */
+/*! validate method
+ * @return -1 if something doesn't work in the request */
 int RTSP_validate_method(RTSP_buffer * rtsp)
 {
     char method[32], hdr[16];
