@@ -33,7 +33,6 @@
  * */
 
 #include <fenice/rtp.h>
-#include <fenice/utils.h>
 
 extern int start_port;
 extern int port_pool[ONE_FORK_MAX_CONNECTION];

@@ -34,19 +34,8 @@
 
 #include <config.h>
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
 #include <fenice/rtp.h>
-#include <fenice/utils.h>
+#include <fenice/demuxer.h>
 #include <fenice/bufferpool.h>
 
 RTP_session *RTP_session_destroy(RTP_session * session)

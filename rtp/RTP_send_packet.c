@@ -34,19 +34,8 @@
 
 #include <config.h>
 
-#if HAVE_ALLOCA_H
-#include <alloca.h>
-#endif
-
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <netinet/in.h>
-
 #include <fenice/rtp.h>
-#include <fenice/utils.h>
 #include <fenice/bufferpool.h>
-#include <fenice/fnc_log.h>
 #include <fenice/mediathread.h>
 
 #if ENABLE_DUMP
@@ -130,9 +119,7 @@ int RTP_send_packet(RTP_session * session)
         OMSbuff_gotreader(session->cons);
 
         nextts = OMSbuff_nextts(session->cons);
-        // fnc_log(FNC_LOG_DEBUG, "*** current time=%f - next time=%f\n\n", s_time, nextts);
         if (nextts < 0) {
-            // fnc_log(FNC_LOG_DEBUG, "*** time on\n");
             event_buffer_low(session, t);
             slot = NULL;
             session->cons->frames--;
