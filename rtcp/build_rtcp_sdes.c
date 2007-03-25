@@ -27,8 +27,6 @@
  * */
 
 #include <fenice/rtcp.h>
-#include <fenice/socket.h>
-//#include <fenice/version.h>
 #include <pwd.h>
 
 int build_rtcp_sdes(RTP_session * session, unsigned char *pkt, int left)
