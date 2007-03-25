@@ -48,15 +48,14 @@
  * terminate on really ugly cases.
  */
 int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
-// This routine is from OMS.
 {
-    int eomh;        /* end of message header found */
-    int mb;            /* message body exists */
-    int tc;            /* terminator count */
-    int ws;            /* white space */
-    unsigned int ml;    /* total message length including any message body */
-    int bl;            /* message body length */
-    char c;            /* character */
+    int eomh;          /*! end of message header found */
+    int mb;            /*! message body exists */
+    int tc;            /*! terminator count */
+    int ws;            /*! white space */
+    unsigned int ml;   /*! total message length including any message body */
+    int bl;            /*! message body length */
+    char c;            /*! character */
     int control;
     char *p;
 
@@ -65,7 +64,6 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
         uint16 *intlvd_len = (uint16 *) & rtsp->in_buffer[2];
 
         if ((bl = ntohs(*intlvd_len)) <= rtsp->in_size) {
-            // fnc_log(FNC_LOG_DEBUG,"Interleaved RTP or RTCP packet arrived (len: %hu).\n", bl);
             if (hdr_len)
                 *hdr_len = 4;
             if (body_len)

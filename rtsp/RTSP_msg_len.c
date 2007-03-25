@@ -32,10 +32,6 @@
  *  
  * */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
 

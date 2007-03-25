@@ -32,10 +32,7 @@
  *  
  * */
 
-#include <string.h>
-
 #include <fenice/rtsp.h>
-#include <netembryo/wsocket.h>
 
 void RTSP_initserver(RTSP_buffer * rtsp, Sock *rtsp_sock)
 {
