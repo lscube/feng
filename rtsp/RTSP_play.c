@@ -32,13 +32,8 @@
  *  
  * */
 
-#include <stdio.h>
-#include <string.h>
-#include <netinet/in.h>
-
 #include <fenice/bufferpool.h>
 #include <fenice/rtsp.h>
-#include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 
@@ -51,7 +46,6 @@
 
 int RTSP_play(RTSP_buffer * rtsp)
 {
-    int url_is_file;
     char object[255], server[255], trash[255];
     char url[255];
     unsigned short port;

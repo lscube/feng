@@ -33,21 +33,9 @@
  *  
  * */
 
-#include <stdio.h>
-#include <string.h>
-#include <sys/time.h>        // shawill: for gettimeofday
-#include <stdlib.h>        // shawill: for rand, srand
-#include <unistd.h>        // shawill: for dup
-// shawill: for inet_aton
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <glib.h>
-#include <glib/gprintf.h>
 
 #include <fenice/rtsp.h>
-#include <netembryo/wsocket.h>
-#include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include <fenice/multicast.h>
 #include <fenice/fnc_log.h>
