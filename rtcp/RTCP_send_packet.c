@@ -39,7 +39,6 @@
 #include <fenice/rtcp.h>
 
 #include <fenice/utils.h>
-#include <fenice/types.h>
 #include <fenice/fnc_log.h>
 #include <netinet/in.h>
 #include <sys/time.h>
@@ -48,7 +47,7 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
 {
     unsigned char *pkt = NULL;
     RTCP_header hdr;
-    uint32 pkt_size = 0, hdr_s = 0;
+    uint32_t pkt_size = 0, hdr_s = 0;
     Track *t = r_selected_track(session->track_selector);
 
     hdr.version = 2;
