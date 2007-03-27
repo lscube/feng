@@ -60,7 +60,6 @@ typedef enum __MT_EVENT_ID {
 typedef struct __MT_EVENT_ITEM {
 	mt_event_id id;
 	void **args;		//! args[0] = sender
-	pthread_mutex_t lock;
 } mt_event_item;
 
 typedef struct __MT_EXCL_INS {

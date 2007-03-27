@@ -46,23 +46,25 @@ void *mediathread(void *arg) {
 	GList *el_cur, *el_prev;
 	struct timespec ts = {0, 0};
 
-	fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started\n");
+	fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started");
 
 	while(1) {
 		pthread_mutex_lock(&el_mutex);
 		el_cur = g_list_last(el_head);
+                el_prev = g_list_previous(el_cur);
+                el_head = g_list_remove_link(el_head, el_cur);
 		pthread_mutex_unlock(&el_mutex);
 
 		while (el_cur) {
 			mt_process_event(EVENT(el_cur));
+                        mt_dispose_event(EVENT(el_cur));
+                        g_list_free_1(el_cur);
 
 			pthread_mutex_lock(&el_mutex);
-			mt_dispose_event(EVENT(el_cur));
+                        el_cur = el_prev;
 			el_prev = g_list_previous(el_cur);
-			el_head = g_list_delete_link(el_head, el_cur);
+			el_head = g_list_remove_link(el_head, el_cur);
 			pthread_mutex_unlock(&el_mutex);
-
-			el_cur = el_prev;
 		}
 		//to avoid 100% cpu usage with empty eventlist
 		nanosleep(&ts, NULL);
@@ -75,18 +77,11 @@ int mt_add_event(mt_event_id id, void **args) {
 
 	if (!(item = g_new0(mt_event_item, 1))) {
 		mt_dispose_event_args(id, args);
-		fnc_log(FNC_LOG_FATAL, "[MT] Allocation failure in mt_create_event()\n");
+		fnc_log(FNC_LOG_FATAL, "[MT] Allocation failure in mt_create_event()");
 		return ERR_GENERIC;
 	}
 
-	if (pthread_mutex_init(&item->lock, NULL)) {
-		mt_dispose_event_args(id, args);
-		g_free(item);
-		fnc_log(FNC_LOG_FATAL, "[MT] Mutex creation failure in mt_create_event()\n");
-		return ERR_GENERIC;
-	}
-
-	fnc_log(FNC_LOG_VERBOSE, "[MT] Created event: %#x\n", item);
+	fnc_log(FNC_LOG_VERBOSE, "[MT] Created event: %#x", item);
 
 	item->id = id;
 	item->args = args;
@@ -103,9 +98,7 @@ inline int mt_process_event(mt_event_item *ev) {
 	if (!ev)
 		return ERR_GENERIC;
 
-	pthread_mutex_lock(&ev->lock);
-
-	fnc_log(FNC_LOG_VERBOSE, "[MT] Processing event: %#x\n", ev->id);
+	fnc_log(FNC_LOG_VERBOSE, "[MT] Processing event: %#x", ev->id);
 
 	switch (ev->id) {
 		case MT_EV_BUFFER_LOW:
@@ -113,11 +106,11 @@ inline int mt_process_event(mt_event_item *ev) {
 			Track *t = ev->args[1];
 			Resource *r = t->parent;
 
-			fnc_log(FNC_LOG_VERBOSE, "[MT] Filling buffer for track %p\n", t);
+			fnc_log(FNC_LOG_VERBOSE, "[MT] Filling buffer for track %p", t);
 
 			switch (r->demuxer->read_packet(r)) {
 				case RESOURCE_OK:
-					fnc_log(FNC_LOG_VERBOSE, "[MT] Done!\n");
+					fnc_log(FNC_LOG_VERBOSE, "[MT] Done!");
 					break;
 				case RESOURCE_NOT_PARSEABLE:
 				{
@@ -126,15 +119,15 @@ inline int mt_process_event(mt_event_item *ev) {
 					if((n = t->parser->get_frame(buffer, MT_BUFFERSIZE,
 					    &(t->properties->mtime), t->i_stream,
 					    t->properties, t->parser_private)) > 0) {
-						fnc_log(FNC_LOG_DEBUG, "[MT] Timestamp: %f!\n",t->properties->mtime);
+						fnc_log(FNC_LOG_DEBUG, "[MT] Timestamp: %f!",t->properties->mtime);
 						t->parser->parse(t, buffer, (long) n, NULL, 0);
 					}
-					fnc_log(FNC_LOG_VERBOSE, "[MT] Done legacy!\n");
+					fnc_log(FNC_LOG_VERBOSE, "[MT] Done legacy!");
 				}
 					break;
 				default:
 					fnc_log(FNC_LOG_VERBOSE,
-						"[MT] read_packet() error.\n");
+						"[MT] read_packet() error.");
 					break;
 			}
 		}
@@ -143,7 +136,6 @@ inline int mt_process_event(mt_event_item *ev) {
 		default:
 			break;
 	}
-	pthread_mutex_unlock(&ev->lock);
 	return ERR_NOERROR;
 }
 
@@ -151,14 +143,12 @@ inline void mt_disable_event(mt_event_item *ev) {
 	if (!ev)
 		return;
 
-	fnc_log(FNC_LOG_VERBOSE, "[MT] Disabling event: %#x\n", ev);
+	fnc_log(FNC_LOG_VERBOSE, "[MT] Disabling event: %#x", ev);
 
-	pthread_mutex_lock(&ev->lock);
 	if (ev->args)
 		mt_dispose_event_args(ev->id, ev->args);
 	ev->id = MT_EV_NOP;
 	ev->args = NULL;
-	pthread_mutex_unlock(&ev->lock);
 }
 
 inline void mt_dispose_event(mt_event_item *ev) {
@@ -166,7 +156,6 @@ inline void mt_dispose_event(mt_event_item *ev) {
 		return;
 	if (ev->args)
 		mt_dispose_event_args(ev->id, ev->args);
-	pthread_mutex_destroy(&ev->lock);
 	g_free(ev);
 }
 
@@ -219,7 +208,7 @@ int mt_rem_track(Track *t) {
 	tl_ptr = g_list_find_custom(tl_head, t, mt_comp_func);
 	if (!tl_ptr) {
 		pthread_mutex_unlock(&tl_mutex);
-		fnc_log(FNC_LOG_ERR, "Tried to remove from MT an unavailable track.\n");
+		fnc_log(FNC_LOG_ERR, "Tried to remove from MT an unavailable track.");
 		return ERR_GENERIC;
 	}
 
@@ -242,7 +231,6 @@ int mt_disable_events(void *sender) {
 	GList *el_cur;
 
 	pthread_mutex_lock(&el_mutex);
-
 	for(el_cur = el_head; el_cur; el_cur = g_list_next(el_cur)) {
 		switch (EVENT(el_cur)->id) {
 			case MT_EV_BUFFER_LOW:
