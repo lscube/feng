@@ -14,11 +14,11 @@ libmediath_la_SOURCES =	cache.c \
 			mpeg12.c \
 			mpegaudio.c \
 			demuxer_ds.c
-
 if FENICE_FFMPEG
 libmediath_la_SOURCES += demuxer_avf.c \
-			 h264.c
+			 h264.c \
+			 vorbis.c
 endif
 
-libmediath_la_LDFLAGS = -static
+# libmediath_la_LDFLAGS = -static
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)
