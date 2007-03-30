@@ -39,6 +39,7 @@
 #include <sys/types.h>
 #include <math.h>
 #include <fenice/types.h>
+#include <string.h>
 
 //XXX should me moved somewhere else
 #ifdef WIN32
