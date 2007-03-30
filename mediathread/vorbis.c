@@ -85,12 +85,13 @@ typedef struct {
 	unsigned char* framestack;
 } framestack;
 
+/// Private struct for Vorbis
 typedef struct {
-    uint8_t         *conf // current configuration
+    uint8_t         *conf;      ///< current configuration
     unsigned int    conf_len;
-    uint8_t         *packet; // holds the incomplete packet
-    unsigned int    len; // incomplete packet length
-//    unsigned int    ident; // identification string
+    uint8_t         *packet;    ///< holds the incomplete packet
+    unsigned int    len;        ///< incomplete packet length
+//    unsigned int    ident;    ///< identification string
     vorbis_header   header;
 //    framestack      stack; XXX use it later
 } vorbis_priv;
@@ -120,7 +121,7 @@ int encode_header(uint8_t *data, int len, vorbis_priv *priv)
                 ++j;
             }
             if (j>=headers_len) {
-                av_log(avccontext, AV_LOG_ERROR, "Extradata corrupt.\n");
+                fnc_log(FNC_LOG_ERR, "Extradata corrupt.\n");
                 return -1;
             }
             header_len[i]+=headers[j];
@@ -138,14 +139,14 @@ int encode_header(uint8_t *data, int len, vorbis_priv *priv)
         return -1;
     }
 
-    priv->header.ident = htonl(random32());
+    priv->header.ident = random32(0);
 
     // Envelope size
     priv->conf_len = 4 +                // count field
                      3 +                // Ident field
                      2 +                // headers size
                      header_len[0] +    // Everything but the comment
-                     header_len[2]
+                     header_len[2];
     priv->conf = g_malloc(priv->conf_len);
     priv->conf[0] = priv->conf[1] = priv->conf[2] = 0;
     priv->conf[3] = 1; //just one packet for now
@@ -155,9 +156,18 @@ int encode_header(uint8_t *data, int len, vorbis_priv *priv)
     priv->conf[6] = priv->header.ident & 0xff;
     priv->conf[7] = (header_len[2]+header_len[0])>>8; //no need to mask
     priv->conf[8] = (header_len[2]+header_len[0]) & 0xff;
-    memcpy(priv->conf + 9, header[0], header_len[0]);
-    memcpy(priv->conf + 9 + header_len[0], header[2], header_len[2]);
+    memcpy(priv->conf + 9, header_start[0], header_len[0]);
+    memcpy(priv->conf + 9 + header_len[0], header_start[2], header_len[2]);
     return 0;
+}
+
+static int vorbis_uninit(void *private_data)
+{
+    vorbis_priv *priv = private_data;
+    if (priv->conf_len) g_free(priv->conf);
+    if (priv->len) g_free(priv->packet);
+    free(private_data);
+    return ERR_NOERROR;
 }
 
 static int vorbis_init(MediaProperties *properties, void **private_data)
@@ -181,7 +191,7 @@ static int vorbis_init(MediaProperties *properties, void **private_data)
     buf = g_malloc(buf_len);
 
     if (!buf) goto err_alloc;
-    av_base64_encode(buf, buf_len, priv, priv->conf_len);
+    av_base64_encode(buf, buf_len, priv->conf, priv->conf_len);
 
     sdp_private = g_new(sdp_field, 1);
     sdp_private->type = fmtp;
@@ -210,7 +220,7 @@ static int vorbis_init(MediaProperties *properties, void **private_data)
     return ERR_ALLOC;
 }
 
-static int vorbis_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp,
+static int vorbis_get_frame2(uint8_t *dst, uint32_t dst_nbytes, double *timestamp,
                       InputStream *istream, MediaProperties *properties,
                       void *private_data)
 {
@@ -218,13 +228,13 @@ static int vorbis_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp,
 return ERR_PARSE;
 }
 
-static int vorbis_packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
+static int vorbis_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src, uint32_t src_nbytes, MediaProperties *properties, void *private_data)
 {
 
 return ERR_PARSE;
 }
 
-static int vorbis_parse(void *track, uint8 *data, long len, uint8 *extradata,
+static int vorbis_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                  long extradata_len)
 {
     //XXX handle the last packet on EOF
@@ -237,9 +247,9 @@ static int vorbis_parse(void *track, uint8 *data, long len, uint8 *extradata,
     if(!packet) goto err_alloc;
 
     // the ident is always the same
-    packet[0] = (priv->bitfield.ident>>16)& 0xff;
-    packet[1] = (priv->bitfield.ident>>8) & 0xff;
-    packet[2] =  priv->bitfield.ident     & 0xff;
+    packet[0] = (priv->header.ident>>16)& 0xff;
+    packet[1] = (priv->header.ident>>8) & 0xff;
+    packet[2] =  priv->header.ident     & 0xff;
 
     if (len > mtu) {
         frag = 1; // first frag
@@ -284,14 +294,6 @@ static int vorbis_parse(void *track, uint8 *data, long len, uint8 *extradata,
     return ERR_ALLOC;
 }
 
-static int vorbis_uninit(void *private_data)
-{
-    vorbis_priv *priv = private_data;
-    if (priv->conf_len) g_free(priv->conf);
-    if (priv->len) g_free(priv->packet);
-    free(private_data);
-    return ERR_NOERROR;
-}
 
-FNC_LIB_MEDIAPARSER(h264);
+FNC_LIB_MEDIAPARSER(vorbis);
 
