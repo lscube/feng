@@ -75,9 +75,6 @@ inline void mt_disable_event(mt_event_item *);
 inline void mt_dispose_event(mt_event_item *);
 inline void mt_dispose_event_args(mt_event_id, void **args);
 
-int mt_add_track(Track *);
-int mt_rem_track(Track *);
-
 inline int event_buffer_low(void *sender, Track *src);
 int mt_disable_events(void *sender);
 

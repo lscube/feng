@@ -453,11 +453,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         return ERR_NOERROR;
     }
 
-    if (mt_add_track(req_track)) {
-        send_reply(500, 0, rtsp);    // Internal server error
-        return ERR_NOERROR;
-    }
-
 // Setup the RTP session
     if (rtsp->session_list->rtp_session == NULL) {
         rtsp->session_list->rtp_session = calloc(1, sizeof(RTP_session));

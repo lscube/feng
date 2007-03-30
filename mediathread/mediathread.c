@@ -5,12 +5,9 @@
  *
  *  Fenice -- Open Media Server
  *
- *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
+ *  Copyright (C) 2007 by
+ *
+ *	- Dario Gallucci	<dario.gallucci@polito.it>
  * 
  *  Fenice is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -183,41 +180,6 @@ void mt_resource_close(Resource *resource) {
 	// TODO: remove tracks from list if still there!
 
 	r_close(resource);
-}
-
-int mt_add_track(Track *t) {
-
-	if(!t)
-		return ERR_GENERIC;
-/*
-	pthread_mutex_lock(&tl_mutex);
-	tl_head = g_list_prepend(tl_head, t);
-	pthread_mutex_unlock(&tl_mutex);
-*/
-	return ERR_NOERROR;
-}
-
-/*static gint mt_comp_func(gconstpointer element, gconstpointer track) {
-	return ((const Track *)element != (Track *)track);
-}*/
-
-int mt_rem_track(Track *t) {
-/*	GList *tl_ptr;
-	
-	pthread_mutex_lock(&tl_mutex);
-	tl_ptr = g_list_find_custom(tl_head, t, mt_comp_func);
-	if (!tl_ptr) {
-		pthread_mutex_unlock(&tl_mutex);
-		fnc_log(FNC_LOG_ERR, "Tried to remove from MT an unavailable track.");
-		return ERR_GENERIC;
-	}
-
-	tl_head = g_list_remove_link (tl_head, tl_ptr);
-	pthread_mutex_unlock(&tl_mutex);
-
-	g_list_free_1(tl_ptr);
-*/
-	return ERR_NOERROR;
 }
 
 inline int event_buffer_low(void *sender, Track *src) {
