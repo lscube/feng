@@ -55,6 +55,13 @@ if which automake >/dev/null 2>&1 ; then
 	dots $! 
 	echo " done."
 fi
+if which libtoolize >/dev/null 2>&1 ; then
+        echo -n "Running libtoolize..."
+        libtoolize --copy --force 2>&1 | grep -v installing&
+        dots $! 
+        echo " done."
+fi
+
 #echo -n "Copying missing files..."
 #	cp -f admin/lt* libltdl
 #	cp -f admin/config.* libltdl
