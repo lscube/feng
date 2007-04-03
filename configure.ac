@@ -123,7 +123,7 @@ AC_CHECK_LIB(pthread,pthread_create)
 dnl AC_CHECK_LIB(avcodec,avcodec_open)
 
 dnl Replace `main' with a function in -lm:
-AC_CHECK_LIB(m, main)
+AC_CHECK_LIBM
 
 dnl Checks for header files.
 AC_HEADER_DIRENT
