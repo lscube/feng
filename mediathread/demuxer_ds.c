@@ -100,7 +100,8 @@ static inline edl_item_elem *edl_active_res (void *private_data) {
 
 static void destroy_list_data(gpointer elem, gpointer unused) {
     edl_item_elem *item = (edl_item_elem *) elem;
-    r_close(item->r);
+    if (item)
+    	r_close(item->r);
     g_free(elem);
 }
 
@@ -163,7 +164,7 @@ static int init(Resource * r)
         item->first_ts = 1;
         item->end = end;
         item->offset = r_offset;
-        if (resource->info->duration && (end - begin) > resource->info->duration) {
+        if (resource->info->duration && end > resource->info->duration) {
             r_offset += resource->info->duration - begin;
         } else {
             r_offset += end - begin;
@@ -255,11 +256,15 @@ static int seek(Resource * r, double time_sec)
 
 static int uninit(Resource * r)
 {
-    GList *edl_head = (GList *) r->private_data;
+    GList *edl_head = NULL;
+    if (r->private_data)
+        edl_head = ((edl_priv_data *) r->private_data)->head;
     if (edl_head) {
         g_list_foreach(edl_head, destroy_list_data, NULL);
         g_list_free(edl_head);
+        g_free(r->private_data);
         r->private_data = NULL;
     }
+    r->tracks = NULL; //Unlink local copy of first resource tracks
     return RESOURCE_OK;
 }
