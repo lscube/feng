@@ -48,10 +48,6 @@ static Demuxer *demuxers[] = {
     NULL
 };
 
-/*! \brief The exclusive tracks.
- * The Media Thread keeps a list of the tracks that can be opened only once.
- * */
-static GList *ex_tracks=NULL;
 /*! \brief The resource description cache.
  * This list holds the cache of resource descriptions. This way the mediathread
  * can provide the description buffer without opening the resource every time.
@@ -130,25 +126,6 @@ static int find_demuxer(InputStream *i_stream)
 
     return found ? i: -1;
 }
-
-static void ex_track_save(Track *track, gpointer *user_data)
-{
-    if ( track->i_stream                 &&
-         IS_ISEXCLUSIVE(track->i_stream) &&
-         !g_list_find(ex_tracks, track)     )
-        ex_tracks = g_list_prepend(ex_tracks, track);
-}
-
-static inline void ex_tracks_save(GList *tracks)
-{
-    g_list_foreach(tracks, (GFunc)ex_track_save, NULL);
-}
-
-static inline void ex_track_remove(Track *track)
-{
-    ex_tracks = g_list_remove(ex_tracks, track);
-}
-
 
 // --- Description Cache management --- //
 static gint cache_cmp(gconstpointer a, gconstpointer b)
@@ -318,9 +295,6 @@ Resource *r_open(char *root, char *n)
         return NULL;
     }
 
-    // search for exclusive tracks: should be done track per track?
-    ex_tracks_save(r->tracks);
-
     r_descr_cache_update(r);
 
     return r;
@@ -335,9 +309,6 @@ void free_track(Track *t, Resource *r)
     MObject_unref(MOBJECT(t->properties));
     mparser_unreg(t->parser, t->private_data);
     OMSbuff_free(t->buffer);
-
-    if ( t->i_stream && IS_ISEXCLUSIVE(t->i_stream) )
-        ex_track_remove(t);
 
     istream_close(t->i_stream);
 
