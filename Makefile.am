@@ -1,6 +1,5 @@
 SUBDIRS =	bufferpool \
 		var \
-		wsocket \
 		md5 \
 		xmlparser \
 		mediathread \

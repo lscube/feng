@@ -64,13 +64,13 @@ feng_LDADD += ../stunserver/libstunserver.la \
 		../stun/libstun.la 
 endif
 		
-feng_LDADD +=	../wsocket/libwsocket.la \
-		../command_environment/libcommand.la \
+feng_LDADD +=	../command_environment/libcommand.la \
 		../src/libprefs.la \
 		../src/libutils.la \
 		../src/liblog.la \
 		../src/libsafectype.la \
-		../md5/libmd5.la
+		../md5/libmd5.la \
+		-lnetembryo
 
 if FENICE_VERBOSE
 feng_LDADD += ../src/libdebug.la

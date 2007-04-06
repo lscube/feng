@@ -231,6 +231,10 @@ fi
 
 AM_CONDITIONAL(FENICE_FFMPEG, [test "$enable_ffmpeg" = "yes"])
 
+PKG_CHECK_MODULES(LIBNETEMBRYO,[libnetembryo >= 0.0.1])
+CFLAGS="$CFLAGS $LIBNETEMBRYO_CFLAGS"
+LIBS="$LIBS $LIBNETEMBRYO_LIBS"
+
 ssl_msg="libssl found ................... : no"
 if test x_$found_ssl == x_yes; then
 ssl_msg="libssl found ................... : yes"
@@ -387,7 +391,6 @@ AC_CONFIG_FILES([xmlparser/Makefile])
 AC_CONFIG_FILES([multicast/Makefile])
 AC_CONFIG_FILES([command_environment/Makefile])
 AC_CONFIG_FILES([var/Makefile])
-AC_CONFIG_FILES([wsocket/Makefile])
 AC_CONFIG_FILES([docs/Makefile])
 AC_CONFIG_FILES([etc/Makefile])
 AC_CONFIG_FILES([avroot/Makefile])

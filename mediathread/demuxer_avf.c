@@ -201,7 +201,7 @@ static int init(Resource * r)
 //register_protocol(&fnc_protocol);
 
     avfc = av_alloc_format_context();
-    ap.prealloced_context = 1;
+//    ap.prealloced_context = 1;
 
     avfc->flags |= AVFMT_FLAG_GENPTS;
 
