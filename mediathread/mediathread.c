@@ -38,6 +38,7 @@
 
 static GList *el_head = NULL;
 static pthread_mutex_t el_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mt_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void *mediathread(void *arg) {
     GList *el_cur, *el_prev;
@@ -53,8 +54,11 @@ void *mediathread(void *arg) {
         pthread_mutex_unlock(&el_mutex);
 
         while (el_cur) {
+            pthread_mutex_lock(&mt_mutex);
             mt_process_event(EVENT(el_cur));
             mt_dispose_event(EVENT(el_cur));
+            pthread_mutex_unlock(&mt_mutex);
+
             g_list_free_1(el_cur);
 
             pthread_mutex_lock(&el_mutex);
@@ -176,7 +180,9 @@ Resource *mt_resource_open(char * path, char *filename) {
 void mt_resource_close(Resource *resource) {
     if (!resource)
         return;
+    pthread_mutex_lock(&mt_mutex);
     r_close(resource);
+    pthread_mutex_unlock(&mt_mutex);
 }
 
 inline int event_buffer_low(void *sender, Track *src) {
