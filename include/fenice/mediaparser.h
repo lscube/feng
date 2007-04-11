@@ -46,6 +46,8 @@ typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCodingType;
 
 typedef enum {MP_undef=-1, MP_audio, MP_video, MP_application, MP_data, MP_control} MediaType;
 
+typedef enum {MS_stored=0, MS_live} MediaSource;
+
 MObject_def(__MEDIA_PROPERTIES)
     int bit_rate; /*! average if VBR or -1 is not useful*/
     MediaCodingType coding_type;
@@ -53,6 +55,7 @@ MObject_def(__MEDIA_PROPERTIES)
     unsigned int clock_rate;
     char encoding_name[11];
     MediaType media_type;
+    MediaSource media_source;
     double mtime;    //FIXME Move to bufferpool   //time is in seconds
     double duration; //FIXME Move to bufferpool
     //! Audio specific properties:

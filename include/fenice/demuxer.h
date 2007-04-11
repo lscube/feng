@@ -94,6 +94,7 @@ MObject_def(__RESOURCE_INFO)
     char *phone;
     sdp_field_list sdp_private;
     double duration;
+    MediaSource media_source;
     char twin[255];
     char multicast[16];
     char ttl[4];
@@ -132,8 +133,6 @@ MObject_def(__TRACK_INFO)
     //end CC
 } TrackInfo;
 
-//typedef enum {stored=0,live} media_source;
-
 typedef struct __TRACK {
     InputStream *i_stream;
     TrackInfo *info;
@@ -141,7 +140,6 @@ typedef struct __TRACK {
     MediaParser *parser;
     /*bufferpool*/
     OMSBuffer *buffer;
-    media_source msource;
     MediaProperties *properties; /* track properties */
     Resource *parent;
     /* private data is managed by specific media parser: from allocation to deallocation
