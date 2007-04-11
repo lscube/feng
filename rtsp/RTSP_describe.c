@@ -32,14 +32,13 @@
  *  
  * */
 
-#include <stdio.h>
-#include <string.h>
-
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include <fenice/sdp2.h>
 #include <fenice/fnc_log.h>
+
+#include <RTSP_utils.h>
 
 /*
      ****************************************************************
@@ -48,107 +47,40 @@
 */
 int RTSP_describe(RTSP_buffer * rtsp)
 {
-    int res;
-    char object[255], server[255], trash[255];
-    char *p;
-    unsigned short port;
     char url[255];
-    description_format descr_format = df_SDP_format;    // shawill put to some default
-    char descr[MAX_DESCR_LENGTH];
+    ConnectionInfo cinfo;
 
+    int error_id = 0;
 
-    /* Extract the URL */
-    if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
-        send_reply(400, 0, rtsp);    /* bad request */
-        return ERR_NOERROR;
-    }
-    /* Validate the URL */
+    cinfo.descr_format = df_SDP_format; // shawill put to some default
 
-    switch (parse_url
-        (url, server, sizeof(server), &port, object, sizeof(object))) {
-    case 1:        // bad request
-        send_reply(400, 0, rtsp);
-        return ERR_NOERROR;
-        break;
-    case -1:        // internal server error
-        send_reply(500, 0, rtsp);
-        return ERR_NOERROR;
-        break;
-    default:
-        break;
-    }
-    if (strcmp(server, prefs_get_hostname()) != 0) {    /* Currently this feature is disabled. */
-        /* wrong server name */
-        //      send_reply(404, 0 , rtsp);  /* Not Found */
-        //      return ERR_NOERROR;
-    }
-    if (strstr(object, "../")) {
-        /* disallow relative paths outside of current directory. */
-        send_reply(403, 0, rtsp);    /* Forbidden */
-        return ERR_NOERROR;
-    }
-    if (strstr(object, "./")) {
-        /* Disallow ./ */
-        send_reply(403, 0, rtsp);    /* Forbidden */
-        return ERR_NOERROR;
-    }
-    // Disallow Header REQUIRE
-    if (strstr(rtsp->in_buffer, HDR_REQUIRE)) {
-        send_reply(551, 0, rtsp);    /* Option not supported */
-        return ERR_NOERROR;
-    }
-
-
-    /* Get the description format. SDP is recomended */
-    if (strstr(rtsp->in_buffer, HDR_ACCEPT) != NULL) {
-        if (strstr(rtsp->in_buffer, "application/sdp") != NULL) {
-            descr_format = df_SDP_format;
-        } else {
-            // Add here new description formats
-            send_reply(551, 0, rtsp);    /* Option not supported */
-            return ERR_NOERROR;
-        }
-    }
-    // Get the CSeq 
-    if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-        send_reply(400, 0, rtsp);    /* Bad Request */
-        return ERR_NOERROR;
-    } else {
-        if (sscanf(p, "%254s %d", trash, &(rtsp->rtsp_cseq)) != 2) {
-            send_reply(400, 0, rtsp);    /* Bad Request */
-            return ERR_NOERROR;
-        }
-    }
-
-    if ((res = sdp_session_descr(object, descr, sizeof(descr)))) 
-        fnc_log(FNC_LOG_ERR,"[SDP2] error\n");
-
-    if (res == ERR_NOT_FOUND) {
-        send_reply(404, 0, rtsp);    // Not found
-        return ERR_NOERROR;
-    }
-    if (res == ERR_PARSE || res == ERR_GENERIC || res == ERR_ALLOC) {
-        send_reply(500, 0, rtsp);    // Internal server error
-        return ERR_NOERROR;
-    }
+    if ( (error_id = extract_url(rtsp, url)) ) // Extract the URL
+	    goto error_management;
+    else if ( (error_id = validate_url(url, &cinfo)) ) // Validate URL
+    	goto error_management;
+    else if ( (error_id = check_forbidden_path(&cinfo)) ) // Check for Forbidden Paths
+    	goto error_management;
+    else if ( (error_id = check_require_header(rtsp)) ) // Disallow Header REQUIRE
+    	goto error_management;
+    else if ( (error_id = get_description_format(rtsp, &cinfo)) ) // Get the description format. SDP is recomended
+    	goto error_management;
+    else if ( (error_id = get_cseq(rtsp)) ) // Get the CSeq 
+        goto error_management;
+    else if ( (error_id = get_session_description(&cinfo)) ) // Get Session Description
+        goto error_management;
 
     if (max_connection() == ERR_GENERIC) {
         /*redirect */
-        return send_redirect_3xx(rtsp, object);
+        return send_redirect_3xx(rtsp, cinfo.object);
     }
 
     fnc_log(FNC_LOG_INFO, "DESCRIBE %s RTSP/1.0 ", url);
-    send_describe_reply(rtsp, object, descr_format, descr);
+    send_describe_reply(rtsp, cinfo.object, cinfo.descr_format, cinfo.descr);
+    log_user_agent(rtsp); // See User-Agent 
 
-    // See User-Agent 
-    if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
-        char cut[strlen(p)];
-        strcpy(cut, p);
-        p = strstr(cut, "\n");
-        cut[strlen(cut) - strlen(p) - 1] = '\0';
-        fnc_log(FNC_LOG_CLIENT, "%s\n", cut);
-    } else
-        fnc_log(FNC_LOG_CLIENT, "- \n");
+    return ERR_NOERROR;
 
+error_management:
+    send_reply(error_id, 0, rtsp);
     return ERR_NOERROR;
 }

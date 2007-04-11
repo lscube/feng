@@ -40,6 +40,8 @@
 #include <fenice/multicast.h>
 #include <fenice/fnc_log.h>
 
+#include <RTSP_utils.h>
+
 /*
      ****************************************************************
      *            SETUP METHOD HANDLING
@@ -49,12 +51,11 @@
 
 int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
-    char object[255], server[255];
+    ConnectionInfo cinfo;
     char url[255];
-    unsigned short port;
     RTSP_session *rtsp_s;
     RTP_session *rtp_s;
-    int session_id = 0;
+    long int session_id = 0;
     port_pair cli_ports;
     port_pair ser_ports;
     struct timeval now_tmp;
@@ -72,48 +73,21 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     Sock *sock_pair[2];
     RTSP_interleaved *intlvd, *ilvd_s;
 
+    int error_id = 0;
+
     // init
     memset(&transport, 0, sizeof(transport));
 
     // Parse the input message
 
-    /* Get the URL */
-    fnc_log(FNC_LOG_DEBUG, "%s\n", rtsp->in_buffer);
-    if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
-        send_reply(400, 0, rtsp);    /* bad request */
-        return ERR_NOERROR;
-    }
-    /* Validate the URL */
-    switch (parse_url(url, server, sizeof(server), &port, object,
-                      sizeof(object))) {    //object is requested file's name
-        case 1:        // bad request
-            send_reply(400, 0, rtsp);
-            return ERR_NOERROR;
-        case -1:        // interanl server error
-            send_reply(500, 0, rtsp);
-            return ERR_NOERROR;
-            break;
-        default:
-            break;
-    }
+    if ( (error_id = extract_url(rtsp, url)) ) // Extract the URL
+	    goto error_management;
+    else if ( (error_id = validate_url(url, &cinfo)) ) // Validate URL
+    	goto error_management;
+    else if ( (error_id = check_forbidden_path(&cinfo)) ) // Check for Forbidden Paths
+    	goto error_management;
 
-    if (strcmp(server, prefs_get_hostname()) != 0) {
-        /* Currently this feature is disabled. */
-        /* wrong server name */
-        //      send_reply(404, 0 , rtsp); /* Not Found */
-        //      return ERR_NOERROR;
-    }
-    if (strstr(object, "../")) {
-        /* disallow relative paths outside of current directory. */
-        send_reply(403, 0, rtsp);    /* Forbidden */
-        return ERR_NOERROR;
-    }
-    if (strstr(object, "./")) {
-        /* Disallow the ./ */
-        send_reply(403, 0, rtsp);    /* Forbidden */
-        return ERR_NOERROR;
-    }
-    if (!(p = strchr(object, '!'))) {
+    if (!(p = strchr(cinfo.object, '!'))) { 
     //if '!' is not present then a file has not been specified
         send_reply(500, 0, rtsp);    /* Internal server error */
         return ERR_NOERROR;
@@ -121,20 +95,12 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         // SETUP resource!trackname
         strcpy (trackname, p + 1);
         // XXX Not really nice...
-        while (object != p) if (*--p == '/') break;
+        while (cinfo.object != p) if (*--p == '/') break;
         *p = '\0';
     }
 
-    // Get the CSeq 
-    if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-        send_reply(400, 0, rtsp);    /* Bad Request */
-        return ERR_NOERROR;
-    } else {
-        if (sscanf(p, "%*s %d", &(rtsp->rtsp_cseq)) != 1) {
-            send_reply(400, 0, rtsp);    /* Bad Request */
-            return ERR_NOERROR;
-        }
-    }
+    if ( (error_id = get_cseq(rtsp)) ) // Get the CSeq 
+        goto error_management;
 
     // Start parsing the Transport header
     if ((p = strstr(rtsp->in_buffer, HDR_TRANSPORT)) == NULL) {
@@ -380,12 +346,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         return ERR_NOERROR;
     }
     // If there's a Session header we have an aggregate control
-    if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(p, "%*s %d", &session_id) != 1) {
-            send_reply(454, 0, rtsp);    /* Session Not Found */
-            return ERR_NOERROR;
-        }
-    } else {
+    if ( (error_id = get_session_id(rtsp, &session_id)) )
+        goto error_management;
+    else {
         // Generate a random Session number
         gettimeofday(&now_tmp, 0);
         srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
@@ -434,9 +397,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     // it should parse the request giving us object!trackname
     if (!rtsp_s->resource) {
         if (!(rtsp_s->resource = mt_resource_open(prefs_get_serv_root(),
-                                                object))) {
+                                                cinfo.object))) {
             send_reply(404, 0, rtsp);//TODO: Not found or Internal server error?
-            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", object);
+            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", cinfo.object);
             return ERR_NOERROR;
         }
     }
@@ -444,7 +407,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     if (!(track_sel = r_open_tracks(rtsp_s->resource, trackname, NULL))) {
         send_reply(404, 0, rtsp);    // Not found
         fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
-                trackname, object);
+                trackname, cinfo.object);
         return ERR_NOERROR;
     }
 
@@ -480,7 +443,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         start_rtptime++;
     }
     rtp_s->pause = 1;
-    strcpy(rtp_s->sd_filename, object);
+    strcpy(rtp_s->sd_filename, cinfo.object);
 #if 0 //MULTICAST
     /*XXX */
     rtp_s->current_media = calloc(1, sizeof(media_entry));
@@ -513,15 +476,11 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
     fnc_log(FNC_LOG_INFO, "SETUP %s RTSP/1.0 ", url);
     send_setup_reply(rtsp, rtsp_s, rtp_s);
-    // See User-Agent 
-    if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
-        char cut[strlen(p)];
-        strcpy(cut, p);
-        p = strstr(cut, "\n");
-        cut[strlen(cut) - strlen(p) - 1] = '\0';
-        fnc_log(FNC_LOG_CLIENT, "%s\n", cut);
-    } else
-        fnc_log(FNC_LOG_CLIENT, "- \n");
+    log_user_agent(rtsp); // See User-Agent 
 
+    return ERR_NOERROR;
+
+error_management:
+    send_reply(error_id, 0, rtsp);
     return ERR_NOERROR;
 }

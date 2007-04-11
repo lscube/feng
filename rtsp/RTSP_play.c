@@ -37,6 +37,7 @@
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 
+#include <RTSP_utils.h>
 
 /*
      ****************************************************************
@@ -46,9 +47,8 @@
 
 int RTSP_play(RTSP_buffer * rtsp)
 {
-    char object[255], server[255], trash[255];
+    ConnectionInfo cinfo;
     char url[255];
-    unsigned short port;
     char *p = NULL, *q = NULL;
     long int session_id;
     RTSP_session *rtsp_sess;
@@ -56,17 +56,12 @@ int RTSP_play(RTSP_buffer * rtsp)
     play_args args;
     int time_taken = 0;
 
+    int error_id = 0;
+
     // Parse the input message
-    // Get the CSeq 
-    if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-        send_reply(400, 0, rtsp);    /* Bad Request */
-        return ERR_NOERROR;
-    } else {
-        if (sscanf(p, "%254s %d", trash, &(rtsp->rtsp_cseq)) != 2) {
-            send_reply(400, 0, rtsp);    /* Bad Request */
-            return ERR_NOERROR;
-        }
-    }
+    if ( (error_id = get_cseq(rtsp)) ) // Get the CSeq 
+        goto error_management;
+
     // Get the range
     args.playback_time_valid = 0;
     args.start_time_valid = 0;
@@ -85,23 +80,18 @@ int RTSP_play(RTSP_buffer * rtsp)
             if (sscanf(q + 1, "%f", &(args.end_time)) != 1) {
                 args.end_time = 0;
             }
-        } else
-
-        if ((q = strstr(p, "smpte")) != NULL) {
-        // FORMAT: smpte                        
+        } 
+        else if ((q = strstr(p, "smpte")) != NULL) { // FORMAT: smpte                        
             // Currently unsupported. Using default.
             args.start_time = 0;
             args.end_time = 0;
-        } else
-
-        if ((q = strstr(p, "clock"))!= NULL) {
-        // FORMAT: clock
+        }
+        else if ((q = strstr(p, "clock"))!= NULL) { // FORMAT: clock
             // Currently unsupported. Using default.
             args.start_time = 0;
             args.end_time = 0;
-        } else
-        // No specific format. Assuming NeMeSI format.
-        if ((q = strstr(p, "time")) == NULL) {
+        } 
+        else if ((q = strstr(p, "time")) == NULL) { // No specific format. Assuming NeMeSI format.
             // Hour
             double t;
             q = strstr(p, ":");
@@ -117,7 +107,8 @@ int RTSP_play(RTSP_buffer * rtsp)
             args.start_time += t;
 
             args.start_time_valid = 1;
-        } else {
+        } 
+        else {
             // no range defined but start time expressed?
             args.start_time = 0;
             args.end_time = 0;
@@ -128,38 +119,32 @@ int RTSP_play(RTSP_buffer * rtsp)
             // Start playing immediately
             memset(&(args.playback_time), 0,
                    sizeof(args.playback_time));
-        } else {
+        } 
+        else {
             // Start playing at desired time
             if (!time_taken) {
                 q = strchr(q, '=');
-                if (get_utc(&(args.playback_time), q + 1)
-                    != ERR_NOERROR) {
+                if (get_utc(&(args.playback_time), q + 1) != ERR_NOERROR) {
                     memset(&(args.playback_time), 0,
                            sizeof(args.playback_time));
                 }
                 args.playback_time_valid = 1;
             }
         }
-    } else {
+    } 
+    else {
         args.start_time = 0;
         args.end_time = 0;
         memset(&(args.playback_time), 0, sizeof(args.playback_time));
     }
-    // CSeq
-    if ((p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL) {
-        send_reply(400, 0, rtsp);    /* Bad Request */
-        return ERR_NOERROR;
+
+    if ( (error_id = get_session_id(rtsp, &session_id)) )
+        goto error_management;
+    else if ( session_id == -1 ) {
+        error_id = 400;
+        goto error_management;
     }
-    // If we get a Session hdr, then we have an aggregate control
-    if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(p, "%254s %ld", trash, &session_id) != 2) {
-            send_reply(454, 0, rtsp);    /* Session Not Found */
-            return ERR_NOERROR;
-        }
-    } else {
-        send_reply(400, 0, rtsp);    /* bad request */
-        return ERR_NOERROR;
-    }
+
     // Pick the session matching the right session_id
 #if 0 
     for (rtsp_sess = rtsp->session_list; rtsp_sess != NULL; rtsp_sess++)
@@ -175,45 +160,15 @@ int RTSP_play(RTSP_buffer * rtsp)
         return ERR_NOERROR;
     }
 
-    /* Extract the URL */
-    if (!sscanf(rtsp->in_buffer, " %*s %254s ", url)) {
-        send_reply(400, 0, rtsp);    /* bad request */
-        return ERR_NOERROR;
-    }
-    /* Validate the URL */
+    if ( (error_id = extract_url(rtsp, url)) ) // Extract the URL
+	    goto error_management;
+    else if ( (error_id = validate_url(url, &cinfo)) ) // Validate URL
+    	goto error_management;
+    else if ( (error_id = check_forbidden_path(&cinfo)) ) // Check for Forbidden Paths
+    	goto error_management;
 
-    switch (parse_url(url, server, sizeof(server), &port, object,
-            sizeof(object))) {
-    case 1:        // bad request
-        send_reply(400, 0, rtsp);
-        return ERR_NOERROR;
-        break;
-    case -1:        // internal server error
-        send_reply(500, 0, rtsp);
-        return ERR_NOERROR;
-        break;
-    default:
-        break;
-    }
-    if (strcmp(server, prefs_get_hostname()) != 0) {
-    /* Currently this feature is disabled. */
-    /* wrong server name */
-    // fnc_log(FNC_LOG_ERR,"PLAY request specified an unknown server name.\n");
-    // send_reply(404, 0 , rtsp); /* Not Found */
-    // return ERR_NOERROR;
-    }
-    if (strstr(object, "../")) {
-        /* disallow relative paths outside of current directory. */
-        send_reply(403, 0, rtsp);    /* Forbidden */
-        return ERR_NOERROR;
-    }
-    if (strstr(object, "./")) {
-        /* Disallow ./ */
-        send_reply(403, 0, rtsp);    /* Forbidden */
-        return ERR_NOERROR;
-    }
 #if ENABLE_MEDIATHREAD
-    if (!(q = strchr(object, '!'))) {
+    if (!(q = strchr(cinfo.object, '!'))) {
         //if '!' is not present then a file has not been specified
         // aggregate content requested
         for (rtp_sess = rtsp_sess->rtp_session;
@@ -242,11 +197,11 @@ int RTSP_play(RTSP_buffer * rtsp)
         // resource!trackname
 //        strcpy (trackname, q + 1);
         // XXX Not really nice...
-        while (object != q) if (*--q == '/') break;
+        while (cinfo.object != q) if (*--q == '/') break;
         *q = '\0';
     }
 #else
-    q = strchr(object, '!');
+    q = strchr(cinfo.object, '!');
     if (q == NULL) {
         // PLAY <file.sd>
         // Search for the RTP session
@@ -312,16 +267,11 @@ int RTSP_play(RTSP_buffer * rtsp)
 #endif
 
     fnc_log(FNC_LOG_INFO, "PLAY %s RTSP/1.0 ", url);
-    send_play_reply(rtsp, object, rtsp_sess);
-    // See User-Agent 
-    if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
-        char cut[strlen(p)];
-        strcpy(cut, p);
-        p = strstr(cut, "\n");
-        cut[strlen(cut) - strlen(p) - 1] = '\0';
-        fnc_log(FNC_LOG_CLIENT, "%s\n", cut);
-    } else
-        fnc_log(FNC_LOG_CLIENT, "- \n");
+    send_play_reply(rtsp, cinfo.object, rtsp_sess);
+    log_user_agent(rtsp); // See User-Agent 
+    return ERR_NOERROR;
 
+error_management:
+    send_reply(error_id, 0, rtsp);
     return ERR_NOERROR;
 }

@@ -2,7 +2,8 @@
 feniceincludedir = $(top_srcdir)/include
 
 noinst_LTLIBRARIES = librtsp.la
-librtsp_la_SOURCES =	RTSP_state_machine.c \
+librtsp_la_SOURCES =	RTSP_utils.c \
+			RTSP_state_machine.c \
 			RTSP_handler.c \
 			RTSP_initserver.c \
 			RTSP_full_msg_rcvd.c \
