@@ -1,12 +1,12 @@
 /* * 
  *  $Id$
- *  
+ *
  *  This file is part of Fenice
  *
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *      
+ *
  *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
  *    - Francesco Varano    <francesco.varano@polito.it>
  *    - Marco Penno        <marco.penno@polito.it>
@@ -25,7 +25,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with Fenice; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  * */
 
 #include <string.h>
@@ -51,16 +51,6 @@ static DemuxerInfo info = {
 
 FNC_LIB_DEMUXER(sd);
 
-typedef struct __FLAGS_DATA {
-    struct __DATA {
-        int frame_len;    // i need to move it in Parser
-        int priority;    //i need to move it. Where? Selector, Track 
-        float pkt_len;    //i need to move it in Parser
-        int byte_per_pckt;    //i need to move it in Parser
-        char aggregate[80];
-    } data;
-} FlagsData;
-
 static int probe(InputStream * i_stream)
 {
     char *ext;
@@ -79,7 +69,6 @@ static int init(Resource * r)
     unsigned short port;
     char content_base[256] = "", *separator, track_file[256];
 
-    media_source msource = stored;
     FILE *fd;
 
     MediaProperties props_hints;
@@ -101,10 +90,11 @@ static int init(Resource * r)
 
     MObject_init(MOBJECT(&props_hints));
     MObject_init(MOBJECT(&trackinfo));
-    MObject_0(MOBJECT(&props_hints), MediaProperties);
-    MObject_0(MOBJECT(&trackinfo), TrackInfo);
 
     do {
+        MObject_0(MOBJECT(&props_hints), MediaProperties);
+        MObject_0(MOBJECT(&trackinfo), TrackInfo);
+
         *keyword = '\0';
         while (strcasecmp(keyword, SD_STREAM) && !feof(fd)) {
             fgets(line, sizeof(line), fd);
@@ -150,12 +140,6 @@ static int init(Resource * r)
                 else
                     g_strlcpy(trackinfo.name, track_file, sizeof(trackinfo.name));
 
-#if 0
-                if (!(track->i_stream = istream_open(track->info->mrl))) {
-                    free_track(track, r);
-                    return ERR_ALLOC;
-                }
-#endif
             } else if (!strcasecmp(keyword, SD_ENCODING_NAME)) {
                 // SD_ENCODING_NAME
                 sscanf(line, "%*s%10s", props_hints.encoding_name);
@@ -195,9 +179,9 @@ static int init(Resource * r)
                 // SD_MEDIA_SOURCE
                 sscanf(line, "%*s%10s", sparam);
                 if (strcasecmp(sparam, "STORED") == 0)
-                    msource = stored;
+                    props_hints.media_source = MS_stored;
                 if (strcasecmp(sparam, "LIVE") == 0)
-                    msource = live;
+                    props_hints.media_source = MS_live;
             } else if (!strcasecmp(keyword, SD_LICENSE)) {
 
                 /*******START CC********/
@@ -232,7 +216,7 @@ static int init(Resource * r)
         if (!(track = add_track(r, &trackinfo, &props_hints)))
             return ERR_ALLOC;
 
-        track->msource = msource;
+        r->info->media_source = props_hints.media_source;
 
     } while (!feof(fd));
 
