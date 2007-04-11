@@ -1,7 +1,7 @@
 /* * 
  *  $Id: $
  *  
- *  This file is part of Fenice
+ *  This file is part of Feng
  *
  *  Fenice -- Open Media Server
  *  h264 parser based on rfc 3984
