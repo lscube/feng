@@ -51,16 +51,6 @@ static DemuxerInfo info = {
 
 FNC_LIB_DEMUXER(sd);
 
-typedef struct __FLAGS_DATA {
-    struct __DATA {
-        int frame_len;    // i need to move it in Parser
-        int priority;    //i need to move it. Where? Selector, Track 
-        float pkt_len;    //i need to move it in Parser
-        int byte_per_pckt;    //i need to move it in Parser
-        char aggregate[80];
-    } data;
-} FlagsData;
-
 static int probe(InputStream * i_stream)
 {
     char *ext;
