@@ -308,7 +308,9 @@ void free_track(Track *t, Resource *r)
     MObject_unref(MOBJECT(t->info));
     MObject_unref(MOBJECT(t->properties));
     mparser_unreg(t->parser, t->private_data);
-    OMSbuff_free(t->buffer);
+
+    if (t->buffer)
+        OMSbuff_free(t->buffer);
 
     istream_close(t->i_stream);
 
@@ -407,8 +409,6 @@ int r_changed(ResourceDescr *descr)
 #define ADD_TRACK_ERROR(level, ...) \
     { \
         fnc_log(level, __VA_ARGS__); \
-        MObject_unref(MOBJECT(t->info)); \
-        MObject_unref(MOBJECT(t->properties)); \
         free_track(t, r); \
         return NULL; \
     }
@@ -416,15 +416,18 @@ int r_changed(ResourceDescr *descr)
 Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 {
     Track *t;
+    char *shm_name;
 
     // TODO: search first of all in exclusive tracks
 
     if(r->num_tracks>=MAX_TRACKS)
         return NULL;
 
-    if( !(t=(Track *)calloc(1, sizeof(Track))) ) 
-        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
-    
+    if( !(t=(Track *)calloc(1, sizeof(Track))) ) {
+        fnc_log(FNC_LOG_FATAL, "Memory allocation problems\n");
+        return NULL;
+    }
+
     if (info)
         t->info = MObject_dup(info, sizeof(TrackInfo));
     else
@@ -439,17 +442,28 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 
     MObject_destructor(t->properties, properties_free);
 
-    if( !(t->buffer = OMSbuff_new(OMSBUFFER_DEFAULT_DIM)) )
-        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
+    switch (t->properties->media_source) {
+    case MS_stored:
+        if( !(t->buffer = OMSbuff_new(OMSBUFFER_DEFAULT_DIM)) )
+            ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
+        if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
+            ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
+        if ( !(t->parser = mparser_find(t->properties->encoding_name)) )
+            ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
+        if (t->parser->init(t->properties, &t->parser_private))
+            ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
+                            t->properties->encoding_name);
+        break;
+    case MS_live:
+	shm_name = strstr(t->info->mrl, FNC_PROTO_SEPARATOR) + strlen(FNC_PROTO_SEPARATOR);
+        if( !(t->buffer = OMSbuff_shm_map(shm_name)) )
+            ADD_TRACK_ERROR(FNC_LOG_FATAL, "Shared memory problems\n");
+        break;
+    default:
+        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Media source not supported!");
+        break;
+    }
 
-    if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
-        ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
-
-    if ( !(t->parser = mparser_find(t->properties->encoding_name)) )
-        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
-    if (t->parser->init(t->properties, &t->parser_private))
-        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
-                                        t->properties->encoding_name);
     t->parent = r;
     r->tracks = g_list_append(r->tracks, t);
     r->num_tracks++;

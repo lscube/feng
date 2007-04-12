@@ -225,7 +225,14 @@ static int init(Resource * r)
 
 static int read_packet(Resource * r)
 {
-    return RESOURCE_NOT_PARSEABLE;
+    switch(r->info->media_source) {
+        case MS_stored:
+            return RESOURCE_NOT_PARSEABLE;
+        case MS_live:
+            return RESOURCE_OK;
+        default:
+            return RESOURCE_DAMAGED;
+    }
 }
 
 static int seek(Resource * r, double time_sec)
