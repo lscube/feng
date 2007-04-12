@@ -1,12 +1,12 @@
 /* * 
  *  $Id$
- *  
+ *
  *  This file is part of Fenice
  *
  *  Fenice -- Open Media Server
  *
  *  Copyright (C) 2004 by
- *      
+ *
  *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
  *    - Francesco Varano    <francesco.varano@polito.it>
  *    - Marco Penno        <marco.penno@polito.it>
@@ -25,7 +25,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with Fenice; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  * */
 
 #include <string.h>
@@ -51,16 +51,6 @@ static DemuxerInfo info = {
 
 FNC_LIB_DEMUXER(sd);
 
-typedef struct __FLAGS_DATA {
-    struct __DATA {
-        int frame_len;    // i need to move it in Parser
-        int priority;    //i need to move it. Where? Selector, Track 
-        float pkt_len;    //i need to move it in Parser
-        int byte_per_pckt;    //i need to move it in Parser
-        char aggregate[80];
-    } data;
-} FlagsData;
-
 static int probe(InputStream * i_stream)
 {
     char *ext;
@@ -75,12 +65,10 @@ static int init(Resource * r)
 {
     char keyword[80], line[256], sparam[10];
     Track *track;
-    FlagsData me;
     char object[255], server[255];
     unsigned short port;
     char content_base[256] = "", *separator, track_file[256];
 
-    media_source msource = stored;
     FILE *fd;
 
     MediaProperties props_hints;
@@ -89,28 +77,28 @@ static int init(Resource * r)
     fnc_log(FNC_LOG_DEBUG, "SD init function\n");
     fd = fdopen(r->i_stream->fd, "r");
 
-    // content base
-    // if ( (seaparator=strrchr(r->i_stream->name, '/')) )
-    // using GLib it becomes:
     if ((separator = strrchr(r->i_stream->name, G_DIR_SEPARATOR))) {
-        if ((unsigned) (separator - r->i_stream->name + 1) >= sizeof(content_base)) {
+        int len = separator - r->i_stream->name + 1;
+        if (len >= sizeof(content_base)) {
             fnc_log(FNC_LOG_ERR, "content base string too long\n");
             return ERR_GENERIC;
         } else {
-            strncpy(content_base, r->i_stream->name, separator - r->i_stream->name + 1);
+            strncpy(content_base, r->i_stream->name, len);
             fnc_log(FNC_LOG_DEBUG, "content base: %s\n", content_base);
         }
     }
+
     MObject_init(MOBJECT(&props_hints));
     MObject_init(MOBJECT(&trackinfo));
-    MObject_0(MOBJECT(&props_hints), MediaProperties);
-    MObject_0(MOBJECT(&trackinfo), TrackInfo);
 
     do {
+        MObject_0(MOBJECT(&props_hints), MediaProperties);
+        MObject_0(MOBJECT(&trackinfo), TrackInfo);
+
         *keyword = '\0';
         while (strcasecmp(keyword, SD_STREAM) && !feof(fd)) {
             fgets(line, sizeof(line), fd);
-            sscanf(line, "%s", keyword);
+            sscanf(line, "%79s", keyword);
             /*
              *- validate multicast
              *- validate twin
@@ -119,7 +107,7 @@ static int init(Resource * r)
                 sscanf(line, "%*s%s", r->info->twin);
                 parse_url(r->info->twin, server, sizeof(server), &port, object, sizeof (object));    //FIXME
             } else if (!strcasecmp(keyword, SD_MULTICAST)) {
-                sscanf(line, "%*s%s", r->info->multicast);
+                sscanf(line, "%*s%15s", r->info->multicast);
                 // if (!is_valid_multicast_address(sd->multicast))
                 if (!is_valid_multicast_address(r->info->multicast))
                     //strcpy(sd->multicast, DEFAULT_MULTICAST_ADDRESS);
@@ -132,7 +120,6 @@ static int init(Resource * r)
         /* Allocate and cast TRACK PRIVATE DATA foreach track.
          * (in this case track = elementary stream media file)
          * */
-        // memset(keyword,0,sizeof(keyword));
         *keyword = '\0';
         while (strcasecmp(keyword, SD_STREAM_END) && !feof(fd)) {
             fgets(line, sizeof(line), fd);
@@ -153,18 +140,12 @@ static int init(Resource * r)
                 else
                     g_strlcpy(trackinfo.name, track_file, sizeof(trackinfo.name));
 
-#if 0
-                if (!(track->i_stream = istream_open(track->info->mrl))) {
-                    free_track(track, r);
-                    return ERR_ALLOC;
-                }
-#endif
             } else if (!strcasecmp(keyword, SD_ENCODING_NAME)) {
                 // SD_ENCODING_NAME
                 sscanf(line, "%*s%10s", props_hints.encoding_name);
             } else if (!strcasecmp(keyword, SD_PRIORITY)) {
-                // SD_PRIORITY // shawill XXX: probably to be moved in properties or infos
-                sscanf(line, "%*s %d\n", &me.data.priority);
+                // SD_PRIORITY //XXX once pt change is back...
+//                sscanf(line, "%*s %d\n", &me.data.priority);
             } else if (!strcasecmp(keyword, SD_BITRATE)) {
                 // SD_BITRATE
                 sscanf(line, "%*s %d\n", &props_hints.bit_rate);
@@ -177,41 +158,30 @@ static int init(Resource * r)
             } else if (!strcasecmp(keyword, SD_AUDIO_CHANNELS)) {
                 // SD_AUDIO_CHANNELS
                 sscanf(line, "%*s %d\n", &props_hints.audio_channels);
-            } else if (!strcasecmp(keyword, SD_AGGREGATE)) {
-                // SD_AGGREGATE
-                sscanf(line, "%*s%50s", me.data.aggregate);
             } else if (!strcasecmp(keyword, SD_SAMPLE_RATE)) {
                 // SD_SAMPLE_RATE
                 sscanf(line, "%*s%f", &props_hints.sample_rate);
             } else if (!strcasecmp(keyword, SD_BIT_PER_SAMPLE)) {
                 // SD_BIT_PER_SAMPLE
                 sscanf(line, "%*s%u", &props_hints.bit_per_sample);
-            } else if (!strcasecmp(keyword, SD_FRAME_LEN)) {
-                // SD_FRAME_LEN
-                sscanf(line, "%*s%d", &me.data.frame_len);
             } else if (!strcasecmp(keyword, SD_CODING_TYPE)) {
                 // SD_CODING_TYPE
                 sscanf(line, "%*s%10s", sparam);
+            //XXX remove this later...
                 if (strcasecmp(sparam, "FRAME") == 0)
                     props_hints.coding_type = mc_frame;
                 else if (strcasecmp(sparam, "SAMPLE") == 0)
                     props_hints.coding_type = mc_sample;
-            } else if (!strcasecmp(keyword, SD_PKT_LEN)) {
-                // SD_PKT_LEN
-                sscanf(line, "%*s%f", &me.data.pkt_len);
             } else if (!strcasecmp(keyword, SD_FRAME_RATE)) {
                 // SD_FRAME_RATE
                 sscanf(line, "%*s%u", &props_hints.frame_rate);
-            } else if (!strcasecmp(keyword, SD_BYTE_PER_PCKT)) {
-                // SD_BYTE_PER_PCKT
-                sscanf(line, "%*s%d", &me.data.byte_per_pckt);
             } else if (!strcasecmp(keyword, SD_MEDIA_SOURCE)) {
                 // SD_MEDIA_SOURCE
                 sscanf(line, "%*s%10s", sparam);
                 if (strcasecmp(sparam, "STORED") == 0)
-                    msource = stored;
+                    props_hints.media_source = MS_stored;
                 if (strcasecmp(sparam, "LIVE") == 0)
-                    msource = live;
+                    props_hints.media_source = MS_live;
             } else if (!strcasecmp(keyword, SD_LICENSE)) {
 
                 /*******START CC********/
@@ -246,92 +216,12 @@ static int init(Resource * r)
         if (!(track = add_track(r, &trackinfo, &props_hints)))
             return ERR_ALLOC;
 
-#if 0
-        if (me.description_flags & MED_ENCODING_NAME) {
-            // MediaProperties *prop = &props_hints;
-            // shawill: init parser functions in another way
-            // set_media_entity(track->parser->parser_type,track->parser->parser_type->encoding_name);
-#    if 0
-            if (!(track->parser = mparser_find(props_hints.encoding_name)))
-                return ERR_GENERIC;
-            if (track->parser->init(&props_hints, &track->parser_private))
-                return ERR_GENERIC;
-#    endif
+        r->info->media_source = props_hints.media_source;
 
-#    if 0
-            // shawill: just for parser trying:
-            {
-                uint8 tmp_dst[512];
-                double timest;
-
-                fnc_log(FNC_LOG_DEBUG, "[MT] demuxer sd init done.\n");
-
-                track->parser->get_frame(tmp_dst, sizeof(tmp_dst), &timest,
-                             track->i_stream, track->properties, track->parser_private);
-            }
-#    endif
-#    if 0
-            switch (props_hints.media_type) {
-            case MP_audio:
-                // audio_spec_prop *prop;
-                // prop=malloc(sizeof(audio_spec_prop));        
-                // shawill: initialize with calloc
-                // prop = calloc(1, sizeof(audio_spec_prop));   
-                prop->sample_rate = sample_rate;    /*SamplingFrequency */
-                prop->audio_channels = audio_channels;
-                prop->bit_per_sample = bit_per_sample;    /*BitDepth */
-                if (me.description_flags & MED_BITRATE)
-                    prop->bit_rate = bit_rate;    /*average if VBR or -1 is not usefull */
-                if (me.description_flags & MED_CODING_TYPE)
-                    prop->coding_type = coding_type;
-                if (me.description_flags & MED_PAYLOAD_TYPE)
-                    prop->payload_type = payload_type;
-                if (me.description_flags & MED_CLOCK_RATE)
-                    prop->clock_rate = clock_rate;
-
-                // shawill: done in add_media_parser:
-                // track->parser->properties=prop;
-                break;
-            case MP_video:
-                // video_spec_prop *prop;
-                // prop = calloc(1, sizeof(video_spec_prop));   
-                // prop->frame_rate;
-                if (me.description_flags & MED_BITRATE)
-                    prop->bit_rate = bit_rate;    /*average if VBR or -1 is not usefull */
-                if (me.description_flags & MED_CODING_TYPE)
-                    prop->coding_type = coding_type;
-                if (me.description_flags & MED_PAYLOAD_TYPE)
-                    prop->payload_type = payload_type;
-                if (me.description_flags & MED_CLOCK_RATE)
-                    prop->clock_rate = clock_rate;
-
-                // shawill: done in add_media_parser:
-                // track->parser->parser_type->properties=prop;
-                break;
-                // TODO other media types, if needed.
-            default:
-                fnc_log(FNC_LOG_ERR, "It's impossible to identify media_type: audio, video ...\n");
-                free_track(track, r);
-                r->num_tracks--;
-                return ERR_ALLOC;
-                break;
-            }
-#    endif
-        }
-#endif
-        track->msource = msource;    // XXX shawill: this variable should not be set here
-        //FIXME validate???
     } while (!feof(fd));
 
     return RESOURCE_OK;
 }
-
-/*
-static int read_header(Resource * r)
-{
-    return RESOURCE_OK;
-}
-*/
 
 static int read_packet(Resource * r)
 {

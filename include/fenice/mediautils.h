@@ -59,32 +59,5 @@ void MObject_zero(MObject *, size_t);
 void *MObject_dup(void *, size_t);
 void MObject_unref(MObject *);
 
-#ifndef _MEDIAINFOH
-//TODO: Remove this legacy from mediathread!
-#define MAX_DESCR_LENGTH 4096
-typedef enum { stored = 0, live } media_source;
-
-typedef enum {
-	df_SDP_format = 0
-} description_format;
-
-/*typedef enum {
-	SD_FL_TWIN = 1,
-	SD_FL_MULTICAST = 2,
-	SD_FL_MULTICAST_PORT = 4
-} sd_descr_flags;
-
-typedef struct _SD_descr {
-	char filename[255];
-//	media_entry *me_list;
-	time_t last_change;
-	struct _SD_descr *next;
-	sd_descr_flags flags;
-	char multicast[16];
-	char ttl[4];
-	char twin[255];
-} SD_descr;*/
-#endif
-
 #endif // __MEDIAUTILS_H
 

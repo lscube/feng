@@ -1,32 +1,32 @@
 /* * 
- *  $Id$
- *  
- *  This file is part of Fenice
- *
- *  Fenice -- Open Media Server
- *
- *  Copyright (C) 2004 by
- *  	
- *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
- *	- Francesco Varano	<francesco.varano@polito.it>
- *	- Marco Penno		<marco.penno@polito.it>
- *	- Federico Ridolfo	<federico.ridolfo@polito.it>
- * 
- *  Fenice is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  Fenice is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with Fenice; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
- * */
+*  $Id$
+*
+*  This file is part of Fenice
+*
+*  Fenice -- Open Media Server
+*
+*  Copyright (C) 2004 by
+*
+*	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
+*	- Francesco Varano	<francesco.varano@polito.it>
+*	- Marco Penno		<marco.penno@polito.it>
+*	- Federico Ridolfo	<federico.ridolfo@polito.it>
+*
+*  Fenice is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  Fenice is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with Fenice; if not, write to the Free Software
+*  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+* */
 
 #ifndef __DEMUXER_H
 #define __DEMUXER_H
@@ -42,12 +42,12 @@
 #include <fenice/sdp_grammar.h>
 
 /*
- * a resource_name can be a mkv, sd, program stream, avi, device ... 
- * syntax could be: 
- * 	udp://ip:port
- * 	file://path/filename
- * 	dev://device:driver
- */
+* a resource_name can be a mkv, sd, program stream, avi, device ... 
+* syntax could be: 
+* 	udp://ip:port
+* 	file://path/filename
+* 	dev://device:driver
+*/
 
 #define msg_error int
 /*msg_error:*/
@@ -86,119 +86,116 @@ typedef struct __CAPABILITIES {
 } Capabilities;
 
 MObject_def(__RESOURCE_INFO)
-	char *mrl;
-	char *name;
-	char *description;
-	char *descrURI;
-	char *email;
-	char *phone;
-	sdp_field_list sdp_private;
-	double duration;
-	// char mrl[255];
-	char twin[255];
-	char multicast[16];
-	char ttl[4];
+    char *mrl;
+    char *name;
+    char *description;
+    char *descrURI;
+    char *email;
+    char *phone;
+    sdp_field_list sdp_private;
+    double duration;
+    MediaSource media_source;
+    char twin[255];
+    char multicast[16];
+    char ttl[4];
 } ResourceInfo;
 
 typedef struct __RESOURCE {
-	InputStream *i_stream;
-	struct __DEMUXER *demuxer;
-	ResourceInfo *info;
-	double (*timescaler)(struct __RESOURCE *, double);
-        struct __RESOURCE *edl;
-	SelList sel;
-        int num_sel;
-        TrackList tracks;
-	int num_tracks;
-	void *private_data; /* private data of demuxer */
+    InputStream *i_stream;
+    struct __DEMUXER *demuxer;
+    ResourceInfo *info;
+    /* Timescale fixer callback function for meta-demuxers */
+    double (*timescaler)(struct __RESOURCE *, double);
+    /* EDL specific data */
+    struct __RESOURCE *edl;
+    /* Mutliformat related things */
+    SelList sel;
+    int num_sel;
+    TrackList tracks;
+    int num_tracks;
+    void *private_data; /* private data of demuxer */
 } Resource;
 
 #if 0 // define MObject with MObject_def
 typedef struct __TRACK_INFO {
-	MOBJECT_COMMONS; // MObject commons MUST be the first field
+    MOBJECT_COMMONS; // MObject commons MUST be the first field
 #endif
 MObject_def(__TRACK_INFO)
-	char *mrl;
-	char name[255];
-        int id; // should it more generic?
-	int rtp_port;
-//	char *sdp_private; // moved in mediaparser.h
-	//start CC
-	char commons_deed[255];
-	char rdf_page[255];
-	char title[80];
-	char author[80];
-	// int tag_dim;    
-	//end CC
+    char *mrl;
+    char name[255];
+    int id; // should it more generic?
+    int rtp_port;
+    //start CC
+    char commons_deed[255];
+    char rdf_page[255];
+    char title[80];
+    char author[80];
+    //end CC
 } TrackInfo;
 
-//typedef enum {stored=0,live} media_source;
-	
 typedef struct __TRACK {
-	InputStream *i_stream;
-	TrackInfo *info;
-	// char name[255];
-	long int timestamp;
-	MediaParser *parser;
-	/*bufferpool*/
-	OMSBuffer *buffer;
-	media_source msource;
-	MediaProperties *properties; /* track properties */
-        Resource *parent;
-	/* private data is managed by specific media parser: from allocation to deallocation
-	 * track MUST NOT do anything on this pointer! */ 
-	void *private_data;
-	void *parser_private; /* private data of media parser */
+    InputStream *i_stream;
+    TrackInfo *info;
+    long int timestamp;
+    MediaParser *parser;
+    /*bufferpool*/
+    OMSBuffer *buffer;
+    MediaProperties *properties; /* track properties */
+    Resource *parent;
+    /* private data is managed by specific media parser: from allocation to deallocation
+     * track MUST NOT do anything on this pointer! */
+    void *private_data;
+    void *parser_private; /* private data of media parser */
 } Track;
 
 typedef struct __SELECTOR {
-	// Track *tracks[MAX_SEL_TRACKS];	
-	TrackList tracks;
-        Track cur;
-	uint32 default_index;
-	uint32 selected_index;/**/
-	uint32 total; /*total tracks in selector*/
+    // Track *tracks[MAX_SEL_TRACKS];	
+    TrackList tracks;
+    Track cur;
+    uint32 default_index;
+    uint32 selected_index;/**/
+    uint32 total; /*total tracks in selector*/
 } Selector;
 
 #if 0 // define MObject with MObject_def
 typedef struct __RESOURCE_INFO {
-	MOBJECT_COMMONS; // MObject commons MUST be the first field
+    MOBJECT_COMMONS; // MObject commons MUST be the first field
 #endif
 
 
 typedef struct {
-	/*name of demuxer module*/
-	const char *name;
-	/* short name (for config strings) (e.g.:"sd") */
-	const char *short_name;
-	/* author ("Author name & surname <mail>") */
-	const char *author;
-	/* any additional comments */
-	const char *comment;
-	/* served file extensions */
-	const char *extensions; // coma separated list of extensions (w/o '.')
+    /*name of demuxer module*/
+    const char *name;
+    /* short name (for config strings) (e.g.:"sd") */
+    const char *short_name;
+    /* author ("Author name & surname <mail>") */
+    const char *author;
+    /* any additional comments */
+    const char *comment;
+    /* served file extensions */
+    const char *extensions; // coma separated list of extensions (w/o '.')
 } DemuxerInfo;
 
 typedef struct __DEMUXER {
-	DemuxerInfo *info;
-	int (*probe)(InputStream *);
-	int (*init)(Resource *);
-	int (*read_packet)(Resource *);
-	int (*seek)(Resource *, double time_sec);
-	int (*uninit)(Resource *);
-	//...
+    DemuxerInfo *info;
+    int (*probe)(InputStream *);
+    int (*init)(Resource *);
+    int (*read_packet)(Resource *);
+    int (*seek)(Resource *, double time_sec);
+    int (*uninit)(Resource *);
+    //...
 } Demuxer;
 
 typedef struct {
-	time_t last_change;
-	ResourceInfo *info;
-	MediaDescrList media; // GList of MediaDescr elements
+    time_t last_change;
+    ResourceInfo *info;
+    MediaDescrList media; // GList of MediaDescr elements
 } ResourceDescr;
 
 typedef struct {
-	time_t last_change;
-	TrackInfo *info;
-	MediaProperties *properties;
+    time_t last_change;
+    TrackInfo *info;
+    MediaProperties *properties;
 } MediaDescr;
 
 // --- functions --- //
@@ -218,7 +215,6 @@ inline Track *r_selected_track(Selector *);
 // TrackList handling functions
 
 // Tracks
-// Track *add_track(Resource *);
 Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 void free_track(Track *, Resource *);
 
@@ -228,10 +224,10 @@ ResourceDescr *r_descr_get(char *root, char *name);
 // void r_descr_free(ResourceDescr *);
 /* --- functions implemented in descriptionAPI.c --- */
 /*! the functions that return pointers do not allocate new memory, simply return
- * the pointer of the description resource. So, there is no need to free
- * anything.
- * The functions that return pointers return NULL if the value is not set.
- * */
+* the pointer of the description resource. So, there is no need to free
+* anything.
+* The functions that return pointers return NULL if the value is not set.
+* */
 inline time_t r_descr_last_change(ResourceDescr *);
 inline char *r_descr_mrl(ResourceDescr *);
 inline char *r_descr_twin(ResourceDescr *);

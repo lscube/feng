@@ -1,7 +1,7 @@
 /* * 
  *  $Id: $
  *  
- *  This file is part of Fenice
+ *  This file is part of Feng
  *
  *  Fenice -- Open Media Server
  *  h264 parser based on rfc 3984
@@ -130,7 +130,8 @@ static int frag_fu_a(uint8_t *nal, int fragsize, int mtu,
 
 static char *encode_avc1_header(uint8_t *p, unsigned int len)
 {
-    int i, cnt, nalsize, buf_len = len * 4 / 3 + 12;
+    int i, cnt, nalsize;
+    unsigned int buf_len = len * 4 / 3 + 12;
     uint8_t *q = p;
     char *sprop = NULL, *out, *buf = g_malloc(buf_len);
     cnt = *(p+5) & 0x1f; // Number of sps
@@ -185,8 +186,9 @@ static char *encode_avc1_header(uint8_t *p, unsigned int len)
 
 static char *encode_header(uint8_t *p, unsigned int len)
 {
-    uint8_t *q, *end = p + len, buf_len = len * 4 / 3 + 12;
-    char *sprop = NULL, *out, *buf = g_malloc(buf_len = len * 4 / 3 + 12);
+    uint8_t *q, *end = p + len;
+    unsigned int buf_len = len * 4 / 3 + 12;
+    char *sprop = NULL, *out, *buf = g_malloc(buf_len);
 
     for (q = p; q < end - 3; q++) {
         if (q[0] == 0 && q[1] == 0 && q[2] == 1) {

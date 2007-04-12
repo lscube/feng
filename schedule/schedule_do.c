@@ -82,7 +82,7 @@ do {
                         case ERR_NOERROR: // All fine
                             break;
                         case ERR_EOF:
-                            if(r_selected_track(sched[i].rtp_session->track_selector)->msource==live) {
+                            if(tr->properties->media_source == MS_live) {
                                     fnc_log(FNC_LOG_WARN,"Pipe empty!\n");
                             } else {
                                     fnc_log(FNC_LOG_INFO,"Stream Finished\n");

@@ -41,12 +41,11 @@
 #include <netembryo/wsocket.h>
 #include <fenice/rtp.h>
 #include <fenice/rtcp.h>
-//#include <fenice/mediainfo.h>
+#include <fenice/sdp2.h>
 #include <fenice/schedule.h>
 
 #define RTSP_BUFFERSIZE 16384
 #define RTSP_RESERVED 1024
-//#define INTERLEAVED_BUFFERSIZE 4096
 
 	/* FIXME move rtsp states to an enum? */
 #define INIT_STATE      0
@@ -107,6 +106,10 @@ typedef struct _RTSP_buffer {
 	RTSP_session *session_list;
 	struct _RTSP_buffer *next;
 } RTSP_buffer;
+
+typedef enum {
+       df_SDP_format = 0
+} description_format;
 
 	// Interfacce
 
