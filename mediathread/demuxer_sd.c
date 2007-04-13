@@ -152,6 +152,13 @@ static int init(Resource * r)
             } else if (!strcasecmp(keyword, SD_PAYLOAD_TYPE)) {
                 // SD_PAYLOAD_TYPE
                 sscanf(line, "%*s %u\n", &props_hints.payload_type);
+                // Automatic media_type detection
+                if (props_hints.payload_type >= 0 &&
+                    props_hints.payload_type < 24)
+                    props_hints.media_type = MP_audio;
+                if (props_hints.payload_type > 23 &&
+                    props_hints.payload_type < 96)
+                    props_hints.media_type = MP_video;
             } else if (!strcasecmp(keyword, SD_CLOCK_RATE)) {
                 // SD_CLOCK_RATE
                 sscanf(line, "%*s %u\n", &props_hints.clock_rate);
