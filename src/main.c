@@ -161,20 +161,6 @@ int main(int argc, char **argv)
     /*
      * Drop privs to a specified user
      * */
-    id = get_pref(PREFS_USER);
-    if (id) {
-        struct passwd *pw = getpwnam(id);
-        if (pw) {
-            if (setuid(pw->pw_uid) < 0)
-                fnc_log(FNC_LOG_WARN,
-                    "Cannot setuid to user %s, %s",
-                    id, strerror(errno));
-        } else {
-            fnc_log(FNC_LOG_WARN,
-                    "Cannot get user %s id, %s",
-                    id, strerror(errno));
-        }
-    }
     id = get_pref(PREFS_GROUP);
     if (id) {
         struct group *gr = getgrnam(id);
@@ -190,6 +176,20 @@ int main(int argc, char **argv)
         }
     }
 
+    id = get_pref(PREFS_USER);
+    if (id) {
+        struct passwd *pw = getpwnam(id);
+        if (pw) {
+            if (setuid(pw->pw_uid) < 0)
+                fnc_log(FNC_LOG_WARN,
+                    "Cannot setuid to user %s, %s",
+                    id, strerror(errno));
+        } else {
+            fnc_log(FNC_LOG_WARN,
+                    "Cannot get user %s id, %s",
+                    id, strerror(errno));
+        }
+    }
     /* Initialises the array of schedule_list sched and creates the thread
      * schedule_do() -> look at schedule.c */
     if (schedule_init() == ERR_FATAL) {
