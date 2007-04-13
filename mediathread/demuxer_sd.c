@@ -27,7 +27,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * */
-
+#define _GNU_SOURCE
 #include <string.h>
 #include <stdio.h>
 
@@ -207,7 +207,7 @@ static int init(Resource * r)
             } else if (!strcasecmp(keyword, SD_TITLE)) {
                 // SD_TITLE
                 int i = 0;
-                char *p = strstr(line, SD_TITLE) + strlen(SD_TITLE);
+                char *p = strcasestr(line, SD_TITLE) + strlen(SD_TITLE);
 
                 while (p[i] != '\n') {
                     trackinfo.title[i] = p[i];
@@ -217,7 +217,7 @@ static int init(Resource * r)
             } else if (!strcasecmp(keyword, SD_CREATOR)) {
                 // SD_CREATOR
                 int i = 0;
-                char *p = strstr(line, SD_CREATOR) + strlen(SD_CREATOR);
+                char *p = strcasestr(line, SD_CREATOR) + strlen(SD_CREATOR);
 
                 while (p[i] != '\n') {
                     trackinfo.author[i] = p[i];
