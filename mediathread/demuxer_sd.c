@@ -182,6 +182,13 @@ static int init(Resource * r)
                     props_hints.media_source = MS_stored;
                 if (strcasecmp(sparam, "LIVE") == 0)
                     props_hints.media_source = MS_live;
+            } else if (!strcasecmp(keyword, SD_MEDIA_TYPE)) {
+                // SD_MEDIA_TYPE
+                sscanf(line, "%*s%10s", sparam);
+                if (strcasecmp(sparam, "AUDIO") == 0)
+                    props_hints.media_type = MP_audio;
+                if (strcasecmp(sparam, "VIDEO") == 0)
+                    props_hints.media_type = MP_video;
             } else if (!strcasecmp(keyword, SD_LICENSE)) {
 
                 /*******START CC********/
@@ -193,18 +200,20 @@ static int init(Resource * r)
             } else if (!strcasecmp(keyword, SD_TITLE)) {
                 // SD_TITLE
                 int i = 0;
+                char *p = strstr(line, SD_TITLE) + strlen(SD_TITLE);
 
-                while (line[i] != '\n') {
-                    trackinfo.title[i] = line[i + 7];
+                while (p[i] != '\n') {
+                    trackinfo.title[i] = p[i];
                     i++;
                 }
                 trackinfo.title[i] = '\0';
             } else if (!strcasecmp(keyword, SD_CREATOR)) {
                 // SD_CREATOR
                 int i = 0;
+                char *p = strstr(line, SD_CREATOR) + strlen(SD_CREATOR);
 
-                while (line[i] != '\n') {
-                    trackinfo.author[i] = line[i + 9];
+                while (p[i] != '\n') {
+                    trackinfo.author[i] = p[i];
                     i++;
                 }
                 trackinfo.author[i] = '\0';
