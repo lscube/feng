@@ -70,8 +70,10 @@ int RTP_send_packet(RTP_session * session)
         r.payload = t->properties->payload_type;
         r.seq_no = htons(slot->slot_seq + session->start_seq - 1);
         r.timestamp =
-            htonl(session->start_rtptime +
-              (slot->timestamp * t->properties->clock_rate));
+            htonl(session->start_rtptime + 
+                  ((slot->rtp_time) ? slot->rtp_time :
+                   (slot->timestamp * t->properties->clock_rate)));
+        fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", r.timestamp);
         r.ssrc = htonl(session->ssrc);
         packet = calloc(1, slot->data_size + hdr_size);
         if (packet == NULL) {
