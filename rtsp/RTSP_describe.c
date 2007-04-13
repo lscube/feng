@@ -50,23 +50,23 @@ int RTSP_describe(RTSP_buffer * rtsp)
     char url[255];
     ConnectionInfo cinfo;
 
-    int error_id = 0;
+    RTSP_Error error;
 
     cinfo.descr_format = df_SDP_format; // shawill put to some default
 
-    if ( (error_id = extract_url(rtsp, url)) ) // Extract the URL
+    if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
 	    goto error_management;
-    else if ( (error_id = validate_url(url, &cinfo)) ) // Validate URL
+    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
     	goto error_management;
-    else if ( (error_id = check_forbidden_path(&cinfo)) ) // Check for Forbidden Paths
+    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
     	goto error_management;
-    else if ( (error_id = check_require_header(rtsp)) ) // Disallow Header REQUIRE
+    else if ( (error = check_require_header(rtsp)).got_error ) // Disallow Header REQUIRE
     	goto error_management;
-    else if ( (error_id = get_description_format(rtsp, &cinfo)) ) // Get the description format. SDP is recomended
+    else if ( (error = get_description_format(rtsp, &cinfo)).got_error ) // Get the description format. SDP is recomended
     	goto error_management;
-    else if ( (error_id = get_cseq(rtsp)) ) // Get the CSeq 
+    else if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
         goto error_management;
-    else if ( (error_id = get_session_description(&cinfo)) ) // Get Session Description
+    else if ( (error = get_session_description(&cinfo)).got_error ) // Get Session Description
         goto error_management;
 
     if (max_connection() == ERR_GENERIC) {
@@ -81,6 +81,6 @@ int RTSP_describe(RTSP_buffer * rtsp)
     return ERR_NOERROR;
 
 error_management:
-    send_reply(error_id, 0, rtsp);
+    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
     return ERR_NOERROR;
 }

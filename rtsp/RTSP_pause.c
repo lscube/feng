@@ -52,17 +52,17 @@ int RTSP_pause(RTSP_buffer * rtsp)
     RTP_session *r;
     char url[255];
 
-    int error_id = 0;
+    RTSP_Error error;
 
-    if ( (error_id = get_cseq(rtsp)) ) // Get the CSeq 
+    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
         goto error_management;
-    else if ( (error_id = extract_url(rtsp, url)) ) // Extract the URL
+    else if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
 	    goto error_management;
-    else if ( (error_id = validate_url(url, &cinfo)) ) // Validate URL
+    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
     	goto error_management;
-    else if ( (error_id = check_forbidden_path(&cinfo)) ) // Check for Forbidden Paths
+    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
     	goto error_management;
-    else if ( (error_id = get_session_id(rtsp, &session_id)) ) // Get Session id
+    else if ( (error = get_session_id(rtsp, &session_id)).got_error ) // Get Session id
         goto error_management;
 
     s = rtsp->session_list;
@@ -86,6 +86,6 @@ int RTSP_pause(RTSP_buffer * rtsp)
     return ERR_NOERROR;
 
 error_management:
-    send_reply(error_id, 0, rtsp);
+    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
     return ERR_NOERROR;
 }

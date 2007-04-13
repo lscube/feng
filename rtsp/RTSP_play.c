@@ -39,9 +39,9 @@
 
 #include <RTSP_utils.h>
 
-int parse_play_time_range(RTSP_buffer * rtsp, play_args * args);
-int do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args);
-int get_session(RTSP_buffer * rtsp, long int session_id, RTSP_session **rtsp_sess);
+RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args);
+RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args);
+RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_session **rtsp_sess);
 
 /*
      ****************************************************************
@@ -57,31 +57,31 @@ int RTSP_play(RTSP_buffer * rtsp)
     RTSP_session *rtsp_sess;
     play_args args;
 
-    int error_id = 0;
+    RTSP_Error error;
 
     // Parse the input message
-    if ( (error_id = get_cseq(rtsp)) ) // Get the CSeq 
+    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
         goto error_management;
-    else if ( (error_id = parse_play_time_range(rtsp, &args)) ) // Get the range
+    else if ( (error = parse_play_time_range(rtsp, &args)).got_error ) // Get the range
         goto error_management;
 
-    if ( (error_id = get_session_id(rtsp, &session_id)) )
+    if ( (error = get_session_id(rtsp, &session_id)).got_error )
         goto error_management;
     else if ( session_id == -1 ) {
-        error_id = 400;
+        set_RTSP_Error(&error, 400, "");
         goto error_management;
     }
 
-    if ( (error_id = get_session(rtsp, session_id, &rtsp_sess)) ) // Pick correct session
+    if ( (error = get_session(rtsp, session_id, &rtsp_sess)).got_error ) // Pick correct session
         goto error_management;
-    else if ( (error_id = extract_url(rtsp, url)) ) // Extract the URL
+    else if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
 	    goto error_management;
-    else if ( (error_id = validate_url(url, &cinfo)) ) // Validate URL
+    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
     	goto error_management;
-    else if ( (error_id = check_forbidden_path(&cinfo)) ) // Check for Forbidden Paths
+    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
     	goto error_management;
-    else if ( (error_id = do_play(rtsp, &cinfo, rtsp_sess, &args)) ) {
-        if (error_id == ERR_ALLOC) 
+    else if ( (error = do_play(rtsp, &cinfo, rtsp_sess, &args)).got_error ) {
+        if (error.got_error == ERR_ALLOC) 
             return ERR_ALLOC;
         goto error_management;
     }   
@@ -92,11 +92,11 @@ int RTSP_play(RTSP_buffer * rtsp)
     return ERR_NOERROR;
 
 error_management:
-    send_reply(error_id, 0, rtsp);
+    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
     return ERR_NOERROR;
 }
 
-int parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
+RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
 {
     int time_taken = 0;
     char *p = NULL, *q = NULL;
@@ -106,12 +106,12 @@ int parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
     if ((p = strstr(rtsp->in_buffer, HDR_RANGE)) != NULL) {
         if ((q = strstr(p, "npt")) != NULL) {      // FORMAT: npt
             if ((q = strchr(q, '=')) == NULL)
-                return 400;    /* Bad Request */
+                return RTSP_BadRequest;    /* Bad Request */
 
             sscanf(q + 1, "%f", &(args->start_time));
 
             if ((q = strchr(q, '-')) == NULL)
-                return 400;
+                return RTSP_BadRequest;
 
             if (sscanf(q + 1, "%f", &(args->end_time)) != 1)
                 args->end_time = 0;
@@ -171,29 +171,29 @@ int parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
         memset(&(args->playback_time), 0, sizeof(args->playback_time));
     }
 
-    return 0;
+    return RTSP_Ok;
 }
 
-int get_session(RTSP_buffer * rtsp, long int session_id, RTSP_session **rtsp_sess)
+RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_session **rtsp_sess)
 {
-#if 0 
+#if 0
     for (rtsp_sess = rtsp->session_list; rtsp_sess != NULL; rtsp_sess++)
         if (rtsp_sess->session_id == session_id) break;
     if (rtsp_sess == NULL) {
-    // XXX Fenice supports single session atm
 #else
+    // XXX Fenice supports single session atm
     if (((*rtsp_sess = rtsp->session_list) == NULL) ||
         ((*rtsp_sess)->session_id != session_id))
     {
 #endif
-        return 454;
+        return RTSP_SessionNotFound;
     }
 
-    return 0;
+    return RTSP_Ok;
 }
 
 #if ENABLE_MEDIATHREAD
-int do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
+RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
 {
     RTP_session *rtp_sess;
     char *q = NULL;
@@ -209,7 +209,7 @@ int do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess
             if (!rtp_sess->started) {
                 // Start new
                 if (schedule_start (rtp_sess->sched_id, args) == ERR_ALLOC)
-                    return ERR_ALLOC;
+                        return RTSP_Fatal_ErrAlloc;
             } else {
                 // Resume existing
                 if (!rtp_sess->pause) {
@@ -221,7 +221,7 @@ int do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess
         }
     } else {
         // FIXME complete with the other stuff
-        return 500; /* Internal server error */
+        return RTSP_InternalServerError; /* Internal server error */
         
         // resource!trackname
 //        strcpy (trackname, q + 1);
@@ -230,11 +230,12 @@ int do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess
         *q = '\0';
     }
 
-    return 0;
+    return RTSP_Ok;
 }
 #else
-int do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
+RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
 {
+    RTSP_Error error = RTSP_Ok;
     RTP_session *rtp_sess;
 
     char *q = strchr(cinfo->object, '!');
@@ -248,9 +249,9 @@ int do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess
             // Start playing all the presentation
                 if (!rtp_sess->started) {
                     // Start new
-                    if (schedule_start (rtp_sess->sched_id, args) ==
-                            ERR_ALLOC)
-                        return ERR_ALLOC;
+                    if (schedule_start (rtp_sess->sched_id, args) == ERR_ALLOC) {
+                        return RTSP_Fatal_ErrAlloc;
+                    }
                 } else {
                     // Resume existing
                     if (!rtp_sess->pause) {
@@ -274,10 +275,11 @@ int do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess
             }
             if (rtp_sess != NULL) {
                 // FOUND. Start Playing
-                if (schedule_start (rtp_sess->sched_id, args) == ERR_ALLOC)
-                    return ERR_ALLOC;
+                if (schedule_start (rtp_sess->sched_id, args) == ERR_ALLOC) {
+                    return RTSP_Fatal_ErrAlloc;
+                }
             } else {
-                return 454;
+                return RTSP_SessionNotFound;
             }
         } else {
             // PLAY <file.sd>!<aggr>
@@ -287,7 +289,7 @@ int do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess
                 if (!rtp_sess->started) {
                     // Start new
                     if (schedule_start(rtp_sess->sched_id, args) == ERR_ALLOC)
-                        return ERR_ALLOC;
+                        return RTSP_Fatal_ErrAlloc;
                 } else {
                     // Resume existing
                     if (!rtp_sess->pause) {
@@ -300,6 +302,6 @@ int do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess
         }
     }
 
-    return 0;
+    return RTSP_Ok;
 }
 #endif

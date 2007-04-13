@@ -50,9 +50,9 @@ int RTSP_options(RTSP_buffer * rtsp)
     char ver[255];
     unsigned int cseq;
 
-    int error_id = 0;
+    RTSP_Error error;
 
-    if ( (error_id = get_cseq(rtsp)) ) // Get the CSeq 
+    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
         goto error_management;
 
     cseq = rtsp->rtsp_cseq;
@@ -66,6 +66,6 @@ int RTSP_options(RTSP_buffer * rtsp)
     return ERR_NOERROR;
 
 error_management:
-    send_reply(error_id, 0, rtsp);
+    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
     return ERR_NOERROR;
 }
