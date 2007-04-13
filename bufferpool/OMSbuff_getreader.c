@@ -46,8 +46,10 @@ OMSSlot *OMSbuff_getreader(OMSConsumer * cons)
 
     OMSbuff_lock(cons->buffer);
 
-    // TODO: if it fails?
-    OMSbuff_shm_refresh(cons->buffer);
+    if (OMSbuff_shm_refresh(cons->buffer)) {
+        OMSbuff_unlock(cons->buffer);
+        return NULL;
+    }
 
     last_read = OMStoSlot(cons->buffer, cons->last_read_pos);
     next = &cons->buffer->slots[cons->read_pos];
