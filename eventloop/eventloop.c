@@ -63,7 +63,7 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
         /* This is the process allowed for accepting new clients */
         FD_SET(Sock_fd(main_sock), &rset);
         max_fd = Sock_fd(main_sock);
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
         if (sctp_main_sock) {
             FD_SET(Sock_fd(sctp_main_sock), &rset);
             max_fd = max(max_fd, Sock_fd(sctp_main_sock));
@@ -85,7 +85,7 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
     schedule_connections(&rtsp_list, &conn_count, &rset, &wset, NULL);
     /* handle new connections */
     if (conn_count != -1) {
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
         if (sctp_main_sock && FD_ISSET(Sock_fd(sctp_main_sock), &rset)) {
             client_sock = Sock_accept(sctp_main_sock);
         } else
@@ -127,7 +127,7 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
                         conn_count = -1;
                         Sock_close(client_sock);
                         Sock_close(main_sock);
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
                         if (sctp_main_sock)
                             Sock_close(sctp_main_sock);
 #endif

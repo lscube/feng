@@ -132,7 +132,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
     if (prefs_get_sctp_port() >= 0) {
         port = g_strdup_printf("%d", prefs_get_sctp_port());
         sctp_main_sock = Sock_bind(NULL, port, SCTP, 0);

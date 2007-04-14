@@ -426,7 +426,7 @@ RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * transport,
                 rtsp->interleaved = intlvd;
 
                 break;    // found a valid transport
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
             } else if (Sock_type(rtsp->sock) == SCTP &&
                        !strncmp(p, "/SCTP", 5)) {
                 // Transport: RTP/AVP/SCTP;streams=x-y

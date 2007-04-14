@@ -66,7 +66,7 @@ typedef struct _RTSP_interleaved {
 			uint16 rtp_ch;
 			uint16 rtcp_ch;
 		} tcp;
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
 		struct {
 			struct sctp_sndrcvinfo rtp;
 			struct sctp_sndrcvinfo rtcp;

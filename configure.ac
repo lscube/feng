@@ -10,19 +10,19 @@ AM_CONFIG_HEADER(config.h)
 
 AC_ARG_WITH(rtsp-port,
 [  --with-rtsp-port        default RTSP listening port [[default=554, alternative=8554]]],,
-	with_rtsp_port=554)
+    with_rtsp_port=554)
 
 AC_ARG_WITH(config-file,
 [  --with-config-file      name for the configuration file in sysconfdir [[default=feng.conf]]],,
-	with_config_file="feng.conf")
+    with_config_file="feng.conf")
 
 AC_ARG_WITH(log-file,
-[  --with-log-file	   name for the log file [[default=/var/log/feng.log]]],,
-	with_log_file="/var/log/feng.log")
+[  --with-log-file       name for the log file [[default=/var/log/feng.log]]],,
+    with_log_file="/var/log/feng.log")
 
 AC_ARG_WITH(max-session,
 [  --with-max-session      max number of incoming sessions [[default=100]]],,
-	with_max_session=100)
+    with_max_session=100)
 dnl netembryo
 AC_ARG_ENABLE(ipv6,
 [  --enable-ipv6            enable IPv6 support [[default=autodetected]]],,
@@ -79,30 +79,30 @@ dnl     AC_SUBST(HAVE_SSL)
 AC_ARG_ENABLE(fhs23,
 [  --enable-fhs23          enable Filesystem Hierarchy Standard 2.3:
                           document root avroot will be placed under /srv [[default=yes]]],,
-	enable_fhs23="yes")
+    enable_fhs23="yes")
 
 AC_ARG_ENABLE(debug,
 [  --enable-debug          enable gcc dubugging flags [[default=no]]],,
-	enable_debug="no")
+    enable_debug="no")
 
 AC_ARG_ENABLE(efence,
 [  --enable-efence         link against Electric Fence library to debug memory usage
                           (this will involve --enable-debug) [[default=no]]],,
-	enable_efence="no")
+    enable_efence="no")
 
 
 AC_ARG_ENABLE(verbose,
 [  --enable-verbose          make fe.ng verbose [[default=no]]],,
-	enable_verbose="no")
+    enable_verbose="no")
 
 AC_ARG_ENABLE(dump,
 [  --enable-dump          enable dump 
-			  (this will involve --enable-verbose) [[default=no]]],,
-	enable_dump="no")
+              (this will involve --enable-verbose) [[default=no]]],,
+    enable_dump="no")
 
 AC_ARG_ENABLE(errors,
 [  --enable-errors         make gcc warnings behave like errors: none, normal, pedantic [[default=none]]],,
-	enable_errors="none")
+    enable_errors="none")
 AC_ARG_ENABLE(sctp,
 [  --enable-sctp            enable SCTP support [[default=autodetected]]],,         enable_sctp="yes")
 
@@ -152,14 +152,14 @@ AC_CHECK_FUNCS(select socket gettimeofday uname getcwd getwd strcspn strdup strt
 AC_CHECK_FUNC(getaddrinfo)
 CHECK_SSL
 if test "x$with_ssl" = "xyes"; then
-        fenice_cert=$(eval echo ${localstatedir}/local/lib/feng/certs/cert.pem)
+    fenice_cert=$(eval echo ${localstatedir}/local/lib/feng/certs/cert.pem)
 else
-        fenice_cert=$with_ssl
+    fenice_cert=$with_ssl
 fi
 AC_SUBST(fenice_cert)
 
 AC_CHECK_LIB([c], [shm_open], [SHM_LIB=], 
-	[AC_CHECK_LIB([rt], [shm_open], [SHM_LIB=-lrt])])
+    [AC_CHECK_LIB([rt], [shm_open], [SHM_LIB=-lrt])])
 AC_SUBST(SHM_LIB)
 
 fenice_state_dir=$(eval echo ${localstatedir}/local/lib/feng/certs)
@@ -177,45 +177,44 @@ stun_msg="stun enabled ................... : no";
 dnl Stun. Disable ipv6 if stun is enabled
 AM_CONDITIONAL(FENICE_STUN, /bin/false)
 if test "$enable_stun" = "yes"; then
-	AM_CONDITIONAL(FENICE_STUN, /bin/true)
-	AC_DEFINE(ENABLE_STUN, 1,[Stun enabled])
-	enable_ipv6=no
-	stun_msg="stun enabled ................... : yes";
+    AM_CONDITIONAL(FENICE_STUN, /bin/true)
+    AC_DEFINE(ENABLE_STUN, 1,[Stun enabled])
+    enable_ipv6=no
+    stun_msg="stun enabled ................... : yes";
 fi
 
 dnl test enable
 if test "x$enable_ipv6" = "xyes"; then
-        AC_CHECK_TYPE(struct sockaddr_in6, AC_DEFINE([IPV6], 1, [Define IPv6 support]), , [#include <netinet/in.h>])
+    AC_CHECK_TYPE(struct sockaddr_in6,
+        AC_DEFINE([IPV6], 1, [Define IPv6 support]),
+        ,
+        [#include <netinet/in.h>])
 else
-        AC_MSG_WARN([IPv6 disabled: check skipped.])
+    AC_MSG_WARN([IPv6 disabled: check skipped.])
 fi
+
+PKG_CHECK_MODULES(LIBNETEMBRYO,[libnetembryo >= 0.0.1])
+CFLAGS="$CFLAGS $LIBNETEMBRYO_CFLAGS"
+LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 
 dnl Check for SCTP support
 if test "$enable_sctp" = "yes"; then
+    if test "${LIBNETEMBRYO_LIBS//sctp}" = "${LIBNETEMBRYO_LIBS}"; then
+        AC_MSG_ERROR([sctp required but netembryo does not support it, rebuild netembryo first.])
+    fi
         AC_CHECK_TYPE(struct sctp_sndrcvinfo, [
-		 AC_CHECK_LIB(sctp,sctp_recvmsg, [
-				AC_DEFINE([HAVE_SCTP_FENICE], 1, [Define SCTP support])
-				AM_CONDITIONAL(FENICE_SCTP, [test "$enable_sctp" = "yes"])
-				sctp_msg="sctp enabled ................... : yes"
-				], [
-				AC_MSG_WARN([SCTP not available])
-				AM_CONDITIONAL(FENICE_SCTP, [test "$enable_sctp" != "yes"])
-				sctp_msg="sctp enabled ................... : no"
-				])], [
-		AC_MSG_WARN([SCTP not available])
-		AM_CONDITIONAL(FENICE_SCTP, [test "$enable_sctp" != "yes"])
-		sctp_msg="sctp enabled ................... : no"],
-	[#include <netinet/sctp.h>])
-	
+         AC_CHECK_LIB(sctp,sctp_recvmsg)],
+         AC_MSG_WARN([SCTP disabled: headers not found]),
+         [#include <netinet/sctp.h>])
 else
-        AC_MSG_WARN([SCTP disabled: check skipped.])
-	AM_CONDITIONAL(FENICE_SCTP, [test "$enable_sctp" = "yes"])
-	sctp_msg="sctp enabled ................... : no"
+    AC_MSG_WARN([SCTP disabled: check skipped.])
+    sctp_msg="sctp enabled ................... : no"
 fi
+
 avformat_msg="libavformat enabled ............... : no"
 avutil_msg="libavutil enabled .............. : no"
 if test "x$enable_ffmpeg" = "xyes"; then
-	PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 50.5.0],
+    PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 50.5.0],
         [AC_DEFINE(HAVE_AVFORMAT,,[Define if libavformat support is available])
          avformat_msg="libavformat enabled ............ : yes"
          ])
@@ -231,10 +230,6 @@ fi
 
 AM_CONDITIONAL(FENICE_FFMPEG, [test "$enable_ffmpeg" = "yes"])
 
-PKG_CHECK_MODULES(LIBNETEMBRYO,[libnetembryo >= 0.0.1])
-CFLAGS="$CFLAGS $LIBNETEMBRYO_CFLAGS"
-LIBS="$LIBS $LIBNETEMBRYO_LIBS"
-
 ssl_msg="libssl found ................... : no"
 if test x_$found_ssl == x_yes; then
 ssl_msg="libssl found ................... : yes"
@@ -242,59 +237,59 @@ fi
 
 AM_CONDITIONAL(FENICE_EFENCE, /bin/false)
 if test "$enable_efence" = "yes"; then
-	AM_CONDITIONAL(FENICE_EFENCE, /bin/true)
-	AC_DEFINE(ENABLE_EFENCE, 1,[Debug enabled])
-	enable_debug=yes
-	efence_msg="   You chose to compile against Electric Fence lib"
+    AM_CONDITIONAL(FENICE_EFENCE, /bin/true)
+    AC_DEFINE(ENABLE_EFENCE, 1,[Debug enabled])
+    enable_debug=yes
+    efence_msg="   You chose to compile against Electric Fence lib"
 fi
 
 AM_CONDITIONAL(FENICE_DEBUG, /bin/false)
 if test "$enable_debug" = "yes"; then
-	CFLAGS="$CFLAGS -g -ggdb -Wall"
-	AM_CONDITIONAL(FENICE_DEBUG, /bin/true)
-	AC_DEFINE(ENABLE_DEBUG, 1,[Debug enabled])
-	debug_msg="
+    CFLAGS="$CFLAGS -g -ggdb -Wall"
+    AM_CONDITIONAL(FENICE_DEBUG, /bin/true)
+    AC_DEFINE(ENABLE_DEBUG, 1,[Debug enabled])
+    debug_msg="
    Debuging flags enabled: welcome developer!!!"
 else
-	AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
-	CFLAGS="$CFLAGS -O2 -Wall"
+    AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
+    CFLAGS="$CFLAGS -O2 -Wall"
 fi
 
 AM_CONDITIONAL(FENICE_DUMP, /bin/false)
 if test "$enable_dump" = "yes"; then
-	AM_CONDITIONAL(FENICE_DUMP, /bin/true)
-	AC_DEFINE(ENABLE_DUMP, 1,[Dump enabled])
-	enable_verbose=yes
-	dump_msg="
+    AM_CONDITIONAL(FENICE_DUMP, /bin/true)
+    AC_DEFINE(ENABLE_DUMP, 1,[Dump enabled])
+    enable_verbose=yes
+    dump_msg="
    Dump to dump_fenice.ENCODING_TYPE.rtpsock enabled!!!"
 else
-	AC_DEFINE(ENABLE_DUMP, 0,[Dump disabled])
+    AC_DEFINE(ENABLE_DUMP, 0,[Dump disabled])
 fi
 
 AM_CONDITIONAL(FENICE_VERBOSE, /bin/false)
 if test "$enable_verbose" = "yes"; then
-	AM_CONDITIONAL(FENICE_VERBOSE, /bin/true)
-	AC_DEFINE(ENABLE_VERBOSE, 1,[verbosity enabled])
-	enable_verbose=yes
-	verbose_msg="   You chose Fe.NG to be very verbose... who'll stop it talking now!!!"
+    AM_CONDITIONAL(FENICE_VERBOSE, /bin/true)
+    AC_DEFINE(ENABLE_VERBOSE, 1,[verbosity enabled])
+    enable_verbose=yes
+    verbose_msg="   You chose Fe.NG to be very verbose... who'll stop it talking now!!!"
 fi
 
 case "$enable_errors" in
-	pedantic)
-		CFLAGS="$CFLAGS -pedantic-errors -Werror"
-	;;
-	normal | yes)
-		CFLAGS="$CFLAGS -Werror"
-	;;
-	none | *)
-		CFLAGS="$CFLAGS"
-	;;
+    pedantic)
+        CFLAGS="$CFLAGS -pedantic-errors -Werror"
+    ;;
+    normal | yes)
+        CFLAGS="$CFLAGS -Werror"
+    ;;
+    none | *)
+        CFLAGS="$CFLAGS"
+    ;;
 esac
 
 if ( test "x$enable_fhs23" = "xyes" ) && ( test -d /srv ) then
-	fenice_avroot_dir=/srv/$PACKAGE_NAME/avroot
+    fenice_avroot_dir=/srv/$PACKAGE_NAME/avroot
 else
-	fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot)
+    fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot)
         fenice_avroot_dir=${fenice_avroot_dir//NONE}
 fi
 AC_SUBST(fenice_avroot_dir)
@@ -319,7 +314,7 @@ fenice_docs_dir=$(eval echo $datadir/doc/$PACKAGE_NAME)
 AC_SUBST(fenice_docs_dir)
 
 if test -f svnrev.h; then
-	AC_DEFINE(FENICE_SVN, 1,[Define if this is a development (subversion) tree])
+    AC_DEFINE(FENICE_SVN, 1,[Define if this is a development (subversion) tree])
 fi
 
 AC_DEFINE_UNQUOTED(FENICE_MAX_SESSION_DEFAULT,

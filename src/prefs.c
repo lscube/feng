@@ -109,7 +109,7 @@ void prefs_init(char *fileconf)
     printf("\trtsp listening port for TCP is: %d\n", prefs_get_port());
     printf("\trunning as: %s:%s\n",
            (char*)get_pref(PREFS_USER), (char*)get_pref(PREFS_GROUP));
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
     if (prefs_get_sctp_port() > 0)
         printf("\trtsp listening port for SCTP is: %d\n",
                prefs_get_sctp_port());

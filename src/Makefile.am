@@ -78,10 +78,6 @@ endif
 
 feng_LDFLAGS =
 
-if FENICE_SCTP
-feng_LDFLAGS += -lsctp
-endif
-
 if FENICE_EFENCE
 feng_LDFLAGS += -lefence
 endif

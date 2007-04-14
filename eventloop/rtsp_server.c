@@ -48,7 +48,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
     RTSP_session *q = NULL;
     RTP_session *p = NULL;
     RTSP_interleaved *intlvd;
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
     struct sctp_sndrcvinfo sctp_info;
     int m = 0;
 #endif
@@ -74,7 +74,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
         // There are RTSP or RTCP packets to read in
         memset(buffer, 0, sizeof(buffer));
         size = sizeof(buffer) - 1;
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
         if (Sock_type(rtsp->sock) == SCTP) {
             memset(&sctp_info, 0, sizeof(sctp_info));
             n = Sock_read(rtsp->sock, buffer, size, &sctp_info, 0);
@@ -82,11 +82,11 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
             fnc_log(FNC_LOG_DEBUG,
                 "Sock_read() received %d bytes from sctp stream %d\n", n, m);
         } else {    // RTSP protocol is TCP
-#endif    // HAVE_SCTP_FENICE
+#endif    // HAVE_LIBSCTP
             n = Sock_read(rtsp->sock, buffer, size, NULL, 0);
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
         }
-#endif    // HAVE_SCTP_FENICE
+#endif    // HAVE_LIBSCTP
         if (n == 0) {
             return ERR_CONNECTION_CLOSE;
         }
@@ -97,9 +97,9 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
             return ERR_GENERIC;    //errore interno al server                           
         }
         if (Sock_type(rtsp->sock) == TCP
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
             || (Sock_type(rtsp->sock) == SCTP&& m == 0)
-#endif    // HAVE_SCTP_FENICE 
+#endif    // HAVE_LIBSCTP 
                         ) {
             if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
                 fnc_log(FNC_LOG_DEBUG,
@@ -119,7 +119,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
                 return ERR_NOERROR;
             }
         } else {    /* if (rtsp->proto == SCTP && m != 0) */
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
             for (intlvd = rtsp->interleaved;
                  intlvd && !((intlvd->proto.sctp.rtp.sinfo_stream == m)
                 || (intlvd->proto.sctp.rtcp.sinfo_stream == m));
@@ -137,7 +137,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
                     "Packet arrived from unknown stream (%d)... ignoring.\n",
                     m);
             }
-#endif    // HAVE_SCTP_FENICE
+#endif    // HAVE_LIBSCTP
         }
     }
     for (intlvd=rtsp->interleaved; intlvd; intlvd=intlvd->next) {
@@ -160,7 +160,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
                     }
                 }
                 break;
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
             case SCTP:
                 memcpy(&sctp_info, &(intlvd->proto.sctp.rtcp), sizeof(struct sctp_sndrcvinfo));
                 Sock_write(rtsp->sock, buffer, n, &sctp_info, MSG_DONTWAIT | MSG_EOR | MSG_NOSIGNAL);
@@ -190,7 +190,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
                     }
                 }
             break;
-#ifdef HAVE_SCTP_FENICE
+#ifdef HAVE_LIBSCTP
             case SCTP:
                 memcpy(&sctp_info, &(intlvd->proto.sctp.rtp), sizeof(struct sctp_sndrcvinfo));
                 Sock_write(rtsp->sock, buffer, n, &sctp_info, MSG_DONTWAIT | MSG_EOR | MSG_NOSIGNAL);
