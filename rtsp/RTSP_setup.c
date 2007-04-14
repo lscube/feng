@@ -280,7 +280,7 @@ RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * transport,
     }
 
     // tokenize the coma seaparated list of transport settings:
-    if ((transport_tkn = strtok_r(transport_str, ",", &saved_ptr))) {
+    if (!(transport_tkn = strtok_r(transport_str, ",", &saved_ptr))) {
         fnc_log(FNC_LOG_ERR,
             "Malformed Transport string from client\n");
         return RTSP_BadRequest;
