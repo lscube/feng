@@ -48,7 +48,7 @@
 /*!\brief This function adds shared memory page of slots.
  * The function remaps the shared memory according to the new size, but
  * it does NOT link new page to previous existing queue:
- * This is done in OMSbuff_slotadd.
+ * This is done in OMSbuff_addpage.
  * WARNING: the function assumes that the caller (OMSbuff_write or OMSbuff_getslot) locked the buffer mutex
  * \return the first OMSSlot of new added page of slots.
  * */
@@ -119,7 +119,7 @@ OMSSlot *OMSbuff_shm_addpage(OMSBuffer * buffer)
     }
     slots[i].refs = 0;
     slots[i].slot_seq = 0;
-    slots[i].next = -1;    // last added slot in shm new page has next slot to NULL: OMSbuff_slotadd will link it correctly.
+    slots[i].next = -1;    // last added slot in shm new page has next slot to NULL: OMSbuff_addpage will link it correctly.
 
     added = &slots[buffer->control->nslots];
     buffer->slots = slots;
