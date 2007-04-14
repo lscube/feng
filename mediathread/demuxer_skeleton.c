@@ -24,7 +24,6 @@
  *
  * */
 
-#include <fenice/demuxer.h>
 #include <fenice/demuxer_module.h>
 
 static DemuxerInfo info = {
@@ -35,7 +34,6 @@ static DemuxerInfo info = {
     "skl"
 };
 
-FNC_LIB_DEMUXER(skel);
 
 static int skel_probe(InputStream * i_stream)
 {
@@ -61,3 +59,6 @@ static int skel_uninit(Resource * r)
 {
     return RESOURCE_OK;
 }
+
+FNC_LIB_DEMUXER(skel);
+

@@ -24,7 +24,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <fenice/demuxer.h>
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
@@ -44,7 +43,6 @@ static DemuxerInfo info = {
 	"mov, nut, mkv, mxf" // the others are a problem
 };
 
-FNC_LIB_DEMUXER(avf);
 /*
 Demuxer fnc_demuxer_avf =
 {
@@ -160,7 +158,7 @@ static URLProtocol fnc_protocol = {
 
 #define PROBE_BUF_SIZE 2048
 
-static int probe(InputStream * i_stream)
+static int avf_probe(InputStream * i_stream)
 {
     AVProbeData avpd;
     uint8_t buf[PROBE_BUF_SIZE];
@@ -186,7 +184,7 @@ static double avf_timescaler (Resource *r, double res_time) {
     return res_time;
 }
 
-static int init(Resource * r)
+static int avf_init(Resource * r)
 {
     AVFormatContext *avfc;
     AVFormatParameters ap;
@@ -311,7 +309,7 @@ err_alloc:
     return ERR_PARSE;
 }
 
-static int read_packet(Resource * r)
+static int avf_read_packet(Resource * r)
 {
     int ret = -1;
 #if 0
@@ -372,7 +370,7 @@ static int read_packet(Resource * r)
     return ret;
 }
 
-static int seek(Resource * r, double time_sec)
+static int avf_seek(Resource * r, double time_sec)
 {
     int flags = 0;
     int64_t time_msec = time_sec * AV_TIME_BASE;
@@ -383,7 +381,7 @@ static int seek(Resource * r, double time_sec)
     return av_seek_frame(fc, -1, time_msec, flags);
 }
 
-static int uninit(Resource * r)
+static int avf_uninit(Resource * r)
 {
     lavf_priv_t* priv = r->private_data;
 
@@ -400,4 +398,6 @@ static int uninit(Resource * r)
 
     return RESOURCE_OK;
 }
+
+FNC_LIB_DEMUXER(avf);
 

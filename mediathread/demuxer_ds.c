@@ -29,12 +29,11 @@
 #include <stdio.h>
 #include <math.h>
 
-#include <fenice/demuxer.h>
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
 #include <fenice/multicast.h>    /*is_valid_multicast_address */
-#include <fenice/rtsp.h>    /*parse_url */
+#include <fenice/rtsp.h>         /*parse_url */
 #include <fenice/rtpptdefs.h>    /*payload type definitions */
 
 #include <fenice/demuxer_module.h>
@@ -47,7 +46,6 @@ static DemuxerInfo info = {
     "sd"
 };
 
-FNC_LIB_DEMUXER(ds);
 
 typedef struct __EDL_ITEM_ELEM {
     Resource *r;
@@ -64,7 +62,7 @@ typedef struct __EDL_PRIV {
     int move_to_next;
 } edl_priv_data;
 
-static int probe(InputStream * i_stream)
+static int ds_probe(InputStream * i_stream)
 {
     char *ext;
     char buffer[80], string[80];
@@ -125,7 +123,7 @@ static double edl_timescaler (Resource * r, double res_time) {
     return res_time + item->offset - item->begin;
 }
 
-static int init(Resource * r)
+static int ds_init(Resource * r)
 {
     char line[256], mrl[256];
     double begin = 0.0, end = HUGE_VAL, r_offset = 0.0;
@@ -223,7 +221,7 @@ static void edl_buffer_switcher(edl_priv_data *data) {
     data->old = data->active;
 }
 
-static int read_packet(Resource * r)
+static int ds_read_packet(Resource * r)
 {
     edl_priv_data *data = ((edl_priv_data *) r->private_data);
     edl_item_elem *item;
@@ -249,12 +247,12 @@ static int read_packet(Resource * r)
     return res;
 }
 
-static int seek(Resource * r, double time_sec)
+static int ds_seek(Resource * r, double time_sec)
 {
     return RESOURCE_NOT_SEEKABLE;
 }
 
-static int uninit(Resource * r)
+static int ds_uninit(Resource * r)
 {
     GList *edl_head = NULL;
     if (r->private_data)
@@ -268,3 +266,6 @@ static int uninit(Resource * r)
     r->tracks = NULL; //Unlink local copy of first resource tracks
     return RESOURCE_OK;
 }
+
+FNC_LIB_DEMUXER(ds);
+

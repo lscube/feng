@@ -28,39 +28,19 @@
  *  
  * */
 
+#include <fenice/demuxer.h>
+
 #ifndef __DEMUXER_MODULE_H
 #define __DEMUXER_MODULE_H
-
-/* probe function:
- *    arg - Resource filename to probe
- *    returns: 0 on success (file recognized), non-zero on error.
- * */
-static int probe(InputStream *);
-
-/* init: ...
- * */
-static int init(Resource *);
-
-/* read_packet: ...
- * */
-static int read_packet(Resource *);
-
-/* seek: ...
- * */
-static int seek(Resource *, double time_sec);
-
-/* uninit: ...
- * */
-static int uninit(Resource *);
 
 #define FNC_LIB_DEMUXER(x) Demuxer fnc_demuxer_##x =\
 {\
 	&info, \
-	probe, \
-	init, \
-	read_packet, \
-	seek, \
-	uninit \
+	x##_probe, \
+	x##_init, \
+	x##_read_packet, \
+	x##_seek, \
+	x##_uninit \
 }
 
 #endif // __DEMUXER_MODULE_H

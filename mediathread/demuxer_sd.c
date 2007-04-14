@@ -31,7 +31,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <fenice/demuxer.h>
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
@@ -49,9 +48,8 @@ static DemuxerInfo info = {
     "sd"
 };
 
-FNC_LIB_DEMUXER(sd);
 
-static int probe(InputStream * i_stream)
+static int sd_probe(InputStream * i_stream)
 {
     char *ext;
 
@@ -61,7 +59,7 @@ static int probe(InputStream * i_stream)
     return RESOURCE_DAMAGED;
 }
 
-static int init(Resource * r)
+static int sd_init(Resource * r)
 {
     char keyword[80], line[256], sparam[10];
     Track *track;
@@ -239,7 +237,7 @@ static int init(Resource * r)
     return RESOURCE_OK;
 }
 
-static int read_packet(Resource * r)
+static int sd_read_packet(Resource * r)
 {
     switch(r->info->media_source) {
         case MS_stored:
@@ -251,12 +249,15 @@ static int read_packet(Resource * r)
     }
 }
 
-static int seek(Resource * r, double time_sec)
+static int sd_seek(Resource * r, double time_sec)
 {
     return RESOURCE_NOT_SEEKABLE;
 }
 
-static int uninit(Resource * r)
+static int sd_uninit(Resource * r)
 {
     return RESOURCE_OK;
 }
+
+FNC_LIB_DEMUXER(sd);
+
