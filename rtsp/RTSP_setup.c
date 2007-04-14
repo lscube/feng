@@ -240,7 +240,7 @@ RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, size_t 
     char * p;
 
     //if '!' is not present then a file has not been specified
-    if ((p = strchr(cinfo->object, '!'))) 
+    if (!(p = strchr(cinfo->object, '!')))
         return RTSP_InternalServerError;
     else {
         // SETUP resource!trackname
