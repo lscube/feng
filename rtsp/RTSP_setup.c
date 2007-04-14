@@ -146,7 +146,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
     // it should parse the request giving us object!trackname
     if (!rtsp_s->resource) {
-        if ((rtsp_s->resource = mt_resource_open(prefs_get_serv_root(),
+        if (!(rtsp_s->resource = mt_resource_open(prefs_get_serv_root(),
                                                 cinfo.object))) {
             send_reply(404, 0, rtsp);//TODO: Not found or Internal server error?
             fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", cinfo.object);
@@ -154,14 +154,14 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         }
     }
 
-    if ((track_sel = r_open_tracks(rtsp_s->resource, trackname, NULL))) {
+    if (!(track_sel = r_open_tracks(rtsp_s->resource, trackname, NULL))) {
         send_reply(404, 0, rtsp);    // Not found
         fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
                 trackname, cinfo.object);
         return ERR_NOERROR;
     }
 
-    if ((req_track = r_selected_track(track_sel))) {
+    if (!(req_track = r_selected_track(track_sel))) {
         send_reply(500, 0, rtsp);    // Internal server error
         return ERR_NOERROR;
     }
