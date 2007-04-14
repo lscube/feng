@@ -58,10 +58,7 @@ OMSSlot *OMSbuff_addpage(OMSBuffer * buffer, OMSSlot * prev)
         break;
     case buff_local:
         prev_diff = prev - buffer->slots;
-        if (!
-            (added =
-             realloc(buffer->slots,
-                 (buffer->control->nslots +
+        if (!(added = realloc(buffer->slots, (buffer->control->nslots +
                   OMSBUFF_MEM_PAGE) * sizeof(OMSSlot))))
             return NULL;
         buffer->slots = added;
