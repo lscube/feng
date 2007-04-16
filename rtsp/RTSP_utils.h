@@ -50,7 +50,6 @@ void log_user_agent(RTSP_buffer * rtsp);
 // Message functions
 int send_redirect_3xx(RTSP_buffer *, char *);
 int max_connection();
-char *get_stat(int err);
-int send_reply(int err, char *addon, RTSP_buffer * rtsp);
+char const *get_stat(int err);
 int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp);
 void add_time_stamp(char *b, int crlf);

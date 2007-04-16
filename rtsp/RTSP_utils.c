@@ -27,7 +27,7 @@ void set_RTSP_Error(RTSP_Error * err, int reply_code, char * message)
     strncpy(err->message.reply_str, message, MAX_REPLY_MESSAGE_LEN);
 }
 
-char *get_stat(int err)
+char const *get_stat(int err)
 {
     struct {
         char *token;

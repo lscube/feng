@@ -150,6 +150,8 @@ int RTSP_valid_response_msg(unsigned short *status, char *msg,
 int RTSP_validate_method(RTSP_buffer * rtsp);
 void RTSP_initserver(RTSP_buffer * rtsp, Sock *rtsp_sock);
 
+int send_reply(int err, char *addon, RTSP_buffer * rtsp);
+
 // low level functions
 ssize_t RTSP_send(RTSP_buffer * rtsp);
 #if 0 // To support multiple session per socket...
