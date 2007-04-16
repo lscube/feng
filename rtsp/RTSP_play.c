@@ -43,6 +43,8 @@ RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args);
 RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args);
 RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_session **rtsp_sess);
 
+int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp_session);
+
 /*
      ****************************************************************
      *            PLAY METHOD HANDLING
@@ -93,6 +95,52 @@ int RTSP_play(RTSP_buffer * rtsp)
 
 error_management:
     send_reply(error.message.reply_code, error.message.reply_str, rtsp);
+    return ERR_NOERROR;
+}
+
+int send_play_reply(RTSP_buffer * rtsp, char *object,
+            RTSP_session * rtsp_session)
+{
+    char r[1024];
+    char temp[30];
+    RTP_session *p = rtsp_session->rtp_session;
+    Track *t;
+    /* build a reply message */
+    sprintf(r,
+        "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
+        RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
+        VERSION);
+    add_time_stamp(r, 0);
+    strcat(r, "Session: ");
+    sprintf(temp, "%d", rtsp_session->session_id);
+    strcat(r, temp);
+    strcat(r, RTSP_EL);
+    strcat(r, "RTP-info: ");
+    do {
+        t = r_selected_track(p->track_selector);
+        strcat(r, "url=");
+        // TODO: we MUST be sure to send the correct url 
+        sprintf(r + strlen(r), "rtsp://%s/%s/%s!%s",
+            prefs_get_hostname(), p->sd_filename, t->parent->info->name,
+            t->info->name);
+        strcat(r, ";");
+        sprintf(r + strlen(r), "seq=%u;rtptime=%u", p->start_seq,
+            p->start_rtptime);
+        if (p->next != NULL) {
+            strcat(r, ",");
+        } else {
+            strcat(r, RTSP_EL);
+        }
+        p = p->next;
+    } while (p != NULL);
+    // end of message
+    strcat(r, RTSP_EL);
+
+    bwrite(r, (unsigned short) strlen(r), rtsp);
+
+
+    fnc_log(FNC_LOG_CLIENT, "200 - %s ", object);
+
     return ERR_NOERROR;
 }
 

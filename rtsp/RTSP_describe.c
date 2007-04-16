@@ -40,6 +40,8 @@
 
 #include <RTSP_utils.h>
 
+int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format descr_format, char *descr);
+
 /*
      ****************************************************************
      *            DESCRIBE METHOD HANDLING
@@ -82,5 +84,61 @@ int RTSP_describe(RTSP_buffer * rtsp)
 
 error_management:
     send_reply(error.message.reply_code, error.message.reply_str, rtsp);
+    return ERR_NOERROR;
+}
+
+int send_describe_reply(RTSP_buffer * rtsp, char *object,
+            description_format descr_format, char *descr)
+{
+    char *r;        /* get reply message buffer pointer */
+    char *mb;        /* message body buffer pointer */
+    int mb_len;
+
+
+    /* allocate buffer */
+    mb_len = 2048;
+    mb = malloc(mb_len);
+    r = malloc(mb_len + 1512);
+    if (!r || !mb) {
+        fnc_log(FNC_LOG_ERR,
+            "send_describe_reply(): unable to allocate memory\n");
+        send_reply(500, 0, rtsp);    /* internal server error */
+        if (r) {
+            free(r);
+        }
+        if (mb) {
+            free(mb);
+        }
+        return ERR_ALLOC;
+    }
+
+    /*describe */
+    sprintf(r,
+        "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
+        RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
+        VERSION);
+    add_time_stamp(r, 0);
+    switch (descr_format) {
+        // Add new formats here
+    case df_SDP_format:{
+            strcat(r, "Content-Type: application/sdp" RTSP_EL);
+            break;
+        }
+    }
+    sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/" RTSP_EL,
+        prefs_get_hostname(), object);
+    sprintf(r + strlen(r), "Content-Length: %d" RTSP_EL, strlen(descr));
+    // end of message
+    strcat(r, RTSP_EL);
+
+    // concatenate description
+    strcat(r, descr);
+    bwrite(r, (unsigned short) strlen(r), rtsp);
+
+    free(mb);
+    free(r);
+
+    fnc_log(FNC_LOG_CLIENT, "200 %d %s ", strlen(descr), object);
+
     return ERR_NOERROR;
 }

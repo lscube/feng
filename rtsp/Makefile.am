@@ -22,12 +22,6 @@ librtsp_la_SOURCES =	RTSP_utils.c \
 			send_reply.c \
 			bwrite.c \
 			add_time_stamp.c \
-			send_describe_reply.c \
-			send_setup_reply.c \
-			send_play_reply.c \
-			send_pause_reply.c \
-			send_teardown_reply.c \
-			send_options_reply.c  \
 			send_redirect_3xx.c  \
 			max_connection.c  \
 			parse_url.c 

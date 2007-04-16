@@ -40,6 +40,9 @@
 #include <fenice/bufferpool.h>
 #include <fenice/fnc_log.h>
 #include <glib.h>
+
+int send_teardown_reply(RTSP_buffer * rtsp, long session_id, long cseq);
+
 /*
      ****************************************************************
      *            TEARDOWN METHOD HANDLING
@@ -134,5 +137,25 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 
 error_management:
     send_reply(error.message.reply_code, error.message.reply_str, rtsp);
+    return ERR_NOERROR;
+}
+
+int send_teardown_reply(RTSP_buffer * rtsp, long session_id, long cseq)
+{
+    char r[1024];
+    char temp[30];
+    /* build a reply message */
+    sprintf(r,
+        "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL "Server: %s/%s" RTSP_EL,
+        RTSP_VER, 200, get_stat(200), cseq, PACKAGE, VERSION);
+    add_time_stamp(r, 0);
+    strcat(r, "Session: ");
+    sprintf(temp, "%ld", session_id);
+    strcat(r, temp);
+    strcat(r, RTSP_EL RTSP_EL);
+    bwrite(r, (unsigned short) strlen(r), rtsp);
+
+    fnc_log(FNC_LOG_CLIENT, "200 - - ");
+
     return ERR_NOERROR;
 }
