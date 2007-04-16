@@ -17,14 +17,7 @@ librtsp_la_SOURCES =	RTSP_utils.c \
 			RTSP_play.c \
 			RTSP_pause.c \
 			RTSP_teardown.c \
-			RTSP_options.c \
-			get_stat.c \
-			send_reply.c \
-			bwrite.c \
-			add_time_stamp.c \
-			send_redirect_3xx.c  \
-			max_connection.c  \
-			parse_url.c 
+			RTSP_options.c
 			 
 						
 librtsp_la_LDFLAGS = -static

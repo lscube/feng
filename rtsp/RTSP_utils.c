@@ -8,21 +8,96 @@
 #include <fenice/sdp2.h>
 #include <fenice/fnc_log.h>
 
-RTSP_Error const RTSP_Ok = { {0, ""}, FALSE };
-RTSP_Error const RTSP_BadRequest = { {400, ""}, TRUE };
-RTSP_Error const RTSP_InternalServerError = { {500, ""}, TRUE };
-RTSP_Error const RTSP_Forbidden = { {403, ""}, TRUE };
-RTSP_Error const RTSP_NotFound = { {404, ""}, TRUE };
-RTSP_Error const RTSP_OptionNotSupported = { {551, ""}, TRUE };
-RTSP_Error const RTSP_SessionNotFound = { {454, ""}, TRUE };
+RTSP_Error const RTSP_Ok = { {200, "OK"}, FALSE };
+RTSP_Error const RTSP_BadRequest = { {400, "Bad Request"}, TRUE };
+RTSP_Error const RTSP_Forbidden = { {403, "Forbidden"}, TRUE };
+RTSP_Error const RTSP_NotFound = { {404, "Not Found"}, TRUE };
+RTSP_Error const RTSP_SessionNotFound = { {454, "Session Not Found"}, TRUE };
+RTSP_Error const RTSP_InternalServerError = { {500, "Internal Server Error"}, TRUE };
+RTSP_Error const RTSP_OptionNotSupported = { {551, "Option not supported"}, TRUE };
 
 RTSP_Error const RTSP_Fatal_ErrAlloc = { {0, ""}, ERR_ALLOC };
+
+extern int num_conn;
 
 void set_RTSP_Error(RTSP_Error * err, int reply_code, char * message)
 {
     err->got_error = TRUE;
     err->message.reply_code = reply_code;
     strncpy(err->message.reply_str, message, MAX_REPLY_MESSAGE_LEN);
+}
+
+char *get_stat(int err)
+{
+    struct {
+        char *token;
+        int code;
+    } status[] = {
+        {
+        "Continue", 100}, {
+        "Created", 201}, {
+        "Accepted", 202}, {
+        "Non-Authoritative Information", 203}, {
+        "No Content", 204}, {
+        "Reset Content", 205}, {
+        "Partial Content", 206}, {
+        "Multiple Choices", 300}, {
+        "Moved Permanently", 301}, {
+        "Moved Temporarily", 302}, {
+        "Unauthorized", 401}, {
+        "Payment Required", 402}, {
+        "Method Not Allowed", 405}, {
+        "Not Acceptable", 406}, {
+        "Proxy Authentication Required", 407}, {
+        "Request Time-out", 408}, {
+        "Conflict", 409}, {
+        "Gone", 410}, {
+        "Length Required", 411}, {
+        "Precondition Failed", 412}, {
+        "Request Entity Too Large", 413}, {
+        "Request-URI Too Large", 414}, {
+        "Unsupported Media Type", 415}, {
+        "Bad Extension", 420}, {
+        "Invalid Parameter", 450}, {
+        "Parameter Not Understood", 451}, {
+        "Conference Not Found", 452}, {
+        "Not Enough Bandwidth", 453}, {
+        "Method Not Valid In This State", 455}, {
+        "Header Field Not Valid for Resource", 456}, {
+        "Invalid Range", 457}, {
+        "Parameter Is Read-Only", 458}, {
+        "Unsupported transport", 461}, {
+        "Not Implemented", 501}, {
+        "Bad Gateway", 502}, {
+        "Service Unavailable", 503}, {
+        "Gateway Time-out", 504}, {
+        "RTSP Version Not Supported", 505}, {
+        "Extended Error:", 911}, {
+        NULL, -1}
+    };
+    int i;
+
+    switch (err)
+    {
+        case 200:
+            return RTSP_Ok.message.reply_str;
+        case 400:
+            return RTSP_BadRequest.message.reply_str;
+        case 403:
+            return RTSP_Forbidden.message.reply_str;
+        case 404:
+            return RTSP_NotFound.message.reply_str;
+        case 454:
+            return RTSP_SessionNotFound.message.reply_str;
+        case 500:
+            return RTSP_InternalServerError.message.reply_str;
+        case 551:
+            return RTSP_OptionNotSupported.message.reply_str;
+        default:
+            for (i = 0; status[i].code != err && status[i].code != -1; ++i);
+            return status[i].token;
+    }
+
 }
 
 RTSP_Error check_forbidden_path(ConnectionInfo * cinfo)
@@ -144,3 +219,241 @@ void log_user_agent(RTSP_buffer * rtsp)
         fnc_log(FNC_LOG_CLIENT, "- ");
 }
 
+
+// ------------------------------------------------------
+// Message Functions
+// ------------------------------------------------------
+int send_reply(int err, char *addon, RTSP_buffer * rtsp)
+{
+    unsigned int len;
+    char *b;
+    char *p;
+    int res;
+    char method[32];
+    char object[256];
+    char ver[32];
+
+
+    if (addon != NULL) {
+        len = 256 + strlen(addon);
+    } else {
+        len = 256;
+    }
+
+    b = (char *) malloc(len);
+    if (b == NULL) {
+        fnc_log(FNC_LOG_ERR,
+            "send_reply(): memory allocation error.\n");
+        return ERR_ALLOC;
+    }
+    memset(b, 0, sizeof(b));
+    sprintf(b, "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL, RTSP_VER, err,
+        get_stat(err), rtsp->rtsp_cseq);
+    //---patch coerenza con rfc in caso di errore
+    // strcat(b, "\r\n");
+    strcat(b, RTSP_EL);
+
+    res = bwrite(b, (unsigned short) strlen(b), rtsp);
+    free(b);
+
+    sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, object, ver);
+    fnc_log(FNC_LOG_ERR, "%s %s %s %d - - ", method, object, ver, err);
+    if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
+        char cut[strlen(p)];
+        strcpy(cut, p);
+        cut[strlen(cut) - 1] = '\0';
+        fnc_log(FNC_LOG_CLIENT, "%s", cut);
+    }
+
+    return res;
+}
+
+int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
+{
+#if ENABLE_MEDIATHREAD
+#warning Write mt equivalent
+        send_reply(500, 0, rtsp);       /* Internal server error */
+        return ERR_NOERROR;
+#else
+    char *r;        /* get reply message buffer pointer */
+    uint8 *mb;        /* message body buffer pointer */
+    uint32 mb_len;
+    SD_descr *matching_descr;
+
+    if (enum_media(object, &matching_descr) != ERR_NOERROR) {
+        fnc_log(FNC_LOG_ERR,
+            "SETUP request specified an object file which can be damaged.\n");
+        send_reply(500, 0, rtsp);    /* Internal server error */
+        return ERR_NOERROR;
+    }
+    //if(!strcasecmp(matching_descr->twin,"NONE") || !strcasecmp(matching_descr->twin,"")){
+    if (!(matching_descr->flags & SD_FL_TWIN)) {
+        send_reply(453, 0, rtsp);
+        return ERR_NOERROR;
+    }
+    /* allocate buffer */
+    mb_len = 2048;
+    mb = malloc(mb_len);
+    r = malloc(mb_len + 1512);
+    if (!r || !mb) {
+        fnc_log(FNC_LOG_ERR,
+            "send_redirect(): unable to allocate memory\n");
+        send_reply(500, 0, rtsp);    /* internal server error */
+        if (r) {
+            free(r);
+        }
+        if (mb) {
+            free(mb);
+        }
+        return ERR_ALLOC;
+    }
+    /* build a reply message */
+    sprintf(r,
+        "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
+        RTSP_VER, 302, get_stat(302), rtsp->rtsp_cseq, PACKAGE,
+        VERSION);
+    sprintf(r + strlen(r), "Location: %s" RTSP_EL, matching_descr->twin);    /*twin of the first media of the aggregate movie */
+
+    strcat(r, RTSP_EL);
+
+
+    bwrite(r, (unsigned short) strlen(r), rtsp);
+
+    free(mb);
+    free(r);
+
+    fnc_log(FNC_LOG_VERBOSE, "REDIRECT response sent.\n");
+#endif
+    return ERR_NOERROR;
+
+}
+
+int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
+{
+    if ((rtsp->out_size + len) > (int) sizeof(rtsp->out_buffer)) {
+        fnc_log(FNC_LOG_ERR,
+            "bwrite(): not enough free space in out message buffer.\n");
+        return ERR_ALLOC;
+    }
+    memcpy(&(rtsp->out_buffer[rtsp->out_size]), buffer, len);
+    rtsp->out_buffer[rtsp->out_size + len] = '\0';
+    rtsp->out_size += len;
+    return ERR_NOERROR;
+}
+
+int max_connection()
+{
+    if (num_conn <= prefs_get_max_session())
+        return ERR_NOERROR;
+
+    return ERR_GENERIC;
+}
+
+void add_time_stamp(char *b, int crlf)
+{
+    struct tm *t;
+    time_t now;
+
+    /*!
+     * concatenates a null terminated string with a
+     * time stamp in the format of "Date: 23 Jan 1997 15:35:06 GMT"
+     */
+    now = time(NULL);
+    t = gmtime(&now);
+    strftime(b + strlen(b), 38, "Date: %a, %d %b %Y %H:%M:%S GMT" RTSP_EL,
+         t);
+    if (crlf)
+        strcat(b, "\r\n");    /* add a message header terminator (CRLF) */
+}
+
+//FIXME this code should be killed once we got time
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#define my_alloca(x) alloca(x)
+#define my_free(x)
+#else
+#define my_alloca(x) malloc(x)
+#define my_free(x) free(x)
+#endif
+
+//! \return 0 if the URL is valid, 1 if the URL is not valid, -1 on internal error (some buffer too small)
+int parse_url(const char *url, char *server, size_t server_len,
+          unsigned short *port, char *file_name, size_t file_name_len)
+// Note: this routine comes from OMS
+{
+    /* expects format '[rtsp://server[:port/]]filename' */
+
+    int not_valid_url = 1;
+    /* copy url */
+    char *full = my_alloca(strlen(url) + 1);
+    strcpy(full, url);
+    if (strncmp(full, "rtsp://", 7) == 0) {
+        char *token;
+        int has_port = 0;
+        /* BEGIN Altered by Ed Hogan, Trusted Info. Sys. Inc. */
+        /* Need to look to see if it has a port on the first host or not. */
+        char *aSubStr = my_alloca(strlen(url) + 1);
+        strcpy(aSubStr, &full[7]);
+        if (strchr(aSubStr, '/')) {
+            int len = 0;
+            unsigned short i = 0;
+            char *end_ptr;
+            end_ptr = strchr(aSubStr, '/');
+            len = end_ptr - aSubStr;
+            for (; (i < strlen(url)); i++)
+                aSubStr[i] = 0;
+            strncpy(aSubStr, &full[7], len);
+        }
+        if (strchr(aSubStr, ':'))
+            has_port = 1;
+        my_free(aSubStr);
+        /* END   Altered by Ed Hogan, Trusted Info. Sys. Inc. */
+
+        token = strtok(&full[7], " :/\t\n");
+        if (token) {
+            strncpy(server, token, server_len);
+            if (server[server_len - 1]) {
+                my_free(full);
+                return -1;    // internal error
+            }
+            if (has_port) {
+                char *port_str =
+                    strtok(&full[strlen(server) + 7 + 1],
+                       " /\t\n");
+                if (port_str)
+                    *port = (unsigned short) atol(port_str);
+                else
+                    *port = FENICE_RTSP_PORT_DEFAULT;
+            } else
+                *port = FENICE_RTSP_PORT_DEFAULT;
+            /* don't require a file name */
+            not_valid_url = 0;
+            token = strtok(NULL, " ");
+            if (token) {
+                strncpy(file_name, token, file_name_len);
+                if (file_name[file_name_len - 1]) {
+                    my_free(full);
+                    return -1;    // internal error
+                }
+            } else
+                file_name[0] = '\0';
+        }
+    } else {
+        /* try just to extract a file name */
+        char *token = strtok(full, " \t\n");
+        if (token) {
+            strncpy(file_name, token, file_name_len);
+            if (file_name[file_name_len - 1]) {
+                my_free(full);
+                return -1;    // internal error
+            }
+            server[0] = '\0';
+            not_valid_url = 0;
+        }
+    }
+    my_free(full);
+    return not_valid_url;
+}
+
+#undef my_alloca
+#undef my_free

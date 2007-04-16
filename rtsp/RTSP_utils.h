@@ -25,6 +25,15 @@ typedef struct
     int got_error;
 } RTSP_Error;
 
+extern RTSP_Error const RTSP_Ok;
+extern RTSP_Error const RTSP_BadRequest;
+extern RTSP_Error const RTSP_InternalServerError;
+extern RTSP_Error const RTSP_Forbidden;
+extern RTSP_Error const RTSP_OptionNotSupported;
+extern RTSP_Error const RTSP_NotFound;
+extern RTSP_Error const RTSP_SessionNotFound;
+extern RTSP_Error const RTSP_Fatal_ErrAlloc;
+
 void set_RTSP_Error(RTSP_Error * err, int reply_code, char * message);
 
 RTSP_Error check_forbidden_path(ConnectionInfo * cinfo);
@@ -38,11 +47,10 @@ RTSP_Error get_session_id(RTSP_buffer * rtsp, long int * session_id);
 
 void log_user_agent(RTSP_buffer * rtsp);
 
-extern RTSP_Error const RTSP_Ok;
-extern RTSP_Error const RTSP_BadRequest;
-extern RTSP_Error const RTSP_InternalServerError;
-extern RTSP_Error const RTSP_Forbidden;
-extern RTSP_Error const RTSP_OptionNotSupported;
-extern RTSP_Error const RTSP_NotFound;
-extern RTSP_Error const RTSP_SessionNotFound;
-extern RTSP_Error const RTSP_Fatal_ErrAlloc;
+// Message functions
+int send_redirect_3xx(RTSP_buffer *, char *);
+int max_connection();
+char *get_stat(int err);
+int send_reply(int err, char *addon, RTSP_buffer * rtsp);
+int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp);
+void add_time_stamp(char *b, int crlf);

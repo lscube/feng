@@ -150,15 +150,6 @@ int RTSP_valid_response_msg(unsigned short *status, char *msg,
 int RTSP_validate_method(RTSP_buffer * rtsp);
 void RTSP_initserver(RTSP_buffer * rtsp, Sock *rtsp_sock);
 
-	// REDIRECT 3xx
-int send_redirect_3xx(RTSP_buffer *, char *);
-
-	// messages functions
-int max_connection();
-char *get_stat(int err);
-int send_reply(int err, char *addon, RTSP_buffer * rtsp);
-int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp);
-void add_time_stamp(char *b, int crlf);
 // low level functions
 ssize_t RTSP_send(RTSP_buffer * rtsp);
 #if 0 // To support multiple session per socket...
