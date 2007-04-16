@@ -44,6 +44,10 @@
 
 RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, size_t trackname_max_len);
 RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * transport, unsigned char * is_multicast_dad);
+long int generate_session_id();
+RTSP_session * append_session(RTSP_buffer * rtsp);
+RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, int is_multicast_dad, Selector * track_sel);
+RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track);
 
 /*
      ****************************************************************
@@ -66,9 +70,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     RTSP_session *rtsp_s;
     unsigned char is_multicast_dad = 1;    //unicast and the first multicast
 
-    struct timeval now_tmp;
-    unsigned int start_seq, start_rtptime;
-
     RTSP_Error error;
 
     // init
@@ -89,137 +90,22 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     else if ( (error = parse_transport_header(rtsp, &transport, &is_multicast_dad)).got_error )
         goto error_management;
 
-    // printf("rtp transport: %d\n", transport->type);
-    if (!transport.rtp_sock) {
-        // fnc_log(FNC_LOG_ERR,"Unsupported Transport\n");
-        set_RTSP_Error(&error, 461, "Unsupported Transport");
-        goto error_management;
-    }
     // If there's a Session header we have an aggregate control
     if ( (error = get_session_id(rtsp, &session_id)).got_error )
         goto error_management;
-    else {
-        // Generate a random Session number
-        gettimeofday(&now_tmp, 0);
-        srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
-#ifdef WIN32
-        session_id = rand();
-#else
-        session_id = 1 + (int) (10.0 * rand() / (100000 + 1.0));
-#endif
-        if (session_id == 0) {
-            session_id++;
-        }
-#if 0 // To support multiple session per socket...
-        // XXX Paranoia make sure we have a connection limit set elsewhere...
-        while (rtsp_session_from_id(rtsp, session_id))
-#ifdef WIN32
-            session_id = rand();
-#else
-            session_id = 1 + (int) (10.0 * rand() / (100000 + 1.0));
-#endif
-
-#endif
-    }
+    else
+        session_id = generate_session_id();
 
     // Add an RTSP session if necessary
-    // XXX Append a new session if one isn't present already!
-#if 1
-    if (!rtsp->session_list) {
-        rtsp->session_list = calloc(1, sizeof(RTSP_session));
-    }
-    rtsp_s = rtsp->session_list;
-#else // To support multiple session per socket...
-    if (!rtsp->session_list) {
-        rtsp->session_list = calloc(1, sizeof(RTSP_session));
-        rtsp_s = rtsp->session_list;
-    } else {
-        RTSP_session *rtsp_s_prec;
-        for (rtsp_s = rtsp->session_list; rtsp_s != NULL;
-             rtsp_s = rtsp_s->next) {
-            rtsp_s_prec = rtsp_s;
-        }
-        rtsp_s_prec->next = calloc(1, sizeof(RTP_session));
-        rtsp_s = rtsp_s_prec->next;
-    }
-#endif
+    rtsp_s = append_session(rtsp);
 
-    // it should parse the request giving us object!trackname
-    if (!rtsp_s->resource) {
-        if (!(rtsp_s->resource = mt_resource_open(prefs_get_serv_root(),
-                                                cinfo.object))) {
-            send_reply(404, 0, rtsp);//TODO: Not found or Internal server error?
-            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", cinfo.object);
-            return ERR_NOERROR;
-        }
-    }
+    // Get the selected track
+    if ( (error = select_requested_track(&cinfo, rtsp_s, trackname, &track_sel, &req_track)).got_error )
+        goto error_management;
 
-    if (!(track_sel = r_open_tracks(rtsp_s->resource, trackname, NULL))) {
-        send_reply(404, 0, rtsp);    // Not found
-        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
-                trackname, cinfo.object);
-        return ERR_NOERROR;
-    }
+    // Setup the RTP session
+    rtp_s = setup_rtp_session(&cinfo, rtsp, rtsp_s, &transport, is_multicast_dad, track_sel);
 
-    if (!(req_track = r_selected_track(track_sel))) {
-        send_reply(500, 0, rtsp);    // Internal server error
-        return ERR_NOERROR;
-    }
-
-// Setup the RTP session
-    if (rtsp->session_list->rtp_session == NULL) {
-        rtsp->session_list->rtp_session = calloc(1, sizeof(RTP_session));
-        rtp_s = rtsp->session_list->rtp_session;
-    } else {
-        rtp_s = rtsp_s->rtp_session;
-        while (rtp_s->next !=  NULL) {
-            rtp_s = rtp_s->next;
-        };
-        rtp_s->next = calloc(1, sizeof(RTP_session));
-        rtp_s = rtp_s->next;
-    }
-
-#ifdef WIN32
-    start_seq = rand();
-    start_rtptime = rand();
-#else
-    start_seq = 1 + (unsigned int) (rand() % (0xFFFF));
-    start_rtptime = 1 + (unsigned int) (rand() % (0xFFFFFFFF));
-#endif
-    if (start_seq == 0) {
-        start_seq++;
-    }
-    if (start_rtptime == 0) {
-        start_rtptime++;
-    }
-    rtp_s->pause = 1;
-    strcpy(rtp_s->sd_filename, cinfo.object);
-#if 0 //MULTICAST
-    /*XXX */
-    rtp_s->current_media = calloc(1, sizeof(media_entry));
-
-    // if((matching_descr->flags & SD_FL_MULTICAST_PORT)){
-
-    // TODO: multicast with mediathread
-    if (is_multicast_dad) {
-        if (mediacpy(&rtp_s->current_media, &matching_me)) {
-            send_reply(500, 0, rtsp);    // Internal server error
-            return ERR_GENERIC;
-        }
-    }
-#endif
-
-    gettimeofday(&now_tmp, 0);
-    srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
-    rtp_s->start_rtptime = start_rtptime;
-    rtp_s->start_seq = start_seq;
-    memcpy(&rtp_s->transport, &transport, sizeof(transport));
-    rtp_s->is_multicast_dad = is_multicast_dad;
-    rtp_s->track_selector = track_sel;
-    rtp_s->sched_id = schedule_add(rtp_s);
-
-
-    rtp_s->ssrc = random32(0);
     // Setup the RTSP session
     rtsp_s->session_id = session_id;
     *new_session = rtsp_s;
@@ -500,6 +386,160 @@ RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * transport,
             }
         }
     } while ((transport_tkn = strtok_r(NULL, ",", &saved_ptr)));
+
+    // printf("rtp transport: %d\n", transport->type);
+    if (!transport->rtp_sock) {
+        // fnc_log(FNC_LOG_ERR,"Unsupported Transport\n");
+        set_RTSP_Error(&error, 461, "Unsupported Transport");
+        return error;
+    }
+
+    return RTSP_Ok;
+}
+
+long int generate_session_id()
+{        
+    struct timeval now_tmp;
+    long int session_id;
+
+    // Generate a random Session number
+    gettimeofday(&now_tmp, 0);
+    srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
+#ifdef WIN32
+    session_id = rand();
+#else
+    session_id = 1 + (int) (10.0 * rand() / (100000 + 1.0));
+#endif
+    if (session_id == 0) {
+        session_id++;
+    }
+#if 0 // To support multiple session per socket...
+    // XXX Paranoia make sure we have a connection limit set elsewhere...
+    while (rtsp_session_from_id(rtsp, session_id))
+#ifdef WIN32
+        session_id = rand();
+#else
+        session_id = 1 + (int) (10.0 * rand() / (100000 + 1.0));
+#endif
+
+#endif
+
+    return session_id;
+}
+
+RTSP_session * append_session(RTSP_buffer * rtsp)
+{
+    RTSP_session *rtsp_s;
+
+    // XXX Append a new session if one isn't present already!
+#if 1
+    if (!rtsp->session_list) {
+        rtsp->session_list = calloc(1, sizeof(RTSP_session));
+    }
+    rtsp_s = rtsp->session_list;
+#else // To support multiple session per socket...
+    if (!rtsp->session_list) {
+        rtsp->session_list = calloc(1, sizeof(RTSP_session));
+        rtsp_s = rtsp->session_list;
+    } else {
+        RTSP_session *rtsp_s_prec;
+        for (rtsp_s = rtsp->session_list; rtsp_s != NULL;
+             rtsp_s = rtsp_s->next) {
+            rtsp_s_prec = rtsp_s;
+        }
+        rtsp_s_prec->next = calloc(1, sizeof(RTP_session));
+        rtsp_s = rtsp_s_prec->next;
+    }
+#endif
+
+    return rtsp_s;
+}
+
+RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, int is_multicast_dad, Selector * track_sel)
+{
+    struct timeval now_tmp;
+    unsigned int start_seq, start_rtptime;
+    RTP_session *rtp_s;
+
+// Setup the RTP session
+    if (rtsp->session_list->rtp_session == NULL) {
+        rtsp->session_list->rtp_session = calloc(1, sizeof(RTP_session));
+        rtp_s = rtsp->session_list->rtp_session;
+    } else {
+        rtp_s = rtsp_s->rtp_session;
+        while (rtp_s->next !=  NULL) {
+            rtp_s = rtp_s->next;
+        };
+        rtp_s->next = calloc(1, sizeof(RTP_session));
+        rtp_s = rtp_s->next;
+    }
+
+#ifdef WIN32
+    start_seq = rand();
+    start_rtptime = rand();
+#else
+    start_seq = 1 + (unsigned int) (rand() % (0xFFFF));
+    start_rtptime = 1 + (unsigned int) (rand() % (0xFFFFFFFF));
+#endif
+    if (start_seq == 0) {
+        start_seq++;
+    }
+    if (start_rtptime == 0) {
+        start_rtptime++;
+    }
+    rtp_s->pause = 1;
+    strcpy(rtp_s->sd_filename, cinfo->object);
+
+#if 0 //MULTICAST
+    /*XXX */
+    rtp_s->current_media = calloc(1, sizeof(media_entry));
+
+    // if((matching_descr->flags & SD_FL_MULTICAST_PORT)){
+
+    // TODO: multicast with mediathread
+    if (is_multicast_dad) {
+        if (mediacpy(&rtp_s->current_media, &matching_me)) {
+            send_reply(500, 0, rtsp);    // Internal server error
+            return ERR_GENERIC;
+        }
+    }
+#endif
+
+    gettimeofday(&now_tmp, 0);
+    srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
+    rtp_s->start_rtptime = start_rtptime;
+    rtp_s->start_seq = start_seq;
+    memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
+    rtp_s->is_multicast_dad = is_multicast_dad;
+    rtp_s->track_selector = track_sel;
+    rtp_s->sched_id = schedule_add(rtp_s);
+    rtp_s->ssrc = random32(0);
+
+    return rtp_s;
+}
+
+RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
+{
+    RTSP_Error error;
+
+    // it should parse the request giving us object!trackname
+    if (!rtsp_s->resource) {
+        if (!(rtsp_s->resource = mt_resource_open(prefs_get_serv_root(), cinfo->object))) {
+            error = RTSP_NotFound;
+            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", cinfo->object);
+            return error;
+        }
+    }
+
+    if (!(*track_sel = r_open_tracks(rtsp_s->resource, trackname, NULL))) {
+        error = RTSP_NotFound;
+        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
+                trackname, cinfo->object);
+        return error;
+    }
+
+    if (!(*req_track = r_selected_track(*track_sel)))
+        return RTSP_InternalServerError;    // Internal server error
 
     return RTSP_Ok;
 }
