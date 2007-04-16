@@ -150,28 +150,8 @@ int RTSP_valid_response_msg(unsigned short *status, char *msg,
 int RTSP_validate_method(RTSP_buffer * rtsp);
 void RTSP_initserver(RTSP_buffer * rtsp, Sock *rtsp_sock);
 
-	// DESCRIBE     
-int send_describe_reply(RTSP_buffer * rtsp, char *object,
-			description_format descr_format, char *descr);
-
 	// REDIRECT 3xx
 int send_redirect_3xx(RTSP_buffer *, char *);
-
-	// SETUP
-int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_session * sp2);
-
-	// TEARDOWN
-int send_teardown_reply(RTSP_buffer * rtsp, long session_id, long cseq);
-
-	// PLAY
-int send_play_reply(RTSP_buffer * rtsp, char *object,
-		    RTSP_session * rtsp_session);
-
-	// PAUSE
-int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session);
-
-	// OPTIONS
-int send_options_reply(RTSP_buffer * rtsp, long cseq);
 
 	// messages functions
 int max_connection();
