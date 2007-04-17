@@ -36,12 +36,79 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
+/* This file contains RTSP message handling and dispatchment */
+
+//Handles incoming RTSP message, validates them and them dispatches them with RTSP_
+int RTSP_handler(RTSP_buffer * rtsp)
+{
+    unsigned short status;
+    char msg[100];
+    int m, op;
+    int full_msg;
+    RTSP_interleaved *intlvd;
+    int hlen, blen;
+
+    while (rtsp->in_size) {
+        switch ((full_msg = RTSP_full_msg_rcvd(rtsp, &hlen, &blen))) {
+        case RTSP_method_rcvd:
+            op = RTSP_valid_response_msg(&status, msg, rtsp);
+            if (op == 0) {
+                // There is NOT an input RTSP message, therefore it's a request
+                m = RTSP_validate_method(rtsp);
+                if (m < 0) {
+                    // Bad request: non-existing method
+                    fnc_log(FNC_LOG_INFO, "Bad Request ");
+                    send_reply(400, NULL, rtsp);
+                } else
+                    RTSP_state_machine(rtsp, m);
+            } else {
+                // There's a RTSP answer in input.
+                if (op == ERR_GENERIC) {
+                    // Invalid answer
+                }
+            }
+            RTSP_discard_msg(rtsp);
+            break;
+        case RTSP_interlvd_rcvd:
+            m = rtsp->in_buffer[1];
+            for (intlvd = rtsp->interleaved;
+                 intlvd && !((intlvd->proto.tcp.rtp_ch == m)
+                || (intlvd->proto.tcp.rtcp_ch == m));
+                 intlvd = intlvd->next);
+            if (!intlvd) {    // session not found
+                fnc_log(FNC_LOG_DEBUG,
+                    "Interleaved RTP or RTCP packet arrived for unknown channel (%d)... discarding.\n",
+                    m);
+                RTSP_discard_msg(rtsp);
+                break;
+            }
+            if (m == intlvd->proto.tcp.rtcp_ch) {    // RTCP pkt arrived
+                fnc_log(FNC_LOG_DEBUG,
+                    "Interleaved RTCP packet arrived for channel %d (len: %d).\n",
+                    m, blen);
+                Sock_write(intlvd->rtcp_local, &rtsp->in_buffer[hlen],
+                      blen, NULL, 0);
+            } else    // RTP pkt arrived: do nothing...
+                fnc_log(FNC_LOG_DEBUG,
+                    "Interleaved RTP packet arrived for channel %d.\n",
+                    m);
+            RTSP_discard_msg(rtsp);
+            break;
+        default:
+            return full_msg;
+            break;
+        }
+    }
+
+    return ERR_NOERROR;
+}
+
+/*
+ * All state transitions are made here except when the last stream packet
+ * is sent during a PLAY.  That transition is located in stream_event().
+ */
 void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 {
-    /*
-     * All state transitions are made here except when the last stream packet
-     * is sent during a PLAY.  That transition is located in stream_event().
-     */
     char *s;
     RTSP_session *p;
     long int session_id;
@@ -158,4 +225,115 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
         }
         break;
     }            /* end of current state switch */
+}
+
+/*! validate method
+ * @return -1 if something doesn't work in the request */
+int RTSP_validate_method(RTSP_buffer * rtsp)
+{
+    char method[32], hdr[16];
+    char object[256];
+    char ver[32];
+    unsigned int seq;
+    int pcnt;        /* parameter count */
+        char *p;
+    int mid = ERR_GENERIC;
+
+    *method = *object = '\0';
+    seq = 0;
+
+    /* parse first line of message header as if it were a request message */
+
+    if ((pcnt =
+         sscanf(rtsp->in_buffer, " %31s %255s %31s ", method,
+            object, ver)) != 3)
+        return ERR_GENERIC;
+
+        p = rtsp->in_buffer;
+
+        while ((p = strstr(p,"\n"))) {
+            if ((pcnt = sscanf(p, " %15s %u ", hdr, &seq)) == 2)
+                    if (strstr(hdr, HDR_CSEQ)) break;
+            p++;
+        }
+    if (p == NULL)
+        return ERR_GENERIC;
+
+    if (strcmp(method, RTSP_METHOD_DESCRIBE) == 0) {
+        mid = RTSP_ID_DESCRIBE;
+    }
+    if (strcmp(method, RTSP_METHOD_ANNOUNCE) == 0) {
+        mid = RTSP_ID_ANNOUNCE;
+    }
+    if (strcmp(method, RTSP_METHOD_GET_PARAMETERS) == 0) {
+        mid = RTSP_ID_GET_PARAMETERS;
+    }
+    if (strcmp(method, RTSP_METHOD_OPTIONS) == 0) {
+        mid = RTSP_ID_OPTIONS;
+    }
+    if (strcmp(method, RTSP_METHOD_PAUSE) == 0) {
+        mid = RTSP_ID_PAUSE;
+    }
+    if (strcmp(method, RTSP_METHOD_PLAY) == 0) {
+        mid = RTSP_ID_PLAY;
+    }
+    if (strcmp(method, RTSP_METHOD_RECORD) == 0) {
+        mid = RTSP_ID_RECORD;
+    }
+    if (strcmp(method, RTSP_METHOD_REDIRECT) == 0) {
+        mid = RTSP_ID_REDIRECT;
+    }
+    if (strcmp(method, RTSP_METHOD_SETUP) == 0) {
+        mid = RTSP_ID_SETUP;
+    }
+    if (strcmp(method, RTSP_METHOD_SET_PARAMETER) == 0) {
+        mid = RTSP_ID_SET_PARAMETER;
+    }
+    if (strcmp(method, RTSP_METHOD_TEARDOWN) == 0) {
+        mid = RTSP_ID_TEARDOWN;
+    }
+
+    rtsp->rtsp_cseq = seq;    /* set the current method request seq. number. */
+    return mid;
+}
+
+int RTSP_valid_response_msg(unsigned short *status, char *msg,
+                RTSP_buffer * rtsp)
+// This routine is from OMS.
+{
+    char ver[32], trash[15];
+    unsigned int stat;
+    unsigned int seq;
+    int pcnt;        /* parameter count */
+
+    *ver = *msg = '\0';
+    /* assuming "stat" may not be zero (probably faulty) */
+    stat = 0;
+
+    pcnt =
+        sscanf(rtsp->in_buffer, " %31s %u %s %s %u\n%255s ", ver, &stat,
+           trash, trash, &seq, msg);
+
+    /* check for a valid response token. */
+    if (strncasecmp(ver, "RTSP/", 5))
+        return 0;    /* not a response message */
+
+    /* confirm that at least the version, status code and sequence are there. */
+    if (pcnt < 3 || stat == 0)
+        return 0;    /* not a response message */
+
+    /*
+     * here is where code can be added to reject the message if the RTSP
+     * version is not compatible.
+     */
+
+    /* check if the sequence number is valid in this response message. */
+    if (rtsp->rtsp_cseq != seq + 1) {
+        fnc_log(FNC_LOG_ERR,
+            "Invalid sequence number returned in response.\n");
+        return ERR_GENERIC;
+    }
+
+    *status = stat;
+    return 1;
 }
