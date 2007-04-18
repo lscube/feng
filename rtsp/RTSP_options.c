@@ -37,7 +37,19 @@
 
 #include <RTSP_utils.h>
 
-int send_options_reply(RTSP_buffer * rtsp, long cseq);
+static int send_options_reply(RTSP_buffer * rtsp, long cseq)
+{
+    char r[1024];
+    sprintf(r, "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL, RTSP_VER, 200,
+        get_stat(200), cseq);
+    strcat(r, "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN" RTSP_EL);
+    strcat(r, RTSP_EL);
+    bwrite(r, (unsigned short) strlen(r), rtsp);
+
+    fnc_log(FNC_LOG_CLIENT, "200 - - ");
+
+    return ERR_NOERROR;
+}
 
 /*
      ****************************************************************
@@ -69,19 +81,5 @@ int RTSP_options(RTSP_buffer * rtsp)
 
 error_management:
     send_reply(error.message.reply_code, error.message.reply_str, rtsp);
-    return ERR_NOERROR;
-}
-
-int send_options_reply(RTSP_buffer * rtsp, long cseq)
-{
-    char r[1024];
-    sprintf(r, "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL, RTSP_VER, 200,
-        get_stat(200), cseq);
-    strcat(r, "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN" RTSP_EL);
-    strcat(r, RTSP_EL);
-    bwrite(r, (unsigned short) strlen(r), rtsp);
-
-    fnc_log(FNC_LOG_CLIENT, "200 - - ");
-
     return ERR_NOERROR;
 }

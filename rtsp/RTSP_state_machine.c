@@ -297,8 +297,7 @@ int RTSP_validate_method(RTSP_buffer * rtsp)
     return mid;
 }
 
-int RTSP_valid_response_msg(unsigned short *status, char *msg,
-                RTSP_buffer * rtsp)
+int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rtsp)
 // This routine is from OMS.
 {
     char ver[32], trash[15];

@@ -1,3 +1,32 @@
+/*
+ *  $Id: $
+ *
+ *  Copyright (C) 2007 by team@streaming.polito.it
+ *
+ *  Fenice is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  libnms is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with libnms; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+
+/** @file RTSP_utils.c
+ * @brief Contains declarations of various RTSP utility structures and functions
+ * 
+ * Contains declaration of RTSP structures and constants for error management,
+ * declaration of various RTSP requests validation functions and various
+ * internal functions
+ */
+
 #include <RTSP_utils.h>
 
 #include <stdio.h>
@@ -18,8 +47,15 @@ RTSP_Error const RTSP_OptionNotSupported = { {551, "Option not supported"}, TRUE
 
 RTSP_Error const RTSP_Fatal_ErrAlloc = { {0, ""}, ERR_ALLOC };
 
+//! number of currently active connections
 extern int num_conn;
 
+/**
+ * sets an RTSP_Error to a specific error
+ * @param err the pointer to the error variable to edit
+ * @param reply_code the code of RTSP reply message
+ * @param message the content of the RTSP reply message
+ */
 void set_RTSP_Error(RTSP_Error * err, int reply_code, char * message)
 {
     err->got_error = TRUE;
@@ -27,6 +63,11 @@ void set_RTSP_Error(RTSP_Error * err, int reply_code, char * message)
     strncpy(err->message.reply_str, message, MAX_REPLY_MESSAGE_LEN);
 }
 
+/**
+ * gets the reply message from a standard RTSP error code
+ * @param err the code of the error
+ * @return the string format of the error corresponding to the given code
+ */
 char const *get_stat(int err)
 {
     struct {
@@ -100,6 +141,11 @@ char const *get_stat(int err)
 
 }
 
+/**
+ * Checks if the path required by the connection is inside the avroot
+ * @param cinfo the connection informations containing the path to be checked
+ * @return RTSP_Ok or RTSP_Forbidden if the path is out of avroot
+ */
 RTSP_Error check_forbidden_path(ConnectionInfo * cinfo)
 {
     if ( strstr(cinfo->object, "../") || strstr(cinfo->object, "./") )
@@ -108,6 +154,12 @@ RTSP_Error check_forbidden_path(ConnectionInfo * cinfo)
     return RTSP_Ok;
 }
 
+/**
+ * Validates the url requested and sets up the connection informations for the given url
+ * @param url the url of the request
+ * @param cinfo where the connection informations retrieved from the url should be placed
+ * @return RTSP_Ok or RTSP_BadRequest if the url is malformed (might return RTSP_InternalServerError on url parsing errors)
+ */
 RTSP_Error validate_url(char *url, ConnectionInfo * cinfo)
 {
     switch (parse_url
@@ -131,6 +183,12 @@ RTSP_Error validate_url(char *url, ConnectionInfo * cinfo)
     return RTSP_Ok;
 }
 
+/**
+ * Checks if the RTSP message is a request of the supported options
+ * actually HDR_REQUIRE header is not supported by feng.
+ * @param rtsp the buffer of the request to check
+ * @return RTSP_Ok if it is not present a REQUIRE header, RTSP_OptionNotSupported else
+ */
 RTSP_Error check_require_header(RTSP_buffer * rtsp)
 {
 	if (strstr(rtsp->in_buffer, HDR_REQUIRE))
@@ -139,6 +197,12 @@ RTSP_Error check_require_header(RTSP_buffer * rtsp)
     return RTSP_Ok;
 }
 
+/**
+ * Extracts the required url from the buffer
+ * @param rtsp the buffer of the request from which to extract the url
+ * @param url_buffer the buffer where to write the url (must be big enough)
+ * @return RTSP_Ok or RTSP_BadRequest if no url is present
+ */
 RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer)
 {
     if (!sscanf(rtsp->in_buffer, " %*s %254s ", url_buffer)) {
@@ -148,6 +212,12 @@ RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer)
     return RTSP_Ok;
 }
 
+/**
+ * Gets the required media description format from the RTSP request
+ * @param rtsp the buffer of the request
+ * @param cinfo the connection informations where to store the description format
+ * @return RTSP_Ok or RTSP_OptionNotSupported if the required format is not SDP
+ */
 RTSP_Error get_description_format(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
 {
     if (strstr(rtsp->in_buffer, HDR_ACCEPT) != NULL) {
@@ -161,6 +231,12 @@ RTSP_Error get_description_format(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
     return RTSP_Ok;
 }
 
+/**
+ * Gets the CSeq from the buffer
+ * @param rtsp the buffer of the request
+ * @return RTSP_Ok or RTSP_BadRequest if there is not a CSEQ header
+ * @return or it is not possible to parse it
+ */
 RTSP_Error get_cseq(RTSP_buffer * rtsp)
 {
     char * p;
@@ -173,6 +249,13 @@ RTSP_Error get_cseq(RTSP_buffer * rtsp)
     return RTSP_Ok;
 }
 
+/**
+ * Gets the session description, the description will be saved in the given cinfo
+ * @param the connection for which is required to retrieve the description
+ * @return RTSP_Ok or RTSP_InternalServerError on various errors
+ * @return might return RTSP_NotFound both if the file doesn't exist or
+ * @return if a demuxer is not available for the given file
+ */
 RTSP_Error get_session_description(ConnectionInfo * cinfo)
 {
     int sdesc_error = sdp_session_descr(cinfo->object, cinfo->descr, sizeof(cinfo->descr));
@@ -190,6 +273,12 @@ RTSP_Error get_session_description(ConnectionInfo * cinfo)
     return RTSP_Ok;
 }
 
+/**
+ * Gets the id of the requested session
+ * @param rtsp the buffer from which to parse the session id
+ * @param session_id where to save the retrieved session id
+ * @return RTSP_Ok or RTSP_SessionNotFound if it is not possible to parse the id
+ */
 RTSP_Error get_session_id(RTSP_buffer * rtsp, long int * session_id)
 {
     char * p;
@@ -205,6 +294,10 @@ RTSP_Error get_session_id(RTSP_buffer * rtsp, long int * session_id)
     return RTSP_Ok;
 }
 
+/**
+ * prints out various informations about the user agent
+ * @param rtsp the buffer containing the USER_AGENT header
+ */
 void log_user_agent(RTSP_buffer * rtsp)
 {
     char * p;
@@ -223,6 +316,14 @@ void log_user_agent(RTSP_buffer * rtsp)
 // ------------------------------------------------------
 // Message Functions
 // ------------------------------------------------------
+
+/**
+ * Sends a reply message to the client
+ * @param err the message code
+ * @param addon the text to append to the message
+ * @param rtsp the buffer where to write the output message
+ * @return ERR_NOERROR or ERR_ALLOC if it was not possible to allocate enough space
+ */
 int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 {
     unsigned int len;
@@ -268,6 +369,12 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
     return res;
 }
 
+/**
+ * Redirects the client to another server
+ * @param rtsp the buffer of the rtsp connection
+ * @param object the requested object for which the client is redirected
+ * @return ERR_NOERROR or ERR_ALLOC if it was not possible to allocate enough space
+ */
 int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
 {
 #if ENABLE_MEDIATHREAD
@@ -328,6 +435,13 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
 
 }
 
+/**
+ * Writes a buffer to the output buffer of an RTSP connection
+ * @param buffer the buffer from which to get the data to send
+ * @param len the size of the data to send
+ * @param rtsp where the output buffer is saved
+ * @return ERR_NOERROR or ERR_ALLOC if it was not possible to allocate enough space
+ */
 int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
 {
     if ((rtsp->out_size + len) > (int) sizeof(rtsp->out_buffer)) {
@@ -341,6 +455,10 @@ int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
     return ERR_NOERROR;
 }
 
+/**
+ * Checks if the number of active connections is greater then the maximum of supported
+ * return ERR_NOERROR or ERR_GENERIC if the number of connections is greater then the maximum
+ */
 int max_connection()
 {
     if (num_conn <= prefs_get_max_session())
@@ -349,6 +467,11 @@ int max_connection()
     return ERR_GENERIC;
 }
 
+/**
+ * Adds a timestamp to a buffer
+ * @param b the buffer where to write the timestamp
+ * @crlf whenever to put the message terminator or not
+ */
 void add_time_stamp(char *b, int crlf)
 {
     struct tm *t;
@@ -376,7 +499,16 @@ void add_time_stamp(char *b, int crlf)
 #define my_free(x) free(x)
 #endif
 
-//! \return 0 if the URL is valid, 1 if the URL is not valid, -1 on internal error (some buffer too small)
+/**
+ * Parses an url giving back the server, the port and the requested file
+ * @param url the url to parse
+ * @param server where to save the server address
+ * @param server_len the maximum size of the server address buffer
+ * @param port where to save the connection port
+ * @param file_name where to save the requested file name
+ * @param file_name_len the maximum size of the file name buffer
+ * @return 0 if the URL is valid, 1 if the URL is not valid, -1 on internal error (some buffer too small)
+ */
 int parse_url(const char *url, char *server, size_t server_len,
           unsigned short *port, char *file_name, size_t file_name_len)
 // Note: this routine comes from OMS

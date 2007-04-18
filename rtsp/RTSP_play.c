@@ -39,112 +39,7 @@
 
 #include <RTSP_utils.h>
 
-RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args);
-RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args);
-RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_session **rtsp_sess);
-
-int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp_session);
-
-/*
-     ****************************************************************
-     *            PLAY METHOD HANDLING
-     ****************************************************************
-*/
-
-int RTSP_play(RTSP_buffer * rtsp)
-{
-    ConnectionInfo cinfo;
-    char url[255];
-    long int session_id;
-    RTSP_session *rtsp_sess;
-    play_args args;
-
-    RTSP_Error error;
-
-    // Parse the input message
-    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
-        goto error_management;
-    else if ( (error = parse_play_time_range(rtsp, &args)).got_error ) // Get the range
-        goto error_management;
-
-    if ( (error = get_session_id(rtsp, &session_id)).got_error )
-        goto error_management;
-    else if ( session_id == -1 ) {
-        set_RTSP_Error(&error, 400, "");
-        goto error_management;
-    }
-
-    if ( (error = get_session(rtsp, session_id, &rtsp_sess)).got_error ) // Pick correct session
-        goto error_management;
-    else if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
-	    goto error_management;
-    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
-    	goto error_management;
-    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
-    	goto error_management;
-    else if ( (error = do_play(rtsp, &cinfo, rtsp_sess, &args)).got_error ) {
-        if (error.got_error == ERR_ALLOC) 
-            return ERR_ALLOC;
-        goto error_management;
-    }   
-
-    fnc_log(FNC_LOG_INFO, "PLAY %s RTSP/1.0 ", url);
-    send_play_reply(rtsp, cinfo.object, rtsp_sess);
-    log_user_agent(rtsp); // See User-Agent 
-    return ERR_NOERROR;
-
-error_management:
-    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
-    return ERR_NOERROR;
-}
-
-int send_play_reply(RTSP_buffer * rtsp, char *object,
-            RTSP_session * rtsp_session)
-{
-    char r[1024];
-    char temp[30];
-    RTP_session *p = rtsp_session->rtp_session;
-    Track *t;
-    /* build a reply message */
-    sprintf(r,
-        "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
-        RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
-        VERSION);
-    add_time_stamp(r, 0);
-    strcat(r, "Session: ");
-    sprintf(temp, "%d", rtsp_session->session_id);
-    strcat(r, temp);
-    strcat(r, RTSP_EL);
-    strcat(r, "RTP-info: ");
-    do {
-        t = r_selected_track(p->track_selector);
-        strcat(r, "url=");
-        // TODO: we MUST be sure to send the correct url 
-        sprintf(r + strlen(r), "rtsp://%s/%s/%s!%s",
-            prefs_get_hostname(), p->sd_filename, t->parent->info->name,
-            t->info->name);
-        strcat(r, ";");
-        sprintf(r + strlen(r), "seq=%u;rtptime=%u", p->start_seq,
-            p->start_rtptime);
-        if (p->next != NULL) {
-            strcat(r, ",");
-        } else {
-            strcat(r, RTSP_EL);
-        }
-        p = p->next;
-    } while (p != NULL);
-    // end of message
-    strcat(r, RTSP_EL);
-
-    bwrite(r, (unsigned short) strlen(r), rtsp);
-
-
-    fnc_log(FNC_LOG_CLIENT, "200 - %s ", object);
-
-    return ERR_NOERROR;
-}
-
-RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
+static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
 {
     int time_taken = 0;
     char *p = NULL, *q = NULL;
@@ -222,7 +117,7 @@ RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
     return RTSP_Ok;
 }
 
-RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_session **rtsp_sess)
+static RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_session **rtsp_sess)
 {
 #if 0
     for (rtsp_sess = rtsp->session_list; rtsp_sess != NULL; rtsp_sess++)
@@ -241,7 +136,7 @@ RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_session **r
 }
 
 #if ENABLE_MEDIATHREAD
-RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
+static RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
 {
     RTP_session *rtp_sess;
     char *q = NULL;
@@ -281,7 +176,7 @@ RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rt
     return RTSP_Ok;
 }
 #else
-RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
+static RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
 {
     RTSP_Error error = RTSP_Ok;
     RTP_session *rtp_sess;
@@ -353,3 +248,101 @@ RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rt
     return RTSP_Ok;
 }
 #endif
+
+static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp_session)
+{
+    char r[1024];
+    char temp[30];
+    RTP_session *p = rtsp_session->rtp_session;
+    Track *t;
+    /* build a reply message */
+    sprintf(r,
+        "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
+        RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
+        VERSION);
+    add_time_stamp(r, 0);
+    strcat(r, "Session: ");
+    sprintf(temp, "%d", rtsp_session->session_id);
+    strcat(r, temp);
+    strcat(r, RTSP_EL);
+    strcat(r, "RTP-info: ");
+    do {
+        t = r_selected_track(p->track_selector);
+        strcat(r, "url=");
+        // TODO: we MUST be sure to send the correct url 
+        sprintf(r + strlen(r), "rtsp://%s/%s/%s!%s",
+            prefs_get_hostname(), p->sd_filename, t->parent->info->name,
+            t->info->name);
+        strcat(r, ";");
+        sprintf(r + strlen(r), "seq=%u;rtptime=%u", p->start_seq,
+            p->start_rtptime);
+        if (p->next != NULL) {
+            strcat(r, ",");
+        } else {
+            strcat(r, RTSP_EL);
+        }
+        p = p->next;
+    } while (p != NULL);
+    // end of message
+    strcat(r, RTSP_EL);
+
+    bwrite(r, (unsigned short) strlen(r), rtsp);
+
+
+    fnc_log(FNC_LOG_CLIENT, "200 - %s ", object);
+
+    return ERR_NOERROR;
+}
+
+/*
+     ****************************************************************
+     *            PLAY METHOD HANDLING
+     ****************************************************************
+*/
+
+int RTSP_play(RTSP_buffer * rtsp)
+{
+    ConnectionInfo cinfo;
+    char url[255];
+    long int session_id;
+    RTSP_session *rtsp_sess;
+    play_args args;
+
+    RTSP_Error error;
+
+    // Parse the input message
+    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
+        goto error_management;
+    else if ( (error = parse_play_time_range(rtsp, &args)).got_error ) // Get the range
+        goto error_management;
+
+    if ( (error = get_session_id(rtsp, &session_id)).got_error )
+        goto error_management;
+    else if ( session_id == -1 ) {
+        set_RTSP_Error(&error, 400, "");
+        goto error_management;
+    }
+
+    if ( (error = get_session(rtsp, session_id, &rtsp_sess)).got_error ) // Pick correct session
+        goto error_management;
+    else if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
+	    goto error_management;
+    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
+    	goto error_management;
+    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
+    	goto error_management;
+    else if ( (error = do_play(rtsp, &cinfo, rtsp_sess, &args)).got_error ) {
+        if (error.got_error == ERR_ALLOC) 
+            return ERR_ALLOC;
+        goto error_management;
+    }   
+
+    fnc_log(FNC_LOG_INFO, "PLAY %s RTSP/1.0 ", url);
+    send_play_reply(rtsp, cinfo.object, rtsp_sess);
+    log_user_agent(rtsp); // See User-Agent 
+    return ERR_NOERROR;
+
+error_management:
+    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
+    return ERR_NOERROR;
+}

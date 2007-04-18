@@ -42,87 +42,7 @@
 
 #include <RTSP_utils.h>
 
-RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, size_t trackname_max_len);
-RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * transport, unsigned char * is_multicast_dad);
-long int generate_session_id();
-RTSP_session * append_session(RTSP_buffer * rtsp);
-RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, int is_multicast_dad, Selector * track_sel);
-RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track);
-int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_session * rtp_s);
-
-/*
-     ****************************************************************
-     *            SETUP METHOD HANDLING
-     ****************************************************************
-*/
-int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
-{
-    ConnectionInfo cinfo;
-    char url[255];
-    long int session_id = 0;
-    char trackname[255];
-    RTP_transport transport;
-
-    Selector *track_sel;
-    Track *req_track;
-
-    //mediathread pointers
-    RTP_session *rtp_s;
-    RTSP_session *rtsp_s;
-    unsigned char is_multicast_dad = 1;    //unicast and the first multicast
-
-    RTSP_Error error;
-
-    // init
-    memset(&transport, 0, sizeof(transport));
-
-    // Parse the input message
-
-    if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
-	    goto error_management;
-    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
-    	goto error_management;
-    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
-    	goto error_management;
-    else if ( (error = split_resource_path(&cinfo, trackname, sizeof(trackname))).got_error ) //Split resource!trackname
-        goto error_management;
-    else if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
-        goto error_management;
-    else if ( (error = parse_transport_header(rtsp, &transport, &is_multicast_dad)).got_error )
-        goto error_management;
-
-    // If there's a Session header we have an aggregate control
-    if ( (error = get_session_id(rtsp, &session_id)).got_error )
-        goto error_management;
-    else
-        session_id = generate_session_id();
-
-    // Add an RTSP session if necessary
-    rtsp_s = append_session(rtsp);
-
-    // Get the selected track
-    if ( (error = select_requested_track(&cinfo, rtsp_s, trackname, &track_sel, &req_track)).got_error )
-        goto error_management;
-
-    // Setup the RTP session
-    rtp_s = setup_rtp_session(&cinfo, rtsp, rtsp_s, &transport, is_multicast_dad, track_sel);
-
-    // Setup the RTSP session
-    rtsp_s->session_id = session_id;
-    *new_session = rtsp_s;
-
-    fnc_log(FNC_LOG_INFO, "SETUP %s RTSP/1.0 ", url);
-    send_setup_reply(rtsp, rtsp_s, rtp_s);
-    log_user_agent(rtsp); // See User-Agent 
-
-    return ERR_NOERROR;
-
-error_management:
-    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
-    return ERR_NOERROR;
-}
-
-RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, size_t trackname_max_len)
+static RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, size_t trackname_max_len)
 {
     char * p;
 
@@ -140,7 +60,7 @@ RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, size_t 
     return RTSP_Ok;
 }
 
-RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * transport, unsigned char * is_multicast_dad)
+static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * transport, unsigned char * is_multicast_dad)
 {
     RTSP_Error error;
 
@@ -398,7 +318,7 @@ RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * transport,
     return RTSP_Ok;
 }
 
-long int generate_session_id()
+static long int generate_session_id()
 {        
     struct timeval now_tmp;
     long int session_id;
@@ -428,7 +348,7 @@ long int generate_session_id()
     return session_id;
 }
 
-RTSP_session * append_session(RTSP_buffer * rtsp)
+static RTSP_session * append_session(RTSP_buffer * rtsp)
 {
     RTSP_session *rtsp_s;
 
@@ -456,7 +376,7 @@ RTSP_session * append_session(RTSP_buffer * rtsp)
     return rtsp_s;
 }
 
-RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, int is_multicast_dad, Selector * track_sel)
+static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, int is_multicast_dad, Selector * track_sel)
 {
     struct timeval now_tmp;
     unsigned int start_seq, start_rtptime;
@@ -519,7 +439,7 @@ RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP
     return rtp_s;
 }
 
-RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
+static RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
 {
     RTSP_Error error;
 
@@ -545,8 +465,7 @@ RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * rtsp_s,
     return RTSP_Ok;
 }
 
-int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session,
-                     RTP_session * rtp_s)
+static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_session * rtp_s)
 {
     char r[1024];
     int w_pos = 0;
@@ -652,5 +571,77 @@ int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session,
     fnc_log(FNC_LOG_CLIENT, "200 - %s ",
             r_selected_track(rtp_s->track_selector)->info->name);
 
+    return ERR_NOERROR;
+}
+
+/*
+     ****************************************************************
+     *            SETUP METHOD HANDLING
+     ****************************************************************
+*/
+int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
+{
+    ConnectionInfo cinfo;
+    char url[255];
+    long int session_id = 0;
+    char trackname[255];
+    RTP_transport transport;
+
+    Selector *track_sel;
+    Track *req_track;
+
+    //mediathread pointers
+    RTP_session *rtp_s;
+    RTSP_session *rtsp_s;
+    unsigned char is_multicast_dad = 1;    //unicast and the first multicast
+
+    RTSP_Error error;
+
+    // init
+    memset(&transport, 0, sizeof(transport));
+
+    // Parse the input message
+
+    if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
+	    goto error_management;
+    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
+    	goto error_management;
+    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
+    	goto error_management;
+    else if ( (error = split_resource_path(&cinfo, trackname, sizeof(trackname))).got_error ) //Split resource!trackname
+        goto error_management;
+    else if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
+        goto error_management;
+    else if ( (error = parse_transport_header(rtsp, &transport, &is_multicast_dad)).got_error )
+        goto error_management;
+
+    // If there's a Session header we have an aggregate control
+    if ( (error = get_session_id(rtsp, &session_id)).got_error )
+        goto error_management;
+    else
+        session_id = generate_session_id();
+
+    // Add an RTSP session if necessary
+    rtsp_s = append_session(rtsp);
+
+    // Get the selected track
+    if ( (error = select_requested_track(&cinfo, rtsp_s, trackname, &track_sel, &req_track)).got_error )
+        goto error_management;
+
+    // Setup the RTP session
+    rtp_s = setup_rtp_session(&cinfo, rtsp, rtsp_s, &transport, is_multicast_dad, track_sel);
+
+    // Setup the RTSP session
+    rtsp_s->session_id = session_id;
+    *new_session = rtsp_s;
+
+    fnc_log(FNC_LOG_INFO, "SETUP %s RTSP/1.0 ", url);
+    send_setup_reply(rtsp, rtsp_s, rtp_s);
+    log_user_agent(rtsp); // See User-Agent 
+
+    return ERR_NOERROR;
+
+error_management:
+    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
     return ERR_NOERROR;
 }
