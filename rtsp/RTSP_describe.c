@@ -40,55 +40,7 @@
 
 #include <RTSP_utils.h>
 
-int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format descr_format, char *descr);
-
-/*
-     ****************************************************************
-     *            DESCRIBE METHOD HANDLING
-     ****************************************************************
-*/
-int RTSP_describe(RTSP_buffer * rtsp)
-{
-    char url[255];
-    ConnectionInfo cinfo;
-
-    RTSP_Error error;
-
-    cinfo.descr_format = df_SDP_format; // shawill put to some default
-
-    if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
-	    goto error_management;
-    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
-    	goto error_management;
-    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
-    	goto error_management;
-    else if ( (error = check_require_header(rtsp)).got_error ) // Disallow Header REQUIRE
-    	goto error_management;
-    else if ( (error = get_description_format(rtsp, &cinfo)).got_error ) // Get the description format. SDP is recomended
-    	goto error_management;
-    else if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
-        goto error_management;
-    else if ( (error = get_session_description(&cinfo)).got_error ) // Get Session Description
-        goto error_management;
-
-    if (max_connection() == ERR_GENERIC) {
-        /*redirect */
-        return send_redirect_3xx(rtsp, cinfo.object);
-    }
-
-    fnc_log(FNC_LOG_INFO, "DESCRIBE %s RTSP/1.0 ", url);
-    send_describe_reply(rtsp, cinfo.object, cinfo.descr_format, cinfo.descr);
-    log_user_agent(rtsp); // See User-Agent 
-
-    return ERR_NOERROR;
-
-error_management:
-    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
-    return ERR_NOERROR;
-}
-
-int send_describe_reply(RTSP_buffer * rtsp, char *object,
-            description_format descr_format, char *descr)
+static int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format descr_format, char *descr)
 {
     char *r;        /* get reply message buffer pointer */
     char *mb;        /* message body buffer pointer */
@@ -140,5 +92,50 @@ int send_describe_reply(RTSP_buffer * rtsp, char *object,
 
     fnc_log(FNC_LOG_CLIENT, "200 %d %s ", strlen(descr), object);
 
+    return ERR_NOERROR;
+}
+
+/*
+     ****************************************************************
+     *            DESCRIBE METHOD HANDLING
+     ****************************************************************
+*/
+int RTSP_describe(RTSP_buffer * rtsp)
+{
+    char url[255];
+    ConnectionInfo cinfo;
+
+    RTSP_Error error;
+
+    cinfo.descr_format = df_SDP_format; // shawill put to some default
+
+    if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
+	    goto error_management;
+    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
+    	goto error_management;
+    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
+    	goto error_management;
+    else if ( (error = check_require_header(rtsp)).got_error ) // Disallow Header REQUIRE
+    	goto error_management;
+    else if ( (error = get_description_format(rtsp, &cinfo)).got_error ) // Get the description format. SDP is recomended
+    	goto error_management;
+    else if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
+        goto error_management;
+    else if ( (error = get_session_description(&cinfo)).got_error ) // Get Session Description
+        goto error_management;
+
+    if (max_connection() == ERR_GENERIC) {
+        /*redirect */
+        return send_redirect_3xx(rtsp, cinfo.object);
+    }
+
+    fnc_log(FNC_LOG_INFO, "DESCRIBE %s RTSP/1.0 ", url);
+    send_describe_reply(rtsp, cinfo.object, cinfo.descr_format, cinfo.descr);
+    log_user_agent(rtsp); // See User-Agent 
+
+    return ERR_NOERROR;
+
+error_management:
+    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
     return ERR_NOERROR;
 }
