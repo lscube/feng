@@ -33,6 +33,10 @@
  *  
  * */
 
+/** @file RTSP_setup.c
+ * @brief Contains SETUP method and reply handlers
+ */
+
 #include <glib.h>
 
 #include <fenice/rtsp.h>
@@ -42,6 +46,13 @@
 
 #include <RTSP_utils.h>
 
+/**
+ * Splits the path of a requested media finding the trackname and the removing it from the object
+ * @param cinfo the connection for which to split the object
+ * @param trackname where to save the trackname removed from the object
+ * @param trackname_max_len maximum length of the trackname buffer 
+ * @return RTSP_Ok or RTSP_InternalServerError if there was no trackname
+ */
 static RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, size_t trackname_max_len)
 {
     char * p;
@@ -60,6 +71,16 @@ static RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, 
     return RTSP_Ok;
 }
 
+/**
+ * Parses the TRANSPORT header from the RTSP buffer
+ * @param rtsp the buffer for which to parse the header
+ * @param transport where to save the data of the header
+ * @param is_multicast_dad Duplicated address detection for multicast support?? (Currently not supported)
+ * @return RTSP_Ok or RTSP_BadRequest if the header is malformed
+ * @return an RTSP_Error with reply_code 406 if the transport header is missing
+ * @return an RTSP_Error with reply_code 461 if the required transport is unsupported
+ * @return an RTSP_Error with reply_code 500 if it wasn't possible to allocate a socket for the client
+ */
 static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * transport, unsigned char * is_multicast_dad)
 {
     RTSP_Error error;
@@ -318,6 +339,10 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * tra
     return RTSP_Ok;
 }
 
+/**
+ * Generates a random session id
+ * @return the random session id (actually a number)
+ */
 static long int generate_session_id()
 {        
     struct timeval now_tmp;
@@ -348,6 +373,11 @@ static long int generate_session_id()
     return session_id;
 }
 
+/**
+ * Appends a new session to the buffer (actually only 1 session is supported)
+ * @param rtsp the buffer where to add the session
+ * @return The newly allocated session
+ */
 static RTSP_session * append_session(RTSP_buffer * rtsp)
 {
     RTSP_session *rtsp_s;
@@ -376,6 +406,16 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
     return rtsp_s;
 }
 
+/**
+ * sets up the RTP session
+ * @param cinfo the object for which to generate the session
+ * @param rtsp the buffer for which to generate the session
+ * @param rtsp_s the RTSP session to use
+ * @param transport the transport to use
+ * @param is_multicast_dad Duplicated address detection for multicast support?? (Currently not supported)
+ * @param track_sel the track for which to generate the session
+ * @return The newly generated RTP session
+ */
 static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, int is_multicast_dad, Selector * track_sel)
 {
     struct timeval now_tmp;
@@ -439,6 +479,16 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     return rtp_s;
 }
 
+/**
+ * Gets the track requested for the object
+ * @param cinfo the object for which to get the requested track
+ * @param rtsp_s the session where to save the addressed resource
+ * @param trackname the name of the track to open
+ * @param track_sel where to save the selector for the opened track
+ * @param req_track where to save the data of the opened track
+ * @return RTSP_Ok or RTSP_NotFound if the object or the track was not found
+ * @return RTSP_InternalServerError if it was not possible to retrieve the data of the opened track
+ */
 static RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
 {
     RTSP_Error error;
@@ -465,6 +515,13 @@ static RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * 
     return RTSP_Ok;
 }
 
+/**
+ * Sends the reply for the setup method
+ * @param rtsp the buffer where to write the reply
+ * @param session the new RTSP session allocated for the client
+ * @param rtp_s the new RTP session allocated for the client
+ * @return ERR_NOERROR
+ */
 static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_session * rtp_s)
 {
     char r[1024];
@@ -574,11 +631,12 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
     return ERR_NOERROR;
 }
 
-/*
-     ****************************************************************
-     *            SETUP METHOD HANDLING
-     ****************************************************************
-*/
+/**
+ * RTSP SETUP method handler
+ * @param rtsp the buffer for which to handle the method
+ * @param new_session where to save the newly allocated RTSP session
+ * @return ERR_NOERROR
+ */
 int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
     ConnectionInfo cinfo;

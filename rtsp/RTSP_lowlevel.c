@@ -36,6 +36,15 @@
 #include <fenice/fnc_log.h>
 #include <fenice/utils.h>
 
+/** @file RTSP_lowlevel.c
+ * @brief Contains most of lowlevel RTSP functions
+ */
+
+/**
+ * Initializes an RTSP buffer binding it to a socket
+ * @param rtsp the buffer to inizialize
+ * @param rtsp_sock the socket to link to the buffer
+ */
 void RTSP_initserver(RTSP_buffer * rtsp, Sock *rtsp_sock)
 {
     rtsp->sock = rtsp_sock;
@@ -43,6 +52,11 @@ void RTSP_initserver(RTSP_buffer * rtsp, Sock *rtsp_sock)
     rtsp->session_list->session_id = -1;
 }
 
+/**
+ * Sends the rtsp output buffer through the socket
+ * @param rtsp the rtsp connection to flush through the socket
+ * @return the size of data sent
+ */
 ssize_t RTSP_send(RTSP_buffer * rtsp)
 {
     int n = 0;
@@ -115,6 +129,11 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
     return n;
 }
 
+/** 
+ * Removes a message from the input buffer
+ * @param len the size of the message to remove
+ * @param rtsp the buffer from which to remove the message
+ */
 void RTSP_remove_msg(int len, RTSP_buffer * rtsp)
 {
     rtsp->in_size -= len;
@@ -125,17 +144,9 @@ void RTSP_remove_msg(int len, RTSP_buffer * rtsp)
     }
 }
 
-void RTSP_discard_msg(RTSP_buffer * rtsp)
-{
-    int hlen, blen;
-
-    if (RTSP_msg_len(rtsp, &hlen, &blen) > 0)
-        RTSP_remove_msg(hlen + blen, rtsp);
-}
-
 #if 0
+static void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 // TODO handle wisely errors.
-void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 // This routine is from OMS.
 {
     char eom;        /* end of message found */
@@ -235,12 +246,27 @@ void RTSP_msg_len(int *hdr_len, int *body_len, RTSP_buffer * rtsp)
 }
 #endif
 
-/*!
- * \return -1 on ERROR
- * \return RTSP_not_full (0) if a full RTSP message is NOT present in the in_buffer yet.
- * \return RTSP_method_rcvd (1) if a full RTSP message is present in the in_buffer and is
+/**
+ * Removes the last message from the rtsp buffer
+ * @param rtsp the buffer from which to discard the message
+ */
+void RTSP_discard_msg(RTSP_buffer * rtsp)
+{
+    int hlen, blen;
+
+    if (RTSP_msg_len(rtsp, &hlen, &blen) > 0)
+        RTSP_remove_msg(hlen + blen, rtsp);
+}
+
+/**
+ * Recieves an RTSP message and puts it into the buffer
+ * @param hdr_len where to save the header length
+ * @param body_len where to save the message body length
+ * @return -1 on ERROR
+ * @return RTSP_not_full (0) if a full RTSP message is NOT present in the in_buffer yet.
+ * @return RTSP_method_rcvd (1) if a full RTSP message is present in the in_buffer and is
  * ready to be handled.
- * \return RTSP_interlvd_rcvd (2) if a complete RTP/RTCP interleaved packet is present.  
+ * @return RTSP_interlvd_rcvd (2) if a complete RTP/RTCP interleaved packet is present.  
  * terminate on really ugly cases.
  */
 int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)

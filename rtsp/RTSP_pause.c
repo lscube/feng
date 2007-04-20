@@ -32,12 +32,22 @@
  *  
  * */
 
+/** @file RTSP_pause.c
+ * @brief Contains PAUSE method and reply handlers
+ */
+
 #include <fenice/rtsp.h>
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 
 #include <RTSP_utils.h>
 
+/**
+ * Sends the reply for the pause method
+ * @param rtsp the buffer where to write the reply
+ * @param rtsp_session the session for which to generate the reply
+ * @return ERR_NOERROR
+ */
 static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
 {
     char r[1024];
@@ -58,12 +68,12 @@ static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
     return ERR_NOERROR;
 }
 
-/*
-     ****************************************************************
-     *            PAUSE METHOD HANDLING
-     ****************************************************************
-*/
 
+/**
+ * RTSP PAUSE method handler
+ * @param rtsp the buffer for which to handle the method
+ * @return ERR_NOERROR
+ */
 int RTSP_pause(RTSP_buffer * rtsp)
 {
     ConnectionInfo cinfo;

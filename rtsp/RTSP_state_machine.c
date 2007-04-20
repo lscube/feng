@@ -36,9 +36,16 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-/* This file contains RTSP message handling and dispatchment */
+/** @file RTSP_state_machine.c
+ * @brief Contains RTSP message dispatchment functions
+ */
 
-//Handles incoming RTSP message, validates them and them dispatches them with RTSP_
+/**
+ * Handles incoming RTSP message, validates them and then dispatches them 
+ * with RTSP_state_machine
+ * @param rtsp the buffer from where to read the message
+ * @return ERR_NOERROR (can also mean RTSP_not_full if the message was not full)
+ */
 int RTSP_handler(RTSP_buffer * rtsp)
 {
     unsigned short status;
@@ -103,9 +110,11 @@ int RTSP_handler(RTSP_buffer * rtsp)
     return ERR_NOERROR;
 }
 
-/*
+/**
  * All state transitions are made here except when the last stream packet
  * is sent during a PLAY.  That transition is located in stream_event().
+ * @param rtsp the buffer containing the message to dispatch
+ * @param method the id of the method to execute
  */
 void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 {
@@ -227,8 +236,10 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
     }            /* end of current state switch */
 }
 
-/*! validate method
- * @return -1 if something doesn't work in the request */
+/** validates an rtsp message and returns its id
+ * @param rtsp the buffer containing the message
+ * @return the message id or -1 if something doesn't work in the request 
+ */
 int RTSP_validate_method(RTSP_buffer * rtsp)
 {
     char method[32], hdr[16];
@@ -297,6 +308,15 @@ int RTSP_validate_method(RTSP_buffer * rtsp)
     return mid;
 }
 
+/**
+ * Validates an incoming response message
+ * @param status where to save the state specified in the message
+ * @param msg where to save the message itself
+ * @param rtsp the buffer containing the message
+ * @return 1 if everything was fine
+ * @return 0 if the parsed message wasn't a response message
+ * @return ERR_GENERIC on generic error
+ */ 
 int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rtsp)
 // This routine is from OMS.
 {

@@ -32,14 +32,25 @@
  *  
  * */
 
+/** @file RTSP_options.c
+ * @brief Contains OPTIONS method and reply handlers
+ */
+
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
 
 #include <RTSP_utils.h>
 
-static int send_options_reply(RTSP_buffer * rtsp, long cseq)
+/**
+ * Sends the reply for the options method
+ * @param rtsp the buffer where to write the reply
+ * @return ERR_NOERROR
+ */
+static int send_options_reply(RTSP_buffer * rtsp)
 {
     char r[1024];
+    long int cseq = rtsp->rtsp_cseq;
+
     sprintf(r, "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL, RTSP_VER, 200,
         get_stat(200), cseq);
     strcat(r, "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN" RTSP_EL);
@@ -51,30 +62,26 @@ static int send_options_reply(RTSP_buffer * rtsp, long cseq)
     return ERR_NOERROR;
 }
 
-/*
-     ****************************************************************
-     *            OPTIONS METHOD HANDLING
-     ****************************************************************
-*/
-
+/**
+ * RTSP OPTIONS method handler
+ * @param rtsp the buffer for which to handle the method
+ * @return ERR_NOERROR
+ */
 int RTSP_options(RTSP_buffer * rtsp)
 {
     char url[255];
     char method[255];
     char ver[255];
-    unsigned int cseq;
 
     RTSP_Error error;
 
     if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
         goto error_management;
 
-    cseq = rtsp->rtsp_cseq;
-
     sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, url, ver);
 
     fnc_log(FNC_LOG_INFO, "%s %s %s ", method, url, ver);
-    send_options_reply(rtsp, cseq);
+    send_options_reply(rtsp);
     log_user_agent(rtsp); // See User-Agent 
 
     return ERR_NOERROR;

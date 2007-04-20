@@ -32,6 +32,10 @@
  *  
  * */
 
+/** @file RTSP_describe.c
+ * @brief Contains DESCRIBE method and reply handlers
+ */
+
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
@@ -40,7 +44,13 @@
 
 #include <RTSP_utils.h>
 
-static int send_describe_reply(RTSP_buffer * rtsp, char *object, description_format descr_format, char *descr)
+/**
+ * Sends the reply for the describe method
+ * @param rtsp the buffer where to write the reply
+ * @param cinfo the connection for which to send the reply
+ * @return ERR_NOERROR or ERR_ALLOC on buffer allocation errors
+ */
+static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
 {
     char *r;        /* get reply message buffer pointer */
     char *mb;        /* message body buffer pointer */
@@ -70,7 +80,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, char *object, description_for
         RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
         VERSION);
     add_time_stamp(r, 0);
-    switch (descr_format) {
+    switch (cinfo->descr_format) {
         // Add new formats here
     case df_SDP_format:{
             strcat(r, "Content-Type: application/sdp" RTSP_EL);
@@ -78,28 +88,28 @@ static int send_describe_reply(RTSP_buffer * rtsp, char *object, description_for
         }
     }
     sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/" RTSP_EL,
-        prefs_get_hostname(), object);
-    sprintf(r + strlen(r), "Content-Length: %d" RTSP_EL, strlen(descr));
+        prefs_get_hostname(), cinfo->object);
+    sprintf(r + strlen(r), "Content-Length: %d" RTSP_EL, strlen(cinfo->descr));
     // end of message
     strcat(r, RTSP_EL);
 
     // concatenate description
-    strcat(r, descr);
+    strcat(r, cinfo->descr);
     bwrite(r, (unsigned short) strlen(r), rtsp);
 
     free(mb);
     free(r);
 
-    fnc_log(FNC_LOG_CLIENT, "200 %d %s ", strlen(descr), object);
+    fnc_log(FNC_LOG_CLIENT, "200 %d %s ", strlen(cinfo->descr), cinfo->object);
 
     return ERR_NOERROR;
 }
 
-/*
-     ****************************************************************
-     *            DESCRIBE METHOD HANDLING
-     ****************************************************************
-*/
+/**
+ * RTSP DESCRIBE method handler
+ * @param rtsp the buffer for which to handle the method
+ * @return ERR_NOERROR
+ */
 int RTSP_describe(RTSP_buffer * rtsp)
 {
     char url[255];
@@ -130,7 +140,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
     }
 
     fnc_log(FNC_LOG_INFO, "DESCRIBE %s RTSP/1.0 ", url);
-    send_describe_reply(rtsp, cinfo.object, cinfo.descr_format, cinfo.descr);
+    send_describe_reply(rtsp, &cinfo);
     log_user_agent(rtsp); // See User-Agent 
 
     return ERR_NOERROR;

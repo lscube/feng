@@ -32,6 +32,10 @@
  *  
  * */
 
+/** @file RTSP_teardown.c
+ * @brief Contains TEARDOWN method and reply handlers
+ */
+
 #include <RTSP_utils.h>
 
 #include <fenice/rtsp.h>
@@ -41,10 +45,18 @@
 #include <fenice/fnc_log.h>
 #include <glib.h>
 
-static int send_teardown_reply(RTSP_buffer * rtsp, long session_id, long cseq)
+/**
+ * Sends the reply for the teardown method
+ * @param rtsp the buffer where to write the reply
+ * @param session_id the id of the session closed
+ * @return ERR_NOERROR
+ */
+static int send_teardown_reply(RTSP_buffer * rtsp, long session_id)
 {
     char r[1024];
     char temp[30];
+    long int cseq = rtsp->rtsp_cseq;
+
     /* build a reply message */
     sprintf(r,
         "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL "Server: %s/%s" RTSP_EL,
@@ -61,12 +73,11 @@ static int send_teardown_reply(RTSP_buffer * rtsp, long session_id, long cseq)
     return ERR_NOERROR;
 }
 
-/*
-     ****************************************************************
-     *            TEARDOWN METHOD HANDLING
-     ****************************************************************
-*/
-
+/**
+ * RTSP TEARDOWN method handler
+ * @param rtsp the buffer for which to handle the method
+ * @return ERR_NOERROR
+ */
 int RTSP_teardown(RTSP_buffer * rtsp)
 {
     ConnectionInfo cinfo;
@@ -75,7 +86,6 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     RTP_session *rtp_curr, *rtp_prev = NULL, *rtp_temp;
     char *filename;
     char url[255];
-    unsigned int cseq;
 
     RTSP_Error error;
 
@@ -101,9 +111,8 @@ int RTSP_teardown(RTSP_buffer * rtsp)
         return ERR_PARSE;
     }
 
-    cseq = rtsp->rtsp_cseq;
     fnc_log(FNC_LOG_INFO, "TEARDOWN %s RTSP/1.0 ", url);
-    send_teardown_reply(rtsp, session_id, cseq);
+    send_teardown_reply(rtsp, session_id);
     log_user_agent(rtsp); // See User-Agent 
 
     if (strchr(cinfo.object, '!'))    /*Compatibility with RealOne and RealPlayer */

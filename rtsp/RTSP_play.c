@@ -32,6 +32,10 @@
  *  
  * */
 
+/** @file RTSP_play.c
+ * @brief Contains PAUSE method and reply handlers
+ */
+
 #include <fenice/bufferpool.h>
 #include <fenice/rtsp.h>
 #include <fenice/prefs.h>
@@ -39,6 +43,12 @@
 
 #include <RTSP_utils.h>
 
+/**
+ * Parses the RANGE HEADER to get the required play range
+ * @param rtsp the buffer from which to get the data
+ * @param args where to save the play range informations
+ * @return RTSP_Ok or RTSP_BadRequest on missing RANGE HEADER
+ */
 static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
 {
     int time_taken = 0;
@@ -117,6 +127,13 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
     return RTSP_Ok;
 }
 
+/**
+ * Gets the correct session for the given session_id (actually only 1 session is supported)
+ * @param rtsp the buffer from which to get the session
+ * @param session_id the id of the session to retrieve
+ * @param rtsp_sess where to save the retrieved session
+ * @return RTSP_Ok or RTSP_SessionNotFound
+ */
 static RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_session **rtsp_sess)
 {
 #if 0
@@ -136,7 +153,14 @@ static RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_sess
 }
 
 #if ENABLE_MEDIATHREAD
-static RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
+/**
+ * Actually starts playing the media using mediathread
+ * @param cinfo the connection for which to start playing
+ * @param rtsp_sess the session for which to start playing
+ * @param args the range to play
+ * @return RTSP_Ok or RTSP_InternalServerError
+ */
+static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
 {
     RTP_session *rtp_sess;
     char *q = NULL;
@@ -176,7 +200,14 @@ static RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_sessi
     return RTSP_Ok;
 }
 #else
-static RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
+/**
+ * Actually starts playing the media withoutusing mediathread
+ * @param cinfo the connection for which to start playing
+ * @param rtsp_sess the session for which to start playing
+ * @param args the range to play
+ * @return RTSP_Ok or RTSP_InternalServerError or RTSP_FatalErrAlloc
+ */
+static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
 {
     RTSP_Error error = RTSP_Ok;
     RTP_session *rtp_sess;
@@ -249,6 +280,13 @@ static RTSP_Error do_play(RTSP_buffer * rtsp, ConnectionInfo * cinfo, RTSP_sessi
 }
 #endif
 
+/**
+ * Sends the reply for the play method
+ * @param rtsp the buffer where to write the reply
+ * @param object the object that we wanted to play
+ * @param rtsp_session the session for which to generate the reply
+ * @return ERR_NOERROR
+ */
 static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp_session)
 {
     char r[1024];
@@ -294,12 +332,11 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp
     return ERR_NOERROR;
 }
 
-/*
-     ****************************************************************
-     *            PLAY METHOD HANDLING
-     ****************************************************************
-*/
-
+/**
+ * RTSP PLAY method handler
+ * @param rtsp the buffer for which to handle the method
+ * @return ERR_NOERROR
+ */
 int RTSP_play(RTSP_buffer * rtsp)
 {
     ConnectionInfo cinfo;
@@ -331,7 +368,7 @@ int RTSP_play(RTSP_buffer * rtsp)
     	goto error_management;
     else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
     	goto error_management;
-    else if ( (error = do_play(rtsp, &cinfo, rtsp_sess, &args)).got_error ) {
+    else if ( (error = do_play(&cinfo, rtsp_sess, &args)).got_error ) {
         if (error.got_error == ERR_ALLOC) 
             return ERR_ALLOC;
         goto error_management;
