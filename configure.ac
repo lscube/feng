@@ -200,7 +200,7 @@ LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 dnl Check for SCTP support
 if test "$enable_sctp" = "yes"; then
     if test "${LIBNETEMBRYO_LIBS//sctp}" = "${LIBNETEMBRYO_LIBS}"; then
-        AC_MSG_ERROR([sctp required but netembryo does not support it, rebuild netembryo first.])
+        AC_MSG_WARN([sctp required but netembryo does not support it, rebuild netembryo first.])
     fi
         AC_CHECK_TYPE(struct sctp_sndrcvinfo, [
          AC_CHECK_LIB(sctp,sctp_recvmsg)],
