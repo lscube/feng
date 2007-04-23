@@ -58,17 +58,10 @@ MObject_def(__MEDIA_PROPERTIES)
     MediaSource media_source;
     double mtime;    //FIXME Move to bufferpool   //time is in seconds
     double duration; //FIXME Move to bufferpool
-    //! Audio specific properties:
-    //! \defgroup Audio Properties
-    //\@{
     float sample_rate;/*! SamplingFrequency*/
     float OutputSamplingFrequency;
     int audio_channels;
     int bit_per_sample;/*! BitDepth*/
-    //\@}
-    //! Video specific properties:
-    //! \defgroup Video Properties
-    //\@{
     int frame_rate;
     int FlagInterlaced;
     unsigned int PixelWidth;
@@ -79,7 +72,6 @@ MObject_def(__MEDIA_PROPERTIES)
     unsigned int AspectRatio;
     uint8_t *ColorSpace;
     float GammaValue;
-    //\@}
     uint8_t *extradata;
     long extradata_len;
     sdp_field_list sdp_private;
@@ -132,11 +124,18 @@ typedef struct __MEDIAPARSER {
     int (*uninit)(void *private_data);
 } MediaParser;
 
-/*MediaParser Interface*/
-void free_parser(MediaParser *);
+/** 
+ * MediaParser Interface, pending overhaul
+ * @defgroup MediaParser
+ * @{
+ */
 MediaParser *add_media_parser(void); 
 MediaParser *mparser_find(const char *);
 void mparser_unreg(MediaParser *, void *);
+void free_parser(MediaParser *);
+/**
+ * @}
+ */
 
 #define DEFAULT_MTU 1440
 
