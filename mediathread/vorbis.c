@@ -164,9 +164,11 @@ int encode_header(uint8_t *data, int len, vorbis_priv *priv)
 static int vorbis_uninit(void *private_data)
 {
     vorbis_priv *priv = private_data;
-    if (priv->conf_len) g_free(priv->conf);
-    if (priv->len) g_free(priv->packet);
-    free(private_data);
+    if (priv) {
+        if (priv->conf_len) g_free(priv->conf);
+        if (priv->len) g_free(priv->packet);
+        free(private_data);
+    }
     return ERR_NOERROR;
 }
 

@@ -67,6 +67,7 @@ const id_tag id_tags[] = {
    { CODEC_ID_MPEG2VIDEO, 32, "MPV" },
    { CODEC_ID_H264, 96, "H264" },
    { CODEC_ID_MP3, 14, "MPA"},
+   { CODEC_ID_VORBIS, 96, "VORBIS"},
    { CODEC_ID_NONE, 0, "NONE"} //XXX ...
 };
 
@@ -192,7 +193,7 @@ static int avf_init(Resource * r)
     MediaProperties props;
     Track *track;
     TrackInfo trackinfo;
-    int i;
+    int i, pt = 96;
 
     memset(&ap, 0, sizeof(AVFormatParameters));
 // make avf use our stuff or not?
@@ -256,6 +257,8 @@ static int avf_init(Resource * r)
         { 
             strncpy(props.encoding_name, id, 11);
             props.payload_type = pt_from_id(codec->codec_id);
+            if (props.payload_type == 96)
+                props.payload_type = pt++;
             fnc_log(FNC_LOG_DEBUG, "[MT] Parsing AVStream %s\n",
                     props.encoding_name);
         } else {
