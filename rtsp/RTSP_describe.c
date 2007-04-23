@@ -52,30 +52,21 @@
  */
 static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
 {
-    char *r;        /* get reply message buffer pointer */
-    char *mb;        /* message body buffer pointer */
+    char *r;        /* reply message buffer */
     int mb_len;
 
-
     /* allocate buffer */
-    mb_len = 2048;
-    mb = malloc(mb_len);
-    r = malloc(mb_len + 1512);
-    if (!r || !mb) {
+    mb_len = 1512 + strlen(cinfo->descr);
+    r = malloc(mb_len);
+    if (!r) {
         fnc_log(FNC_LOG_ERR,
             "send_describe_reply(): unable to allocate memory\n");
         send_reply(500, 0, rtsp);    /* internal server error */
-        if (r) {
-            free(r);
-        }
-        if (mb) {
-            free(mb);
-        }
         return ERR_ALLOC;
     }
 
     /*describe */
-    sprintf(r,
+    snprintf(r, mb_len,
         "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
         RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
         VERSION);
@@ -87,9 +78,12 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
             break;
         }
     }
-    sprintf(r + strlen(r), "Content-Base: rtsp://%s/%s/" RTSP_EL,
-        prefs_get_hostname(), cinfo->object);
-    sprintf(r + strlen(r), "Content-Length: %d" RTSP_EL, strlen(cinfo->descr));
+    snprintf(r + strlen(r), mb_len - strlen(r),
+             "Content-Base: rtsp://%s/%s/" RTSP_EL,
+             prefs_get_hostname(), cinfo->object);
+    snprintf(r + strlen(r), mb_len - strlen(r),
+             "Content-Length: %d" RTSP_EL,
+             strlen(cinfo->descr));
     // end of message
     strcat(r, RTSP_EL);
 
@@ -97,7 +91,6 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
     strcat(r, cinfo->descr);
     bwrite(r, (unsigned short) strlen(r), rtsp);
 
-    free(mb);
     free(r);
 
     fnc_log(FNC_LOG_CLIENT, "200 %d %s ", strlen(cinfo->descr), cinfo->object);
