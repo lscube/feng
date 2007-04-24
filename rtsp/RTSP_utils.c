@@ -489,16 +489,6 @@ void add_time_stamp(char *b, int crlf)
         strcat(b, "\r\n");    /* add a message header terminator (CRLF) */
 }
 
-//FIXME this code should be killed once we got time
-#if HAVE_ALLOCA_H
-#include <alloca.h>
-#define my_alloca(x) alloca(x)
-#define my_free(x)
-#else
-#define my_alloca(x) malloc(x)
-#define my_free(x) free(x)
-#endif
-
 /**
  * Parses an url giving back the server, the port and the requested file
  * @param url the url to parse
@@ -517,14 +507,14 @@ int parse_url(const char *url, char *server, size_t server_len,
 
     int not_valid_url = 1;
     /* copy url */
-    char *full = my_alloca(strlen(url) + 1);
+    char *full = malloc(strlen(url) + 1);
     strcpy(full, url);
     if (strncmp(full, "rtsp://", 7) == 0) {
         char *token;
         int has_port = 0;
         /* BEGIN Altered by Ed Hogan, Trusted Info. Sys. Inc. */
         /* Need to look to see if it has a port on the first host or not. */
-        char *aSubStr = my_alloca(strlen(url) + 1);
+        char *aSubStr = malloc(strlen(url) + 1);
         strcpy(aSubStr, &full[7]);
         if (strchr(aSubStr, '/')) {
             int len = 0;
@@ -538,14 +528,14 @@ int parse_url(const char *url, char *server, size_t server_len,
         }
         if (strchr(aSubStr, ':'))
             has_port = 1;
-        my_free(aSubStr);
+        free(aSubStr);
         /* END   Altered by Ed Hogan, Trusted Info. Sys. Inc. */
 
         token = strtok(&full[7], " :/\t\n");
         if (token) {
             strncpy(server, token, server_len);
             if (server[server_len - 1]) {
-                my_free(full);
+                free(full);
                 return -1;    // internal error
             }
             if (has_port) {
@@ -564,7 +554,7 @@ int parse_url(const char *url, char *server, size_t server_len,
             if (token) {
                 strncpy(file_name, token, file_name_len);
                 if (file_name[file_name_len - 1]) {
-                    my_free(full);
+                    free(full);
                     return -1;    // internal error
                 }
             } else
@@ -576,16 +566,13 @@ int parse_url(const char *url, char *server, size_t server_len,
         if (token) {
             strncpy(file_name, token, file_name_len);
             if (file_name[file_name_len - 1]) {
-                my_free(full);
+                free(full);
                 return -1;    // internal error
             }
             server[0] = '\0';
             not_valid_url = 0;
         }
     }
-    my_free(full);
+    free(full);
     return not_valid_url;
 }
-
-#undef my_alloca
-#undef my_free

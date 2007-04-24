@@ -3,25 +3,17 @@
  *  
  *  This file is part of Fenice
  *
- *  Fenice -- Open Media Server
+ *  Feng -- Standard Streaming Server
  *
- *  Copyright (C) 2004 by
- *      
- *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
- *    - Francesco Varano    <francesco.varano@polito.it>
- *    - Marco Penno        <marco.penno@polito.it>
- *    - Federico Ridolfo    <federico.ridolfo@polito.it>
- *    - Eugenio Menegatti     <m.eu@libero.it>
- *    - Stefano Cau
- *    - Giuliano Emma
- *    - Stefano Oldrini
+ *  Copyright (C) 2007 by LScube team <team@streaming.polito.it>
+ *      - see AUTHORS for the complete list
  * 
- *  Fenice is free software; you can redistribute it and/or modify
+ *  Feng is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
  *
- *  Fenice is distributed in the hope that it will be useful,
+ *  Feng is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
@@ -32,9 +24,11 @@
  *  
  * */
 
+
 #include <config.h>
 
 #include <fenice/rtp.h>
+#include <fenice/demuxer.h>
 #include <fenice/bufferpool.h>
 #include <fenice/mediathread.h>
 
@@ -133,4 +127,59 @@ int RTP_send_packet(RTP_session * session)
     }
 
     return ERR_NOERROR;
+}
+
+ssize_t RTP_recv(RTP_session * session, rtp_protos proto)
+{
+    Sock *s = session->transport.rtcp_sock;
+    struct sockaddr *sa_p = (struct sockaddr *)&(session->transport.last_stg);
+
+    if (proto == rtcp_proto) {
+        switch (s->socktype) {
+        case UDP:
+            session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
+                     sizeof(session->rtcp_inbuffer),
+                     sa_p, 0);
+            break;
+        case LOCAL:
+            session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
+                     sizeof(session->rtcp_inbuffer),
+                     NULL, 0);
+            break;
+        default:
+            session->rtcp_insize = -1;
+            break;
+        }
+    }
+    else
+        return -1;
+
+return session->rtcp_insize;
+}
+
+int RTP_transport_close(RTP_session * session) {
+
+    Sock_close(session->transport.rtp_sock);
+    Sock_close(session->transport.rtcp_sock);
+
+    return 0;
+}
+
+RTP_session *RTP_session_destroy(RTP_session * session)
+{
+    RTP_session *next = session->next;
+
+    RTP_transport_close(session);
+
+    // Close track selector
+    r_close_tracks(session->track_selector);
+
+    // destroy consumer
+    OMSbuff_unref(session->cons);
+
+
+    // Deallocate memory
+    free(session);
+
+    return next;
 }
