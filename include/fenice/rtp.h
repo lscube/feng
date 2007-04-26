@@ -155,9 +155,30 @@ typedef struct _RTP_header {
 
 typedef int (*RTP_play_action) (RTP_session * sess);
 
+/**
+ * @defgroup RTSP
+ * @{
+ */
+
+/** 
+ * RTP ports management functions
+ * @defgroup rtp_port RTP ports management functions
+ * @{
+ */
+
 void RTP_port_pool_init(int port);
 int RTP_get_port_pair(port_pair * pair);
 int RTP_release_port_pair(port_pair * pair);
+
+/**
+ * @}
+ */
+
+/** 
+ * RTP session management functions
+ * @defgroup rtp_session RTP session management functions
+ * @{
+ */
 
 int RTP_send_packet(RTP_session * session);
 RTP_session *RTP_session_destroy(RTP_session *);
@@ -166,5 +187,13 @@ RTP_session *RTP_session_destroy(RTP_session *);
 int RTP_transport_close(RTP_session *);
 //! low-level sent/receive packet functions depending on transport settings.
 ssize_t RTP_recv(RTP_session *, rtp_protos);
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */
 
 #endif
