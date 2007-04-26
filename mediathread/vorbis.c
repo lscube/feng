@@ -80,9 +80,9 @@ typedef struct {
 } vorbis_header;
 
 typedef struct {
-	int stacksize;
-	int stackcount;
-	unsigned char* framestack;
+    int stacksize;
+    int stackcount;
+    unsigned char* framestack;
 } framestack;
 
 /// Private struct for Vorbis
