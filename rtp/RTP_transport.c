@@ -36,6 +36,19 @@
 #include <fenice/debug.h>
 #endif
 
+/**
+ * @file RTP_transport.c
+ * RTP packets sending and receiving with session handling
+ */
+
+
+/**
+ * Sends pending RTP packets for the given session
+ * @param session the RTP session for which to send the packets
+ * @return ERR_NOERROR
+ * @return ERR_ALLOC on buffer allocation errors
+ * @return Same error values as event_buffer_low on event emission problems
+ */
 int RTP_send_packet(RTP_session * session)
 {
     unsigned char *packet = NULL;
@@ -129,6 +142,12 @@ int RTP_send_packet(RTP_session * session)
     return ERR_NOERROR;
 }
 
+/**
+ * Receives data from the socket linked to the session and puts it inside the session buffer
+ * @param session the RTP session for which to receive the packets
+ * @param proto the protocol to use (actually only rtcp is a valid option)
+ * @return size of te received data or -1 on error or invalid protocol request
+ */
 ssize_t RTP_recv(RTP_session * session, rtp_protos proto)
 {
     Sock *s = session->transport.rtcp_sock;
@@ -154,9 +173,14 @@ ssize_t RTP_recv(RTP_session * session, rtp_protos proto)
     else
         return -1;
 
-return session->rtcp_insize;
+    return session->rtcp_insize;
 }
 
+/**
+ * Closes a transport linked to a session
+ * @param session the RTP session for which to close the transport
+ * @return always 0
+ */
 int RTP_transport_close(RTP_session * session) {
 
     Sock_close(session->transport.rtp_sock);
@@ -165,6 +189,11 @@ int RTP_transport_close(RTP_session * session) {
     return 0;
 }
 
+/**
+ * Deallocates an RTP session, closing its tracks and transports
+ * @param session the RTP session to remove
+ * @return the subsequent session
+ */
 RTP_session *RTP_session_destroy(RTP_session * session)
 {
     RTP_session *next = session->next;
