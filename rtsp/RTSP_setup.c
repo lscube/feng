@@ -165,7 +165,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * tra
                     ser_ports.RTCP = matching_me->rtp_multicast_port + 1;
 
                     *is_multicast_dad = 0;
-                    if ((matching_descr-> flags & SD_FL_MULTICAST_PORT)) {
+                    if (!(matching_descr-> flags & SD_FL_MULTICAST_PORT)) {
                         *is_multicast_dad = 1;
                         //RTP outgoing packets
                         tmp = g_strdup_printf("%d", cli_ports.RTP);
@@ -286,7 +286,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * tra
                     intlvd->proto.sctp.rtcp.sinfo_stream = max_interlvd + 2;
                 }
                 if (
-                    (
+                    !(
                     (intlvd->proto.sctp.rtp.sinfo_stream < MAX_SCTP_STREAMS) &&
                     (intlvd->proto.sctp.rtcp.sinfo_stream < MAX_SCTP_STREAMS)
                     )) {
@@ -459,7 +459,7 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     /*XXX */
     rtp_s->current_media = calloc(1, sizeof(media_entry));
 
-    // if((matching_descr->flags & SD_FL_MULTICAST_PORT)){
+    // if(!(matching_descr->flags & SD_FL_MULTICAST_PORT)){
 
     // TODO: multicast with mediathread
     if (is_multicast_dad) {
