@@ -192,8 +192,10 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * tra
                 break;    // found a valid transport
             } else if (Sock_type(rtsp->sock) == TCP && !strncmp(p, "/TCP", 4)) {    // Transport: RTP/AVP/TCP;interleaved=x-y
 
-                if ( (intlvd = calloc(1, sizeof(RTSP_interleaved))) )
-                    return RTSP_Ok;
+                if ( !(intlvd = calloc(1, sizeof(RTSP_interleaved))) ) {
+                    set_RTSP_Error(&error, 500, "");
+                    return error;
+                }
 
                 if ((p = strstr(transport_tkn, "interleaved"))) {
                     p = strstr(p, "=");
@@ -258,8 +260,10 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * tra
             } else if (Sock_type(rtsp->sock) == SCTP &&
                        !strncmp(p, "/SCTP", 5)) {
                 // Transport: RTP/AVP/SCTP;streams=x-y
-                if ( (intlvd = calloc(1, sizeof(RTSP_interleaved))) )
-                    return RTSP_Ok;
+                if ( !(intlvd = calloc(1, sizeof(RTSP_interleaved))) ) {
+                    set_RTSP_Error(&error, 500, "");
+                    return error;
+                }
 
                 if ((p = strstr(transport_tkn, "streams"))) {
                     p = strstr(p, "=");
@@ -537,6 +541,8 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
                       session->session_id);
 
     w_pos += snprintf(r + w_pos, sizeof(r) - w_pos, "Transport: ");
+    if (!rtp_s || !rtp_s->transport.rtp_sock)
+        return ERR_GENERIC;
     switch (Sock_type(rtp_s->transport.rtp_sock)) {
     case UDP:
 #if 0
@@ -694,7 +700,10 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     *new_session = rtsp_s;
 
     fnc_log(FNC_LOG_INFO, "SETUP %s RTSP/1.0 ", url);
-    send_setup_reply(rtsp, rtsp_s, rtp_s);
+    if(send_setup_reply(rtsp, rtsp_s, rtp_s)) {
+        set_RTSP_Error(&error, 500, "Can't write answer");
+        goto error_management;
+    }
     log_user_agent(rtsp); // See User-Agent 
 
     return ERR_NOERROR;
