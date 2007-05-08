@@ -647,7 +647,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
     ConnectionInfo cinfo;
     char url[255];
-    long int session_id = 0;
+    long int session_id = -1;
     char trackname[255];
     RTP_transport transport;
 
@@ -682,7 +682,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     // If there's a Session header we have an aggregate control
     if ( (error = get_session_id(rtsp, &session_id)).got_error )
         goto error_management;
-    else
+    if (session_id == -1)
         session_id = generate_session_id();
 
     // Add an RTSP session if necessary
