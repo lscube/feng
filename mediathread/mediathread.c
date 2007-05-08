@@ -34,38 +34,30 @@
 #include <fenice/utils.h>
 #include <time.h>
 
-#define EVENT(x) ((mt_event_item *)(x->data))
-
-static GList *el_head = NULL;
+static GQueue *el_head;
 static pthread_mutex_t el_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mt_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void *mediathread(void *arg) {
-    GList *el_cur, *el_prev;
+    mt_event_item *el_cur;
     struct timespec ts = {0, 0};
+
+    el_head = g_queue_new();
 
     fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started");
 
     while(1) {
-        pthread_mutex_lock(&el_mutex);
-        el_cur = g_list_last(el_head);
-        el_prev = g_list_previous(el_cur);
-        el_head = g_list_remove_link(el_head, el_cur);
-        pthread_mutex_unlock(&el_mutex);
-
-        while (el_cur) {
-            pthread_mutex_lock(&mt_mutex);
-            mt_process_event(EVENT(el_cur));
-            mt_dispose_event(EVENT(el_cur));
-            pthread_mutex_unlock(&mt_mutex);
-
-            g_list_free_1(el_cur);
-
+        while (!g_queue_is_empty(el_head)) {
             pthread_mutex_lock(&el_mutex);
-            el_cur = el_prev;
-            el_prev = g_list_previous(el_cur);
-            el_head = g_list_remove_link(el_head, el_cur);
+            el_cur = g_queue_pop_head (el_head);
             pthread_mutex_unlock(&el_mutex);
+
+            if (el_cur) {
+                pthread_mutex_lock(&mt_mutex);
+                mt_process_event(el_cur);
+                mt_dispose_event(el_cur);
+                pthread_mutex_unlock(&mt_mutex);
+            }
         }
         //to avoid 100% cpu usage with empty eventlist
         nanosleep(&ts, NULL);
@@ -88,7 +80,7 @@ int mt_add_event(mt_event_id id, void **args) {
     item->args = args;
 
     pthread_mutex_lock(&el_mutex);
-    el_head = g_list_prepend(el_head, item);
+    g_queue_push_tail(el_head, item);
     pthread_mutex_unlock(&el_mutex);
 
     return ERR_NOERROR;
@@ -144,16 +136,17 @@ inline int mt_process_event(mt_event_item *ev) {
     return ERR_NOERROR;
 }
 
-inline void mt_disable_event(mt_event_item *ev) {
+void mt_disable_event(mt_event_item *ev, void *sender) {
     if (!ev)
         return;
 
     fnc_log(FNC_LOG_VERBOSE, "[MT] Disabling event: %#x", ev);
 
-    if (ev->args)
+    if (ev->args && ev->args[0] == sender) {
         mt_dispose_event_args(ev->id, ev->args);
-    ev->id = MT_EV_NOP;
-    ev->args = NULL;
+        ev->id = MT_EV_NOP;
+        ev->args = NULL;
+    }
 }
 
 inline void mt_dispose_event(mt_event_item *ev) {
@@ -178,14 +171,18 @@ Resource *mt_resource_open(char * path, char *filename) {
 }
 
 void mt_resource_close(Resource *resource) {
+    struct timespec ts = {0, 0};
     if (!resource)
         return;
+
+    nanosleep(&ts, NULL);
+
     pthread_mutex_lock(&mt_mutex);
     r_close(resource);
     pthread_mutex_unlock(&mt_mutex);
 }
 
-inline int event_buffer_low(void *sender, Track *src) {
+int event_buffer_low(void *sender, Track *src) {
     void **args = g_new(void *, 2);
     args[0] = sender;
     args[1] = src;
@@ -193,19 +190,8 @@ inline int event_buffer_low(void *sender, Track *src) {
 }
 
 int mt_disable_events(void *sender) {
-    GList *el_cur;
     pthread_mutex_lock(&el_mutex);
-    for(el_cur = el_head; el_cur; el_cur = g_list_next(el_cur)) {
-        switch (EVENT(el_cur)->id) {
-        case MT_EV_BUFFER_LOW:
-            if (EVENT(el_cur)->args[0] == sender) {
-                mt_disable_event(EVENT(el_cur));
-            }
-            break;
-        default:
-            break;
-        }
-    }
+    g_queue_foreach(el_head, mt_disable_event, sender);
     pthread_mutex_unlock(&el_mutex);
     return ERR_NOERROR;
 }

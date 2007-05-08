@@ -71,11 +71,11 @@ void *mediathread(void *arg);
 
 int mt_add_event(mt_event_id, void **args);
 inline int mt_process_event(mt_event_item *);
-inline void mt_disable_event(mt_event_item *);
 inline void mt_dispose_event(mt_event_item *);
 inline void mt_dispose_event_args(mt_event_id, void **args);
+int event_buffer_low(void *sender, Track *src);
 
-inline int event_buffer_low(void *sender, Track *src);
+void mt_disable_event(mt_event_item *, void *sender);
 int mt_disable_events(void *sender);
 
 Resource *mt_resource_open(char *, char *);
