@@ -156,7 +156,7 @@ typedef struct _RTP_header {
 typedef int (*RTP_play_action) (RTP_session * sess);
 
 /**
- * @defgroup RTSP
+ * @defgroup RTP
  * @{
  */
 
