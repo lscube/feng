@@ -103,6 +103,14 @@ int encode_header(uint8_t *data, int len, vorbis_priv *priv)
     int headers_len = len, i , j;
     uint8_t *header_start[3];
     int header_len[3];
+    uint8_t comment[26] =
+        /*quite minimal comment */
+    { 3, 'v', 'o', 'r', 'b', 'i', 's',
+        10, 0, 0, 0,
+        'v', 'o', 'r', 'b', 'i', 's', '-', 'r', 't', 'p',
+        0, 0, 0, 0,
+        1 
+    };
 
 // old way.
     if(headers[0] == 0 && headers[1] == 30) {
@@ -142,22 +150,29 @@ int encode_header(uint8_t *data, int len, vorbis_priv *priv)
     priv->header.ident = random32(0);
 
     // Envelope size
+    headers_len = header_len[0] + sizeof(comment) + header_len[2];
     priv->conf_len = 4 +                // count field
                      3 +                // Ident field
-                     2 +                // headers size
-                     header_len[0] +    // Everything but the comment
-                     header_len[2];
+                     1 +                // headers count (2)
+                     2 +                // headers sizes
+                     headers_len;       // the rest
+
     priv->conf = g_malloc(priv->conf_len);
     priv->conf[0] = priv->conf[1] = priv->conf[2] = 0;
     priv->conf[3] = 1; //just one packet for now
-    // new configure
+    // new config
     priv->conf[4] = (priv->header.ident >> 16) & 0xff;
     priv->conf[5] = (priv->header.ident >> 8) & 0xff;
     priv->conf[6] = priv->header.ident & 0xff;
-    priv->conf[7] = (header_len[2]+header_len[0])>>8; //no need to mask
-    priv->conf[8] = (header_len[2]+header_len[0]) & 0xff;
-    memcpy(priv->conf + 9, header_start[0], header_len[0]);
-    memcpy(priv->conf + 9 + header_len[0], header_start[2], header_len[2]);
+    priv->conf[7] = (headers_len)>>8;
+    priv->conf[8] = (headers_len) & 0xff;
+    priv->conf[9] = 2;
+    priv->conf[10] = header_len[0];     // 30, always
+    priv->conf[11] = sizeof(comment);   // 26
+    memcpy(priv->conf + 11, header_start[0], header_len[0]);
+    memcpy(priv->conf + 11 + header_len[0], comment, sizeof(comment));
+    memcpy(priv->conf + 11 + header_len[0] + sizeof(comment), header_start[2],
+           header_len[2]);
     return 0;
 }
 
