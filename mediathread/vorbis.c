@@ -169,9 +169,9 @@ int encode_header(uint8_t *data, int len, vorbis_priv *priv)
     priv->conf[9] = 2;
     priv->conf[10] = header_len[0];     // 30, always
     priv->conf[11] = sizeof(comment);   // 26
-    memcpy(priv->conf + 11, header_start[0], header_len[0]);
-    memcpy(priv->conf + 11 + header_len[0], comment, sizeof(comment));
-    memcpy(priv->conf + 11 + header_len[0] + sizeof(comment), header_start[2],
+    memcpy(priv->conf + 12, header_start[0], header_len[0]);
+    memcpy(priv->conf + 12 + header_len[0], comment, sizeof(comment));
+    memcpy(priv->conf + 12 + header_len[0] + sizeof(comment), header_start[2],
            header_len[2]);
     return 0;
 }
