@@ -153,6 +153,7 @@ int encode_header(uint8_t *data, int len, vorbis_priv *priv)
     headers_len = header_len[0] + sizeof(comment) + header_len[2];
     priv->conf_len = 4 +                // count field
                      3 +                // Ident field
+                     2 +                // pack size
                      1 +                // headers count (2)
                      2 +                // headers sizes
                      headers_len;       // the rest
