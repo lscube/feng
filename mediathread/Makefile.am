@@ -17,7 +17,8 @@ libmediath_la_SOURCES =	cache.c \
 if FENICE_FFMPEG
 libmediath_la_SOURCES += demuxer_avf.c \
 			 h264.c \
-			 vorbis.c
+			 vorbis.c \
+			 theora.c
 endif
 
 # libmediath_la_LDFLAGS = -static
