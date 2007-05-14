@@ -37,7 +37,7 @@
 #include <fenice/md5.h>
 #include <fenice/types.h>
 
-uint32_t md_32(char *string, int length)
+uint32_t md_32(uint8_t *string, int length)
 {
     MD5_CTX context;
     union {
@@ -78,5 +78,5 @@ uint32_t random32(int type)
     s.uid  = getuid();
     s.gid  = getgid();
 
-    return md_32((char *)&s, sizeof(s));
+    return md_32((uint8_t *)&s, sizeof(s));
 }
