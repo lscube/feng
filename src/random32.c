@@ -37,7 +37,7 @@
 #include <fenice/md5.h>
 #include <fenice/types.h>
 
-static uint32_t md_32(char *string, int length)
+uint32_t md_32(char *string, int length)
 {
     MD5_CTX context;
     union {

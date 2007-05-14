@@ -140,7 +140,8 @@
 
 /*! random seed generator, as documented in rfc1889 Appendix A.6 */
 uint32_t random32(int);
-
+/*! simple hasher */
+uint32_t md_32(char *string, int length);
 /*! parses the urls splitting it in fields [SLATED FOR RESHAPE] */
 int parse_url(const char *url, char *server, size_t, unsigned short *port,
               char *file_name, size_t);
