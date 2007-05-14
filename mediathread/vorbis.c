@@ -139,7 +139,7 @@ int encode_header(uint8_t *data, int len, vorbis_priv *priv)
         return -1;
     }
 
-    priv->ident = random32(0);
+    priv->ident = md_32(data, len);
 
     // Envelope size
     headers_len = header_len[0] + sizeof(comment) + header_len[2];
