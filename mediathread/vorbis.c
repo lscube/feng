@@ -73,13 +73,6 @@ static MediaParserInfo info = {
 };
 
 typedef struct {
-    unsigned int ident:24;
-    unsigned int frag_type:2;
-    unsigned int data_type:2;
-    unsigned int pkts:4;
-} vorbis_header;
-
-typedef struct {
     int stacksize;
     int stackcount;
     unsigned char* framestack;
@@ -91,8 +84,7 @@ typedef struct {
     unsigned int    conf_len;
     uint8_t         *packet;    ///< holds the incomplete packet
     unsigned int    len;        ///< incomplete packet length
-//    unsigned int    ident;    ///< identification string
-    vorbis_header   header;
+    unsigned int    ident;    ///< identification string
 //    framestack      stack; XXX use it later
 } vorbis_priv;
 
@@ -147,7 +139,7 @@ int encode_header(uint8_t *data, int len, vorbis_priv *priv)
         return -1;
     }
 
-    priv->header.ident = random32(0);
+    priv->ident = random32(0);
 
     // Envelope size
     headers_len = header_len[0] + sizeof(comment) + header_len[2];
@@ -162,9 +154,9 @@ int encode_header(uint8_t *data, int len, vorbis_priv *priv)
     priv->conf[0] = priv->conf[1] = priv->conf[2] = 0;
     priv->conf[3] = 1; //just one packet for now
     // new config
-    priv->conf[4] = (priv->header.ident >> 16) & 0xff;
-    priv->conf[5] = (priv->header.ident >> 8) & 0xff;
-    priv->conf[6] = priv->header.ident & 0xff;
+    priv->conf[4] = (priv->ident >> 16) & 0xff;
+    priv->conf[5] = (priv->ident >> 8) & 0xff;
+    priv->conf[6] = priv->ident & 0xff;
     priv->conf[7] = (headers_len)>>8;
     priv->conf[8] = (headers_len) & 0xff;
     priv->conf[9] = 2;
@@ -265,9 +257,9 @@ static int vorbis_parse(void *track, uint8_t *data, long len, uint8_t *extradata
     if(!packet) goto err_alloc;
 
     // the ident is always the same
-    packet[0] = (priv->header.ident>>16)& 0xff;
-    packet[1] = (priv->header.ident>>8) & 0xff;
-    packet[2] =  priv->header.ident     & 0xff;
+    packet[0] = (priv->ident>>16)& 0xff;
+    packet[1] = (priv->ident>>8) & 0xff;
+    packet[2] =  priv->ident     & 0xff;
 
     if (len > mtu) {
         frag = 1; // first frag
