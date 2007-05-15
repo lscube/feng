@@ -46,7 +46,7 @@
 #define SDP2_EL "\r\n"
 #define SDP2_VERSION 0
 
-#define MAX_DESCR_LENGTH 4096
+#define MAX_DESCR_LENGTH 63000
 
 gint sdp_session_id(char *, size_t);
 gint sdp_get_version(ResourceDescr *, char *, size_t);
