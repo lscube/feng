@@ -252,6 +252,8 @@ static int theora_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src, ui
 return ERR_PARSE;
 }
 
+
+#define XIPH_HEADER_SIZE 6
 static int theora_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                  long extradata_len)
 {
@@ -259,7 +261,8 @@ static int theora_parse(void *track, uint8_t *data, long len, uint8_t *extradata
     Track *tr = (Track *)track;
     theora_priv *priv = tr->parser_private;
     int frag, off = 0;
-    uint32_t mtu = DEFAULT_MTU -4 -2; //FIXME get it from SETUP
+    uint32_t mtu = DEFAULT_MTU;  //FIXME get it from SETUP
+    uint32_t payload = mtu - XIPH_HEADER_SIZE;
     uint8_t *packet = calloc(1, mtu);
 
     if(!packet) goto err_alloc;
@@ -269,24 +272,24 @@ static int theora_parse(void *track, uint8_t *data, long len, uint8_t *extradata
     packet[1] = (priv->ident>>8) & 0xff;
     packet[2] =  priv->ident     & 0xff;
 
-    if (len > mtu) {
+    if (len > payload) {
         frag = 1; // first frag
         // this is always the same
 //        packet[3] |= 0; //frames in packet
-        packet[4] = (mtu>>8)&0xff;
-        packet[5] = mtu&0xff;
-        while (len > mtu) {
+        packet[4] = (payload>>8)&0xff;
+        packet[5] = payload&0xff;
+        while (len > payload) {
             packet[3] = frag << 6;  //frag type
 //            packet[3] |= 0 << 4; //data type
-            memcpy(packet + 6, data + off, mtu);
+            memcpy(packet + XIPH_HEADER_SIZE, data + off, payload);
             if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                                      packet, DEFAULT_MTU)) {
+                                      packet, mtu)) {
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
                 return ERR_ALLOC;
             }
 
-            len -= DEFAULT_MTU;
-            off += DEFAULT_MTU;
+            len -= payload;
+            off += payload;
             frag = 2; // middle frag
         }
         packet[3] = 3 << 6; // last frag
@@ -297,9 +300,9 @@ static int theora_parse(void *track, uint8_t *data, long len, uint8_t *extradata
 
     packet[4] = (len>>8)&0xff;
     packet[5] = len&0xff;
-    memcpy(packet + 6, data + off, len);
+    memcpy(packet + XIPH_HEADER_SIZE, data + off, len);
     if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                      packet, len +4 +2)) {
+                      packet, len + XIPH_HEADER_SIZE)) {
         fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
         return ERR_ALLOC;
     }
