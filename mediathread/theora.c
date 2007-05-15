@@ -66,6 +66,45 @@ static inline char *av_base64_encode(char * buf, int buf_len,
 }
 #endif
 
+#if 1
+#define AV_RB16(x)  ((((uint8_t*)(x))[0] << 8) | ((uint8_t*)(x))[1])
+static int ff_split_xiph_headers(uint8_t *extradata, int extradata_size,
+                          int first_header_size, uint8_t *header_start[3],
+                          int header_len[3])
+{
+    int i, j;
+
+    if (AV_RB16(extradata) == first_header_size) {
+        for (i=0; i<3; i++) {
+            header_len[i] = AV_RB16(extradata);
+            extradata += 2;
+            header_start[i] = extradata;
+            extradata += header_len[i];
+        }
+    } else if (extradata[0] == 2) {
+        for (i=0,j=1; i<2; i++,j++) {
+            header_len[i] = 0;
+            for (; j<extradata_size && extradata[j]==0xff; j++) {
+                header_len[i] += 0xff;
+            }
+            if (j >= extradata_size)
+                return -1;
+
+            header_len[i] += extradata[j];
+        }
+        header_len[2] = extradata_size - header_len[0] - header_len[1] - j;
+        extradata += j;
+        header_start[0] = extradata;
+        header_start[1] = header_start[0] + header_len[0];
+        header_start[2] = header_start[1] + header_len[1];
+    } else {
+        return -1;
+    }
+    return 0;
+}
+#endif
+
+
 static MediaParserInfo info = {
     "theora",
     MP_video
@@ -90,8 +129,7 @@ typedef struct {
 //! Parse extradata and reformat it, most of the code is shamelessly ripped from fftheora.
 static int encode_header(uint8_t *data, int len, theora_priv *priv)
 {
-    uint8_t *headers = data;
-    int headers_len = len, i , j;
+    int headers_len;
     uint8_t *header_start[3];
     int header_len[3];
     uint8_t comment[] =
@@ -102,35 +140,8 @@ static int encode_header(uint8_t *data, int len, theora_priv *priv)
       0,0,0,0};
 
 
-// old way.
-    if(headers[0] == 0 && headers[1] == 30) {
-        for(i = 0; i < 3; i++){
-            header_len[i] = *headers++ << 8;
-            header_len[i] += *headers++;
-            header_start[i] = headers;
-            headers += header_len[i];
-        }
-// xiphlaced
-    } else if(headers[0] == 2) {
-        for(j=1, i=0; i<2 ; ++i, ++j) {
-            header_len[i]=0;
-            while(j<headers_len && headers[j]==0xff) {
-                header_len[i]+=0xff;
-                ++j;
-            }
-            if (j>=headers_len) {
-                fnc_log(FNC_LOG_ERR, "Extradata corrupt.\n");
-                return -1;
-            }
-            header_len[i]+=headers[j];
-        }
-        header_len[2] = headers_len - header_len[0] - header_len[1] - j;
-        headers += j;
-        header_start[0] = headers;
-        header_start[1] = header_start[0] + header_len[0];
-        header_start[2] = header_start[1] + header_len[1];
-    } else {
-        fnc_log(FNC_LOG_ERR, "Extradata corrupt.");
+    if (ff_split_xiph_headers(data, len, 42, header_start, header_len) < 0) {
+        fnc_log(FNC_LOG_ERR, "Extradata corrupt. unknown layout");
         return -1;
     }
     if (header_len[2] + header_len[0]>UINT16_MAX) {
@@ -158,8 +169,8 @@ static int encode_header(uint8_t *data, int len, theora_priv *priv)
     priv->conf[7] = (headers_len)>>8;
     priv->conf[8] = (headers_len) & 0xff;
     priv->conf[9] = 2;
-    priv->conf[10] = header_len[0];     // 30, always
-    priv->conf[11] = sizeof(comment);   // 26
+    priv->conf[10] = header_len[0];
+    priv->conf[11] = sizeof(comment);
     memcpy(priv->conf + 12, header_start[0], header_len[0]);
     memcpy(priv->conf + 12 + header_len[0], comment, sizeof(comment));
     memcpy(priv->conf + 12 + header_len[0] + sizeof(comment), header_start[2],
