@@ -88,7 +88,7 @@ typedef struct {
 } theora_priv;
 
 //! Parse extradata and reformat it, most of the code is shamelessly ripped from fftheora.
-int encode_header(uint8_t *data, int len, theora_priv *priv)
+static int encode_header(uint8_t *data, int len, theora_priv *priv)
 {
     uint8_t *headers = data;
     int headers_len = len, i , j;

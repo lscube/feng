@@ -89,7 +89,7 @@ typedef struct {
 } vorbis_priv;
 
 //! Parse extradata and reformat it, most of the code is shamelessly ripped from ffvorbis.
-int encode_header(uint8_t *data, int len, vorbis_priv *priv)
+static int encode_header(uint8_t *data, int len, vorbis_priv *priv)
 {
     uint8_t *headers = data;
     int headers_len = len, i , j;
