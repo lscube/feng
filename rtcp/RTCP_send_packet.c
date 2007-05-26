@@ -143,7 +143,7 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
             RTCP_header_BYE hdr_bye;
             int hdr_bye_s;
             char *reason = "The medium is over.";
-            //printf("BYE\n");
+            printf("BYE\n");
             hdr_bye_s = sizeof(hdr_bye);
             pkt_size = hdr_s + hdr_bye_s;
             hdr.length = htons((pkt_size >> 2) - 1);

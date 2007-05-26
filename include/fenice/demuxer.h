@@ -108,12 +108,13 @@ typedef struct __RESOURCE {
     double (*timescaler)(struct __RESOURCE *, double);
     /* EDL specific data */
     struct __RESOURCE *edl;
-    /* Mutliformat related things */
+    /* Multiformat related things */
     SelList sel;
     int num_sel;
     TrackList tracks;
     int num_tracks;
-    void *private_data; /* private data of demuxer */
+    void *private_data; /* Demuxer private data */
+    int eos; //!< signals the end of stream
 } Resource;
 
 #if 0 // define MObject with MObject_def

@@ -122,6 +122,10 @@ inline int mt_process_event(mt_event_item *ev) {
                     fnc_log(FNC_LOG_VERBOSE, "[MT] Done legacy!");
                 }
                 break;
+            case EOF:
+                // Signal the end of stream
+                r->eos = 1;
+                break;
             default:
                 fnc_log(FNC_LOG_VERBOSE,
                         "[MT] read_packet() error.");
@@ -183,7 +187,9 @@ void mt_resource_close(Resource *resource) {
 }
 
 int event_buffer_low(void *sender, Track *src) {
-    void **args = g_new(void *, 2);
+    void **args;
+    if (src->parent->eos) return ERR_EOF;
+    args = g_new(void *, 2);
     args[0] = sender;
     args[1] = src;
     return mt_add_event(MT_EV_BUFFER_LOW, args);

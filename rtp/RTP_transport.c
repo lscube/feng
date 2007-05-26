@@ -47,6 +47,7 @@
  * @param session the RTP session for which to send the packets
  * @return ERR_NOERROR
  * @return ERR_ALLOC on buffer allocation errors
+ * @retunr ERR_EOF on stream end
  * @return Same error values as event_buffer_low on event emission problems
  */
 int RTP_send_packet(RTP_session * session)
@@ -62,7 +63,14 @@ int RTP_send_packet(RTP_session * session)
 
     if (!(slot = OMSbuff_getreader(session->cons))) {
         if ((res = event_buffer_low(session, t)) != ERR_NOERROR) {
-            fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low\n");
+            switch (res) {
+            case ERR_EOF:
+                fnc_log(FNC_LOG_INFO, "End of stream reached");
+                break;
+            default:
+                fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low");
+                break;
+            }
             return res;
         }
     }
