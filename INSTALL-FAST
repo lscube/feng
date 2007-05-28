@@ -1,15 +1,21 @@
 If you are in a hurry:
 
+Get the deps built:
+
+glib-2
+ffmpeg
+netembryo
+
 Compile:
-Change to fenice source dir, then:
+Change to feng source dir, then:
 
 $ ./configure
 $ make
 # make install
 
 Run:
-fenice
+feng
 
 Configuration:
-Please, edit /etc/fenice.conf
+Please, edit /etc/feng.conf
 
