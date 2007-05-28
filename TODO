@@ -1,15 +1,21 @@
-0.1.13
-	* ipc/rpc systems
-        * more formats support
+To do:
+    * ipc/rpc systems
+    * support more formats (h263, aac, dirac, snow, wavpack, speex)
+
+Done:
+    * rtcp bye
+    * vorbis support
+    * theora support
+    * bare scheduler
 
 0.1.12:
-	* fast seek
-	* cross file stream sync (homogeneous files)
+    * fast seek
+    * cross file stream sync (homogeneous files)
 
 0.1.11:
-	* mediathread
-		- mmapped I/O
-		- libavformat support (starting from mov/mp4)
-		- mov2sdp (limited to interesting format)
-	* daemon mode
+    * mediathread
+	- mmapped I/O
+        - libavformat support (starting from mov/mp4)
+        - mov2sdp (limited to interesting format)
+    * daemon mode
 
