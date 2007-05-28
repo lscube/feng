@@ -104,11 +104,12 @@ typedef struct _RTCP_header_SDES {
 typedef struct _RTCP_header_BYE {
     unsigned int ssrc;
     unsigned char length;
-} RTCP_header_BYE;
+} __attribute__((__packed__)) RTCP_header_BYE;
 
 int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type);
 int RTCP_recv_packet(RTP_session * session);
 int RTCP_handler(RTP_session * session);
+int RTCP_flush(RTP_session * session);
 
 int RTCP_get_pkt_lost(RTP_session * session);
 

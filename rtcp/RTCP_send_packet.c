@@ -142,21 +142,21 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
     case BYE:{
             RTCP_header_BYE hdr_bye;
             int hdr_bye_s;
-            char *reason = "The medium is over.";
-            printf("BYE\n");
+            char reason[20] = "The medium is over.";
+//            printf("BYE\n");
             hdr_bye_s = sizeof(hdr_bye);
-            pkt_size = hdr_s + hdr_bye_s;
+            pkt_size = hdr_s + hdr_bye_s + sizeof(reason);
             hdr.length = htons((pkt_size >> 2) - 1);
             hdr.count = 1;
             hdr_bye.ssrc = htonl(session->ssrc);
             hdr_bye.length = htonl(strlen(reason));
-            hdr_bye.ssrc = htonl(session->ssrc);
             pkt = (unsigned char *) calloc(1, pkt_size);
             if (pkt == NULL) {
                 return ERR_ALLOC;
             }
             memcpy(pkt, &hdr, hdr_s);
             memcpy(pkt + hdr_s, &hdr_bye, hdr_bye_s);
+            memcpy(pkt + hdr_s + hdr_bye_s, reason, sizeof(reason));
             break;
         }
     default:{

@@ -45,8 +45,6 @@ void schedule_stop(int id)
 
     sched[id].rtp_session->pause=1;
 
-    RTCP_handler(sched[id].rtp_session);
-
     sched[id].rtp_session->started=0;
     //sched[id].rtsp_session->cur_state=READY_STATE;
 }

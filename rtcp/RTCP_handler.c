@@ -38,6 +38,35 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
+int RTCP_flush(RTP_session * session)
+{
+    fd_set wset;
+    struct timeval t;
+
+    /*---------------SEE eventloop/rtsp_server.c-------*/
+    FD_ZERO(&wset);
+    t.tv_sec = 0;
+    t.tv_usec = 1000;
+
+    if (session->rtcp_outsize > 0)
+        FD_SET(Sock_fd(session->transport.rtcp_sock), &wset);
+    if (select(Sock_fd(session->transport.rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
+        fnc_log(FNC_LOG_ERR, "select error\n");
+        /*send_reply(500, NULL, rtsp); */
+        return ERR_GENERIC;    //errore interno al server
+    }
+
+    if (FD_ISSET(Sock_fd(session->transport.rtcp_sock), &wset)) {
+        if (Sock_write(session->transport.rtcp_sock, session->rtcp_outbuffer,
+            session->rtcp_outsize, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
+            fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
+        session->rtcp_outsize = 0;
+        fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
+    }
+
+    return ERR_NOERROR;
+}
+
 int RTCP_handler(RTP_session * session)
 {
     fd_set wset;
@@ -49,28 +78,7 @@ int RTCP_handler(RTP_session * session)
         else
             RTCP_send_packet(session, SR);
         RTCP_send_packet(session, SDES);
-        /*---------------SEND PKT-------------------------*/
-        /*---------------SEE eventloop/rtsp_server.c-------*/
-        FD_ZERO(&wset);
-        t.tv_sec = 0;
-        t.tv_usec = 1000;
-
-        if (session->rtcp_outsize > 0)
-            FD_SET(Sock_fd(session->transport.rtcp_sock), &wset);
-        if (select(Sock_fd(session->transport.rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
-            fnc_log(FNC_LOG_ERR, "select error\n");
-            /*send_reply(500, NULL, rtsp); */
-            return ERR_GENERIC;    //errore interno al server
-        }
-
-        if (FD_ISSET(Sock_fd(session->transport.rtcp_sock), &wset)) {
-            if (Sock_write(session->transport.rtcp_sock, session->rtcp_outbuffer,
-                session->rtcp_outsize, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
-                fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
-            session->rtcp_outsize = 0;
-            fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
-        }
-        /*------------------------------------------------*/
+        return RTCP_flush(session);
     }
     return ERR_NOERROR;
 }

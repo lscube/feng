@@ -83,10 +83,12 @@ do {
                             break;
                         case ERR_EOF:
                             if(tr->properties->media_source == MS_live) {
-                                    fnc_log(FNC_LOG_WARN,"Pipe empty!\n");
+                                fnc_log(FNC_LOG_WARN,"Pipe empty!\n");
                             } else {
-                                    fnc_log(FNC_LOG_INFO,"Stream Finished\n");
-                                    schedule_stop(i);
+                                fnc_log(FNC_LOG_INFO,"Stream Finished\n");
+                                RTCP_send_packet(sched[i].rtp_session, SR);
+                                RTCP_send_packet(sched[i].rtp_session, BYE);
+                                RTCP_flush(sched[i].rtp_session);
                             }
                             break;
                         case ERR_ALLOC:
