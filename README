@@ -11,36 +11,21 @@ Sparse notes on A/V Resources management.
 
 * For every A/V resource you need
   
-  1)  Either separate files for audio (MP3) and video (MPEG-1,2), or a
-      libavformat compatible container (mov/mp4 suggested)
+  1)  Either separate files for audio (MP3, Vorbis) and video (Theora, H264),
+      or a libavformat compatible container (mov/mp4 suggested, ogg supported)
   2a) Optionally a Source Description (.sd) file for resource description
       to map the different sources.
   2b) Optionally an editlist (.ds for now) file that allows you to do a
       simple collage of resources. (the resources MUST be seekable)
   
   Streming clients must be invoked with, e.g:
-  	
-	$ streamingclient rtsp://streamingserver/content
+
+	$ streamingclient rtsp://streamingserver/resource
 
   or similar.
   You can request plain files as you would expect from a webserver.
 
-  The test files in avroot dir show a simple sd an ds and you can directly ask
-  for the single audio and single video
-
-* You can do live streaming in two ways:
- 
- - (poor's man way) using a named-pipe:
-
-  1) Create a named-pipe (e.g., mkfifo live.mp3),
-  2) create a .sd file with the named-pipe as audio content, then
-  3) feed named-pipe with live-encoded elementary stream data.
-
- - (warmly suggested way) using felix and shared memory:
-
-  1) prepare a felix start script or just launch felix
-  2) create a .sd file with the stream tags
-  3) feed felix.
+  Usage of sd files is severely discouraged.
 
 * Suggested encoding tools:
   Video: vlc, gst, ffmpeg

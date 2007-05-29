@@ -1,6 +1,6 @@
 FENICE_AVROOT_DIR = $(DESTDIR)@fenice_avroot_dir@
 
-FENICE_TEST_FILES = test.sd audio.mp3 video.mpg
+FENICE_TEST_FILES = h264.ds h264_scramble.ds test.mov
 
 EXTRA_DIST = $(FENICE_TEST_FILES)
 

@@ -1,0 +1,4 @@
+# Version 1 - EDL di testtc.mov 0.0 10.0
+test.mov 0.0 1.0
+test.mov 1.0 3.0
+test.mov 3.0 4.0
