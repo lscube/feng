@@ -1,7 +1,6 @@
 SUBDIRS =	bufferpool \
 		var \
 		md5 \
-		xmlparser \
 		mediathread \
 		multicast \
 		command_environment \
