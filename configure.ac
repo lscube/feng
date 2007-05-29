@@ -313,10 +313,6 @@ AC_SUBST(fenice_conf_dir)
 fenice_docs_dir=$(eval echo $datadir/doc/$PACKAGE_NAME)
 AC_SUBST(fenice_docs_dir)
 
-if test -f svnrev.h; then
-    AC_DEFINE(FENICE_SVN, 1,[Define if this is a development (subversion) tree])
-fi
-
 AC_DEFINE_UNQUOTED(FENICE_MAX_SESSION_DEFAULT,
                     $fenice_max_session,
                     [Define max number of RTSP incoming sessions for Fe.NG])
