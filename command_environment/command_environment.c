@@ -1,11 +1,11 @@
 /* * 
  *  $Id$
  *  
- *  This file is part of Fenice
+ *  This file is part of Feng
  *
- *  Fenice -- Open Media Server
+ *  Feng -- Standard Streaming Server
  *
- *  Copyright (C) 2004 by
+ *  Copyright (C) 2007 by
  *      
  *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
  *    - Francesco Varano    <francesco.varano@polito.it>
@@ -16,18 +16,18 @@
  *    - Giuliano Emma
  *    - Stefano Oldrini
  * 
- *  Fenice is free software; you can redistribute it and/or modify
+ *  Feng is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
  *
- *  Fenice is distributed in the hope that it will be useful,
+ *  Feng is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with Fenice; if not, write to the Free Software
+ *  along with Feng; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <fenice/command_environment.h>
+#include <fenice/utils.h>
 #include <glib.h>
 
 void usage(char *name)
@@ -42,6 +43,7 @@ void usage(char *name)
     fprintf(stdout,
         "%s [options] \n"
         "--help\t\t| -h | -? \tshow this message\n"
+        "--quiet\t\t| -q \tshow as little output as possible\n"
         "--config\t| -f <config> \tspecify configuration file\n"
         "--verbose\t| -v \t\toutput to standar error (debug)\n"
         "--version\t| -V \t\tprint version and exit\n"
@@ -52,22 +54,24 @@ void usage(char *name)
 int command_environment(int argc, char **argv)
 {
 
-    static const char short_options[] = "f:vVs";
+    static const char short_options[] = "f:vVsq";
     //"m:a:f:n:b:z:T:B:q:o:S:I:r:M:4:2:Q:X:D:g:G:v:V:F:N:tpdsZHOcCPK:E:R:";
 
     int n;
     int nerr = 0;    /*number of error */
     int config_file = 0;
+    int quiet = 0;
     int view_log = FNC_LOG_FILE;
     char *progname = g_path_get_basename(argv[0]);
 
     static struct option long_options[] = {
-        {"config", 1, 0, 'f'},
-        {"verbose", 0, 0, 'v'},
-        {"version", 0, 0, 'V'},
-        {"syslog", 0, 0, 's'},
-        {"help", 0, 0, '?'},
-        {0, 0, 0, 0}
+        {"config",   1, 0, 'f'},
+        {"quiet",    0, 0, 'q'},
+        {"verbose",  0, 0, 'v'},
+        {"version",  0, 0, 'V'},
+        {"syslog",   0, 0, 's'},
+        {"help",     0, 0, '?'},
+        {0,          0, 0,  0 }
     };
 
     while ((n = getopt_long(argc, argv, short_options, long_options, NULL))
@@ -80,6 +84,9 @@ int command_environment(int argc, char **argv)
             prefs_init(optarg);
             config_file = 1;
             break;
+        case 'q':
+            quiet = 1;    
+            break;
         case 'v':
             view_log = FNC_LOG_OUT;
             break;
@@ -87,8 +94,12 @@ int command_environment(int argc, char **argv)
             view_log = FNC_LOG_SYS;
             break;
         case '?':
+            fncheader();
             usage(progname);
+            g_free(progname);
+            break;
 	case 'V':
+            fncheader();
             g_free(progname);
             return 1;
             break;
@@ -97,6 +108,8 @@ int command_environment(int argc, char **argv)
         }
     }
 
+    if (!quiet) fncheader();
+
     if (nerr) {
         usage(progname);
     } else {
@@ -104,8 +117,6 @@ int command_environment(int argc, char **argv)
     }
 
     fnc_log_init(prefs_get_log(), view_log, progname);
-
-    // g_free(progname); syslog needs this buffer!
 
     return nerr;
 }
