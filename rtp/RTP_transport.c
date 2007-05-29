@@ -1,7 +1,7 @@
 /* * 
  *  $Id$
  *  
- *  This file is part of Fenice
+ *  This file is part of Feng
  *
  *  Feng -- Standard Streaming Server
  *
@@ -19,7 +19,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with Fenice; if not, write to the Free Software
+ *  along with Feng; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */

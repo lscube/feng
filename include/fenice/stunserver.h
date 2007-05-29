@@ -5,7 +5,7 @@
  *
  *  Fenice -- Open Media Server
  *
- *  Copyright (C) 2004 by
+ *  Copyright (C) 2007 by
  * 
  *  - (LS) Team			<team@streaming.polito.it>	
  *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>

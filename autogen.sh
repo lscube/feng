@@ -14,7 +14,7 @@ function dots ()
 }
 
 echo
-echo "Bootstrapping Fenice package AutoTools configuration..."
+echo "Bootstrapping Feng package AutoTools configuration..."
 
 if ! test -d config; then
 	mkdir config;
@@ -25,7 +25,7 @@ if which libtoolize >/dev/null 2>&1 ; then
 	libtoolize --force --copy --automake &
 	echo " done."
 else
-	echo "WARNING! Fenice SVN needs LibTool!"
+	echo "WARNING! Feng scm needs LibTool!"
 	echo "Please, install it."
 	echo "Aborting."
 fi

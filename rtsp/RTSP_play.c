@@ -1,11 +1,11 @@
 /* * 
  *  $Id$
  *  
- *  This file is part of Fenice
+ *  This file is part of Feng
  *
- *  Fenice -- Open Media Server
+ *  Feng -- Standard Streaming Server
  *
- *  Copyright (C) 2004 by
+ *  Copyright (C) 2007 by
  *      
  *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
  *    - Francesco Varano    <francesco.varano@polito.it>
@@ -16,18 +16,18 @@
  *    - Giuliano Emma
  *    - Stefano Oldrini
  * 
- *  Fenice is free software; you can redistribute it and/or modify
+ *  Feng is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
  *
- *  Fenice is distributed in the hope that it will be useful,
+ *  Feng is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with Fenice; if not, write to the Free Software
+ *  along with Feng; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *  
  * */
@@ -141,7 +141,7 @@ static RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_sess
         if (rtsp_sess->session_id == session_id) break;
     if (rtsp_sess == NULL) {
 #else
-    // XXX Fenice supports single session atm
+    // XXX Feng supports single session atm
     if (((*rtsp_sess = rtsp->session_list) == NULL) ||
         ((*rtsp_sess)->session_id != session_id))
     {

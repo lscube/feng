@@ -11,13 +11,13 @@ Source: http://streaming.polito.it/download/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-buildroot
 
 %description
-Fenice is a multimedia streaming server compliant with the IETF's standards for
-real-time streaming of multimedia contents over Internet. Fenice implements
+Feng is a multimedia streaming server compliant with the IETF's standards for
+real-time streaming of multimedia contents over Internet. Feng implements
 RTSP (Real-Time Streaming Protocol - RFC2326) and RTP/RTCP (Real-Time Transport
 Protocol/RTP Control Protocol - RFC3550) with RTP Profile for Audio and Video
 Conferences with Minimal Control (RFC3551).
 
-Fenice is the official streaming server for the Open Media Streaming Project
+Feng is the official streaming server for the Open Media Streaming Project
 (http://streaming.polito.it) which is is a free/libre project software for the
 development of a platform for the streaming of multimedia contents. The
 platform is based on the full support of the IETF's standards for the real-time

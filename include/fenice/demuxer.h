@@ -5,7 +5,7 @@
 *
 *  Fenice -- Open Media Server
 *
-*  Copyright (C) 2004 by
+*  Copyright (C) 2007 by
 *
 *	- Giampaolo Mancini	<giampaolo.mancini@polito.it>
 *	- Francesco Varano	<francesco.varano@polito.it>
