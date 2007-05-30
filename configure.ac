@@ -17,25 +17,25 @@ AC_ARG_WITH(config-file,
     with_config_file="feng.conf")
 
 AC_ARG_WITH(log-file,
-[  --with-log-file       name for the log file [[default=/var/log/feng.log]]],,
-    with_log_file="/var/log/feng.log")
+[  --with-log-file         name for the log file [[default=feng.log]]],,
+    with_log_file="feng.log")
 
 AC_ARG_WITH(max-session,
 [  --with-max-session      max number of incoming sessions [[default=100]]],,
     with_max_session=100)
 dnl netembryo
 AC_ARG_ENABLE(ipv6,
-[  --enable-ipv6            enable IPv6 support [[default=autodetected]]],,
+[  --enable-ipv6           enable IPv6 support [[default=autodetected]]],,
         enable_ipv6="yes")
 AC_ARG_ENABLE(libavformat,
-[  --enable-libavformat          enable ffmpeg's libavformat  support [[default=yes]]],,
+[  --enable-libavformat    enable ffmpeg's libavformat  support [[default=yes]]],,
         enable_ffmpeg="yes")
 
 AM_CONDITIONAL(HAVE_SSL, /bin/false)
 AC_DEFUN([CHECK_SSL],
 [AC_MSG_CHECKING(if ssl is wanted)
 AC_ARG_WITH(ssl,
-[  --with-ssl enable ssl [will check /usr/local/ssl
+[  --with-ssl              enable ssl [will check /usr/local/ssl
                             /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr. [Default certificate = /var/local/lib/feng/certs/cert.pem]]
 ],
 [   AC_MSG_RESULT(yes)
@@ -71,12 +71,6 @@ dnl     AC_SUBST(HAVE_SSL)
 ])
 ])dnl netembryo
 
-
-AC_ARG_ENABLE(fhs23,
-[  --enable-fhs23          enable Filesystem Hierarchy Standard 2.3:
-                          document root avroot will be placed under /srv [[default=yes]]],,
-    enable_fhs23="yes")
-
 AC_ARG_ENABLE(debug,
 [  --enable-debug          enable gcc dubugging flags [[default=no]]],,
     enable_debug="no")
@@ -88,7 +82,7 @@ AC_ARG_ENABLE(efence,
 
 
 AC_ARG_ENABLE(verbose,
-[  --enable-verbose          make fe.ng verbose [[default=no]]],,
+[  --enable-verbose        make feng verbose [[default=no]]],,
     enable_verbose="no")
 
 AC_ARG_ENABLE(dump,
@@ -100,7 +94,7 @@ AC_ARG_ENABLE(errors,
 [  --enable-errors         make gcc warnings behave like errors: none, normal, pedantic [[default=none]]],,
     enable_errors="none")
 AC_ARG_ENABLE(sctp,
-[  --enable-sctp            enable SCTP support [[default=autodetected]]],,         enable_sctp="yes")
+[  --enable-sctp           enable SCTP support [[default=autodetected]]],,         enable_sctp="yes")
 
 dnl Check for LibTool Dynamic Loading
 m4_undefine([AC_PROG_CXX])
@@ -271,12 +265,9 @@ case "$enable_errors" in
     ;;
 esac
 
-if ( test "x$enable_fhs23" = "xyes" ) && ( test -d /srv ) then
-    fenice_avroot_dir=/srv/$PACKAGE_NAME/avroot
-else
-    fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot)
-        fenice_avroot_dir=${fenice_avroot_dir//NONE}
-fi
+fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot)
+fenice_avroot_dir=${fenice_avroot_dir//NONE}
+
 AC_SUBST(fenice_avroot_dir)
 
 fenice_max_session=$(eval echo $with_max_session)
@@ -288,7 +279,8 @@ AC_SUBST(fenice_rtsp_port)
 fenice_conf_file=$(eval echo $with_config_file)
 AC_SUBST(fenice_conf_file)
 
-fenice_log_file=$(eval echo $with_log_file)
+fenice_log_file=$(eval echo $localstatedir/log/$with_log_file)
+fenice_log_file=${fenice_log_file//NONE}
 AC_SUBST(fenice_log_file)
 
 fenice_conf_dir=$(eval echo $sysconfdir)
