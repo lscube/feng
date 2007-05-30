@@ -27,10 +27,6 @@ dnl netembryo
 AC_ARG_ENABLE(ipv6,
 [  --enable-ipv6            enable IPv6 support [[default=autodetected]]],,
         enable_ipv6="yes")
-dnl StunServer
-AC_ARG_ENABLE(stun,
-[  --enable-stun            enable stun support [[default=no]]],,
-        enable_stun="no")
 AC_ARG_ENABLE(libavformat,
 [  --enable-libavformat          enable ffmpeg's libavformat  support [[default=yes]]],,
         enable_ffmpeg="yes")
@@ -171,17 +167,6 @@ AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 dnl CFLAGS=""
 
 AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Fe.NG uses Glib. Please install it (you need devel files).]),)
-
-
-stun_msg="stun enabled ................... : no";
-dnl Stun. Disable ipv6 if stun is enabled
-AM_CONDITIONAL(FENICE_STUN, /bin/false)
-if test "$enable_stun" = "yes"; then
-    AM_CONDITIONAL(FENICE_STUN, /bin/true)
-    AC_DEFINE(ENABLE_STUN, 1,[Stun enabled])
-    enable_ipv6=no
-    stun_msg="stun enabled ................... : yes";
-fi
 
 dnl test enable
 if test "x$enable_ipv6" = "xyes"; then
@@ -372,8 +357,6 @@ AC_CONFIG_FILES([rtp/Makefile])
 AC_CONFIG_FILES([rtcp/Makefile])
 AC_CONFIG_FILES([intnet/Makefile])
 AC_CONFIG_FILES([rtsp/Makefile])
-AC_CONFIG_FILES([stunserver/Makefile])
-AC_CONFIG_FILES([stun/Makefile])
 AC_CONFIG_FILES([sdp2/Makefile])
 AC_CONFIG_FILES([src/Makefile])
 AC_CONFIG_FILES([md5/Makefile])
@@ -397,7 +380,6 @@ Fe.NG Multimedia Files root ... : $fenice_avroot_dir
 Fe.NG RTSP listening port ..... : $fenice_rtsp_port
 Byte order ..................... : this is a $BIGENDIAN machine
 $ssl_msg
-$stun_msg
 $sctp_msg
 $avformat_msg
 $avutil_msg

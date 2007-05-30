@@ -36,11 +36,7 @@ noinst_HEADERS	=	bufferpool.h \
 			sdp_grammar.h \
 			sdp.h \
 			socket.h \
-			stunserver.h \
 			types.h \
-			utils.h \
-			wsocket.h \
-			xmllexer.h \
-			xmlparser.h 
+			utils.h
 
 INCLUDES = $(top_srcdir)

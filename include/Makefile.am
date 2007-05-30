@@ -1,1 +1,1 @@
-SUBDIRS = fenice netembryo stun
+SUBDIRS = fenice

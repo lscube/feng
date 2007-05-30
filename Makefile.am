@@ -8,13 +8,6 @@ SUBDIRS =	bufferpool \
 		rtp \
 		rtcp \
 		rtsp
-#		intnet
-
-if FENICE_STUN
-SUBDIRS +=	stunserver \
-		stun 
-
-endif
 
 SUBDIRS +=	sdp2 \
 		schedule \

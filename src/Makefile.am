@@ -54,16 +54,7 @@ feng_LDADD =	../eventloop/libeventloop.la \
 		../mediathread/libmediath.la \
 		../bufferpool/libbufferpool.la \
 		../multicast/libmulticast.la
-#		../xmlparser/libxmlparser.la
-#		../intnet/libintnet.la
-#		../mediainfo/libmediainfo.la
-#		../sdp/libsdp.la
 
-if FENICE_STUN
-feng_LDADD += ../stunserver/libstunserver.la \
-		../stun/libstun.la 
-endif
-		
 feng_LDADD +=	../command_environment/libcommand.la \
 		../src/libprefs.la \
 		../src/libutils.la \

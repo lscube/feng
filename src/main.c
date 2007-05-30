@@ -54,7 +54,6 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 
-#include <fenice/stunserver.h>
 #include <pthread.h>
 
 int running = 1;
@@ -64,23 +63,6 @@ static void terminator_function (int num) {
     fprintf(stderr, "Exiting...\n");
     running = 0;
 }
-
-#if ENABLE_STUN
-static void enable_stun(void)
-{
-    struct STUN_SERVER_IFCFG *cfg = prefs_get_stuncfg();
-
-    if( cfg!= NULL) {
-        pthread_t thread;
-
-        fnc_log(FNC_LOG_DEBUG, "Trying to start OMSstunserver thread");
-        fnc_log(FNC_LOG_DEBUG, "stun parameters: %s,%s,%s,%s",
-                                cfg->a1, cfg->p1, cfg->a2, cfg->p2);
-
-        pthread_create(&thread,NULL,OMSstunserverStart,(void *)(cfg));
-    }
-}
-#endif
 
 int main(int argc, char **argv)
 {
@@ -101,10 +83,6 @@ int main(int argc, char **argv)
     term_action.sa_handler = terminator_function;
     sigaction(SIGINT, &term_action, NULL);
     sigaction(SIGTERM, &term_action, NULL);
-
-#if ENABLE_STUN
-    enable_stun();
-#endif //ENABLE_STUN
 
     /* Bind to the defined listening port */
     port = g_strdup_printf("%d", prefs_get_port());
