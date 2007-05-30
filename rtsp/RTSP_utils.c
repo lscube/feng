@@ -37,6 +37,8 @@
 #include <fenice/sdp2.h>
 #include <fenice/fnc_log.h>
 
+#include <netembryo/url.h>
+
 RTSP_Error const RTSP_Ok = { {200, "OK"}, FALSE };
 RTSP_Error const RTSP_BadRequest = { {400, "Bad Request"}, TRUE };
 RTSP_Error const RTSP_Forbidden = { {403, "Forbidden"}, TRUE };
@@ -173,6 +175,8 @@ RTSP_Error validate_url(char *url, ConnectionInfo * cinfo)
     default:
         break;
     }
+
+    printf("server: %s\npath: %s\n", cinfo->server, cinfo->object);
 
     if (strcmp(cinfo->server, prefs_get_hostname()) != 0) {    /* Currently this feature is disabled. */
         /* wrong server name */
@@ -489,6 +493,7 @@ void add_time_stamp(char *b, int crlf)
         strcat(b, "\r\n");    /* add a message header terminator (CRLF) */
 }
 
+
 /**
  * Parses an url giving back the server, the port and the requested file
  * @param url the url to parse
@@ -499,6 +504,44 @@ void add_time_stamp(char *b, int crlf)
  * @param file_name_len the maximum size of the file name buffer
  * @return 0 if the URL is valid, 1 if the URL is not valid, -1 on internal error (some buffer too small)
  */
+int parse_url(const char *url, char *server, size_t server_len,
+          unsigned short *port, char *file_name, size_t file_name_len)
+{
+    int exit_status = 0;
+
+    Url turl;
+    Url_init(&turl, (char*)url);
+
+    if (!turl.path) {
+        exit_status = 1;
+        goto quit_function;
+    }
+
+    if ((strlen(turl.hostname) >= server_len) || (strlen(turl.path) >= file_name_len)) {
+        exit_status = 1;
+        goto quit_function;
+    }
+
+    if (turl.port) {
+        if (strlen(turl.port) > 5) {
+            exit_status = 1;
+            goto quit_function;
+        }
+        *port = atoi(turl.port);
+    }
+    else {
+        *port = FENICE_RTSP_PORT_DEFAULT;
+    }
+
+    strcpy(server, turl.hostname);
+    strcpy(file_name, turl.path);
+
+quit_function:
+    Url_destroy(&turl);
+    return exit_status;
+}
+
+#if 0
 int parse_url(const char *url, char *server, size_t server_len,
           unsigned short *port, char *file_name, size_t file_name_len)
 // Note: this routine comes from OMS
@@ -576,3 +619,4 @@ int parse_url(const char *url, char *server, size_t server_len,
     free(full);
     return not_valid_url;
 }
+#endif

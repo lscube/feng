@@ -104,6 +104,7 @@ static int sd_init(Resource * r)
             if (!strcasecmp(keyword, SD_TWIN)) {
                 sscanf(line, "%*s%s", r->info->twin);
                 parse_url(r->info->twin, server, sizeof(server), &port, object, sizeof (object));    //FIXME
+                printf("SD: server:%s\npath:%s\n", server, object);
             } else if (!strcasecmp(keyword, SD_MULTICAST)) {
                 sscanf(line, "%*s%15s", r->info->multicast);
                 // if (!is_valid_multicast_address(sd->multicast))
