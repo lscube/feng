@@ -51,7 +51,7 @@ if which autoconf >/dev/null 2>&1 ; then
 fi
 if which automake >/dev/null 2>&1 ; then
 	echo -n "Running automake..."
-	automake --gnu --add-missing --copy --force-missing 2>&1 | grep -v installing&
+	automake --gnu --add-missing --copy 2>&1 | grep -v installing&
 	dots $! 
 	echo " done."
 fi
@@ -61,14 +61,6 @@ if which libtoolize >/dev/null 2>&1 ; then
         dots $! 
         echo " done."
 fi
-
-#echo -n "Copying missing files..."
-#	cp -f admin/lt* libltdl
-#	cp -f admin/config.* libltdl
-#	cp -f admin/install-sh libltdl
-#	cp -f admin/mkinstalldirs .
-#	cp -f libltdl/acinclude.m4 .
-#echo " done."
 
 echo "All done. Bye."
 echo

@@ -1,0 +1,75 @@
+Feng installation instructions
+
++ Dependencies
+
+In order to build feng you need:
+
+- a full Posix compatible system (suggested any linux distribution)
+- gnu toolchain (gcc >= 3.4 , make >= 3.80, libtool >= 1.5.20) [1]
+- glib-2 >= 2.10 [2]
+- ffmpeg svn HEAD or any recent snapshot [3].
+- netembryo git HEAD [4]
+
+
+
++ Build instructions
+
+The following steps will be enough to build and install feng from release
+sources.
+
+- install the dependencies
+- enter the feng unpacked directory
+- type ./configure in order to prepare the makefiles, you may specify a non
+  standard prefix and the other paths, please refer to ./configure --help for
+  the full details
+- type make to build the sources
+- type make install to install the program, you should be root in order to
+  install system wide.
+
+
+
++ Building from git
+
+In order to use the live sources for our scm you need the following additional
+softwares:
+
+- git >= 1.5 [5]
+- autotools (automake >= 1.9, autoconf >= 2.61) [6]
+
+The sources reside at git://live.polito.it/var/git/feng.git you can fetch them
+by issuing 
+
+$ git clone git://live.polito.it/var/git/feng.git
+
+Please refer to the git documentation[5] and our site[0] for further documentation.
+
+In order to generate the configure script you may use either autoreconf or the autogen.sh script, the outcome will be the same.
+
+$ autoreconf 
+
+or 
+
+$ ./autogen.sh
+
+The standard build instruction applies form this step.
+
+
+
++ Links
+
+[0] http://live.polito.it                       -- LScube main website
+
+[1] http://www.gnu.org/software/gcc/            -- GNU Compiler collection
+    http://www.gnu.org/software/libtool/        -- GNU Libtool
+    http://www.gnu.org/software/make/           -- GNU Make
+
+[2] http://www.gtk.org                          -- Gimp Toolkit 
+
+[3] http://ffmpeg.org                           -- FFmpeg
+
+[4] git://live.polito.it/var/git/netembryo.git  -- Netembryo git repository
+
+[5] http://git.or.cz                            -- Git Version Control System
+
+[6] http://www.gnu.org/software/automake/       -- GNU automake
+    http://www.gnu.org/software/autoconf/       -- GNU autoconf
