@@ -183,26 +183,26 @@ if test "$enable_sctp" = "yes"; then
     fi
         AC_CHECK_TYPE(struct sctp_sndrcvinfo, [
          AC_CHECK_LIB(sctp,sctp_recvmsg)],
-         AC_MSG_WARN([SCTP disabled: headers not found]),
+         [enable_sctp=no,
+         AC_MSG_WARN([SCTP disabled: headers not found])],
          [#include <netinet/sctp.h>])
 else
     AC_MSG_WARN([SCTP disabled: check skipped.])
-    sctp_msg="sctp enabled ................... : no"
 fi
 
-avformat_msg="libavformat enabled ............... : no"
-avutil_msg="libavutil enabled .............. : no"
+avformat_msg="no"
+avutil_msg="no"
 if test "x$enable_ffmpeg" = "xyes"; then
     PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 50.5.0],
         [AC_DEFINE(HAVE_AVFORMAT,,[Define if libavformat support is available])
-         avformat_msg="libavformat enabled ............ : yes"
+         avformat_msg="yes"
          ])
          CFLAGS="$CFLAGS $LIBAVFORMAT_CFLAGS"
          LIBS="$LIBS $LIBAVFORMAT_LIBS"
         PKG_CHECK_MODULES(LIBAVUTIL,[libavutil >= 49.4.0],
         [AC_DEFINE(HAVE_AVUTIL,,[Define if libavutil support is available])
-         avutil_msg="libavutil enabled .............. : yes"],
-         [avutil_msg="libavutil enabled .............. : no, using internal"])
+         avutil_msg="yes"],
+         [avutil_msg="no, using internal"])
          CFLAGS="$CFLAGS $LIBAVUTIL_CFLAGS"
          LIBS="$LIBS $LIBAVUTIL_LIBS"
 fi
@@ -265,7 +265,7 @@ case "$enable_errors" in
     ;;
 esac
 
-fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot)
+fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot|sed -e "s:/\+:/:g")
 fenice_avroot_dir=${fenice_avroot_dir//NONE}
 
 AC_SUBST(fenice_avroot_dir)
@@ -276,23 +276,23 @@ AC_SUBST(fenice_max_session)
 fenice_rtsp_port=$(eval echo $with_rtsp_port)
 AC_SUBST(fenice_rtsp_port)
 
-fenice_conf_file=$(eval echo $with_config_file)
+fenice_conf_file=$(eval echo $with_config_file|sed -e "s:/\+:/:g")
 AC_SUBST(fenice_conf_file)
 
-fenice_log_file=$(eval echo $localstatedir/log/$with_log_file)
+fenice_log_file=$(eval echo $localstatedir/log/$with_log_file|sed -e "s:/\+:/:g")
 fenice_log_file=${fenice_log_file//NONE}
 AC_SUBST(fenice_log_file)
 
-fenice_conf_dir=$(eval echo $sysconfdir)
+fenice_conf_dir=$(eval echo $sysconfdir|sed -e "s:/\+:/:g")
 fenice_conf_dir=${fenice_conf_dir//NONE}
 AC_SUBST(fenice_conf_dir)
 
-fenice_docs_dir=$(eval echo $datadir/doc/$PACKAGE_NAME)
+fenice_docs_dir=$(eval echo $datadir/doc/$PACKAGE_NAME|sed -e "s:/\+:/:g")
 AC_SUBST(fenice_docs_dir)
 
 AC_DEFINE_UNQUOTED(FENICE_MAX_SESSION_DEFAULT,
                     $fenice_max_session,
-                    [Define max number of RTSP incoming sessions for Fe.NG])
+                    [Define max number of RTSP incoming sessions for Feng])
 
 AC_DEFINE_UNQUOTED(FENICE_RTSP_PORT_DEFAULT,
                     $fenice_rtsp_port,
@@ -300,30 +300,30 @@ AC_DEFINE_UNQUOTED(FENICE_RTSP_PORT_DEFAULT,
 
 AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT,
                     $fenice_avroot_dir,
-                    [Define default directory for Fe.NG A/V resources])
+                    [Define default directory for Feng A/V resources])
 
 AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT_STR,
                     "$fenice_avroot_dir",
-                    [Define default directory string for Fe.NG A/V resources])
+                    [Define default directory string for Feng A/V resources])
 
 AC_DEFINE_UNQUOTED(FENICE_CONF_FILE_DEFAULT,
                     $fenice_conf_file,
-                    [Define default file for Fe.NG configuration])
+                    [Define default file for Feng configuration])
 
 AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT,
                     $fenice_log_file,
-                    [Define default file for Fe.NG logger])
+                    [Define default file for Feng logger])
 
 AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT_STR,
                     "$fenice_log_file",
-                    [Define default string for Fe.NG log file])
+                    [Define default string for Feng log file])
 
 AC_DEFINE_UNQUOTED(FENICE_CONF_DIR_DEFAULT,
                     $fenice_conf_dir,
-                    [Define default directory for Fe.NG configuration])
+                    [Define default directory for Feng configuration])
 
 AC_DEFINE_UNQUOTED(FENICE_CONF_PATH_DEFAULT_STR,
-                    "${fenice_conf_dir}/${fenice_conf_file}",
+                    "$(eval echo ${fenice_conf_dir}/${fenice_conf_file}|sed -e s:/\+:/:g)",
                     [Define absolute path string for Fe.NG configuration file])
 
 dnl netembryo TO BE REMOVED!
@@ -364,18 +364,19 @@ AC_OUTPUT
 
 AC_MSG_NOTICE([config files successfully generated!
  
-Fe.NG Install prefix .......... : $prefix
-Fe.NG Binary path ............. : $(eval echo $exec_prefix/bin/feng)
-Fe.NG Configuration path ...... : $fenice_conf_dir
-Fe.NG Log File ................ : $fenice_log_file
-Fe.NG Multimedia Files root ... : $fenice_avroot_dir
-Fe.NG RTSP listening port ..... : $fenice_rtsp_port
-Byte order ..................... : this is a $BIGENDIAN machine
-$ssl_msg
-$sctp_msg
-$avformat_msg
-$avutil_msg
-$debug_msg
+Feng Install prefix .......... : $prefix
+Feng Binary path ............. : $(eval echo $exec_prefix/bin/feng)
+Feng Configuration path ...... : $fenice_conf_dir
+Feng Log File ................ : $fenice_log_file
+Feng Multimedia Files root ... : $fenice_avroot_dir
+Feng RTSP listening port ..... : $fenice_rtsp_port
+Byte order ................... : this is a $BIGENDIAN machine
+
+sctp support enabled ......... : $enable_sctp
+avformat support enabled ..... : $avformat_msg
+avutil support enabled ....... : $avutil_msg
+debug enabled ................ : $enable_debug
+
 $efence_msg
 $verbose_msg
 $dump_msg
