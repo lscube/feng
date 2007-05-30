@@ -41,7 +41,7 @@ by issuing
 
 $ git clone git://live.polito.it/var/git/feng.git
 
-Please refer to the git documentation[5] and our site[0] for further documentation.
+Please refer to the git website[5] and our site[0] for further documentation.
 
 In order to generate the configure script you may use either autoreconf or the autogen.sh script, the outcome will be the same.
 
