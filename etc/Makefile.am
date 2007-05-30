@@ -5,7 +5,7 @@ EXTRA_DIST = $(FENICE_CONF_FILE).in
 
 all: feng.conf
 
-feng.conf: feng.conf.in
+feng.conf: feng.conf.in ../config.h
 	cpp -I.. -P $(srcdir)/$(FENICE_CONF_FILE).in > $(FENICE_CONF_FILE)
 
 clean:

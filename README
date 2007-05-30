@@ -1,32 +1,59 @@
-##########
+Feng - standard compliant streaming server
 
-BEWARE: work in progress status, the codebase is being updated
++ What is feng?
 
------------------------------------------
-Sparse notes on A/V Resources management.
------------------------------------------
+Feng is a multimedia streaming server compliant with the IETF's standards for real-time streaming of multimedia contents over Internet. Feng implements RTSP ¿ Real-Time Streaming Protocol (rfc2326) and RTP/RTCP ¿ Real-Time Transport Protocol/RTP Control Protocol (rfc3550) supporting the RTP Profile for Audio and Video Conferences with Minimal Control (rfc3551).
 
-* Default dir for A/V files is /var/feng/avroot.
-* Default RTSP port is 554.
+Feng supports the following encoding standards:
 
-* For every A/V resource you need
-  
-  1)  Either separate files for audio (MP3, Vorbis) and video (Theora, H264),
-      or a libavformat compatible container (mov/mp4 suggested, ogg supported)
-  2a) Optionally a Source Description (.sd) file for resource description
-      to map the different sources.
-  2b) Optionally an editlist (.ds for now) file that allows you to do a
-      simple collage of resources. (the resources MUST be seekable)
-  
-  Streming clients must be invoked with, e.g:
+    * Audio
+          o MP3 (MPEG-1 Layer III) (rfc3119)
+          o Vorbis (draft)
+    * Video
+          o h264 (rfc3984)
+          o Theora (draft)
 
-	$ streamingclient rtsp://streamingserver/resource
+The main characteristic of Feng are the container support, the ability to handle seeking (not exposed to the rtsp layer but used internally for the compositor metademuxer) and the modular structure focused to ease the extension of the codec and the protocol support.
 
-  or similar.
-  You can request plain files as you would expect from a webserver.
++ Usage
 
-  Usage of sd files is severely discouraged.
+The simplest way to test feng is just adding a resource by putting it in the
+feng root (usually /var/feng/avroot or /srv/feng/avroot/, you can change it in
+the configuration file) and running feng from command line.
+Feng by default will listen for incoming rtsp connection on the
+port 554, serving the content matching the requested resources if available.
 
-* Suggested encoding tools:
-  Video: vlc, gst, ffmpeg
-  Audio: vlc, gst, ffmpeg
+$ $EDITOR /etc/feng.conf
+
+$ cp myfile.mov /var/feng/avroot
+
+$ feng &
+
+$ mplayer rtsp://localhost/myfile.mov
+
++ Advanced usage
+
+++ Daemon mode
+
+For a full deployment it's advised to use start-stop-daemon as shown below or
+prepare initscripts for you specific distribution.
+
+# starting the daemon, messages to the system logging facility
+$ start-stop-daemon --start --quiet --background --make-pidfile \
+                    --pidfile /var/run/feng.pid \
+                    --exec /usr/bin/feng -- -s
+
+# stopping the daemon
+$ start-stop-daemon --stop -p /var/run/feng.pid
+
+++ Metademuxer
+Feng container layer provides a powerful infrastructure to enable customized
+stream management. Currently there are two example provided.
+
++++ ds - compositor metademuxer
+the compositor metademuxer handles lists (see the examples provided in the avroot directory) of coherent resources (same encoding, same resolution, same streams number presents) allowing the creation of resources made out of the files/excerpts aggregation.
+
++++ live/sd
+the sd metademuxer is present as backward compatibility with fenice, it has the very same limitation of fenice's streaming support (lack of seek, requires many informations) and should not be used if possible.
+
+Please refer to the man page for further informations.

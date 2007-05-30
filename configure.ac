@@ -17,25 +17,25 @@ AC_ARG_WITH(config-file,
     with_config_file="feng.conf")
 
 AC_ARG_WITH(log-file,
-[  --with-log-file       name for the log file [[default=/var/log/feng.log]]],,
-    with_log_file="/var/log/feng.log")
+[  --with-log-file         name for the log file [[default=feng.log]]],,
+    with_log_file="feng.log")
 
 AC_ARG_WITH(max-session,
 [  --with-max-session      max number of incoming sessions [[default=100]]],,
     with_max_session=100)
 dnl netembryo
 AC_ARG_ENABLE(ipv6,
-[  --enable-ipv6            enable IPv6 support [[default=autodetected]]],,
+[  --enable-ipv6           enable IPv6 support [[default=autodetected]]],,
         enable_ipv6="yes")
 AC_ARG_ENABLE(libavformat,
-[  --enable-libavformat          enable ffmpeg's libavformat  support [[default=yes]]],,
+[  --enable-libavformat    enable ffmpeg's libavformat  support [[default=yes]]],,
         enable_ffmpeg="yes")
 
 AM_CONDITIONAL(HAVE_SSL, /bin/false)
 AC_DEFUN([CHECK_SSL],
 [AC_MSG_CHECKING(if ssl is wanted)
 AC_ARG_WITH(ssl,
-[  --with-ssl enable ssl [will check /usr/local/ssl
+[  --with-ssl              enable ssl [will check /usr/local/ssl
                             /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr. [Default certificate = /var/local/lib/feng/certs/cert.pem]]
 ],
 [   AC_MSG_RESULT(yes)
@@ -71,12 +71,6 @@ dnl     AC_SUBST(HAVE_SSL)
 ])
 ])dnl netembryo
 
-
-AC_ARG_ENABLE(fhs23,
-[  --enable-fhs23          enable Filesystem Hierarchy Standard 2.3:
-                          document root avroot will be placed under /srv [[default=yes]]],,
-    enable_fhs23="yes")
-
 AC_ARG_ENABLE(debug,
 [  --enable-debug          enable gcc dubugging flags [[default=no]]],,
     enable_debug="no")
@@ -88,7 +82,7 @@ AC_ARG_ENABLE(efence,
 
 
 AC_ARG_ENABLE(verbose,
-[  --enable-verbose          make fe.ng verbose [[default=no]]],,
+[  --enable-verbose        make feng verbose [[default=no]]],,
     enable_verbose="no")
 
 AC_ARG_ENABLE(dump,
@@ -100,7 +94,7 @@ AC_ARG_ENABLE(errors,
 [  --enable-errors         make gcc warnings behave like errors: none, normal, pedantic [[default=none]]],,
     enable_errors="none")
 AC_ARG_ENABLE(sctp,
-[  --enable-sctp            enable SCTP support [[default=autodetected]]],,         enable_sctp="yes")
+[  --enable-sctp           enable SCTP support [[default=autodetected]]],,         enable_sctp="yes")
 
 dnl Check for LibTool Dynamic Loading
 m4_undefine([AC_PROG_CXX])
@@ -189,26 +183,26 @@ if test "$enable_sctp" = "yes"; then
     fi
         AC_CHECK_TYPE(struct sctp_sndrcvinfo, [
          AC_CHECK_LIB(sctp,sctp_recvmsg)],
-         AC_MSG_WARN([SCTP disabled: headers not found]),
+         [enable_sctp=no,
+         AC_MSG_WARN([SCTP disabled: headers not found])],
          [#include <netinet/sctp.h>])
 else
     AC_MSG_WARN([SCTP disabled: check skipped.])
-    sctp_msg="sctp enabled ................... : no"
 fi
 
-avformat_msg="libavformat enabled ............... : no"
-avutil_msg="libavutil enabled .............. : no"
+avformat_msg="no"
+avutil_msg="no"
 if test "x$enable_ffmpeg" = "xyes"; then
     PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 50.5.0],
         [AC_DEFINE(HAVE_AVFORMAT,,[Define if libavformat support is available])
-         avformat_msg="libavformat enabled ............ : yes"
+         avformat_msg="yes"
          ])
          CFLAGS="$CFLAGS $LIBAVFORMAT_CFLAGS"
          LIBS="$LIBS $LIBAVFORMAT_LIBS"
         PKG_CHECK_MODULES(LIBAVUTIL,[libavutil >= 49.4.0],
         [AC_DEFINE(HAVE_AVUTIL,,[Define if libavutil support is available])
-         avutil_msg="libavutil enabled .............. : yes"],
-         [avutil_msg="libavutil enabled .............. : no, using internal"])
+         avutil_msg="yes"],
+         [avutil_msg="no, using internal"])
          CFLAGS="$CFLAGS $LIBAVUTIL_CFLAGS"
          LIBS="$LIBS $LIBAVUTIL_LIBS"
 fi
@@ -271,12 +265,9 @@ case "$enable_errors" in
     ;;
 esac
 
-if ( test "x$enable_fhs23" = "xyes" ) && ( test -d /srv ) then
-    fenice_avroot_dir=/srv/$PACKAGE_NAME/avroot
-else
-    fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot)
-        fenice_avroot_dir=${fenice_avroot_dir//NONE}
-fi
+fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot|sed -e "s:/\+:/:g")
+fenice_avroot_dir=${fenice_avroot_dir//NONE}
+
 AC_SUBST(fenice_avroot_dir)
 
 fenice_max_session=$(eval echo $with_max_session)
@@ -285,22 +276,23 @@ AC_SUBST(fenice_max_session)
 fenice_rtsp_port=$(eval echo $with_rtsp_port)
 AC_SUBST(fenice_rtsp_port)
 
-fenice_conf_file=$(eval echo $with_config_file)
+fenice_conf_file=$(eval echo $with_config_file|sed -e "s:/\+:/:g")
 AC_SUBST(fenice_conf_file)
 
-fenice_log_file=$(eval echo $with_log_file)
+fenice_log_file=$(eval echo $localstatedir/log/$with_log_file|sed -e "s:/\+:/:g")
+fenice_log_file=${fenice_log_file//NONE}
 AC_SUBST(fenice_log_file)
 
-fenice_conf_dir=$(eval echo $sysconfdir)
+fenice_conf_dir=$(eval echo $sysconfdir|sed -e "s:/\+:/:g")
 fenice_conf_dir=${fenice_conf_dir//NONE}
 AC_SUBST(fenice_conf_dir)
 
-fenice_docs_dir=$(eval echo $datadir/doc/$PACKAGE_NAME)
+fenice_docs_dir=$(eval echo $datadir/doc/$PACKAGE_NAME|sed -e "s:/\+:/:g")
 AC_SUBST(fenice_docs_dir)
 
 AC_DEFINE_UNQUOTED(FENICE_MAX_SESSION_DEFAULT,
                     $fenice_max_session,
-                    [Define max number of RTSP incoming sessions for Fe.NG])
+                    [Define max number of RTSP incoming sessions for Feng])
 
 AC_DEFINE_UNQUOTED(FENICE_RTSP_PORT_DEFAULT,
                     $fenice_rtsp_port,
@@ -308,30 +300,30 @@ AC_DEFINE_UNQUOTED(FENICE_RTSP_PORT_DEFAULT,
 
 AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT,
                     $fenice_avroot_dir,
-                    [Define default directory for Fe.NG A/V resources])
+                    [Define default directory for Feng A/V resources])
 
 AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT_STR,
                     "$fenice_avroot_dir",
-                    [Define default directory string for Fe.NG A/V resources])
+                    [Define default directory string for Feng A/V resources])
 
 AC_DEFINE_UNQUOTED(FENICE_CONF_FILE_DEFAULT,
                     $fenice_conf_file,
-                    [Define default file for Fe.NG configuration])
+                    [Define default file for Feng configuration])
 
 AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT,
                     $fenice_log_file,
-                    [Define default file for Fe.NG logger])
+                    [Define default file for Feng logger])
 
 AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT_STR,
                     "$fenice_log_file",
-                    [Define default string for Fe.NG log file])
+                    [Define default string for Feng log file])
 
 AC_DEFINE_UNQUOTED(FENICE_CONF_DIR_DEFAULT,
                     $fenice_conf_dir,
-                    [Define default directory for Fe.NG configuration])
+                    [Define default directory for Feng configuration])
 
 AC_DEFINE_UNQUOTED(FENICE_CONF_PATH_DEFAULT_STR,
-                    "${fenice_conf_dir}/${fenice_conf_file}",
+                    "$(eval echo ${fenice_conf_dir}/${fenice_conf_file}|sed -e s:/\+:/:g)",
                     [Define absolute path string for Fe.NG configuration file])
 
 dnl netembryo TO BE REMOVED!
@@ -372,18 +364,19 @@ AC_OUTPUT
 
 AC_MSG_NOTICE([config files successfully generated!
  
-Fe.NG Install prefix .......... : $prefix
-Fe.NG Binary path ............. : $(eval echo $exec_prefix/bin/feng)
-Fe.NG Configuration path ...... : $fenice_conf_dir
-Fe.NG Log File ................ : $fenice_log_file
-Fe.NG Multimedia Files root ... : $fenice_avroot_dir
-Fe.NG RTSP listening port ..... : $fenice_rtsp_port
-Byte order ..................... : this is a $BIGENDIAN machine
-$ssl_msg
-$sctp_msg
-$avformat_msg
-$avutil_msg
-$debug_msg
+Feng Install prefix .......... : $prefix
+Feng Binary path ............. : $(eval echo $exec_prefix/bin/feng)
+Feng Configuration path ...... : $fenice_conf_dir
+Feng Log File ................ : $fenice_log_file
+Feng Multimedia Files root ... : $fenice_avroot_dir
+Feng RTSP listening port ..... : $fenice_rtsp_port
+Byte order ................... : this is a $BIGENDIAN machine
+
+sctp support enabled ......... : $enable_sctp
+avformat support enabled ..... : $avformat_msg
+avutil support enabled ....... : $avutil_msg
+debug enabled ................ : $enable_debug
+
 $efence_msg
 $verbose_msg
 $dump_msg
