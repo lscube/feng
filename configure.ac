@@ -23,53 +23,14 @@ AC_ARG_WITH(log-file,
 AC_ARG_WITH(max-session,
 [  --with-max-session      max number of incoming sessions [[default=100]]],,
     with_max_session=100)
-dnl netembryo
+
 AC_ARG_ENABLE(ipv6,
 [  --enable-ipv6           enable IPv6 support [[default=autodetected]]],,
         enable_ipv6="yes")
+
 AC_ARG_ENABLE(libavformat,
 [  --enable-libavformat    enable ffmpeg's libavformat  support [[default=yes]]],,
         enable_ffmpeg="yes")
-
-AM_CONDITIONAL(HAVE_SSL, /bin/false)
-AC_DEFUN([CHECK_SSL],
-[AC_MSG_CHECKING(if ssl is wanted)
-AC_ARG_WITH(ssl,
-[  --with-ssl              enable ssl [will check /usr/local/ssl
-                            /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr. [Default certificate = /var/local/lib/feng/certs/cert.pem]]
-],
-[   AC_MSG_RESULT(yes)
-    for dir in $withval /usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr; do
-        ssldir="$dir"
-        if test -f "$dir/include/openssl/ssl.h"; then
-            found_ssl="yes";
-            CFLAGS="$CFLAGS -I$ssldir/include/openssl -DHAVE_SSL";
-            break;
-        fi
-        if test -f "$dir/include/ssl.h"; then
-            found_ssl="yes";
-            CFLAGS="$CFLAGS -I$ssldir/include/openssl -DHAVE_SSL";
-            break
-        fi
-    done
-    if test x_$found_ssl != x_yes; then
-        AC_MSG_ERROR(Cannot find ssl libraries)
-        AC_DEFINE([HAVE_SSL],[0],[Disable SSl])
-dnl     AC_DEFINE([HAVE_SSL],[0],[Disable SSl])
-    else
-        printf "OpenSSL found in $ssldir\n";
-        LIBS="$LIBS -lssl -lcrypto";
-        LDFLAGS="$LDFLAGS -L$ssldir/lib";
-        AM_CONDITIONAL(HAVE_SSL, /bin/true)
-        AC_DEFINE([HAVE_SSL],[1],[Enable SSl])
-    fi
-dnl     AC_SUBST(HAVE_SSL)
-],
-[
-    with_ssl="${localstatedir}/local/lib/feng/certs/cert.pem"
-    AC_MSG_RESULT(no)
-])
-])dnl netembryo
 
 AC_ARG_ENABLE(debug,
 [  --enable-debug          enable gcc dubugging flags [[default=no]]],,
@@ -140,13 +101,6 @@ AC_FUNC_MMAP
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(select socket gettimeofday uname getcwd getwd strcspn strdup strtoul strerror strstr setenv getopt_long uname)
 AC_CHECK_FUNC(getaddrinfo)
-CHECK_SSL
-if test "x$with_ssl" = "xyes"; then
-    fenice_cert=$(eval echo ${localstatedir}/local/lib/feng/certs/cert.pem)
-else
-    fenice_cert=$with_ssl
-fi
-AC_SUBST(fenice_cert)
 
 AC_CHECK_LIB([c], [shm_open], [SHM_LIB=], 
     [AC_CHECK_LIB([rt], [shm_open], [SHM_LIB=-lrt])])
@@ -208,11 +162,6 @@ if test "x$enable_ffmpeg" = "xyes"; then
 fi
 
 AM_CONDITIONAL(FENICE_FFMPEG, [test "$enable_ffmpeg" = "yes"])
-
-ssl_msg="libssl found ................... : no"
-if test x_$found_ssl == x_yes; then
-ssl_msg="libssl found ................... : yes"
-fi
 
 AM_CONDITIONAL(FENICE_EFENCE, /bin/false)
 if test "$enable_efence" = "yes"; then
@@ -326,14 +275,6 @@ AC_DEFINE_UNQUOTED(FENICE_CONF_PATH_DEFAULT_STR,
                     "$(eval echo ${fenice_conf_dir}/${fenice_conf_file}|sed -e s:/\+:/:g)",
                     [Define absolute path string for Fe.NG configuration file])
 
-dnl netembryo TO BE REMOVED!
-AC_DEFINE_UNQUOTED(FENICE_CERT_FILE_DEFAULT,
-                    $fenice_cert,
-                    [Define default file for Certificate (pem format)])
-AC_DEFINE_UNQUOTED(FENICE_CERT_FILE_DEFAULT_STR,
-                    "$fenice_cert",
-                    [Define default string file for Certificate (pem format])
-
 AC_DEFINE_UNQUOTED(FENICE_STATE_DIR,
                     $fenice_state_dir,
                     [Define default dir for Certificate (pem format)])
@@ -355,7 +296,6 @@ AC_CONFIG_FILES([md5/Makefile])
 AC_CONFIG_FILES([schedule/Makefile])
 AC_CONFIG_FILES([multicast/Makefile])
 AC_CONFIG_FILES([command_environment/Makefile])
-AC_CONFIG_FILES([var/Makefile])
 AC_CONFIG_FILES([docs/Makefile])
 AC_CONFIG_FILES([etc/Makefile])
 AC_CONFIG_FILES([avroot/Makefile])

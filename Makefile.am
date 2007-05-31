@@ -1,5 +1,4 @@
 SUBDIRS =	bufferpool \
-		var \
 		md5 \
 		mediathread \
 		multicast \
