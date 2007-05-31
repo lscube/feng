@@ -2,6 +2,7 @@ To do:
     * ipc/rpc systems
     * support more formats (h263, aac, dirac, snow, wavpack, speex)
     * investigate possible memory leak
+    * update rpm and deb package scripts
 
 Done:
     * rtcp bye
