@@ -1,0 +1,20 @@
+
+    Release notes for feng 0.1.13
+
+
+The lscube team is proud to announce the first release of feng, the standard
+streaming server. This is the first release so this notes won't be particulary
+long, as stated in the README and in the website feng is a major improvement
+over the Fenice codebase, most of the work was focused to have a robust
+foundation and a flexible framework in order to provide a dependable solution
+for common usage and remove any constraint for future development and research.
+The main features currently implemented are the following:
+
+ - very simple way to handle resources
+ - the metademuxer compositor (ds)
+ - support for recent codecs (h264, vorbis, theora)
+ - support for mp3 basically because no clients but one* support vorbis.
+
+*gstreamer cvs is the only implementation.
+
+
