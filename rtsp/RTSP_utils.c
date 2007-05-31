@@ -164,8 +164,8 @@ RTSP_Error check_forbidden_path(ConnectionInfo * cinfo)
  */
 RTSP_Error validate_url(char *url, ConnectionInfo * cinfo)
 {
-    switch (parse_url
-        (url, cinfo->server, sizeof(cinfo->server), &cinfo->port, cinfo->object, sizeof(cinfo->object))) {
+    switch (parse_url(url, cinfo->server, sizeof(cinfo->server),
+            &cinfo->port, cinfo->object, sizeof(cinfo->object))) {
     case 1:        // bad request
         return RTSP_BadRequest;
         break;
@@ -176,7 +176,7 @@ RTSP_Error validate_url(char *url, ConnectionInfo * cinfo)
         break;
     }
 
-    printf("server: %s\npath: %s\n", cinfo->server, cinfo->object);
+//    printf("server: %s\npath: %s\n", cinfo->server, cinfo->object);
 
     if (strcmp(cinfo->server, prefs_get_hostname()) != 0) {    /* Currently this feature is disabled. */
         /* wrong server name */
