@@ -57,3 +57,11 @@ the compositor metademuxer handles lists (see the examples provided in the avroo
 the sd metademuxer is present as backward compatibility with fenice, it has the very same limitation of fenice's streaming support (lack of seek, requires many informations) and should not be used if possible.
 
 Please refer to the man page for further informations.
+
+
+
++ Bug reports
+
+Please use our bug tracker accessible at https://live.polito.it/roundup/lscube
+using as Topic feng.
+

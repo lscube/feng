@@ -1,4 +1,5 @@
-No releases yet, no changelog available.
-For an automated ChangeLog please issue:
++ Feng changelog
 
-$ git-whatchanged --pretty=format:"%aD %an <%ae>%n%h %s" > ChangeLog
+  31 May 2007; Luca Barbato <lu_zero@gentoo.org> :
+  First release
+
