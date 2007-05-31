@@ -1,9 +1,10 @@
-.TH Feng 1 "March 11, 2007" "Feng Streaming Server" "LScube Project"
+.TH Feng 1 "May 31, 2007" "Feng Streaming Server" "LScube Project"
 .SH NAME
 \fBFeng\fP \- multimedia streaming server
 .SH SYNOPSIS
 .B feng
 .RI -f " config"
+.RI -q
 .RI -s
 .RI -v
 .RI -h
@@ -24,6 +25,9 @@ supporting the RTP Profile for Audio and Video Conferences with Minimal Control
 .IP
 \(bu
 MP3 (MPEG-1 Layer III) (RFC3119).
+.IP
+\(bu
+Vorbis (draft 05).
 .RE
 .sp 1
 .RS
@@ -32,6 +36,8 @@ MP3 (MPEG-1 Layer III) (RFC3119).
 \(bu
 H264 (RFC3984).
 .IP
+\(bu
+Theora (draft 03).
 .RE
 .sp 1
 \fBFeng\fP is capable of live streaming using external real\-time audio/video
@@ -49,6 +55,9 @@ on startup. See CONFIGURATION for details.
 .TP
 .BI "\-s, \-\-syslog "
 Uses the standard system logger facility instead of writing a logfile.
+.TP
+.BI "\-q, \-\-quiet "
+Suppresses the standard output completely.
 .TP
 .BI "\-v, \-\-verbose "
 Outputs messages to standard error, useful for debug purposes.
@@ -90,9 +99,9 @@ Log filename including the full path.
 .SH SEE ALSO
 \fIOn-line Documentation\fP
 .TP
-.BR "Feng How-To":
+.BR "Feng":
 .UH
-http://streaming.polito.it/documentation/
+http://live.polito.it/feng
 .sp 1
 .PP
 .SH AUTHORS
@@ -102,6 +111,6 @@ This manual page was written by \fBLScube Team\fP <team@streaming.polito.it>.
 .PP
 Please check 
 .UH
-http://streaming.polito.it/team
+http://live.polito.it/team
 for further details.
 
