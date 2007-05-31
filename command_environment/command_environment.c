@@ -97,6 +97,7 @@ int command_environment(int argc, char **argv)
             fncheader();
             usage(progname);
             g_free(progname);
+            return 1;
             break;
 	case 'V':
             fncheader();
