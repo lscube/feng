@@ -126,6 +126,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * tra
             p += strlen(RTSP_RTP_AVP);
             if (!*p || (*p == ';') || (*p == ' ') || (!strncmp(p, "/UDP", 4))) {
                 if (strstr(transport_tkn, "unicast")) {
+                    char port_buffer[8];
                     if ((p = strstr(transport_tkn, "client_port"))) {
                         p = strstr(p, "=");
                         sscanf(p + 1, "%d", &(cli_ports.RTP));
@@ -136,23 +137,19 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * tra
                         return RTSP_InternalServerError;
                     }
                     //UDP bind for outgoing RTP packets
-                    tmp = g_strdup_printf("%d", ser_ports.RTP);
-                    transport->rtp_sock = Sock_bind(NULL, tmp, UDP, 0);
-                    g_free(tmp);
+                    snprintf(port_buffer, 8, "%d", ser_ports.RTP);
+                    transport->rtp_sock = Sock_bind(NULL, port_buffer, UDP, 0);
                     //UDP bind for outgoing RTCP packets
-                    tmp = g_strdup_printf("%d", ser_ports.RTCP);
-                    transport->rtcp_sock = Sock_bind(NULL, tmp, UDP, 0);
-                    g_free(tmp);
+                    snprintf(port_buffer, 8, "%d", ser_ports.RTCP);
+                    transport->rtcp_sock = Sock_bind(NULL, port_buffer, UDP, 0);
                     //UDP connection for outgoing RTP packets
-                    tmp = g_strdup_printf("%d", cli_ports.RTP);
-                    Sock_connect (get_remote_host(rtsp->sock), tmp,
+                    snprintf(port_buffer, 8, "%d", cli_ports.RTP);
+                    Sock_connect (get_remote_host(rtsp->sock), port_buffer,
                                   transport->rtp_sock, UDP, 0);
-                    g_free(tmp);
                     //UDP connection for outgoing RTCP packets
-                    tmp = g_strdup_printf("%d", cli_ports.RTCP);
-                    Sock_connect (get_remote_host(rtsp->sock), tmp,
+                    snprintf(port_buffer, 8, "%d", cli_ports.RTCP);
+                    Sock_connect (get_remote_host(rtsp->sock), port_buffer,
                                   transport->rtcp_sock, UDP, 0);
-                    g_free(tmp);
                 }
 #if 0
 // TODO: multicast with mediathread
