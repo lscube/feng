@@ -190,10 +190,17 @@ ssize_t RTP_recv(RTP_session * session, rtp_protos proto)
  * @return always 0
  */
 int RTP_transport_close(RTP_session * session) {
-
+    port_pair pair;
+    pair.RTP = get_local_port(session->transport.rtp_sock);
+    pair.RTCP = get_local_port(session->transport.rtcp_sock);
+    switch (session->transport.rtp_sock->socktype) {
+        case UDP:
+            RTP_release_port_pair(&pair);
+        default:
+            break;
+    }
     Sock_close(session->transport.rtp_sock);
     Sock_close(session->transport.rtcp_sock);
-
     return 0;
 }
 
