@@ -112,7 +112,7 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
                         RTP_port_pool_init
                             (ONE_FORK_MAX_CONNECTION *
                              child_count * 2 +
-                             RTP_DEFAULT_PORT);
+                             *((int *) get_pref(PREFS_FIRST_UDP_PORT)));
                         if (schedule_init() == ERR_FATAL) {
                             fnc_log(FNC_LOG_FATAL,
                             "Can't start scheduler. "

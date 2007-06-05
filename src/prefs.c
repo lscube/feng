@@ -38,6 +38,7 @@
 #include <unistd.h>
 
 #include <fenice/prefs.h>
+#include <fenice/rtp.h> //RTP_DEFAULT_PORT
 
 CREATE_PREFS_DATA;
 
@@ -135,6 +136,9 @@ void prefs_use_default(pref_id index)
     case PREFS_SCTP_PORT:
         SET_INTEGER_DATA(PREFS_SCTP_PORT, -1);
         break;
+    case PREFS_FIRST_UDP_PORT:
+        SET_INTEGER_DATA(PREFS_FIRST_UDP_PORT, RTP_DEFAULT_PORT);
+        break;
     case PREFS_MAX_SESSION:
         SET_INTEGER_DATA(PREFS_MAX_SESSION, FENICE_MAX_SESSION_DEFAULT);
         break;
@@ -147,6 +151,7 @@ void prefs_use_default(pref_id index)
         SET_STRING_DATA(PREFS_ROOT, buffer);
         SET_INTEGER_DATA(PREFS_TCP_PORT, FENICE_RTSP_PORT_DEFAULT);
         SET_INTEGER_DATA(PREFS_SCTP_PORT, -1);
+        SET_INTEGER_DATA(PREFS_FIRST_UDP_PORT, RTP_DEFAULT_PORT);
         SET_INTEGER_DATA(PREFS_MAX_SESSION, FENICE_MAX_SESSION_DEFAULT);
         SET_STRING_DATA(PREFS_LOG, FENICE_LOG_FILE_DEFAULT_STR);
         //USER and GROUP are unset by default

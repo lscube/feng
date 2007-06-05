@@ -178,7 +178,7 @@ int main(int argc, char **argv)
     /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
      * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
 
-    RTP_port_pool_init(RTP_DEFAULT_PORT);
+    RTP_port_pool_init(*((int *) get_pref(PREFS_FIRST_UDP_PORT)));
 
     while (running) {
 

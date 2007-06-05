@@ -51,6 +51,7 @@ typedef enum _pref_id {
     PREFS_ROOT,
     PREFS_TCP_PORT,
     PREFS_SCTP_PORT,
+    PREFS_FIRST_UDP_PORT,
     PREFS_MAX_SESSION,
     PREFS_LOG,
     PREFS_HOSTNAME, 
@@ -82,6 +83,7 @@ typedef struct _pref_record {
         { PREFS_ROOT, STRING, "root", NULL }, \
         { PREFS_TCP_PORT, INTEGER, "tcp_port", NULL }, \
         { PREFS_SCTP_PORT, INTEGER, "sctp_port", NULL }, \
+        { PREFS_FIRST_UDP_PORT, INTEGER, "first_udp_port", NULL }, \
         { PREFS_MAX_SESSION, INTEGER, "max_session", NULL }, \
         { PREFS_LOG, STRING, "log_file", NULL }, \
         { PREFS_HOSTNAME, STRING, "###", NULL }, \
