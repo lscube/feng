@@ -123,7 +123,7 @@ static int fnc_read(URLContext *h, unsigned char *buf, int size){
 
     ret = istream_read(size, buf, stream);
 
-    fnc_log(FNC_LOG_DEBUG, "%d=fnc_read(%p, %p, %d)\n", ret, h, buf, size);
+    fnc_log(FNC_LOG_DEBUG, "%d=fnc_read(%p, %p, %d)", ret, h, buf, size);
 
     return ret;
 }
@@ -131,7 +131,7 @@ static int fnc_read(URLContext *h, unsigned char *buf, int size){
 static offset_t fnc_seek(URLContext *h, offset_t pos, int whence){
     InputStream *stream = (InputStream*)h->priv_data;
     
-    fnc_log(FNC_LOG_DEBUG, "fnc_seek(%p, %d, %d)\n", h, (int)pos, whence);
+    fnc_log(FNC_LOG_DEBUG, "fnc_seek(%p, %d, %d)", h, (int)pos, whence);
 
     if(whence == SEEK_CUR)
         pos += istream_tell(stream);
@@ -212,14 +212,14 @@ static int avf_init(Resource * r)
 //    if(av_open_input_stream(&avfc, &priv->pb, r->i_stream->name,
 //                            priv->avif, &ap)<0) {
      if (av_open_input_file(&avfc, r->info->mrl, NULL, 0, &ap)) {
-        fnc_log(FNC_LOG_DEBUG, "[MT] Cannot open %s\n", r->info->mrl);
+        fnc_log(FNC_LOG_DEBUG, "[avf] Cannot open %s", r->info->mrl);
         goto err_alloc;
     }
 
     priv->avfc = avfc;
 
     if(av_find_stream_info(avfc) < 0){
-        fnc_log(FNC_LOG_DEBUG, "[MT] Cannot find streams in file %s\n",
+        fnc_log(FNC_LOG_DEBUG, "[avf] Cannot find streams in file %s",
                 r->i_stream->name);
         goto err_alloc;
     }
@@ -260,10 +260,10 @@ static int avf_init(Resource * r)
             props.payload_type = pt_from_id(codec->codec_id);
             if (props.payload_type == 96)
                 props.payload_type = pt++;
-            fnc_log(FNC_LOG_DEBUG, "[MT] Parsing AVStream %s\n",
+            fnc_log(FNC_LOG_DEBUG, "[avf] Parsing AVStream %s",
                     props.encoding_name);
         } else {
-            fnc_log(FNC_LOG_DEBUG, "[MT] Cannot map stream id %d\n",
+            fnc_log(FNC_LOG_DEBUG, "[avf] Cannot map stream id %d",
                     codec->codec_id);
             goto err_alloc;
         }
@@ -299,7 +299,7 @@ static int avf_init(Resource * r)
             case CODEC_TYPE_UNKNOWN:
             case CODEC_TYPE_SUBTITLE: //XXX import subtitle work!
             default:
-                fnc_log(FNC_LOG_DEBUG, "[MT] codec type unsupported\n");
+                fnc_log(FNC_LOG_DEBUG, "[avf] codec type unsupported");
             break;
         }
     }
@@ -334,15 +334,15 @@ static int avf_read_packet(Resource * r)
         if (pkt.stream_index == TRACK(tr)->info->id) {
 // push it to the framer
             stream = priv->avfc->streams[TRACK(tr)->info->id];
-            fnc_log(FNC_LOG_DEBUG, "[MT] Parsing track %s\n",
+            fnc_log(FNC_LOG_VERBOSE, "[avf] Parsing track %s",
                     TRACK(tr)->info->name);
             if(pkt.pts != AV_NOPTS_VALUE) {
                 TRACK(tr)->properties->mtime = r->timescaler (r,
                     pkt.pts * av_q2d(stream->time_base));
-                fnc_log(FNC_LOG_DEBUG, "[MT] timestamp %f\n",
+                fnc_log(FNC_LOG_VERBOSE, "[avf] timestamp %f",
                         TRACK(tr)->properties->mtime);
             } else {
-                fnc_log(FNC_LOG_DEBUG, "[MT] missing timestamp");
+                fnc_log(FNC_LOG_VERBOSE, "[avf] missing timestamp");
             }
 
             if (pkt.duration) {
@@ -359,7 +359,7 @@ static int avf_read_packet(Resource * r)
                 }
             }
 
-            fnc_log(FNC_LOG_DEBUG, "[MT] packet duration %f\n",
+            fnc_log(FNC_LOG_VERBOSE, "[avf] packet duration %f",
                 TRACK(tr)->properties->duration);
 
             ret = TRACK(tr)->parser->parse(TRACK(tr), pkt.data, pkt.size,

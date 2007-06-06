@@ -141,7 +141,7 @@ static int encode_header(uint8_t *data, int len, theora_priv *priv)
 
 
     if (ff_split_xiph_headers(data, len, 42, header_start, header_len) < 0) {
-        fnc_log(FNC_LOG_ERR, "Extradata corrupt. unknown layout");
+        fnc_log(FNC_LOG_ERR, "[theora] Extradata corrupt. unknown layout");
         return -1;
     }
     if (header_len[2] + header_len[0]>UINT16_MAX) {
@@ -284,7 +284,7 @@ static int theora_parse(void *track, uint8_t *data, long len, uint8_t *extradata
             memcpy(packet + XIPH_HEADER_SIZE, data + off, payload);
             if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       packet, mtu)) {
-                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                 return ERR_ALLOC;
             }
 
@@ -303,7 +303,7 @@ static int theora_parse(void *track, uint8_t *data, long len, uint8_t *extradata
     memcpy(packet + XIPH_HEADER_SIZE, data + off, len);
     if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                       packet, len + XIPH_HEADER_SIZE)) {
-        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
         return ERR_ALLOC;
     }
 
