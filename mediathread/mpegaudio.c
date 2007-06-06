@@ -158,35 +158,35 @@ static void mpa_info(mpa_data *mpa, MediaProperties *properties)
 {
 	switch (mpa->id) {
 		case MPA_MPEG_1:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG1\n");
+			fnc_log(FNC_LOG_VERBOSE, "[MPA] MPEG1");
 			break;
 		case MPA_MPEG_2:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG2\n");
+			fnc_log(FNC_LOG_VERBOSE, "[MPA] MPEG2");
 			break;
 		case MPA_MPEG_2_5:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG2.5\n");
+			fnc_log(FNC_LOG_VERBOSE, "[MPA] MPEG2.5");
 			break;
 		default:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG reserved (bad)\n");
+			fnc_log(FNC_LOG_DEBUG, "[MPA] MPEG reserved (bad)");
 			return;
 			break;
 	}
 	switch (mpa->layer) {
 		case MPA_LAYER_I:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer I\n");
+			fnc_log(FNC_LOG_VERBOSE, "[MPA] Layer I");
 			break;
 		case MPA_LAYER_II:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer II\n");
+			fnc_log(FNC_LOG_VERBOSE, "[MPA] Layer II");
 			break;
 		case MPA_LAYER_III:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer III\n");
+			fnc_log(FNC_LOG_VERBOSE, "[MPA] Layer III");
 			break;
 		default:
-			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer reserved (bad)\n");
+			fnc_log(FNC_LOG_DEBUG, "[MPA] Layer reserved (bad)");
 			return;
 			break;
 	}
-	fnc_log(FNC_LOG_DEBUG, "[MPA] bitrate: %d; sample rate: %3.0f; pkt_len: %d\n", properties->bit_rate, properties->sample_rate, mpa->pkt_len);
+	fnc_log(FNC_LOG_VERBOSE, "[MPA] bitrate: %d; sample rate: %3.0f; pkt_len: %d", properties->bit_rate, properties->sample_rate, mpa->pkt_len);
 }
 #endif // DEBUG
 static int mpa_decode_header(uint32 header, MediaProperties *properties, mpa_data *mpa)
@@ -278,7 +278,7 @@ static int mpa_sync(uint32 *header, mpa_input *in, mpa_data *mpa)
 		if (!memcmp(sync_w, "ID3", 3)) { // ID3 tag present
 			id3v2_hdr id3hdr;
 
-			// fnc_log(FNC_LOG_DEBUG, "ID3v2 tag present in %s\n", i_stream->name);
+			// fnc_log(FNC_LOG_DEBUG, "ID3v2 tag present in %s", i_stream->name);
 
 			memcpy(&id3hdr, sync_w, 4);
 			// if ( (ret = istream_read(ID3v2_HDRLEN - 4, &id3hdr.rev, i_stream)) != ID3v2_HDRLEN - 4 )
@@ -301,7 +301,7 @@ static int mpa_sync(uint32 *header, mpa_input *in, mpa_data *mpa)
 		// if ( (ret=istream_read(1, &sync_w[3], i_stream)) != 1 )
 		if ( (ret=mpa_read(in, &sync_w[3], 1)) != 1 )
 			return (ret<0) ? ERR_PARSE : ERR_EOF;
-		fnc_log(FNC_LOG_DEBUG, "[MPA] sync: %X%X%X%X\n", sync_w[0], sync_w[1], sync_w[2], sync_w[3]);
+		fnc_log(FNC_LOG_VERBOSE, "[MPA] sync: %X%X%X%X", sync_w[0], sync_w[1], sync_w[2], sync_w[3]);
 	}
 
 	return 0;
@@ -347,7 +347,7 @@ static int mpa_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, Inpu
 	// (*timestamp)+=mpa->pkt_len; /*it was negative at the beginning so it is zero at the first time*/
 	*timestamp = mpa->time;
 	mpa->time += (properties->duration = (double)mpa->frame_size/(double)properties->sample_rate);
-	fnc_log(FNC_LOG_DEBUG, "[MPA] time: %fs\n", mpa->time);
+	fnc_log(FNC_LOG_VERBOSE, "[MPA] time: %fs", mpa->time);
 
 	return ret + sizeof(header);
 }
@@ -363,7 +363,7 @@ static int mpa_packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_
 
 	if (mpa->fragmented)
         { // last frame was fragmented
-        fnc_log(FNC_LOG_DEBUG, "[mp3]Fragment\n");
+        fnc_log(FNC_LOG_VERBOSE, "[mp3]Fragment");
 		end_frm_dist = src_nbytes - mpa->frag_offset;
 		to_cpy = min(end_frm_dist, (mpa->frag_src_nbytes - 
                                             mpa->frag_offset));
@@ -409,10 +409,10 @@ static int mpa_parse(void *track, uint8 *data, long len, uint8 *extradata,
         memcpy (dst + 4, data, len);
         if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                               dst, len + 4)) {
-                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                 return ERR_ALLOC;
         }
-        fnc_log(FNC_LOG_DEBUG, "[mp3] no frags\n");
+        fnc_log(FNC_LOG_VERBOSE, "[mp3] no frags");
     } else {
         do {
             offset = rem - mtu;
@@ -424,13 +424,13 @@ static int mpa_parse(void *track, uint8 *data, long len, uint8 *extradata,
 
             if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                   dst, min(mtu, rem) + 4)) { 
-                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                 return ERR_ALLOC;
             }
-            fnc_log(FNC_LOG_DEBUG, "[mp3] frags\n");
+            fnc_log(FNC_LOG_VERBOSE, "[mp3] frags");
         } while (rem - mtu > 0);
     }
-    fnc_log(FNC_LOG_DEBUG, "[mp3]Frame completed\n");
+    fnc_log(FNC_LOG_VERBOSE, "[mp3]Frame completed");
     return ERR_NOERROR;
 }
 
