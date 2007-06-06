@@ -121,7 +121,7 @@ static int encode_header(uint8_t *data, int len, vorbis_priv *priv)
                 ++j;
             }
             if (j>=headers_len) {
-                fnc_log(FNC_LOG_ERR, "Extradata corrupt.\n");
+                fnc_log(FNC_LOG_ERR, "[vorbis] Extradata corrupt.");
                 return -1;
             }
             header_len[i]+=headers[j];
@@ -132,7 +132,7 @@ static int encode_header(uint8_t *data, int len, vorbis_priv *priv)
         header_start[1] = header_start[0] + header_len[0];
         header_start[2] = header_start[1] + header_len[1];
     } else {
-        fnc_log(FNC_LOG_ERR, "Extradata corrupt.");
+        fnc_log(FNC_LOG_ERR, "[vorbis] Extradata corrupt.");
         return -1;
     }
     if (header_len[2] + header_len[0]>UINT16_MAX) {
@@ -275,7 +275,7 @@ static int vorbis_parse(void *track, uint8_t *data, long len, uint8_t *extradata
             memcpy(packet + XIPH_HEADER_SIZE, data + off, payload);
             if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       packet, mtu)) {
-                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                 return ERR_ALLOC;
             }
 
@@ -294,7 +294,7 @@ static int vorbis_parse(void *track, uint8_t *data, long len, uint8_t *extradata
     memcpy(packet + XIPH_HEADER_SIZE, data + off, len);
     if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                       packet, len + XIPH_HEADER_SIZE)) {
-        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
         return ERR_ALLOC;
     }
 

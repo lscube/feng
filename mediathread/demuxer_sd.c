@@ -72,17 +72,17 @@ static int sd_init(Resource * r)
     MediaProperties props_hints;
     TrackInfo trackinfo;
 
-    fnc_log(FNC_LOG_DEBUG, "SD init function\n");
+    fnc_log(FNC_LOG_DEBUG, "[sd] SD init function");
     fd = fdopen(r->i_stream->fd, "r");
 
     if ((separator = strrchr(r->i_stream->name, G_DIR_SEPARATOR))) {
         int len = separator - r->i_stream->name + 1;
         if (len >= sizeof(content_base)) {
-            fnc_log(FNC_LOG_ERR, "content base string too long\n");
+            fnc_log(FNC_LOG_ERR, "[sd] content base string too long\n");
             return ERR_GENERIC;
         } else {
             strncpy(content_base, r->i_stream->name, len);
-            fnc_log(FNC_LOG_DEBUG, "content base: %s\n", content_base);
+            fnc_log(FNC_LOG_DEBUG, "[sd] content base: %s\n", content_base);
         }
     }
 

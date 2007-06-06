@@ -79,11 +79,11 @@ static int ds_probe(InputStream * i_stream)
     buffer[79] = '\0';
     // Check for "# Version 1"
     if ((n = sscanf(buffer, "#%s%d", string, &version)) != 2) {
-        fnc_log(FNC_LOG_DEBUG, "Broken Version string (%d): %s\n", n, buffer);
+        fnc_log(FNC_LOG_DEBUG, "[ds] Broken Version string (%d): %s", n, buffer);
         return RESOURCE_DAMAGED;
     }
     if (strcmp(string, "Version") || version != 1) {
-        fnc_log(FNC_LOG_DEBUG, "Broken string, token=%s, version=%d\n", string, version);
+        fnc_log(FNC_LOG_DEBUG, "[ds] Broken string, token=%s, version=%d", string, version);
         return RESOURCE_DAMAGED;
     }
     // Move file descriptor to begin
@@ -110,7 +110,7 @@ static void change_track_parent(gpointer elem, gpointer new_parent) {
 static double edl_timescaler (Resource * r, double res_time) {
     edl_item_elem *item = edl_active_res(r->edl->private_data);
     if (!item) {
-        fnc_log(FNC_LOG_FATAL, "NULL edl item: This shouldn't happen\n");
+        fnc_log(FNC_LOG_FATAL, "[ds] NULL edl item: This shouldn't happen");
         return HUGE_VAL;
     }
     if (item->first_ts) {
@@ -133,7 +133,7 @@ static int ds_init(Resource * r)
     GList *edl_head = NULL;
     edl_item_elem *item;
 
-    fnc_log(FNC_LOG_DEBUG, "EDL init function\n");
+    fnc_log(FNC_LOG_DEBUG, "[ds] EDL init function");
     fd = fdopen(r->i_stream->fd, "r");
 
     do {
@@ -226,12 +226,12 @@ static int ds_read_packet(Resource * r)
     edl_priv_data *data = ((edl_priv_data *) r->private_data);
     edl_item_elem *item;
     int res;
-    fnc_log(FNC_LOG_VERBOSE, "EDL read_packet function\n");
+    fnc_log(FNC_LOG_VERBOSE, "[ds] EDL read_packet function");
     if (data->move_to_next) {
         data->move_to_next = 0;
         data->active +=1;
         edl_buffer_switcher(data);
-        fnc_log(FNC_LOG_DEBUG, "EDL active track: %d\n", data->active);
+        fnc_log(FNC_LOG_DEBUG, "[ds] EDL active track: %d", data->active);
     }
     if (!(item = edl_active_res (data))) {
         return EOF;
@@ -239,7 +239,7 @@ static int ds_read_packet(Resource * r)
     while ((res = item->r->demuxer->read_packet(item->r)) == EOF) {
         data->active +=1;
         edl_buffer_switcher(data);
-        fnc_log(FNC_LOG_DEBUG, "EDL active track: %d\n", data->active);
+        fnc_log(FNC_LOG_DEBUG, "[ds] EDL active track: %d", data->active);
         if (!(item = edl_active_res (data))) {
             return EOF;
         }
