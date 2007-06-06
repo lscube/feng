@@ -99,7 +99,7 @@ static int frag_fu_a(uint8_t *nal, int fragsize, int mtu,
 {
     int start = 1, fraglen;
     uint8_t fu_header, buf[mtu];
-    fnc_log(FNC_LOG_DEBUG, "[h264] frags\n");
+    fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
 //                p = data + index;
     buf[0] = (nal[0] & 0xe0) | 28; // fu_indicator
     fu_header = nal[0] & 0x1f;
@@ -115,11 +115,11 @@ static int frag_fu_a(uint8_t *nal, int fragsize, int mtu,
             buf[1] = fu_header | (1<<6);
         }   
         memcpy(buf + 2, nal, fraglen);
-        fnc_log(FNC_LOG_DEBUG, "Frag %d %d\n",buf[0], buf[1]);
+        fnc_log(FNC_LOG_VERBOSE, "[h264] Frag %d %d",buf[0], buf[1]);
         fragsize -= fraglen;
         nal      += fraglen;
         if (OMSbuff_write(buffer, 0, timestamp, 0, 0, buf, fraglen + 2)) {
-            fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+            fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
             return ERR_ALLOC;
         }
     }
@@ -142,7 +142,7 @@ static char *encode_avc1_header(uint8_t *p, unsigned int len)
             goto err_alloc;
         nalsize = RB16(p); //buf_size
         p += 2;
-        fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
+        fnc_log(FNC_LOG_VERBOSE, "[h264] nalsize %d", nalsize);
         if (i == 0) {
             out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
                                   p[0], p[1], p[2]);
@@ -159,14 +159,14 @@ static char *encode_avc1_header(uint8_t *p, unsigned int len)
     }
     // Decode pps from avcC
     cnt = *(p++); // Number of pps
-    fnc_log(FNC_LOG_DEBUG, "[h264] pps %d\n", cnt);
+    fnc_log(FNC_LOG_VERBOSE, "[h264] pps %d", cnt);
 
     for (i = 0; i < cnt; i++) {
         if (p > q + len)
             goto err_alloc;
         nalsize = RB16(p);
         p += 2;
-        fnc_log(FNC_LOG_DEBUG, "[h264] nalsize %d\n", nalsize);
+        fnc_log(FNC_LOG_VERBOSE, "[h264] nalsize %d", nalsize);
         av_base64_encode(buf, buf_len, p, nalsize);
         out = g_strdup_printf("%s,%s",sprop, buf);
         g_free(sprop);
@@ -325,17 +325,17 @@ static int h264_parse(void *track, uint8 *data, long len, uint8 *extradata,
                     index++;
                     continue;
                 } else {
-                    fnc_log(FNC_LOG_ERR, "AVC: nal size %d\n", nalsize);
+                    fnc_log(FNC_LOG_VERBOSE, "[h264] AVC: nal size %d", nalsize);
                     break;
                 }
             }
             if (mtu >= nalsize) {
                 if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       data + index, nalsize)) {
-                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                         return ERR_ALLOC;
                 }
-                fnc_log(FNC_LOG_DEBUG, "[h264] single NAL\n");
+                fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
             // single NAL, to be fragmented, FU-A;
                 ret = frag_fu_a(data + index, nalsize, mtu, tr->buffer,
@@ -366,16 +366,16 @@ static int h264_parse(void *track, uint8 *data, long len, uint8 *extradata,
             if (q >= data + len - 3) break;
 
             if (mtu >= q - p) {
-                fnc_log(FNC_LOG_DEBUG, "Sending NAL %d \n",p[0]&0x1f);
+                fnc_log(FNC_LOG_VERBOSE, "[h264] Sending NAL %d",p[0]&0x1f);
                 if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       p, q - p)) {
-                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                         return ERR_ALLOC;
                 }
-                fnc_log(FNC_LOG_DEBUG, "[h264] single NAL\n");
+                fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
                 //FU-A
-                fnc_log(FNC_LOG_DEBUG, "[h264] frags\n");
+                fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
                 ret = frag_fu_a(p, q - p, mtu, tr->buffer,
                                 tr->properties->mtime);
                 if (ret) return ret;
@@ -385,24 +385,24 @@ static int h264_parse(void *track, uint8 *data, long len, uint8 *extradata,
 
         }
         // last NAL
-        fnc_log(FNC_LOG_DEBUG, "[h264] last NAL %d \n",p[0]&0x1f);
+        fnc_log(FNC_LOG_VERBOSE, "[h264] last NAL %d",p[0]&0x1f);
         if (mtu >= len - (p - data)) {
-            fnc_log(FNC_LOG_DEBUG, "[h264] no frags\n");
+            fnc_log(FNC_LOG_VERBOSE, "[h264] no frags");
             if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       p, len - (p - data))) {
-                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
+                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                         return ERR_ALLOC;
             }
         } else {
             //FU-A
-            fnc_log(FNC_LOG_DEBUG, "[h264] frags\n");
+            fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
             ret = frag_fu_a(p, len - (p - data), mtu, tr->buffer,
                             tr->properties->mtime);
             if (ret) return ret;
         }
     }
 
-    fnc_log(FNC_LOG_DEBUG, "[h264]Frame completed\n");
+    fnc_log(FNC_LOG_VERBOSE, "[h264] Frame completed");
     return ERR_NOERROR;
 }
 
