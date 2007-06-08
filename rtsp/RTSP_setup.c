@@ -450,7 +450,8 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
         start_rtptime++;
     }
     rtp_s->pause = 1;
-    strcpy(rtp_s->sd_filename, cinfo->object);
+    //XXX use strdup
+    strncpy(rtp_s->sd_filename, cinfo->object, sizeof(rtp_s->sd_filename));
 
 #if 0 //MULTICAST
     /*XXX */
