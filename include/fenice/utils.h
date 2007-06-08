@@ -132,6 +132,7 @@
 #define SD_MEDIA_SOURCE     "MEDIA_SOURCE"
 #define SD_TWIN             "TWIN"
 #define SD_MULTICAST        "MULTICAST"
+#define SD_FMTP             "FMTP"
 /*! Creative commons specific tags */
 #define SD_LICENSE "LICENSE"
 #define SD_RDF "VERIFY"

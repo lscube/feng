@@ -61,11 +61,12 @@ static int sd_probe(InputStream * i_stream)
 
 static int sd_init(Resource * r)
 {
-    char keyword[80], line[256], sparam[10];
+    char keyword[80], line[1024], sparam[256];
     Track *track;
     char object[255], server[255];
     unsigned short port;
     char content_base[256] = "", *separator, track_file[256];
+    sdp_field *sdp_private = NULL;
 
     FILE *fd;
 
@@ -196,6 +197,11 @@ static int sd_init(Resource * r)
                     props_hints.media_type = MP_audio;
                 if (strcasecmp(sparam, "VIDEO") == 0)
                     props_hints.media_type = MP_video;
+            } else if (!strcasecmp(keyword, SD_FMTP)) {
+                sscanf(line, "%*s%255s", sparam);
+                sdp_private = g_new(sdp_field, 1);
+                sdp_private->type = fmtp;
+                sdp_private->field = g_strdup(sparam);
             } else if (!strcasecmp(keyword, SD_LICENSE)) {
 
                 /*******START CC********/
@@ -231,6 +237,9 @@ static int sd_init(Resource * r)
 
         if (!(track = add_track(r, &trackinfo, &props_hints)))
             return ERR_ALLOC;
+        if (sdp_private)
+            track->properties->sdp_private =
+                g_list_prepend(track->properties->sdp_private, sdp_private);
 
         r->info->media_source = props_hints.media_source;
 
