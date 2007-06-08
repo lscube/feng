@@ -110,7 +110,7 @@ typedef struct _RTP_session {
     unsigned int seq;
     unsigned int ssrc;
 
-    char sd_filename[255];
+    char sd_filename[255]; //!< resource name, including path from avroot
 
     //mediathread - TODO: find better placement
     Selector *track_selector;
