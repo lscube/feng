@@ -240,6 +240,32 @@ static int sd_init(Resource * r)
         if (sdp_private)
             track->properties->sdp_private =
                 g_list_prepend(track->properties->sdp_private, sdp_private);
+        //XXX could be moved in sdp2
+        if (props_hints.payload_type >= 96) 
+        {
+            sdp_private = g_new(sdp_field, 1);
+            sdp_private->type = rtpmap;
+            switch (props_hints.media_type) {
+            case MP_audio:
+                sdp_private->field = 
+                    g_strdup_printf ("%s/%d/%d",
+                                    props_hints.encoding_name,
+                                    props_hints.clock_rate,
+                                    props_hints.audio_channels);
+            break;
+            case MP_video:
+                sdp_private->field =
+                    g_strdup_printf ("%s/%d",
+                                    props_hints.encoding_name,
+                                    props_hints.clock_rate);
+            break;
+            default:
+            break;
+            }
+            track->properties->sdp_private =
+                g_list_prepend(track->properties->sdp_private, sdp_private);
+        }
+        sdp_private = NULL;
 
         r->info->media_source = props_hints.media_source;
 
