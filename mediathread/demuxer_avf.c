@@ -241,6 +241,8 @@ static int avf_init(Resource * r)
     strncpy(trackinfo.title, avfc->title, 80);
     strncpy(trackinfo.author, avfc->author, 80);
 
+    r->info->duration = (double)avfc->duration /AV_TIME_BASE;
+
     for(i=0; i<avfc->nb_streams; i++){
         AVStream *st= avfc->streams[i];
         AVCodecContext *codec= st->codec;
@@ -303,7 +305,7 @@ static int avf_init(Resource * r)
             break;
         }
     }
-
+    fnc_log(FNC_LOG_DEBUG, "[avf] duration %f", r->info->duration);
     r->private_data = priv;
     r->timescaler = avf_timescaler;
     return RESOURCE_OK;
