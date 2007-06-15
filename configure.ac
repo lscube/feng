@@ -38,12 +38,12 @@ AC_ARG_ENABLE(debug,
 
 AC_ARG_ENABLE(duma,
 [  --enable-duma           link against DUMA library to debug memory usage
-                          (this will involve --enable-debug) [[default=no]]],,
+                          (implies --enable-debug) [[default=no]]],,
     enable_duma="no")
 
 AC_ARG_ENABLE(mudflap,
 [  --enable-mudflap        enable mudflap support
-                          (this will involve --enable-debug) [[default=no]]],,
+                          (implies --enable-debug) [[default=no]]],,
     enable_mudflap="no")
 
 AC_ARG_ENABLE(verbose,
@@ -169,6 +169,11 @@ if test "$enable_duma" = "yes"; then
     CFLAGS="$CFLAGS -lduma"
 fi
 
+if test "$enable_mudflap" = "yes"; then
+    CFLAGS="$CFLAGS -fmudflapth -lmudflapth"
+    enable_debug=yes
+fi
+
 AM_CONDITIONAL(FENICE_DEBUG, [test "$enable_debug" = "yes"])
 if test "$enable_debug" = "yes"; then
     CFLAGS="$CFLAGS -g -ggdb -Wall"
@@ -178,9 +183,6 @@ else
     CFLAGS="$CFLAGS -O2 -Wall"
 fi
 
-if test "$enable_mudflap" = "yes"; then
-    CFLAGS="$CFLAGS -fmudflapth -lmudflapth"
-fi
 
 AM_CONDITIONAL(FENICE_DUMP, [test "$enable_dump" = "yes"])
 if test "$enable_dump" = "yes"; then
