@@ -36,11 +36,15 @@ AC_ARG_ENABLE(debug,
 [  --enable-debug          enable gcc dubugging flags [[default=no]]],,
     enable_debug="no")
 
-AC_ARG_ENABLE(efence,
-[  --enable-efence         link against Electric Fence library to debug memory usage
+AC_ARG_ENABLE(duma,
+[  --enable-duma           link against DUMA library to debug memory usage
                           (this will involve --enable-debug) [[default=no]]],,
-    enable_efence="no")
+    enable_duma="no")
 
+AC_ARG_ENABLE(mudflap,
+[  --enable-mudflap        enable mudflap support
+                          (this will involve --enable-debug) [[default=no]]],,
+    enable_mudflap="no")
 
 AC_ARG_ENABLE(verbose,
 [  --enable-verbose        make feng verbose [[default=no]]],,
@@ -159,43 +163,37 @@ fi
 
 AM_CONDITIONAL(FENICE_FFMPEG, [test "$enable_ffmpeg" = "yes"])
 
-AM_CONDITIONAL(FENICE_EFENCE, /bin/false)
-if test "$enable_efence" = "yes"; then
-    AM_CONDITIONAL(FENICE_EFENCE, /bin/true)
-    AC_DEFINE(ENABLE_EFENCE, 1,[Debug enabled])
+if test "$enable_duma" = "yes"; then
+    AC_DEFINE(ENABLE_DUMA, 1,[Debug enabled])
     enable_debug=yes
-    efence_msg="   You chose to compile against Electric Fence lib"
+    CFLAGS="$CFLAGS -lduma"
 fi
 
-AM_CONDITIONAL(FENICE_DEBUG, /bin/false)
+AM_CONDITIONAL(FENICE_DEBUG, [test "$enable_debug" = "yes"])
 if test "$enable_debug" = "yes"; then
     CFLAGS="$CFLAGS -g -ggdb -Wall"
-    AM_CONDITIONAL(FENICE_DEBUG, /bin/true)
     AC_DEFINE(ENABLE_DEBUG, 1,[Debug enabled])
-    debug_msg="
-   Debuging flags enabled: welcome developer!!!"
 else
     AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
     CFLAGS="$CFLAGS -O2 -Wall"
 fi
 
-AM_CONDITIONAL(FENICE_DUMP, /bin/false)
+if test "$enable_mudflap" = "yes"; then
+    CFLAGS="$CFLAGS -fmudflapth -lmudflapth"
+fi
+
+AM_CONDITIONAL(FENICE_DUMP, [test "$enable_dump" = "yes"])
 if test "$enable_dump" = "yes"; then
-    AM_CONDITIONAL(FENICE_DUMP, /bin/true)
     AC_DEFINE(ENABLE_DUMP, 1,[Dump enabled])
     enable_verbose=yes
-    dump_msg="
-   Dump to dump_fenice.ENCODING_TYPE.rtpsock enabled!!!"
 else
     AC_DEFINE(ENABLE_DUMP, 0,[Dump disabled])
 fi
 
-AM_CONDITIONAL(FENICE_VERBOSE, /bin/false)
+AM_CONDITIONAL(FENICE_VERBOSE, [test "$enable_verbose" = "yes"])
 if test "$enable_verbose" = "yes"; then
-    AM_CONDITIONAL(FENICE_VERBOSE, /bin/true)
     AC_DEFINE(ENABLE_VERBOSE, 1,[verbosity enabled])
     enable_verbose=yes
-    verbose_msg="   You chose Fe.NG to be very verbose... who'll stop it talking now!!!"
 fi
 
 case "$enable_errors" in
@@ -312,10 +310,10 @@ sctp support enabled ......... : $enable_sctp
 avformat support enabled ..... : $avformat_msg
 avutil support enabled ....... : $avutil_msg
 debug enabled ................ : $enable_debug
-
-$efence_msg
-$verbose_msg
-$dump_msg
+ duma enabled ................ : $enable_duma
+ mudflap enabled ............. : $enable_mudflap
+verbose enabled .............. : $enable_verbose
+ dump enabled ................ : $enable_dump
 
  'make' will now compile Fe.NG and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.

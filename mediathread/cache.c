@@ -29,6 +29,9 @@
  * */
 
 #include <stdlib.h>
+#ifdef ENABLE_DUMA
+#include <duma.h>
+#endif
 #include <string.h>
 #include <unistd.h>
 

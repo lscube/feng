@@ -36,6 +36,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef ENABLE_DUMA
+#include <duma.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/unistd.h>

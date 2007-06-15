@@ -69,11 +69,6 @@ endif
 
 feng_LDFLAGS =
 
-if FENICE_EFENCE
-feng_LDFLAGS += -lefence
-endif
-
-
 feng_LDADD += @GLIB_LIBS@
 
 INCLUDES = -I$(feniceincludedir) -I..
