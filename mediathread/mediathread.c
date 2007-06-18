@@ -108,14 +108,14 @@ inline int mt_process_event(mt_event_item *ev) {
             case RESOURCE_NOT_PARSEABLE:
                 {
                     static uint8 buffer[MT_BUFFERSIZE];
-                    int n;
+                    long n;
                     if((n = t->parser->get_frame(buffer, MT_BUFFERSIZE,
                                                  &(t->properties->mtime),
                                                  t->i_stream, t->properties,
                                                  t->parser_private)) > 0) {
                         fnc_log(FNC_LOG_DEBUG, "[MT] Timestamp: %f!",
                                 t->properties->mtime);
-                        t->parser->parse(t, buffer, (long)n, NULL, 0);
+                        t->parser->parse(t, buffer, n, NULL, 0);
                     }
                     fnc_log(FNC_LOG_VERBOSE, "[MT] Done legacy!");
                 }
