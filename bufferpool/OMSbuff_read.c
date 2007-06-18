@@ -40,7 +40,7 @@
 #include <fenice/bufferpool.h>
 #include <fenice/utils.h>
 
-/* ! Read the next slot in buffer.
+/*! Read the next slot in buffer.
  *
  * Read the next slot in the buffer fill the parameters given as input and move
  * current read position.
@@ -52,10 +52,10 @@
  * @param data_size input value for size of <tt>data</tt> buffer and return
  * value for size of effective size of read data.
  *
- * @return -1 on error, 1 if slot data size is bigger thar size of buffer
+ * @return -1 on error, 1 if slot data size is bigger than the buffer
  * provided and then it was not possible to copy all the data, 0 otherwise.
  * 
- * */
+ **/
 // OMSSlot *OMSbuff_read(OMSConsumer *cons)
 int OMSbuff_read(OMSConsumer * cons, uint32 * timestamp, uint8 * marker,
            uint8 * data, uint32 * data_size)

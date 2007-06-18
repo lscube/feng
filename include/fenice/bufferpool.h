@@ -167,7 +167,7 @@ OMSBuffer *OMSbuff_shm_map(char *);
 OMSSlot *OMSbuff_shm_addpage(OMSBuffer *);
 int OMSbuff_shm_remap(OMSBuffer *);
 // int OMSbuff_shm_refresh(OMSBuffer *);
-#define OMSbuff_shm_refresh(oms_buffer)    \
+#define OMSbuff_shm_refresh(oms_buffer) \
     (((oms_buffer->type == buff_shm) && \
       (oms_buffer->known_slots != oms_buffer->control->nslots)) ? \
         OMSbuff_shm_remap(oms_buffer) : 0)
