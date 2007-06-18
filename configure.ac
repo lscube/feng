@@ -166,11 +166,12 @@ AM_CONDITIONAL(FENICE_FFMPEG, [test "$enable_ffmpeg" = "yes"])
 if test "$enable_duma" = "yes"; then
     AC_DEFINE(ENABLE_DUMA, 1,[Debug enabled])
     enable_debug=yes
-    CFLAGS="$CFLAGS -lduma"
+    LDFLAGS="$LDFLAGS -lduma"
 fi
 
 if test "$enable_mudflap" = "yes"; then
-    CFLAGS="$CFLAGS -fmudflapth -lmudflapth"
+    CFLAGS="$CFLAGS -fmudflapth"
+    LDFLAGS="$LDFLAGS -lmudflapth"
     enable_debug=yes
 fi
 
