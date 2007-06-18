@@ -68,9 +68,6 @@ OMSBuffer *OMSbuff_new(uint32_t buffer_size)
         OMSNEWBUFF_RET_ERR;
 
     control->write_pos = buffer_size - 1;
-#ifdef USE_VALID_READ_POS
-    control->valid_read_pos = 0;    // buffer_size-1;
-#endif // USE_VALID_READ_POS
 
     control->refs = 0;
     control->nslots = buffer_size;
@@ -86,8 +83,6 @@ OMSBuffer *OMSbuff_new(uint32_t buffer_size)
 
     buffer->type = buff_local;
     *buffer->filename = '\0';
-    // buffer->fd = -1;
-    // buffer->fd = NULL;
     buffer->known_slots = buffer_size;
 
     // link all allocated structs

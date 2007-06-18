@@ -60,26 +60,11 @@ OMSConsumer *OMSbuff_ref(OMSBuffer * buffer)
     cons->first_rtptime = -1;
 
     OMSbuff_lock(buffer);
-#ifndef USE_VALID_READ_POS
     cons->read_pos = buffer->slots[buffer->control->write_pos].next;
     cons->last_seq = buffer->slots[buffer->control->write_pos].slot_seq;
-#else // USE_VALID_READ_POS
-    cons->read_pos = buffer->control->valid_read_pos;    // buffer->slots[buffer->control->valid_read_pos].next;
-    cons->last_seq = 0;    // buffer->slots[buffer->control->valid_read_pos].slot_seq;
 
-    if (buffer->slots[cons->read_pos].slot_seq) {
-        for (i = cons->read_pos; i != buffer->control->write_pos;
-             i = buffer->slots[i].next)
-            buffer->slots[i].refs++;
-        buffer->slots[i].refs++;
-    }
-#endif // USE_VALID_READ_POS
-
-    // printf("ref at position %d (write_pos @ %d)\n", cons->read_pos, buffer->control->write_pos);
     buffer->control->refs++;
 
-//      if ( msync(buffer->control, sizeof(OMSControl), MS_SYNC) )
-//              printf("*** control msync error\n");
     OMSbuff_unlock(buffer);
 
     fnc_log(FNC_LOG_DEBUG, "Buffer ref (%d)\n", buffer->control->refs);

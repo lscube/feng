@@ -43,8 +43,6 @@
 #ifndef _BUFFERPOOLH
 #define _BUFFERPOOLH
 
-// #define USE_VALID_READ_POS
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -98,9 +96,6 @@ typedef struct _OMSControl {
     uint16_t refs;        /*! n.Consumers that share the buffer */
     uint32_t nslots;
     OMSSlotPtr write_pos;    /*! last write position */
-#ifdef USE_VALID_READ_POS
-    OMSSlotPtr valid_read_pos;    /*! valid read position for new consumers */
-#endif // USE_VALID_READ_POS
     pthread_mutex_t syn;
 } OMSControl;
 
@@ -136,14 +131,6 @@ typedef struct _OMSconsumer {
     int64_t first_rtptime;
     // pthread_mutex_t mutex;
 } OMSConsumer;
-
-/*! This structure is useful if you need to do some syncronization 
- *  among different correlated buffers.
- * */
-typedef struct _OMSAggregate {
-    OMSBuffer *buffer;
-    struct _OMSAggregate *next;
-} OMSAggregate;
 
 /*! API definitions*/
 OMSBuffer *OMSbuff_new(uint32_t);
@@ -182,10 +169,6 @@ char *fnc_ipc_name(const char *, const char *);
     ((p<0) ? NULL : (&b->slots[p])) //! used when a pointer could be NULL,
                                     //  otherwise we'll use buffe->slots[index]
 #define OMStoSlotPtr(b, p) (p ? p - b->slots : -1)
-
-// syncronization of aggregate consumers
-OMSAggregate *OMBbuff_aggregate(OMSAggregate *, OMSBuffer *);
-int OMSbuff_sync(OMSAggregate *);
 
 // dump for debug 
 #if ENABLE_DUMPBUFF

@@ -10,7 +10,6 @@ libbufferpool_la_SOURCES = 	fnc_ipc_name.c \
 				OMSbuff_new.c \
 				OMSbuff_read.c \
 				OMSbuff_ref.c \
-				OMSbuff_sync.c \
 				OMSbuff_shm_addpage.c \
 				OMSbuff_shm_create.c \
 				OMSbuff_shm_destroy.c \

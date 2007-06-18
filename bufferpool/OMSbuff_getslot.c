@@ -44,13 +44,7 @@
  */
 OMSSlot *OMSbuff_getslot(OMSBuffer * buffer)
 {
-    OMSSlot *slot; // = &buffer->slots[buffer->control->write_pos];    // lock not needed here
-    // uint64 curr_seq = slot->slot_seq;
-#ifdef USE_VALID_READ_POS
-    OMSSlot *valid_read_pos;
-    // = &buffer->slots[buffer->control->valid_read_pos];
-    double ts;
-#endif // USE_VALID_READ_POS
+    OMSSlot *slot;
 
     OMSbuff_lock(buffer);
 
@@ -58,32 +52,14 @@ OMSSlot *OMSbuff_getslot(OMSBuffer * buffer)
         return NULL;
     
     slot = &buffer->slots[buffer->control->write_pos];
-#ifdef USE_VALID_READ_POS
-    valid_read_pos= &buffer->slots[buffer->control->valid_read_pos];
-#endif // USE_VALID_READ_POS
 
     if (buffer->slots[slot->next].refs > 0) {
-        // printf("must add slot\n");
         if (!(slot = OMSbuff_addpage(buffer, slot))) {
             OMSbuff_unlock(buffer);
             return NULL;
         }
     } else {
         slot = &buffer->slots[slot->next];
-#ifdef USE_VALID_READ_POS
-        // write_pos reaches valid_read_pos, we "push" it
-        if ((valid_read_pos->slot_seq) && (valid_read_pos == slot)) {
-            for (ts = valid_read_pos->timestamp;
-                 /*(buffer->slots[valid_read_pos->next].slot_seq) && \ */
-                 (valid_read_pos->slot_seq <
-                  buffer->slots[valid_read_pos->next].slot_seq)
-                 && (ts == valid_read_pos->timestamp);
-                 ts = valid_read_pos->timestamp, valid_read_pos =
-                 &buffer->slots[valid_read_pos->next]);
-            buffer->control->valid_read_pos =
-                OMStoSlotPtr(buffer, valid_read_pos);
-        }
-#endif // USE_VALID_READ_POS
     }
 
     OMSbuff_unlock(buffer);
