@@ -46,7 +46,7 @@
 
 #define FILE_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 
-/*! \brief This function creates che shared memory object on the file system.
+/*! @brief This function creates che shared memory object on the file system.
  *  In order to let different, and independent, processes to access it.
  * WARNING: this function is not used by fenice directly but it is implemented here for completeness.
  * Feng is just the "consumer" of a shared memory object, while the producer is some other object like felix.

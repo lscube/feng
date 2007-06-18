@@ -36,7 +36,7 @@
 
 #include <fenice/bufferpool.h>
 
-/*! \return the next slot in the buffer and do NOT move current read position.
+/*! @return the next slot in the buffer and do NOT move current read position.
  * NULL if buffer is empty
  * */
 OMSSlot *OMSbuff_getreader(OMSConsumer * cons)

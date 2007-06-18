@@ -32,9 +32,9 @@
 
 #include <fenice/bufferpool.h>
 
-/*\brief internal function used to add a page of slots (of OMSBUFF_MEM_PAGE size).
+/* @brief internal function used to add a page of slots (of OMSBUFF_MEM_PAGE size).
  * WARNING: the function assumes that the caller (OMSbuff_write or OMSbuff_getslot) locked the buffer mutex
- * \return the first OMSSlot of new added page of slots.
+ * @return the first OMSSlot of new added page of slots.
  * */
 OMSSlot *OMSbuff_addpage(OMSBuffer * buffer, OMSSlot * prev)
 {

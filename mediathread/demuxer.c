@@ -48,7 +48,7 @@ static Demuxer *demuxers[] = {
     NULL
 };
 
-/*! \brief The resource description cache.
+/*! @brief The resource description cache.
  * This list holds the cache of resource descriptions. This way the mediathread
  * can provide the description buffer without opening the resource every time.
  * This will result in a better performance for RTSP DESCRIBE metod response.
@@ -71,8 +71,8 @@ static GList *descr_cache=NULL;
  * First of all, it tries to match the <tt>resource_name</tt>'s extension with
  * one of those served by the demuxers and, if found, probes that demuxer.  If
  * no demuxer can be found this way, then it tries everyone from demuxer list.
- * \param resource_name the name of the resource.
- * \return the index of the valid demuxer in the list or -1 if it could not be
+ * @param resource_name the name of the resource.
+ * @return the index of the valid demuxer in the list or -1 if it could not be
  * found.
  * */
 static int find_demuxer(InputStream *i_stream)
@@ -403,8 +403,8 @@ int r_changed(ResourceDescr *descr)
 /*! Add track to resource tree.  This function adds a new track data struct to
  * resource tree. It used by specific demuxer function in order to obtain the
  * struct to fill.
- * \param r pointer to resource.
- * \return pointer to newly allocated track struct.
+ * @param r pointer to resource.
+ * @return pointer to newly allocated track struct.
  * */
 #define ADD_TRACK_ERROR(level, ...) \
     { \

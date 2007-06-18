@@ -46,11 +46,11 @@
  * Checks in this function are taken from <tt>OMSbuff_read()</tt> and not
  * optimized
  *
- * \param Consumer to be checked.
- * \return 1 if buffer is empty, 0 if not.
- * \return -1 on error.
+ * @param Consumer to be checked.
+ * @return 1 if buffer is empty, 0 if not.
+ * @return -1 on error.
  *
- * \see OMSbuff_read
+ * @see OMSbuff_read
  * */
 int OMSbuff_isempty(OMSConsumer * cons)
 {

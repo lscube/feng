@@ -45,14 +45,14 @@
  * Read the next slot in the buffer fill the parameters given as input and move
  * current read position.
  *
- * \param cons is the consumer.
- * \param timestamp return position for timestamp value of slot read.
- * \param marker return position for marker value of slot read.
- * \param data position of where to copy data filed of the read slot.
- * \param data_size input value for size of <tt>data</tt> buffer and return
+ * @param cons is the consumer.
+ * @param timestamp return position for timestamp value of slot read.
+ * @param marker return position for marker value of slot read.
+ * @param data position of where to copy data filed of the read slot.
+ * @param data_size input value for size of <tt>data</tt> buffer and return
  * value for size of effective size of read data.
  *
- * \return -1 on error, 1 if slot data size is bigger thar size of buffer
+ * @return -1 on error, 1 if slot data size is bigger thar size of buffer
  * provided and then it was not possible to copy all the data, 0 otherwise.
  * 
  * */

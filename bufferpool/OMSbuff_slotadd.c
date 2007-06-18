@@ -47,10 +47,10 @@
 
 
 
-/*\brief internal function used to add a slot or, in case of shared memory, a page of slots
+/*@brief internal function used to add a slot or, in case of shared memory, a page of slots
  * (of OMSBUFF_SHM_PAGE size).
  * WARNING: the function assumes that the caller (OMSbuff_write or OMSbuff_getslot) locked the buffer mutex
- * \return the first OMSSlot of new added page of slots.
+ * @return the first OMSSlot of new added page of slots.
  * */
 OMSSlot *OMSbuff_slotadd(OMSBuffer * buffer, OMSSlot * prev)
 {

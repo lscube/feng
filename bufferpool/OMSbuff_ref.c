@@ -41,7 +41,7 @@
 
 
 /* ! Add and return a new consumer reference to the buffer,
- * \return NULL if an error occurs*/
+ * @return NULL if an error occurs*/
 OMSConsumer *OMSbuff_ref(OMSBuffer * buffer)
 {
     OMSConsumer *cons;

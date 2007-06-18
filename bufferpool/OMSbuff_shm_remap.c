@@ -44,11 +44,11 @@
 #include <fenice/bufferpool.h>
 
 
-/*!\brief This function remaps shared memory slots in case that the slots queue size is changed.
+/*!@brief This function remaps shared memory slots in case that the slots queue size is changed.
  * The function only remap the shared memory according to the new size, but it does not do anything
  * on new shm slots page: if it must be initialized you must do it by yourself.
  * WARNING: the function assumes that the caller locked the buffer mutex.
- * \return 0 on succes, 1 otherwis.
+ * @return 0 on succes, 1 otherwis.
  * */
 int OMSbuff_shm_remap(OMSBuffer * buffer)
 {

@@ -101,9 +101,9 @@ inline sdp_field_list r_descr_sdp_private(ResourceDescr *r_descr)
  * This array is returned to function caller.
  * Each element of the array is a MediaDescrList that contain all the media of the same type with the same name.
  * All the elements of each list can be included together in the sdp description in a single m= block.
- * \param r_descr Resource description that contains all the media
- * \param m_descrs this is a return parameter. It will contain the MediaDescrList array
- * \return the dimension of the array or an interger < 0 if an error occurred.
+ * @param r_descr Resource description that contains all the media
+ * @param m_descrs this is a return parameter. It will contain the MediaDescrList array
+ * @return the dimension of the array or an interger < 0 if an error occurred.
  * */
 MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
 {

@@ -38,12 +38,12 @@
 #include <fenice/bufferpool.h>
 
 
-/*! \brief This function destroys the shared memory object.
+/*! @brief This function destroys the shared memory object.
  * Firstly it unlinks the shm objects referenced in buffer and
  * then unlink them thus removing them from system.
  * It doesn't stop on the first error, but completes all operations
  * and returns the code of first error.
- * \return 0 on succes or the number of the first error occurred.
+ * @return 0 on succes or the number of the first error occurred.
  * */
 int OMSbuff_shm_destroy(OMSBuffer * buffer)
 {

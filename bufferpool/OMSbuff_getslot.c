@@ -34,13 +34,13 @@
 #include <fenice/bufferpool.h>
 
 
-/*! \brief get a new empty slot from bufferpool.
+/*! @brief get a new empty slot from bufferpool.
  *
  * It do NOT mark the slot as busy, this action will be performed by
  * OMSbuff_write that MUST be called at the end of operations with the obtained
  * slot.
  *
- * \return empty slot.
+ * @return empty slot.
  */
 OMSSlot *OMSbuff_getslot(OMSBuffer * buffer)
 {

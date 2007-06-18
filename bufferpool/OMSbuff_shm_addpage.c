@@ -45,12 +45,12 @@
 #include <fenice/bufferpool.h>
 
 
-/*!\brief This function adds shared memory page of slots.
+/*!@brief This function adds shared memory page of slots.
  * The function remaps the shared memory according to the new size, but
  * it does NOT link new page to previous existing queue:
  * This is done in OMSbuff_addpage.
  * WARNING: the function assumes that the caller (OMSbuff_write or OMSbuff_getslot) locked the buffer mutex
- * \return the first OMSSlot of new added page of slots.
+ * @return the first OMSSlot of new added page of slots.
  * */
 OMSSlot *OMSbuff_shm_addpage(OMSBuffer * buffer)
 {

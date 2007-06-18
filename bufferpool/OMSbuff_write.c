@@ -39,15 +39,15 @@
 #include <fenice/utils.h>
 #include <fenice/bufferpool.h>
 
-/*! \brief Write a new slot in the buffer using the input parameters.
- *  
+/*! @brief Write a new slot in the buffer using the input parameters.
+ *
  *  The function writes a new slot according with input parameters. If the
- *  <tt>data</tt> belongs to a slot that was prevoiusly requested with
- *  <tt>OMSbuff_getslot</tt> then there is not the copy of data, just the
+ *  <tt>data</tt> belongs to a slot that was previously requested with
+ *  <tt>OMSbuff_getslot</tt> then there is not copy of data, just the
  *  parameter setting like a commit of changes done.
- * \param seq impose explicitly the sequence number of pkt(slot). If this parameter is 0 the
+ *  @param seq impose explicitly the sequence number of pkt(slot). If this parameter is 0 the
  * it's set calculating 'prev_seq+1'.
- *  \return ERR_NOERROR or ERR_ALLOC
+ *  @return ERR_NOERROR or ERR_ALLOC
  *  */
 int OMSbuff_write(OMSBuffer * buffer, uint64 seq, double timestamp,
            uint32 rtp_time, uint8 marker, uint8 * data, uint32 data_size)

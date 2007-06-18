@@ -43,7 +43,7 @@
 #define LOG_FORMAT "%d/%b/%Y:%H:%M:%S %z"
 #define MAX_LEN_DATE 30
 
-/* \brief Dump of OMSbufferpool.
+/* @brief Dump of OMSbufferpool.
  * This function print the current status of bufferpool. This is useful only for debugging, so if ENABLE_DEBUG
  * is not defined it will be #defined to nothing.
  * The function takes two parameters that are mutual exclusive each other: If you are a consumer you should use

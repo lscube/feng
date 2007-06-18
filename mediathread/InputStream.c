@@ -190,8 +190,8 @@ stream_type parse_mrl(char *mrl, char **resource_name)
 
 
 
-/*! \brief The function just returns the last change time of given mrl.
- * \return modification time of mrl or 0 if not guessable.
+/*! @brief The function just returns the last change time of given mrl.
+ * @return modification time of mrl or 0 if not guessable.
  * */
 time_t mrl_mtime(char *mrl)
 {
@@ -232,11 +232,11 @@ time_t mrl_mtime(char *mrl)
 	return 0;
 }
 
-/*! \brief Checks if the given mrl has been modified
+/*! @brief Checks if the given mrl has been modified
  * The function parses the given mrl and, depending on the type, checks if that mrl has been modified. The second parameter of the function is both normal and return parameter.
- * \param mrl mrl to check for changes
- * \param last_change uptodate time for mrl and return parameter for new time if mrl is changed.
- * \return 1 is mrl is changed since last_change.
+ * @param mrl mrl to check for changes
+ * @param last_change uptodate time for mrl and return parameter for new time if mrl is changed.
+ * @return 1 is mrl is changed since last_change.
  * */
 int mrl_changed(char *mrl, time_t *last_change)
 {
