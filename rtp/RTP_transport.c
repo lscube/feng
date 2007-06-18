@@ -56,26 +56,11 @@ int RTP_send_packet(RTP_session * session)
     unsigned int hdr_size = 0;
     RTP_header r;        // 12 bytes
     int res = ERR_GENERIC;
-    double nextts;
     OMSSlot *slot = NULL;
     ssize_t psize_sent = 0;
     Track *t = r_selected_track(session->track_selector);
 
-    if (!(slot = OMSbuff_getreader(session->cons))) {
-        if ((res = event_buffer_low(session, t)) != ERR_NOERROR) {
-            switch (res) {
-            case ERR_EOF:
-                fnc_log(FNC_LOG_INFO, "End of stream reached");
-                break;
-            default:
-                fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low");
-                break;
-            }
-            return res;
-        }
-    }
-
-    while (slot) {
+    while ((slot = OMSbuff_getreader(session->cons))) {
         hdr_size = sizeof(r);
         r.version = 2;
         r.padding = 0;
@@ -134,20 +119,22 @@ int RTP_send_packet(RTP_session * session)
         free(packet);
 
         OMSbuff_gotreader(session->cons);
-
-        nextts = OMSbuff_nextts(session->cons);
-        if (nextts < 0) {
-            event_buffer_low(session, t);
-            slot = NULL;
-            session->cons->frames--;
-        } else {
-            slot = OMSbuff_getreader(session->cons);
-            if( OMSbuff_nextts(session->cons) < 0)
-                event_buffer_low(session, t);
-        }
     }
 
-    return ERR_NOERROR;
+    res = event_buffer_low(session, t);
+
+    switch (res) {
+    case ERR_NOERROR:
+        break;
+    case ERR_EOF:
+        fnc_log(FNC_LOG_INFO, "End of stream reached");
+        break;
+    default:
+        fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low");
+        break;
+    }
+
+    return res;
 }
 
 /**
