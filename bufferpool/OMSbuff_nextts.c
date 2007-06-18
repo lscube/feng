@@ -34,14 +34,21 @@
 
 #include <fenice/bufferpool.h>
 
+/*! return the next packet timestamp
+ *
+ * @return -1 on error, the packet timestamp otherwise
+ **/
+
 double OMSbuff_nextts(OMSConsumer * cons)
 {
     OMSSlot *last_read;
     OMSSlot *next;
+    int ret = -1;
 
     OMSbuff_lock(cons->buffer);
 
-    OMSbuff_shm_refresh(cons->buffer);
+    if(OMSbuff_shm_refresh(cons->buffer))
+        goto err_unlock;
 
     last_read = OMStoSlot(cons->buffer, cons->last_read_pos);
     next = &cons->buffer->slots[cons->read_pos];
@@ -53,15 +60,17 @@ double OMSbuff_nextts(OMSConsumer * cons)
             cons->last_seq))
             next = &cons->buffer->slots[last_read->next];
         else {
-            OMSbuff_unlock(cons->buffer);
-            return -1;
+            goto err_unlock;
         }
     } else if (last_read
            && (cons->buffer->slots[last_read->next].slot_seq <
                next->slot_seq))
         next = &cons->buffer->slots[last_read->next];
+    
+    ret = next->timestamp;
 
+    err_unlock:
     OMSbuff_unlock(cons->buffer);
 
-    return next->timestamp;
+    return ret;
 }

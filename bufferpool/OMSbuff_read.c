@@ -63,12 +63,15 @@ int OMSbuff_read(OMSConsumer * cons, uint32 * timestamp, uint8 * marker,
     OMSSlot *last_read;
     OMSSlot *next;
     uint32 cpy_size;
+    int ret = -1; // wrong by default
 
     OMSbuff_lock(cons->buffer);
 
-    OMSbuff_shm_refresh(cons->buffer);
+    if(OMSbuff_shm_refresh(cons->buffer))
+        goto err_unlock;
 
-    last_read = OMStoSlot(cons->buffer, cons->last_read_pos);    //we use OMStoSlot 'cause last_read could be NULL
+    //we use OMStoSlot 'cause last_read could be NULL
+    last_read = OMStoSlot(cons->buffer, cons->last_read_pos);
     next = &cons->buffer->slots[cons->read_pos];
 
     if (!next->refs || (next->slot_seq < cons->last_seq)) {
@@ -78,8 +81,7 @@ int OMSbuff_read(OMSConsumer * cons, uint32 * timestamp, uint8 * marker,
             cons->last_seq))
             next = &cons->buffer->slots[last_read->next];
         else {
-            OMSbuff_unlock(cons->buffer);
-            return -1;    // NULL;
+            goto err_unlock;
         }
     } else if (last_read
            && (cons->buffer->slots[last_read->next].slot_seq <
@@ -102,13 +104,12 @@ int OMSbuff_read(OMSConsumer * cons, uint32 * timestamp, uint8 * marker,
     memcpy(data, next->data, cpy_size);
     *data_size = cpy_size;
 
-//      if ( msync(next, sizeof(OMSSlot), MS_ASYNC) )
-//      if ( msync(cons->buffer->slots, cons->buffer->known_slots * sizeof(OMSSlot), MS_ASYNC) )
-//              printf("*** msync error\n");
-    OMSbuff_unlock(cons->buffer);
-
     cons->last_read_pos = OMStoSlotPtr(cons->buffer, next);
 
-    // return cons->read_pos;
-    return (cpy_size == next->data_size) ? 0 : 1;    // next;          
+    ret = (cpy_size == next->data_size) ? 0 : 1;
+
+    err_unlock:
+    OMSbuff_unlock(cons->buffer);
+
+    return ret;    // next;          
 }

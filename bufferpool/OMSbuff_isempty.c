@@ -59,7 +59,8 @@ int OMSbuff_isempty(OMSConsumer * cons)
 
     OMSbuff_lock(cons->buffer);
 
-    OMSbuff_shm_refresh(cons->buffer);
+    if(OMSbuff_shm_refresh(cons->buffer))
+        RETURN(-1);
 
     last_read = OMStoSlot(cons->buffer, cons->last_read_pos);
     next = &cons->buffer->slots[cons->read_pos];
