@@ -39,31 +39,10 @@
 
 #include <netembryo/url.h>
 
-RTSP_Error const RTSP_Ok = { {200, "OK"}, FALSE };
-RTSP_Error const RTSP_BadRequest = { {400, "Bad Request"}, TRUE };
-RTSP_Error const RTSP_Forbidden = { {403, "Forbidden"}, TRUE };
-RTSP_Error const RTSP_NotFound = { {404, "Not Found"}, TRUE };
-RTSP_Error const RTSP_SessionNotFound = { {454, "Session Not Found"}, TRUE };
-RTSP_Error const RTSP_InternalServerError = { {500, "Internal Server Error"}, TRUE };
-RTSP_Error const RTSP_OptionNotSupported = { {551, "Option not supported"}, TRUE };
-
 RTSP_Error const RTSP_Fatal_ErrAlloc = { {0, ""}, ERR_ALLOC };
 
 //! number of currently active connections
 extern int num_conn;
-
-/**
- * sets an RTSP_Error to a specific error
- * @param err the pointer to the error variable to edit
- * @param reply_code the code of RTSP reply message
- * @param message the content of the RTSP reply message
- */
-void set_RTSP_Error(RTSP_Error * err, int reply_code, char * message)
-{
-    err->got_error = TRUE;
-    err->message.reply_code = reply_code;
-    strncpy(err->message.reply_str, message, MAX_REPLY_MESSAGE_LEN);
-}
 
 /**
  * gets the reply message from a standard RTSP error code
@@ -72,6 +51,8 @@ void set_RTSP_Error(RTSP_Error * err, int reply_code, char * message)
  */
 char const *get_stat(int err)
 {
+    RTSP_Error * err_data = NULL;
+
     struct {
         char *token;
         int code;
@@ -120,27 +101,13 @@ char const *get_stat(int err)
     };
     int i;
 
-    switch (err)
-    {
-        case 200:
-            return RTSP_Ok.message.reply_str;
-        case 400:
-            return RTSP_BadRequest.message.reply_str;
-        case 403:
-            return RTSP_Forbidden.message.reply_str;
-        case 404:
-            return RTSP_NotFound.message.reply_str;
-        case 454:
-            return RTSP_SessionNotFound.message.reply_str;
-        case 500:
-            return RTSP_InternalServerError.message.reply_str;
-        case 551:
-            return RTSP_OptionNotSupported.message.reply_str;
-        default:
+    err_data = get_RTSP_Error(err);
+    if (err_data == NULL) {
             for (i = 0; status[i].code != err && status[i].code != -1; ++i);
             return status[i].token;
     }
-
+    else
+        return err_data->message.reply_str;
 }
 
 /**

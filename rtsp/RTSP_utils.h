@@ -8,13 +8,13 @@
  *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
  *
- *  libnms is distributed in the hope that it will be useful,
+ *  Feng is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with libnms; if not, write to the Free Software
+ *  along with Feng; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
@@ -27,10 +27,13 @@
  * internal functions
  */
 
-
 #include <fenice/rtsp.h>
+#include <netembryo/rtsp_errors.h>
 
-#define MAX_REPLY_MESSAGE_LEN 256
+/**
+ * @addtogroup RTSP
+ * @{
+ */
 
 /** 
   * RTSP connection informations used by RTSP method functions
@@ -44,49 +47,6 @@ typedef struct
     description_format descr_format; //!< format of the media description
     char descr[MAX_DESCR_LENGTH]; //!< media description
 } ConnectionInfo;
-
-/**
-  * RTSP reply message
-  */
-typedef struct
-{
-    int reply_code; //!< RTSP code representation of the message
-    char reply_str[MAX_REPLY_MESSAGE_LEN]; //!< written representation of the message
-} ReplyMessage;
-
-/**
-  * RTSP error description
-  */
-typedef struct
-{
-    ReplyMessage message; //!< RTSP standard error message
-    int got_error; //!< can be: FALSE no error, TRUE generic error or have internal error id
-} RTSP_Error;
-
-/**
- * @addtogroup RTSP
- * @{
- */
-
-/** 
- * RTSP Error Notification data and functions
- * @defgroup rtsp_error RTSP Error Notification
- * @{
- */
-extern RTSP_Error const RTSP_Ok;
-extern RTSP_Error const RTSP_BadRequest;
-extern RTSP_Error const RTSP_InternalServerError;
-extern RTSP_Error const RTSP_Forbidden;
-extern RTSP_Error const RTSP_OptionNotSupported;
-extern RTSP_Error const RTSP_NotFound;
-extern RTSP_Error const RTSP_SessionNotFound;
-extern RTSP_Error const RTSP_Fatal_ErrAlloc;
-
-void set_RTSP_Error(RTSP_Error * err, int reply_code, char * message);
-char const *get_stat(int err);
-/**
- * @}
- */
 
 /**
  * RTSP Header and request parsing and validation functions
@@ -118,7 +78,9 @@ void add_time_stamp(char *b, int crlf);
  * @}
  */
 
+char const *get_stat(int err);
 void log_user_agent(RTSP_buffer * rtsp);
+extern RTSP_Error const RTSP_Fatal_ErrAlloc;
 
 /**
  * @}
