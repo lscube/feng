@@ -103,14 +103,14 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * tra
     }
     if (sscanf(p, "%*10s%255s", transport_str) != 1) {
         fnc_log(FNC_LOG_ERR,
-            "SETUP request malformed: Transport string is empty\n");
+            "SETUP request malformed: Transport string is empty");
         return RTSP_BadRequest;
     }
 
-    // tokenize the coma seaparated list of transport settings:
+    // tokenize the comma separated list of transport settings:
     if (!(transport_tkn = strtok_r(transport_str, ",", &saved_ptr))) {
         fnc_log(FNC_LOG_ERR,
-            "Malformed Transport string from client\n");
+            "Malformed Transport string from client");
         return RTSP_BadRequest;
     }
 
