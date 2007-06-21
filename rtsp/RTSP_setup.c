@@ -43,7 +43,7 @@
 #include <fenice/prefs.h>
 #include <fenice/multicast.h>
 #include <fenice/fnc_log.h>
-
+#include <gcrypt.h>
 #include <RTSP_utils.h>
 
 /**
@@ -476,7 +476,7 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     rtp_s->is_multicast_dad = is_multicast_dad;
     rtp_s->track_selector = track_sel;
     rtp_s->sched_id = schedule_add(rtp_s);
-    rtp_s->ssrc = random32(0);
+    gcry_randomize(&rtp_s->ssrc, sizeof(rtp_s->ssrc), GCRY_STRONG_RANDOM);
 
     return rtp_s;
 }

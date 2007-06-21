@@ -115,7 +115,8 @@ AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 dnl CFLAGS=""
 
 AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Fe.NG uses Glib. Please install it (you need devel files).]),)
-
+AM_PATH_LIBGCRYPT(1.2.4, [CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
+                          LDFLAGS="$LDFLAGS $LIBGCRYPT_LIBS"])
 dnl test enable
 if test "x$enable_ipv6" = "xyes"; then
     AC_CHECK_TYPE(struct sockaddr_in6,
@@ -289,7 +290,6 @@ AC_CONFIG_FILES([intnet/Makefile])
 AC_CONFIG_FILES([rtsp/Makefile])
 AC_CONFIG_FILES([sdp2/Makefile])
 AC_CONFIG_FILES([src/Makefile])
-AC_CONFIG_FILES([md5/Makefile])
 AC_CONFIG_FILES([schedule/Makefile])
 AC_CONFIG_FILES([multicast/Makefile])
 AC_CONFIG_FILES([command_environment/Makefile])
