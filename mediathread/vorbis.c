@@ -95,6 +95,7 @@ static int encode_header(uint8_t *data, int len, vorbis_priv *priv)
     int headers_len = len, i , j;
     uint8_t *header_start[3];
     int header_len[3];
+    int hash[4];
     uint8_t comment[26] =
         /*quite minimal comment */
     { 3, 'v', 'o', 'r', 'b', 'i', 's',
@@ -139,7 +140,8 @@ static int encode_header(uint8_t *data, int len, vorbis_priv *priv)
         return -1;
     }
 
-    priv->ident = md_32(data, len);
+    av_md5_sum(hash, data, len);
+    priv->ident = hash[0]^hash[1]^hash[2]^hash[3];
 
     // Envelope size
     headers_len = header_len[0] + sizeof(comment) + header_len[2];
