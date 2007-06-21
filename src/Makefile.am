@@ -7,20 +7,19 @@ noinst_LTLIBRARIES += libdebug.la
 endif
 
 libutils_la_SOURCES =	NTP_time.c \
-			random32.c \
 			get_utc.c \
 			get_field.c
 
-libutils_la_LDFLAGS = -static -lm
+libutils_la_LDFLAGS = -lm
 
 
 liblog_la_SOURCES =	fnc_log.c 
 
-liblog_la_LDFLAGS = -static -lm
+liblog_la_LDFLAGS = -lm
 
 libsafectype_la_SOURCES =	safe-ctype.c 
 
-libsafectype_la_LDFLAGS = -static -lm
+libsafectype_la_LDFLAGS = -lm
 
 libprefs_la_SOURCES = prefs.c
 
@@ -60,7 +59,6 @@ feng_LDADD +=	../command_environment/libcommand.la \
 		../src/libutils.la \
 		../src/liblog.la \
 		../src/libsafectype.la \
-		../md5/libmd5.la \
 		-lnetembryo
 
 if FENICE_VERBOSE

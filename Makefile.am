@@ -1,5 +1,4 @@
 SUBDIRS =	bufferpool \
-		md5 \
 		mediathread \
 		multicast \
 		command_environment \
