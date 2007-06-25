@@ -1,5 +1,4 @@
- /* * 
- *  $Id$
+/* * 
  *  
  *  This file is part of Feng
  *
@@ -47,17 +46,13 @@
 #define MAX_LEN_DATE 30
 
 //static char* fnc_name;
-static FILE *fd;
-
-void (*fnc_log) (int level, const char *fmt, ...);
+static FILE *fd = NULL;
 
 /*Prints on standard error or file*/
-static void fnc_errlog(int level, const char *fmt, ...)
+static void fnc_errlog(int level, const char *fmt, va_list args)
 {
-    va_list args;
     time_t now;
     char date[MAX_LEN_DATE];
-    int no_print = 0;
     const struct tm *tm;
 
     time(&now);
@@ -80,14 +75,14 @@ static void fnc_errlog(int level, const char *fmt, ...)
 #if DEBUG
             fprintf(fd, "[debug] ");
 #else
-            no_print = 1;     
+            return;  
 #endif
             break;
         case FNC_LOG_VERBOSE:
 #ifdef VERBOSE
             fprintf(fd, "[verbose debug] ");
 #else
-            no_print = 1;
+            return;
 #endif
             break;
         case FNC_LOG_CLIENT:
@@ -99,21 +94,15 @@ static void fnc_errlog(int level, const char *fmt, ...)
             break;
     }
 
-    if(!no_print) {
-        va_start(args, fmt);
-        vfprintf(fd, fmt, args);
-        fprintf(fd, "\n");
-        va_end(args);
-        fflush(fd);
-    }
+    vfprintf(fd, fmt, args);
+    fprintf(fd, "\n");
+    fflush(fd);
 }
 
 #if HAVE_SYSLOG_H
-static void fnc_syslog(int level, const char *fmt, ...)
+static void fnc_syslog(int level, const char *fmt, va_list args)
 {
-    va_list args;
     int l = LOG_ERR;
-    int no_print = 0;
 
     switch (level) {
         case FNC_LOG_FATAL:
@@ -129,51 +118,66 @@ static void fnc_syslog(int level, const char *fmt, ...)
 #if DEBUG
             l = LOG_DEBUG;
 #else
-            no_print = 1;
+            return;
 #endif
             break;
         case FNC_LOG_VERBOSE:
 #ifdef VERBOSE
             l = LOG_DEBUG;
 #else
-            no_print = 1;
+            return;
 #endif
             break;
         case FNC_LOG_CLIENT:
             l = LOG_INFO;
-            no_print = 1;
+            return;
             break;
         default:
             l = LOG_INFO;
             break;
     }
-
-    if(!no_print) {
-        va_start(args, fmt);
-        vsyslog(l, fmt, args);
-        va_end(args);
-    }
+    vsyslog(l, fmt, args);
 }
 #endif
 
-/*Set fnc_log as fprintf on file or syslog or stderr*/
-void fnc_log_init(char *file, int out, char *name)
+static void (*fnc_vlog)(int, const char*, va_list) = fnc_errlog;
+
+/**
+ * Set the logger and returns the function pointer to be feed to the
+ * Sock_init
+ * @param file path to the logfile
+ * @param out specifies the logger function
+ * @param name specifies the application name
+ * @return the logger currently in use
+ * */
+fnc_log_t fnc_log_init(char *file, int out, char *name)
 {
-    fnc_log = fnc_errlog;
+    fd = stderr;
     switch (out) {
         case FNC_LOG_SYS:
 #if HAVE_SYSLOG_H
             openlog(name, LOG_PID /*| LOG_PERROR*/, LOG_DAEMON);
-            fnc_log = fnc_syslog;
-#else
-            fd = stderr;
+            fnc_vlog = fnc_syslog;
 #endif
             break;
         case FNC_LOG_FILE:
             if ((fd = fopen(file, "a+")) == NULL) fd = stderr;
             break;
         case FNC_LOG_OUT:
-            fd = stderr;
             break;
     }
+    return fnc_vlog;
+}
+
+/**
+ * External logger function
+ * @param level log level
+ * @param fmt as printf format string
+ * @param ... as printf variable argument
+ */
+void fnc_log(int level, const char *fmt, ...) {
+    va_list vl;
+    va_start(vl, fmt);
+    fnc_vlog(level, fmt, vl);
+    va_end(vl);
 }

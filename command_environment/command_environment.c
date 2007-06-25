@@ -36,6 +36,7 @@
 #include <getopt.h>
 #include <fenice/command_environment.h>
 #include <fenice/utils.h>
+#include <netembryo/wsocket.h>
 #include <glib.h>
 
 void usage(char *name)
@@ -58,11 +59,11 @@ int command_environment(int argc, char **argv)
     //"m:a:f:n:b:z:T:B:q:o:S:I:r:M:4:2:Q:X:D:g:G:v:V:F:N:tpdsZHOcCPK:E:R:";
 
     int n;
-    int nerr = 0;    /*number of error */
     int config_file = 0;
     int quiet = 0;
     int view_log = FNC_LOG_FILE;
     char *progname = g_path_get_basename(argv[0]);
+    fnc_log_t fn;
 
     static struct option long_options[] = {
         {"config",   1, 0, 'f'},
@@ -111,13 +112,11 @@ int command_environment(int argc, char **argv)
 
     if (!quiet) fncheader();
 
-    if (nerr) {
-        usage(progname);
-    } else {
-        if (!config_file) prefs_init(NULL);
-    }
+    if (!config_file) prefs_init(NULL);
 
-    fnc_log_init(prefs_get_log(), view_log, progname);
+    fn = fnc_log_init(prefs_get_log(), view_log, progname);
 
-    return nerr;
+    Sock_init(fn);
+
+    return 0;
 }

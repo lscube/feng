@@ -52,9 +52,10 @@ enum {  FNC_LOG_OUT,
 #define FNC_LOG_VERBOSE 5
 #define FNC_LOG_CLIENT 6
 
+typedef void (*fnc_log_t)(int, const char*, va_list);
 
-extern void (*fnc_log) (int level, const char *fmt, ...);
+void fnc_log(int level, const char *fmt, ...);
 
-void fnc_log_init(char *file, int out, char *name);
+fnc_log_t fnc_log_init(char *file, int out, char *name);
 
 #endif

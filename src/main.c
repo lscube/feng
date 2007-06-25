@@ -72,11 +72,9 @@ int main(int argc, char **argv)
     char *id;
     struct sigaction term_action;
 
-    /* parses the command line */
+    /* parses the command line and initializes the log*/
     if (command_environment(argc, argv))
         return 1;
-
-    Sock_init(fnc_log);
 
     /* catch TERM and INT signals */
     memset(&term_action, 0, sizeof(term_action));

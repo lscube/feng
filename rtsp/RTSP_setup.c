@@ -89,7 +89,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * tra
     port_pair ser_ports;
 
     char *p  /* = NULL */ ;
-    char transport_str[255];
+    char transport_str[1024];
 
     char *saved_ptr, *transport_tkn, *tmp;
     int max_interlvd;
@@ -101,7 +101,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * tra
         set_RTSP_Error(&error, 406, "Require: Transport settings"); /* Not Acceptable */
         return error;
     }
-    if (sscanf(p, "%*10s%255s", transport_str) != 1) {
+    if (sscanf(p, "%*10s%1023s", transport_str) != 1) {
         fnc_log(FNC_LOG_ERR,
             "SETUP request malformed: Transport string is empty");
         return RTSP_BadRequest;
