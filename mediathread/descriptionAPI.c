@@ -92,6 +92,11 @@ inline char *r_descr_phone(ResourceDescr *r_descr)
     return (r_descr && r_descr->info) ? r_descr->info->phone : NULL;
 }
 
+inline long int r_descr_time(ResourceDescr *r_descr)
+{
+    return (r_descr && r_descr->info) ? ceil(r_descr->info->duration) : 0;
+}
+
 inline sdp_field_list r_descr_sdp_private(ResourceDescr *r_descr)
 {
     return (r_descr && r_descr->info) ? r_descr->info->sdp_private : NULL;

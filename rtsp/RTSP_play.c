@@ -40,6 +40,7 @@
 #include <fenice/rtsp.h>
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
+#include <math.h>
 
 #include <RTSP_utils.h>
 
@@ -61,24 +62,25 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
             if ((q = strchr(q, '=')) == NULL)
                 return RTSP_BadRequest;    /* Bad Request */
 
-            sscanf(q + 1, "%f", &(args->start_time));
+	        if (sscanf(q + 1, "%f", &(args->start_time)) != 1)
+                return RTSP_BadRequest;
 
             if ((q = strchr(q, '-')) == NULL)
                 return RTSP_BadRequest;
 
             if (sscanf(q + 1, "%f", &(args->end_time)) != 1)
-                args->end_time = 0;
-        } 
-        else if ((q = strstr(p, "smpte")) != NULL) { // FORMAT: smpte                        
+                args->end_time = HUGE_VAL;
+        }
+        else if ((q = strstr(p, "smpte")) != NULL) { // FORMAT: smpte
             // Currently unsupported. Using default.
-            args->start_time = 0;
-            args->end_time = 0;
+            args->start_time = 0.0;
+            args->end_time = HUGE_VAL;
         }
         else if ((q = strstr(p, "clock"))!= NULL) { // FORMAT: clock
             // Currently unsupported. Using default.
-            args->start_time = 0;
-            args->end_time = 0;
-        } 
+            args->start_time = 0.0;
+            args->end_time = HUGE_VAL;
+        }
         else if ((q = strstr(p, "time")) == NULL) { // No specific format. Assuming NeMeSI format.
             // Hour
             double t;
@@ -95,18 +97,18 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
             args->start_time += t;
 
             args->start_time_valid = 1;
-        } 
+        }
         else {
             // no range defined but start time expressed?
-            args->start_time = 0;
-            args->end_time = 0;
+            args->start_time = 0.0;
+            args->end_time = HUGE_VAL;
             time_taken = 1;
         }
 
         if ((q = strstr(p, "time")) == NULL) {
             // Start playing immediately
             memset(&(args->playback_time), 0, sizeof(args->playback_time));
-        } 
+        }
         else {
             // Start playing at desired time
             if (!time_taken) {
@@ -117,10 +119,10 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
                 args->playback_time_valid = 1;
             }
         }
-    } 
+    }
     else {
-        args->start_time = 0;
-        args->end_time = 0;
+        args->start_time = 0.0;
+        args->end_time = HUGE_VAL;
         memset(&(args->playback_time), 0, sizeof(args->playback_time));
     }
 
@@ -164,6 +166,7 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
 {
     RTP_session *rtp_sess;
     char *q = NULL;
+    Resource *r = rtsp_sess->resource;
 
     if (!(q = strchr(cinfo->object, '!'))) {
         //if '!' is not present then a file has not been specified
@@ -175,12 +178,24 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
             // Start playing all the presentation
             if (!rtp_sess->started) {
                 // Start new
+                //TODO: Verify end_time
+                if (args->start_time > 0.0) {
+                    if(mt_resource_seek(r, args->start_time)) {
+                        return RTSP_InvalidRange;
+                    }
+                }
                 if (schedule_start (rtp_sess->sched_id, args) == ERR_ALLOC)
                         return RTSP_Fatal_ErrAlloc;
             } else {
                 // Resume existing
                 if (!rtp_sess->pause) {
-                //  fnc_log(FNC_LOG_INFO,"PLAY: already playing\n");
+                    //  Already playing, this is a seek request
+                    //TODO: Verify end_time
+                    if (args->start_time >= 0.0) {
+                        if(mt_resource_seek(r, args->start_time)) {
+                            return RTSP_InvalidRange;
+                        }
+                    }
                 } else {
                     schedule_resume (rtp_sess->sched_id, args);
                 }
@@ -189,7 +204,7 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
     } else {
         // FIXME complete with the other stuff
         return RTSP_InternalServerError; /* Internal server error */
-        
+
         // resource!trackname
 //        strcpy (trackname, q + 1);
         // XXX Not really nice...

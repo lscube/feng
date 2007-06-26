@@ -239,6 +239,7 @@ inline char *r_descr_description(ResourceDescr *);
 inline char *r_descr_descrURI(ResourceDescr *);
 inline char *r_descr_email(ResourceDescr *);
 inline char *r_descr_phone(ResourceDescr *);
+inline long int r_descr_time(ResourceDescr *);
 inline sdp_field_list r_descr_sdp_private(ResourceDescr *);
 MediaDescrListArray r_descr_get_media(ResourceDescr *);
 inline char *m_descr_name(MediaDescr *);
