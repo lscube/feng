@@ -114,9 +114,9 @@ inline int mt_process_event(mt_event_item *ev) {
                                                  t->i_stream, t->properties,
                                                  t->parser_private)) > 0) {
                         fnc_log(FNC_LOG_DEBUG, "[MT] Timestamp: %f!",
-                                t->properties->mtime);
+                                                         t->properties->mtime);
                         t->parser->parse(t, buffer, n, NULL, 0);
-                    }
+                                                }
                     fnc_log(FNC_LOG_VERBOSE, "[MT] Done legacy!");
                 }
                 break;
@@ -181,6 +181,12 @@ void mt_resource_close(Resource *resource) {
 
     pthread_mutex_lock(&mt_mutex);
     r_close(resource);
+    pthread_mutex_unlock(&mt_mutex);
+}
+
+void mt_resource_seek(Resource *resource, double time) {
+    pthread_mutex_lock(&mt_mutex);
+    resource->demuxer->seek(resource, time);
     pthread_mutex_unlock(&mt_mutex);
 }
 

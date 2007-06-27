@@ -130,7 +130,9 @@ int sdp_session_descr(char *name, char *descr, size_t descr_size)
     // b=
     // t=
     // TODO: enable seek
-    DESCRCAT(g_strlcat(cursor, "t=0 0"SDP2_EL, size_left))    // r=
+    DESCRCAT(g_snprintf(cursor, size_left, "t=0 %ld"SDP2_EL,
+                        r_descr_time(r_descr)))
+    // r=
     // z=
     // k=
     // a=

@@ -204,10 +204,9 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
     case PLAY_STATE:{
             switch (method) {
             case RTSP_ID_PLAY:
-                // Feature not supported
-                fnc_log(FNC_LOG_INFO,
-                    "UNSUPPORTED: Play while playing.\n");
-                send_reply(551, 0, rtsp);    /* Option not supported */
+                // This is a seek
+                fnc_log(FNC_LOG_INFO, "EXPERIMENTAL: Seek.");
+                RTSP_play(rtsp);
                 break;
             case RTSP_ID_PAUSE:
                 if (RTSP_pause(rtsp) == ERR_NOERROR) {
