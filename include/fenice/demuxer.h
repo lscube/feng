@@ -38,7 +38,7 @@
 #include <fenice/mediautils.h>
 #include <fenice/InputStream.h>
 #include <fenice/mediaparser.h>
-#include <fenice/bufferpool.h>
+#include <bufferpool/bufferpool.h>
 #include <fenice/sdp_grammar.h>
 
 /*
@@ -140,7 +140,7 @@ typedef struct __TRACK {
     long int timestamp;
     MediaParser *parser;
     /*bufferpool*/
-    OMSBuffer *buffer;
+    BPBuffer *buffer;
     MediaProperties *properties; /* track properties */
     Resource *parent;
     /* private data is managed by specific media parser: from allocation to deallocation

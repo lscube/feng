@@ -37,6 +37,7 @@
 #include <fenice/command_environment.h>
 #include <fenice/utils.h>
 #include <netembryo/wsocket.h>
+#include <bufferpool/bufferpool.h>
 #include <glib.h>
 
 void usage(char *name)
@@ -117,6 +118,7 @@ int command_environment(int argc, char **argv)
     fn = fnc_log_init(prefs_get_log(), view_log, progname);
 
     Sock_init(fn);
+    bp_log_init(fn);
 
     return 0;
 }

@@ -40,7 +40,7 @@
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
 #include <fenice/schedule.h>
-#include <fenice/bufferpool.h>
+#include <bufferpool/bufferpool.h>
 
 int stop_schedule = 0;
 extern int num_conn;

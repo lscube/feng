@@ -42,7 +42,7 @@
 #include <sys/socket.h>
 #include <netembryo/wsocket.h>
 #include <fenice/mediathread.h>
-#include <fenice/bufferpool.h>
+#include <bufferpool/bufferpool.h>
 #include <fenice/types.h>
 #include <fenice/prefs.h>
 #define RTP_DEFAULT_PORT 5004
@@ -116,7 +116,7 @@ typedef struct _RTP_session {
     Selector *track_selector;
 
     //Consumer has transferred itself here
-    OMSConsumer *cons;
+    BPConsumer *cons;
     RTCP_stats rtcp_stats[2];    //client and server
     struct _RTP_session *next;
     unsigned char is_multicast_dad;    /*! if is it a multicast son it cannot do TEARDOWN etc... */

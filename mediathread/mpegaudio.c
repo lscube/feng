@@ -398,7 +398,7 @@ static int mpa_parse(void *track, uint8 *data, long len, uint8 *extradata,
           long extradata_len)
 {
     Track *tr = (Track *)track;
-    OMSSlot *slot;
+    BPSlot *slot;
     uint32_t rem, mtu = DEFAULT_MTU; //FIXME get it from SETUP
     int32_t offset;
     uint8 dst[mtu];
@@ -407,7 +407,7 @@ static int mpa_parse(void *track, uint8 *data, long len, uint8 *extradata,
     if (mtu >= len + 4) {
         memset (dst, 0, 4);
         memcpy (dst + 4, data, len);
-        if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
+        if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                               dst, len + 4)) {
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                 return ERR_ALLOC;
@@ -422,7 +422,7 @@ static int mpa_parse(void *track, uint8 *data, long len, uint8 *extradata,
             offset = htonl(offset & 0xffff);
             memcpy (dst, &offset, 4);
 
-            if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
+            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                   dst, min(mtu, rem) + 4)) { 
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                 return ERR_ALLOC;

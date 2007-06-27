@@ -36,7 +36,7 @@
  * @brief Contains PAUSE method and reply handlers
  */
 
-#include <fenice/bufferpool.h>
+#include <bufferpool/bufferpool.h>
 #include <fenice/rtsp.h>
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>

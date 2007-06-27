@@ -511,7 +511,7 @@ quit_function:
 #if 0
 int parse_url(const char *url, char *server, size_t server_len,
           unsigned short *port, char *file_name, size_t file_name_len)
-// Note: this routine comes from OMS
+// Note: this routine comes from BP
 {
     /* expects format '[rtsp://server[:port/]]filename' */
 

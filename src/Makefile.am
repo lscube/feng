@@ -51,7 +51,6 @@ feng_LDADD =	../eventloop/libeventloop.la \
 		../rtcp/librtcp.la \
 		../rtp/librtp.la \
 		../mediathread/libmediath.la \
-		../bufferpool/libbufferpool.la \
 		../multicast/libmulticast.la
 
 feng_LDADD +=	../command_environment/libcommand.la \
@@ -59,7 +58,7 @@ feng_LDADD +=	../command_environment/libcommand.la \
 		../src/libutils.la \
 		../src/liblog.la \
 		../src/libsafectype.la \
-		-lnetembryo
+		-lnemesi -lbufferpool
 
 if FENICE_VERBOSE
 feng_LDADD += ../src/libdebug.la
@@ -67,6 +66,6 @@ endif
 
 feng_LDFLAGS =
 
-feng_LDADD += @GLIB_LIBS@
+feng_LDADD += @GLIB_LIBS@ 
 
 INCLUDES = -I$(feniceincludedir) -I..

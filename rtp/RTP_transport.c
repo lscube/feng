@@ -29,8 +29,9 @@
 
 #include <fenice/rtp.h>
 #include <fenice/demuxer.h>
-#include <fenice/bufferpool.h>
+#include <bufferpool/bufferpool.h>
 #include <fenice/mediathread.h>
+#include <fenice/fnc_log.h>
 
 #if ENABLE_DUMP
 #include <fenice/debug.h>
@@ -56,11 +57,11 @@ int RTP_send_packet(RTP_session * session)
     unsigned int hdr_size = 0;
     RTP_header r;        // 12 bytes
     int res = ERR_GENERIC;
-    OMSSlot *slot = NULL;
+    BPSlot *slot = NULL;
     ssize_t psize_sent = 0;
     Track *t = r_selected_track(session->track_selector);
 
-    while ((slot = OMSbuff_getreader(session->cons))) {
+    while ((slot = bp_getreader(session->cons))) {
         hdr_size = sizeof(r);
         r.version = 2;
         r.padding = 0;
@@ -118,7 +119,7 @@ int RTP_send_packet(RTP_session * session)
 
         free(packet);
 
-        OMSbuff_gotreader(session->cons);
+        bp_gotreader(session->cons);
     }
 
     res = event_buffer_low(session, t);
@@ -206,7 +207,7 @@ RTP_session *RTP_session_destroy(RTP_session * session)
     r_close_tracks(session->track_selector);
 
     // destroy consumer
-    OMSbuff_unref(session->cons);
+    bp_unref(session->cons);
 
 
     // Deallocate memory

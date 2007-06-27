@@ -41,7 +41,7 @@
 static DemuxerInfo info = {
     "Dynamic Edit List",
     "sd",
-    "OMSP Team",
+    "BPP Team",
     "",
     "sd"
 };

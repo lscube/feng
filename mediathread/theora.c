@@ -284,7 +284,7 @@ static int theora_parse(void *track, uint8_t *data, long len, uint8_t *extradata
             packet[3] = frag << 6;  //frag type
 //            packet[3] |= 0 << 4; //data type
             memcpy(packet + XIPH_HEADER_SIZE, data + off, payload);
-            if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
+            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       packet, mtu)) {
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                 return ERR_ALLOC;
@@ -303,7 +303,7 @@ static int theora_parse(void *track, uint8_t *data, long len, uint8_t *extradata
     packet[4] = (len>>8)&0xff;
     packet[5] = len&0xff;
     memcpy(packet + XIPH_HEADER_SIZE, data + off, len);
-    if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
+    if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                       packet, len + XIPH_HEADER_SIZE)) {
         fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
         return ERR_ALLOC;

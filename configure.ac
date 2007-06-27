@@ -116,7 +116,7 @@ dnl CFLAGS=""
 
 AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Fe.NG uses Glib. Please install it (you need devel files).]),)
 AM_PATH_LIBGCRYPT(1.2.4, [CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
-                          LDFLAGS="$LDFLAGS $LIBGCRYPT_LIBS"])
+                          LIBS="$LIBS $LIBGCRYPT_LIBS"])
 dnl test enable
 if test "x$enable_ipv6" = "xyes"; then
     AC_CHECK_TYPE(struct sockaddr_in6,
@@ -130,6 +130,10 @@ fi
 PKG_CHECK_MODULES(LIBNETEMBRYO,[libnetembryo >= 0.0.3])
 CFLAGS="$CFLAGS $LIBNETEMBRYO_CFLAGS"
 LIBS="$LIBS $LIBNETEMBRYO_LIBS"
+
+PKG_CHECK_MODULES(LIBBUFFERPOOL,[libbufferpool >= 0.0.1])
+CFLAGS="$CFLAGS $LIBBUFFERPOOL_CFLAGS"
+LIBS="$LIBS $LIBBUFFERPOOL_LIBS"
 
 dnl Check for SCTP support
 if test "$enable_sctp" = "yes"; then
@@ -167,12 +171,12 @@ AM_CONDITIONAL(FENICE_FFMPEG, [test "$enable_ffmpeg" = "yes"])
 if test "$enable_duma" = "yes"; then
     AC_DEFINE(ENABLE_DUMA, 1,[Debug enabled])
     enable_debug=yes
-    LDFLAGS="$LDFLAGS -lduma"
+    LIBS="$LIBS -lduma"
 fi
 
 if test "$enable_mudflap" = "yes"; then
     CFLAGS="$CFLAGS -fmudflapth"
-    LDFLAGS="$LDFLAGS -lmudflapth"
+    LIBS="$LIBS -lmudflapth"
     enable_debug=yes
 fi
 
@@ -296,7 +300,6 @@ AC_CONFIG_FILES([command_environment/Makefile])
 AC_CONFIG_FILES([docs/Makefile])
 AC_CONFIG_FILES([etc/Makefile])
 AC_CONFIG_FILES([avroot/Makefile])
-AC_CONFIG_FILES([bufferpool/Makefile])
 AC_OUTPUT
 
 AC_MSG_NOTICE([config files successfully generated!

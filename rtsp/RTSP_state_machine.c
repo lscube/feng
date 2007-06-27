@@ -318,7 +318,7 @@ int RTSP_validate_method(RTSP_buffer * rtsp)
  * @return ERR_GENERIC on generic error
  */ 
 int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rtsp)
-// This routine is from OMS.
+// This routine is from BP.
 {
     char ver[32], trash[15];
     unsigned int stat;

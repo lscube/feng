@@ -1,5 +1,8 @@
 + Feng changelog
 
+  27 Jun 2007; Luca Barbato <lu_zero@gentoo.org>:
+  Move to external bufferpool
+
   31 May 2007; Luca Barbato <lu_zero@gentoo.org> feng-0.1.13:
   First release
 

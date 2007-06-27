@@ -38,7 +38,7 @@
 static DemuxerInfo info = {
 	"Avformat Demuxer",
 	"avf",
-	"OMSP Team",
+	"BPP Team",
 	"",
 	"mov, nut, mkv, mxf" // the others are a problem
 };

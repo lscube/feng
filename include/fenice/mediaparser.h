@@ -33,7 +33,7 @@
 #include <glib.h>
 
 #include <fenice/types.h>
-#include <fenice/bufferpool.h>
+#include <bufferpool/bufferpool.h>
 #include <fenice/mediautils.h>
 #include <fenice/InputStream.h>
 #include <fenice/sdp_grammar.h>

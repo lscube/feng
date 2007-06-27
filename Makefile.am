@@ -1,5 +1,4 @@
-SUBDIRS =	bufferpool \
-		mediathread \
+SUBDIRS =	mediathread \
 		multicast \
 		command_environment \
 		eventloop \

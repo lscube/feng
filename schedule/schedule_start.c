@@ -50,7 +50,7 @@ int schedule_start(int id, play_args *args)
 
     mnow = gettimeinseconds();
 
-    session->cons = OMSbuff_ref(tr->buffer);
+    session->cons = bp_ref(tr->buffer);
 
     if (session->cons == NULL)
         return ERR_ALLOC;

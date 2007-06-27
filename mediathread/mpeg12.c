@@ -653,7 +653,7 @@ static int mpv_parse(void *track, uint8 *data, long len, uint8 *extradata,
 {
     Track *tr = (Track *)track;
     int ret;
-    OMSSlot *slot;
+    BPSlot *slot;
     uint32 dst_len = len + 4; //mpegaudio can be fragmented but not collated
     uint8 dst[dst_len];
     do {
@@ -662,7 +662,7 @@ static int mpv_parse(void *track, uint8 *data, long len, uint8 *extradata,
         ret = mpv_packetize(dst, &dst_len, data, len, tr->properties,
                   tr->parser_private);
         if (ret >= 0) {
-            if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
+            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                               dst, dst_len)) {
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool\n");
                 return ERR_ALLOC;

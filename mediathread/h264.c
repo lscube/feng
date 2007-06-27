@@ -95,7 +95,7 @@ typedef struct {
  */
 
 static int frag_fu_a(uint8_t *nal, int fragsize, int mtu,
-                     OMSBuffer * buffer, double timestamp)
+                     BPBuffer * buffer, double timestamp)
 {
     int start = 1, fraglen;
     uint8_t fu_header, buf[mtu];
@@ -118,7 +118,7 @@ static int frag_fu_a(uint8_t *nal, int fragsize, int mtu,
         fnc_log(FNC_LOG_VERBOSE, "[h264] Frag %d %d",buf[0], buf[1]);
         fragsize -= fraglen;
         nal      += fraglen;
-        if (OMSbuff_write(buffer, 0, timestamp, 0, 0, buf, fraglen + 2)) {
+        if (bp_write(buffer, 0, timestamp, 0, 0, buf, fraglen + 2)) {
             fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
             return ERR_ALLOC;
         }
@@ -330,7 +330,7 @@ static int h264_parse(void *track, uint8 *data, long len, uint8 *extradata,
                 }
             }
             if (mtu >= nalsize) {
-                if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
+                if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       data + index, nalsize)) {
                         fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                         return ERR_ALLOC;
@@ -367,7 +367,7 @@ static int h264_parse(void *track, uint8 *data, long len, uint8 *extradata,
 
             if (mtu >= q - p) {
                 fnc_log(FNC_LOG_VERBOSE, "[h264] Sending NAL %d",p[0]&0x1f);
-                if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
+                if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       p, q - p)) {
                         fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                         return ERR_ALLOC;
@@ -388,7 +388,7 @@ static int h264_parse(void *track, uint8 *data, long len, uint8 *extradata,
         fnc_log(FNC_LOG_VERBOSE, "[h264] last NAL %d",p[0]&0x1f);
         if (mtu >= len - (p - data)) {
             fnc_log(FNC_LOG_VERBOSE, "[h264] no frags");
-            if (OMSbuff_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
+            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       p, len - (p - data))) {
                         fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                         return ERR_ALLOC;

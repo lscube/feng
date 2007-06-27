@@ -43,7 +43,7 @@
 static DemuxerInfo info = {
     "Source Description",
     "sd",
-    "OMSP Team",
+    "BPP Team",
     "",
     "sd"
 };

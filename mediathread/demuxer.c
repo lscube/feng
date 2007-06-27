@@ -310,7 +310,7 @@ void free_track(Track *t, Resource *r)
     mparser_unreg(t->parser, t->private_data);
 
     if (t->buffer)
-        OMSbuff_free(t->buffer);
+        bp_free(t->buffer);
 
     istream_close(t->i_stream);
 
@@ -444,7 +444,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 
     switch (t->properties->media_source) {
     case MS_stored:
-        if( !(t->buffer = OMSbuff_new(OMSBUFFER_DEFAULT_DIM)) )
+        if( !(t->buffer = bp_new(BPBUFFER_DEFAULT_DIM)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
         if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
             ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
@@ -456,7 +456,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
         break;
     case MS_live:
 	shm_name = strstr(t->info->mrl, FNC_PROTO_SEPARATOR) + strlen(FNC_PROTO_SEPARATOR);
-        if( !(t->buffer = OMSbuff_shm_map(shm_name)) )
+        if( !(t->buffer = bp_shm_map(shm_name)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Shared memory problems\n");
         break;
     default:
