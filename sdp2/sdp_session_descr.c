@@ -61,7 +61,8 @@ int sdp_session_descr(char *name, char *descr, size_t descr_size)
     MediaDescrListArray m_descrs;
     sdp_field_list sdp_private;
     guint i;
-    
+    double duration;
+
     fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s\n", name);
     if ( !(r_descr=r_descr_get(prefs_get_serv_root(), name)) )
         return ERR_NOT_FOUND;
@@ -130,14 +131,15 @@ int sdp_session_descr(char *name, char *descr, size_t descr_size)
     // b=
     // t=
     // TODO: enable seek
-    DESCRCAT(g_snprintf(cursor, size_left, "t=0 %ld"SDP2_EL,
-                        r_descr_time(r_descr)))
+    DESCRCAT(g_snprintf(cursor, size_left, "t=0 0"SDP2_EL))
     // r=
     // z=
     // k=
     // a=
     // control attribute. We should look if aggregate metod is supported?
     DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s"SDP2_EL, name))
+    if (duration = r_descr_time(r_descr))
+        DESCRCAT(g_snprintf(cursor, size_left, "a=range:npt=0-%f"SDP2_EL, duration))
     // other private data
     if ( (sdp_private=r_descr_sdp_private(r_descr)) )
         for (sdp_private = list_first(sdp_private);

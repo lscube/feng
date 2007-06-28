@@ -380,6 +380,7 @@ static int avf_seek(Resource * r, double time_sec)
 {
     int flags = 0;
     int64_t time_msec = time_sec * AV_TIME_BASE;
+    fnc_log(FNC_LOG_DEBUG, "Seeking to %f", time_sec);
     AVFormatContext *fc = ((lavf_priv_t *)r->private_data)->avfc;
     if (fc->start_time != AV_NOPTS_VALUE)
         time_msec += fc->start_time;

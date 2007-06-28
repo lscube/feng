@@ -62,7 +62,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
             if ((q = strchr(q, '=')) == NULL)
                 return RTSP_BadRequest;    /* Bad Request */
 
-	        if (sscanf(q + 1, "%f", &(args->start_time)) != 1)
+            if (sscanf(q + 1, "%f", &(args->start_time)) != 1)
                 return RTSP_BadRequest;
 
             if ((q = strchr(q, '-')) == NULL)
@@ -183,6 +183,8 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
                     if(mt_resource_seek(r, args->start_time)) {
                         return RTSP_InvalidRange;
                     }
+                } else  if (args->start_time < 0.0) {
+                    return RTSP_InvalidRange;
                 }
                 if (schedule_start (rtp_sess->sched_id, args) == ERR_ALLOC)
                         return RTSP_Fatal_ErrAlloc;
@@ -195,6 +197,8 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
                         if(mt_resource_seek(r, args->start_time)) {
                             return RTSP_InvalidRange;
                         }
+                    } else {
+                        return RTSP_InvalidRange;
                     }
                 } else {
                     schedule_resume (rtp_sess->sched_id, args);
