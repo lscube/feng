@@ -189,17 +189,16 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
                 if (schedule_start (rtp_sess->sched_id, args) == ERR_ALLOC)
                         return RTSP_Fatal_ErrAlloc;
             } else {
+                if (args->start_time > 0.0) {
+                    if(mt_resource_seek(r, args->start_time)) {
+                        return RTSP_InvalidRange;
+                    }
+                } else  if (args->start_time < 0.0) {
+                    return RTSP_InvalidRange;
+                }
                 // Resume existing
                 if (!rtp_sess->pause) {
                     //  Already playing, this is a seek request
-                    //TODO: Verify end_time
-                    if (args->start_time >= 0.0) {
-                        if(mt_resource_seek(r, args->start_time)) {
-                            return RTSP_InvalidRange;
-                        }
-                    } else {
-                        return RTSP_InvalidRange;
-                    }
                 } else {
                     schedule_resume (rtp_sess->sched_id, args);
                 }

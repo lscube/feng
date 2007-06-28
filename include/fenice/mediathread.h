@@ -79,9 +79,8 @@ void mt_disable_event(mt_event_item *, void *sender);
 int mt_disable_events(void *sender);
 
 Resource *mt_resource_open(char *, char *);
-// ... resource_info();
 void mt_resource_close(Resource *);
-// int resource_seek(Resource *, <abs time>);
+int mt_resource_seek(Resource *, double);
 
 #endif // __MEDIA_THREAD
 
