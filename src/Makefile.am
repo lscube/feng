@@ -57,8 +57,7 @@ feng_LDADD +=	../command_environment/libcommand.la \
 		../src/libprefs.la \
 		../src/libutils.la \
 		../src/liblog.la \
-		../src/libsafectype.la \
-		-lnemesi -lbufferpool
+		../src/libsafectype.la
 
 if FENICE_VERBOSE
 feng_LDADD += ../src/libdebug.la
