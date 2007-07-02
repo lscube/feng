@@ -1,23 +1,7 @@
 To do:
     * ipc/rpc systems
     * support more formats (h263, aac, dirac, snow, wavpack, speex)
-    * investigate possible memory leak
     * update rpm and deb package scripts
-
-Done:
-    * rtcp bye
-    * vorbis support
-    * theora support
-    * bare scheduler
-
-0.1.12:
-    * fast seek
-    * cross file stream sync (homogeneous files)
-
-0.1.11:
-    * mediathread
-	- mmapped I/O
-        - libavformat support
-        - any2sdp (limited to interesting format)
-    * daemon mode
+    * integrate yaml
+    * multicast support
 
