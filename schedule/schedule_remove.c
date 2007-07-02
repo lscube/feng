@@ -45,7 +45,6 @@ int schedule_remove(int id)
     pthread_mutex_lock(&sched[id].mux);
     sched[id].valid = 0;
     if (sched[id].rtp_session) {
-    //    if(sched[i].rtp_session->is_multicast_dad) {
         RTP_session_destroy(sched[id].rtp_session);
         sched[id].rtp_session = NULL;
         fnc_log(FNC_LOG_INFO, "rtp session closed\n");

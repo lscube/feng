@@ -75,13 +75,13 @@ static RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, 
  * Parses the TRANSPORT header from the RTSP buffer
  * @param rtsp the buffer for which to parse the header
  * @param transport where to save the data of the header
- * @param is_multicast_dad Duplicated address detection for multicast support?? (Currently not supported)
  * @return RTSP_Ok or RTSP_BadRequest if the header is malformed
  * @return an RTSP_Error with reply_code 406 if the transport header is missing
  * @return an RTSP_Error with reply_code 461 if the required transport is unsupported
  * @return an RTSP_Error with reply_code 500 if it wasn't possible to allocate a socket for the client
  */
-static RTSP_Error parse_transport_header(RTSP_buffer * rtsp, RTP_transport * transport, unsigned char * is_multicast_dad)
+static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
+                                         RTP_transport * transport)
 {
     RTSP_Error error;
 
@@ -413,11 +413,10 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
  * @param rtsp the buffer for which to generate the session
  * @param rtsp_s the RTSP session to use
  * @param transport the transport to use
- * @param is_multicast_dad Duplicated address detection for multicast support?? (Currently not supported)
  * @param track_sel the track for which to generate the session
  * @return The newly generated RTP session
  */
-static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, int is_multicast_dad, Selector * track_sel)
+static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, Selector * track_sel)
 {
     struct timeval now_tmp;
     unsigned int start_seq, start_rtptime;
@@ -473,7 +472,6 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     rtp_s->start_rtptime = start_rtptime;
     rtp_s->start_seq = start_seq;
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
-    rtp_s->is_multicast_dad = is_multicast_dad;
     rtp_s->track_selector = track_sel;
     rtp_s->sched_id = schedule_add(rtp_s);
     gcry_randomize(&rtp_s->ssrc, sizeof(rtp_s->ssrc), GCRY_STRONG_RANDOM);
@@ -655,7 +653,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     //mediathread pointers
     RTP_session *rtp_s;
     RTSP_session *rtsp_s;
-    unsigned char is_multicast_dad = 1;    //unicast and the first multicast
 
     RTSP_Error error;
 
@@ -674,7 +671,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         goto error_management;
     else if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
         goto error_management;
-    else if ( (error = parse_transport_header(rtsp, &transport, &is_multicast_dad)).got_error )
+    else if ( (error = parse_transport_header(rtsp, &transport)).got_error )
         goto error_management;
 
     // If there's a Session header we have an aggregate control
@@ -691,7 +688,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         goto error_management;
 
     // Setup the RTP session
-    rtp_s = setup_rtp_session(&cinfo, rtsp, rtsp_s, &transport, is_multicast_dad, track_sel);
+    rtp_s = setup_rtp_session(&cinfo, rtsp, rtsp_s, &transport, track_sel);
 
     // Setup the RTSP session
     rtsp_s->session_id = session_id;

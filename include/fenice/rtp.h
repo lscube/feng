@@ -89,7 +89,7 @@ typedef struct _RTP_session {
     unsigned char rtcp_inbuffer[RTCP_BUFFERSIZE];
     int rtcp_insize;
     unsigned char rtcp_outbuffer[RTCP_BUFFERSIZE];
-    uint32 rtcp_outsize;
+    uint32_t rtcp_outsize;
 
     //these time vars now are now back here
     double start_time;
@@ -119,7 +119,6 @@ typedef struct _RTP_session {
     BPConsumer *cons;
     RTCP_stats rtcp_stats[2];    //client and server
     struct _RTP_session *next;
-    unsigned char is_multicast_dad;    /*! if is it a multicast son it cannot do TEARDOWN etc... */
 } RTP_session;
 
 typedef struct _RTP_header {

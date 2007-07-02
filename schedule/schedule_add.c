@@ -47,8 +47,7 @@ int schedule_add(RTP_session *rtp_session)
         if (!sched[i].valid) {
             sched[i].valid = 1;
             sched[i].rtp_session = rtp_session;
-            if(rtp_session->is_multicast_dad)
-                sched[i].play_action = RTP_send_packet;
+            sched[i].play_action = RTP_send_packet;
             pthread_mutex_unlock(&sched[i].mux);
             return i;
         }
