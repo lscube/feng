@@ -109,6 +109,11 @@ static int sd_init(Resource * r)
                 if (!is_valid_multicast_address(r->info->multicast))
                     strcpy(r->info->multicast, DEFAULT_MULTICAST_ADDRESS);
             }
+/* XXX later
+            if (!strcasecmp(keyword, SD_TTL)) {
+                sscanf(line, "%*s%3s", r->info->ttl);
+            }
+*/
         }
         if (feof(fd))
             return RESOURCE_OK;

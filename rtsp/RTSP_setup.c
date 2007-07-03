@@ -153,7 +153,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                 }
 #if 0
 // TODO: multicast with mediathread
-                else if (matching_descr->flags & SD_FL_MULTICAST) {    //multicast 
+                else if (*rtsp->session_list->resource->info->multicast) {
                     // TODO: make the difference between only multicast allowed or unicast fallback allowed.
                     cli_ports.RTP =
                     ser_ports.RTP = matching_me->rtp_multicast_port;
@@ -541,68 +541,25 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
         return ERR_GENERIC;
     switch (Sock_type(rtp_s->transport.rtp_sock)) {
     case UDP:
-#if 0
-//Temporary disable of multicast code for netembro
-        // if (!(descr->flags & SD_FL_MULTICAST)) {
-        if (rtp_s->transport.u.udp.is_multicast) {
-            /*
-               strcat(r, "Transport: RTP/AVP;multicast;");
-               sprintf(temp, "destination=%s;", descr->multicast);
-               strcat(r, temp);
-               strcat(r, "port=");
-             */
-            w_pos +=
-                sprintf(r + w_pos,
+        if (Sock_flags(rtp_s->transport.rtp_sock)== IS_MULTICAST) {
+            w_pos += sprintf(r + w_pos,
                     "RTP/AVP;multicast;ttl=%d;destination=%s;port=",
-                    (int) DEFAULT_TTL, descr->multicast);
-        } else {
-#endif //Temporary disable of multicast code for netembro
-            /*
-               strcat(r, "Transport: RTP/AVP;unicast;client_port=");
-               sprintf(temp, "%d", rtp_s->transport.u.udp.cli_ports.RTP);
-               strcat(r, temp);
-               strcat(r, "-");
-               sprintf(temp, "%d", rtp_s->transport.u.udp.cli_ports.RTCP);
-               strcat(r, temp);
-
-               sprintf(temp, ";source=%s", get_address());
-               strcat(r, temp);
-
-               strcat(r, ";server_port=");
-             */
-            w_pos +=
-                snprintf(r + w_pos, sizeof(r) - w_pos,
+//                    session->resource->info->ttl,
+                    DEFAULT_TTL,
+                    session->resource->info->multicast);
+        } else { // XXX handle TLS here
+            w_pos += snprintf(r + w_pos, sizeof(r) - w_pos,
                     "RTP/AVP;unicast;client_port=%d-%d;source=%s;server_port=",
                     get_remote_port(rtp_s->transport.rtp_sock),
                     get_remote_port(rtp_s->transport.rtcp_sock),
                     get_local_host(rtsp->sock));
-#if 0
         }
-#endif
-        /*
-           sprintf(temp, "%d", rtp_s->transport.u.udp.ser_ports.RTP);
-           strcat(r, temp);
-           strcat(r, "-");
-           sprintf(temp, "%d", rtp_s->transport.u.udp.ser_ports.RTCP);
-           strcat(r, temp);
-         */
+
         w_pos +=
             snprintf(r + w_pos, sizeof(r) - w_pos, "%d-%d",
                 get_local_port(rtp_s->transport.rtp_sock),
                 get_local_port(rtp_s->transport.rtcp_sock));
 
-#if 0
-        // if ((descr->flags & SD_FL_MULTICAST)) {
-        if (rtp_s->transport.u.udp.is_multicast) {
-            /*
-               strcat(r,";ttl=");
-               sprintf(ttl,"%d",(int)DEFAULT_TTL);
-               strcat(r,ttl);
-             */
-            w_pos +=
-                sprintf(r + w_pos, ";ttl=%d", (int) DEFAULT_TTL);
-        }
-#endif
         break;
     case LOCAL:
         if (Sock_type(rtsp->sock) == TCP) {
