@@ -38,7 +38,7 @@
 static DemuxerInfo info = {
 	"Avformat Demuxer",
 	"avf",
-	"BPP Team",
+	"LScube Team",
 	"",
 	"mov, nut, mkv, mxf" // the others are a problem
 };

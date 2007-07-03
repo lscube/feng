@@ -43,7 +43,7 @@
 static DemuxerInfo info = {
     "Source Description",
     "sd",
-    "BPP Team",
+    "LScube Team",
     "",
     "sd"
 };
