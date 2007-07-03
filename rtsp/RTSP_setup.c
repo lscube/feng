@@ -660,18 +660,29 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     memset(&transport, 0, sizeof(transport));
 
     // Parse the input message
+    
+    // Extract the URL
+    if ( (error = extract_url(rtsp, url)).got_error )
+	goto error_management;
 
-    if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
-	    goto error_management;
-    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
+    // Validate URL
+    if ( (error = validate_url(url, &cinfo)).got_error )
     	goto error_management;
-    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
+
+    // Check for Forbidden Paths
+    if ( (error = check_forbidden_path(&cinfo)).got_error )
     	goto error_management;
-    else if ( (error = split_resource_path(&cinfo, trackname, sizeof(trackname))).got_error ) //Split resource!trackname
+
+    // Split resource!trackname
+    if ( (error = split_resource_path(&cinfo, trackname, sizeof(trackname))).got_error )
         goto error_management;
-    else if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
+    
+    // Get the CSeq
+    if ( (error = get_cseq(rtsp)).got_error ) 
         goto error_management;
-    else if ( (error = parse_transport_header(rtsp, &transport)).got_error )
+
+    // Parse the RTP/AVP/something string
+    if ( (error = parse_transport_header(rtsp, &transport)).got_error )
         goto error_management;
 
     // If there's a Session header we have an aggregate control
