@@ -98,20 +98,15 @@ static int sd_init(Resource * r)
         while (strcasecmp(keyword, SD_STREAM) && !feof(fd)) {
             fgets(line, sizeof(line), fd);
             sscanf(line, "%79s", keyword);
-            /*
-             *- validate multicast
-             *- validate twin
-             * */
+            /* validate twin */
             if (!strcasecmp(keyword, SD_TWIN)) {
                 sscanf(line, "%*s%s", r->info->twin);
                 parse_url(r->info->twin, server, sizeof(server),
                           &port, object, sizeof (object));    //FIXME
-//                printf("SD: server:%s\npath:%s\n", server, object);
+            /* validate multicast */
             } else if (!strcasecmp(keyword, SD_MULTICAST)) {
                 sscanf(line, "%*s%15s", r->info->multicast);
-                // if (!is_valid_multicast_address(sd->multicast))
                 if (!is_valid_multicast_address(r->info->multicast))
-                    //strcpy(sd->multicast, DEFAULT_MULTICAST_ADDRESS);
                     strcpy(r->info->multicast, DEFAULT_MULTICAST_ADDRESS);
             }
         }
