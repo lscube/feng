@@ -39,7 +39,6 @@
 #include <fenice/safe-ctype.h> /*ISXDIGIT*/
 
 #include <fenice/multicast.h>
-#include <fenice/types.h>
 #include <fenice/utils.h>
 
 #ifndef IN_IS_ADDR_MULTICAST
@@ -181,7 +180,7 @@ static bool is_valid_ipv6_address (const char *str, const char *end)
 }
 
 
-uint32 is_valid_multicast_address(char *ip)
+int is_valid_multicast_address(char *ip)
 {
     sa_family_t family;
 
