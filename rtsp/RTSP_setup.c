@@ -43,8 +43,12 @@
 #include <fenice/prefs.h>
 #include <fenice/multicast.h>
 #include <fenice/fnc_log.h>
+#include <fenice/schedule.h>
 #include <gcrypt.h>
 #include <RTSP_utils.h>
+
+extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
+
 
 /**
  * Splits the path of a requested media finding the trackname and the removing it from the object
@@ -81,7 +85,8 @@ static RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, 
  * @return an RTSP_Error with reply_code 500 if it wasn't possible to allocate a socket for the client
  */
 static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
-                                         RTP_transport * transport)
+                                         RTP_transport * transport,
+                                         RTP_session **rtp_s)
 {
     RTSP_Error error;
 
@@ -91,7 +96,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
     char *p  /* = NULL */ ;
     char transport_str[1024];
 
-    char *saved_ptr, *transport_tkn, *tmp;
+    char *saved_ptr, *transport_tkn;
     int max_interlvd;
     Sock *sock_pair[2];
     RTSP_interleaved *intlvd, *ilvd_s;
@@ -151,41 +156,45 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                     Sock_connect (get_remote_host(rtsp->sock), port_buffer,
                                   transport->rtcp_sock, UDP, 0);
                 }
-#if 0
-// TODO: multicast with mediathread
                 else if (*rtsp->session_list->resource->info->multicast) {
-                    // TODO: make the difference between only multicast allowed or unicast fallback allowed.
-                    cli_ports.RTP =
-                    ser_ports.RTP = matching_me->rtp_multicast_port;
-
-                    cli_ports.RTCP =
-                    ser_ports.RTCP = matching_me->rtp_multicast_port + 1;
-
-                    *is_multicast_dad = 0;
-                    if (!(matching_descr-> flags & SD_FL_MULTICAST_PORT)) {
-                        *is_multicast_dad = 1;
-                        //RTP outgoing packets
-                        tmp = g_strdup_printf("%d", cli_ports.RTP);
-                        transport->rtp_sock = Sock_connect(matching_descr->multicast, tmp, NULL, UDP, 0);
-                        g_free(tmp);
-                        //RTCP incoming packets
-                        //transport->rtcp_sock = Sock_bind(NULL, tmp, UDP, 0); //TODO: check if needed
-                        //RTCP outgoing packets
-                        tmp = g_strdup_printf("%d", cli_ports.RTCP);
-                        transport->rtcp_sock = Sock_connect(matching_descr->multicast, tmp, transport->rtcp_sock, UDP, 0);
-                        g_free(tmp);
-
-                        if (matching_me->next == NULL)
-                            matching_descr->flags |= SD_FL_MULTICAST_PORT;
-
-                        matching_me-> rtp_multicast_port = cli_ports.RTP;
-
-                        fnc_log(FNC_LOG_DEBUG,
-                            "\nSet up socket for multicast ok\n");
+                    char port_buffer[8];
+                    RTSP_session *s = rtsp->session_list;
+                    *rtp_s=NULL;
+                    int i;
+                    for (i = 0; !*rtp_s && i<ONE_FORK_MAX_CONNECTION; ++i) {
+                        pthread_mutex_lock(&sched[i].mux);
+                        if (sched[i].valid) {
+                            if (!strncmp(sched[i].rtp_session->sd_filename,
+                                         s->resource->info->mrl, 255)) {
+                                *rtp_s = sched[i].rtp_session;
+                                fnc_log(FNC_LOG_DEBUG,
+                                        "Found multicast instance.");
+                        }
+                        pthread_mutex_unlock(&sched[i].mux);
+                    }
+                    if ((p = strstr(transport_tkn, "client_port"))) {
+                        p = strstr(p, "=");
+                        sscanf(p + 1, "%d", &(cli_ports.RTP));
+                        p = strstr(p, "-");
+                        sscanf(p + 1, "%d", &(cli_ports.RTCP));
+                    }
+                    
+                    if (!*rtp_s) {
+                        snprintf(port_buffer, 8, "%d",
+                                 s->resource->info->port);
+                        transport->rtp_sock =
+                            Sock_connect(s->resource->info->multicast,
+                            port_buffer, NULL, UDP, 0);
+                        snprintf(port_buffer, 8, "%d",
+                                 s->resource->info->port+1);
+                        transport->rtcp_sock =
+                            Sock_connect(s->resource->info->multicast,
+                            port_buffer, transport->rtcp_sock, UDP, 0);
+                    }
+                        fnc_log(FNC_LOG_DEBUG,"Multicast socket set");
                     }
                 } else 
                     continue;
-#endif
                 break;    // found a valid transport
             } else if (Sock_type(rtsp->sock) == TCP && !strncmp(p, "/TCP", 4)) {    // Transport: RTP/AVP/TCP;interleaved=x-y
 
@@ -196,9 +205,9 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
 
                 if ((p = strstr(transport_tkn, "interleaved"))) {
                     p = strstr(p, "=");
-                    sscanf(p + 1, "%hu", &(intlvd->proto.tcp.rtp_ch));
+                    sscanf(p + 1, "%u", &(intlvd->proto.tcp.rtp_ch));
                     if ((p = strstr(p, "-")))
-                        sscanf(p + 1, "%hu", &(intlvd->proto.tcp.rtcp_ch));
+                        sscanf(p + 1, "%u", &(intlvd->proto.tcp.rtcp_ch));
                     else
                         intlvd->proto.tcp.rtcp_ch = 
                                                 intlvd->proto.tcp.rtp_ch + 1;
@@ -452,21 +461,6 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     //XXX use strdup
     strncpy(rtp_s->sd_filename, cinfo->object, sizeof(rtp_s->sd_filename));
 
-#if 0 //MULTICAST
-    /*XXX */
-    rtp_s->current_media = calloc(1, sizeof(media_entry));
-
-    // if(!(matching_descr->flags & SD_FL_MULTICAST_PORT)){
-
-    // TODO: multicast with mediathread
-    if (is_multicast_dad) {
-        if (mediacpy(&rtp_s->current_media, &matching_me)) {
-            send_reply(500, 0, rtsp);    // Internal server error
-            return ERR_GENERIC;
-        }
-    }
-#endif
-
     gettimeofday(&now_tmp, 0);
     srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
     rtp_s->start_rtptime = start_rtptime;
@@ -608,7 +602,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     Track *req_track;
 
     //mediathread pointers
-    RTP_session *rtp_s;
+    RTP_session *rtp_s = NULL;
     RTSP_session *rtsp_s;
 
     RTSP_Error error;
@@ -638,10 +632,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     if ( (error = get_cseq(rtsp)).got_error ) 
         goto error_management;
 
-    // Parse the RTP/AVP/something string
-    if ( (error = parse_transport_header(rtsp, &transport)).got_error )
-        goto error_management;
-
     // If there's a Session header we have an aggregate control
     if ( (error = get_session_id(rtsp, &session_id)).got_error )
         goto error_management;
@@ -655,8 +645,13 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     if ( (error = select_requested_track(&cinfo, rtsp_s, trackname, &track_sel, &req_track)).got_error )
         goto error_management;
 
+    // Parse the RTP/AVP/something string
+    if ( (error = parse_transport_header(rtsp, &transport, &rtp_s)).got_error )
+        goto error_management;
+
     // Setup the RTP session
-    rtp_s = setup_rtp_session(&cinfo, rtsp, rtsp_s, &transport, track_sel);
+    if (!rtp_s)
+        rtp_s = setup_rtp_session(&cinfo, rtsp, rtsp_s, &transport, track_sel);
 
     // Setup the RTSP session
     rtsp_s->session_id = session_id;

@@ -96,6 +96,7 @@ MObject_def(__RESOURCE_INFO)
     MediaSource media_source;
     char twin[255];
     char multicast[16];
+    int port;
     char ttl[4];
 } ResourceInfo;
 
