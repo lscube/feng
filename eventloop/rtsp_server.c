@@ -151,7 +151,8 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
                 if ((i = rtsp->out_size) + n < RTSP_BUFFERSIZE - RTSP_RESERVED) {
                     rtsp->out_buffer[i] = '$';
                     rtsp->out_buffer[i + 1] = (unsigned char) intlvd->proto.tcp.rtcp_ch;
-                    *((uint16 *) & rtsp->out_buffer[i + 2]) = htons((uint16) n);
+                    *((uint16_t *) & rtsp->out_buffer[i + 2]) = 
+                        htons((uint16_t) n);
                     rtsp->out_size += n + 4;
                     memcpy(rtsp->out_buffer + i + 4, buffer, n);
                     if ( (n = RTSP_send(rtsp)) < 0) {
@@ -181,7 +182,8 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
                 if ((i = rtsp->out_size) + n < RTSP_BUFFERSIZE - RTSP_RESERVED) {
                     rtsp->out_buffer[i] = '$';
                     rtsp->out_buffer[i + 1] = (unsigned char) intlvd->proto.tcp.rtp_ch;
-                    *((uint16 *) & rtsp->out_buffer[i + 2]) = htons((uint16) n);
+                    *((uint16_t *) & rtsp->out_buffer[i + 2]) =
+                        htons((uint16_t) n);
                     rtsp->out_size += n + 4;
                     memcpy(rtsp->out_buffer + i + 4, buffer, n);
                     if ( (n = RTSP_send(rtsp)) < 0) {

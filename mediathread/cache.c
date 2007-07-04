@@ -45,7 +45,7 @@ static int read_from_device(int fd, void *buf, size_t nbytes);/*not implemented 
 // shawill: should we receive cache size as parameter?
 Cache *create_cache(stream_type type)
 {
-    uint32 size;
+    uint32_t size;
     Cache *c;
     
     if ( !(c=(Cache *)malloc(sizeof(Cache))) )
@@ -73,7 +73,7 @@ Cache *create_cache(stream_type type)
             c->read_data=read;
             break;
     }
-    if ( !(c->cache=(uint8 *)malloc(size)) ) {
+    if ( !(c->cache = malloc(size)) ) {
         free(c);
         return NULL;
     }
@@ -91,9 +91,9 @@ Cache *create_cache(stream_type type)
 /*! internal read function
  * if buf pointer is NULL, then the read act like a forward seek
  * */
-static uint32 read_internal_c(uint32 nbytes, uint8 *buf, Cache *c, int fd)
+static uint32_t read_internal_c(uint32_t nbytes, uint8_t *buf, Cache *c, int fd)
 {
-    uint32 bytes;
+    uint32_t bytes;
 
     if(!nbytes)
         return 0;
@@ -113,7 +113,7 @@ static uint32 read_internal_c(uint32 nbytes, uint8 *buf, Cache *c, int fd)
 
 
 /*Interface to Cache*/
-int read_c(uint32 nbytes, uint8 *buf, Cache **c, int fd, stream_type type)
+int read_c(uint32_t nbytes, uint8_t *buf, Cache **c, int fd, stream_type type)
 {
     int bytes_read;
 //FIXME make sure it is thread safe!

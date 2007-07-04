@@ -37,7 +37,6 @@
 #define _DEBUGH
 
 #include <config.h>
-#include <fenice/types.h>
 
 
 #if ENABLE_VERBOSE
@@ -45,7 +44,7 @@ void dump_buffer(char *buffer);
 #define VERBOSE
 #endif
 #if ENABLE_DUMP
-int dump_payload(uint8_t * data_slot, uint32_t data_size, uint8 fname[255]);
+int dump_payload(uint8_t * data_slot, uint32_t data_size, char fname[255]);
 #endif
 
 

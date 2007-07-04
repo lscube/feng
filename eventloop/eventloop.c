@@ -51,7 +51,7 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
     int max_fd;
     static RTSP_buffer *rtsp_list = NULL;
     RTSP_buffer *p = NULL;
-    uint32 fd_found;
+    uint32_t fd_found;
     fd_set rset,wset;
     Sock *client_sock = NULL;
 

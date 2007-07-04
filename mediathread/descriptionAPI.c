@@ -175,7 +175,7 @@ inline int m_descr_rtp_port(MediaDescr *m_descr)
     return (m_descr && m_descr->info) ? m_descr->info->rtp_port : 0;
 }
 
-inline uint32 m_descr_rtp_pt(MediaDescr *m_descr)
+inline int m_descr_rtp_pt(MediaDescr *m_descr)
 {
     return (m_descr && m_descr->properties) ? m_descr->properties->payload_type : 0;
 }

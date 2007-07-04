@@ -31,7 +31,7 @@
 #ifndef __INPUTSTREAMH
 #define __INPUTSTREAMH
 
-#include <fenice/types.h>
+#include <stdint.h>
 
 #define CACHE_FILE_SIZE     65536
 #define CACHE_NET_SIZE      65536
@@ -55,10 +55,10 @@
 #endif // min
 
 typedef struct __CACHE {
-    uint8 *cache;
-    uint32 max_cache_size;
-    uint32 cache_size;
-    uint32 bytes_left;
+    uint8_t *cache;
+    uint32_t max_cache_size;
+    uint32_t cache_size;
+    uint32_t bytes_left;
     int (*read_data)(int /*fd*/, void * /*buf*/, size_t /*nbytes*/); /*can be: read, read_from_net, read_from_device*/
 } Cache;
 
@@ -70,7 +70,7 @@ Cache *create_cache(stream_type);
 // int read_from_device(int fd, void *buf, size_t nbytes);/*not implemented yet*/
 
 /*Interface to Cache*/
-int read_c(uint32 nbytes, uint8 *buf, Cache **c, int fd, stream_type);
+int read_c(uint32_t nbytes, uint8_t *buf, Cache **c, int fd, stream_type);
 void flush_cache(Cache *c); 
 void free_cache(Cache *c); 
 
@@ -100,7 +100,7 @@ typedef struct __INPUTSTREAM {
 InputStream *istream_open(char *mrl);
 void istream_close(InputStream *);
 
-inline int istream_read(InputStream *is, uint8 *buf, uint32 nbytes); 
+inline int istream_read(InputStream *is, uint8_t *buf, uint32_t nbytes); 
 inline int istream_reset(InputStream *is);
 stream_type parse_mrl(char *mrl, char **resource_name);
 time_t mrl_mtime(char *mrl);

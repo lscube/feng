@@ -36,9 +36,9 @@
 #define _UTILSH
 #include <time.h>
 #include <ctype.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <math.h>
-#include <fenice/types.h>
 #include <string.h>
 
 //XXX should me moved somewhere else

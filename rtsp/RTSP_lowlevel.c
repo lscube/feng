@@ -181,7 +181,7 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
 
     // is there an interleaved RTP/RTCP packet?
     if (rtsp->in_buffer[0] == '$') {
-        uint16 *intlvd_len = (uint16 *) & rtsp->in_buffer[2];
+        uint16_t *intlvd_len = (uint16_t *) & rtsp->in_buffer[2];
 
         if ((bl = ntohs(*intlvd_len)) <= rtsp->in_size) {
             if (hdr_len)

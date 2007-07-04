@@ -35,7 +35,6 @@
 // #include <time.h>
 #include <sys/time.h>
 
-#include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/schedule.h>
 #include <fenice/rtp.h>

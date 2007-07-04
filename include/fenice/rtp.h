@@ -43,7 +43,6 @@
 #include <netembryo/wsocket.h>
 #include <fenice/mediathread.h>
 #include <bufferpool/bufferpool.h>
-#include <fenice/types.h>
 #include <fenice/prefs.h>
 #define RTP_DEFAULT_PORT 5004
 #define RTCP_BUFFERSIZE    1024
@@ -67,7 +66,7 @@ typedef struct _RTP_transport {
     Sock *rtp_sock;
     Sock *rtcp_sock;
     struct sockaddr_storage last_stg;
-    uint16 rtp_ch, rtcp_ch;
+    int rtp_ch, rtcp_ch;
 } RTP_transport;
 
 typedef struct _RTCP_stats {

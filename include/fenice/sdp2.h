@@ -35,13 +35,9 @@
 #include <unistd.h>
 #include <glib.h>
 
-#include <fenice/types.h>
 #include <fenice/demuxer.h>
 
 #include <config.h>
-#ifndef PACKAGE
-#define PACKAGE "fenice"
-#endif
 
 #define SDP2_EL "\r\n"
 #define SDP2_VERSION 0
@@ -51,6 +47,6 @@
 gint sdp_session_id(char *, size_t);
 gint sdp_get_version(ResourceDescr *, char *, size_t);
 int sdp_session_descr(char *, char *, size_t);
-int sdp_media_descr(ResourceDescr *, MediaDescrList, char *, uint32);
+int sdp_media_descr(ResourceDescr *, MediaDescrList, char *, uint32_t);
 
 #endif /*SDP2_H_*/

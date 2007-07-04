@@ -33,7 +33,6 @@
 
 #include <glib.h>
 
-#include <fenice/types.h>
 #include <fenice/utils.h>
 #include <fenice/mediautils.h>
 #include <fenice/InputStream.h>
@@ -153,9 +152,9 @@ typedef struct __SELECTOR {
     // Track *tracks[MAX_SEL_TRACKS];	
     TrackList tracks;
     Track cur;
-    uint32 default_index;
-    uint32 selected_index;/**/
-    uint32 total; /*total tracks in selector*/
+    uint32_t default_index;
+    uint32_t selected_index;/**/
+    uint32_t total; /*total tracks in selector*/
 } Selector;
 
 #if 0 // define MObject with MObject_def
@@ -246,7 +245,7 @@ inline char *m_descr_name(MediaDescr *);
 inline MediaType m_descr_type(MediaDescr *);
 inline sdp_field_list m_descr_sdp_private(MediaDescr *);
 inline int m_descr_rtp_port(MediaDescr *);
-inline uint32 m_descr_rtp_pt(MediaDescr *);
+inline int m_descr_rtp_pt(MediaDescr *);
 inline char *m_descr_commons_deed(MediaDescr *);
 inline char *m_descr_rdf_page(MediaDescr *);
 inline char *m_descr_title(MediaDescr *);

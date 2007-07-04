@@ -31,7 +31,6 @@
 #ifndef __MEDIAPARSER_MODULE_H
 #define __MEDIAPARSER_MODULE_H
 
-#include <fenice/types.h>
 #include <fenice/mediaparser.h>
 #include <fenice/InputStream.h>
 

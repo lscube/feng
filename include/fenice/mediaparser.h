@@ -32,7 +32,6 @@
 
 #include <glib.h>
 
-#include <fenice/types.h>
 #include <bufferpool/bufferpool.h>
 #include <fenice/mediautils.h>
 #include <fenice/InputStream.h>
@@ -104,7 +103,7 @@ typedef struct __MEDIAPARSER {
                      InputStream *istream, MediaProperties *properties,
                      void *private_data);
 /*! packetize: DEPRECATED*/
-    int (*packetize)(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data);
+    int (*packetize)(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src, uint32_t src_nbytes, MediaProperties *properties, void *private_data);
 /*! parse: take a single elementary unit of the codec stream and prepare the rtp payload out of it.
  *
  *  @param track: track whose bufferpool should be filled,

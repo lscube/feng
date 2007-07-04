@@ -105,7 +105,7 @@ void istream_close(InputStream *is)
 }
 
 #ifdef HAVE_MMAP
-static int read_mmap(uint32 nbytes, uint8 *buf, InputStream *is)
+static int read_mmap(uint32_t nbytes, uint8_t *buf, InputStream *is)
 {
     off_t len = nbytes;
 
@@ -128,7 +128,7 @@ static int read_mmap(uint32 nbytes, uint8 *buf, InputStream *is)
 /*! InputStream read function
  * If buf pointer is NULL then the function act like a forward seek
  * */
-inline int istream_read(InputStream *is, uint8 *buf, uint32 nbytes)
+inline int istream_read(InputStream *is, uint8_t *buf, uint32_t nbytes)
 {
     if (is) {
 #ifdef HAVE_MMAP

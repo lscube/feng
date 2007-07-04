@@ -73,7 +73,7 @@ static int ds_probe(InputStream * i_stream)
         return RESOURCE_DAMAGED;
     }
     // Read begin of file
-    if (istream_read(i_stream, (uint8 *) buffer, 79) <= 0) {
+    if (istream_read(i_stream, (uint8_t *) buffer, 79) <= 0) {
         return RESOURCE_DAMAGED;
     }
     buffer[79] = '\0';

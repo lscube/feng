@@ -35,7 +35,6 @@
 #include <fenice/mediaparser.h>
 #include <fenice/mediaparser_module.h>
 #include <fenice/utils.h>
-#include <fenice/types.h>
 
 static MediaParserInfo info = {
     "MPV",
@@ -102,8 +101,8 @@ typedef struct _MPV_DATA {
 
 typedef struct {
     InputStream *istream; 
-    uint8 *src;
-    uint32 src_nbytes;
+    uint8_t *src;
+    uint32_t src_nbytes;
 } mpv_input;
 
 static float FrameRateCode[] = {
@@ -144,7 +143,7 @@ static float AspectRatioCode[] = {
         0.0000  /*  15              reserved                                */
     };
 
-static int mpv_read(mpv_input *in, uint8 *buf, uint32 nbytes)
+static int mpv_read(mpv_input *in, uint8_t *buf, uint32_t nbytes)
 {
     if (in->istream)
     {
@@ -152,7 +151,7 @@ static int mpv_read(mpv_input *in, uint8 *buf, uint32 nbytes)
         return istream_read(in->istream, buf, nbytes);
     }
     else if (in->src) {
-        uint32 to_cpy=min(nbytes, in->src_nbytes);
+        uint32_t to_cpy=min(nbytes, in->src_nbytes);
 
         if (buf)
             memcpy(buf, in->src, to_cpy);
@@ -165,9 +164,9 @@ static int mpv_read(mpv_input *in, uint8 *buf, uint32 nbytes)
     
 }
 
-static int get_header(uint32 *header, uint8* src, mpv_data *mpv)
+static int get_header(uint32_t *header, uint8_t *src, mpv_data *mpv)
 {
-    uint8 *sync_w = (uint8 *)header;
+    uint8_t *sync_w = (uint8_t *)header;
     int ret;
     mpv_input in = {NULL, src, 4};
 
@@ -181,9 +180,9 @@ static int get_header(uint32 *header, uint8* src, mpv_data *mpv)
     return 0;
 }
 
-static int mpv_sync(uint32 *header, mpv_input *in, mpv_data *mpv)
+static int mpv_sync(uint32_t *header, mpv_input *in, mpv_data *mpv)
 {
-    uint8 *sync_w = (uint8 *)header;
+    uint8_t *sync_w = (uint8_t *)header;
     int ret;
 
     if ( (ret=mpv_read(in, sync_w, 4)) != 4 ) 
@@ -198,11 +197,11 @@ static int mpv_sync(uint32 *header, mpv_input *in, mpv_data *mpv)
     return 0;
 }
 
-static int next_start_code2(uint8 *dst, uint32 dst_remained, mpv_input *in)
+static int next_start_code2(uint8_t *dst, uint32_t dst_remained, mpv_input *in)
 {
     int count=0;
     int ret;
-    uint8 sync_w[4];
+    uint8_t sync_w[4];
 
     if ( (ret=mpv_read(in, sync_w, 4)) != 4 ) 
         return (ret<0) ? ERR_PARSE : ERR_EOF;
@@ -225,7 +224,7 @@ static int next_start_code2(uint8 *dst, uint32 dst_remained, mpv_input *in)
 
 }
 
-static int seq_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+static int seq_ext(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
     int count=0;
 
@@ -237,7 +236,7 @@ static int seq_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperti
 
 }
 
-static int read_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+static int read_ext(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
     int count=0;
 
@@ -249,7 +248,7 @@ static int read_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaPropert
 
 }
 
-static int ext_and_user_data(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+static int ext_and_user_data(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
     int count=0;
 
@@ -261,7 +260,7 @@ static int ext_and_user_data(uint8 *dst, uint32 dst_remained, mpv_input *in, Med
 
 }
 
-static int slice(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+static int slice(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
     int count=0;
 
@@ -273,11 +272,11 @@ static int slice(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties
 
 }
 
-static int seq_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+static int seq_head(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
     int count=0,ret;
-    uint32 header;
-    uint32 off;
+    uint32_t header;
+    uint32_t off;
     int bt;
 
     /*---------------------*/
@@ -314,10 +313,10 @@ static int seq_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaPropert
     return count;
 }
 
-static int gop_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+static int gop_head(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
     int count=0, ret,off,bt;
-    uint32 header;
+    uint32_t header;
 
     /*---------------------*/
     count=next_start_code2(dst, dst_remained, in);
@@ -346,10 +345,10 @@ static int gop_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaPropert
     return count;
 }
 
-static int picture_coding_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+static int picture_coding_ext(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
     int count=0, ret,off,bt;
-    uint32 header;
+    uint32_t header;
 
     /*---------------------*/
     count=next_start_code2(dst, dst_remained, in);
@@ -405,10 +404,10 @@ static int picture_coding_ext(uint8 *dst, uint32 dst_remained, mpv_input *in, Me
 
 }
 
-static int picture_head(uint8 *dst, uint32 dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
+static int picture_head(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
     int count=0, ret,off,bt;
-    uint32 header;
+    uint32_t header;
 
     /*---------------------*/
     count=next_start_code2(dst, dst_remained, in);
@@ -478,9 +477,9 @@ static int mpv_init(MediaProperties *properties, void **private_data)
     return 0;
 }
 
-static int mpv_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data)
+static int mpv_get_frame2(uint8_t *dst, uint32_t dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data)
 {
-    uint32 count=0, header;
+    uint32_t count=0, header;
     int ret=0;
     mpv_data *mpv;
     mpv_input in={istream, NULL, 0};
@@ -496,10 +495,10 @@ static int mpv_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, Inpu
 //#if (BYTE_ORDER == BIG_ENDIAN)
     memcpy(dst,&header,4);
 /*#elif (BYTE_ORDER == LITTLE_ENDIAN)
-    dst[0]=((uint8 *)&header)[3];
-    dst[1]=((uint8 *)&header)[2];
-    dst[2]=((uint8 *)&header)[1];
-    dst[3]=((uint8 *)&header)[0];
+    dst[0]=((uint8_t *)&header)[3];
+    dst[1]=((uint8_t *)&header)[2];
+    dst[2]=((uint8_t *)&header)[1];
+    dst[3]=((uint8_t *)&header)[0];
     
 #endif //ENDIAN*/
 
@@ -561,7 +560,7 @@ static int mpv_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, Inpu
 
 /*see RFC 2250: RTP Payload Format for MPEG1/MPEG2 Video*/
 #if MPEG2VSHE
-    #define VSHCPY  vsh_tmp = (uint8 *)(mpv->vsh1); \
+    #define VSHCPY  vsh_tmp = (uint8_t *)(mpv->vsh1); \
                 dst[0] = vsh_tmp[3]; \
                 dst[1] = vsh_tmp[2]; \
                 dst[2] = vsh_tmp[1]; \
@@ -574,7 +573,7 @@ static int mpv_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, Inpu
                         dst[7] = vsh_tmp[0]; \
                     } 
 #else
-    #define VSHCPY  vsh_tmp = (uint8 *)(mpv->vsh1); \
+    #define VSHCPY  vsh_tmp = (uint8_t *)(mpv->vsh1); \
                 dst[0] = vsh_tmp[3]; \
                 dst[1] = vsh_tmp[2]; \
                 dst[2] = vsh_tmp[1]; \
@@ -582,13 +581,13 @@ static int mpv_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp, Inpu
 
 #endif //MPEG2VSHE
 
-static int mpv_packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
+static int mpv_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src, uint32_t src_nbytes, MediaProperties *properties, void *private_data)
 {
     mpv_data *mpv = (mpv_data *)private_data;
     mpv_input in = {NULL, src + mpv->countsrc, src_nbytes - mpv->countsrc};
     int ret = 0, count = 0, i = 0;
-    uint8 *vsh_tmp;
-    uint32 header;
+    uint8_t *vsh_tmp;
+    uint32_t header;
 
     mpv->vsh1->b=0;/*begining of slice*/
     mpv->vsh1->e=0;/*end of slice*/
@@ -648,14 +647,14 @@ static int mpv_packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_
     return mpv->is_fragmented;
 }
 
-static int mpv_parse(void *track, uint8 *data, long len, uint8 *extradata,
+static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
           long extradata_len)
 {
     Track *tr = (Track *)track;
     int ret;
     BPSlot *slot;
-    uint32 dst_len = len + 4; //mpegaudio can be fragmented but not collated
-    uint8 dst[dst_len];
+    uint32_t dst_len = len + 4; //mpegaudio can be fragmented but not collated
+    uint8_t dst[dst_len];
     do {
         // dst_len remains unchanged,
         // the return value is either EOF or the size

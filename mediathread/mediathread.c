@@ -107,7 +107,7 @@ inline int mt_process_event(mt_event_item *ev) {
                 break;
             case RESOURCE_NOT_PARSEABLE:
                 {
-                    static uint8 buffer[MT_BUFFERSIZE];
+                    static uint8_t buffer[MT_BUFFERSIZE];
                     long n;
                     if((n = t->parser->get_frame(buffer, MT_BUFFERSIZE,
                                                  &(t->properties->mtime),

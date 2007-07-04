@@ -63,8 +63,8 @@ typedef struct _RTSP_interleaved {
     Sock *rtcp_local;
     union {
         struct {
-            uint16 rtp_ch;
-            uint16 rtcp_ch;
+            int rtp_ch;
+            int rtcp_ch;
         } tcp;
 #ifdef HAVE_LIBSCTP
         struct {

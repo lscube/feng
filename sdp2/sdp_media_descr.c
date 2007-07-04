@@ -40,7 +40,7 @@
     } while(0);
 
 int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list,
-                    char *descr, uint32 descr_size)
+                    char *descr, uint32_t descr_size)
 {
     MediaDescr *m_descr = m_descr_list ? MEDIA_DESCR(m_descr_list) : NULL;
     MediaDescrList tmp_mdl;

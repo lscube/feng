@@ -284,7 +284,7 @@ static int h264_init(MediaProperties *properties, void **private_data)
     return ERR_ALLOC;
 }
 
-static int h264_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp,
+static int h264_get_frame2(uint8_t *dst, uint32_t dst_nbytes, double *timestamp,
                       InputStream *istream, MediaProperties *properties,
                       void *private_data)
 {
@@ -292,7 +292,7 @@ static int h264_get_frame2(uint8 *dst, uint32 dst_nbytes, double *timestamp,
 return ERR_PARSE;
 }
 
-static int h264_packetize(uint8 *dst, uint32 *dst_nbytes, uint8 *src, uint32 src_nbytes, MediaProperties *properties, void *private_data)
+static int h264_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src, uint32_t src_nbytes, MediaProperties *properties, void *private_data)
 {
 
 return ERR_PARSE;
@@ -303,7 +303,7 @@ return ERR_PARSE;
 //  - fragmenting
 //  - feed a single NAL as is.
 
-static int h264_parse(void *track, uint8 *data, long len, uint8 *extradata,
+static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                  long extradata_len)
 {
     Track *tr = (Track *)track;
