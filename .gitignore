@@ -8,6 +8,8 @@ configure
 *.o
 *.lo
 *.la
+*.swp
+*.swo
 *Makefile
 *Makefile.in
 *.libs
