@@ -92,6 +92,7 @@ typedef struct _RTP_session {
 
     //these time vars now are now back here
     double start_time;
+    double seek_time;
 
     double prev_tx_time;
     unsigned int PreviousCount;
@@ -100,6 +101,7 @@ typedef struct _RTP_session {
     // Back references
     int sched_id;
     unsigned int start_seq;
+    unsigned int seq_no;
 
     unsigned int start_rtptime;
 

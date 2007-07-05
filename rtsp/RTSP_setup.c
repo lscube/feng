@@ -465,6 +465,7 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
     rtp_s->start_rtptime = start_rtptime;
     rtp_s->start_seq = start_seq;
+    rtp_s->seq_no = start_seq - 1;
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
     rtp_s->track_selector = track_sel;
     rtp_s->sched_id = schedule_add(rtp_s);
