@@ -428,7 +428,6 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
 static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, Selector * track_sel)
 {
     struct timeval now_tmp;
-    unsigned int start_seq, start_rtptime;
     RTP_session *rtp_s;
 
 // Setup the RTP session
@@ -444,28 +443,12 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
         rtp_s = rtp_s->next;
     }
 
-#ifdef WIN32
-    start_seq = rand();
-    start_rtptime = rand();
-#else
-    start_seq = 1 + (unsigned int) (rand() % (0xFFFF));
-    start_rtptime = 1 + (unsigned int) (rand() % (0xFFFFFFFF));
-#endif
-    if (start_seq == 0) {
-        start_seq++;
-    }
-    if (start_rtptime == 0) {
-        start_rtptime++;
-    }
     rtp_s->pause = 1;
     //XXX use strdup
     strncpy(rtp_s->sd_filename, cinfo->object, sizeof(rtp_s->sd_filename));
 
     gettimeofday(&now_tmp, 0);
     srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
-    rtp_s->start_rtptime = start_rtptime;
-    rtp_s->start_seq = start_seq;
-    rtp_s->seq_no = start_seq - 1;
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
     rtp_s->track_selector = track_sel;
     rtp_s->sched_id = schedule_add(rtp_s);
@@ -599,7 +582,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     char trackname[255];
     RTP_transport transport;
 
-    Selector *track_sel;
+    Selector *track_sel = NULL;
     Track *req_track;
 
     //mediathread pointers
