@@ -108,14 +108,7 @@ static int sd_init(Resource * r)
                 sscanf(line, "%*s%15s", r->info->multicast);
                 if (!is_valid_multicast_address(r->info->multicast))
                     strcpy(r->info->multicast, DEFAULT_MULTICAST_ADDRESS);
-            } else if (*r->info->multicast &&
-                        (!strcasecmp(keyword, SD_PORT)))
-                sscanf(line, "%*s%d", &r->info->port);
-/* XXX later
-            if (!strcasecmp(keyword, SD_TTL)) {
-                sscanf(line, "%*s%3s", r->info->ttl);
             }
-*/
         }
         if (feof(fd))
             return RESOURCE_OK;
@@ -232,8 +225,14 @@ static int sd_init(Resource * r)
                     i++;
                 }
                 trackinfo.author[i] = '\0';
+            }  else if (*r->info->multicast &&
+                        (!strcasecmp(keyword, SD_PORT)))
+                sscanf(line, "%*s%d", &trackinfo.rtp_port);
+/* XXX later
+            if (!strcasecmp(keyword, SD_TTL)) {
+                sscanf(line, "%*s%3s", r->info->ttl);
             }
-
+*/
             /********END CC*********/
         }        /*end while !STREAM_END or eof */
 

@@ -86,7 +86,8 @@ static RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, 
  */
 static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                                          RTP_transport * transport,
-                                         RTP_session **rtp_s)
+                                         RTP_session **rtp_s,
+                                         Track *tr)
 {
     RTSP_Error error;
 
@@ -156,40 +157,38 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                     Sock_connect (get_remote_host(rtsp->sock), port_buffer,
                                   transport->rtcp_sock, UDP, 0);
                 }
+    // Transport: RTP/AVP
+    // Transport: RTP/AVP;multicast
                 else if (*rtsp->session_list->resource->info->multicast) {
-                    char port_buffer[8];
                     RTSP_session *s = rtsp->session_list;
-                    *rtp_s=NULL;
+                    char port_buffer[8];
+                    *rtp_s = NULL;
                     int i;
                     for (i = 0; !*rtp_s && i<ONE_FORK_MAX_CONNECTION; ++i) {
                         pthread_mutex_lock(&sched[i].mux);
                         if (sched[i].valid) {
-                            if (!strncmp(sched[i].rtp_session->sd_filename,
-                                         s->resource->info->mrl, 255)) {
+                            Track *tr2 = 
+                                r_selected_track(
+                                    sched[i].rtp_session->track_selector);
+                            if (!strncmp(tr2->info->mrl,
+                                         tr->info->mrl, 255)) {
                                 *rtp_s = sched[i].rtp_session;
                                 fnc_log(FNC_LOG_DEBUG,
                                         "Found multicast instance.");
                         }
                         pthread_mutex_unlock(&sched[i].mux);
                     }
-                    if ((p = strstr(transport_tkn, "client_port"))) {
-                        p = strstr(p, "=");
-                        sscanf(p + 1, "%d", &(cli_ports.RTP));
-                        p = strstr(p, "-");
-                        sscanf(p + 1, "%d", &(cli_ports.RTCP));
-                    }
-                    
                     if (!*rtp_s) {
                         snprintf(port_buffer, 8, "%d",
-                                 s->resource->info->port);
+                                 tr->info->rtp_port);
                         transport->rtp_sock =
                             Sock_connect(s->resource->info->multicast,
-                            port_buffer, NULL, UDP, 0);
+                                    port_buffer, transport->rtp_sock, UDP, 0);
                         snprintf(port_buffer, 8, "%d",
-                                 s->resource->info->port+1);
+                                 tr->info->rtp_port+1);
                         transport->rtcp_sock =
                             Sock_connect(s->resource->info->multicast,
-                            port_buffer, transport->rtcp_sock, UDP, 0);
+                                    port_buffer, transport->rtcp_sock, UDP, 0);
                     }
                         fnc_log(FNC_LOG_DEBUG,"Multicast socket set");
                     }
@@ -630,7 +629,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         goto error_management;
 
     // Parse the RTP/AVP/something string
-    if ( (error = parse_transport_header(rtsp, &transport, &rtp_s)).got_error )
+    if ( (error = parse_transport_header(rtsp, &transport, &rtp_s, req_track)).got_error )
         goto error_management;
 
     // Setup the RTP session
