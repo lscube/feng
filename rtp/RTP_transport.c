@@ -69,7 +69,7 @@ int RTP_send_packet(RTP_session * session)
         r.csrc_len = 0;
         r.marker = slot->marker;
         r.payload = t->properties->payload_type;
-        r.seq_no = htons(slot->seq_delta + (session->seq_no)++);
+        r.seq_no = htons(session->seq_no += slot->seq_delta);
         r.timestamp =
             htonl(session->start_rtptime + 
                   ((slot->rtp_time) ? slot->rtp_time :
