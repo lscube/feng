@@ -75,7 +75,7 @@ int RTP_send_packet(RTP_session * session)
                   ((slot->rtp_time) ? slot->rtp_time :
                    (slot->timestamp - session->seek_time)
                    * t->properties->clock_rate));
-        fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", r.timestamp);
+        fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(r.timestamp));
         r.ssrc = htonl(session->ssrc);
         packet = calloc(1, slot->data_size + hdr_size);
         if (packet == NULL) {

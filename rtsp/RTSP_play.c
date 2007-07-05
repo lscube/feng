@@ -156,6 +156,42 @@ static RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_sess
 
 #if ENABLE_MEDIATHREAD
 /**
+ * Actually seek through the media using mediathread
+ * @param rtsp_sess the session for which to start playing
+ * @param args the range to play
+ * @return RTSP_Ok or RTSP_InvalidRange
+ */
+static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
+{
+    Resource *r = rtsp_sess->resource;
+    RTP_session *rtp_sess;
+
+
+    if (args->start_time > 0.0) {
+        if(mt_resource_seek(r, args->start_time)) {
+            return RTSP_InvalidRange;
+        }
+    } else  if (args->start_time < 0.0) {
+        return RTSP_InvalidRange;
+    }
+    for (rtp_sess = rtsp_sess->rtp_session; rtp_sess; rtp_sess = rtp_sess->next)
+    {
+        rtp_sess->start_seq = 1 + (unsigned int) (rand() % (0xFFFF));
+        rtp_sess->start_rtptime = 1 + (unsigned int) (rand() % (0xFFFFFFFF));
+        rtp_sess->seq_no = rtp_sess->start_seq - 1;
+        rtp_sess->seek_time = args->start_time;
+        if (rtp_sess->cons) {
+            while (bp_getreader(rtp_sess->cons)) {
+                /* Drop spurious packets after seek */
+                bp_gotreader(rtp_sess->cons);
+            }
+        }
+    }
+    return RTSP_Ok;
+}
+
+
+/**
  * Actually starts playing the media using mediathread
  * @param cinfo the connection for which to start playing
  * @param rtsp_sess the session for which to start playing
@@ -164,9 +200,9 @@ static RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_sess
  */
 static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
 {
+    RTSP_Error error = RTSP_Ok;
     RTP_session *rtp_sess;
     char *q = NULL;
-    Resource *r = rtsp_sess->resource;
 
     if (!(q = strchr(cinfo->object, '!'))) {
         //if '!' is not present then a file has not been specified
@@ -178,28 +214,17 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
             // Start playing all the presentation
             if (!rtp_sess->started) {
                 // Start new
-                //TODO: Verify end_time
-                if (args->start_time > 0.0) {
-                    if(mt_resource_seek(r, args->start_time)) {
-                        return RTSP_InvalidRange;
-                    }
-                } else  if (args->start_time < 0.0) {
-                    return RTSP_InvalidRange;
+                if ((error = do_seek(rtsp_sess, args)).got_error) {
+                    return error;
                 }
                 if (schedule_start (rtp_sess->sched_id, args) == ERR_ALLOC)
                         return RTSP_Fatal_ErrAlloc;
             } else {
-                if (args->start_time > 0.0) {
-                    if(mt_resource_seek(r, args->start_time)) {
-                        return RTSP_InvalidRange;
-                    }
-                } else  if (args->start_time < 0.0) {
-                    return RTSP_InvalidRange;
+                if ((error = do_seek(rtsp_sess, args)).got_error) {
+                    return error;
                 }
                 // Resume existing
-                if (!rtp_sess->pause) {
-                    //  Already playing, this is a seek request
-                } else {
+                if (rtp_sess->pause) {
                     schedule_resume (rtp_sess->sched_id, args);
                 }
             }
