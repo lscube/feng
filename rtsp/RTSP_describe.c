@@ -123,7 +123,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
     // Disallow Header REQUIRE
     else if ( (error = check_require_header(rtsp)).got_error )
         goto error_management;
-    // Get the description format. SDP is recomended
+    // Get the description format. SDP is recommended
     else if ( (error = get_description_format(rtsp, &cinfo)).got_error )
         goto error_management;
     // Get the CSeq
