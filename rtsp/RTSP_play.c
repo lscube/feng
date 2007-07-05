@@ -57,6 +57,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
 
     args->playback_time_valid = 0;
     args->start_time_valid = 0;
+    args->seek_time_valid = 0;
     if ((p = strstr(rtsp->in_buffer, HDR_RANGE)) != NULL) {
         if ((q = strstr(p, "npt")) != NULL) {      // FORMAT: npt
             if ((q = strchr(q, '=')) == NULL)
