@@ -165,7 +165,7 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
 {
     Resource *r = rtsp_sess->resource;
     RTP_session *rtp_sess;
-
+    int pause_needed;
 
     if (args->start_time > 0.0) {
         if(mt_resource_seek(r, args->start_time)) {
@@ -176,15 +176,23 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
     }
     for (rtp_sess = rtsp_sess->rtp_session; rtp_sess; rtp_sess = rtp_sess->next)
     {
+        if ((pause_needed = (rtp_sess->started && !rtp_sess->pause))) {
+            /* Pause scheduler while reinitng RTP session */
+            rtp_sess->pause = 1;
+        }
         rtp_sess->start_seq = 1 + (unsigned int) (rand() % (0xFFFF));
         rtp_sess->start_rtptime = 1 + (unsigned int) (rand() % (0xFFFFFFFF));
         rtp_sess->seq_no = rtp_sess->start_seq - 1;
         rtp_sess->seek_time = args->start_time;
+
         if (rtp_sess->cons) {
             while (bp_getreader(rtp_sess->cons)) {
                 /* Drop spurious packets after seek */
                 bp_gotreader(rtp_sess->cons);
             }
+        }
+        if (pause_needed) {
+            schedule_resume (rtp_sess->sched_id, args);
         }
     }
     return RTSP_Ok;
@@ -207,22 +215,20 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
     if (!(q = strchr(cinfo->object, '!'))) {
         //if '!' is not present then a file has not been specified
         // aggregate content requested
-        for (rtp_sess = rtsp_sess->rtp_session;
-             rtp_sess != NULL;
+        for (rtp_sess = rtsp_sess->rtp_session; rtp_sess;
              rtp_sess = rtp_sess->next)
         {
+            // Perform seek if needed
+            if ((error = do_seek(rtsp_sess, args)).got_error) {
+                return error;
+            }
             // Start playing all the presentation
             if (!rtp_sess->started) {
                 // Start new
-                if ((error = do_seek(rtsp_sess, args)).got_error) {
-                    return error;
-                }
                 if (schedule_start (rtp_sess->sched_id, args) == ERR_ALLOC)
                         return RTSP_Fatal_ErrAlloc;
             } else {
-                if ((error = do_seek(rtsp_sess, args)).got_error) {
-                    return error;
-                }
+
                 // Resume existing
                 if (rtp_sess->pause) {
                     schedule_resume (rtp_sess->sched_id, args);
