@@ -76,6 +76,87 @@ static RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, 
 }
 
 /**
+ * bind&connect the socket
+ */
+static RTSP_Error unicast_transport(RTSP_buffer *rtsp, RTP_transport *transport,
+                                    port_pair cli_ports)
+{
+    char port_buffer[8];
+    port_pair ser_ports;
+    RTSP_Error error;
+    if (RTP_get_port_pair(&ser_ports) != ERR_NOERROR) {
+        return RTSP_InternalServerError;
+    }
+    //UDP bind for outgoing RTP packets
+    snprintf(port_buffer, 8, "%d", ser_ports.RTP);
+    transport->rtp_sock = Sock_bind(NULL, port_buffer, UDP, 0);
+    //UDP bind for outgoing RTCP packets
+    snprintf(port_buffer, 8, "%d", ser_ports.RTCP);
+    transport->rtcp_sock = Sock_bind(NULL, port_buffer, UDP, 0);
+    //UDP connection for outgoing RTP packets
+    snprintf(port_buffer, 8, "%d", cli_ports.RTP);
+    Sock_connect (get_remote_host(rtsp->sock), port_buffer,
+                  transport->rtp_sock, UDP, 0);
+    //UDP connection for outgoing RTCP packets
+    snprintf(port_buffer, 8, "%d", cli_ports.RTCP);
+    Sock_connect (get_remote_host(rtsp->sock), port_buffer,
+                  transport->rtcp_sock, UDP, 0);
+
+    if (!transport->rtp_sock) {
+        // fnc_log(FNC_LOG_ERR,"Unsupported Transport\n");
+        set_RTSP_Error(&error, 461, "Unsupported Transport");
+        return error;
+    }
+
+    return RTSP_Ok;
+}
+
+/**
+ * set the sockets for the first multicast request, otherwise provide the
+ * already instantiated rtp session
+ */
+static RTSP_Error multicast_transport(RTP_transport *transport,
+                                      ResourceInfo *info,
+                                      Track *tr,
+                                      RTP_session **rtp_s)
+{
+    char port_buffer[8];
+    RTSP_Error error;
+    int i;
+
+    *rtp_s = NULL;
+    for (i = 0; !*rtp_s && i<ONE_FORK_MAX_CONNECTION; ++i) {
+        pthread_mutex_lock(&sched[i].mux);
+        if (sched[i].valid) {
+            Track *tr2 = r_selected_track(
+                                sched[i].rtp_session->track_selector);
+            if (!strncmp(tr2->info->mrl, tr->info->mrl, 255)) {
+                *rtp_s = sched[i].rtp_session;
+                fnc_log(FNC_LOG_DEBUG,
+                        "Found multicast instance.");
+            }
+        }
+        pthread_mutex_unlock(&sched[i].mux);
+    }
+
+    if (!*rtp_s) {
+        snprintf(port_buffer, 8, "%d", tr->info->rtp_port);
+        transport->rtp_sock = Sock_connect(info->multicast, port_buffer,
+                                                transport->rtp_sock, UDP, 0);
+        snprintf(port_buffer, 8, "%d", tr->info->rtp_port + 1);
+        transport->rtcp_sock = Sock_connect(info->multicast, port_buffer,
+                                                transport->rtcp_sock, UDP, 0);
+    }
+    if (!transport->rtp_sock) {
+        set_RTSP_Error(&error, 461, "Unsupported Transport");
+        return error;
+    }
+
+    fnc_log(FNC_LOG_DEBUG,"Multicast socket set");
+    return RTSP_Ok;
+}
+
+/**
  * Parses the TRANSPORT header from the RTSP buffer
  * @param rtsp the buffer for which to parse the header
  * @param transport where to save the data of the header
@@ -92,7 +173,6 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
     RTSP_Error error;
 
     port_pair cli_ports;
-    port_pair ser_ports;
 
     char *p  /* = NULL */ ;
     char transport_str[1024];
@@ -104,7 +184,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
 
     // Start parsing the Transport header
     if ((p = strstr(rtsp->in_buffer, HDR_TRANSPORT)) == NULL) {
-        set_RTSP_Error(&error, 406, "Require: Transport settings"); /* Not Acceptable */
+        set_RTSP_Error(&error, 406, "Require: Transport settings");
         return error;
     }
     if (sscanf(p, "%*10s%1023s", transport_str) != 1) {
@@ -126,76 +206,35 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
         return ERR_GENERIC;
     }*/
 
-//    transport->type = RTP_no_transport;
-    do {            // search a good transport string
-        if ((p = strstr(transport_tkn, RTSP_RTP_AVP))) {// Transport: RTP/AVP
+    // search a good transport string
+    do {
+        if ((p = strstr(transport_tkn, RTSP_RTP_AVP))) {
             p += strlen(RTSP_RTP_AVP);
             if (!*p || (*p == ';') || (*p == ' ') || (!strncmp(p, "/UDP", 4))) {
+    // Transport: RTP/AVP;unicast
+    // Transport: RTP/AVP/UDP;unicast
                 if (strstr(transport_tkn, "unicast")) {
-                    char port_buffer[8];
                     if ((p = strstr(transport_tkn, "client_port"))) {
                         p = strstr(p, "=");
                         sscanf(p + 1, "%d", &(cli_ports.RTP));
                         p = strstr(p, "-");
                         sscanf(p + 1, "%d", &(cli_ports.RTCP));
-                    }
-                    if (RTP_get_port_pair(&ser_ports) != ERR_NOERROR) {
-                        return RTSP_InternalServerError;
-                    }
-                    //UDP bind for outgoing RTP packets
-                    snprintf(port_buffer, 8, "%d", ser_ports.RTP);
-                    transport->rtp_sock = Sock_bind(NULL, port_buffer, UDP, 0);
-                    //UDP bind for outgoing RTCP packets
-                    snprintf(port_buffer, 8, "%d", ser_ports.RTCP);
-                    transport->rtcp_sock = Sock_bind(NULL, port_buffer, UDP, 0);
-                    //UDP connection for outgoing RTP packets
-                    snprintf(port_buffer, 8, "%d", cli_ports.RTP);
-                    Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                                  transport->rtp_sock, UDP, 0);
-                    //UDP connection for outgoing RTCP packets
-                    snprintf(port_buffer, 8, "%d", cli_ports.RTCP);
-                    Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                                  transport->rtcp_sock, UDP, 0);
+                    } else continue;
+                    unicast_transport(rtsp, transport, cli_ports);
                 }
     // Transport: RTP/AVP
     // Transport: RTP/AVP;multicast
+    // Transport: RTP/AVP/UDP
+    // Transport: RTP/AVP/UDP;multicast
                 else if (*rtsp->session_list->resource->info->multicast) {
-                    RTSP_session *s = rtsp->session_list;
-                    char port_buffer[8];
-                    *rtp_s = NULL;
-                    int i;
-                    for (i = 0; !*rtp_s && i<ONE_FORK_MAX_CONNECTION; ++i) {
-                        pthread_mutex_lock(&sched[i].mux);
-                        if (sched[i].valid) {
-                            Track *tr2 = 
-                                r_selected_track(
-                                    sched[i].rtp_session->track_selector);
-                            if (!strncmp(tr2->info->mrl,
-                                         tr->info->mrl, 255)) {
-                                *rtp_s = sched[i].rtp_session;
-                                fnc_log(FNC_LOG_DEBUG,
-                                        "Found multicast instance.");
-                        }
-                        pthread_mutex_unlock(&sched[i].mux);
-                    }
-                    if (!*rtp_s) {
-                        snprintf(port_buffer, 8, "%d",
-                                 tr->info->rtp_port);
-                        transport->rtp_sock =
-                            Sock_connect(s->resource->info->multicast,
-                                    port_buffer, transport->rtp_sock, UDP, 0);
-                        snprintf(port_buffer, 8, "%d",
-                                 tr->info->rtp_port+1);
-                        transport->rtcp_sock =
-                            Sock_connect(s->resource->info->multicast,
-                                    port_buffer, transport->rtcp_sock, UDP, 0);
-                    }
-                        fnc_log(FNC_LOG_DEBUG,"Multicast socket set");
-                    }
+                    multicast_transport(transport,
+                                        rtsp->session_list->resource->info,
+                                        tr, rtp_s);
                 } else 
                     continue;
-                break;    // found a valid transport
-            } else if (Sock_type(rtsp->sock) == TCP && !strncmp(p, "/TCP", 4)) {    // Transport: RTP/AVP/TCP;interleaved=x-y
+                break;  // found a valid transport
+    // Transport: RTP/AVP/TCP;interleaved=x-y
+            } else if (Sock_type(rtsp->sock) == TCP && !strncmp(p, "/TCP", 4)) {
 
                 if ( !(intlvd = calloc(1, sizeof(RTSP_interleaved))) ) {
                     set_RTSP_Error(&error, 500, "");
@@ -338,7 +377,6 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
         }
     } while ((transport_tkn = strtok_r(NULL, ",", &saved_ptr)));
 
-    // printf("rtp transport: %d\n", transport->type);
     if (!transport->rtp_sock) {
         // fnc_log(FNC_LOG_ERR,"Unsupported Transport\n");
         set_RTSP_Error(&error, 461, "Unsupported Transport");
@@ -582,7 +620,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     RTP_transport transport;
 
     Selector *track_sel = NULL;
-    Track *req_track;
+    Track *req_track = NULL;
 
     //mediathread pointers
     RTP_session *rtp_s = NULL;
