@@ -334,7 +334,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                         p = strstr(p, "-");
                         sscanf(p + 1, "%d", &(cli_ports.RTCP));
                     } else continue;
-                    unicast_transport(rtsp, transport, cli_ports);
+                    return unicast_transport(rtsp, transport, cli_ports);
                 }
     // Transport: RTP/AVP
     // Transport: RTP/AVP;multicast
