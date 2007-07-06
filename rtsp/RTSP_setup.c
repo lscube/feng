@@ -341,7 +341,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
     // Transport: RTP/AVP/UDP
     // Transport: RTP/AVP/UDP;multicast
                 else if (*rtsp->session_list->resource->info->multicast) {
-                    multicast_transport(transport,
+                    return multicast_transport(transport,
                                         rtsp->session_list->resource->info,
                                         tr, rtp_s);
                 } else 
