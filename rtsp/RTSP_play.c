@@ -68,7 +68,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
             if ((q = strchr(q, '=')) == NULL)
                 return RTSP_BadRequest;    /* Bad Request */
 
-            if (sscanf(q + 1, "%lf", &(args->start_time)) != 1) {
+            if (sscanf(q + 1, "%f", &(args->start_time)) != 1) {
                 if (sscanf(q + 1, "%4s", tmp) != 1 && !strcasecmp(tmp,"now-")) {
                     return RTSP_BadRequest;
                 }
@@ -90,17 +90,17 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
         }
         else if ((q = strstr(p, "time")) == NULL) { // No specific format. Assuming NeMeSI format.
             double t;
-            if (q = strstr(p, ":")) {
+            if ((q = strstr(p, ":"))) {
                 // Hours
                 sscanf(q + 1, "%lf", &t);
                 args->start_time = t * 60 * 60;
             }
-            if (q = strstr(q + 1, ":")) {
+            if ((q = strstr(q + 1, ":"))) {
                 // Minutes
                 sscanf(q + 1, "%lf", &t);
                 args->start_time += (t * 60);
             }
-            if (q = strstr(q + 1, ":")) {
+            if ((q = strstr(q + 1, ":"))) {
                 // Seconds
                 sscanf(q + 1, "%lf", &t);
                 args->start_time += t;
@@ -199,7 +199,8 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
                 schedule_resume (rtp_sess->sched_id, args);
             }
         }
-    } else  if (args->start_time < 0.0) {
+    } else if (args->start_time < 0.0) {
+        fnc_log(FNC_LOG_DEBUG,"[RTSP] Negative seek to %f", args->start_time);
         return RTSP_InvalidRange;
     }
 
