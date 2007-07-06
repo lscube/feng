@@ -54,19 +54,27 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
 {
     int time_taken = 0;
     char *p = NULL, *q = NULL;
+    char tmp[5];
 
+    /* Default values */
     args->playback_time_valid = 0;
     args->start_time_valid = 0;
     args->seek_time_valid = 0;
+    args->start_time = 0.0;
+    args->end_time = HUGE_VAL;
+
     if ((p = strstr(rtsp->in_buffer, HDR_RANGE)) != NULL) {
         if ((q = strstr(p, "npt")) != NULL) {      // FORMAT: npt
             if ((q = strchr(q, '=')) == NULL)
                 return RTSP_BadRequest;    /* Bad Request */
 
-            if (sscanf(q + 1, "%f", &(args->start_time)) != 1)
-                return RTSP_BadRequest;
-            else
+            if (sscanf(q + 1, "%lf", &(args->start_time)) != 1) {
+                if (sscanf(q + 1, "%4s", tmp) != 1 && !strcasecmp(tmp,"now-")) {
+                    return RTSP_BadRequest;
+                }
+            } else {
                 args->seek_time_valid = 1;
+            }
 
             if ((q = strchr(q, '-')) == NULL)
                 return RTSP_BadRequest;
@@ -76,35 +84,31 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
         }
         else if ((q = strstr(p, "smpte")) != NULL) { // FORMAT: smpte
             // Currently unsupported. Using default.
-            args->start_time = 0.0;
-            args->end_time = HUGE_VAL;
         }
         else if ((q = strstr(p, "clock"))!= NULL) { // FORMAT: clock
             // Currently unsupported. Using default.
-            args->start_time = 0.0;
-            args->end_time = HUGE_VAL;
         }
         else if ((q = strstr(p, "time")) == NULL) { // No specific format. Assuming NeMeSI format.
-            // Hour
             double t;
-            q = strstr(p, ":");
-            sscanf(q + 1, "%lf", &t);
-            args->start_time = t * 60 * 60;
-            // Min
-            q = strstr(q + 1, ":");
-            sscanf(q + 1, "%lf", &t);
-            args->start_time += (t * 60);
-            // Sec
-            q = strstr(q + 1, ":");
-            sscanf(q + 1, "%lf", &t);
-            args->start_time += t;
-
+            if (q = strstr(p, ":")) {
+                // Hours
+                sscanf(q + 1, "%lf", &t);
+                args->start_time = t * 60 * 60;
+            }
+            if (q = strstr(q + 1, ":")) {
+                // Minutes
+                sscanf(q + 1, "%lf", &t);
+                args->start_time += (t * 60);
+            }
+            if (q = strstr(q + 1, ":")) {
+                // Seconds
+                sscanf(q + 1, "%lf", &t);
+                args->start_time += t;
+            }
             args->start_time_valid = 1;
         }
         else {
             // no range defined but start time expressed?
-            args->start_time = 0.0;
-            args->end_time = HUGE_VAL;
             time_taken = 1;
         }
 
