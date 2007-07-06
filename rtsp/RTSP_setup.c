@@ -487,6 +487,9 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     gettimeofday(&now_tmp, 0);
     srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
+    rtp_s->start_rtptime = 1 + (unsigned int) (rand() % (0xFFFF));
+    rtp_s->start_seq = 1 + (unsigned int) (rand() % (0xFFFFFFFF));
+    rtp_s->seq_no = rtp_s->start_seq - 1;
     rtp_s->track_selector = track_sel;
     rtp_s->sched_id = schedule_add(rtp_s);
     gcry_randomize(&rtp_s->ssrc, sizeof(rtp_s->ssrc), GCRY_STRONG_RANDOM);

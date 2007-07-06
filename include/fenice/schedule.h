@@ -47,8 +47,9 @@
 typedef struct _play_args {
 	struct tm playback_time;
 	short playback_time_valid;
-	float start_time;	//! time in seconds
 	short start_time_valid;
+	short seek_time_valid;
+	float start_time;   //! time in seconds
 	float end_time;
 } play_args;
 

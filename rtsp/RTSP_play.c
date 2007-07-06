@@ -54,16 +54,27 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
 {
     int time_taken = 0;
     char *p = NULL, *q = NULL;
+    char tmp[5];
 
+    /* Default values */
     args->playback_time_valid = 0;
     args->start_time_valid = 0;
+    args->seek_time_valid = 0;
+    args->start_time = 0.0;
+    args->end_time = HUGE_VAL;
+
     if ((p = strstr(rtsp->in_buffer, HDR_RANGE)) != NULL) {
         if ((q = strstr(p, "npt")) != NULL) {      // FORMAT: npt
             if ((q = strchr(q, '=')) == NULL)
                 return RTSP_BadRequest;    /* Bad Request */
 
-            if (sscanf(q + 1, "%f", &(args->start_time)) != 1)
-                return RTSP_BadRequest;
+            if (sscanf(q + 1, "%f", &(args->start_time)) != 1) {
+                if (sscanf(q + 1, "%4s", tmp) != 1 && !strcasecmp(tmp,"now-")) {
+                    return RTSP_BadRequest;
+                }
+            } else {
+                args->seek_time_valid = 1;
+            }
 
             if ((q = strchr(q, '-')) == NULL)
                 return RTSP_BadRequest;
@@ -73,35 +84,31 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
         }
         else if ((q = strstr(p, "smpte")) != NULL) { // FORMAT: smpte
             // Currently unsupported. Using default.
-            args->start_time = 0.0;
-            args->end_time = HUGE_VAL;
         }
         else if ((q = strstr(p, "clock"))!= NULL) { // FORMAT: clock
             // Currently unsupported. Using default.
-            args->start_time = 0.0;
-            args->end_time = HUGE_VAL;
         }
         else if ((q = strstr(p, "time")) == NULL) { // No specific format. Assuming NeMeSI format.
-            // Hour
             double t;
-            q = strstr(p, ":");
-            sscanf(q + 1, "%lf", &t);
-            args->start_time = t * 60 * 60;
-            // Min
-            q = strstr(q + 1, ":");
-            sscanf(q + 1, "%lf", &t);
-            args->start_time += (t * 60);
-            // Sec
-            q = strstr(q + 1, ":");
-            sscanf(q + 1, "%lf", &t);
-            args->start_time += t;
-
+            if ((q = strstr(p, ":"))) {
+                // Hours
+                sscanf(q + 1, "%lf", &t);
+                args->start_time = t * 60 * 60;
+            }
+            if ((q = strstr(q + 1, ":"))) {
+                // Minutes
+                sscanf(q + 1, "%lf", &t);
+                args->start_time += (t * 60);
+            }
+            if ((q = strstr(q + 1, ":"))) {
+                // Seconds
+                sscanf(q + 1, "%lf", &t);
+                args->start_time += t;
+            }
             args->start_time_valid = 1;
         }
         else {
             // no range defined but start time expressed?
-            args->start_time = 0.0;
-            args->end_time = HUGE_VAL;
             time_taken = 1;
         }
 
@@ -167,34 +174,36 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
     RTP_session *rtp_sess;
     int pause_needed;
 
-    if (args->start_time > 0.0) {
+    if (args->seek_time_valid && args->start_time >= 0.0) {
         if(mt_resource_seek(r, args->start_time)) {
             return RTSP_InvalidRange;
         }
-    } else  if (args->start_time < 0.0) {
-        return RTSP_InvalidRange;
-    }
-    for (rtp_sess = rtsp_sess->rtp_session; rtp_sess; rtp_sess = rtp_sess->next)
-    {
-        if ((pause_needed = (rtp_sess->started && !rtp_sess->pause))) {
-            /* Pause scheduler while reinitng RTP session */
-            rtp_sess->pause = 1;
-        }
-        rtp_sess->start_seq = 1 + (unsigned int) (rand() % (0xFFFF));
-        rtp_sess->start_rtptime = 1 + (unsigned int) (rand() % (0xFFFFFFFF));
-        rtp_sess->seq_no = rtp_sess->start_seq - 1;
-        rtp_sess->seek_time = args->start_time;
+        for (rtp_sess = rtsp_sess->rtp_session; rtp_sess;
+             rtp_sess = rtp_sess->next) {
+            if ((pause_needed = (rtp_sess->started && !rtp_sess->pause))) {
+                /* Pause scheduler while reinitng RTP session */
+                rtp_sess->pause = 1;
+            }
+            rtp_sess->start_seq = 1 + (unsigned int) (rand() % (0xFFFF));
+            rtp_sess->start_rtptime = 1 + (unsigned int) (rand() % (0xFFFFFFFF));
+            rtp_sess->seq_no = rtp_sess->start_seq - 1;
+            rtp_sess->seek_time = args->start_time;
 
-        if (rtp_sess->cons) {
-            while (bp_getreader(rtp_sess->cons)) {
-                /* Drop spurious packets after seek */
-                bp_gotreader(rtp_sess->cons);
+            if (rtp_sess->cons) {
+                while (bp_getreader(rtp_sess->cons)) {
+                    /* Drop spurious packets after seek */
+                    bp_gotreader(rtp_sess->cons);
+                }
+            }
+            if (pause_needed) {
+                schedule_resume (rtp_sess->sched_id, args);
             }
         }
-        if (pause_needed) {
-            schedule_resume (rtp_sess->sched_id, args);
-        }
+    } else if (args->start_time < 0.0) {
+        fnc_log(FNC_LOG_DEBUG,"[RTSP] Negative seek to %f", args->start_time);
+        return RTSP_InvalidRange;
     }
+
     return RTSP_Ok;
 }
 
@@ -215,13 +224,13 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
     if (!(q = strchr(cinfo->object, '!'))) {
         //if '!' is not present then a file has not been specified
         // aggregate content requested
+        // Perform seek if needed
+        if ((error = do_seek(rtsp_sess, args)).got_error) {
+            return error;
+        }
         for (rtp_sess = rtsp_sess->rtp_session; rtp_sess;
              rtp_sess = rtp_sess->next)
         {
-            // Perform seek if needed
-            if ((error = do_seek(rtsp_sess, args)).got_error) {
-                return error;
-            }
             // Start playing all the presentation
             if (!rtp_sess->started) {
                 // Start new
