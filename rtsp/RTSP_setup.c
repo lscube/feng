@@ -156,6 +156,55 @@ static RTSP_Error multicast_transport(RTP_transport *transport,
     return RTSP_Ok;
 }
 
+static RTSP_Error tcp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
+                                 int rtp_ch, int rtcp_ch)
+{
+    RTSP_Error error;
+    RTSP_interleaved *intlvd;
+    Sock *sock_pair[2];
+
+    if ( !(intlvd = calloc(1, sizeof(RTSP_interleaved))) ) {
+        set_RTSP_Error(&error, 500, "");
+        return error;
+    }
+
+    // RTP local sockpair
+    if ( Sock_socketpair(sock_pair) < 0) {
+        fnc_log(FNC_LOG_ERR,
+                "Cannot create AF_LOCAL socketpair for rtp\n");
+        set_RTSP_Error(&error, 500, "");
+        free(intlvd);
+        return error;
+    }
+
+    transport->rtp_sock = sock_pair[0];
+    intlvd->rtp_local = sock_pair[1];
+
+    // RTCP local sockpair
+    if ( Sock_socketpair(sock_pair) < 0) {
+        fnc_log(FNC_LOG_ERR,
+                "Cannot create AF_LOCAL socketpair for rtcp\n");
+        set_RTSP_Error(&error, 500, "");
+        Sock_close(transport->rtp_sock);
+        Sock_close(intlvd->rtp_local);
+        free(intlvd);
+        return error;
+    }
+
+    transport->rtcp_sock = sock_pair[0];
+    intlvd->rtcp_local = sock_pair[1];
+
+    // copy stream number in rtp_transport struct
+    transport->rtp_ch = intlvd->proto.tcp.rtp_ch = rtp_ch;
+    transport->rtcp_ch = intlvd->proto.tcp.rtcp_ch = rtcp_ch;
+
+    // insert new interleaved stream in the list
+    intlvd->next = rtsp->interleaved;
+    rtsp->interleaved = intlvd;
+
+    return RTSP_Ok;
+}
+
 /**
  * Parses the TRANSPORT header from the RTSP buffer
  * @param rtsp the buffer for which to parse the header
@@ -181,6 +230,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
     int max_interlvd;
     Sock *sock_pair[2];
     RTSP_interleaved *intlvd, *ilvd_s;
+    int rtp_ch = 0, rtcp_ch = 0;
 
     // Start parsing the Transport header
     if ((p = strstr(rtsp->in_buffer, HDR_TRANSPORT)) == NULL) {
@@ -235,69 +285,31 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                 break;  // found a valid transport
     // Transport: RTP/AVP/TCP;interleaved=x-y
             } else if (Sock_type(rtsp->sock) == TCP && !strncmp(p, "/TCP", 4)) {
-
-                if ( !(intlvd = calloc(1, sizeof(RTSP_interleaved))) ) {
-                    set_RTSP_Error(&error, 500, "");
-                    return error;
-                }
-
                 if ((p = strstr(transport_tkn, "interleaved"))) {
                     p = strstr(p, "=");
-                    sscanf(p + 1, "%u", &(intlvd->proto.tcp.rtp_ch));
+                    sscanf(p + 1, "%d", &rtp_ch);
                     if ((p = strstr(p, "-")))
-                        sscanf(p + 1, "%u", &(intlvd->proto.tcp.rtcp_ch));
+                        sscanf(p + 1, "%d", &rtcp_ch);
                     else
-                        intlvd->proto.tcp.rtcp_ch = 
-                                                intlvd->proto.tcp.rtp_ch + 1;
+                        rtcp_ch = rtp_ch + 1;
                 } else {    // search for max used interleved channel.
                     max_interlvd = -1;
                     for (ilvd_s = (rtsp->interleaved);
                          ilvd_s;
                          ilvd_s = ilvd_s->next)
-                        max_interlvd = max(max_interlvd,
-                                           ilvd_s->proto.tcp.rtcp_ch);
-                    intlvd->proto.tcp.rtp_ch = max_interlvd + 1;
-                    intlvd->proto.tcp.rtcp_ch = max_interlvd + 2;
+                        max_interlvd = max(max_interlvd, rtcp_ch);
+                    rtp_ch = max_interlvd + 1;
+                    rtcp_ch = max_interlvd + 2;
                 }
-                if ((intlvd->proto.tcp.rtp_ch > 255) ||
-                    (intlvd->proto.tcp.rtcp_ch > 255)) {
+
+                if ((rtp_ch > 255) || (rtcp_ch > 255)) {
                     fnc_log(FNC_LOG_ERR,
                         "Interleaved channel number already reached max\n");
                     set_RTSP_Error(&error, 500, "Interleaved channel number already reached max");
-                    free(intlvd);
-                    return error;
-                }
-                // RTP local sockpair
-                if ( Sock_socketpair(sock_pair) < 0) {
-                    fnc_log(FNC_LOG_ERR,
-                            "Cannot create AF_LOCAL socketpair for rtp\n");
-                    set_RTSP_Error(&error, 500, "");
-                    free(intlvd);
-                    return error;
-                }
-                transport->rtp_sock = sock_pair[0];
-                intlvd->rtp_local = sock_pair[1];
-                // RTCP local sockpair
-                if ( Sock_socketpair(sock_pair) < 0) {
-                    fnc_log(FNC_LOG_ERR,
-                            "Cannot create AF_LOCAL socketpair for rtcp\n");
-                    set_RTSP_Error(&error, 500, "");
-                    Sock_close(transport->rtp_sock);
-                    Sock_close(intlvd->rtp_local);
-                    free(intlvd);
                     return error;
                 }
 
-                transport->rtcp_sock = sock_pair[0];
-                intlvd->rtcp_local = sock_pair[1];
-
-                // copy stream number in rtp_transport struct
-                transport->rtp_ch = intlvd->proto.tcp.rtp_ch;
-                transport->rtcp_ch = intlvd->proto.tcp.rtcp_ch;
-
-                // insert new interleaved stream in the list
-                intlvd->next = rtsp->interleaved;
-                rtsp->interleaved = intlvd;
+                return tcp_transport(rtsp, transport, rtp_ch, rtcp_ch);
 
                 break;    // found a valid transport
 #ifdef HAVE_LIBSCTP
