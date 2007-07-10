@@ -113,12 +113,14 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     // Release all URI RTP session
     rtp_curr = s->rtp_session;
     while (rtp_curr != NULL) {
-        if (strcmp(
+
+        if ((!strcmp(
                 r_selected_track(rtp_curr->track_selector)->info->name,
-                                 filename) == 0 || 
-            strcmp(
+                                 filename) || 
+            !strcmp(
                 r_selected_track(rtp_curr->track_selector)->parent->info->name,
-                                 filename) == 0) {
+                                 filename)) &&
+            !rtp_curr->is_multicast--) {
             rtp_temp = rtp_curr;
             if (rtp_prev != NULL)
                 rtp_prev->next = rtp_curr->next;

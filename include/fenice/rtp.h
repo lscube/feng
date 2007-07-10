@@ -103,6 +103,9 @@ typedef struct _RTP_session {
     //mediathread - TODO: find better placement
     Selector *track_selector;
 
+    //multicast management
+    int is_multicast; //!< 0, treat as usual, >0 do nothing
+
     //Consumer has transferred itself here
     BPConsumer *cons;
     RTCP_stats rtcp_stats[2];    //client and server

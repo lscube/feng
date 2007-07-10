@@ -218,6 +218,7 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
         for (rtp_sess = rtsp_sess->rtp_session; rtp_sess;
              rtp_sess = rtp_sess->next)
         {
+            if (rtp_sess->is_multicast) return RTSP_Ok;
             // Start playing all the presentation
             if (!rtp_sess->started) {
                 // Start new

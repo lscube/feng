@@ -47,13 +47,23 @@ void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count,
                 // The connection is closed
                 if (res == ERR_CONNECTION_CLOSE)
                     fnc_log(FNC_LOG_INFO,
-                        "RTSP connection closed by client.\n");
+                        "RTSP connection closed by client.");
                 else
                     fnc_log(FNC_LOG_INFO,
-                        "RTSP connection closed by server.\n");
+                        "RTSP connection closed by server.");
+        //if client truncated RTSP connection before sending TEARDOWN: error
 
-                if (p->session_list != NULL) {    //if client truncated RTSP connection before sending TEARDOWN: error
+                if (p->session_list != NULL) {
+#if 0 // Do not use it, is just for testing...
+                    if (p->session_list->resource->info->multicast[0]) {
+                        fnc_log(FNC_LOG_INFO,
+                            "RTSP connection closed by client during"
+                            " a multicast session, ignoring...");
+                        continue;
+                    }
+#endif
                     r = p->session_list->rtp_session;
+
                     // Release all RTP sessions
                     while (r != NULL) {
                         // if (r->current_media->pkt_buffer);
