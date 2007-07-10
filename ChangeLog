@@ -1,5 +1,11 @@
 + Feng changelog
 
+  10 Jul 2007; Luca Barbato <lu_zero@gentoo.org> feng-0.1.14:
+  New release
+
+  6 Jul 2007; Dario Gallucci <dario.gallucci@polito.it>:
+  seek support
+
   27 Jun 2007; Luca Barbato <lu_zero@gentoo.org>:
   Move to external bufferpool
 

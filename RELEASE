@@ -1,20 +1,20 @@
 
-    Release notes for feng 0.1.13
+    Release notes for feng 0.1.14
 
 
-The lscube team is proud to announce the first release of feng, the standard
-streaming server. This is the first release so this notes won't be particulary
-long, as stated in the README and in the website feng is a major improvement
-over the Fenice codebase, most of the work was focused to have a robust
-foundation and a flexible framework in order to provide a dependable solution
-for common usage and remove any constraint for future development and research.
-The main features currently implemented are the following:
-
- - very simple way to handle resources
- - the metademuxer compositor (ds)
- - support for recent codecs (h264, vorbis, theora)
- - support for mp3 basically because no clients but one* support vorbis.
-
-*gstreamer cvs is the only implementation.
-
-
+The lscube team is proud to announce the second release of feng, the standard
+streaming server. The release notes will be quite terse, during this month we
+focused on exposing some new features and polishing the previous code in order
+to get rid of corner cases and race conditions.
+From this release feng's bufferpool is a stand alone library in order to keep
+the data structures in sync with felix, the multiplexer program used to feed
+feng live streams.
+The seeking facility that we used for the demuxer_ds now is exposed also in
+the RTSP layer, issuing rtsp PAUSE+PLAY makes the server seek to the PLAY
+argument, this feature obvisously would be enabled only for seekable streams,
+for this release, anyway, it is restricted to demuxer_avf streams since
+demuxer_ds requires some additional logic. 
+From this release demuxer_sd provides experimental support for multicast with
+the following constraints:
+- the multicast address is per rtsp session, not per rtp stream
+- every stream in the session must have the rtp port defined
