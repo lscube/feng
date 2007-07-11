@@ -681,10 +681,13 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         goto error_management;
 
     // Setup the RTP session
+    // XXX refactor
     if (!rtp_s)
         rtp_s = setup_rtp_session(&cinfo, rtsp, rtsp_s, &transport, track_sel);
-    else // multicast
+    else { // multicast
         rtp_s->is_multicast++;
+        rtsp_s->rtp_session = rtp_s;
+    }
 
     // Setup the RTSP session
     rtsp_s->session_id = session_id;
