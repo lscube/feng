@@ -1,5 +1,9 @@
 + Feng changelog
 
+  11 Jul 2007; Luca Barbato <lu_zero@gentoo.org> feng-0.1.14a:
+  Fix a 64bit issue, unbreak multicast to a degree (the first client is still
+  special)
+
   10 Jul 2007; Luca Barbato <lu_zero@gentoo.org> feng-0.1.14:
   New release
 
