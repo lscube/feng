@@ -133,10 +133,11 @@ static RTSP_Error multicast_transport(RTP_transport *transport,
         snprintf(port_buffer, 8, "%d", tr->info->rtp_port + 1);
         transport->rtcp_sock = Sock_connect(info->multicast, port_buffer,
                                                 transport->rtcp_sock, UDP, 0);
-    }
-    if (!transport->rtp_sock) {
-        set_RTSP_Error(&error, 461, "Unsupported Transport");
-        return error;
+    
+        if (!transport->rtp_sock) {
+            set_RTSP_Error(&error, 461, "Unsupported Transport");
+            return error;
+        }
     }
 
     fnc_log(FNC_LOG_DEBUG,"Multicast socket set");
