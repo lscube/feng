@@ -108,7 +108,7 @@ inline int mt_process_event(mt_event_item *ev) {
                                                  &(t->properties->mtime),
                                                  t->i_stream, t->properties,
                                                  t->parser_private)) > 0) {
-                        fnc_log(FNC_LOG_DEBUG, "[MT] Timestamp: %f!",
+                        fnc_log(FNC_LOG_VERBOSE, "[MT] Timestamp: %f!",
                                                          t->properties->mtime);
                         t->parser->parse(t, buffer, n, NULL, 0);
                                                 }
