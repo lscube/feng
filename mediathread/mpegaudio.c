@@ -116,13 +116,13 @@ static int mpa_read(mpa_input *in, uint8_t *buf, uint32_t nbytes)
         return ERR_EOF;
 }
 
-static uint32_t dec_synchsafe_int(uint8_t encoded[4])
+static unsigned int dec_synchsafe_int(uint8_t *encoded)
 {
-    const unsigned char bitsused = 7;
-    uint32_t decoded =/*(uint32)*/encoded[0] & MASK(bitsused);
-    unsigned i;
+    const uint8_t bitsused = 7;
+    unsigned int decoded = encoded[0] & MASK(bitsused);
+    int i;
 
-    for (i=1; i<sizeof(encoded); i++) {
+    for (i=1; i<4; i++) {
         decoded <<= bitsused;
         decoded |= encoded[i] & MASK(bitsused);
     }
@@ -132,12 +132,12 @@ static uint32_t dec_synchsafe_int(uint8_t encoded[4])
 
 static int mpa_read_id3v2(id3v2_hdr *id3hdr, mpa_input *in, mpa_data *mpa)
 {
-    uint32_t tagsize;
+    unsigned int tagsize;
     int ret;
 
-    tagsize=dec_synchsafe_int(id3hdr->size);
+    tagsize = dec_synchsafe_int(id3hdr->size);
 
-    if ( (ret=mpa_read(in, NULL, tagsize)) != (int)tagsize )
+    if ( (ret = mpa_read(in, NULL, tagsize)) != tagsize )
         return (ret<0) ? ERR_PARSE : ERR_EOF;
 
     return 0;
@@ -389,7 +389,6 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
           long extradata_len)
 {
     Track *tr = (Track *)track;
-    BPSlot *slot;
     uint32_t rem, mtu = DEFAULT_MTU; //FIXME get it from SETUP
     int32_t offset;
     uint8_t dst[mtu];
