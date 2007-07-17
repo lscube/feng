@@ -46,6 +46,8 @@
 #include <fenice/mediaparser_module.h>
 #include <fenice/utils.h>
 
+#include <ffmpeg/md5.h>
+
 #ifdef HAVE_AVUTIL
 #include <ffmpeg/base64.h>
 #else
@@ -166,7 +168,7 @@ static int encode_header(uint8_t *data, int len, theora_priv *priv)
         return -1;
     }
 
-    av_md5_sum(hash, data, len);
+    av_md5_sum((uint8_t *)hash, data, len);
     priv->ident = hash[0]^hash[1]^hash[2]^hash[3];
 
     // Envelope size
@@ -284,7 +286,7 @@ static int theora_parse(void *track, uint8_t *data, long len, uint8_t *extradata
     uint32_t payload = mtu - XIPH_HEADER_SIZE;
     uint8_t *packet = calloc(1, mtu);
 
-    if(!packet) goto err_alloc;
+    if(!packet) return ERR_ALLOC;
 
     // the ident is always the same
     packet[0] = (priv->ident>>16)& 0xff;
@@ -304,7 +306,7 @@ static int theora_parse(void *track, uint8_t *data, long len, uint8_t *extradata
             if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       packet, mtu)) {
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
-                return ERR_ALLOC;
+                goto err_alloc;
             }
 
             len -= payload;
@@ -323,7 +325,7 @@ static int theora_parse(void *track, uint8_t *data, long len, uint8_t *extradata
     if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                       packet, len + XIPH_HEADER_SIZE)) {
         fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
-        return ERR_ALLOC;
+        goto err_alloc;
     }
 
     free(packet);
