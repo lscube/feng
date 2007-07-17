@@ -52,8 +52,6 @@ extern int num_conn;
  */
 char const *get_stat(int err)
 {
-    RTSP_Error * err_data = NULL;
-
     struct {
         char *token;
         int code;
@@ -101,11 +99,11 @@ char const *get_stat(int err)
         NULL, -1}
     };
     int i;
+    const RTSP_Error * err_data = get_RTSP_Error(err);
 
-    err_data = get_RTSP_Error(err);
     if (err_data == NULL) {
-            for (i = 0; status[i].code != err && status[i].code != -1; ++i);
-            return status[i].token;
+        for (i = 0; status[i].code != err && status[i].code != -1; ++i);
+        return status[i].token;
     }
     else
         return err_data->message.reply_str;

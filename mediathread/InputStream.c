@@ -54,7 +54,7 @@ static int open_socket(char *host, char *port, int *fd);
 static void close_fd(InputStream *is);
 
 static void is_setfl(InputStream *, istream_flags);
-static void is_clrfl(InputStream *, istream_flags);
+// static void is_clrfl(InputStream *, istream_flags);
 
 /*Interface*/
 InputStream *istream_open(char *mrl)
@@ -418,9 +418,9 @@ static void is_setfl(InputStream *is, istream_flags flags)
 {
 	is->flags |= flags;
 }
-
+#if 0
 static void is_clrfl(InputStream *is, istream_flags flags)
 {
 	is->flags &= ~flags;
 }
-
+#endif

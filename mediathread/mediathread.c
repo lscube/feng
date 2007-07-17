@@ -133,6 +133,7 @@ inline int mt_process_event(mt_event_item *ev) {
     return ERR_NOERROR;
 }
 
+//XXX void foo(gpointer data, gpointer user_data)
 void mt_disable_event(mt_event_item *ev, void *sender) {
     if (!ev)
         return;
@@ -197,7 +198,7 @@ int event_buffer_low(void *sender, Track *src) {
 
 int mt_disable_events(void *sender) {
     pthread_mutex_lock(&el_mutex);
-    g_queue_foreach(el_head, mt_disable_event, sender);
+    g_queue_foreach(el_head, (GFunc)mt_disable_event, sender);
     pthread_mutex_unlock(&el_mutex);
     return ERR_NOERROR;
 }

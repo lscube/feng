@@ -307,7 +307,8 @@ static int seq_head(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaPro
 
 static int gop_head(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
-    int count=0, ret,off,bt;
+    int count=0, ret,bt;
+    unsigned int off;
     uint32_t header;
 
     /*---------------------*/
@@ -339,7 +340,8 @@ static int gop_head(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaPro
 
 static int picture_coding_ext(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
-    int count=0, ret,off,bt;
+    int count=0, ret,bt;
+    unsigned int off;
     uint32_t header;
 
     /*---------------------*/
@@ -398,7 +400,8 @@ static int picture_coding_ext(uint8_t *dst, uint32_t dst_remained, mpv_input *in
 
 static int picture_head(uint8_t *dst, uint32_t dst_remained, mpv_input *in, MediaProperties *properties, mpv_data *mpv)
 {
-    int count=0, ret,off,bt;
+    int count=0, ret,bt;
+    unsigned int off;
     uint32_t header;
 
     /*---------------------*/
@@ -644,7 +647,7 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 {
     Track *tr = (Track *)track;
     int ret;
-    BPSlot *slot;
+//    BPSlot *slot;
     uint32_t dst_len = len + 4; //mpegaudio can be fragmented but not collated
     uint8_t dst[dst_len];
     do {

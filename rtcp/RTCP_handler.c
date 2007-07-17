@@ -57,9 +57,6 @@ int RTCP_flush(RTP_session * session)
 
 int RTCP_handler(RTP_session * session)
 {
-    fd_set wset;
-    struct timeval t;
-
     if (session->rtcp_stats[i_server].pkt_count % 20 == 0) {
         if (session->rtcp_stats[i_server].pkt_count == 0)
             RTCP_send_packet(session, RR);

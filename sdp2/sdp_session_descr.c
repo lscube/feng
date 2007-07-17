@@ -130,7 +130,7 @@ int sdp_session_descr(char *name, char *descr, size_t descr_size)
     // a=
     // control attribute. We should look if aggregate metod is supported?
     DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s"SDP2_EL, name))
-    if (duration = r_descr_time(r_descr))
+    if ((duration = r_descr_time(r_descr)))
         DESCRCAT(g_snprintf(cursor, size_left, "a=range:npt=0-%f"SDP2_EL, duration))
     // other private data
     if ( (sdp_private=r_descr_sdp_private(r_descr)) )
