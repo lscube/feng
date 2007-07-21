@@ -630,7 +630,7 @@ static int mpv_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src, uint3
         mpv->is_fragmented=0;
         mpv->countsrc = 0;
     } else {
-        mpv->vsh1->e=0;/*end of slice*/
+        mpv->vsh1->e=0;/*not end of slice*/
         mpv->is_fragmented=1;
     }
 
