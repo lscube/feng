@@ -221,8 +221,7 @@ static int mp2t_get_frame2(uint8_t *dst, uint32_t dst_nbytes,
     ts_pkts_read = bytes_read / TS_PKT_SIZE;
 
     //scan through the TS packets and estimate the duration of each packet
-    gettimeofday(&tv_now, NULL);
-    now = (double)tv_now.tv_sec + (double)tv_now.tv_usec / 1000000.0;
+    now = gettimeinseconds();
     for(i=0; i<ts_pkts_read; i++) {
         update_ts_pkt_duration(priv, &dst[i*TS_PKT_SIZE], now);
     }

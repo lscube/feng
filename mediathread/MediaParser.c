@@ -33,59 +33,62 @@ extern MediaParser fnc_mediaparser_h264;
 extern MediaParser fnc_mediaparser_aac;
 extern MediaParser fnc_mediaparser_vorbis;
 extern MediaParser fnc_mediaparser_theora;
+extern MediaParser fnc_mediaparser_mp2t;
 
 // static array containing all the available media parsers:
 static MediaParser *media_parsers[] = {
-	&fnc_mediaparser_mpv,
-	&fnc_mediaparser_mpa,
-	&fnc_mediaparser_h264,
-	&fnc_mediaparser_aac,
-	&fnc_mediaparser_vorbis,
-	&fnc_mediaparser_theora,
-	NULL
+    &fnc_mediaparser_mpv,
+    &fnc_mediaparser_mpa,
+    &fnc_mediaparser_h264,
+    &fnc_mediaparser_aac,
+    &fnc_mediaparser_vorbis,
+    &fnc_mediaparser_theora,
+    &fnc_mediaparser_mp2t,
+    NULL
 };
 
 MediaParser *mparser_find(const char *encoding_name)
 {
-	int i;
+    int i;
 
-	for(i=0; media_parsers[i]; i++) {
-		if ( !g_ascii_strcasecmp(encoding_name, media_parsers[i]->info->encoding_name) ) {
-			fnc_log(FNC_LOG_DEBUG, "[MT] Found Media Parser for %s\n", encoding_name);
-			return media_parsers[i];
-		}
-	}
-        fnc_log(FNC_LOG_DEBUG, "[MT] Media Parser for %s not found\n", encoding_name);
-	return NULL;
+    for(i=0; media_parsers[i]; i++) {
+        if ( !g_ascii_strcasecmp(encoding_name,
+                                 media_parsers[i]->info->encoding_name) ) {
+            fnc_log(FNC_LOG_DEBUG, "[MT] Found Media Parser for %s\n",
+                    encoding_name);
+            return media_parsers[i];
+        }
+    }
+
+    fnc_log(FNC_LOG_DEBUG, "[MT] Media Parser for %s not found\n",
+            encoding_name);
+    return NULL;
 }
 
 void mparser_unreg(MediaParser *p, void *private_data)
 {
-	if (p)
-		p->uninit(private_data);
+    if (p) p->uninit(private_data);
 }
 
 // shawill: probably these functions will be removed sooner ir later.
 MediaParser *add_media_parser(void) 
 {
-	MediaParser *p;
+    MediaParser *p;
 
-	if(!(p=malloc(sizeof(MediaParser)))) {
-		return NULL;
-	}
+    if(!(p=malloc(sizeof(MediaParser)))) {
+        return NULL;
+    }
 
-	p->info = NULL;
+    p->info = NULL;
 
-	return p;
+    return p;
 }
 
 void free_parser(MediaParser *p)
 {
-	if(p) {
-		// p->uninit(p->private_data);
-		p->uninit(NULL);
-		// free(p);	
-	}
+    if(p) {
+        // p->uninit(p->private_data);
+        p->uninit(NULL);
+        // free(p);    
+    }
 }
-// ---------------
-
