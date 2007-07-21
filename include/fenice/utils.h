@@ -20,9 +20,10 @@
  *  
  * */
 
-#ifndef _UTILSH
-#define _UTILSH
+#ifndef UTILS_H
+#define UTILS_H
 #include <time.h>
+#include <sys/time.h>
 #include <ctype.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -146,5 +147,14 @@ void fncheader(void);
 
 //XXX we should use the mathlib one if available! (C99)
 #define lround(x) (x - floor(x) < 0.5) ? floor(x): ceil(x)
+
+/**
+ * Returns the current time in seconds
+ */
+static inline double gettimeinseconds(void) {
+    struct timeval now;
+    gettimeofday(&now,NULL);
+    return (double)now.tv_sec + (double)now.tv_usec/1000000.0;
+}
 
 #endif
