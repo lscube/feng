@@ -49,6 +49,7 @@ int running = 1;
 static void terminator_function (int num) {
     fnc_log(FNC_LOG_INFO, "Exiting...");
 //    fprintf(stderr, "Exiting...\n");
+    mt_shutdown();
     running = 0;
 }
 

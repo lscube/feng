@@ -114,7 +114,7 @@ AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 
 dnl CFLAGS=""
 
-AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Fe.NG uses Glib. Please install it (you need devel files).]),)
+AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Fe.NG uses Glib. Please install it (you need devel files).]), gthread)
 AM_PATH_LIBGCRYPT(1.2.0, [CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
                           LIBS="$LIBS $LIBGCRYPT_LIBS"], AC_MSG_ERROR([Fe.NG uses libgcrypts. Please install it.]))
 dnl test enable
