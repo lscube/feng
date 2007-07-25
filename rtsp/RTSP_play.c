@@ -163,7 +163,7 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
 
     if (args->seek_time_valid && args->start_time >= 0.0) {
         if(mt_resource_seek(r, args->start_time)) {
-            return RTSP_InvalidRange;
+            return RTSP_HeaderFieldNotValidforResource;
         }
         for (rtp_sess = rtsp_sess->rtp_session; rtp_sess;
              rtp_sess = rtp_sess->next) {
