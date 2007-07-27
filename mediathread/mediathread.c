@@ -36,7 +36,7 @@ static int running = 1;
 
 void *mediathread(void *arg) {
     mt_event_item *el_cur;
-    
+
     if (!g_thread_supported ()) g_thread_init (NULL);
 
     el_head = g_async_queue_new();
@@ -44,7 +44,7 @@ void *mediathread(void *arg) {
     fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started");
 
     while(running) {
-        
+
         //this replaces the previous nanosleep loop, 
         //as this will block until data is available
         el_cur = g_async_queue_pop (el_head);
@@ -169,11 +169,8 @@ Resource *mt_resource_open(char * path, char *filename) {
 }
 
 void mt_resource_close(Resource *resource) {
-    struct timespec ts = {0, 0};
     if (!resource)
         return;
-
-    nanosleep(&ts, NULL);
 
     pthread_mutex_lock(&mt_mutex);
     r_close(resource);
