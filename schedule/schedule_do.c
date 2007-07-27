@@ -30,23 +30,29 @@
 #include <fenice/debug.h>
 #include <fenice/fnc_log.h>
 
+#define SCHEDULER_TIMING_NS 4000000  //time to obtain legacy 250Hz tickness
+
 extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 extern int stop_schedule;
 
 void *schedule_do(void *nothing)
 {
-    int i=0,res=ERR_GENERIC;
+    int i = 0, j = 1, res = ERR_GENERIC;
     double mnow;
     // Fake timespec for fake nanosleep. See below.
-    struct timespec ts = {0,0};
+	struct timespec ts;
 do {
     // Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
+    if (!j)
+        j = 1; //Avoid division by 0
+    ts.tv_sec = 0;
+    ts.tv_nsec = SCHEDULER_TIMING_NS / j;
     nanosleep(&ts, NULL);
-
+    j = 0;
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
         pthread_mutex_lock(&sched[i].mux);
-            if (sched[i].valid) {
-
+        if (sched[i].valid) {
+            j++;
             if (!sched[i].rtp_session->pause) {
                 Track *tr = 
                     r_selected_track(sched[i].rtp_session->track_selector);
