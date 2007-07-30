@@ -22,6 +22,7 @@
 
 #include <fenice/sdp2.h>
 #include <fenice/utils.h>
+#include <netembryo/url.h>
 
 #define DESCRCAT(x) \
     do { \
@@ -38,7 +39,9 @@ int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list,
     sdp_field_list sdp_private;
     gint64 size_left = descr_size;
     char *cursor = descr;
-    
+    char encoded_descr_name[256];
+    char encoded_media_name[256];
+
     if (!m_descr)
         return ERR_INPUT_PARAM;
     // m=
@@ -80,8 +83,10 @@ int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list,
     // b=*
     // k=*
     // a=*
+    Url_encode (encoded_descr_name, r_descr_name(r_descr), sizeof(encoded_descr_name));
+    Url_encode (encoded_media_name, m_descr_name(m_descr), sizeof(encoded_media_name));
     DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s!%s"SDP2_EL,
-            r_descr_name(r_descr), m_descr_name(m_descr)))
+            encoded_descr_name, encoded_media_name))
 
     // other sdp private data
     for (tmp_mdl = list_first(m_descr_list); tmp_mdl;

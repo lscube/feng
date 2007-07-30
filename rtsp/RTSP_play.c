@@ -29,6 +29,7 @@
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <math.h>
+#include <netembryo/url.h>
 
 #include <RTSP_utils.h>
 
@@ -256,7 +257,7 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
 static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp_session)
 {
     char r[1024];
-    char temp[30];
+    char temp[256];
     RTP_session *p = rtsp_session->rtp_session;
     Track *t;
     /* build a reply message */
@@ -274,9 +275,17 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp
         t = r_selected_track(p->track_selector);
         strcat(r, "url=");
         // TODO: we MUST be sure to send the correct url 
-        sprintf(r + strlen(r), "rtsp://%s/%s/%s!%s",
-            prefs_get_hostname(), p->sd_filename, t->parent->info->name,
-            t->info->name);
+        strcat (r, "rtsp://");
+        strcat (r, prefs_get_hostname());
+        strcat (r, "/");
+        Url_encode(temp, p->sd_filename, sizeof(temp));
+        strcat (r, temp);
+        strcat (r, "/");
+        Url_encode(temp, t->parent->info->name, sizeof(temp));
+        strcat (r, temp);
+        strcat (r, "!");
+        Url_encode(temp, t->info->name, sizeof(temp));
+        strcat (r, temp);
         strcat(r, ";");
         sprintf(r + strlen(r), "seq=%u;rtptime=%u", p->start_seq,
             p->start_rtptime);

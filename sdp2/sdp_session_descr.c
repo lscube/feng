@@ -31,6 +31,7 @@
 /*x-x*/
 //#include <fenice/socket.h>
 #include <netembryo/wsocket.h>
+#include <netembryo/url.h>
 
 #include "sdp_get_version.c"
 
@@ -46,6 +47,7 @@ int sdp_session_descr(char *name, char *descr, size_t descr_size)
 {
     /*x-x*/
     char localhostname[NI_MAXHOST];
+    char encoded_url[256];
     struct passwd *pwitem=getpwuid(getuid());
     gint64 size_left=descr_size;
     char *cursor=descr;
@@ -129,7 +131,8 @@ int sdp_session_descr(char *name, char *descr, size_t descr_size)
     // k=
     // a=
     // control attribute. We should look if aggregate metod is supported?
-    DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s"SDP2_EL, name))
+    Url_encode (encoded_url, name, sizeof(encoded_url));
+    DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s"SDP2_EL, encoded_url))
     if ((duration = r_descr_time(r_descr)))
         DESCRCAT(g_snprintf(cursor, size_left, "a=range:npt=0-%f"SDP2_EL, duration))
     // other private data

@@ -117,7 +117,7 @@ char const *get_stat(int err)
 RTSP_Error check_forbidden_path(ConnectionInfo * cinfo)
 {
     if ( strstr(cinfo->object, "../") || strstr(cinfo->object, "./") )
-     	return RTSP_Forbidden;
+        return RTSP_Forbidden;
 
     return RTSP_Ok;
 }
@@ -161,7 +161,7 @@ RTSP_Error validate_url(char *url, ConnectionInfo * cinfo)
  */
 RTSP_Error check_require_header(RTSP_buffer * rtsp)
 {
-	if (strstr(rtsp->in_buffer, HDR_REQUIRE))
+    if (strstr(rtsp->in_buffer, HDR_REQUIRE))
         return RTSP_OptionNotSupported;
 
     return RTSP_Ok;
@@ -476,7 +476,11 @@ int parse_url(const char *url, char *server, size_t server_len,
     int exit_status = 0;
 
     Url turl;
-    Url_init(&turl, (char*)url);
+    char decoded_url[1024];
+
+    if (Url_decode( decoded_url, url, sizeof(decoded_url) ) < 0)
+        return 1;
+    Url_init(&turl, decoded_url);
 
     if (!turl.path) {
         exit_status = 1;

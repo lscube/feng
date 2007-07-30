@@ -42,6 +42,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
 {
     char *r;        /* reply message buffer */
     int mb_len;
+    char encoded_object[256];
 
     /* allocate buffer */
     mb_len = 1512 + strlen(cinfo->descr);
@@ -66,9 +67,10 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
             break;
         }
     }
+    Url_encode (encoded_object, cinfo->object, sizeof(encoded_object));
     snprintf(r + strlen(r), mb_len - strlen(r),
              "Content-Base: rtsp://%s/%s/" RTSP_EL,
-             prefs_get_hostname(), cinfo->object);
+             prefs_get_hostname(), encoded_object);
     snprintf(r + strlen(r), mb_len - strlen(r),
              "Content-Length: %d" RTSP_EL,
              strlen(cinfo->descr));
