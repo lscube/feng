@@ -162,7 +162,8 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
     RTP_session *rtp_sess;
     int pause_needed;
 
-    if (args->seek_time_valid && args->start_time >= 0.0) {
+    if (args->seek_time_valid && ((rtsp_sess->started && args->start_time == 0.0)
+                                  || args->start_time > 0.0)) {
         if(mt_resource_seek(r, args->start_time)) {
             return RTSP_HeaderFieldNotValidforResource;
         }
@@ -221,6 +222,7 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
         {
             if (rtp_sess->is_multicast) return RTSP_Ok;
             // Start playing all the presentation
+            rtsp_sess->started = 1;
             if (!rtp_sess->started) {
                 // Start new
                 if (schedule_start (rtp_sess->sched_id, args) == ERR_ALLOC)

@@ -178,10 +178,13 @@ void mt_resource_close(Resource *resource) {
 }
 
 int mt_resource_seek(Resource *resource, double time) {
+    int res;
+
     pthread_mutex_lock(&mt_mutex);
-    resource->demuxer->seek(resource, time);
+    res = resource->demuxer->seek(resource, time);
     pthread_mutex_unlock(&mt_mutex);
-    return 0;
+
+    return res;
 }
 
 int event_buffer_low(void *sender, Track *src) {

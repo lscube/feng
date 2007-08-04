@@ -67,6 +67,7 @@ typedef struct _RTSP_interleaved {
 typedef struct _RTSP_session {
     int cur_state;
     int session_id;
+    int started;
     RTP_session *rtp_session;
     struct _RTSP_session *next;
     // mediathread resource
