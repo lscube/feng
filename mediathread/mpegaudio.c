@@ -305,7 +305,7 @@ static int mpa_init(MediaProperties *properties, void **private_data)
     if ( !(*private_data = calloc (1, sizeof(mpa_data))) )
         return ERR_ALLOC;
 
-        INIT_PROPS
+    INIT_PROPS
 
     return 0;
 }
