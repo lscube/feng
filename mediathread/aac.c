@@ -111,7 +111,7 @@ return ERR_PARSE;
 */
 
 //XXX implement aggregation
-
+#define AAC_EXTRA 7
 static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                  long extradata_len)
 {
@@ -123,6 +123,10 @@ static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     uint8_t *packet = calloc(1, mtu);
 
     if(!packet) return ERR_ALLOC;
+
+// trim away extradata
+    data += AAC_EXTRA;
+    len -= AAC_EXTRA;
 
     packet[0] = 0x00;
     packet[1] = 0x10;
