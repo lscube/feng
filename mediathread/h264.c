@@ -121,6 +121,7 @@ static int frag_fu_a(uint8_t *nal, int fragsize, int mtu,
     buf[0] = (nal[0] & 0xe0) | 28; // fu_indicator
     fu_header = nal[0] & 0x1f;
     nal++;
+    fragsize--;
     while(fragsize>0) {
         buf[1] = fu_header;
         if (start) {
@@ -130,7 +131,7 @@ static int frag_fu_a(uint8_t *nal, int fragsize, int mtu,
         fraglen = min(mtu-2, fragsize);
         if (fraglen == fragsize) {
             buf[1] = fu_header | (1<<6);
-        }   
+        }
         memcpy(buf + 2, nal, fraglen);
         fnc_log(FNC_LOG_VERBOSE, "[h264] Frag %d %d",buf[0], buf[1]);
         fragsize -= fraglen;
