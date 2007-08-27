@@ -276,8 +276,10 @@ static int avf_init(Resource * r)
         props.extradata_len = codec->extradata_size;
         // make them pointers?
         if (id) 
-        { 
+        {
             strncpy(props.encoding_name, id, 11);
+            props.codec_id = codec->codec_id;
+            props.codec_sub_id = codec->sub_id;
             props.payload_type = pt_from_id(codec->codec_id);
             if (props.payload_type == 96)
                 props.payload_type = pt++;

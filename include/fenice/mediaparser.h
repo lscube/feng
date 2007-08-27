@@ -40,19 +40,21 @@ typedef enum {MP_undef=-1, MP_audio, MP_video, MP_application, MP_data, MP_contr
 typedef enum {MS_stored=0, MS_live} MediaSource;
 
 MObject_def(__MEDIA_PROPERTIES)
-    int bit_rate; /*! average if VBR or -1 is not useful*/
+    int bit_rate; /*!< average if VBR or -1 is not useful*/
     MediaCodingType coding_type;
     int payload_type;
     unsigned int clock_rate;
     char encoding_name[11];
     MediaType media_type;
     MediaSource media_source;
+    int codec_id; /*!< Codec ID as defined by ffmpeg */
+    int codec_sub_id; /*!< Subcodec ID as defined by ffmpeg */
     double mtime;    //FIXME Move to bufferpool   //time is in seconds
     double duration; //FIXME Move to bufferpool
-    float sample_rate;/*! SamplingFrequency*/
+    float sample_rate;/*!< SamplingFrequency*/
     float OutputSamplingFrequency;
     int audio_channels;
-    int bit_per_sample;/*! BitDepth*/
+    int bit_per_sample;/*!< BitDepth*/
     int frame_rate;
     int FlagInterlaced;
     unsigned int PixelWidth;
