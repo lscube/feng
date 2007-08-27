@@ -83,6 +83,7 @@ const id_tag id_tags[] = {
    { CODEC_ID_MPEG1VIDEO, 32, "MPV" },
    { CODEC_ID_MPEG2VIDEO, 32, "MPV" },
    { CODEC_ID_H264, 96, "H264" },
+   { CODEC_ID_MP2, 14, "MPA"},
    { CODEC_ID_MP3, 14, "MPA"},
    { CODEC_ID_VORBIS, 97, "VORBIS"},
    { CODEC_ID_THEORA, 96, "THEORA"},
