@@ -83,6 +83,7 @@ const id_tag id_tags[] = {
    { CODEC_ID_MPEG1VIDEO, 32, "MPV" },
    { CODEC_ID_MPEG2VIDEO, 32, "MPV" },
    { CODEC_ID_H264, 96, "H264" },
+   { CODEC_ID_MP2, 14, "MPA"},
    { CODEC_ID_MP3, 14, "MPA"},
    { CODEC_ID_VORBIS, 97, "VORBIS"},
    { CODEC_ID_THEORA, 96, "THEORA"},
@@ -275,8 +276,10 @@ static int avf_init(Resource * r)
         props.extradata_len = codec->extradata_size;
         // make them pointers?
         if (id) 
-        { 
+        {
             strncpy(props.encoding_name, id, 11);
+            props.codec_id = codec->codec_id;
+            props.codec_sub_id = codec->sub_id;
             props.payload_type = pt_from_id(codec->codec_id);
             if (props.payload_type == 96)
                 props.payload_type = pt++;
