@@ -43,9 +43,10 @@ static int aac_init(MediaProperties *properties, void **private_data)
     int profile_id, config;
 
 
-    if(!properties->extradata_len)
+    if(!properties->extradata_len) {
+        fnc_log(FNC_LOG_ERR, "No extradata!");
 	goto err_alloc;
-
+    }
     profile_id = (properties->extradata[0] & 0xf8) >> 3;
     config =     (properties->extradata[1] & 0x78) >> 3;
 
