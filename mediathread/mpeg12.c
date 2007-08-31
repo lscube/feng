@@ -57,10 +57,9 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 {
     Track * tr = track;
     int h, b=1, e=0, mtu = DEFAULT_MTU;
-    long rem;
+    long rem = len;
     uint8_t dst[mtu];
     uint8_t *q = dst;
-    rem = len;
 
     while (rem > 0) {
         len = mtu - 4;
