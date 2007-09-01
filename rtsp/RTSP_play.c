@@ -173,8 +173,8 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
                 /* Pause scheduler while reiniting RTP session */
                 rtp_sess->pause = 1;
             }
-            rtp_sess->start_seq = 1 + (unsigned int) (rand() % (0xFFFF));
-            rtp_sess->start_rtptime = 1 + (unsigned int) (rand() % (0xFFFFFFFF));
+            rtp_sess->start_seq = 1 + ((unsigned int) rand() & (0xFFFF));
+            rtp_sess->start_rtptime = 1 + ((unsigned int) rand() & (0xFFFFFFFF));
             rtp_sess->seq_no = rtp_sess->start_seq - 1;
             rtp_sess->seek_time = args->start_time;
 
