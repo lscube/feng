@@ -40,21 +40,23 @@ static int aac_uninit(void *private_data)
 static int aac_init(MediaProperties *properties, void **private_data)
 {
     sdp_field *sdp_private;
-    int profile_id, config;
+    int profile_id/*, config*/;
 
 
     if(!properties->extradata_len) {
         fnc_log(FNC_LOG_ERR, "No extradata!");
-	goto err_alloc;
+        goto err_alloc;
     }
     profile_id = (properties->extradata[0] & 0xf8) >> 3;
-    config =     (properties->extradata[1] & 0x78) >> 3;
+//    config =     (properties->extradata[1] & 0x78) >> 3;
+    properties->clock_rate = properties->sample_rate;
 
     sdp_private = g_new(sdp_field, 1);
     sdp_private->type = fmtp;
     sdp_private->field = 
-        g_strdup_printf("streamtype=5; profile-level-id=%d;"
-                        " mode=AAC-hbr; config=%x;", profile_id, config);
+        g_strdup_printf("streamtype=5;profile-level-id=%d;"
+                        "mode=AAC-hbr;sizeLength=13;indexLength=3;"
+                        "indexDeltaLength=3;", profile_id/*, config*/);
     properties->sdp_private =
         g_list_prepend(properties->sdp_private, sdp_private);
 
@@ -112,7 +114,7 @@ return ERR_PARSE;
 */
 
 //XXX implement aggregation
-#define AAC_EXTRA 7
+//#define AAC_EXTRA 7
 static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                  long extradata_len)
 {
@@ -126,8 +128,8 @@ static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     if(!packet) return ERR_ALLOC;
 
 // trim away extradata
-    data += AAC_EXTRA;
-    len -= AAC_EXTRA;
+//    data += AAC_EXTRA;
+//    len -= AAC_EXTRA;
 
     packet[0] = 0x00;
     packet[1] = 0x10;
@@ -137,7 +139,7 @@ static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     if (len > payload) {
         while (len > payload) {
             memcpy(packet + AU_HEADER_SIZE, data + off, payload);
-            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
+            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, (len <= payload),
                                       packet, mtu)) {
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                 goto err_alloc;
