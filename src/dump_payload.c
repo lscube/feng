@@ -27,7 +27,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <fenice/types.h>
 #include <fenice/fnc_log.h>
 
 #define MAX_FILE_DUMP 6
