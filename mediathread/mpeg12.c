@@ -62,7 +62,7 @@ static uint8_t *find_start_code(uint8_t *p, uint8_t *end,
     }
 
     p= MIN(p, end)-4;
-    *state= p[0] + p[1]<<8 + p[2]<<16 + p[3]<<24;
+    *state= p[0] + (p[1]<<8) + (p[2]<<16) + (p[3]<<24);
 
     return p+4;
 }
