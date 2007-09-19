@@ -53,7 +53,7 @@ static char *data_to_hex(char *buff, const uint8_t *src, int s)
 
 static char *extradata2config(const uint8_t *extradata, int extradata_size)
 {
-    char *config = malloc(extradata_size * 2);
+    char *config = malloc(extradata_size * 2 + 1);
 
     if (config == NULL) {
         return NULL;
@@ -85,7 +85,6 @@ static int aac_uninit(void *private_data)
 static int aac_init(MediaProperties *properties, void **private_data)
 {
     sdp_field *sdp_private;
-    int profile_id;
     char *config;
 
 
@@ -94,7 +93,6 @@ static int aac_init(MediaProperties *properties, void **private_data)
         return ERR_ALLOC;
     }
 
-    profile_id = (properties->extradata[0] & 0xf8) >> 3;
     properties->clock_rate = properties->sample_rate;
 
     sdp_private = g_new(sdp_field, 1);
@@ -105,10 +103,9 @@ static int aac_init(MediaProperties *properties, void **private_data)
     if (!config) return ERR_PARSE;
 
     sdp_private->field = 
-        g_strdup_printf("streamtype=5;profile-level-id=%d;"
+        g_strdup_printf("streamtype=5;profile-level-id=1;"
                         "mode=AAC-hbr;sizeLength=13;indexLength=3;"
-                        "indexDeltaLength=3; config=%s;",
-                        profile_id, config);
+                        "indexDeltaLength=3; config=%s;", config);
     free(config);
 
     properties->sdp_private =
