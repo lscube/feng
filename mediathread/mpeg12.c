@@ -33,7 +33,41 @@ static MediaParserInfo info = {
     MP_video
 };
 
-/*mediaparser_module interface implementation*/
+#if 1
+// Stolen from ffmpeg as usual...
+
+static uint8_t *find_start_code(uint8_t *p, uint8_t *end,
+                                uint32_t *state)
+{
+    int i;
+
+    if(p>=end)
+        return end;
+
+    for(i=0; i<3; i++){
+        uint32_t tmp= *state << 8;
+        *state= tmp + *(p++);
+        if(tmp == 0x100 || p==end)
+            return p;
+    }
+
+    while(p<end){
+        if     (p[-1] > 1      ) p+= 3;
+        else if(p[-2]          ) p+= 2;
+        else if(p[-3]|(p[-1]-1)) p++;
+        else{
+            p++;
+            break;
+        }
+    }
+
+    p= MIN(p, end)-4;
+    *state= p[0] + p[1]<<8 + p[2]<<16 + p[3]<<24;
+
+    return p+4;
+}
+#endif
+
 static int mpv_init(MediaProperties *properties, void **private_data)
 {
     INIT_PROPS
@@ -56,22 +90,65 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
           long extradata_len)
 {
     Track * tr = track;
-    int h, b=1, e=0, mtu = DEFAULT_MTU;
+    int h, b = 1, e = 0, mtu = DEFAULT_MTU;
+    int frame_type = 0 , temporal_reference = 0;
     long rem = len;
     uint8_t dst[mtu];
     uint8_t *q = dst;
 
     while (rem > 0) {
+        int begin_of_sequence = 0;
+
         len = mtu - 4;
 
         if (len >= rem) {
             len = rem;
             e = 1;
+        } else {
+            uint8_t *r, *r1 = data;
+            uint32_t start_code;
+            while (1) {
+                start_code = -1;
+                r = find_start_code(r1, data + rem, &start_code);
+                if ((start_code & 0xffffff00) == 0x100) {
+                    if (start_code == 0x100) {
+                        frame_type = (r[1] & 0x38)>> 3;
+                        temporal_reference = (int)r[0] << 2 | r[1] >> 6;
+                    }
+
+                    if (start_code == 0x1b8) {
+                        b = 1;
+                    }
+
+                    if (r - data < len) {
+                        /* The current slice fits in the packet */
+                        if (b == 0) {
+                            /* no slice at the beginning of the packet... */
+                            e = 1;
+                            len = r - data - 4;
+                            break;
+                        }
+                        r1 = r;
+                    } else {
+                        if (r - r1 < mtu) {
+                            len = r1 - data - 4;
+                            e = 1;
+                        }
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
         }
 
         h = 0;
+        h |= temporal_reference << 16;
+        h |= begin_of_sequence << 13;
         h |= b << 12;
         h |= e << 11;
+        h |= frame_type << 8;
+
         q = dst;
         *q++ = h >> 24;
         *q++ = h >> 16;
@@ -86,7 +163,8 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
             return ERR_ALLOC;
         }
-        b = 0;
+        b = e;
+        e = 0;
         data += len;
         rem -= len;
     }
