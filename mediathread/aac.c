@@ -27,6 +27,51 @@
 
 #include <ffmpeg/md5.h>
 
+#if 1
+// Ripped from ffmpeg, see sdp.c 
+
+static void digit_to_char(char *dst, uint8_t src)
+{
+    if (src < 10) {
+        *dst = '0' + src;
+    } else {
+        *dst = 'A' + src - 10;
+    }
+}
+
+static char *data_to_hex(char *buff, const uint8_t *src, int s)
+{
+    int i;
+
+    for(i = 0; i < s; i++) {
+        digit_to_char(buff + 2 * i, src[i] >> 4);
+        digit_to_char(buff + 2 * i + 1, src[i] & 0xF);
+    }
+
+    return buff;
+}
+
+static char *extradata2config(const uint8_t *extradata, int extradata_size)
+{
+    char *config = malloc(extradata_size * 2);
+
+    if (config == NULL) {
+        return NULL;
+    }
+
+    data_to_hex(config, extradata, extradata_size);
+
+    config[extradata_size * 2] = '\0';
+
+    return config;
+}
+
+#else
+
+#endif
+
+
+
 static MediaParserInfo info = {
     "aac",
     MP_audio
@@ -40,23 +85,32 @@ static int aac_uninit(void *private_data)
 static int aac_init(MediaProperties *properties, void **private_data)
 {
     sdp_field *sdp_private;
-    int profile_id/*, config*/;
+    int profile_id;
+    char *config;
 
 
     if(!properties->extradata_len) {
         fnc_log(FNC_LOG_ERR, "No extradata!");
-        goto err_alloc;
+        return ERR_ALLOC;
     }
+
     profile_id = (properties->extradata[0] & 0xf8) >> 3;
-//    config =     (properties->extradata[1] & 0x78) >> 3;
     properties->clock_rate = properties->sample_rate;
 
     sdp_private = g_new(sdp_field, 1);
     sdp_private->type = fmtp;
+
+    config = extradata2config(properties->extradata,
+                              properties->extradata_len);
+    if (!config) return ERR_PARSE;
+
     sdp_private->field = 
         g_strdup_printf("streamtype=5;profile-level-id=%d;"
                         "mode=AAC-hbr;sizeLength=13;indexLength=3;"
-                        "indexDeltaLength=3;", profile_id/*, config*/);
+                        "indexDeltaLength=3; config=%s;",
+                        profile_id, config);
+    free(config);
+
     properties->sdp_private =
         g_list_prepend(properties->sdp_private, sdp_private);
 
@@ -72,9 +126,6 @@ static int aac_init(MediaProperties *properties, void **private_data)
     INIT_PROPS
 
     return ERR_NOERROR;
-
-    err_alloc:
-    return ERR_ALLOC;
 }
 
 static int aac_get_frame2(uint8_t *dst, uint32_t dst_nbytes, double *timestamp,

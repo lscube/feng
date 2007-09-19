@@ -5,7 +5,7 @@ Codecs
 -   h263+       To Be Ported    2429        Exists in the previous fenice
 -   mpeg1/2     Not Working     2250        There is something wrong
 -   mp3         To Be Updated   3119        The former draft is supported
--   aac         Inexistent      
+-   aac         Working         3640
 -   vorbis      Working         draft       Interoperable with gstreamer
 -   theora      Working         draft       Interoperable with gstreamer
 -   amr         Inexistent      3267
