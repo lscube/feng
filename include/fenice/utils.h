@@ -135,6 +135,7 @@ int parse_url(const char *url, char *server, size_t, unsigned short *port,
 float NTP_time(time_t t);
 int get_utc(struct tm *t, char *b);
 int get_field(uint8_t * d, uint32_t bits, uint32_t * offset);
+char *extradata2config(const uint8_t *extradata, int extradata_size);
 void fncheader(void);
 
 //XXX check and maybe use something saner...

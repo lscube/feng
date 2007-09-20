@@ -25,51 +25,6 @@
 #include <fenice/mediaparser_module.h>
 #include <fenice/utils.h>
 
-#if 1
-// Ripped from ffmpeg, see sdp.c 
-
-static void digit_to_char(char *dst, uint8_t src)
-{
-    if (src < 10) {
-        *dst = '0' + src;
-    } else {
-        *dst = 'A' + src - 10;
-    }
-}
-
-static char *data_to_hex(char *buff, const uint8_t *src, int s)
-{
-    int i;
-
-    for(i = 0; i < s; i++) {
-        digit_to_char(buff + 2 * i, src[i] >> 4);
-        digit_to_char(buff + 2 * i + 1, src[i] & 0xF);
-    }
-
-    return buff;
-}
-
-static char *extradata2config(const uint8_t *extradata, int extradata_size)
-{
-    char *config = malloc(extradata_size * 2 + 1);
-
-    if (config == NULL) {
-        return NULL;
-    }
-
-    data_to_hex(config, extradata, extradata_size);
-
-    config[extradata_size * 2] = '\0';
-
-    return config;
-}
-
-#else
-
-#endif
-
-
-
 static MediaParserInfo info = {
     "aac",
     MP_audio

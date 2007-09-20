@@ -8,7 +8,8 @@ endif
 
 libutils_la_SOURCES =	NTP_time.c \
 			get_utc.c \
-			get_field.c
+			get_field.c \
+			sdp_utils.c
 
 libutils_la_LDFLAGS = -lm
 
