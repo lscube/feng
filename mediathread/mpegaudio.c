@@ -389,8 +389,8 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
           long extradata_len)
 {
     Track *tr = (Track *)track;
-    uint32_t rem, mtu = DEFAULT_MTU; //FIXME get it from SETUP
-    int32_t offset;
+    uint32_t mtu = DEFAULT_MTU; //FIXME get it from SETUP
+    int32_t offset, rem;
     uint8_t dst[mtu];
     rem = len;
 
@@ -405,20 +405,20 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         fnc_log(FNC_LOG_VERBOSE, "[mp3] no frags");
     } else {
         do {
-            offset = rem - mtu;
+            offset = len - rem;
             if (offset & 0xffff0000) return ERR_ALLOC;
-            rem -= mtu;
-            memcpy (dst + 4, data + offset, min(mtu, rem));
+            memcpy (dst + 4, data + offset, min(mtu - 4, rem));
             offset = htonl(offset & 0xffff);
             memcpy (dst, &offset, 4);
 
             if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                                  dst, min(mtu, rem) + 4)) { 
+                                  dst, min(mtu, rem + 4))) {
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                 return ERR_ALLOC;
             }
+            rem -= mtu - 4;
             fnc_log(FNC_LOG_VERBOSE, "[mp3] frags");
-        } while (rem - mtu > 0);
+        } while (rem >= 0);
     }
     fnc_log(FNC_LOG_VERBOSE, "[mp3]Frame completed");
     return ERR_NOERROR;
