@@ -94,7 +94,7 @@ static inline edl_item_elem *edl_active_res (void *private_data) {
 static void destroy_list_data(gpointer elem, gpointer unused) {
     edl_item_elem *item = (edl_item_elem *) elem;
     if (item)
-    	r_close(item->r);
+        r_close(item->r);
     g_free(elem);
 }
 
@@ -121,7 +121,7 @@ static double edl_timescaler (Resource * r, double res_time) {
 static int ds_init(Resource * r)
 {
     char line[256], mrl[256];
-    double begin = 0.0, end = HUGE_VAL, r_offset = 0.0;
+    double begin, end, r_offset = 0.0;
     int n;
     FILE *fd;
     Resource *resource;
@@ -132,6 +132,8 @@ static int ds_init(Resource * r)
     fd = fdopen(r->i_stream->fd, "r");
 
     do {
+        begin = 0.0;
+        end = HUGE_VAL;
         fgets(line, sizeof(line), fd);
         if (feof(fd))
             break;
@@ -157,11 +159,12 @@ static int ds_init(Resource * r)
         item->first_ts = 1;
         item->end = end;
         item->offset = r_offset;
-        if (resource->info->duration && end > resource->info->duration) {
+        if (resource->info->duration > 0 && end > resource->info->duration) {
             r_offset += resource->info->duration - begin;
         } else {
             r_offset += end - begin;
         }
+        fnc_log(FNC_LOG_DEBUG, "[ds] r_offset=%f", r_offset);
         //seek to begin
         if (begin)
             resource->demuxer->seek(resource, begin);
@@ -170,13 +173,15 @@ static int ds_init(Resource * r)
         if(!r->tracks) {
             r->tracks = resource->tracks;
         }
-	g_list_foreach(resource->tracks, change_track_parent, r);
+    g_list_foreach(resource->tracks, change_track_parent, r);
     } while (!feof(fd));
 
     if (!(r->private_data = g_new0(edl_priv_data, 1))) {
         goto err_alloc;
     }
 
+//    r->info->duration = r_offset;
+    fnc_log(FNC_LOG_DEBUG, "[ds] duration=%f", r_offset);
     ((edl_priv_data *) r->private_data)->head = g_list_reverse(edl_head);
 
     return RESOURCE_OK;

@@ -25,8 +25,6 @@
 #include <fenice/mediaparser_module.h>
 #include <fenice/utils.h>
 
-#include <ffmpeg/md5.h>
-
 #if 1
 // Ripped from ffmpeg, see sdp.c 
 
@@ -187,7 +185,7 @@ static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     if (len > payload) {
         while (len > payload) {
             memcpy(packet + AU_HEADER_SIZE, data + off, payload);
-            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, (len <= payload),
+            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       packet, mtu)) {
                 fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
                 goto err_alloc;

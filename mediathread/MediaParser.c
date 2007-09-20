@@ -31,6 +31,7 @@ extern MediaParser fnc_mediaparser_mpv;
 extern MediaParser fnc_mediaparser_mpa;
 extern MediaParser fnc_mediaparser_h264;
 extern MediaParser fnc_mediaparser_aac;
+extern MediaParser fnc_mediaparser_mp4ves;
 extern MediaParser fnc_mediaparser_vorbis;
 extern MediaParser fnc_mediaparser_theora;
 extern MediaParser fnc_mediaparser_mp2t;
@@ -41,6 +42,7 @@ static MediaParser *media_parsers[] = {
     &fnc_mediaparser_mpa,
     &fnc_mediaparser_h264,
     &fnc_mediaparser_aac,
+    &fnc_mediaparser_mp4ves,
     &fnc_mediaparser_vorbis,
     &fnc_mediaparser_theora,
     &fnc_mediaparser_mp2t,
