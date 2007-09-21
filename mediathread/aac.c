@@ -46,8 +46,6 @@ static int aac_init(MediaProperties *properties, void **private_data)
         return ERR_ALLOC;
     }
 
-    properties->clock_rate = properties->sample_rate;
-
     sdp_private = g_new(sdp_field, 1);
     sdp_private->type = fmtp;
 
