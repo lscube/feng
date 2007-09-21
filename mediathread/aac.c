@@ -64,9 +64,8 @@ static int aac_init(MediaProperties *properties, void **private_data)
 
     sdp_private = g_new(sdp_field, 1);
     sdp_private->type = rtpmap;
-    sdp_private->field = g_strdup_printf ("mpeg4-generic/%d/%d",
-                                            properties->clock_rate,
-                                            properties->audio_channels);
+    sdp_private->field = g_strdup_printf ("mpeg4-generic/%d",
+                                            properties->clock_rate);
 
     properties->sdp_private =
         g_list_prepend(properties->sdp_private, sdp_private);
