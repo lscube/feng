@@ -160,7 +160,6 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
 {
     Resource *r = rtsp_sess->resource;
     RTP_session *rtp_sess;
-    int pause_needed;
 
     if (args->seek_time_valid && ((rtsp_sess->started && args->start_time == 0.0)
                                   || args->start_time > 0.0)) {
@@ -169,13 +168,12 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
         }
         for (rtp_sess = rtsp_sess->rtp_session; rtp_sess;
              rtp_sess = rtp_sess->next) {
-            if ((pause_needed = (rtp_sess->started && !rtp_sess->pause))) {
+            if (rtp_sess->started && !rtp_sess->pause) {
                 /* Pause scheduler while reiniting RTP session */
                 rtp_sess->pause = 1;
             }
-            rtp_sess->start_seq = 1 + ((unsigned int) rand() & (0xFFFF));
+            rtp_sess->start_seq = 1 + rtp_sess->seq_no;
             rtp_sess->start_rtptime = 1 + ((unsigned int) rand() & (0xFFFFFFFF));
-            rtp_sess->seq_no = rtp_sess->start_seq - 1;
             rtp_sess->seek_time = args->start_time;
 
             if (rtp_sess->cons) {
@@ -183,9 +181,6 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
                     /* Drop spurious packets after seek */
                     bp_gotreader(rtp_sess->cons);
                 }
-            }
-            if (pause_needed) {
-                schedule_resume (rtp_sess->sched_id, args);
             }
         }
     } else if (args->start_time < 0.0) {
@@ -228,7 +223,6 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
                 if (schedule_start (rtp_sess->sched_id, args) == ERR_ALLOC)
                         return RTSP_Fatal_ErrAlloc;
             } else {
-
                 // Resume existing
                 if (rtp_sess->pause) {
                     schedule_resume (rtp_sess->sched_id, args);
