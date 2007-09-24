@@ -21,7 +21,6 @@
  * */
 
 #include <string.h>
-#include <arpa/inet.h>
 #include <fenice/mpeg.h>
 #include <fenice/demuxer.h>
 #include <fenice/fnc_log.h>
@@ -63,7 +62,7 @@ static uint8_t *find_start_code(uint8_t *p, uint8_t *end,
     }
 
     p= MIN(p, end)-4;
-    *state= ntohl(p[0] + (p[1]<<8) + (p[2]<<16) + (p[3]<<24));
+    *state= (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | (p[3]);
 
     return p+4;
 }
@@ -97,6 +96,8 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     uint8_t dst[mtu];
     uint8_t *q = dst;
 
+    fnc_log(FNC_LOG_DEBUG, "[mpv] start of frame");
+
     while (rem > 0) {
         int begin_of_sequence = 0;
 
@@ -112,6 +113,7 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                 start_code = -1;
                 r = find_start_code(r1, data + rem, &start_code);
                 if ((start_code & 0xffffff00) == 0x100) {
+                    fnc_log(FNC_LOG_DEBUG, "[mpv] start_code %x", start_code);
                     if (start_code == 0x100) {
                         frame_type = (r[1] & 0x38)>> 3;
                         temporal_reference = (int)r[0] << 2 | r[1] >> 6;
@@ -150,6 +152,8 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         h |= e << 11;
         h |= frame_type << 8;
 
+	fnc_log(FNC_LOG_DEBUG, "[mpv] header %x", h);
+
         q = dst;
         *q++ = h >> 24;
         *q++ = h >> 16;
@@ -169,6 +173,7 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         data += len;
         rem -= len;
     }
+    fnc_log(FNC_LOG_DEBUG, "[mpv] end of frame");
     return ERR_NOERROR;
 }
 
