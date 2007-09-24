@@ -34,10 +34,8 @@ static MediaParserInfo info = {
 };
 
 #if 1
-// Stolen from ffmpeg as usual...
-
-static uint8_t *find_start_code(uint8_t *p, uint8_t *end,
-                                uint32_t *state)
+// Stolen from ffmpeg (mpegvideo.c)
+static uint8_t *find_start_code(uint8_t *p, uint8_t *end, uint32_t *state)
 {
     int i;
 
@@ -92,49 +90,57 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     Track * tr = track;
     int h, b = 1, e = 0, mtu = DEFAULT_MTU;
     int frame_type = 0 , temporal_reference = 0;
-    long rem = len;
+    long rem = len, payload;
     uint8_t dst[mtu];
     uint8_t *q = dst;
+    uint8_t *r, *r1 = data;
+    uint32_t start_code;
 
-    fnc_log(FNC_LOG_DEBUG, "[mpv] start of frame");
+    while (1) {
+        start_code = -1;
+        r = find_start_code(r1, data + len, &start_code);
+        if ((start_code & 0xffffff00) == 0x100) {
+            if (start_code == 0x100) {
+                frame_type = (r[1] & 0x38)>> 3;
+                temporal_reference = (int)r[0] << 2 | r[1] >> 6;
+            }
+            r1 = r;
+        } else {
+            break;
+        }
+    }
 
     while (rem > 0) {
         int begin_of_sequence = 0;
 
-        len = mtu - 4;
+        payload = mtu - 4;
 
-        if (len >= rem) {
-            len = rem;
+        if (payload >= rem) {
+            payload = rem;
             e = 1;
         } else {
-            uint8_t *r, *r1 = data;
-            uint32_t start_code;
+            r1 = data;
             while (1) {
                 start_code = -1;
-                r = find_start_code(r1, data + rem, &start_code);
+                r = find_start_code(r1, data + len, &start_code);
                 if ((start_code & 0xffffff00) == 0x100) {
-                    fnc_log(FNC_LOG_DEBUG, "[mpv] start_code %x", start_code);
-                    if (start_code == 0x100) {
-                        frame_type = (r[1] & 0x38)>> 3;
-                        temporal_reference = (int)r[0] << 2 | r[1] >> 6;
-                    }
 
                     if (start_code == 0x1b8) {
                         b = 1;
                     }
 
-                    if (r - data < len) {
+                    if (r - data < payload) {
                         /* The current slice fits in the packet */
                         if (b == 0) {
                             /* no slice at the beginning of the packet... */
                             e = 1;
-                            len = r - data - 4;
+                            payload = r - data - 4;
                             break;
                         }
                         r1 = r;
                     } else {
                         if (r - r1 < mtu) {
-                            len = r1 - data - 4;
+                            payload = r1 - data - 4;
                             e = 1;
                         }
                         break;
@@ -152,28 +158,25 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         h |= e << 11;
         h |= frame_type << 8;
 
-	fnc_log(FNC_LOG_DEBUG, "[mpv] header %x", h);
-
         q = dst;
         *q++ = h >> 24;
         *q++ = h >> 16;
         *q++ = h >> 8;
         *q++ = h;
 
-        memcpy(q, data, len);
-        q += len;
+        memcpy(q, data, payload);
+        q += payload;
 
-        if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, (len == rem),
+        if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, (payload == rem),
                      dst, q - dst)) {
             fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
             return ERR_ALLOC;
         }
         b = e;
         e = 0;
-        data += len;
-        rem -= len;
+        data += payload;
+        rem -= payload;
     }
-    fnc_log(FNC_LOG_DEBUG, "[mpv] end of frame");
     return ERR_NOERROR;
 }
 
