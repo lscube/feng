@@ -21,6 +21,7 @@
  * */
 
 #include <string.h>
+#include <arpa/inet.h>
 #include <fenice/mpeg.h>
 #include <fenice/demuxer.h>
 #include <fenice/fnc_log.h>
@@ -62,7 +63,7 @@ static uint8_t *find_start_code(uint8_t *p, uint8_t *end,
     }
 
     p= MIN(p, end)-4;
-    *state= p[0] + (p[1]<<8) + (p[2]<<16) + (p[3]<<24);
+    *state= ntohl(p[0] + (p[1]<<8) + (p[2]<<16) + (p[3]<<24));
 
     return p+4;
 }
