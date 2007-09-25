@@ -100,6 +100,7 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         start_code = -1;
         r = find_start_code(r1, data + len, &start_code);
         if ((start_code & 0xffffff00) == 0x100) {
+            /* New start code found */
             if (start_code == 0x100) {
                 frame_type = (r[1] & 0x38)>> 3;
                 temporal_reference = (int)r[0] << 2 | r[1] >> 6;
@@ -112,7 +113,6 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 
     while (rem > 0) {
         int begin_of_sequence = 0;
-
         payload = mtu - 4;
 
         if (payload >= rem) {
@@ -124,11 +124,10 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                 start_code = -1;
                 r = find_start_code(r1, data + len, &start_code);
                 if ((start_code & 0xffffff00) == 0x100) {
-
+                    /* New start code found */
                     if (start_code == 0x1b8) {
-                        b = 1;
+                        begin_of_sequence = 1;
                     }
-
                     if (r - data < payload) {
                         /* The current slice fits in the packet */
                         if (b == 0) {
