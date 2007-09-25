@@ -88,7 +88,7 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
           long extradata_len)
 {
     Track * tr = track;
-    int h, b = 1, e = 0, mtu = DEFAULT_MTU;
+    int h, b = 1, e = 0 , ffc = 0, ffv = 0, fbv = 0, bfc = 0, mtu = DEFAULT_MTU;
     int frame_type = 0, temporal_reference = 0, begin_of_sequence = 0;
     long rem = len, payload;
     uint8_t dst[mtu];
@@ -104,8 +104,16 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             if (start_code == 0x100) {
                 frame_type = (r[1] & 0x38)>> 3;
                 temporal_reference = (int)r[0] << 2 | r[1] >> 6;
+                if (frame_type == 2 || frame_type == 3) {
+                    ffv = (r[2] & 0x04)>> 2;
+                    ffc = (r[2] & 0x03)<< 1 | (r[3] & 0x80)>> 7;
+                }
+                if (frame_type == 3) {
+                    fbv = (r[3] & 0x40)>> 6;
+                    bfc = (r[3] & 0x38)>> 3;
+                }
             }
-            if (start_code == 0x1b8) {
+            if (start_code == 0x1b3) {
                 begin_of_sequence = 1;
             }
             r1 = r;
@@ -155,6 +163,10 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         h |= b << 12;
         h |= e << 11;
         h |= frame_type << 8;
+        h |= fbv << 7;
+        h |= bfc << 4;
+        h |= ffv << 3;
+        h |= ffc;
 
         q = dst;
         *q++ = h >> 24;
