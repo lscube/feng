@@ -75,7 +75,7 @@ static int mpv_init(MediaProperties *properties, void **private_data)
 
 static int mpv_get_frame2(uint8_t *dst, uint32_t dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data)
 {
-	return ERR_PARSE;
+    return ERR_PARSE;
 }
 
 static int mpv_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src, uint32_t src_nbytes, MediaProperties *properties, void *private_data)
@@ -89,7 +89,7 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 {
     Track * tr = track;
     int h, b = 1, e = 0, mtu = DEFAULT_MTU;
-    int frame_type = 0 , temporal_reference = 0;
+    int frame_type = 0, temporal_reference = 0, begin_of_sequence = 0;
     long rem = len, payload;
     uint8_t dst[mtu];
     uint8_t *q = dst;
@@ -105,6 +105,9 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                 frame_type = (r[1] & 0x38)>> 3;
                 temporal_reference = (int)r[0] << 2 | r[1] >> 6;
             }
+            if (start_code == 0x1b8) {
+                begin_of_sequence = 1;
+            }
             r1 = r;
         } else {
             break;
@@ -112,7 +115,6 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     }
 
     while (rem > 0) {
-        int begin_of_sequence = 0;
         payload = mtu - 4;
 
         if (payload >= rem) {
@@ -125,9 +127,6 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                 r = find_start_code(r1, data + len, &start_code);
                 if ((start_code & 0xffffff00) == 0x100) {
                     /* New start code found */
-                    if (start_code == 0x1b8) {
-                        begin_of_sequence = 1;
-                    }
                     if (r - data < payload) {
                         /* The current slice fits in the packet */
                         if (b == 0) {
@@ -175,6 +174,7 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         e = 0;
         data += payload;
         rem -= payload;
+        begin_of_sequence = 0;
     }
     return ERR_NOERROR;
 }
