@@ -83,7 +83,9 @@ static int mpv_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src, uint3
     return ERR_PARSE;
 }
 
-/* Proudly stolen without any shame from ff_rtp_send_mpegvideo (ffmpeg libavformat) */
+/* Source code taken from ff_rtp_send_mpegvideo (ffmpeg libavformat) and 
+ * modified to be fully rfc 2250 compliant 
+ */
 static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
           long extradata_len)
 {
