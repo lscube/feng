@@ -21,7 +21,8 @@ libmediath_la_SOURCES += demuxer_avf.c \
 			vorbis.c \
 			theora.c \
 			aac.c \
-			mp4ves.c
+			mp4ves.c \
+			h263.c
 endif
 
 # libmediath_la_LDFLAGS = -static

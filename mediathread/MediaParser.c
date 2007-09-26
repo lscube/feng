@@ -35,6 +35,7 @@ extern MediaParser fnc_mediaparser_mp4ves;
 extern MediaParser fnc_mediaparser_vorbis;
 extern MediaParser fnc_mediaparser_theora;
 extern MediaParser fnc_mediaparser_mp2t;
+extern MediaParser fnc_mediaparser_h263;
 
 // static array containing all the available media parsers:
 static MediaParser *media_parsers[] = {
@@ -46,6 +47,7 @@ static MediaParser *media_parsers[] = {
     &fnc_mediaparser_vorbis,
     &fnc_mediaparser_theora,
     &fnc_mediaparser_mp2t,
+    &fnc_mediaparser_h263,
     NULL
 };
 

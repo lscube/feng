@@ -47,132 +47,54 @@
 #include <fenice/mediaparser_module.h>
 
 static MediaParserInfo info = {
-    "H263",
+    "H263P",
     MP_video
 };
 
-/* H263 MODE A RTP Header (RFC 2190)
-    0                   1                   2                   3
-    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |F|P|SBIT |EBIT | SRC |I|U|S|A|   R   |DBQ| TRB |      TR       |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/* H263-1998 FRAGMENT Header (RFC4629)
+    0                   1
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |   RR    |P|V|   PLEN    |PEBIT|
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
 
-typedef struct {
-    /* byte 0 */
-#if (BYTE_ORDER == LITTLE_ENDIAN)
-    unsigned char ebit:3;
-    unsigned char sbit:3;
-    unsigned char p:1;
-    unsigned char f:1;
-#elif (BYTE_ORDER == BIG_ENDIAN)
-    unsigned char f:1; /* Indicates the mode of the payload header */
-    unsigned char p:1; /* Optional PB-frames mode */
-    unsigned char sbit:3; /* Start bit position */
-    unsigned char ebit:3; /* End bit position */
+typedef struct
+{
+#if BYTE_ORDER == LITTLE_ENDIAN
+    uint16_t plen1:1;       /* Length in bytes of the extra picture header */
+    uint16_t v:1;           /* Video Redundancy Coding */
+    uint16_t p:1;           /* picture/GOB/slice/EOS/EOSBS start code */
+    uint16_t rr:5;          /* Reserved. Shall be zero. */
+
+    uint16_t pebit:3;       /* Bits to ignore in the last byte of the header */
+    uint16_t plen2:5;       /* Length in bytes of the extra picture header */
+#elif BYTE_ORDER == BIG_ENDIAN
+    uint16_t rr:5;          /* Reserved. Shall be zero. */
+    uint16_t p:1;           /* picture/GOB/slice/EOS/EOSBS start code */
+    uint16_t v:1;           /* Video Redundancy Coding */
+    uint16_t plen1:1;       /* Length in bytes of the extra picture header */
+
+    uint16_t plen2:5;       /* Length in bytes of the extra picture header */
+    uint16_t pebit:3;       /* Bits to ignore in the last byte of the header */
 #else
 #error Neither big nor little
 #endif
-    /* byte 1 */
-#if (BYTE_ORDER == LITTLE_ENDIAN)
-    unsigned char r1:1;
-    unsigned char a:1;
-    unsigned char s:1;
-    unsigned char u:1;
-    unsigned char i:1;
-    unsigned char src:3;
-#elif (BYTE_ORDER == BIG_ENDIAN)
-    unsigned char src:3; /* Source format, bit 6,7 and 8 in PTYPE */
-    unsigned char i:1; /* Picture coding type, bit 9 in PTYPE */
-    unsigned char u:1; /* Unrestricted Motion Vector option, bit 10 in PTYPE */
-    unsigned char s:1; /* Syntax-based Arithmetic Coding option, bit 11 in PTYPE */
-    unsigned char a:1; /* Advanced Prediction option, bit 12 in PTYPE */
-    unsigned char r1:1; /* Reserved: must be zero */
-#endif
-    /* byte 2 */
-#if (BYTE_ORDER == LITTLE_ENDIAN)
-    unsigned char trb:3;
-    unsigned char dbq:2;
-    unsigned char r2:3;
-#elif (BYTE_ORDER == BIG_ENDIAN)
-    unsigned char r2:3; /* Reserved: must be zero */
-    unsigned char dbq:2; /* same as DBQUANT defined by H.263 */
-    unsigned char trb:3; /* Temporal Reference for the B frame */
-#endif
-    /* byte 3 */
-    unsigned char tr; /* Temporal Reference for the P frame */
-} h263a_rtpheader;
-
-/* H263 Picture Layer Header
-    0                   1                   2                   3
-    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                    PSC                    |      TR       |...|
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |      PTYPE          |  CHAFF  |                               |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-*/
-// Taken from gstreamer gstrtph263pay.c
-typedef struct {
-#if BYTE_ORDER == LITTLE_ENDIAN
-  unsigned int psc1:16;
-
-  unsigned int tr1:2;
-  unsigned int psc2:6;
-
-  unsigned int ptype_263:1;
-  unsigned int ptype_start:1;
-  unsigned int tr2:6;
-
-  unsigned int ptype_umvmode:1;
-  unsigned int ptype_pictype:1;
-  unsigned int ptype_srcformat:3;
-  unsigned int ptype_freeze:1;
-  unsigned int ptype_camera:1;
-  unsigned int ptype_split:1;
-
-  unsigned int chaff:5;
-  unsigned int ptype_pbmode:1;
-  unsigned int ptype_apmode:1;
-  unsigned int ptype_sacmode:1;
-#elif BYTE_ORDER == BIG_ENDIAN
-  unsigned int psc1:16;
-
-  unsigned int psc2:6;
-  unsigned int tr1:2;
-
-  unsigned int tr2:6;
-  unsigned int ptype_start:1;
-  unsigned int ptype_263:1;
-
-  unsigned int ptype_split:1;
-  unsigned int ptype_camera:1;
-  unsigned int ptype_freeze:1;
-  unsigned int ptype_srcformat:3;
-  unsigned int ptype_pictype:1;
-  unsigned int ptype_umvmode:1;
-
-  unsigned int ptype_sacmode:1;
-  unsigned int ptype_apmode:1;
-  unsigned int ptype_pbmode:1;
-  unsigned int chaff:5;
-#endif
-} h263_piclayer;
-
-typedef struct {
-    h263_piclayer header; //holds the latest header
-} h263_priv;
+} h263_header;
 
 static int h263_init(MediaProperties *properties, void **private_data)
 {
-    h263_priv *priv = calloc(1, sizeof(h263_priv));
+    sdp_field *sdp_private;
 
-    if (!priv) return ERR_ALLOC;
+    sdp_private = g_new(sdp_field, 1);
+    sdp_private->type = rtpmap;
+    sdp_private->field = g_strdup_printf ("H263-1998/%d",
+                                            properties->clock_rate);
+
+    properties->sdp_private =
+        g_list_prepend(properties->sdp_private, sdp_private);
 
     INIT_PROPS
-
-    *private_data = priv;
 
     return ERR_NOERROR;
 }
@@ -192,14 +114,42 @@ static int h263_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src, uint
 static int h263_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                  long extradata_len)
 {
+    Track *tr = (Track *)track;
+    int mtu = DEFAULT_MTU, cur = 0, payload, header_len, found_gob = 0;
+    uint8_t dst[mtu];
+    h263_header *header = (h263_header *) dst;
+
+    if (len >= 3 && *data == '\0' && *(data + 1) == '\0'
+        && *(data + 2) >= 0x80) {
+        found_gob = 1;
+    }
+
+    while (len - cur > 0) {
+        if (cur == 0 && found_gob) {
+            payload = min(mtu, len);
+            memcpy(dst, data, payload);
+            memset(header, 0, 2);
+            header->p = 1;
+            header_len = 0;
+        } else {
+            payload = min(mtu - 2, len);
+            memcpy(dst + 2, data + cur, payload);
+            memset(header, 0, 2);
+            header_len = 2;
+        }
+        if (bp_write(tr->buffer, 0, tr->properties->mtime, 0,
+            cur + payload >= len, dst, payload + header_len)) {
+            fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
+            return ERR_ALLOC;
+        }
+        cur += payload;
+    }
 
     return ERR_NOERROR;
 }
 
 static int h263_uninit(void *private_data)
 {
-    //that's all?
-    if (private_data) free(private_data);
     return ERR_NOERROR;
 }
 
