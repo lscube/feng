@@ -250,7 +250,7 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
  * @param rtsp_session the session for which to generate the reply
  * @return ERR_NOERROR
  */
-static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp_session)
+static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp_session, play_args * args)
 {
     char r[1024];
     char temp[256];
@@ -262,6 +262,14 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp
         RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
         VERSION);
     add_time_stamp(r, 0);
+    strcat(r, "Range: npt=");
+    sprintf(temp, "%f-", args->start_time);
+    strcat(r, temp);
+    if (args->end_time != HUGE_VAL) {
+        sprintf(temp, "%f", args->end_time);
+        strcat(r, temp);
+    }
+    strcat(r, RTSP_EL);
     strcat(r, "Session: ");
     sprintf(temp, "%d", rtsp_session->session_id);
     strcat(r, temp);
@@ -346,7 +354,7 @@ int RTSP_play(RTSP_buffer * rtsp)
     }   
 
     fnc_log(FNC_LOG_INFO, "PLAY %s RTSP/1.0 ", url);
-    send_play_reply(rtsp, cinfo.object, rtsp_sess);
+    send_play_reply(rtsp, cinfo.object, rtsp_sess, &args);
     log_user_agent(rtsp); // See User-Agent 
     return ERR_NOERROR;
 
