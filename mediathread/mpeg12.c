@@ -107,12 +107,12 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                 frame_type = (r[1] & 0x38)>> 3;
                 temporal_reference = (int)r[0] << 2 | r[1] >> 6;
                 if (frame_type == 2 || frame_type == 3) {
-                    ffv = (r[2] & 0x04)>> 2;
-                    ffc = (r[2] & 0x03)<< 1 | (r[3] & 0x80)>> 7;
+                    ffv = (r[3] & 0x04)>> 2;
+                    ffc = (r[3] & 0x03)<< 1 | (r[4] & 0x80)>> 7;
                 }
                 if (frame_type == 3) {
-                    fbv = (r[3] & 0x40)>> 6;
-                    bfc = (r[3] & 0x38)>> 3;
+                    fbv = (r[4] & 0x40)>> 6;
+                    bfc = (r[4] & 0x38)>> 3;
                 }
             }
             if (start_code == 0x1b3) {
