@@ -99,8 +99,6 @@ static int h263_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     uint8_t dst[mtu];
     h263_header *header = (h263_header *) dst;
 
-    fnc_log(FNC_LOG_DEBUG, "[h263] Frame size: %ld", len);
-
     if (len >= 3 && *data == '\0' && *(data + 1) == '\0'
         && *(data + 2) >= 0x80) {
         found_gob = 1;
@@ -119,7 +117,6 @@ static int h263_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             memset(header, 0, 2);
             header_len = 2;
         }
-        fnc_log(FNC_LOG_DEBUG, "[h263] Packet size: %ld", payload + header_len);
         if (bp_write(tr->buffer, 0, tr->properties->mtime, 0,
             cur + payload >= len, dst, payload + header_len)) {
             fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
