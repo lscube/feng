@@ -125,6 +125,8 @@ int RTSP_teardown(RTSP_buffer * rtsp);
 
 int RTSP_options(RTSP_buffer * rtsp);
 
+int RTSP_set_parameter(RTSP_buffer * rtsp);
+
 int RTSP_handler(RTSP_buffer * rtsp);
 
 /**

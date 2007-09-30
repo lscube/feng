@@ -148,6 +148,9 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
                        "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n",
                        rtsp);
                 break;
+            case RTSP_ID_SET_PARAMETER:
+                RTSP_set_parameter(rtsp);
+                break;
             default:
                 send_reply(501,
                        "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n",
@@ -172,6 +175,9 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
                 RTSP_teardown(rtsp);
                 break;
             case RTSP_ID_OPTIONS:
+                break;
+            case RTSP_ID_SET_PARAMETER:
+                RTSP_set_parameter(rtsp);
                 break;
             case RTSP_ID_PAUSE:    /* method not valid this state. */
                 send_reply(455,
@@ -210,6 +216,9 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
                 RTSP_describe(rtsp);
                 break;
             case RTSP_ID_SETUP:
+                break;
+            case RTSP_ID_SET_PARAMETER:
+                RTSP_set_parameter(rtsp);
                 break;
             }
             break;

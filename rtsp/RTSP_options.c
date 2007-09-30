@@ -41,7 +41,7 @@ static int send_options_reply(RTSP_buffer * rtsp)
 
     sprintf(r, "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL, RTSP_VER, 200,
         get_stat(200), cseq);
-    strcat(r, "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN" RTSP_EL);
+    strcat(r, "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN,SET_PARAMETER" RTSP_EL);
     strcat(r, RTSP_EL);
     bwrite(r, (unsigned short) strlen(r), rtsp);
 

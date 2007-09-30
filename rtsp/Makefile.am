@@ -10,7 +10,8 @@ librtsp_la_SOURCES =	RTSP_utils.c \
 			RTSP_pause.c \
 			RTSP_teardown.c \
 			RTSP_options.c \
-			RTSP_describe.c
+			RTSP_describe.c \
+			RTSP_set_parameter.c
 			 
 						
 librtsp_la_LDFLAGS = -static
