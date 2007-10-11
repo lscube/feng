@@ -58,64 +58,63 @@ int RTP_send_packet(RTP_session * session)
     Track *t = r_selected_track(session->track_selector);
 
     while ((slot = bp_getreader(session->cons))) {
-        hdr_size = sizeof(r);
-        r.version = 2;
-        r.padding = 0;
-        r.extension = 0;
-        r.csrc_len = 0;
-        r.marker = slot->marker;
-        r.payload = t->properties->payload_type;
-        r.seq_no = htons(session->seq_no += slot->seq_delta);
-        r.timestamp =
-            htonl(session->start_rtptime + 
-                  ((slot->rtp_time) ? slot->rtp_time :
-                   (slot->timestamp - session->seek_time)
-                   * t->properties->clock_rate));
-        fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(r.timestamp));
-        r.ssrc = htonl(session->ssrc);
-        packet = calloc(1, slot->data_size + hdr_size);
-        if (packet == NULL) {
-            return ERR_ALLOC;
-        }
-        memcpy(packet, &r, hdr_size);
-        memcpy(packet + hdr_size, slot->data, slot->data_size);
+        if (!(session->pause && t->properties->media_source == MS_live)) {
+            hdr_size = sizeof(r);
+            r.version = 2;
+            r.padding = 0;
+            r.extension = 0;
+            r.csrc_len = 0;
+            r.marker = slot->marker;
+            r.payload = t->properties->payload_type;
+            r.seq_no = htons(session->seq_no += slot->seq_delta);
+            r.timestamp =
+                htonl(session->start_rtptime + 
+                      ((slot->rtp_time) ? slot->rtp_time :
+                      (slot->timestamp - session->seek_time)
+                      * t->properties->clock_rate));
+            fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(r.timestamp));
+            r.ssrc = htonl(session->ssrc);
+            packet = calloc(1, slot->data_size + hdr_size);
+            if (packet == NULL) {
+                return ERR_ALLOC;
+            }
+            memcpy(packet, &r, hdr_size);
+            memcpy(packet + hdr_size, slot->data, slot->data_size);
 
-        if ((psize_sent =
-             Sock_write(session->transport.rtp_sock, packet,
-                slot->data_size + hdr_size, NULL, MSG_DONTWAIT
-                | MSG_EOR)) < 0) {
-
-            fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
-        } else {
+            if ((psize_sent =
+                 Sock_write(session->transport.rtp_sock, packet,
+                 slot->data_size + hdr_size, NULL, MSG_DONTWAIT
+                 | MSG_EOR)) < 0) {
+                fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
+            } else {
 #if ENABLE_DUMP
-            char fname[255];
-            char crtp[255];
-            memset(fname, 0, sizeof(fname));
-            strcpy(fname, "dump_fenice.");
-            strcat(fname,
+                char fname[255];
+                char crtp[255];
+                memset(fname, 0, sizeof(fname));
+                strcpy(fname, "dump_fenice.");
+                strcat(fname,
                    session->current_media->description.
                    encoding_name);
-            strcat(fname, ".");
-            sprintf(crtp, "%d", session->transport.rtp_fd);
-            strcat(fname, crtp);
-            if (strcmp
-                (session->current_media->description.encoding_name,
-                 "MPV") == 0
-                || strcmp(session->current_media->description.
+                strcat(fname, ".");
+                sprintf(crtp, "%d", session->transport.rtp_fd);
+                strcat(fname, crtp);
+                if (strcmp
+                    (session->current_media->description.encoding_name,
+                    "MPV") == 0
+                    || strcmp(session->current_media->description.
                       encoding_name, "MPA") == 0)
                 dump_payload(packet + 16, psize_sent - 16,
                          fname);
-            else
-                dump_payload(packet + 12, psize_sent - 12,
+                else
+                    dump_payload(packet + 12, psize_sent - 12,
                          fname);
 #endif
-            session->rtcp_stats[i_server].pkt_count++;
-            session->rtcp_stats[i_server].octet_count +=
-                slot->data_size;
+                session->rtcp_stats[i_server].pkt_count++;
+                session->rtcp_stats[i_server].octet_count +=
+                    slot->data_size;
+            }
+            free(packet);
         }
-
-        free(packet);
-
         bp_gotreader(session->cons);
     }
 
