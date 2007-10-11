@@ -51,7 +51,7 @@ do {
     j = 0;
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
         pthread_mutex_lock(&sched[i].mux);
-        if (sched[i].valid) {
+        if (sched[i].valid && sched[i].rtp_session->started) {
             Track *tr = r_selected_track(sched[i].rtp_session->track_selector);
             j++;
             if (!sched[i].rtp_session->pause || tr->properties->media_source == MS_live) {
