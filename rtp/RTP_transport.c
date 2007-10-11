@@ -114,7 +114,8 @@ int RTP_send_packet(RTP_session * session)
                     slot->data_size;
             }
             free(packet);
-        }
+        } else
+            usleep(1000);
         bp_gotreader(session->cons);
     }
 
