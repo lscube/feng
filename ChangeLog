@@ -1,5 +1,8 @@
 + Feng changelog
 
+  05 Oct 2007; Dario Gallucci <dario.gallucci@polito.it>:
+  Add RealPlayer full compatibility
+
   11 Jul 2007; Luca Barbato <lu_zero@gentoo.org> feng-0.1.14a:
   Fix a 64bit issue, unbreak multicast to a degree (the first client is still
   special)
