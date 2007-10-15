@@ -144,6 +144,9 @@ inline int mt_process_event(mt_event_item *ev) {
     case MT_EV_SHUTDOWN:
         running = 0;
         break;
+    case MT_EV_CLOSE:
+        r_close(ev->args[0]); 
+        break;
     default:
         break;
     }
@@ -186,12 +189,12 @@ Resource *mt_resource_open(char * path, char *filename) {
 }
 
 void mt_resource_close(Resource *resource) {
+    void **args;
     if (!resource)
         return;
-
-    pthread_mutex_lock(&mt_mutex);
-    r_close(resource);
-    pthread_mutex_unlock(&mt_mutex);
+    args = g_new(void *, 1);
+    args[0] = resource;
+    mt_add_event(MT_EV_CLOSE, args); //XXX consider failing?
 }
 
 int mt_resource_seek(Resource *resource, double time) {
@@ -217,15 +220,3 @@ int mt_shutdown() {
     return mt_add_event(MT_EV_SHUTDOWN, NULL);
 }
 
-int mt_disable_events(void *sender) {
-//   mt_event_item* ev = NULL;
-    pthread_mutex_lock(&el_mutex);
-    g_queue_foreach(el_head, (GFunc)mt_disable_event, sender);
-/*
-    while((ev = g_async_queue_try_pop(el_head))) {
-        mt_disable_event(ev, sender);
-    }
-*/
-    pthread_mutex_unlock(&el_mutex);
-    return ERR_NOERROR;
-}
