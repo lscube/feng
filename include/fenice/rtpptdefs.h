@@ -20,8 +20,8 @@
  *  
  * */
  
-#ifndef __RTP_PT_DEFS_H
-#define __RTP_PT_DEFS_H
+#ifndef FN_RTP_PT_DEFS_H
+#define FN_RTP_PT_DEFS_H
 
 	#include <config.h>
 //	#include <fenice/mediainfo.h>
@@ -88,4 +88,4 @@
 	#endif /* GLOBAL_RTP_DEFS */
 	;
 
-#endif /* __RTP_PT_DEFS_H */
+#endif /* FN_RTP_PT_DEFS_H */

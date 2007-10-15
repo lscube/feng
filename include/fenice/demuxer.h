@@ -20,8 +20,8 @@
 *
 * */
 
-#ifndef __DEMUXER_H
-#define __DEMUXER_H
+#ifndef FN_DEMUXER_H
+#define FN_DEMUXER_H
 
 #include <glib.h>
 
@@ -72,11 +72,11 @@ typedef GPtrArray *MediaDescrListArray;
 #define array_data(x) x->pdata
 #define array_index(x, y) x->pdata[y]
 
-typedef struct __CAPABILITIES {
+typedef struct {
 
 } Capabilities;
 
-MObject_def(__RESOURCE_INFO)
+MObject_def(ResourceInfo_s)
     char *mrl;
     char *name;
     char *description;
@@ -92,14 +92,14 @@ MObject_def(__RESOURCE_INFO)
     char ttl[4];
 } ResourceInfo;
 
-typedef struct __RESOURCE {
+typedef struct Resource_s {
     InputStream *i_stream;
-    struct __DEMUXER *demuxer;
+    struct Demuxer_s *demuxer;
     ResourceInfo *info;
     /* Timescale fixer callback function for meta-demuxers */
-    double (*timescaler)(struct __RESOURCE *, double);
+    double (*timescaler)(struct Resource_s *, double);
     /* EDL specific data */
-    struct __RESOURCE *edl;
+    struct Resource_s *edl;
     /* Multiformat related things */
     SelList sel;
     int num_sel;
@@ -109,11 +109,7 @@ typedef struct __RESOURCE {
     int eos; //!< signals the end of stream
 } Resource;
 
-#if 0 // define MObject with MObject_def
-typedef struct __TRACK_INFO {
-    MOBJECT_COMMONS; // MObject commons MUST be the first field
-#endif
-MObject_def(__TRACK_INFO)
+MObject_def(Trackinfo_s)
     char *mrl;
     char name[255];
     int id; // should it more generic?
@@ -126,7 +122,7 @@ MObject_def(__TRACK_INFO)
     //end CC
 } TrackInfo;
 
-typedef struct __TRACK {
+typedef struct {
     InputStream *i_stream;
     TrackInfo *info;
     long int timestamp;
@@ -141,7 +137,7 @@ typedef struct __TRACK {
     void *parser_private; /* private data of media parser */
 } Track;
 
-typedef struct __SELECTOR {
+typedef struct {
     // Track *tracks[MAX_SEL_TRACKS];	
     TrackList tracks;
     Track cur;
@@ -149,12 +145,6 @@ typedef struct __SELECTOR {
     uint32_t selected_index;/**/
     uint32_t total; /*total tracks in selector*/
 } Selector;
-
-#if 0 // define MObject with MObject_def
-typedef struct __RESOURCE_INFO {
-    MOBJECT_COMMONS; // MObject commons MUST be the first field
-#endif
-
 
 typedef struct {
     /*name of demuxer module*/
@@ -169,7 +159,7 @@ typedef struct {
     const char *extensions; // coma separated list of extensions (w/o '.')
 } DemuxerInfo;
 
-typedef struct __DEMUXER {
+typedef struct Demuxer_s {
     DemuxerInfo *info;
     int (*probe)(InputStream *);
     int (*init)(Resource *);
@@ -245,4 +235,4 @@ inline char *m_descr_title(MediaDescr *);
 inline char *m_descr_author(MediaDescr *);
 /*-------------------------------------------*/
 
-#endif // __DEMUXER_H
+#endif // FN_DEMUXER_H

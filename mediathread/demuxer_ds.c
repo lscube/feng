@@ -42,7 +42,7 @@ static DemuxerInfo info = {
 };
 
 
-typedef struct __EDL_ITEM_ELEM {
+typedef struct {
     Resource *r;
     double offset;	//from begin of list
     double begin;	//in seconds
@@ -50,7 +50,7 @@ typedef struct __EDL_ITEM_ELEM {
     int first_ts;	//init to 0, set to 1 when have begin timestamp
 } edl_item_elem;
 
-typedef struct __EDL_PRIV {
+typedef struct {
     GList *head;
     unsigned int active;
     unsigned int old;

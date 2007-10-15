@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef __MEDIA_THREAD
-#define __MEDIA_THREAD
+#ifndef FN_MEDIA_THREAD
+#define FN_MEDIA_THREAD
 
 #define ENABLE_MEDIATHREAD 1
 
@@ -32,17 +32,7 @@
 
 #define MT_BUFFERSIZE 8192
 
-
-
-/*
-typedef struct __MT_RESOURCE_ITEM {
-    Resource *resource;
-    pthread_mutex_t *mutex;
-    struct __MT_RESOURCE_ITEM *next;
-} mt_resource_item;
-*/
-
-typedef enum __MT_EVENT_ID {
+typedef enum {
     MT_EV_NOP,          //!< Fake event do nothing. ARGS= NULL;
     MT_EV_BUFFER_LOW,   //!< Buffer needs to be filled. ARGS= Track*
     MT_EV_DATA_EOF,     //!< Track has no more data. ARGS= Track*
@@ -51,14 +41,14 @@ typedef enum __MT_EVENT_ID {
     MT_EV_CLOSE         //!< The resource must be closed
 } mt_event_id;
 
-typedef struct __MT_EVENT_ITEM {
+typedef struct {
     mt_event_id id;
     void **args;        //! args[0] = sender
 } mt_event_item;
 
-typedef struct __MT_EXCL_INS {
+typedef struct mt_excl_ins_s {
     InputStream *i_stream;
-    struct __MT_EXCL_INS *next;
+    struct mt_excl_ins_s *next;
 } mt_excl_ins;
 
 void *mediathread(void *arg);
@@ -74,5 +64,5 @@ Resource *mt_resource_open(char *, char *);
 void mt_resource_close(Resource *);
 int mt_resource_seek(Resource *, double);
 
-#endif // __MEDIA_THREAD
+#endif // FN_MEDIA_THREAD
 

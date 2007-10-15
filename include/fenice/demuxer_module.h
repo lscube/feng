@@ -22,8 +22,8 @@
 
 #include <fenice/demuxer.h>
 
-#ifndef __DEMUXER_MODULE_H
-#define __DEMUXER_MODULE_H
+#ifndef FN_DEMUXER_MODULE_H
+#define FN_DEMUXER_MODULE_H
 
 #define FNC_LIB_DEMUXER(x) Demuxer fnc_demuxer_##x =\
 {\
@@ -35,5 +35,5 @@
 	x##_uninit \
 }
 
-#endif // __DEMUXER_MODULE_H
+#endif // FN_DEMUXER_MODULE_H
 

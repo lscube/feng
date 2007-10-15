@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef __MEDIAPARSER_MODULE_H
-#define __MEDIAPARSER_MODULE_H
+#ifndef FN_MEDIAPARSER_MODULE_H
+#define FN_MEDIAPARSER_MODULE_H
 
 #include <fenice/mediaparser.h>
 #include <fenice/InputStream.h>
@@ -38,5 +38,5 @@
 	x##_uninit \
 }
 
-#endif // __MEDIAPARSER_MODULE_H
+#endif // FN_MEDIAPARSER_MODULE_H
 

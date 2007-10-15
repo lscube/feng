@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef __MEDIAUTILS_H
-#define __MEDIAUTILS_H
+#ifndef FN_MEDIAUTILS_H
+#define FN_MEDIAUTILS_H
 
 #define MOBJECT_COMMONS	int refs; \
 			void (*destructor)(void *)
@@ -51,5 +51,5 @@ void MObject_zero(MObject *, size_t);
 void *MObject_dup(void *, size_t);
 void MObject_unref(MObject *);
 
-#endif // __MEDIAUTILS_H
+#endif // FN_MEDIAUTILS_H
 

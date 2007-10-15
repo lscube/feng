@@ -19,8 +19,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *  
  * */
-#ifndef __MEDIAPARSERH
-#define __MEDIAPARSERH
+#ifndef FN_MEDIAPARSERH
+#define FN_MEDIAPARSERH
 
 #include <glib.h>
 
@@ -39,7 +39,7 @@ typedef enum {MP_undef=-1, MP_audio, MP_video, MP_application, MP_data, MP_contr
 
 typedef enum {MS_stored=0, MS_live} MediaSource;
 
-MObject_def(__MEDIA_PROPERTIES)
+MObject_def(MediaProperties_s)
     int bit_rate; /*!< average if VBR or -1 is not useful*/
     MediaCodingType coding_type;
     int payload_type;
@@ -75,7 +75,7 @@ typedef struct {
     const MediaType media_type;
 } MediaParserInfo;
 
-typedef struct __MEDIAPARSER {
+typedef struct {
     MediaParserInfo *info;
 /*! init: inizialize the module
  *    

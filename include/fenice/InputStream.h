@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef __INPUTSTREAMH
-#define __INPUTSTREAMH
+#ifndef FN_INPUTSTREAM_H
+#define FN_INPUTSTREAM_H
 
 #include <stdint.h>
 
@@ -46,7 +46,7 @@
 #define min(a,b) (a<b)?a:b
 #endif // min
 
-typedef struct __CACHE {
+typedef struct {
     uint8_t *cache;
     uint32_t max_cache_size;
     uint32_t cache_size;
@@ -74,7 +74,7 @@ typedef enum { // XXX: all initialized to a power of 2 number.
 #define IS_ISINIT(is)    is->flags & IS_FLAGS_INIT
 #define IS_ISEXCLUSIVE(is)    is->flags & IS_EXCLUSIVE
 
-typedef struct __INPUTSTREAM {
+typedef struct {
     char name[255];
     stream_type type;
     Cache *cache;
@@ -98,4 +98,4 @@ stream_type parse_mrl(char *mrl, char **resource_name);
 time_t mrl_mtime(char *mrl);
 int mrl_changed(char *mrl, time_t *last_change);
 
-#endif // __INPUTSTREAMH
+#endif // FN_INPUTSTREAM_H
