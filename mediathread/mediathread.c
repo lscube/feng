@@ -29,8 +29,8 @@
 #include <fenice/utils.h>
 #include <time.h>
 
-//static GAsyncQueue *el_head;
-static GQueue *el_head;
+static GAsyncQueue *el_head;
+//static GQueue *el_head;
 static pthread_mutex_t el_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mt_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int running = 1;
@@ -39,10 +39,10 @@ void *mediathread(void *arg) {
     mt_event_item *el_cur;
     struct timespec ts = {0, 4000000};
 
-//    if (!g_thread_supported ()) g_thread_init (NULL);
+    if (!g_thread_supported ()) g_thread_init (NULL);
 
-//    el_head = g_async_queue_new();
-    el_head = g_queue_new();
+    el_head = g_async_queue_new();
+//    el_head = g_queue_new();
 
     fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started");
 
@@ -60,8 +60,8 @@ void *mediathread(void *arg) {
             }
         }
         //to avoid 100% cpu usage with empty eventlist
-        nanosleep(&ts, NULL);
-/*        //this replaces the previous nanosleep loop, 
+//        nanosleep(&ts, NULL);
+        //this replaces the previous nanosleep loop, 
         //as this will block until data is available
         el_cur = g_async_queue_pop (el_head);
         if (el_cur) {
@@ -69,7 +69,7 @@ void *mediathread(void *arg) {
             mt_process_event(el_cur);
             mt_dispose_event(el_cur);
             pthread_mutex_unlock(&mt_mutex);
-        }*/
+        }
     }
     return NULL;
 }
@@ -89,8 +89,8 @@ int mt_add_event(mt_event_id id, void **args) {
     item->args = args;
 
     pthread_mutex_lock(&el_mutex);
-    //g_async_queue_push(el_head, item);
-    g_queue_push_tail(el_head, item);
+    g_async_queue_push(el_head, item);
+//    g_queue_push_tail(el_head, item);
     pthread_mutex_unlock(&el_mutex);
 
     return ERR_NOERROR;
