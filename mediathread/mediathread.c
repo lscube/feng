@@ -37,30 +37,14 @@ static int running = 1;
 
 void *mediathread(void *arg) {
     mt_event_item *el_cur;
-    struct timespec ts = {0, 4000000};
 
     if (!g_thread_supported ()) g_thread_init (NULL);
 
     el_head = g_async_queue_new();
-//    el_head = g_queue_new();
 
     fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started");
 
-    while(running) {
-        while (!g_queue_is_empty(el_head)) {
-            pthread_mutex_lock(&el_mutex);
-            el_cur = g_queue_pop_head (el_head);
-            pthread_mutex_unlock(&el_mutex);
-
-            if (el_cur) {
-                pthread_mutex_lock(&mt_mutex);
-                mt_process_event(el_cur);
-                mt_dispose_event(el_cur);
-                pthread_mutex_unlock(&mt_mutex);
-            }
-        }
-        //to avoid 100% cpu usage with empty eventlist
-//        nanosleep(&ts, NULL);
+    while(running) { 
         //this replaces the previous nanosleep loop, 
         //as this will block until data is available
         el_cur = g_async_queue_pop (el_head);
@@ -90,7 +74,6 @@ int mt_add_event(mt_event_id id, void **args) {
 
     pthread_mutex_lock(&el_mutex);
     g_async_queue_push(el_head, item);
-//    g_queue_push_tail(el_head, item);
     pthread_mutex_unlock(&el_mutex);
 
     return ERR_NOERROR;
