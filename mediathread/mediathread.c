@@ -153,20 +153,6 @@ inline int mt_process_event(mt_event_item *ev) {
     return ERR_NOERROR;
 }
 
-//XXX void foo(gpointer data, gpointer user_data)
-void mt_disable_event(mt_event_item *ev, void *sender) {
-    if (!ev)
-        return;
-
-    fnc_log(FNC_LOG_VERBOSE, "[MT] Disabling event: %#x", ev);
-
-    if (ev->args && ev->args[0] == sender) {
-        mt_dispose_event_args(ev->id, ev->args);
-        ev->id = MT_EV_NOP;
-        ev->args = NULL;
-    }
-}
-
 inline void mt_dispose_event(mt_event_item *ev) {
     if (!ev)
         return;
