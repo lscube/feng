@@ -1,8 +1,8 @@
 To do:
     * ipc/rpc systems
-    * support more formats (h263, aac, dirac, snow, wavpack, speex)
+    * support more formats (dirac, snow, wavpack)
     * update rpm and deb package scripts
     * integrate yaml
-    * multicast support
+    * access permissions
     * increase the bundled documentation
 
