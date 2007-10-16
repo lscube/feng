@@ -114,8 +114,10 @@ int RTP_send_packet(RTP_session * session)
                     slot->data_size;
             }
             free(packet);
-        } else
+        } else {
+#warning Remove as soon as bufferpool is fixed
             usleep(1000);
+        }
         bp_gotreader(session->cons);
     }
 

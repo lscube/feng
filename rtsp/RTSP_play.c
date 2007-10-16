@@ -291,8 +291,10 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp
         Url_encode(temp, t->info->name, sizeof(temp));
         strcat (r, temp);
         strcat(r, ";");
-        sprintf(r + strlen(r), "seq=%u;rtptime=%u", p->start_seq,
-            p->start_rtptime);
+        sprintf(r + strlen(r), "seq=%u", p->start_seq);
+        if (t->properties->media_source != MS_live) {
+            sprintf(r + strlen(r), ";rtptime=%u", p->start_rtptime);
+        }
         if (p->next != NULL) {
             strcat(r, ",");
         } else {
