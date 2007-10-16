@@ -1,5 +1,8 @@
 + Feng changelog
 
+  16 Oct 2007; Luca Barbato <lu_zero@gentoo.org>:
+  Fix a race condition in mediathread and enable again GAsyncQueue
+
   05 Oct 2007; Dario Gallucci <dario.gallucci@polito.it>:
   Add RealPlayer full compatibility
 
