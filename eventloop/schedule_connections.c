@@ -74,6 +74,8 @@ void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count,
                     }
                     // Close connection                     
                     //close(p->session_list->fd);
+                    // Release the mediathread resource
+                    mt_resource_close(p->session_list->resource);
                     // Release the RTSP session
                     free(p->session_list);
                     p->session_list = NULL;
