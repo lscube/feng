@@ -7,13 +7,18 @@ Feng is a multimedia streaming server compliant with the IETF's standards for re
 Feng supports the following encoding standards:
 
     * Audio
-          o MP3 (MPEG-1 Layer III) (rfc3119)
+          o MPEG Audio (MPEG-1/2 Layer I/II/III) (rfc2250)
           o Vorbis (draft)
+          o AAC (MPEG-4 Part 3) (rfc3640)
+
     * Video
-          o h264 (rfc3984)
+          o MPEG Video (MPEG-1/2) (rfc2250)
+          o MPEG 4 Visual (MPEG-4 Part 2) (rfc3016)
+          o H.264 (MPEG-4 Part 10) (rfc3984)
+          o H.263 / H.263+ (rfc4629)
           o Theora (draft)
 
-The main characteristic of Feng are the container support, the ability to handle seeking (not exposed to the rtsp layer but used internally for the compositor metademuxer) and the modular structure focused to ease the extension of the codec and the protocol support.
+The main characteristics of Feng are the container support, the ability to handle seeking, also used internally for the compositor metademuxer, and the modular structure focused to ease the extension of the codec and the protocol support.
 
 + Usage
 
