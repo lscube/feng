@@ -13,7 +13,6 @@ In order to build feng you need:
 - libgcrypt >= 1.2.0 [5]
 
 
-
 + Build instructions
 
 The following steps will be enough to build and install feng from release
@@ -21,13 +20,14 @@ sources.
 
 - install the dependencies
 - enter the feng unpacked directory
++ You may have to run libtoolize --copy --force if your libtool version is
+  different from the one used to create the package.
 - type ./configure in order to prepare the makefiles, you may specify a non
   standard prefix and the other paths, please refer to ./configure --help for
   the full details
 - type make to build the sources
 - type make install to install the program, you should be root in order to
   install system wide.
-
 
 
 + Building from git
@@ -45,13 +45,9 @@ $ git clone git://live.polito.it/var/git/feng.git
 
 Please refer to the git website[6] and our site[0] for further documentation.
 
-In order to generate the configure script you may use either autoreconf or the autogen.sh script, the outcome will be the same.
+In order to generate the configure script you may use autoreconf
 
 $ autoreconf -i
-
-or 
-
-$ ./autogen.sh
 
 The standard build instruction applies form this step.
 
