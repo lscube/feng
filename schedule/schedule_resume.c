@@ -33,7 +33,7 @@ int schedule_resume(int id, play_args *args)
 {
 #if ENABLE_MEDIATHREAD
     Track *tr = r_selected_track(sched[id].rtp_session->track_selector);
-    double mnow, pkt_len = tr->properties->duration;
+    double mnow, pkt_len = tr->properties->frame_duration;
 
     mnow = gettimeinseconds();
 /*

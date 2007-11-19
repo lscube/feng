@@ -50,7 +50,7 @@ MObject_def(MediaProperties_s)
     int codec_id; /*!< Codec ID as defined by ffmpeg */
     int codec_sub_id; /*!< Subcodec ID as defined by ffmpeg */
     double mtime;    //FIXME Move to bufferpool   //time is in seconds
-    double duration; //FIXME Move to bufferpool
+    double frame_duration; //time is in seconds
     float sample_rate;/*!< SamplingFrequency*/
     float OutputSamplingFrequency;
     int audio_channels;

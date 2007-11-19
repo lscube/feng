@@ -300,7 +300,7 @@ static int avf_init(Resource * r)
                 props.audio_channels = codec->channels;
                 // Make props an int...
                 props.sample_rate    = codec->sample_rate;
-                props.duration       = (double)1 / codec->sample_rate;
+                props.frame_duration       = (double)1 / codec->sample_rate;
                 props.bit_per_sample   = codec->bits_per_sample;
                 snprintf(trackinfo.name, sizeof(trackinfo.name), "%d", i);
                 if (!(track = add_track(r, &trackinfo, &props)))
@@ -310,7 +310,7 @@ static int avf_init(Resource * r)
                 props.media_type   = MP_video;
                 props.bit_rate     = codec->bit_rate;
                 props.frame_rate   = av_q2d(st->r_frame_rate);
-                props.duration     = (double)1 / props.frame_rate;
+                props.frame_duration     = (double)1 / props.frame_rate;
                 props.AspectRatio  = codec->width * 
                                       codec->sample_aspect_ratio.num /
                                       (float)(codec->height *
@@ -371,13 +371,13 @@ static int avf_read_packet(Resource * r)
             }
 
             if (pkt.duration) {
-                TRACK(tr)->properties->duration = pkt.duration * 
+                TRACK(tr)->properties->frame_duration = pkt.duration *
                     av_q2d(stream->time_base);
             } else { // welcome to the wonderland ehm, hackland...
                 switch (stream->codec->codec_id) {
                     case CODEC_ID_MP2:
                     case CODEC_ID_MP3:
-                        TRACK(tr)->properties->duration = 1152.0/
+                        TRACK(tr)->properties->frame_duration = 1152.0/
                                 TRACK(tr)->properties->sample_rate;
                         break;
                     default: break;
@@ -385,7 +385,7 @@ static int avf_read_packet(Resource * r)
             }
 
             fnc_log(FNC_LOG_VERBOSE, "[avf] packet duration %f",
-                TRACK(tr)->properties->duration);
+                TRACK(tr)->properties->frame_duration);
 
             ret = TRACK(tr)->parser->parse(TRACK(tr), pkt.data, pkt.size,
                                     stream->codec->extradata,

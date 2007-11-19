@@ -58,7 +58,7 @@ do {
                 mnow = gettimeinseconds();
                 if (mnow >= sched[i].rtp_session->start_time &&
                     mnow - sched[i].rtp_session->prev_tx_time >=
-                        tr->properties->duration)
+                        tr->properties->frame_duration)
                 {
 #if 1
 //TODO DSC will be implemented WAY later.
@@ -93,7 +93,7 @@ do {
                             break;
                     }
                     sched[i].rtp_session->prev_tx_time +=
-                        tr->properties->duration;
+                        tr->properties->frame_duration;
                 }
             }
         }
