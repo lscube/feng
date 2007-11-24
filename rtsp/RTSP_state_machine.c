@@ -109,10 +109,9 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
     char *s;
     RTSP_session *p;
     long int session_id;
-    char trash[255];
 
     if ((s = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(s, "%254s %ld", trash, &session_id) != 2) {
+        if (sscanf(s, "%*254s %ld", &session_id) != 1) {
             fnc_log(FNC_LOG_INFO,
                 "Invalid Session number in Session header\n");
             send_reply(454, 0, rtsp);    /* Session Not Found */
@@ -317,7 +316,7 @@ int RTSP_validate_method(RTSP_buffer * rtsp)
 int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rtsp)
 // This routine is from BP.
 {
-    char ver[32], trash[15];
+    char ver[32];
     unsigned int stat;
     unsigned int seq;
     int pcnt;        /* parameter count */
@@ -327,8 +326,8 @@ int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rts
     stat = 0;
 
     pcnt =
-        sscanf(rtsp->in_buffer, " %31s %u %s %s %u\n%255s ", ver, &stat,
-           trash, trash, &seq, msg);
+        sscanf(rtsp->in_buffer, " %31s %u %*s %*s %u\n%255s ",
+                ver, &stat, &seq, msg);
 
     /* check for a valid response token. */
     if (strncasecmp(ver, "RTSP/", 5))
