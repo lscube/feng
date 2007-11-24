@@ -243,7 +243,7 @@ int RTSP_validate_method(RTSP_buffer * rtsp)
     char ver[32];
     unsigned int seq;
     int pcnt;        /* parameter count */
-        char *p;
+    char *p;
     int mid = ERR_GENERIC;
 
     *method = *object = '\0';
@@ -256,13 +256,14 @@ int RTSP_validate_method(RTSP_buffer * rtsp)
             object, ver)) != 3)
         return ERR_GENERIC;
 
-        p = rtsp->in_buffer;
+    p = rtsp->in_buffer;
 
-        while ((p = strstr(p,"\n"))) {
-            if ((pcnt = sscanf(p, " %15s %u ", hdr, &seq)) == 2)
-                    if (strstr(hdr, HDR_CSEQ)) break;
-            p++;
-        }
+    while ((p = strstr(p,"\n"))) {
+        if ((pcnt = sscanf(p, " %15s %u ", hdr, &seq)) == 2)
+            if (strstr(hdr, HDR_CSEQ)) break;
+        p++;
+    }
+
     if (p == NULL)
         return ERR_GENERIC;
 
