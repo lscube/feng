@@ -96,7 +96,7 @@ const id_tag id_tags[] = {
 typedef struct lavf_priv{
     AVInputFormat *avif;
     AVFormatContext *avfc;
-    ByteIOContext pb;
+    ByteIOContext *pb;
 //    int audio_streams;
 //    int video_streams;
     int64_t last_pts; //Use it or not?
@@ -421,7 +421,7 @@ static int avf_uninit(Resource * r)
             av_close_input_file(priv->avfc);
             priv->avfc = NULL;
         }
-        url_fclose(&priv->pb);
+        url_fclose(priv->pb);
         free(priv);
         r->private_data = NULL;
     }
