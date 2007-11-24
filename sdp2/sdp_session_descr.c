@@ -38,16 +38,17 @@
 
 #define DESCRCAT(x) \
     do { \
-        if ( (size_left -= x) < 0) \
-        return ERR_INPUT_PARAM; \
-        else cursor=descr+descr_size-size_left; \
+        if ( (size_left -= x) < 0) {\
+            fnc_log(FNC_LOG_ERR, "[SDP2] buffer overflow (%d)", size_left); \
+            return ERR_ALLOC; \
+        } \
+        else \
+            cursor = descr + descr_size - size_left; \
     } while(0);
 
-int sdp_session_descr(char *name, char *descr, size_t descr_size)
+int sdp_session_descr(char *name, char *ip_addr, char *descr, size_t descr_size)
 {
     /*x-x*/
-    char localhostname[NI_MAXHOST];
-    char encoded_url[256];
     struct passwd *pwitem=getpwuid(getuid());
     gint64 size_left=descr_size;
     char *cursor=descr;
@@ -57,13 +58,15 @@ int sdp_session_descr(char *name, char *descr, size_t descr_size)
     guint i;
     double duration;
 
-    fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s\n", name);
-    if ( !(r_descr=r_descr_get(prefs_get_serv_root(), name)) )
+    fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s", name);
+    if ( !(r_descr=r_descr_get(prefs_get_serv_root(), name)) ) {
+        fnc_log(FNC_LOG_ERR, "[SDP2] %s not found", name);
         return ERR_NOT_FOUND;
+    }
 
-    if(get_local_hostname(localhostname,sizeof(localhostname))) {
-        fnc_log(FNC_LOG_ERR, "[SDP2] get_local_hostname failed\n");
-        return ERR_INPUT_PARAM; // could not get address name or IP
+    if(!ip_addr) {
+        fnc_log(FNC_LOG_ERR, "[SDP2] missing local ip address");
+        return ERR_PARSE;
     }
     // v=
     DESCRCAT(g_snprintf(cursor, size_left, "v=%d"SDP2_EL, SDP2_VERSION))
@@ -78,7 +81,7 @@ int sdp_session_descr(char *name, char *descr, size_t descr_size)
     DESCRCAT(g_strlcat(cursor," ", size_left))
     DESCRCAT(sdp_get_version(r_descr, cursor, size_left))
     DESCRCAT(g_strlcat(cursor, " IN IP4 ", size_left))  /* Network type: Internet; Address type: IP4. */
-    DESCRCAT(g_strlcat(cursor, localhostname, size_left))
+    DESCRCAT(g_strlcat(cursor, ip_addr, size_left))
     DESCRCAT(g_strlcat(cursor, SDP2_EL, size_left))
 
     // s=
@@ -131,8 +134,7 @@ int sdp_session_descr(char *name, char *descr, size_t descr_size)
     // k=
     // a=
     // control attribute. We should look if aggregate metod is supported?
-    Url_encode (encoded_url, name, sizeof(encoded_url));
-    DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s"SDP2_EL, encoded_url))
+    DESCRCAT(g_snprintf(cursor, size_left, "a=control:*"SDP2_EL))
     if ((duration = r_descr_time(r_descr)) > 0)
         DESCRCAT(g_snprintf(cursor, size_left, "a=range:npt=0-%f"SDP2_EL, duration))
     // other private data
@@ -158,7 +160,7 @@ int sdp_session_descr(char *name, char *descr, size_t descr_size)
         sdp_media_descr(r_descr, array_data(m_descrs)[i], cursor, size_left);
     }
 
-    fnc_log(FNC_LOG_INFO, "\n[SDP2] description:\n%s\n", descr);
+    fnc_log(FNC_LOG_INFO, "[SDP2] description:\n%s", descr);
 
     return ERR_NOERROR;
 }

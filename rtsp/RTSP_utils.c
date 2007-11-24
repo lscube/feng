@@ -228,15 +228,14 @@ RTSP_Error get_cseq(RTSP_buffer * rtsp)
  */
 RTSP_Error get_session_description(ConnectionInfo * cinfo)
 {
-    int sdesc_error = sdp_session_descr(cinfo->object, cinfo->descr, sizeof(cinfo->descr));
+    int sdesc_error = sdp_session_descr(cinfo->object, cinfo->address, cinfo->descr, sizeof(cinfo->descr));
 
     if ((sdesc_error))
     {
         fnc_log(FNC_LOG_ERR,"[SDP2] error");
         if (sdesc_error == ERR_NOT_FOUND)
             return RTSP_NotFound;
-        else if (sdesc_error == ERR_PARSE || sdesc_error == ERR_GENERIC ||
-                 sdesc_error == ERR_ALLOC)
+        else
             return RTSP_InternalServerError;
     }
 
