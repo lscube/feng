@@ -574,10 +574,11 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
                     session->resource->info->multicast);
         } else { // XXX handle TLS here
             w_pos += snprintf(r + w_pos, sizeof(r) - w_pos,
-                    "RTP/AVP;unicast;client_port=%d-%d;source=%s;server_port=",
+                    "RTP/AVP;unicast;source=%s;"
+                    "client_port=%d-%d;server_port=",
+                    get_local_host(rtsp->sock),
                     get_remote_port(rtp_s->transport.rtp_sock),
-                    get_remote_port(rtp_s->transport.rtcp_sock),
-                    get_local_host(rtsp->sock));
+                    get_remote_port(rtp_s->transport.rtcp_sock));
         }
 
         w_pos +=
@@ -603,7 +604,7 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
     default:
         break;
     }
-    snprintf(r + w_pos, sizeof(r) - w_pos, ";ssrc=%u", rtp_s->ssrc);
+    snprintf(r + w_pos, sizeof(r) - w_pos, ";ssrc=%8X", rtp_s->ssrc);
 
     strcat(r, RTSP_EL RTSP_EL);
 
