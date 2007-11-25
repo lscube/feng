@@ -38,8 +38,6 @@
 #include <fenice/sdp2.h>
 #include <fenice/fnc_log.h>
 
-#include <netembryo/url.h>
-
 RTSP_Error const RTSP_Fatal_ErrAlloc = { {0, ""}, ERR_ALLOC };
 
 //! number of currently active connections
@@ -228,7 +226,7 @@ RTSP_Error get_cseq(RTSP_buffer * rtsp)
  */
 RTSP_Error get_session_description(ConnectionInfo * cinfo)
 {
-    int sdesc_error = sdp_session_descr(cinfo->object, cinfo->address, cinfo->descr, sizeof(cinfo->descr));
+    int sdesc_error = sdp_session_descr(cinfo->object, cinfo->descr, sizeof(cinfo->descr));
 
     if ((sdesc_error))
     {

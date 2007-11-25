@@ -46,6 +46,7 @@
 
 #include <fenice/rtsp.h>
 #include <netembryo/rtsp_errors.h>
+#include <netembryo/url.h>
 
 /**
  * @addtogroup RTSP
@@ -59,7 +60,6 @@ typedef struct
 {
     char object[255]; //!< path of the required media
     char server[255]; //!< local hostname
-    char *address; //!< local address
     unsigned short port; //!< local port where the server is listening for requests
 
     description_format descr_format; //!< format of the media description

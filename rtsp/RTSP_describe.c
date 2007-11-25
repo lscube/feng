@@ -100,7 +100,6 @@ int RTSP_describe(RTSP_buffer * rtsp)
     RTSP_Error error;
 
     // Set some defaults
-    cinfo.address = get_local_host(rtsp->sock);
     cinfo.descr_format = df_SDP_format;
 
     // Extract the URL

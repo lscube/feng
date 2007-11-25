@@ -206,8 +206,8 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
     RTP_session *rtp_sess;
     char *q = NULL;
 
-    if (!(q = strchr(cinfo->object, '!'))) {
-        //if '!' is not present then a file has not been specified
+    if (!(q = strchr(cinfo->object, '='))) {
+        //if '=' is not present then a file has not been specified
         // aggregate content requested
         // Perform seek if needed
         if ((error = do_seek(rtsp_sess, args)).got_error) {
@@ -286,9 +286,7 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp
         Url_encode(temp, p->sd_filename, sizeof(temp));
         strcat (r, temp);
         strcat (r, "/");
-        Url_encode(temp, t->parent->info->name, sizeof(temp));
-        strcat (r, temp);
-        strcat (r, "!");
+        strcat (r, SDP2_TRACK_ID"=");
         Url_encode(temp, t->info->name, sizeof(temp));
         strcat (r, temp);
         strcat(r, ";");

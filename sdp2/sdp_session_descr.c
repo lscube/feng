@@ -22,7 +22,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <pwd.h>
 
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
@@ -35,7 +34,6 @@
 
 #include "sdp_get_version.c"
 
-
 #define DESCRCAT(x) \
     do { \
         if ( (size_left -= x) < 0) {\
@@ -46,12 +44,10 @@
             cursor = descr + descr_size - size_left; \
     } while(0);
 
-int sdp_session_descr(char *name, char *ip_addr, char *descr, size_t descr_size)
+int sdp_session_descr(char *name, char *descr, size_t descr_size)
 {
-    /*x-x*/
-    struct passwd *pwitem=getpwuid(getuid());
     gint64 size_left=descr_size;
-    char *cursor=descr;
+    char *cursor=descr, *ip_addr;
     ResourceDescr *r_descr;
     MediaDescrListArray m_descrs;
     sdp_field_list sdp_private;
@@ -64,7 +60,7 @@ int sdp_session_descr(char *name, char *ip_addr, char *descr, size_t descr_size)
         return ERR_NOT_FOUND;
     }
 
-    if(!ip_addr) {
+    if(!(ip_addr = prefs_get_hostname())) {
         fnc_log(FNC_LOG_ERR, "[SDP2] missing local ip address");
         return ERR_PARSE;
     }
@@ -72,10 +68,7 @@ int sdp_session_descr(char *name, char *ip_addr, char *descr, size_t descr_size)
     DESCRCAT(g_snprintf(cursor, size_left, "v=%d"SDP2_EL, SDP2_VERSION))
     // o=
     DESCRCAT(g_strlcat(cursor, "o=", size_left ))
-    if (pwitem && pwitem->pw_name && *pwitem->pw_name)
-        DESCRCAT(g_strlcat(cursor, pwitem->pw_name, size_left))
-    else
-        DESCRCAT(g_strlcat(cursor, "-", size_left))
+    DESCRCAT(g_strlcat(cursor, "-", size_left))
     DESCRCAT(g_strlcat(cursor, " ", size_left))
     DESCRCAT(sdp_session_id(cursor, size_left))
     DESCRCAT(g_strlcat(cursor," ", size_left))
@@ -92,8 +85,6 @@ int sdp_session_descr(char *name, char *ip_addr, char *descr, size_t descr_size)
         // TODO: choose a better session name
         DESCRCAT(g_strlcat(cursor, "s=RTSP Session"SDP2_EL, size_left))
     // i=
-    DESCRCAT(g_snprintf(cursor, size_left, "i=%s %s Streaming Server"SDP2_EL,
-             PACKAGE, VERSION)) // TODO: choose a better session description
     // u=
     if (r_descr_descrURI(r_descr))
         DESCRCAT(g_snprintf(cursor, size_left, "u=%s"SDP2_EL,
@@ -127,12 +118,16 @@ int sdp_session_descr(char *name, char *ip_addr, char *descr, size_t descr_size)
         DESCRCAT(g_strlcat(cursor, "0.0.0.0"SDP2_EL, size_left))
     // b=
     // t=
-    // TODO: enable seek
     DESCRCAT(g_snprintf(cursor, size_left, "t=0 0"SDP2_EL))
     // r=
     // z=
     // k=
     // a=
+    // type attribute. We offer only broadcast
+    DESCRCAT(g_snprintf(cursor, size_left, "a=type:broadcast"SDP2_EL))
+    // tool attribute. Feng promo
+    DESCRCAT(g_snprintf(cursor, size_left, "a=tool:%s %s Streaming Server"SDP2_EL,
+             PACKAGE, VERSION)) // TODO: choose a better session description
     // control attribute. We should look if aggregate metod is supported?
     DESCRCAT(g_snprintf(cursor, size_left, "a=control:*"SDP2_EL))
     if ((duration = r_descr_time(r_descr)) > 0)
@@ -157,7 +152,7 @@ int sdp_session_descr(char *name, char *ip_addr, char *descr, size_t descr_size)
     m_descrs = r_descr_get_media(r_descr);
 
     for (i=0;i<m_descrs->len;i++) { // TODO: wrap g_array functions
-        sdp_media_descr(r_descr, array_data(m_descrs)[i], cursor, size_left);
+        sdp_media_descr(array_data(m_descrs)[i], cursor, size_left);
     }
 
     fnc_log(FNC_LOG_INFO, "[SDP2] description:\n%s", descr);
