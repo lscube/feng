@@ -35,7 +35,7 @@ int schedule_resume(int id, play_args *args)
     Track *tr = r_selected_track(sched[id].rtp_session->track_selector);
     double mnow, pkt_len = tr->properties->duration;
 
-    mnow = gettimeinseconds();
+    mnow = gettimeinseconds(NULL);
 /*
     sched[id].rtp_session->current_media->mstart_offset 
         += sched[id].rtp_session->current_media->mtime 

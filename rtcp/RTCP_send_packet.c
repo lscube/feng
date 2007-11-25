@@ -29,7 +29,6 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 #include <netinet/in.h>
-#include <sys/time.h>
 
 int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
 {
@@ -44,7 +43,8 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
     hdr_s = sizeof(hdr);
     switch (type) {
     case SR:{
-            struct timeval ntp_time;
+            struct timespec ntp_time;
+            double now;
             RTCP_header_SR hdr_sr;
             int hdr_sr_s;
             //printf("SR\n");
@@ -54,22 +54,19 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
             hdr.count = 0;
             hdr_sr.ssrc = htonl(session->ssrc);
 
-            gettimeofday(&ntp_time, NULL);
+            now = gettimeinseconds(&ntp_time);
             hdr_sr.ntp_timestampH =
-                htonl((unsigned int) ntp_time.tv_sec);
+                htonl((unsigned int) ntp_time.tv_sec + 2208988800u);
             hdr_sr.ntp_timestampL =
-                htonl((unsigned int) ntp_time.tv_usec);
+                htonl((((uint64_t) ntp_time.tv_nsec) << 32) / 1000000000u);
             hdr_sr.rtp_timestamp =
-                htonl((unsigned int) ((double) ntp_time.tv_sec +
-                          (double) ntp_time.tv_usec /
-                          1000000.) *
-                  t->properties->clock_rate +
-                  session->start_rtptime);
+                htonl((unsigned int) ((now - session->start_time) *
+                      t->properties->clock_rate) + session->start_rtptime);
 
             hdr_sr.pkt_count =
-                session->rtcp_stats[i_server].pkt_count;
+                htonl(session->rtcp_stats[i_server].pkt_count);
             hdr_sr.octet_count =
-                session->rtcp_stats[i_server].octet_count;
+                htonl(session->rtcp_stats[i_server].octet_count);
             pkt = (unsigned char *) calloc(1, pkt_size);
             if (pkt == NULL) {
                 return ERR_ALLOC;

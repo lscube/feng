@@ -38,6 +38,18 @@
  * RTP packets sending and receiving with session handling
  */
 
+/**
+ * Calculate RTP time from media timestamp or using pregenerated timestamp
+ * depending on what is available
+ * @param session RTP session of the packet
+ * @param clock_rate RTP clock rate (depends on media)
+ * @param slot Slot of which calculate timestamp
+ * @return RTP Timestamp (in local endianess)
+ */
+inline int RTP_calc_rtptime(RTP_session *session, int clock_rate, BPSlot *slot) {
+    return (session->start_rtptime + ((slot->rtp_time) ? (slot->rtp_time) :
+            (slot->timestamp - session->seek_time) * clock_rate));
+}
 
 /**
  * Sends pending RTP packets for the given session
@@ -67,11 +79,8 @@ int RTP_send_packet(RTP_session * session)
             r.marker = slot->marker;
             r.payload = t->properties->payload_type;
             r.seq_no = htons(session->seq_no += slot->seq_delta);
-            r.timestamp =
-                htonl(session->start_rtptime + 
-                      ((slot->rtp_time) ? slot->rtp_time :
-                      (slot->timestamp - session->seek_time)
-                      * t->properties->clock_rate));
+            r.timestamp = htonl(RTP_calc_rtptime(session,
+                                t->properties->clock_rate, slot));
             fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(r.timestamp));
             r.ssrc = htonl(session->ssrc);
             packet = calloc(1, slot->data_size + hdr_size);
@@ -109,9 +118,9 @@ int RTP_send_packet(RTP_session * session)
                     dump_payload(packet + 12, psize_sent - 12,
                          fname);
 #endif
-                session->rtcp_stats[i_server].pkt_count++;
-                session->rtcp_stats[i_server].octet_count +=
-                    slot->data_size;
+                session->rtcp_stats[i_server].pkt_count += slot->seq_delta;
+#warning Replace with data count when new bufferpool is available
+                session->rtcp_stats[i_server].octet_count += slot->data_size;
             }
             free(packet);
         } else {

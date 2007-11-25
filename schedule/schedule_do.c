@@ -55,7 +55,7 @@ do {
             Track *tr = r_selected_track(sched[i].rtp_session->track_selector);
             j++;
             if (!sched[i].rtp_session->pause || tr->properties->media_source == MS_live) {
-                mnow = gettimeinseconds();
+                mnow = gettimeinseconds(NULL);
                 if (mnow >= sched[i].rtp_session->start_time &&
                     mnow - sched[i].rtp_session->prev_tx_time >=
                         tr->properties->duration)

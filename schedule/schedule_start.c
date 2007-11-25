@@ -35,7 +35,7 @@ int schedule_start(int id, play_args *args)
     RTP_session *session = sched[id].rtp_session;
     Track *tr = r_selected_track(session->track_selector);
 
-    mnow = gettimeinseconds();
+    mnow = gettimeinseconds(NULL);
 
     session->cons = bp_ref(tr->buffer);
 
