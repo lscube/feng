@@ -57,7 +57,7 @@ int RTCP_flush(RTP_session * session)
 
 int RTCP_handler(RTP_session * session)
 {
-    if (session->rtcp_stats[i_server].pkt_count % 67 == 1) {
+    if (session->rtcp_stats[i_server].pkt_count % 29 == 1) {
         RTCP_send_packet(session, SR);
         RTCP_send_packet(session, SDES);
         return RTCP_flush(session);

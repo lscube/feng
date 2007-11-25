@@ -66,9 +66,6 @@ do {
                     stream_change(sched[i].rtp_session,
                         change_check(sched[i].rtp_session));
 #endif
-                    RTCP_handler(sched[i].rtp_session);
-                /*if RTCP_handler return ERR_GENERIC what do i have to do?*/
-
                 // Send an RTP packet
                     res = sched[i].play_action(sched[i].rtp_session);
                     switch (res) {
@@ -92,6 +89,8 @@ do {
                             fnc_log(FNC_LOG_WARN,"Packet Lost\n");
                             break;
                     }
+                    RTCP_handler(sched[i].rtp_session);
+                    /*if RTCP_handler return ERR_GENERIC what do i have to do?*/
                     sched[i].rtp_session->prev_tx_time +=
                         tr->properties->duration;
                 }
