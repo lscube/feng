@@ -108,11 +108,11 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 {
     char *s;
     RTSP_session *p;
-    long int session_id;
+    unsigned long session_id;
     char trash[255];
 
     if ((s = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(s, "%254s %ld", trash, &session_id) != 2) {
+        if (sscanf(s, "%254s %lu", trash, &session_id) != 2) {
             fnc_log(FNC_LOG_INFO,
                 "Invalid Session number in Session header\n");
             send_reply(454, 0, rtsp);    /* Session Not Found */

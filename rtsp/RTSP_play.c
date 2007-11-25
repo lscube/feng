@@ -133,7 +133,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
  * @param rtsp_sess where to save the retrieved session
  * @return RTSP_Ok or RTSP_SessionNotFound
  */
-static RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_session **rtsp_sess)
+static RTSP_Error get_session(RTSP_buffer * rtsp, unsigned long session_id, RTSP_session **rtsp_sess)
 {
 #if 0
     for (rtsp_sess = rtsp->session_list; rtsp_sess != NULL; rtsp_sess++)

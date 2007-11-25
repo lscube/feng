@@ -166,7 +166,7 @@ ssize_t RTSP_send(RTSP_buffer * rtsp);
 
 #if 0 // To support multiple session per socket...
 static inline RTSP_session *rtsp_session_from_id(RTSP_buffer *rtsp,
-                                                 int session_id )
+                                                 unsigned long session_id )
 {
     RTSP_session *rtsp_sess;
 
