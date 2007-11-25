@@ -254,7 +254,7 @@ RTSP_Error get_session_id(RTSP_buffer * rtsp, unsigned long * session_id)
 
     // Session
     if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(p, "%*s %ld", session_id) != 1)
+        if (sscanf(p, "%*s %lu", session_id) != 1)
             return RTSP_SessionNotFound;
     } else {
         *session_id = 0;
