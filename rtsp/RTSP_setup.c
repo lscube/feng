@@ -478,7 +478,7 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     //XXX use strdup
     strncpy(rtp_s->sd_filename, cinfo->object, sizeof(rtp_s->sd_filename));
 
-    rtp_s->start_time = gettimeinseconds(&now_tmp);
+    gettimeinseconds(&now_tmp);
     srand(now_tmp.tv_sec | now_tmp.tv_nsec);
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
     rtp_s->start_rtptime = 1 + ((unsigned int) rand() & (0xFFFFFFFF));

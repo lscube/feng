@@ -20,9 +20,6 @@
  *  
  * */
 
-// #include <time.h>
-#include <sys/time.h>
-
 #include <fenice/utils.h>
 #include <fenice/schedule.h>
 #include <fenice/rtp.h>
@@ -31,14 +28,11 @@ extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 int schedule_start(int id, play_args *args)
 {
-    double mnow;
+    //double mnow = gettimeinseconds(NULL);
     RTP_session *session = sched[id].rtp_session;
     Track *tr = r_selected_track(session->track_selector);
 
-    mnow = gettimeinseconds(NULL);
-
     session->cons = bp_ref(tr->buffer);
-
     if (session->cons == NULL)
         return ERR_ALLOC;
 
@@ -46,27 +40,13 @@ int schedule_start(int id, play_args *args)
  * then it runs here
  * */
     if (tr->buffer->control->refs == 1) {
-#if ENABLE_MEDIATHREAD
         if (!args->playback_time_valid) {
-            session->start_time = mnow;
+            session->start_time = args->start_time;
         } else {
             session->start_time = mktime(&(args->playback_time));
         }
-#else
-        if (!args->playback_time_valid) {
-            session->current_media->mstart = mnow;
-        } else {
-            session->current_media->mstart =
-                mktime(&(args->playback_time));
-        }
-        sched[id].rtp_session->current_media->mtime = mnow;
-        sched[id].rtp_session->current_media->mstart_offset = 
-            args->start_time*1000;
-        sched[id].rtp_session->current_media->play_offset =
-            args->start_time*1000;
-#endif
     }
-    session->prev_tx_time = mnow;
+    session->prev_tx_time = session->start_time;
     session->pause = 0;
     session->started = 1;
     session->MinimumReached = 0;

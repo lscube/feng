@@ -36,8 +36,9 @@ typedef struct _play_args {
     struct tm playback_time;
     short playback_time_valid;
     short seek_time_valid;
-    float start_time;   //! time in seconds
-    float end_time;
+    double start_time;   //! time in seconds
+    double begin_time;
+    double end_time;
 } play_args;
 
 typedef struct _schedule_list {
