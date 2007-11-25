@@ -47,7 +47,6 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
 
     /* Default values */
     args->playback_time_valid = 0;
-    args->start_time_valid = 0;
     args->seek_time_valid = 0;
     args->start_time = 0.0;
     args->end_time = HUGE_VAL;
@@ -77,6 +76,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
         else if ((q = strstr(p, "clock"))!= NULL) { // FORMAT: clock
             // Currently unsupported. Using default.
         }
+#if 0
         else if ((q = strstr(p, "time")) == NULL) { // No specific format. Assuming NeMeSI format.
             double t;
             if ((q = strstr(p, ":"))) {
@@ -96,6 +96,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
             }
             args->start_time_valid = 1;
         }
+#endif
         else {
             // no range defined but start time expressed?
             time_taken = 1;
@@ -271,7 +272,7 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp
     }
     strcat(r, RTSP_EL);
     strcat(r, "Session: ");
-    sprintf(temp, "%d", rtsp_session->session_id);
+    sprintf(temp, "%lu", rtsp_session->session_id);
     strcat(r, temp);
     strcat(r, RTSP_EL);
     strcat(r, "RTP-info: ");
@@ -322,7 +323,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 {
     ConnectionInfo cinfo;
     char url[255];
-    long int session_id;
+    unsigned long session_id;
     RTSP_session *rtsp_sess;
     play_args args;
 
@@ -336,7 +337,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 
     if ( (error = get_session_id(rtsp, &session_id)).got_error )
         goto error_management;
-    else if ( session_id == -1 ) {
+    else if ( session_id == 0 ) {
         set_RTSP_Error(&error, 400, "");
         goto error_management;
     }

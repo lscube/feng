@@ -47,7 +47,7 @@ static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
         VERSION);
     add_time_stamp(r, 0);
     strcat(r, "Session: ");
-    sprintf(temp, "%d", rtsp_session->session_id);
+    sprintf(temp, "%lu", rtsp_session->session_id);
     strcat(r, temp);
     strcat(r, RTSP_EL RTSP_EL);
     bwrite(r, (unsigned short) strlen(r), rtsp);
@@ -65,7 +65,7 @@ static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
 int RTSP_pause(RTSP_buffer * rtsp)
 {
     ConnectionInfo cinfo;
-    long int session_id;
+    unsigned long session_id;
     RTSP_session *s;
     RTP_session *r;
     char url[255];

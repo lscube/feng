@@ -397,31 +397,18 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
  * Generates a random session id
  * @return the random session id (actually a number)
  */
-static long int generate_session_id()
-{        
-    struct timeval now_tmp;
-    long int session_id;
+static unsigned long generate_session_id()
+{
+    unsigned long session_id;
 
     // Generate a random Session number
-    gettimeofday(&now_tmp, 0);
-    srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
-#ifdef WIN32
-    session_id = rand();
-#else
-    session_id = 1 + (int) (10.0 * rand() / (100000 + 1.0));
-#endif
+    gcry_randomize(&session_id, sizeof(session_id), GCRY_STRONG_RANDOM);
     if (session_id == 0) {
         session_id++;
     }
 #if 0 // To support multiple session per socket...
-    // XXX Paranoia make sure we have a connection limit set elsewhere...
     while (rtsp_session_from_id(rtsp, session_id))
-#ifdef WIN32
-        session_id = rand();
-#else
-        session_id = 1 + (int) (10.0 * rand() / (100000 + 1.0));
-#endif
-
+        gcry_randomize(&session_id, sizeof(session_id), GCRY_STRONG_RANDOM);
 #endif
 
     return session_id;
@@ -471,7 +458,7 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
  */
 static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, Selector * track_sel)
 {
-    struct timeval now_tmp;
+    struct timespec now_tmp;
     RTP_session *rtp_s;
 
 // Setup the RTP session
@@ -491,8 +478,8 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     //XXX use strdup
     strncpy(rtp_s->sd_filename, cinfo->object, sizeof(rtp_s->sd_filename));
 
-    gettimeofday(&now_tmp, 0);
-    srand((now_tmp.tv_sec * 1000) + (now_tmp.tv_usec / 1000));
+    rtp_s->start_time = gettimeinseconds(&now_tmp);
+    srand(now_tmp.tv_sec | now_tmp.tv_nsec);
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
     rtp_s->start_rtptime = 1 + ((unsigned int) rand() & (0xFFFFFFFF));
     rtp_s->start_seq = 1 + ((unsigned int) rand() & (0xFFFF));
@@ -558,7 +545,7 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
         VERSION);
     add_time_stamp(r, 0);
     w_pos = strlen(r);
-    w_pos += snprintf(r + w_pos, sizeof(r) - w_pos, "Session: %d" RTSP_EL,
+    w_pos += snprintf(r + w_pos, sizeof(r) - w_pos, "Session: %lu" RTSP_EL,
                       session->session_id);
 
     w_pos += snprintf(r + w_pos, sizeof(r) - w_pos, "Transport: ");
@@ -626,7 +613,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
     ConnectionInfo cinfo;
     char url[255];
-    long int session_id = -1;
+    unsigned long session_id = 0;
     char trackname[255];
     RTP_transport transport;
 
@@ -667,7 +654,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     // If there's a Session header we have an aggregate control
     if ( (error = get_session_id(rtsp, &session_id)).got_error )
         goto error_management;
-    if (session_id == -1)
+    if (session_id == 0)
         session_id = generate_session_id();
 
     // Add an RTSP session if necessary

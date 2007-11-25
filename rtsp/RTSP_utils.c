@@ -248,7 +248,7 @@ RTSP_Error get_session_description(ConnectionInfo * cinfo)
  * @param session_id where to save the retrieved session id
  * @return RTSP_Ok or RTSP_SessionNotFound if it is not possible to parse the id
  */
-RTSP_Error get_session_id(RTSP_buffer * rtsp, long int * session_id)
+RTSP_Error get_session_id(RTSP_buffer * rtsp, unsigned long * session_id)
 {
     char * p;
 
@@ -257,7 +257,7 @@ RTSP_Error get_session_id(RTSP_buffer * rtsp, long int * session_id)
         if (sscanf(p, "%*s %ld", session_id) != 1)
             return RTSP_SessionNotFound;
     } else {
-        *session_id = -1;
+        *session_id = 0;
     }
 
     return RTSP_Ok;
