@@ -591,7 +591,7 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
     default:
         break;
     }
-    snprintf(r + w_pos, sizeof(r) - w_pos, ";ssrc=%8X", rtp_s->ssrc);
+    snprintf(r + w_pos, sizeof(r) - w_pos, ";ssrc=%08X", rtp_s->ssrc);
 
     strcat(r, RTSP_EL RTSP_EL);
 
