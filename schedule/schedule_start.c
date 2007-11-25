@@ -35,7 +35,7 @@ int schedule_start(int id, play_args *args)
     session->cons = bp_ref(tr->buffer);
     if (session->cons == NULL)
         return ERR_ALLOC;
-
+#if 0
 /* Iff this session is the first session related to this media_entry,
  * then it runs here
  * */
@@ -46,6 +46,8 @@ int schedule_start(int id, play_args *args)
             session->start_time = mktime(&(args->playback_time));
         }
     }
+#endif
+    session->start_time = args->start_time;
     session->prev_tx_time = session->start_time;
     session->pause = 0;
     session->started = 1;
