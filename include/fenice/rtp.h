@@ -81,7 +81,7 @@ typedef struct _RTP_session {
     double start_time;
     double seek_time;
 
-    double prev_tx_time;
+    double timestamp;
     unsigned int PreviousCount;
     short MinimumReached;
     short MaximumReached;

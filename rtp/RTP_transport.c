@@ -69,7 +69,7 @@ int RTP_send_packet(RTP_session * session)
     ssize_t psize_sent = 0;
     Track *t = r_selected_track(session->track_selector);
 
-    while ((slot = bp_getreader(session->cons))) {
+    if ((slot = bp_getreader(session->cons))) {
         if (!(session->pause && t->properties->media_source == MS_live)) {
             hdr_size = sizeof(r);
             r.version = 2;
@@ -118,6 +118,7 @@ int RTP_send_packet(RTP_session * session)
                     dump_payload(packet + 12, psize_sent - 12,
                          fname);
 #endif
+                session->timestamp = slot->timestamp;
                 session->rtcp_stats[i_server].pkt_count += slot->seq_delta;
 #warning Replace with data count when new bufferpool is available
                 session->rtcp_stats[i_server].octet_count += slot->data_size;

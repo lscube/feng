@@ -32,7 +32,7 @@ extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 int schedule_resume(int id, play_args *args)
 {
     sched[id].rtp_session->start_time = args->start_time;
-    sched[id].rtp_session->prev_tx_time = args->start_time;
+    sched[id].rtp_session->timestamp = 0.0;
     sched[id].rtp_session->pause=0;
 
     return ERR_NOERROR;

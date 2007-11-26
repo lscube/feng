@@ -48,7 +48,7 @@ int schedule_start(int id, play_args *args)
     }
 #endif
     session->start_time = args->start_time;
-    session->prev_tx_time = session->start_time;
+    session->timestamp = 0.0;
     session->pause = 0;
     session->started = 1;
     session->MinimumReached = 0;

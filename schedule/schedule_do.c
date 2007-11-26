@@ -30,7 +30,7 @@
 #include <fenice/debug.h>
 #include <fenice/fnc_log.h>
 
-#define SCHEDULER_TIMING_NS 4000000  //time to obtain legacy 250Hz tickness
+#define SCHEDULER_TIMING_NS 1000000
 
 extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 extern int stop_schedule;
@@ -52,22 +52,22 @@ do {
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
         pthread_mutex_lock(&sched[i].mux);
         if (sched[i].valid && sched[i].rtp_session->started) {
-            Track *tr = r_selected_track(sched[i].rtp_session->track_selector);
+            RTP_session * session = sched[i].rtp_session;
+            Track *tr = r_selected_track(session->track_selector);
             j++;
-            if (!sched[i].rtp_session->pause || tr->properties->media_source == MS_live) {
+            if (!session->pause || tr->properties->media_source == MS_live) {
                 mnow = gettimeinseconds(NULL);
-                if (mnow >= sched[i].rtp_session->start_time &&
-                    mnow - sched[i].rtp_session->prev_tx_time >=
-                        tr->properties->frame_duration)
+                if (mnow >= session->start_time &&
+                    mnow - session->start_time >= session->timestamp - session->seek_time)
                 {
 #if 1
 //TODO DSC will be implemented WAY later.
 #else
-                    stream_change(sched[i].rtp_session,
-                        change_check(sched[i].rtp_session));
+                    stream_change(session,
+                        change_check(session));
 #endif
                 // Send an RTP packet
-                    res = sched[i].play_action(sched[i].rtp_session);
+                    res = sched[i].play_action(session);
                     switch (res) {
                         case ERR_NOERROR: // All fine
                             break;
@@ -76,9 +76,9 @@ do {
                                 fnc_log(FNC_LOG_WARN,"Pipe empty!\n");
                             } else {
                                 fnc_log(FNC_LOG_INFO,"[BYE] Stream Finished");
-                                RTCP_send_packet(sched[i].rtp_session, SR);
-                                RTCP_send_packet(sched[i].rtp_session, BYE);
-                                RTCP_flush(sched[i].rtp_session);
+                                RTCP_send_packet(session, SR);
+                                RTCP_send_packet(session, BYE);
+                                RTCP_flush(session);
                             }
                             break;
                         case ERR_ALLOC:
@@ -89,10 +89,8 @@ do {
                             fnc_log(FNC_LOG_WARN,"Packet Lost\n");
                             break;
                     }
-                    RTCP_handler(sched[i].rtp_session);
+                    RTCP_handler(session);
                     /*if RTCP_handler return ERR_GENERIC what do i have to do?*/
-                    sched[i].rtp_session->prev_tx_time +=
-                        tr->properties->frame_duration;
                 }
             }
         }
