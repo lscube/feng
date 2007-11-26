@@ -108,7 +108,7 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 {
     char *s;
     RTSP_session *p;
-    long int session_id;
+    unsigned long session_id;
 
     if ((s = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
         if (sscanf(s, "%*254s %ld", &session_id) != 1) {

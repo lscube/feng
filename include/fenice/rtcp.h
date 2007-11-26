@@ -74,7 +74,7 @@ typedef struct _RTCP_header_RR {
 } RTCP_header_RR;
 
 typedef struct _RTCP_header_SR_report_block {
-    unsigned long ssrc;
+    unsigned int ssrc;
     unsigned char fract_lost;
     unsigned char pck_lost[3];
     unsigned int h_seq_no;

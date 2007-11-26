@@ -97,10 +97,11 @@ int RTSP_describe(RTSP_buffer * rtsp)
 {
     char url[255];
     ConnectionInfo cinfo;
-
     RTSP_Error error;
 
-    cinfo.descr_format = df_SDP_format; // shawill put to some default
+    // Set some defaults
+    cinfo.descr_format = df_SDP_format;
+
     // Extract the URL
     if ( (error = extract_url(rtsp, url)).got_error )
         goto error_management;

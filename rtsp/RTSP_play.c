@@ -47,9 +47,9 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
 
     /* Default values */
     args->playback_time_valid = 0;
-    args->start_time_valid = 0;
     args->seek_time_valid = 0;
-    args->start_time = 0.0;
+    args->start_time = gettimeinseconds(NULL);
+    args->begin_time = 0.0;
     args->end_time = HUGE_VAL;
 
     if ((p = strstr(rtsp->in_buffer, HDR_RANGE)) != NULL) {
@@ -57,7 +57,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
             if ((q = strchr(q, '=')) == NULL)
                 return RTSP_BadRequest;    /* Bad Request */
 
-            if (sscanf(q + 1, "%f", &(args->start_time)) != 1) {
+            if (sscanf(q + 1, "%lf", &(args->begin_time)) != 1) {
                 if (sscanf(q + 1, "%4s", tmp) != 1 && !strcasecmp(tmp,"now-")) {
                     return RTSP_BadRequest;
                 }
@@ -68,7 +68,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
             if ((q = strchr(q, '-')) == NULL)
                 return RTSP_BadRequest;
 
-            if (sscanf(q + 1, "%f", &(args->end_time)) != 1)
+            if (sscanf(q + 1, "%lf", &(args->end_time)) != 1)
                 args->end_time = HUGE_VAL;
         }
         else if ((q = strstr(p, "smpte")) != NULL) { // FORMAT: smpte
@@ -77,6 +77,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
         else if ((q = strstr(p, "clock"))!= NULL) { // FORMAT: clock
             // Currently unsupported. Using default.
         }
+#if 0
         else if ((q = strstr(p, "time")) == NULL) { // No specific format. Assuming NeMeSI format.
             double t;
             if ((q = strstr(p, ":"))) {
@@ -96,6 +97,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
             }
             args->start_time_valid = 1;
         }
+#endif
         else {
             // no range defined but start time expressed?
             time_taken = 1;
@@ -117,7 +119,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
         }
     }
     else {
-        args->start_time = 0.0;
+        args->begin_time = 0.0;
         args->end_time = HUGE_VAL;
         memset(&(args->playback_time), 0, sizeof(args->playback_time));
     }
@@ -132,7 +134,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
  * @param rtsp_sess where to save the retrieved session
  * @return RTSP_Ok or RTSP_SessionNotFound
  */
-static RTSP_Error get_session(RTSP_buffer * rtsp, long int session_id, RTSP_session **rtsp_sess)
+static RTSP_Error get_session(RTSP_buffer * rtsp, unsigned long session_id, RTSP_session **rtsp_sess)
 {
 #if 0
     for (rtsp_sess = rtsp->session_list; rtsp_sess != NULL; rtsp_sess++)
@@ -161,9 +163,9 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
     Resource *r = rtsp_sess->resource;
     RTP_session *rtp_sess;
 
-    if (args->seek_time_valid && ((rtsp_sess->started && args->start_time == 0.0)
-                                  || args->start_time > 0.0)) {
-        if(mt_resource_seek(r, args->start_time)) {
+    if (args->seek_time_valid && ((rtsp_sess->started && args->begin_time == 0.0)
+                                  || args->begin_time > 0.0)) {
+        if(mt_resource_seek(r, args->begin_time)) {
             return RTSP_HeaderFieldNotValidforResource;
         }
         for (rtp_sess = rtsp_sess->rtp_session; rtp_sess;
@@ -174,7 +176,7 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
             }
             rtp_sess->start_seq = 1 + rtp_sess->seq_no;
             rtp_sess->start_rtptime = 1 + ((unsigned int) rand() & (0xFFFFFFFF));
-            rtp_sess->seek_time = args->start_time;
+            rtp_sess->seek_time = args->begin_time;
 
             if (rtp_sess->cons) {
                 while (bp_getreader(rtp_sess->cons)) {
@@ -183,8 +185,8 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
                 }
             }
         }
-    } else if (args->start_time < 0.0) {
-        fnc_log(FNC_LOG_DEBUG,"[RTSP] Negative seek to %f", args->start_time);
+    } else if (args->begin_time < 0.0) {
+        fnc_log(FNC_LOG_DEBUG,"[RTSP] Negative seek to %f", args->begin_time);
         return RTSP_InvalidRange;
     }
 
@@ -205,8 +207,8 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
     RTP_session *rtp_sess;
     char *q = NULL;
 
-    if (!(q = strchr(cinfo->object, '!'))) {
-        //if '!' is not present then a file has not been specified
+    if (!(q = strchr(cinfo->object, '='))) {
+        //if '=' is not present then a file has not been specified
         // aggregate content requested
         // Perform seek if needed
         if ((error = do_seek(rtsp_sess, args)).got_error) {
@@ -263,7 +265,7 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp
         VERSION);
     add_time_stamp(r, 0);
     strcat(r, "Range: npt=");
-    sprintf(temp, "%f-", args->start_time);
+    sprintf(temp, "%f-", args->begin_time);
     strcat(r, temp);
     if (args->end_time != HUGE_VAL) {
         sprintf(temp, "%f", args->end_time);
@@ -271,7 +273,7 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp
     }
     strcat(r, RTSP_EL);
     strcat(r, "Session: ");
-    sprintf(temp, "%d", rtsp_session->session_id);
+    sprintf(temp, "%lu", rtsp_session->session_id);
     strcat(r, temp);
     strcat(r, RTSP_EL);
     strcat(r, "RTP-info: ");
@@ -285,9 +287,7 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp
         Url_encode(temp, p->sd_filename, sizeof(temp));
         strcat (r, temp);
         strcat (r, "/");
-        Url_encode(temp, t->parent->info->name, sizeof(temp));
-        strcat (r, temp);
-        strcat (r, "!");
+        strcat (r, SDP2_TRACK_ID"=");
         Url_encode(temp, t->info->name, sizeof(temp));
         strcat (r, temp);
         strcat(r, ";");
@@ -322,7 +322,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 {
     ConnectionInfo cinfo;
     char url[255];
-    long int session_id;
+    unsigned long session_id;
     RTSP_session *rtsp_sess;
     play_args args;
 
@@ -336,7 +336,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 
     if ( (error = get_session_id(rtsp, &session_id)).got_error )
         goto error_management;
-    else if ( session_id == -1 ) {
+    else if ( session_id == 0 ) {
         set_RTSP_Error(&error, 400, "");
         goto error_management;
     }

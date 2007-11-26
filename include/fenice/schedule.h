@@ -33,19 +33,19 @@
 
 
 typedef struct _play_args {
-	struct tm playback_time;
-	short playback_time_valid;
-	short start_time_valid;
-	short seek_time_valid;
-	float start_time;   //! time in seconds
-	float end_time;
+    struct tm playback_time;
+    short playback_time_valid;
+    short seek_time_valid;
+    double start_time;   //! time in seconds
+    double begin_time;
+    double end_time;
 } play_args;
 
 typedef struct _schedule_list {
-        pthread_mutex_t mux;
-	int valid;
-	RTP_session *rtp_session;
-	RTP_play_action play_action;
+    pthread_mutex_t mux;
+    int valid;
+    RTP_session *rtp_session;
+    RTP_play_action play_action;
 } schedule_list;
 
 int schedule_init();

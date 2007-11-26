@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <math.h>
 #include <string.h>
+#include <features.h>
 
 //XXX should me moved somewhere else
 #ifdef WIN32
@@ -152,10 +153,26 @@ void fncheader(void);
 /**
  * Returns the current time in seconds
  */
-static inline double gettimeinseconds(void) {
-    struct timeval now;
-    gettimeofday(&now,NULL);
-    return (double)now.tv_sec + (double)now.tv_usec/1000000.0;
+#if _POSIX_C_SOURCE >= 199309L
+static inline double gettimeinseconds(struct timespec *now) {
+    struct timespec tmp;
+    if (!now) {
+        now = &tmp;
+    }
+    clock_gettime(CLOCK_REALTIME, now);
+    return (double)now->tv_sec + (double)now->tv_nsec * .000000001;
 }
+#else
+#warning Posix RealTime features not available
+static inline double gettimeinseconds(struct timespec *now) {
+    struct timeval tmp;
+    gettimeofday(&tmp, NULL);
+    if (now) {
+        now->tv_sec = tmp.tv_sec;
+        now->tv_nsec = tmp.tv_usec * 1000;
+    }
+    return (double)tmp.tv_sec + (double)tmp.tv_usec * .000001;
+}
+#endif
 
 #endif

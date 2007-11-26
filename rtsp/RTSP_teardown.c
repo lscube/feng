@@ -39,7 +39,7 @@
  * @param session_id the id of the session closed
  * @return ERR_NOERROR
  */
-static int send_teardown_reply(RTSP_buffer * rtsp, long session_id)
+static int send_teardown_reply(RTSP_buffer * rtsp, unsigned long session_id)
 {
     char r[1024];
     char temp[30];
@@ -51,7 +51,7 @@ static int send_teardown_reply(RTSP_buffer * rtsp, long session_id)
         RTSP_VER, 200, get_stat(200), cseq, PACKAGE, VERSION);
     add_time_stamp(r, 0);
     strcat(r, "Session: ");
-    sprintf(temp, "%ld", session_id);
+    sprintf(temp, "%lu", session_id);
     strcat(r, temp);
     strcat(r, RTSP_EL RTSP_EL);
     bwrite(r, (unsigned short) strlen(r), rtsp);
@@ -69,7 +69,7 @@ static int send_teardown_reply(RTSP_buffer * rtsp, long session_id)
 int RTSP_teardown(RTSP_buffer * rtsp)
 {
     ConnectionInfo cinfo;
-    long int session_id;
+    unsigned long session_id;
     RTSP_session *s;
     RTP_session *rtp_curr, *rtp_prev = NULL, *rtp_temp;
     char *filename;
@@ -103,8 +103,8 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     send_teardown_reply(rtsp, session_id);
     log_user_agent(rtsp); // See User-Agent 
 
-    if (strchr(cinfo.object, '!'))    /*Compatibility with RealOne and RealPlayer */
-        filename = strchr(cinfo.object, '!') + 1;
+    if (strchr(cinfo.object, '='))    /*Compatibility with RealOne and RealPlayer */
+        filename = strchr(cinfo.object, '=') + 1;
     else
         filename = cinfo.object;
 

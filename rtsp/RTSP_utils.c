@@ -38,8 +38,6 @@
 #include <fenice/sdp2.h>
 #include <fenice/fnc_log.h>
 
-#include <netembryo/url.h>
-
 RTSP_Error const RTSP_Fatal_ErrAlloc = { {0, ""}, ERR_ALLOC };
 
 //! number of currently active connections
@@ -235,8 +233,7 @@ RTSP_Error get_session_description(ConnectionInfo * cinfo)
         fnc_log(FNC_LOG_ERR,"[SDP2] error");
         if (sdesc_error == ERR_NOT_FOUND)
             return RTSP_NotFound;
-        else if (sdesc_error == ERR_PARSE || sdesc_error == ERR_GENERIC ||
-                 sdesc_error == ERR_ALLOC)
+        else
             return RTSP_InternalServerError;
     }
 
@@ -249,16 +246,16 @@ RTSP_Error get_session_description(ConnectionInfo * cinfo)
  * @param session_id where to save the retrieved session id
  * @return RTSP_Ok or RTSP_SessionNotFound if it is not possible to parse the id
  */
-RTSP_Error get_session_id(RTSP_buffer * rtsp, long int * session_id)
+RTSP_Error get_session_id(RTSP_buffer * rtsp, unsigned long * session_id)
 {
     char * p;
 
     // Session
     if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(p, "%*s %ld", session_id) != 1)
+        if (sscanf(p, "%*s %lu", session_id) != 1)
             return RTSP_SessionNotFound;
     } else {
-        *session_id = -1;
+        *session_id = 0;
     }
 
     return RTSP_Ok;

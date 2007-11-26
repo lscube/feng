@@ -26,20 +26,21 @@
 
 #define DESCRCAT(x) \
     do { \
-        if ( (size_left -= x) < 0) \
-        return ERR_INPUT_PARAM; \
-        else cursor = descr + descr_size - size_left; \
+        if ( (size_left -= x) < 0) {\
+            fnc_log(FNC_LOG_ERR, "[SDP2] buffer overflow (%d)", size_left); \
+            return ERR_ALLOC; \
+        } \
+        else \
+            cursor = descr + descr_size - size_left; \
     } while(0);
 
-int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list,
-                    char *descr, uint32_t descr_size)
+int sdp_media_descr(MediaDescrList m_descr_list, char *descr, size_t descr_size)
 {
     MediaDescr *m_descr = m_descr_list ? MEDIA_DESCR(m_descr_list) : NULL;
     MediaDescrList tmp_mdl;
     sdp_field_list sdp_private;
     gint64 size_left = descr_size;
     char *cursor = descr;
-    char encoded_descr_name[256];
     char encoded_media_name[256];
 
     if (!m_descr)
@@ -83,10 +84,9 @@ int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list,
     // b=*
     // k=*
     // a=*
-    Url_encode (encoded_descr_name, r_descr_name(r_descr), sizeof(encoded_descr_name));
     Url_encode (encoded_media_name, m_descr_name(m_descr), sizeof(encoded_media_name));
-    DESCRCAT(g_snprintf(cursor, size_left, "a=control:%s!%s"SDP2_EL,
-            encoded_descr_name, encoded_media_name))
+    DESCRCAT(g_snprintf(cursor, size_left, "a=control:"SDP2_TRACK_ID"=%s"SDP2_EL,
+             encoded_media_name))
 
     // other sdp private data
     for (tmp_mdl = list_first(m_descr_list); tmp_mdl;
@@ -130,7 +130,7 @@ int sdp_media_descr(ResourceDescr *r_descr, MediaDescrList m_descr_list,
     if (m_descr_author(m_descr))
         DESCRCAT(g_snprintf(cursor, size_left, "a=author:%s"SDP2_EL,
                  m_descr_author(m_descr)))
-        
+
     return ERR_NOERROR;
 }
 #undef DESCRCAT

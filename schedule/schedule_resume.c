@@ -31,26 +31,8 @@ extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 int schedule_resume(int id, play_args *args)
 {
-#if ENABLE_MEDIATHREAD
-    Track *tr = r_selected_track(sched[id].rtp_session->track_selector);
-    double mnow, pkt_len = tr->properties->frame_duration;
-
-    mnow = gettimeinseconds();
-/*
-    sched[id].rtp_session->current_media->mstart_offset 
-        += sched[id].rtp_session->current_media->mtime 
-         - sched[id].rtp_session->current_media->mstart 
-         + pkt_len;
-
-    if (args->start_time_valid)
-        sched[id].rtp_session->current_media->play_offset =
-            args->start_time*1000;
-    */
-
-    sched[id].rtp_session->start_time = mnow;
-//    sched[id].rtp_session->current_media->mtime =
-    sched[id].rtp_session->prev_tx_time = mnow - pkt_len;
-#endif
+    sched[id].rtp_session->start_time = args->start_time;
+    sched[id].rtp_session->timestamp = 0.0;
     sched[id].rtp_session->pause=0;
 
     return ERR_NOERROR;

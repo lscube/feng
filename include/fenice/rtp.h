@@ -62,7 +62,7 @@ typedef struct _RTCP_stats {
     unsigned long dest_SSRC;
     unsigned int pkt_count;
     unsigned int octet_count;
-    int pkt_lost;
+    unsigned int pkt_lost;
     unsigned char fract_lost;
     unsigned int highest_seq_no;
     unsigned int jitter;
@@ -81,7 +81,7 @@ typedef struct _RTP_session {
     double start_time;
     double seek_time;
 
-    double prev_tx_time;
+    double timestamp;
     unsigned int PreviousCount;
     short MinimumReached;
     short MaximumReached;

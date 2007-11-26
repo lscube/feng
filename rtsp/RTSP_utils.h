@@ -46,6 +46,7 @@
 
 #include <fenice/rtsp.h>
 #include <netembryo/rtsp_errors.h>
+#include <netembryo/url.h>
 
 /**
  * @addtogroup RTSP
@@ -77,7 +78,7 @@ RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer);
 RTSP_Error get_description_format(RTSP_buffer * rtsp, ConnectionInfo * cinfo);
 RTSP_Error get_cseq(RTSP_buffer * rtsp);
 RTSP_Error get_session_description(ConnectionInfo * cinfo);
-RTSP_Error get_session_id(RTSP_buffer * rtsp, long int * session_id);
+RTSP_Error get_session_id(RTSP_buffer * rtsp, unsigned long * session_id);
 int max_connection();
 /**
  * @}
