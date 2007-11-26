@@ -58,7 +58,7 @@ do {
                 mnow = gettimeinseconds(NULL);
                 if (mnow >= sched[i].rtp_session->start_time &&
                     mnow - sched[i].rtp_session->prev_tx_time >=
-                        tr->properties->duration)
+                        tr->properties->frame_duration)
                 {
 #if 1
 //TODO DSC will be implemented WAY later.
@@ -92,7 +92,7 @@ do {
                     RTCP_handler(sched[i].rtp_session);
                     /*if RTCP_handler return ERR_GENERIC what do i have to do?*/
                     sched[i].rtp_session->prev_tx_time +=
-                        tr->properties->duration;
+                        tr->properties->frame_duration;
                 }
             }
         }

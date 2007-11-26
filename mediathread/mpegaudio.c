@@ -337,7 +337,7 @@ static int mpa_get_frame2(uint8_t *dst, uint32_t dst_nbytes, double *timestamp, 
     
     // (*timestamp)+=mpa->pkt_len; /*it was negative at the beginning so it is zero at the first time*/
     *timestamp = mpa->time;
-    mpa->time += (properties->duration = (double)mpa->frame_size/(double)properties->sample_rate);
+    mpa->time += (properties->frame_duration = (double)mpa->frame_size/(double)properties->sample_rate);
     fnc_log(FNC_LOG_VERBOSE, "[MPA] time: %fs", mpa->time);
 
     return ret + sizeof(header);

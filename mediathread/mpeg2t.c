@@ -226,8 +226,8 @@ static int mp2t_get_frame2(uint8_t *dst, uint32_t dst_nbytes,
     }
 
     *timestamp = priv->timestamp;
-    properties->duration = ts_pkts_read * (priv->pkt_duration_estimate);
-    priv->timestamp += properties->duration;
+    properties->frame_duration = ts_pkts_read * (priv->pkt_duration_estimate);
+    priv->timestamp += properties->frame_duration;
 
     return bytes_read;
 }
