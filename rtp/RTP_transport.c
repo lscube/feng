@@ -137,7 +137,12 @@ int RTP_send_packet(RTP_session * session)
     case ERR_NOERROR:
         break;
     case ERR_EOF:
-        fnc_log(FNC_LOG_INFO, "[BYE] End of stream reached");
+        if (!slot) {
+            #warning Remove when new bufferpool is available
+            fnc_log(FNC_LOG_INFO, "[BYE] End of stream reached");
+        } else {
+            res = ERR_NOERROR;
+        }
         break;
     default:
         fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low");
