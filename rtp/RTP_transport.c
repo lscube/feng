@@ -64,7 +64,7 @@ int RTP_send_packet(RTP_session * session)
     unsigned char *packet = NULL;
     unsigned int hdr_size = 0;
     RTP_header r;        // 12 bytes
-    int res = ERR_GENERIC;
+    int res = ERR_NOERROR;
     BPSlot *slot = NULL;
     ssize_t psize_sent = 0;
     Track *t = r_selected_track(session->track_selector);
@@ -118,6 +118,7 @@ int RTP_send_packet(RTP_session * session)
                     dump_payload(packet + 12, psize_sent - 12,
                          fname);
 #endif
+                session->prev_timestamp = session->timestamp;
                 session->timestamp = slot->timestamp;
                 session->rtcp_stats[i_server].pkt_count += slot->seq_delta;
 #warning Replace with data count when new bufferpool is available
@@ -131,24 +132,24 @@ int RTP_send_packet(RTP_session * session)
         bp_gotreader(session->cons);
     }
 
-    res = event_buffer_low(session, t);
+    if (!slot || slot->timestamp != session->prev_timestamp)
+        res = event_buffer_low(session, t);
 
     switch (res) {
-    case ERR_NOERROR:
+        case ERR_NOERROR:
+            break;
+        case ERR_EOF:
+            if (!slot) {
+                #warning Remove when new bufferpool is available
+                fnc_log(FNC_LOG_INFO, "[BYE] End of stream reached");
+            } else {
+                res = ERR_NOERROR;
+            }
         break;
-    case ERR_EOF:
-        if (!slot) {
-            #warning Remove when new bufferpool is available
-            fnc_log(FNC_LOG_INFO, "[BYE] End of stream reached");
-        } else {
-            res = ERR_NOERROR;
-        }
-        break;
-    default:
-        fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low");
-        break;
+        default:
+            fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low");
+            break;
     }
-
     return res;
 }
 
