@@ -72,32 +72,32 @@ typedef struct _RTCP_stats {
 
 typedef struct _RTP_session {
     RTP_transport transport;
-    unsigned char rtcp_inbuffer[RTCP_BUFFERSIZE];
-    int rtcp_insize;
-    unsigned char rtcp_outbuffer[RTCP_BUFFERSIZE];
-    uint32_t rtcp_outsize;
+    uint8_t rtcp_inbuffer[RTCP_BUFFERSIZE];
+    size_t rtcp_insize;
+    uint8_t rtcp_outbuffer[RTCP_BUFFERSIZE];
+    size_t rtcp_outsize;
 
     //these time vars now are now back here
     double start_time;
     double seek_time;
-
     double timestamp;
     double prev_timestamp;
+
+    //Dynamic Stream Change
     unsigned int PreviousCount;
     short MinimumReached;
     short MaximumReached;
     // Back references
     int sched_id;
-    unsigned int start_seq;
-    unsigned int seq_no;
+    uint16_t start_seq;
+    uint16_t seq_no;
 
-    unsigned int start_rtptime;
+    uint32_t start_rtptime;
 
-    unsigned char pause;
-    unsigned char started;
+    uint8_t pause;
+    uint8_t started;
 
-    unsigned int seq;
-    unsigned int ssrc;
+    uint32_t ssrc;
 
     char sd_filename[255]; //!< resource name, including path from avroot
 
@@ -105,7 +105,7 @@ typedef struct _RTP_session {
     Selector *track_selector;
 
     //multicast management
-    int is_multicast; //!< 0, treat as usual, >0 do nothing
+    uint8_t is_multicast; //!< 0, treat as usual, >0 do nothing
 
     //Consumer has transferred itself here
     BPConsumer *cons;
@@ -116,32 +116,32 @@ typedef struct _RTP_session {
 typedef struct _RTP_header {
     /* byte 0 */
 #if (BYTE_ORDER == LITTLE_ENDIAN)
-    unsigned char csrc_len:4;   /* expect 0 */
-    unsigned char extension:1;  /* expect 1, see RTP_OP below */
-    unsigned char padding:1;    /* expect 0 */
-    unsigned char version:2;    /* expect 2 */
+    uint8_t csrc_len:4;   /* expect 0 */
+    uint8_t extension:1;  /* expect 1, see RTP_OP below */
+    uint8_t padding:1;    /* expect 0 */
+    uint8_t version:2;    /* expect 2 */
 #elif (BYTE_ORDER == BIG_ENDIAN)
-    unsigned char version:2;
-    unsigned char padding:1;
-    unsigned char extension:1;
-    unsigned char csrc_len:4;
+    uint8_t version:2;
+    uint8_t padding:1;
+    uint8_t extension:1;
+    uint8_t csrc_len:4;
 #else
 #error Neither big nor little
 #endif
     /* byte 1 */
 #if (BYTE_ORDER == LITTLE_ENDIAN)
-    unsigned char payload:7;    /* RTP_PAYLOAD_RTSP */
-    unsigned char marker:1;     /* expect 1 */
+    uint8_t payload:7;    /* RTP_PAYLOAD_RTSP */
+    uint8_t marker:1;     /* expect 1 */
 #elif (BYTE_ORDER == BIG_ENDIAN)
-    unsigned char marker:1;
-    unsigned char payload:7;
+    uint8_t marker:1;
+    uint8_t payload:7;
 #endif
     /* bytes 2, 3 */
-    unsigned short seq_no;
+    uint16_t seq_no;
     /* bytes 4-7 */
-    unsigned int timestamp;
+    uint32_t timestamp;
     /* bytes 8-11 */
-    unsigned int ssrc;    /* stream number is used here. */
+    uint32_t ssrc;    /* stream number is used here. */
 } RTP_header;
 
 typedef int (*RTP_play_action) (RTP_session * sess);

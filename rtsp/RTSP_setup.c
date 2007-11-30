@@ -458,7 +458,6 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
  */
 static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, Selector * track_sel)
 {
-    struct timespec now_tmp;
     RTP_session *rtp_s;
 
 // Setup the RTP session
@@ -478,11 +477,10 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     //XXX use strdup
     strncpy(rtp_s->sd_filename, cinfo->object, sizeof(rtp_s->sd_filename));
 
-    gettimeinseconds(&now_tmp);
-    srand(now_tmp.tv_sec | now_tmp.tv_nsec);
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
-    rtp_s->start_rtptime = 1 + ((unsigned int) rand() & (0xFFFFFFFF));
-    rtp_s->start_seq = 1 + ((unsigned int) rand() & (0xFFFF));
+    gcry_randomize(&rtp_s->start_rtptime, sizeof(rtp_s->start_rtptime), GCRY_STRONG_RANDOM);
+    rtp_s->start_rtptime &= 0x7FFFFFFF; //Workaround for signedness of live555
+    gcry_randomize(&rtp_s->start_seq, sizeof(rtp_s->start_seq), GCRY_STRONG_RANDOM);
     rtp_s->seq_no = rtp_s->start_seq - 1;
     rtp_s->track_selector = track_sel;
     rtp_s->sched_id = schedule_add(rtp_s);

@@ -30,7 +30,7 @@
 #include <fenice/fnc_log.h>
 #include <math.h>
 #include <netembryo/url.h>
-
+#include <gcrypt.h>
 #include <RTSP_utils.h>
 
 /**
@@ -175,7 +175,8 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
                 rtp_sess->pause = 1;
             }
             rtp_sess->start_seq = 1 + rtp_sess->seq_no;
-            rtp_sess->start_rtptime = 1 + ((unsigned int) rand() & (0xFFFFFFFF));
+            gcry_randomize(&rtp_sess->start_rtptime, sizeof(rtp_sess->start_rtptime), GCRY_STRONG_RANDOM);
+            rtp_sess->start_rtptime &= 0x7FFFFFFF; //Workaround for signedness of live555
             rtp_sess->seek_time = args->begin_time;
 
             if (rtp_sess->cons) {
