@@ -207,7 +207,7 @@ static int sd_init(Resource * r)
 
                 p += strlen(SD_TITLE);
 
-                while (p[i] != '\n') {
+                while (p[i] != '\n' && i < 256) {
                     trackinfo.title[i] = p[i];
                     i++;
                 }
@@ -219,7 +219,7 @@ static int sd_init(Resource * r)
                 while (toupper(*p++) != SD_CREATOR[0]);
                 p += strlen(SD_CREATOR);
 
-                while (p[i] != '\n') {
+                while (p[i] != '\n' && i < 256) {
                     trackinfo.author[i] = p[i];
                     i++;
                 }
