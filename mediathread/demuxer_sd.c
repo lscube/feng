@@ -19,7 +19,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
-#define _GNU_SOURCE
 #include <string.h>
 #include <stdio.h>
 
@@ -92,7 +91,7 @@ static int sd_init(Resource * r)
             sscanf(line, "%79s", keyword);
             /* validate twin */
             if (!strcasecmp(keyword, SD_TWIN)) {
-                sscanf(line, "%*s%s", r->info->twin);
+                sscanf(line, "%*s%255s", r->info->twin);
                 parse_url(r->info->twin, server, sizeof(server),
                           &port, object, sizeof (object));    //FIXME
             /* validate multicast */
@@ -111,7 +110,7 @@ static int sd_init(Resource * r)
         *keyword = '\0';
         while (strcasecmp(keyword, SD_STREAM_END) && !feof(fd)) {
             fgets(line, sizeof(line), fd);
-            sscanf(line, "%s", keyword);
+            sscanf(line, "%79s", keyword);
             if (!strcasecmp(keyword, SD_FILENAME)) {
                 // SD_FILENAME
                 sscanf(line, "%*s%255s", track_file);
@@ -185,7 +184,10 @@ static int sd_init(Resource * r)
                 if (strcasecmp(sparam, "VIDEO") == 0)
                     props_hints.media_type = MP_video;
             } else if (!strcasecmp(keyword, SD_FMTP)) {
-                sscanf(line, "%*s%255s", sparam);
+                char *p = line;
+                while (toupper(*p++) != SD_FMTP[0]);
+                p += strlen(SD_FMTP);
+
                 sdp_private = g_new(sdp_field, 1);
                 sdp_private->type = fmtp;
                 sdp_private->field = g_strdup(sparam);
@@ -193,14 +195,17 @@ static int sd_init(Resource * r)
 
                 /*******START CC********/
                 // SD_LICENSE
-                sscanf(line, "%*s%s", trackinfo.commons_deed);
+                sscanf(line, "%*s%255s", trackinfo.commons_deed);
             } else if (!strcasecmp(keyword, SD_RDF)) {
                 // SD_RDF
-                sscanf(line, "%*s%s", trackinfo.rdf_page);
+                sscanf(line, "%*s%255s", trackinfo.rdf_page);
             } else if (!strcasecmp(keyword, SD_TITLE)) {
                 // SD_TITLE
                 int i = 0;
-                char *p = strcasestr(line, SD_TITLE) + strlen(SD_TITLE);
+                char *p = line;
+                while (toupper(*p++) != SD_TITLE[0]);
+
+                p += strlen(SD_TITLE);
 
                 while (p[i] != '\n') {
                     trackinfo.title[i] = p[i];
@@ -210,7 +215,9 @@ static int sd_init(Resource * r)
             } else if (!strcasecmp(keyword, SD_CREATOR)) {
                 // SD_CREATOR
                 int i = 0;
-                char *p = strcasestr(line, SD_CREATOR) + strlen(SD_CREATOR);
+                char *p = line;
+                while (toupper(*p++) != SD_CREATOR[0]);
+                p += strlen(SD_CREATOR);
 
                 while (p[i] != '\n') {
                     trackinfo.author[i] = p[i];

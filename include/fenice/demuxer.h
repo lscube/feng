@@ -86,7 +86,7 @@ MObject_def(ResourceInfo_s)
     sdp_field_list sdp_private;
     double duration;
     MediaSource media_source;
-    char twin[255];
+    char twin[256];
     char multicast[16];
     int port;
     char ttl[4];
@@ -111,14 +111,14 @@ typedef struct Resource_s {
 
 MObject_def(Trackinfo_s)
     char *mrl;
-    char name[255];
+    char name[256];
     int id; // should it more generic?
     int rtp_port;
     //start CC
-    char commons_deed[255];
-    char rdf_page[255];
-    char title[80];
-    char author[80];
+    char commons_deed[256];
+    char rdf_page[256];
+    char title[256];
+    char author[256];
     //end CC
 } TrackInfo;
 
