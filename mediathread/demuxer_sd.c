@@ -190,7 +190,7 @@ static int sd_init(Resource * r)
 
                 sdp_private = g_new(sdp_field, 1);
                 sdp_private->type = fmtp;
-                sdp_private->field = g_strdup(sparam);
+                sdp_private->field = g_strdup(p);
             } else if (!strcasecmp(keyword, SD_LICENSE)) {
 
                 /*******START CC********/
@@ -207,7 +207,7 @@ static int sd_init(Resource * r)
 
                 p += strlen(SD_TITLE);
 
-                while (p[i] != '\n' && i < 256) {
+                while (p[i] != '\n' && i < 255) {
                     trackinfo.title[i] = p[i];
                     i++;
                 }
@@ -219,7 +219,7 @@ static int sd_init(Resource * r)
                 while (toupper(*p++) != SD_CREATOR[0]);
                 p += strlen(SD_CREATOR);
 
-                while (p[i] != '\n' && i < 256) {
+                while (p[i] != '\n' && i < 255) {
                     trackinfo.author[i] = p[i];
                     i++;
                 }
