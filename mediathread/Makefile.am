@@ -6,7 +6,6 @@ noinst_LTLIBRARIES = libmediath.la
 libmediath_la_SOURCES =	cache.c \
 			demuxer.c \
 			demuxer_sd.c \
-			descriptionAPI.c \
 			InputStream.c \
 			MediaParser.c \
 			mediathread.c \

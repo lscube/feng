@@ -1,23 +1,23 @@
-/* * 
+/* *
  *  This file is part of Feng
- * 
- * Copyright (C) 2007 by LScube team <team@streaming.polito.it> 
- * See AUTHORS for more details 
- *  
- * Feng is free software; you can redistribute it and/or 
+ *
+ * Copyright (C) 2007 by LScube team <team@streaming.polito.it>
+ * See AUTHORS for more details
+ *
+ * Feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * Feng is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
- * General Public License for more details. 
- * 
+ *
+ * Feng is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
  * You should have received a copy of the GNU General Public License
  * along with Feng; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *  
+ *
  * */
 
 #include <stdio.h>
@@ -26,6 +26,7 @@
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <fenice/sdp2.h>
+#include <fenice/description.h>
 #include <fenice/multicast.h>
 /*x-x*/
 //#include <fenice/socket.h>
@@ -43,6 +44,62 @@
         else \
             cursor = descr + descr_size - size_left; \
     } while(0);
+
+/**
+ * This function creates an array of MediaDescrList containing media
+ * descriptions.
+ * This array is returned to function caller.
+ * Each element of the array is a MediaDescrList that contain all the
+ * media of the same type with the same name.
+ * All the elements of each list can be included together in the sdp
+ * description in a single m= block.
+ * @param r_descr Resource description that contains all the media
+ * @param m_descrs this is a return parameter.
+ *  It will contain the MediaDescrList array
+ * @return the dimension of the array or an interger < 0 if an error occurred.
+ * */
+MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
+{
+    MediaDescrListArray new_m_descrs;
+    MediaDescrList m_descr_list, m_descr;
+    guint i;
+    gboolean found;
+
+    new_m_descrs = g_ptr_array_sized_new(
+                        g_list_position(r_descr->media,
+                                        g_list_last(r_descr->media))+1);
+
+    for (m_descr = g_list_first(r_descr->media);
+         m_descr;
+         m_descr = g_list_next(m_descr)) {
+        found = FALSE;
+        for (i = 0; i < new_m_descrs->len; ++i) {
+            m_descr_list = g_ptr_array_index(new_m_descrs, i);
+            if ( (m_descr_type(MEDIA_DESCR(m_descr)) ==
+                  m_descr_type(MEDIA_DESCR(m_descr_list))) &&
+                 !strcmp(m_descr_name(MEDIA_DESCR(m_descr)),
+                         m_descr_name(MEDIA_DESCR(m_descr_list))) ) {
+                found = TRUE;
+                break;
+            }
+        }
+        if (found) {
+            m_descr_list = g_ptr_array_index(new_m_descrs, i);
+            m_descr_list = g_list_prepend(m_descr_list, MEDIA_DESCR(m_descr));
+            new_m_descrs->pdata[i]=m_descr_list;
+        } else {
+            m_descr_list = g_list_prepend(NULL, MEDIA_DESCR(m_descr));
+            g_ptr_array_add(new_m_descrs, m_descr_list);
+        }
+    }
+
+    for (i = 0; i < new_m_descrs->len; ++i) {
+            m_descr_list = g_ptr_array_index(new_m_descrs, i);
+            m_descr_list = g_list_reverse(m_descr_list);
+    }
+
+    return new_m_descrs;
+}
 
 int sdp_session_descr(char *name, char *descr, size_t descr_size)
 {

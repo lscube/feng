@@ -21,6 +21,8 @@
  * */
 
 #include <fenice/sdp2.h>
+#include <fenice/fnc_log.h>
+#include <fenice/description.h>
 #include <fenice/utils.h>
 #include <netembryo/url.h>
 
