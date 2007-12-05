@@ -32,23 +32,13 @@
 #include <bufferpool/bufferpool.h>
 #include <fenice/sdp_grammar.h>
 
-/*
-* a resource_name can be a mkv, sd, program stream, avi, device ... 
-* syntax could be: 
-* 	udp://ip:port
-* 	file://path/filename
-* 	dev://device:driver
-*/
-
-#define msg_error int
-/*msg_error:*/
 #define	RESOURCE_OK 0 
 #define	RESOURCE_NOT_FOUND -1 
 #define	RESOURCE_DAMAGED -2
 #define	RESOURCE_NOT_SEEKABLE -3
 #define	RESOURCE_TRACK_NOT_FOUND -4
 #define RESOURCE_NOT_PARSEABLE -5
-/*...*/
+
 #define MAX_TRACKS 20	
 #define MAX_SEL_TRACKS 5
 
@@ -186,7 +176,7 @@ typedef struct {
 // Resources
 Resource *r_open(char *root, char *name);/*open the resource: mkv, sd ...*/
 void r_close(Resource *);
-//msg_error get_resource_info(resource_name, ResourceInfo *);
+
 Selector *r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
 inline int r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
@@ -203,36 +193,5 @@ void free_track(Track *, Resource *);
 
 // Resources and Media descriptions
 ResourceDescr *r_descr_get(char *root, char *name);
-// ResourceDescr *r_descr_new(Resource *);
-// void r_descr_free(ResourceDescr *);
-/* --- functions implemented in descriptionAPI.c --- */
-/*! the functions that return pointers do not allocate new memory, simply return
-* the pointer of the description resource. So, there is no need to free
-* anything.
-* The functions that return pointers return NULL if the value is not set.
-* */
-inline time_t r_descr_last_change(ResourceDescr *);
-inline char *r_descr_mrl(ResourceDescr *);
-inline char *r_descr_twin(ResourceDescr *);
-inline char *r_descr_multicast(ResourceDescr *);
-inline char *r_descr_ttl(ResourceDescr *);
-inline char *r_descr_name(ResourceDescr *);
-inline char *r_descr_description(ResourceDescr *);
-inline char *r_descr_descrURI(ResourceDescr *);
-inline char *r_descr_email(ResourceDescr *);
-inline char *r_descr_phone(ResourceDescr *);
-inline double r_descr_time(ResourceDescr *);
-inline sdp_field_list r_descr_sdp_private(ResourceDescr *);
-MediaDescrListArray r_descr_get_media(ResourceDescr *);
-inline char *m_descr_name(MediaDescr *);
-inline MediaType m_descr_type(MediaDescr *);
-inline sdp_field_list m_descr_sdp_private(MediaDescr *);
-inline int m_descr_rtp_port(MediaDescr *);
-inline int m_descr_rtp_pt(MediaDescr *);
-inline char *m_descr_commons_deed(MediaDescr *);
-inline char *m_descr_rdf_page(MediaDescr *);
-inline char *m_descr_title(MediaDescr *);
-inline char *m_descr_author(MediaDescr *);
-/*-------------------------------------------*/
 
 #endif // FN_DEMUXER_H
