@@ -1,23 +1,23 @@
-/* * 
+/* *
  *  This file is part of Feng
- * 
- * Copyright (C) 2007 by LScube team <team@streaming.polito.it> 
- * See AUTHORS for more details 
- *  
- * Feng is free software; you can redistribute it and/or 
+ *
+ * Copyright (C) 2007 by LScube team <team@streaming.polito.it>
+ * See AUTHORS for more details
+ *
+ * Feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * Feng is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
- * General Public License for more details. 
- * 
+ *
+ * Feng is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
  * You should have received a copy of the GNU General Public License
  * along with Feng; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *  
+ *
  * */
 
 #include <fenice/sdp2.h>
@@ -84,9 +84,12 @@ int sdp_media_descr(MediaDescrList m_descr_list, char *descr, size_t descr_size)
     // b=*
     // k=*
     // a=*
-    Url_encode (encoded_media_name, m_descr_name(m_descr), sizeof(encoded_media_name));
-    DESCRCAT(g_snprintf(cursor, size_left, "a=control:"SDP2_TRACK_ID"=%s"SDP2_EL,
-             encoded_media_name))
+    Url_encode (encoded_media_name, m_descr_name(m_descr),
+                sizeof(encoded_media_name));
+
+    DESCRCAT(g_snprintf(cursor, size_left,
+                        "a=control:"SDP2_TRACK_ID"=%s"SDP2_EL,
+                        encoded_media_name))
 
     // other sdp private data
     for (tmp_mdl = list_first(m_descr_list); tmp_mdl;
@@ -97,7 +100,7 @@ int sdp_media_descr(MediaDescrList m_descr_list, char *descr, size_t descr_size)
                 switch (SDP_FIELD(sdp_private)->type) {
                     case empty_field:
                         DESCRCAT(
-                            g_snprintf(cursor, size_left,"%s"SDP2_EL,
+                            g_snprintf(cursor, size_left, "%s"SDP2_EL,
                                         SDP_FIELD(sdp_private)->field))
                     break;
                     case fmtp:
