@@ -54,10 +54,9 @@ static inline int RTP_calc_rtptime(RTP_session *session, int clock_rate, BPSlot 
 static inline double adjust_send_time(double send_time, double fixed_timestamp, double frame_duration) {
     double correction = 0.0;
 
-    if (abs(send_time - fixed_timestamp) > frame_duration * 2) {
+    if (fabs(send_time - fixed_timestamp) > frame_duration * 2) {
         correction = (send_time - fixed_timestamp > 0) ?
-            (-frame_duration) :
-            (frame_duration);
+            (-frame_duration) : (frame_duration);
     }
     return send_time + correction;
 }
