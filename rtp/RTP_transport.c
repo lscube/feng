@@ -46,9 +46,20 @@
  * @param slot Slot of which calculate timestamp
  * @return RTP Timestamp (in local endianess)
  */
-inline int RTP_calc_rtptime(RTP_session *session, int clock_rate, BPSlot *slot) {
+static inline int RTP_calc_rtptime(RTP_session *session, int clock_rate, BPSlot *slot) {
     return (session->start_rtptime + ((slot->rtp_time) ? (slot->rtp_time) :
             (slot->timestamp - session->seek_time) * clock_rate));
+}
+
+static inline double adjust_send_time(double send_time, double fixed_timestamp, double frame_duration) {
+    double correction = 0.0;
+
+    if (abs(send_time - fixed_timestamp) > frame_duration * 2) {
+        correction = (send_time - fixed_timestamp > 0) ?
+            (-frame_duration) :
+            (frame_duration);
+    }
+    return send_time + correction;
 }
 
 /**
@@ -64,7 +75,7 @@ int RTP_send_packet(RTP_session * session)
     unsigned char *packet = NULL;
     unsigned int hdr_size = 0;
     RTP_header r;        // 12 bytes
-    int res = ERR_NOERROR;
+    int res = ERR_NOERROR, new_frame = 0;
     BPSlot *slot = NULL;
     ssize_t psize_sent = 0;
     Track *t = r_selected_track(session->track_selector);
@@ -118,10 +129,15 @@ int RTP_send_packet(RTP_session * session)
                     dump_payload(packet + 12, psize_sent - 12,
                          fname);
 #endif
-                session->prev_timestamp = session->timestamp;
-                session->timestamp = slot->timestamp;
+
+                if (session->timestamp != slot->timestamp) {
+                    session->timestamp = slot->timestamp;
+                    new_frame = 1;
+                }
+                session->send_time += slot->timewait;
+                session->send_time = adjust_send_time(session->send_time, (session->timestamp -
+                    session->seek_time), t->properties->frame_duration);
                 session->rtcp_stats[i_server].pkt_count += slot->seq_delta;
-#warning Replace with data count when new bufferpool is available
                 session->rtcp_stats[i_server].octet_count += slot->data_size;
             }
             free(packet);
@@ -132,9 +148,9 @@ int RTP_send_packet(RTP_session * session)
         bp_gotreader(session->cons);
     }
 
-    if (!slot || slot->timestamp != session->prev_timestamp)
+    if (!slot || new_frame) {
         res = event_buffer_low(session, t);
-
+    }
     switch (res) {
         case ERR_NOERROR:
             break;

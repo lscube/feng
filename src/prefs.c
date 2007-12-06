@@ -153,6 +153,9 @@ void prefs_use_default(pref_id index)
     case PREFS_SCTP_PORT:
         SET_INTEGER_DATA(PREFS_SCTP_PORT, -1);
         break;
+    case PREFS_SSL_PORT:
+        SET_INTEGER_DATA(PREFS_SSL_PORT, -1);
+        break;
     case PREFS_FIRST_UDP_PORT:
         SET_INTEGER_DATA(PREFS_FIRST_UDP_PORT, RTP_DEFAULT_PORT);
         break;
