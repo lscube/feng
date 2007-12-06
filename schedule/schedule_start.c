@@ -31,6 +31,7 @@ int schedule_start(int id, play_args *args)
     //double mnow = gettimeinseconds(NULL);
     RTP_session *session = sched[id].rtp_session;
     Track *tr = r_selected_track(session->track_selector);
+    int i;
 
     session->cons = bp_ref(tr->buffer);
     if (session->cons == NULL)
@@ -49,6 +50,7 @@ int schedule_start(int id, play_args *args)
 #endif
     session->start_time = args->start_time;
     session->timestamp = 0.0;
+    session->send_time = 0.0;
     session->pause = 0;
     session->started = 1;
     session->MinimumReached = 0;
@@ -56,5 +58,11 @@ int schedule_start(int id, play_args *args)
     session->PreviousCount = 0;
     session->rtcp_stats[i_client].RR_received = 0;
     session->rtcp_stats[i_client].SR_received = 0;
+
+    //Preload some frames in bufferpool
+    for (i=0; i < PRELOADED_FRAMES; i++) {
+        event_buffer_low(session, r_selected_track(session->track_selector));
+    }
+
     return ERR_NOERROR;
 }

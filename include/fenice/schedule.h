@@ -31,6 +31,7 @@
 #include <fenice/prefs.h>
 #include <fenice/debug.h>
 
+#define PRELOADED_FRAMES 4
 
 typedef struct _play_args {
     struct tm playback_time;

@@ -58,8 +58,10 @@ do {
             if (!session->pause || tr->properties->media_source == MS_live) {
                 mnow = gettimeinseconds(NULL);
                 if (mnow >= session->start_time &&
-                    mnow - session->start_time >= session->timestamp - session->seek_time)
-                {
+                    mnow >= session->start_time + session->send_time) {
+                        /*fprintf(stderr, "[SCH] PT: %d Sendtime: %f Delta:%-f\n",
+                                tr->properties->payload_type, session->send_time,
+                                session->send_time - (session->timestamp - session->seek_time));*/
 #if 1
 //TODO DSC will be implemented WAY later.
 #else
@@ -73,20 +75,20 @@ do {
                             break;
                         case ERR_EOF:
                             if(tr->properties->media_source == MS_live) {
-                                fnc_log(FNC_LOG_WARN,"Pipe empty!\n");
+                                fnc_log(FNC_LOG_WARN,"[SCH] Pipe empty!");
                             } else {
-                                fnc_log(FNC_LOG_INFO,"[BYE] Stream Finished");
+                                fnc_log(FNC_LOG_INFO,"[SCH] Stream Finished");
                                 RTCP_send_packet(session, SR);
                                 RTCP_send_packet(session, BYE);
                                 RTCP_flush(session);
                             }
                             break;
                         case ERR_ALLOC:
-                            fnc_log(FNC_LOG_WARN,"Cannot allocate memory!!\n");
+                            fnc_log(FNC_LOG_WARN,"[SCH] Cannot allocate memory");
                             schedule_stop(i);
                             break;
                         default:
-                            fnc_log(FNC_LOG_WARN,"Packet Lost\n");
+                            fnc_log(FNC_LOG_WARN,"[SCH] Packet Lost");
                             break;
                     }
                     RTCP_handler(session);
