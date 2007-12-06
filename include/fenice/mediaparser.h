@@ -55,7 +55,7 @@ MObject_def(MediaProperties_s)
     float OutputSamplingFrequency;
     int audio_channels;
     int bit_per_sample;/*!< BitDepth*/
-    int frame_rate;
+    float frame_rate;
     int FlagInterlaced;
     unsigned int PixelWidth;
     unsigned int PixelHeight;

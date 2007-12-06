@@ -168,7 +168,7 @@ static int sd_init(Resource * r)
                     props_hints.coding_type = mc_sample;
             } else if (!strcasecmp(keyword, SD_FRAME_RATE)) {
                 // SD_FRAME_RATE
-                sscanf(line, "%*s%u", &props_hints.frame_rate);
+                sscanf(line, "%*s%f", &props_hints.frame_rate);
             } else if (!strcasecmp(keyword, SD_MEDIA_SOURCE)) {
                 // SD_MEDIA_SOURCE
                 sscanf(line, "%*s%10s", sparam);

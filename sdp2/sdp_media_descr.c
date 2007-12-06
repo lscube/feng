@@ -94,7 +94,7 @@ int sdp_media_descr(MediaDescrList m_descr_list, char *descr, size_t descr_size)
                         encoded_media_name))
     if (m_descr_frame_rate(m_descr) && m_descr_type(m_descr) == MP_video)
         DESCRCAT(g_snprintf(cursor, size_left,
-                            "a=framerate:%u"SDP2_EL,
+                            "a=framerate:%f"SDP2_EL,
                             m_descr_frame_rate(m_descr)))
 
     // other sdp private data

@@ -98,7 +98,7 @@ static inline char *m_descr_name(MediaDescr *m_descr)
     return (m_descr && m_descr->info) ? m_descr->info->name : NULL;
 }
 
-static inline unsigned m_descr_frame_rate(MediaDescr *m_descr)
+static inline float m_descr_frame_rate(MediaDescr *m_descr)
 {
     return (m_descr && m_descr->properties) ?
             m_descr->properties->frame_rate : 0;
