@@ -31,8 +31,10 @@
 #include <fenice/mediathread.h>
 #include <bufferpool/bufferpool.h>
 #include <fenice/prefs.h>
+
 #define RTP_DEFAULT_PORT 5004
 #define RTCP_BUFFERSIZE    1024
+#define PRELOADED_FRAMES 4
 
 typedef enum {
     i_server = 0,
@@ -80,7 +82,6 @@ typedef struct _RTP_session {
     //these time vars now are now back here
     double start_time;
     double seek_time;
-    double timestamp;
     double send_time;
     //Dynamic Stream Change
     unsigned int PreviousCount;

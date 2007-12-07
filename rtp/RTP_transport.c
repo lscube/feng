@@ -46,19 +46,14 @@
  * @param slot Slot of which calculate timestamp
  * @return RTP Timestamp (in local endianess)
  */
-static inline int RTP_calc_rtptime(RTP_session *session, int clock_rate, BPSlot *slot) {
-    return (session->start_rtptime + ((slot->rtp_time) ? (slot->rtp_time) :
-            (slot->timestamp - session->seek_time) * clock_rate));
+static inline uint32_t RTP_calc_rtptime(RTP_session *session, int clock_rate, BPSlot *slot) {
+    uint32_t calc_rtptime = (slot->timestamp - session->seek_time) * clock_rate;
+    return (session->start_rtptime + (slot->rtp_time ? slot->rtp_time : calc_rtptime));
 }
 
-static inline double adjust_send_time(double send_time, double fixed_timestamp, double frame_duration) {
-    double correction = 0.0;
-
-    if (fabs(send_time - fixed_timestamp) > frame_duration * 2) {
-        correction = (send_time - fixed_timestamp > 0) ?
-            (-frame_duration) : (frame_duration);
-    }
-    return send_time + correction;
+static inline double calc_send_time(RTP_session *session, BPSlot *slot) {
+    double last_timestamp = (slot->last_timestamp - session->seek_time);
+    return (last_timestamp - session->send_time)/slot->pkt_num;
 }
 
 /**
@@ -74,7 +69,7 @@ int RTP_send_packet(RTP_session * session)
     unsigned char *packet = NULL;
     unsigned int hdr_size = 0;
     RTP_header r;        // 12 bytes
-    int res = ERR_NOERROR, new_frame = 0;
+    int res = ERR_NOERROR, bp_frames = 0;
     BPSlot *slot = NULL;
     ssize_t psize_sent = 0;
     Track *t = r_selected_track(session->track_selector);
@@ -128,14 +123,12 @@ int RTP_send_packet(RTP_session * session)
                     dump_payload(packet + 12, psize_sent - 12,
                          fname);
 #endif
-
-                if (session->timestamp != slot->timestamp) {
-                    session->timestamp = slot->timestamp;
-                    new_frame = 1;
+                if (!session->send_time) {
+                    session->send_time = slot->timestamp - session->seek_time;
                 }
-                session->send_time += slot->timewait;
-                session->send_time = adjust_send_time(session->send_time, (session->timestamp -
-                    session->seek_time), t->properties->frame_duration);
+                bp_frames = fabs(slot->last_timestamp - slot->timestamp) /
+                    t->properties->frame_duration;
+                session->send_time += calc_send_time(session, slot);
                 session->rtcp_stats[i_server].pkt_count += slot->seq_delta;
                 session->rtcp_stats[i_server].octet_count += slot->data_size;
             }
@@ -146,16 +139,14 @@ int RTP_send_packet(RTP_session * session)
         }
         bp_gotreader(session->cons);
     }
-
-    if (!slot || new_frame) {
+    if (!slot || bp_frames <= PRELOADED_FRAMES) {
         res = event_buffer_low(session, t);
     }
     switch (res) {
         case ERR_NOERROR:
             break;
         case ERR_EOF:
-            if (!slot) {
-                #warning Remove when new bufferpool is available
+            if (!bp_frames) {
                 fnc_log(FNC_LOG_INFO, "[BYE] End of stream reached");
             } else {
                 res = ERR_NOERROR;

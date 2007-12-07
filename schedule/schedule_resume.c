@@ -35,7 +35,6 @@ int schedule_resume(int id, play_args *args)
     int i;
 
     session->start_time = args->start_time;
-    session->timestamp = 0.0;
     session->send_time = 0.0;
     session->pause=0;
 
