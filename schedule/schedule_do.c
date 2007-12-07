@@ -30,35 +30,28 @@
 #include <fenice/debug.h>
 #include <fenice/fnc_log.h>
 
-#define SCHEDULER_TIMING_NS 1000000
+#define SCHEDULER_TIMING 16000 //16ms. Sleep time suggested by Intel
 
 extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 extern int stop_schedule;
 
 void *schedule_do(void *nothing)
 {
-    int i = 0, j = 1, res = ERR_GENERIC;
-    double mnow;
-    // Fake timespec for fake nanosleep. See below.
-	struct timespec ts;
+    int i = 0, utime = SCHEDULER_TIMING, res = ERR_GENERIC;
+    double now;
 do {
     // Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
-    if (!j)
-        j = 1; //Avoid division by 0
-    ts.tv_sec = 0;
-    ts.tv_nsec = SCHEDULER_TIMING_NS / j;
-    nanosleep(&ts, NULL);
-    j = 0;
+    usleep(utime);
+    utime = SCHEDULER_TIMING;
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
         pthread_mutex_lock(&sched[i].mux);
         if (sched[i].valid && sched[i].rtp_session->started) {
             RTP_session * session = sched[i].rtp_session;
             Track *tr = r_selected_track(session->track_selector);
-            j++;
             if (!session->pause || tr->properties->media_source == MS_live) {
-                mnow = gettimeinseconds(NULL);
-                if (mnow >= session->start_time &&
-                    mnow >= session->start_time + session->send_time) {
+                now = gettimeinseconds(NULL);
+                while (now >= session->start_time &&
+                    now >= session->start_time + session->send_time) {
 #if 0
                         fprintf(stderr, "[SCH] PT: %d Sendtime: %f Timestamp: %f Delta: %f\n",
                                 tr->properties->payload_type, session->send_time, session->timestamp - session->seek_time,
@@ -95,7 +88,11 @@ do {
                     }
                     RTCP_handler(session);
                     /*if RTCP_handler return ERR_GENERIC what do i have to do?*/
+                    if (res != ERR_NOERROR)
+                        break;
                 }
+                utime = min(utime, ((session->start_time + session->send_time) -
+                                    now)*1000000);
             }
         }
         pthread_mutex_unlock(&sched[i].mux);
