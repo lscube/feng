@@ -91,7 +91,7 @@ do {
                     if (res != ERR_NOERROR)
                         break;
                 }
-                utime = min(utime, ((session->start_time + session->send_time) -
+                utime = min(utime, fabs((session->start_time + session->send_time) -
                                     now)*1000000);
             }
         }
