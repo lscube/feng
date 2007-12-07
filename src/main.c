@@ -123,7 +123,7 @@ int main(int argc, char **argv)
     /*
      * Drop privs to a specified user
      * */
-    id = get_pref(PREFS_GROUP);
+    id = get_pref_str(PREFS_GROUP);
     if (id) {
         struct group *gr = getgrnam(id);
         if (gr) {
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
         }
     }
 
-    id = get_pref(PREFS_USER);
+    id = get_pref_str(PREFS_USER);
     if (id) {
         struct passwd *pw = getpwnam(id);
         if (pw) {
@@ -165,7 +165,7 @@ int main(int argc, char **argv)
     /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
      * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
 
-    RTP_port_pool_init(*((int *) get_pref(PREFS_FIRST_UDP_PORT)));
+    RTP_port_pool_init(get_pref_int(PREFS_FIRST_UDP_PORT));
 
     while (running) {
 

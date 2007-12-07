@@ -42,16 +42,17 @@ typedef enum _pref_id {
     PREFS_SSL_PORT,
     PREFS_FIRST_UDP_PORT,
     PREFS_MAX_SESSION,
+    PREFS_BUFFERED_FRAMES,
     PREFS_LOG,
-    PREFS_HOSTNAME, 
+    PREFS_HOSTNAME,
     PREFS_USER,
     PREFS_GROUP,
-    PREFS_LAST, /// Insert other preferences before this one
     PREFS_ALL  /// For prefs_use_default()
 } pref_id;
 
-    // Sync with the first preference in enum _pref_id
+// Sync with the first preference in enum _pref_id
 #define PREFS_FIRST PREFS_ROOT
+#define PREFS_LAST PREFS_ALL
 
 typedef enum _pref_type {
     INTEGER,
@@ -75,6 +76,7 @@ typedef struct _pref_record {
         { PREFS_SSL_PORT, INTEGER, "ssl_port", NULL }, \
         { PREFS_FIRST_UDP_PORT, INTEGER, "first_udp_port", NULL }, \
         { PREFS_MAX_SESSION, INTEGER, "max_session", NULL }, \
+        { PREFS_BUFFERED_FRAMES, INTEGER, "buffered_frames", NULL }, \
         { PREFS_LOG, STRING, "log_file", NULL }, \
         { PREFS_HOSTNAME, STRING, "###", NULL }, \
         { PREFS_USER, STRING, "user", NULL }, \
@@ -100,6 +102,8 @@ void prefs_init(char *fileconf);
 /** returns a pointer to the pref data, NULL if non existent.
  */
 void *get_pref(pref_id id);
+#define get_pref_int(X) (*((int *) get_pref(X)))
+#define get_pref_str(X) ((char *) get_pref(X))
 /** initializes the default prefs for the specific id
  */
 void prefs_use_default(pref_id id);

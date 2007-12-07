@@ -139,7 +139,7 @@ int RTP_send_packet(RTP_session * session)
         }
         bp_gotreader(session->cons);
     }
-    if (!slot || bp_frames <= PRELOADED_FRAMES) {
+    if (!slot || bp_frames <= get_pref_int(PREFS_BUFFERED_FRAMES)) {
         res = event_buffer_low(session, t);
     }
     switch (res) {

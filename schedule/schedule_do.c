@@ -60,7 +60,7 @@ do {
                 if (mnow >= session->start_time &&
                     mnow >= session->start_time + session->send_time) {
 #if 0
-                        fprintf(stderr, "[SCH] PT: %d Sendtime: %f Timestamp: %f Delta:%-f\n",
+                        fprintf(stderr, "[SCH] PT: %d Sendtime: %f Timestamp: %f Delta: %f\n",
                                 tr->properties->payload_type, session->send_time, session->timestamp - session->seek_time,
                                 session->send_time - (session->timestamp - session->seek_time));
 #endif

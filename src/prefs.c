@@ -126,7 +126,7 @@ void prefs_init(char *fileconf)
     printf("\thostname is: %s\n", prefs_get_hostname());
     printf("\trtsp listening port for TCP is: %d\n", prefs_get_port());
     printf("\trunning as: %s:%s\n",
-           (char*)get_pref(PREFS_USER), (char*)get_pref(PREFS_GROUP));
+           get_pref_str(PREFS_USER), get_pref_str(PREFS_GROUP));
 #ifdef HAVE_LIBSCTP
     if (prefs_get_sctp_port() > 0)
         printf("\trtsp listening port for SCTP is: %d\n",
@@ -158,6 +158,9 @@ void prefs_use_default(pref_id index)
         break;
     case PREFS_FIRST_UDP_PORT:
         SET_INTEGER_DATA(PREFS_FIRST_UDP_PORT, RTP_DEFAULT_PORT);
+        break;
+    case PREFS_BUFFERED_FRAMES:
+        SET_INTEGER_DATA(PREFS_MAX_SESSION, BUFFERED_FRAMES_DEFAULT);
         break;
     case PREFS_MAX_SESSION:
         SET_INTEGER_DATA(PREFS_MAX_SESSION, FENICE_MAX_SESSION_DEFAULT);

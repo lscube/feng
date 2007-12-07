@@ -59,7 +59,7 @@ int schedule_start(int id, play_args *args)
     session->rtcp_stats[i_client].SR_received = 0;
 
     //Preload some frames in bufferpool
-    for (i=0; i < PRELOADED_FRAMES; i++) {
+    for (i=0; i < get_pref_int(PREFS_BUFFERED_FRAMES); i++) {
         event_buffer_low(session, r_selected_track(session->track_selector));
     }
 
