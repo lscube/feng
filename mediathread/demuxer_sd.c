@@ -280,7 +280,7 @@ static int sd_read_packet(Resource * r)
         case MS_stored:
             return RESOURCE_NOT_PARSEABLE;
         case MS_live:
-            return RESOURCE_OK;
+            return ERR_EOF;
         default:
             return RESOURCE_DAMAGED;
     }

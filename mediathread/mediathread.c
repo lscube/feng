@@ -109,11 +109,14 @@ inline int mt_process_event(mt_event_item *ev) {
                         fnc_log(FNC_LOG_VERBOSE, "[MT] Timestamp: %f!",
                                                          t->properties->mtime);
                         t->parser->parse(t, buffer, n, NULL, 0);
-                                                }
+                    } else {
+                        // Signal the end of stream
+                        r->eos = 1;
+                    }
                     fnc_log(FNC_LOG_VERBOSE, "[MT] Done legacy!");
                 }
                 break;
-            case EOF:
+            case ERR_EOF:
                 // Signal the end of stream
                 r->eos = 1;
                 break;

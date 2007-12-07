@@ -69,9 +69,7 @@ do {
                         case ERR_NOERROR: // All fine
                             break;
                         case ERR_EOF:
-                            if(tr->properties->media_source == MS_live) {
-                                fnc_log(FNC_LOG_WARN,"[SCH] Pipe empty!");
-                            } else {
+                            if(tr->properties->media_source != MS_live) {
                                 fnc_log(FNC_LOG_INFO,"[SCH] Stream Finished");
                                 RTCP_send_packet(session, SR);
                                 RTCP_send_packet(session, BYE);
@@ -91,8 +89,11 @@ do {
                     if (res != ERR_NOERROR)
                         break;
                 }
-                utime = min(utime, fabs((session->start_time + session->send_time) -
-                                    now)*1000000);
+                if (res == ERR_NOERROR) {
+                    int next_send_time = fabs((session->start_time +
+                                        session->send_time) - now) * 1000000;
+                    utime = min(utime, next_send_time);
+                }
             }
         }
         pthread_mutex_unlock(&sched[i].mux);

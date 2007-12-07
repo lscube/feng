@@ -352,7 +352,7 @@ static int avf_read_packet(Resource * r)
 
 // get a packet
     if(av_read_frame(priv->avfc, &pkt) < 0)
-        return EOF; //FIXME
+        return ERR_EOF; //FIXME
     for (tr = g_list_first(r->tracks);
          tr !=NULL;
          tr = g_list_next(tr)) {
