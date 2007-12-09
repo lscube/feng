@@ -126,8 +126,8 @@ int RTP_send_packet(RTP_session * session)
                 if (!session->send_time) {
                     session->send_time = slot->timestamp - session->seek_time;
                 }
-                bp_frames = fabs(slot->last_timestamp - slot->timestamp) /
-                    t->properties->frame_duration;
+                bp_frames = (fabs(slot->last_timestamp - slot->timestamp) /
+                    t->properties->frame_duration) + 1;
                 session->send_time += calc_send_time(session, slot);
                 session->rtcp_stats[i_server].pkt_count += slot->seq_delta;
                 session->rtcp_stats[i_server].octet_count += slot->data_size;
