@@ -37,7 +37,7 @@ extern int stop_schedule;
 
 void *schedule_do(void *nothing)
 {
-    int i = 0, utime = SCHEDULER_TIMING, res = ERR_GENERIC;
+    int i = 0, utime = SCHEDULER_TIMING, res;
     double now;
 do {
     // Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
@@ -50,7 +50,8 @@ do {
             Track *tr = r_selected_track(session->track_selector);
             if (!session->pause || tr->properties->media_source == MS_live) {
                 now = gettimeinseconds(NULL);
-                while (now >= session->start_time &&
+		res = ERR_NOERROR;
+                while (res == ERR_NOERROR && now >= session->start_time &&
                     now >= session->start_time + session->send_time) {
 #if 0
                         fprintf(stderr, "[SCH] PT: %d Sendtime: %f Timestamp: %f Delta: %f\n",
@@ -86,8 +87,6 @@ do {
                     }
                     RTCP_handler(session);
                     /*if RTCP_handler return ERR_GENERIC what do i have to do?*/
-                    if (res != ERR_NOERROR)
-                        break;
                 }
                 if (res == ERR_NOERROR) {
                     int next_send_time = fabs((session->start_time +
