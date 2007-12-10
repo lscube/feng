@@ -37,7 +37,8 @@ extern int stop_schedule;
 
 void *schedule_do(void *nothing)
 {
-    int i = 0, utime = SCHEDULER_TIMING, res;
+    int i = 0, res;
+    unsigned utime = SCHEDULER_TIMING;
     double now;
 do {
     // Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
