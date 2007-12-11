@@ -116,12 +116,12 @@ inline int mt_process_event(mt_event_item *ev) {
                     fnc_log(FNC_LOG_VERBOSE, "[MT] Done legacy!");
                 }
                 break;
-            case ERR_EOF:
+            case RESOURCE_EOF:
                 // Signal the end of stream
                 r->eos = 1;
                 break;
             default:
-                fnc_log(FNC_LOG_VERBOSE,
+                fnc_log(FNC_LOG_FATAL,
                         "[MT] read_packet() error.");
                 break;
             }

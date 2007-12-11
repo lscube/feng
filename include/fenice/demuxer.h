@@ -32,12 +32,13 @@
 #include <bufferpool/bufferpool.h>
 #include <fenice/sdp_grammar.h>
 
-#define	RESOURCE_OK 0 
-#define	RESOURCE_NOT_FOUND -1 
-#define	RESOURCE_DAMAGED -2
-#define	RESOURCE_NOT_SEEKABLE -3
-#define	RESOURCE_TRACK_NOT_FOUND -4
+#define RESOURCE_OK 0
+#define RESOURCE_NOT_FOUND -1
+#define RESOURCE_DAMAGED -2
+#define RESOURCE_NOT_SEEKABLE -3
+#define RESOURCE_TRACK_NOT_FOUND -4
 #define RESOURCE_NOT_PARSEABLE -5
+#define RESOURCE_EOF -6
 
 #define MAX_TRACKS 20	
 #define MAX_SEL_TRACKS 5

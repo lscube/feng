@@ -234,14 +234,14 @@ static int ds_read_packet(Resource * r)
         fnc_log(FNC_LOG_DEBUG, "[ds] EDL active track: %d", data->active);
     }
     if (!(item = edl_active_res (data))) {
-        return ERR_EOF;
+        return RESOURCE_EOF;
     }
-    while ((res = item->r->demuxer->read_packet(item->r)) == ERR_EOF) {
+    while ((res = item->r->demuxer->read_packet(item->r)) == RESOURCE_EOF) {
         data->active +=1;
         edl_buffer_switcher(data);
         fnc_log(FNC_LOG_DEBUG, "[ds] EDL active track: %d", data->active);
         if (!(item = edl_active_res (data))) {
-            return ERR_EOF;
+            return RESOURCE_EOF;
         }
     }
     return res;

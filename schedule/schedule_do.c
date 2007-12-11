@@ -51,7 +51,7 @@ do {
             Track *tr = r_selected_track(session->track_selector);
             if (!session->pause || tr->properties->media_source == MS_live) {
                 now = gettimeinseconds(NULL);
-		res = ERR_NOERROR;
+                res = ERR_NOERROR;
                 while (res == ERR_NOERROR && now >= session->start_time &&
                     now >= session->start_time + session->send_time) {
 #if 0
