@@ -176,7 +176,6 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
             }
             rtp_sess->start_seq = 1 + rtp_sess->seq_no;
             gcry_randomize(&rtp_sess->start_rtptime, sizeof(rtp_sess->start_rtptime), GCRY_STRONG_RANDOM);
-            rtp_sess->start_rtptime &= 0x7FFFFFFF; //Workaround for signedness of live555
             rtp_sess->seek_time = args->begin_time;
 
             if (rtp_sess->cons) {
