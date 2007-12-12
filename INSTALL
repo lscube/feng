@@ -9,7 +9,7 @@ In order to build feng you need:
 - glib-2 >= 2.10 [2]
 - ffmpeg svn HEAD or any recent snapshot [3].
 - netembryo >= 0.0.3 [4]
-- bufferpool >= 0.0.1 [4]
+- bufferpool >= 0.0.2 [4]
 - libgcrypt >= 1.2.0 [5]
 
 
