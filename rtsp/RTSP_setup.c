@@ -479,7 +479,6 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
 
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
     gcry_randomize(&rtp_s->start_rtptime, sizeof(rtp_s->start_rtptime), GCRY_STRONG_RANDOM);
-    rtp_s->start_rtptime &= 0x7FFFFFFF; //Workaround for signedness of live555
     gcry_randomize(&rtp_s->start_seq, sizeof(rtp_s->start_seq), GCRY_STRONG_RANDOM);
     rtp_s->seq_no = rtp_s->start_seq - 1;
     rtp_s->track_selector = track_sel;

@@ -146,9 +146,8 @@ int RTP_send_packet(RTP_session * session)
         case ERR_NOERROR:
             break;
         case ERR_EOF:
-            if (!bp_frames) {
-                fnc_log(FNC_LOG_INFO, "[BYE] End of stream reached");
-            } else {
+            if (slot) {
+                //Wait to empty bufferpool before sending BYE packets.
                 res = ERR_NOERROR;
             }
         break;
