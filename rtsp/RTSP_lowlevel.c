@@ -55,7 +55,7 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
     }
 
     if ( (n = Sock_write(rtsp->sock, rtsp->out_buffer, rtsp->out_size,
-          NULL, MSG_DONTWAIT | MSG_NOSIGNAL)) < 0) {
+          NULL, MSG_DONTWAIT)) < 0) {
         switch (errno) {
             case EACCES:
                 fnc_log(FNC_LOG_ERR, "EACCES error\n");
