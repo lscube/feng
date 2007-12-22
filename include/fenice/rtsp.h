@@ -32,8 +32,8 @@
 #include <fenice/sdp2.h>
 #include <fenice/schedule.h>
 
-#define RTSP_BUFFERSIZE 65536
 #define RTSP_RESERVED 4096
+#define RTSP_BUFFERSIZE (65536 + RTSP_RESERVED)
 
     /* FIXME move rtsp states to an enum? */
 #define INIT_STATE      0

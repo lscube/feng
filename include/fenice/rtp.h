@@ -34,7 +34,7 @@
 
 #define RTP_DEFAULT_PORT 5004
 #define RTCP_BUFFERSIZE    1024
-#define BUFFERED_FRAMES_DEFAULT 4
+#define BUFFERED_FRAMES_DEFAULT 16
 
 typedef enum {
     i_server = 0,
