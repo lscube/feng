@@ -110,11 +110,11 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
         else {
             // Start playing at desired time
             if (!time_taken) {
-                q = strchr(q, '=');
-                if (get_utc(&(args->playback_time), q + 1) != ERR_NOERROR) {
+                if ((q = strchr(q, '=')) && get_utc(&(args->playback_time), q + 1) == ERR_NOERROR) {
+                    args->playback_time_valid = 1;
+                } else {
                     memset(&(args->playback_time), 0, sizeof(args->playback_time));
                 }
-                args->playback_time_valid = 1;
             }
         }
     }

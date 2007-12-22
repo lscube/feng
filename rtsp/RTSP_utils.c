@@ -267,16 +267,17 @@ RTSP_Error get_session_id(RTSP_buffer * rtsp, unsigned long * session_id)
  */
 void log_user_agent(RTSP_buffer * rtsp)
 {
-    char * p;
+    char * p, cut[256];
 
     if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
-        char cut[strlen(p)];
-        strcpy(cut, p);
-        p = strstr(cut, "\n");
-        cut[strlen(cut) - strlen(p) - 1] = '\0';
+        strncpy(cut, p, 255);
+        p[255] = '\0';
+        if ((p = strstr(cut, RTSP_EL)) != NULL) {
+            *p = '\0';
+        }
         fnc_log(FNC_LOG_CLIENT, "%s", cut);
     } else
-        fnc_log(FNC_LOG_CLIENT, "- ");
+        fnc_log(FNC_LOG_CLIENT, "-");
 }
 
 
@@ -295,7 +296,6 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 {
     unsigned int len;
     char *b;
-    char *p;
     int res;
     char method[32];
     char object[256];
@@ -326,12 +326,7 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 
     sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, object, ver);
     fnc_log(FNC_LOG_ERR, "%s %s %s %d - - ", method, object, ver, err);
-    if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
-        char cut[strlen(p)];
-        strcpy(cut, p);
-        cut[strlen(cut) - 1] = '\0';
-        fnc_log(FNC_LOG_CLIENT, "%s", cut);
-    }
+    log_user_agent(rtsp);
 
     return res;
 }
