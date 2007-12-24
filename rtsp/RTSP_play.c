@@ -1,27 +1,27 @@
-/* * 
+/* *
  *  This file is part of Feng
- * 
- * Copyright (C) 2007 by LScube team <team@streaming.polito.it> 
- * See AUTHORS for more details 
- *  
- * Feng is free software; you can redistribute it and/or 
+ *
+ * Copyright (C) 2007 by LScube team <team@streaming.polito.it>
+ * See AUTHORS for more details
+ *
+ * Feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * Feng is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
- * General Public License for more details. 
- * 
+ *
+ * Feng is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
  * You should have received a copy of the GNU General Public License
  * along with Feng; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *  
+ *
  * */
 
 /** @file RTSP_play.c
- * @brief Contains PAUSE method and reply handlers
+ *  @brief Contains PLAY method and reply handlers
  */
 
 #include <bufferpool/bufferpool.h>
@@ -70,11 +70,9 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
 
             if (sscanf(q + 1, "%lf", &(args->end_time)) != 1)
                 args->end_time = HUGE_VAL;
-        }
-        else if ((q = strstr(p, "smpte")) != NULL) { // FORMAT: smpte
+        } else if ((q = strstr(p, "smpte")) != NULL) { // FORMAT: smpte
             // Currently unsupported. Using default.
-        }
-        else if ((q = strstr(p, "clock"))!= NULL) { // FORMAT: clock
+        } else if ((q = strstr(p, "clock"))!= NULL) { // FORMAT: clock
             // Currently unsupported. Using default.
         }
 #if 0
@@ -106,19 +104,19 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
         if ((q = strstr(p, "time")) == NULL) {
             // Start playing immediately
             memset(&(args->playback_time), 0, sizeof(args->playback_time));
-        }
-        else {
+        } else {
             // Start playing at desired time
             if (!time_taken) {
-                if ((q = strchr(q, '=')) && get_utc(&(args->playback_time), q + 1) == ERR_NOERROR) {
+                if ((q = strchr(q, '=')) &&
+                    get_utc(&(args->playback_time), q + 1) == ERR_NOERROR) {
                     args->playback_time_valid = 1;
                 } else {
-                    memset(&(args->playback_time), 0, sizeof(args->playback_time));
+                    memset(&(args->playback_time), 0,
+                           sizeof(args->playback_time));
                 }
             }
         }
-    }
-    else {
+    } else {
         args->begin_time = 0.0;
         args->end_time = HUGE_VAL;
         memset(&(args->playback_time), 0, sizeof(args->playback_time));
@@ -134,7 +132,9 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
  * @param rtsp_sess where to save the retrieved session
  * @return RTSP_Ok or RTSP_SessionNotFound
  */
-static RTSP_Error get_session(RTSP_buffer * rtsp, unsigned long session_id, RTSP_session **rtsp_sess)
+static RTSP_Error
+get_session(RTSP_buffer * rtsp, unsigned long session_id,
+            RTSP_session **rtsp_sess)
 {
 #if 0
     for (rtsp_sess = rtsp->session_list; rtsp_sess != NULL; rtsp_sess++)
@@ -163,8 +163,9 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
     Resource *r = rtsp_sess->resource;
     RTP_session *rtp_sess;
 
-    if (args->seek_time_valid && ((rtsp_sess->started && args->begin_time == 0.0)
-                                  || args->begin_time > 0.0)) {
+    if (args->seek_time_valid &&
+        ((rtsp_sess->started && args->begin_time == 0.0)
+            || args->begin_time > 0.0)) {
         if(mt_resource_seek(r, args->begin_time)) {
             return RTSP_HeaderFieldNotValidforResource;
         }
@@ -175,7 +176,8 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
                 rtp_sess->pause = 1;
             }
             rtp_sess->start_seq = 1 + rtp_sess->seq_no;
-            gcry_randomize(&rtp_sess->start_rtptime, sizeof(rtp_sess->start_rtptime), GCRY_STRONG_RANDOM);
+            gcry_randomize(&rtp_sess->start_rtptime,
+                           sizeof(rtp_sess->start_rtptime), GCRY_STRONG_RANDOM);
             rtp_sess->seek_time = args->begin_time;
 
             if (rtp_sess->cons) {
@@ -201,7 +203,8 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
  * @param args the range to play
  * @return RTSP_Ok or RTSP_InternalServerError
  */
-static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
+static RTSP_Error
+do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
 {
     RTSP_Error error = RTSP_Ok;
     RTP_session *rtp_sess;
@@ -252,7 +255,8 @@ static RTSP_Error do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play
  * @param rtsp_session the session for which to generate the reply
  * @return ERR_NOERROR
  */
-static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp_session, play_args * args)
+static int send_play_reply(RTSP_buffer * rtsp, char *object,
+                           RTSP_session * rtsp_session, play_args * args)
 {
     char r[1024];
     char temp[256];
@@ -280,7 +284,7 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object, RTSP_session * rtsp
     do {
         t = r_selected_track(p->track_selector);
         strcat(r, "url=");
-        // TODO: we MUST be sure to send the correct url 
+        // TODO: we MUST be sure to send the correct url
         strcat (r, "rtsp://");
         strcat (r, prefs_get_hostname());
         strcat (r, "/");
@@ -329,9 +333,12 @@ int RTSP_play(RTSP_buffer * rtsp)
     RTSP_Error error;
 
     // Parse the input message
-    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
+
+    // Get the CSeq
+    if ( (error = get_cseq(rtsp)).got_error )
         goto error_management;
-    else if ( (error = parse_play_time_range(rtsp, &args)).got_error ) // Get the range
+    // Get the range
+    else if ( (error = parse_play_time_range(rtsp, &args)).got_error )
         goto error_management;
 
     if ( (error = get_session_id(rtsp, &session_id)).got_error )
@@ -341,23 +348,26 @@ int RTSP_play(RTSP_buffer * rtsp)
         goto error_management;
     }
 
-    if ( (error = get_session(rtsp, session_id, &rtsp_sess)).got_error ) // Pick correct session
-        goto error_management;
-    else if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
+    // Pick correct session
+    if ( (error = get_session(rtsp, session_id, &rtsp_sess)).got_error )                goto error_management;
+    // Extract the URL
+    else if ( (error = extract_url(rtsp, url)).got_error )
 	    goto error_management;
-    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
+    // Validate URL
+    else if ( (error = validate_url(url, &cinfo)).got_error )
     	goto error_management;
-    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
-    	goto error_management;
+    // Check for Forbidden Paths
+    else if ( (error = check_forbidden_path(&cinfo)).got_error )
+        goto error_management;
     else if ( (error = do_play(&cinfo, rtsp_sess, &args)).got_error ) {
-        if (error.got_error == ERR_ALLOC) 
+        if (error.got_error == ERR_ALLOC)
             return ERR_ALLOC;
         goto error_management;
-    }   
+    }
 
     fnc_log(FNC_LOG_INFO, "PLAY %s RTSP/1.0 ", url);
     send_play_reply(rtsp, cinfo.object, rtsp_sess, &args);
-    log_user_agent(rtsp); // See User-Agent 
+    log_user_agent(rtsp); // See User-Agent
     return ERR_NOERROR;
 
 error_management:
