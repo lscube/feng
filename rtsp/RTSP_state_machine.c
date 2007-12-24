@@ -37,7 +37,7 @@
 int RTSP_handler(RTSP_buffer * rtsp)
 {
     unsigned short status;
-    char msg[100];
+    char msg[256];
     int m, op;
     int full_msg;
     RTSP_interleaved *intlvd;
@@ -111,7 +111,7 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
     unsigned long session_id;
 
     if ((s = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(s, "%*254s %lu", &session_id) != 1) {
+        if (sscanf(s, "%*s %lu", &session_id) != 1) {
             fnc_log(FNC_LOG_INFO,
                 "Invalid Session number in Session header\n");
             send_reply(454, 0, rtsp);    /* Session Not Found */

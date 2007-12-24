@@ -133,7 +133,7 @@ static RTSP_Error multicast_transport(RTP_transport *transport,
         snprintf(port_buffer, 8, "%d", tr->info->rtp_port + 1);
         transport->rtcp_sock = Sock_connect(info->multicast, port_buffer,
                                                 transport->rtcp_sock, UDP, 0);
-    
+
         if (!transport->rtp_sock) {
             set_RTSP_Error(&error, 461, "Unsupported Transport");
             return error;
@@ -317,10 +317,12 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
     // Transport: RTP/AVP/UDP;unicast
                 if (strstr(transport_tkn, "unicast")) {
                     if ((p = strstr(transport_tkn, "client_port"))) {
-                        p = strstr(p, "=");
-                        sscanf(p + 1, "%d", &(cli_ports.RTP));
-                        p = strstr(p, "-");
-                        sscanf(p + 1, "%d", &(cli_ports.RTCP));
+                        if (!(p = strstr(p, "=")) ||
+                            !sscanf(p + 1, "%d", &(cli_ports.RTP)))
+                        goto malformed;
+                        if (!(p = strstr(p, "-")) ||
+                            !sscanf(p + 1, "%d", &(cli_ports.RTCP)))
+                        goto malformed;
                     } else continue;
                     return unicast_transport(rtsp, transport, cli_ports);
                 }
@@ -332,17 +334,19 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                     return multicast_transport(transport,
                                         rtsp->session_list->resource->info,
                                         tr, rtp_s);
-                } else 
+                } else
                     continue;
                 break;  // found a valid transport
     // Transport: RTP/AVP/TCP;interleaved=x-y
             } else if (Sock_type(rtsp->sock) == TCP && !strncmp(p, "/TCP", 4)) {
                 if ((p = strstr(transport_tkn, "interleaved"))) {
-                    p = strstr(p, "=");
-                    sscanf(p + 1, "%d", &rtp_ch);
-                    if ((p = strstr(p, "-")))
-                        sscanf(p + 1, "%d", &rtcp_ch);
-                    else
+                    if (!(p = strstr(p, "=")) ||
+                        !sscanf(p + 1, "%d", &rtp_ch))
+                    goto malformed;
+                    if ((p = strstr(p, "-"))) {
+                        if (!sscanf(p + 1, "%d", &rtcp_ch))
+                            goto malformed;
+                    } else
                         rtcp_ch = rtp_ch + 1;
                 } else {    // search for max used interleved channel.
                     max_interlvd = -1;
@@ -367,11 +371,13 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                        !strncmp(p, "/SCTP", 5)) {
     // Transport: RTP/AVP/SCTP;streams=x-y
                 if ((p = strstr(transport_tkn, "streams"))) {
-                    p = strstr(p, "=");
-                    sscanf(p + 1, "%d", &rtp_ch);
-                    if ((p = strstr(p, "-")))
-                        sscanf(p + 1, "%d", &rtcp_ch);
-                    else
+                    if (!(p = strstr(p, "=")) ||
+                        !sscanf(p + 1, "%d", &rtp_ch))
+                    goto malformed;
+                    if ((p = strstr(p, "-"))) {
+                        if (!sscanf(p + 1, "%d", &rtcp_ch))
+                            goto malformed;
+                    } else
                         rtcp_ch = rtp_ch + 1;
                 } else {    // search for max used stream.
                     max_interlvd = -1;
@@ -391,6 +397,9 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
     // No supported transport found.
     set_RTSP_Error(&error, 461, "Unsupported Transport");
     return error;
+    malformed:
+    fnc_log(FNC_LOG_ERR, "Malformed Transport string from client");
+    return RTSP_BadRequest;
 }
 
 /**
@@ -627,7 +636,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     memset(&transport, 0, sizeof(transport));
 
     // Parse the input message
-    
+
     // Extract the URL
     if ( (error = extract_url(rtsp, url)).got_error )
 	goto error_management;
@@ -643,9 +652,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     // Split resource!trackname
     if ( (error = split_resource_path(&cinfo, trackname, sizeof(trackname))).got_error )
         goto error_management;
-    
+
     // Get the CSeq
-    if ( (error = get_cseq(rtsp)).got_error ) 
+    if ( (error = get_cseq(rtsp)).got_error )
         goto error_management;
 
     // If there's a Session header we have an aggregate control
@@ -683,11 +692,11 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         set_RTSP_Error(&error, 500, "Can't write answer");
         goto error_management;
     }
-    log_user_agent(rtsp); // See User-Agent 
+    log_user_agent(rtsp); // See User-Agent
 
     return ERR_NOERROR;
 
 error_management:
     send_reply(error.message.reply_code, error.message.reply_str, rtsp);
-    return ERR_NOERROR;
+    return ERR_GENERIC;
 }

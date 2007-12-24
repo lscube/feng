@@ -124,7 +124,7 @@ static int frag_fu_a(uint8_t *nal, int fragsize, int mtu,
 
 #define RB16(x) ((((uint8_t*)(x))[0] << 8) | ((uint8_t*)(x))[1])
 
-static char *encode_avc1_header(uint8_t *p, unsigned int len)
+static char *encode_avc1_header(uint8_t *p, unsigned int len, int packet_mode)
 {
     int i, cnt, nalsize;
     unsigned int buf_len = len * 4 / 3 + 12;
@@ -140,8 +140,9 @@ static char *encode_avc1_header(uint8_t *p, unsigned int len)
         p += 2;
         fnc_log(FNC_LOG_VERBOSE, "[h264] nalsize %d", nalsize);
         if (i == 0) {
-            out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
-                                  p[0], p[1], p[2]);
+            out = g_strdup_printf("profile-level-id=%02x%02x%02x; "
+                                  "packetization-mode=%d; ",
+                                  p[0], p[1], p[2], packet_mode);
             av_base64_encode(buf, buf_len, p, nalsize);
             sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
             g_free(out);
@@ -180,7 +181,7 @@ static char *encode_avc1_header(uint8_t *p, unsigned int len)
     return NULL;
 }
 
-static char *encode_header(uint8_t *p, unsigned int len)
+static char *encode_header(uint8_t *p, unsigned int len, int packet_mode)
 {
     uint8_t *q, *end = p + len;
     unsigned int buf_len = len * 4 / 3 + 12;
@@ -207,8 +208,9 @@ static char *encode_header(uint8_t *p, unsigned int len)
 
     //FIXME I'm abusing memory
     // profile-level-id aka the first 3 bytes from sps
-    out = g_strdup_printf("profile-level-id=%02x%02x%02x; ",
-                            p[0], p[1], p[2]);
+    out = g_strdup_printf("profile-level-id=%02x%02x%02x; "
+                          "packetization-mode=%d; ",
+                            p[0], p[1], p[2], packet_mode);
 
     av_base64_encode(buf, buf_len, p, q - p);
 
@@ -235,6 +237,8 @@ static char *encode_header(uint8_t *p, unsigned int len)
     return sprop;
 }
 
+#define FU_A 1
+
 static int h264_init(MediaProperties *properties, void **private_data)
 {
     sdp_field *sdp_private;
@@ -248,11 +252,11 @@ static int h264_init(MediaProperties *properties, void **private_data)
 	priv->nal_length_size = (properties->extradata[4]&0x03)+1;
         priv->is_avc = 1;
         sprop = encode_avc1_header(properties->extradata,
-                                   properties->extradata_len);
+                                   properties->extradata_len, FU_A);
         if (sprop == NULL) goto err_alloc;
     } else {
         sprop = encode_header(properties->extradata,
-                              properties->extradata_len);
+                              properties->extradata_len, FU_A);
         if (sprop == NULL) goto err_alloc;
     }
 

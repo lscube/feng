@@ -60,6 +60,7 @@ int main(int argc, char **argv)
     char *port;
     char *id;
     struct sigaction term_action;
+    sigset_t block_set;
 
     /* parses the command line and initializes the log*/
     if (command_environment(argc, argv))
@@ -70,6 +71,10 @@ int main(int argc, char **argv)
     term_action.sa_handler = terminator_function;
     sigaction(SIGINT, &term_action, NULL);
     sigaction(SIGTERM, &term_action, NULL);
+    /* block PIPE signal */
+    sigemptyset(&block_set);
+    sigaddset(&block_set, SIGPIPE);
+    sigprocmask(SIG_BLOCK, &block_set, NULL);
 
     /* Bind to the defined listening port */
     port = g_strdup_printf("%d", prefs_get_port());
