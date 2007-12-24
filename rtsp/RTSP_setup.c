@@ -698,5 +698,5 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 error_management:
     send_reply(error.message.reply_code, error.message.reply_str, rtsp);
-    return ERR_NOERROR;
+    return ERR_GENERIC;
 }
