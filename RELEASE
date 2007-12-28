@@ -1,7 +1,8 @@
 
-    Release notes for feng 0.1.15
+    Release notes for feng 0.1.16
 
-This is a maintenance release before working on invasive changes that could
-undermine the server stability.
-Beside various fixes, including one for a quite annoying and hard to reproduce
-race condition, additional codec got fully supported.
+This is a second maintenance release most of the invasive work is being done in
+separate branches while the mainline is getting the improvement once they are
+deemed stable enough.
+Beside the scheduler improvements and the improved codec support, this release
+fixes lots of security issues.
