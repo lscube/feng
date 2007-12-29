@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(feng, 0.1.15)
+AC_INIT(feng, 0.1.16)
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(dist-bzip2 check-news)
@@ -131,7 +131,7 @@ PKG_CHECK_MODULES(LIBNETEMBRYO,[libnetembryo >= 0.0.3])
 CFLAGS="$CFLAGS $LIBNETEMBRYO_CFLAGS"
 LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 
-PKG_CHECK_MODULES(LIBBUFFERPOOL,[libbufferpool >= 0.0.1])
+PKG_CHECK_MODULES(LIBBUFFERPOOL,[libbufferpool >= 0.0.2])
 CFLAGS="$CFLAGS $LIBBUFFERPOOL_CFLAGS"
 LIBS="$LIBS $LIBBUFFERPOOL_LIBS"
 

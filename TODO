@@ -2,7 +2,7 @@ To do:
     * ipc/rpc systems
     * support more formats (dirac, snow, wavpack)
     * update rpm and deb package scripts
-    * integrate yaml
+    * integrate yaml or integrate lighttpd
     * access permissions
     * increase the bundled documentation
 

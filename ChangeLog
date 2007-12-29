@@ -1,6 +1,24 @@
 + Feng changelog
 
-  7 Nov 2007; Luca Barbato <lu_zero@gentoo.org>:
+  28 Dec 2007; Luca Barbato <lu_zero@gentoo.org> feng-0.1.16:
+  Released
+
+  24 Dec 2007; Luca Barbato <lu_zero@gentoo.org>:
+  Machine state fixes
+
+  22 Dec 2007; Dario Gallucci <dario.gallucci@polito.it>:
+  Security fixes
+
+  13 Dec 2007; Dario Gallucci <dario.gallucci@polito.it>:
+  Solaris compatibility
+
+  06 Dec 2007; Dario Gallucci <dario.gallucci@polito.it>:
+  Traffic smoothing
+
+  24 Nov 2007; Dario Gallucci <dario.gallucci@polito.it>:
+  Improve compatibility with clients and conformance to the standard.
+
+  07 Nov 2007; Luca Barbato <lu_zero@gentoo.org>: feng-0.1.15:
   New release
 
   16 Oct 2007; Luca Barbato <lu_zero@gentoo.org>:
