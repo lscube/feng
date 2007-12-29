@@ -103,7 +103,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
             if ((res = RTSP_handler(rtsp)) == ERR_GENERIC) {
                 fnc_log(FNC_LOG_ERR,
                     "Invalid input message.\n");
-                return ERR_NOERROR;
+                return ERR_GENERIC;
             }
         } else {    /* if (rtsp->proto == SCTP && m != 0) */
 #ifdef HAVE_LIBSCTP
