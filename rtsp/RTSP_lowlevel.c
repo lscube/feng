@@ -171,7 +171,7 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
     if (rtsp->in_buffer[0] == '$') {
         uint16_t *intlvd_len = (uint16_t *) & rtsp->in_buffer[2];
 
-        if ((bl = ntohs(*intlvd_len)) <= rtsp->in_size) {
+        if ((bl = ntohs(*intlvd_len)) + 4 <= rtsp->in_size) {
             if (hdr_len)
                 *hdr_len = 4;
             if (body_len)
