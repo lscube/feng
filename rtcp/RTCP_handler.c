@@ -30,6 +30,7 @@ int RTCP_flush(RTP_session * session)
 {
     fd_set wset;
     struct timeval t;
+    Sock *rtcp_sock = session->transport.rtcp_sock;
 
     /*---------------SEE eventloop/rtsp_server.c-------*/
     FD_ZERO(&wset);
@@ -37,15 +38,15 @@ int RTCP_flush(RTP_session * session)
     t.tv_usec = 1000;
 
     if (session->rtcp_outsize > 0)
-        FD_SET(Sock_fd(session->transport.rtcp_sock), &wset);
-    if (select(Sock_fd(session->transport.rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
+        FD_SET(Sock_fd(rtcp_sock), &wset);
+    if (select(Sock_fd(rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
         fnc_log(FNC_LOG_ERR, "select error\n");
         /*send_reply(500, NULL, rtsp); */
         return ERR_GENERIC;    //errore interno al server
     }
 
-    if (FD_ISSET(Sock_fd(session->transport.rtcp_sock), &wset)) {
-        if (Sock_write(session->transport.rtcp_sock, session->rtcp_outbuffer,
+    if (FD_ISSET(Sock_fd(rtcp_sock), &wset)) {
+        if (Sock_write(rtcp_sock, session->rtcp_outbuffer,
             session->rtcp_outsize, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
             fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
         session->rtcp_outsize = 0;
