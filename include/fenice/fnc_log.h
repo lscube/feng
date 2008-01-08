@@ -21,8 +21,8 @@
  * */
 
 
-#ifndef FNC_LOGH
-#define FNC_LOGH
+#ifndef FN_FNC_LOG_H
+#define FN_FNC_LOG_H
 
 #include <config.h>
 #include <stdarg.h>
@@ -46,4 +46,4 @@ void fnc_log(int level, const char *fmt, ...);
 
 fnc_log_t fnc_log_init(char *file, int out, char *name);
 
-#endif
+#endif // FN_FNC_LOG_H 

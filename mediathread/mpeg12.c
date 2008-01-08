@@ -21,7 +21,7 @@
  * */
 
 #include <string.h>
-#include <fenice/mpeg.h>
+#include "mpeg.h"
 #include <fenice/demuxer.h>
 #include <fenice/fnc_log.h>
 #include <fenice/mediaparser.h>

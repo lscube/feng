@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef _EVENTLOOPH
-#define _EVENTLOOPH
+#ifndef FN_EVENTLOOP_H
+#define FN_EVENTLOOP_H
 
 #include <netembryo/wsocket.h>
 #include <fenice/fnc_log.h>
@@ -37,4 +37,4 @@ void add_client(RTSP_buffer ** rtsp_list, Sock *client_sock);
 void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count, fd_set * rset, fd_set * wset, fd_set * xset);
 void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset, fd_set * wset, fd_set * xset);
 
-#endif
+#endif // FN_EVENTLOOP_H

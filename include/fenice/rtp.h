@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef _RTPH
-#define _RTPH
+#ifndef FN_RTP_H
+#define FN_RTP_H
 
 #include <time.h>
 #include <sys/timeb.h>
@@ -187,4 +187,4 @@ ssize_t RTP_recv(RTP_session *, rtp_protos);
  * @}
  */
 
-#endif
+#endif // FN_RTP_H

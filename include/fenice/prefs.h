@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef _SERV_PREFSH
-#define _SERV_PREFSH
+#ifndef FN_SERV_PREFS_H
+#define FN_SERV_PREFS_H
 
 #include <config.h>
 
@@ -117,4 +117,4 @@ void prefs_use_default(pref_id id);
 #define prefs_get_log() ((char *) get_pref(PREFS_LOG))
 #define prefs_get_hostname() ((char *) get_pref(PREFS_HOSTNAME))
 
-#endif
+#endif // FN_SERV_PREFS_H

@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef _RTSPH
-#define _RTSPH
+#ifndef FN_RTSP_H
+#define FN_RTSP_H
 
 #include <time.h>
 #include <config.h>
@@ -196,4 +196,4 @@ static inline rtsp_session_list_free( RTSP_buffer *rtsp )
 /**
  * @}
  */
-#endif
+#endif // FN_RTSP_H

@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef SDP_GRAMMAR_H_
-#define SDP_GRAMMAR_H_
+#ifndef FN_SDP_GRAMMAR_H
+#define FN_SDP_GRAMMAR_H
 
 #include <glib.h>
 
@@ -36,4 +36,4 @@ typedef struct {
 	char *field;
 } sdp_field;
 
-#endif /*SDP_GRAMMAR_H_*/
+#endif // FN_SDP_GRAMMAR_H

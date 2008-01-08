@@ -88,4 +88,4 @@
 	#endif /* GLOBAL_RTP_DEFS */
 	;
 
-#endif /* FN_RTP_PT_DEFS_H */
+#endif // FN_RTP_PT_DEFS_H

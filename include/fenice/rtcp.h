@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef _RTCPH
-#define _RTCPH
+#ifndef FN_RTCP_H
+#define FN_RTCP_H
 
 #include <fenice/rtp.h>
 
@@ -111,4 +111,4 @@ unsigned int RTCP_get_total_packet(RTP_session * session);
 
 unsigned int RTCP_get_total_payload_octet(RTP_session * session);
 
-#endif
+#endif // FN_RTCP_H

@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef FN_UTILS_H
+#define FN_UTILS_H
 #include <time.h>
 #include <sys/time.h>
 #include <ctype.h>
@@ -175,4 +175,4 @@ static inline double gettimeinseconds(struct timespec *now) {
 }
 #endif
 
-#endif
+#endif // FN_UTILS_H

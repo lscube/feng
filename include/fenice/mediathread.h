@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef FN_MEDIA_THREAD
-#define FN_MEDIA_THREAD
+#ifndef FN_MEDIA_THREAD_H
+#define FN_MEDIA_THREAD_H
 
 #define ENABLE_MEDIATHREAD 1
 
@@ -64,5 +64,5 @@ Resource *mt_resource_open(char *, char *);
 void mt_resource_close(Resource *);
 int mt_resource_seek(Resource *, double);
 
-#endif // FN_MEDIA_THREAD
+#endif // FN_MEDIA_THREAD_H
 

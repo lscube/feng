@@ -19,8 +19,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *  
  * */
-#ifndef FN_MEDIAPARSERH
-#define FN_MEDIAPARSERH
+#ifndef FN_MEDIAPARSER_H
+#define FN_MEDIAPARSER_H
 
 #include <glib.h>
 
@@ -132,5 +132,4 @@ void free_parser(MediaParser *);
 
 #define DEFAULT_MTU 1440
 
-#endif
-
+#endif // FN_MEDIAPARSER_H

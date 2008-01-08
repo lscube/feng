@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef SCHEDULE_H
-#define SCHEDULE_H
+#ifndef FN_SCHEDULE_H
+#define FN_SCHEDULE_H
 
 
 #include <time.h>
@@ -56,4 +56,4 @@ int schedule_start(int id, play_args * args);
 void schedule_stop(int id);
 int schedule_remove(int id);
 int schedule_resume(int id, play_args * args);
-#endif
+#endif // FN_SCHEDULE_H

@@ -21,8 +21,8 @@
  * */
 
 
-#ifndef _DEBUGH
-#define _DEBUGH
+#ifndef FN_DEBUG_H
+#define FN_DEBUG_H
 
 #include <config.h>
 
@@ -42,4 +42,4 @@ int dump_payload(uint8_t * data_slot, uint32_t data_size, char fname[255]);
 #define THREADED
 //      #define SELECTED 
 
-#endif
+#endif // FN_DEBUG_H 

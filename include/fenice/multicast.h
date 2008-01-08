@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef _MULTICASTH
-#define _MULTICASTH
+#ifndef FN_MULTICAST_H
+#define FN_MULTICAST_H
 
 #include <fenice/utils.h>
 
@@ -29,4 +29,4 @@
 #define DEFAULT_TTL 32
 
 int is_valid_multicast_address(char *addr);
-#endif
+#endif // FN_MULTICAST_H

@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef _COMMAND_ENVIRONMENTH
-#define _COMMAND_ENVIRONMENTH
+#ifndef FN_COMMAND_ENVIRONMENT_H
+#define FN_COMMAND_ENVIRONMENT_H
 
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
@@ -30,4 +30,4 @@
 #include <fenice/fnc_log.h>
 
 int command_environment(int, char **);
-#endif
+#endif // FN_COMMAND_ENVIRONMENT_H

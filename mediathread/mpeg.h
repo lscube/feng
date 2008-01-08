@@ -24,8 +24,8 @@
  * header file for MPEG1-2 video elementary stream
  */
 
-#ifndef _MPEGH
-#define _MPEGH
+#ifndef MT_MPEG_H
+#define MT_MPEG_H
 
 #include <stdint.h>
 
@@ -100,4 +100,4 @@ int read_slice(uint8_t *, uint32_t *, int fin, char *final_byte);
 int read_picture_coding_ext(uint8_t *, uint32_t *, int fin,
 			    unsigned char *final_byte, video_spec_head2 * vsh2);
 
-#endif
+#endif // MT_MPEG_H

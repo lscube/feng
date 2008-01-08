@@ -20,8 +20,8 @@
  *  
  * */
 
-#ifndef SDP2_H_
-#define SDP2_H_
+#ifndef FN_SDP2_H
+#define FN_SDP2_H
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -42,4 +42,4 @@ gint sdp_get_version(ResourceDescr *, char *, size_t);
 int sdp_session_descr(char *, char *, size_t);
 int sdp_media_descr(MediaDescrList, char *, size_t);
 
-#endif /*SDP2_H_*/
+#endif // FN_SDP2_H
