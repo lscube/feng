@@ -32,13 +32,14 @@
 
 int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
 {
-    unsigned char *pkt = NULL;
+    unsigned char *payload = NULL;
     RTCP_header hdr;
-    uint32_t pkt_size = 0, hdr_s = 0;
+    unsigned pkt_size = 0, hdr_s = 0, payload_s = 0;
     Track *t = r_selected_track(session->track_selector);
 
     hdr.version = 2;
     hdr.padding = 0;
+    hdr.count = 0;
     hdr.pt = type;
     hdr_s = sizeof(hdr);
     switch (type) {
@@ -46,13 +47,8 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
         struct timespec ntp_time;
         double now;
         RTCP_header_SR hdr_sr;
-        int hdr_sr_s;
-        hdr_sr_s = sizeof(hdr_sr);
-        pkt_size = hdr_sr_s;
-        hdr.length = htons((pkt_size >> 2) - 1);
-        hdr.count = 0;
+        payload_s = sizeof(hdr_sr);
         hdr_sr.ssrc = htonl(session->ssrc);
-
         now = gettimeinseconds(&ntp_time);
         hdr_sr.ntp_timestampH =
             htonl((unsigned int) ntp_time.tv_sec + 2208988800u);
@@ -64,80 +60,71 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
 
         hdr_sr.pkt_count = htonl(session->rtcp_stats[i_server].pkt_count);
         hdr_sr.octet_count = htonl(session->rtcp_stats[i_server].octet_count);
-        pkt = calloc(1, pkt_size);
-        if (pkt == NULL)
+        payload = calloc(1, payload_s);
+        if (payload == NULL)
             return ERR_ALLOC;
-        memcpy(pkt, &hdr_sr, hdr_sr_s);
+        memcpy(payload, &hdr_sr, payload_s);
         break;
     }
     case RR:{
         RTCP_header_RR hdr_rr;
-        int hdr_rr_s;
-        hdr_rr_s = sizeof(hdr_rr);
-        pkt_size = hdr_rr_s;
-        hdr.length = htons((pkt_size >> 2) - 1);
-        hdr.count = 0;
+        payload_s = sizeof(hdr_rr);
         hdr_rr.ssrc = htonl(session->ssrc);
-        pkt = calloc(1, pkt_size);
-        if (pkt == NULL)
+        payload = calloc(1, payload_s);
+        if (payload == NULL)
             return ERR_ALLOC;
-        memcpy(pkt, &hdr_rr, hdr_rr_s);
+        memcpy(payload, &hdr_rr, payload_s);
         break;
     }
     case SDES:{
         RTCP_header_SDES hdr_sdes;
-        char *name;
-        int hdr_sdes_s, name_s;
-
-        name = prefs_get_hostname();
-        name_s = strlen(name);
-        hdr_sdes_s = sizeof(hdr_sdes);
-
-        pkt_size = (((hdr_s + hdr_sdes_s + name_s) % 4) ? 1 : 0) +
-                    hdr_sdes_s + name_s;
-        hdr.length = htons((pkt_size >> 2) - 1);
-
-        pkt = calloc(1, pkt_size);
-        if (pkt == NULL)
+        char *name = prefs_get_hostname();
+        int hdr_sdes_s = sizeof(hdr_sdes);
+        int name_s = strlen(name);
+        payload_s = hdr_sdes_s + name_s;
+        // Padding
+        payload_s += (((hdr_s + payload_s) % 4) ? 1 : 0);
+        payload = calloc(1, payload_s);
+        if (payload == NULL)
             return ERR_ALLOC;
         hdr.count = 1;
         hdr_sdes.ssrc = htonl(session->ssrc);
         hdr_sdes.attr_name = CNAME;    // 1=CNAME
         hdr_sdes.len = name_s;
-        memcpy(pkt, &hdr_sdes, hdr_sdes_s);
-        memcpy(pkt + hdr_sdes_s, name, name_s);
+        memcpy(payload, &hdr_sdes, hdr_sdes_s);
+        memcpy(payload + hdr_sdes_s, name, name_s);
         break;
     }
     case BYE:{
         RTCP_header_BYE hdr_bye;
-        int hdr_bye_s;
+        int hdr_bye_s = sizeof(hdr_bye);
         char reason[20] = "The medium is over.";
-        hdr_bye_s = sizeof(hdr_bye);
-        pkt_size = hdr_bye_s + sizeof(reason);
-        hdr.length = htons((pkt_size >> 2) - 1);
+        payload_s = hdr_bye_s + sizeof(reason);
         hdr.count = 1;
         hdr_bye.ssrc = htonl(session->ssrc);
         hdr_bye.length = htonl(strlen(reason));
-        pkt = calloc(1, pkt_size);
-        if (pkt == NULL)
+        payload = calloc(1, payload_s);
+        if (payload == NULL)
             return ERR_ALLOC;
-        memcpy(pkt, &hdr_bye, hdr_bye_s);
-        memcpy(pkt + hdr_bye_s, reason, sizeof(reason));
+        memcpy(payload, &hdr_bye, hdr_bye_s);
+        memcpy(payload + hdr_bye_s, reason, sizeof(reason));
         break;
     }
     default:
         return ERR_NOERROR;
     }
 
-    if (session->rtcp_outsize + pkt_size + hdr_s <=
-        sizeof(session->rtcp_outbuffer)) {
+    pkt_size += payload_s;
+    hdr.length = htons((pkt_size >> 2) - 1);
+
+    if (session->rtcp_outsize + pkt_size <= sizeof(session->rtcp_outbuffer)) {
         memcpy(session->rtcp_outbuffer + session->rtcp_outsize, &hdr, hdr_s);
         memcpy(session->rtcp_outbuffer + session->rtcp_outsize + hdr_s,
-               pkt, pkt_size);
-        session->rtcp_outsize += pkt_size + hdr_s;
+               payload, payload_s);
+        session->rtcp_outsize += pkt_size;
     } else {
         fnc_log(FNC_LOG_VERBOSE, "Output RTCP packet lost\n");
     }
-    free(pkt);
+    free(payload);
     return ERR_NOERROR;
 }
