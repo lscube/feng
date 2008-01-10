@@ -149,9 +149,7 @@ int RTSP_handler(RTSP_buffer * rtsp);
 int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len);
 #define RTSP_msg_len RTSP_full_msg_rcvd
 
-void RTSP_discard_msg(RTSP_buffer * rtsp);
-
-void RTSP_remove_msg(int len, RTSP_buffer * rtsp);
+void RTSP_discard_msg(RTSP_buffer * rtsp, int len);
 
 int RTSP_valid_response_msg(unsigned short *status, char *msg,
                 RTSP_buffer * rtsp);
