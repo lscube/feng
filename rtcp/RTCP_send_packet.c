@@ -114,7 +114,7 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
         return ERR_NOERROR;
     }
 
-    pkt_size += payload_s;
+    pkt_size += payload_s + hdr_s;
     hdr.length = htons((pkt_size >> 2) - 1);
 
     if (session->rtcp_outsize + pkt_size <= sizeof(session->rtcp_outbuffer)) {
