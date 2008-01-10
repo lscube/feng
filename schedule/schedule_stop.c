@@ -30,6 +30,7 @@ void schedule_stop(int id)
 {
     RTCP_send_packet(sched[id].rtp_session,SR);
     RTCP_send_packet(sched[id].rtp_session,BYE);
+    RTCP_flush(sched[id].session);
 
     sched[id].rtp_session->pause=1;
 
