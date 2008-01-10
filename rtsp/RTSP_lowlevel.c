@@ -50,7 +50,7 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
     int n = 0;
 
     if (!rtsp->out_size) {
-        fnc_log(FNC_LOG_WARN, "RTSP_send called, but no data to be sent\n");
+        fnc_log(FNC_LOG_WARN, "RTSP_send called, but no data to be sent");
         return 0;
     }
 
@@ -58,58 +58,58 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
           NULL, MSG_DONTWAIT)) < 0) {
         switch (errno) {
             case EACCES:
-                fnc_log(FNC_LOG_ERR, "EACCES error\n");
+                fnc_log(FNC_LOG_ERR, "EACCES error");
                 break;
             case EAGAIN:
-                fnc_log(FNC_LOG_ERR, "EAGAIN error\n");
+                fnc_log(FNC_LOG_ERR, "EAGAIN error");
                 return 0; // Don't close socket if tx buffer is full!
                 break;
             case EBADF:
-                fnc_log(FNC_LOG_ERR, "EBADF error\n");
+                fnc_log(FNC_LOG_ERR, "EBADF error");
                 break;
             case ECONNRESET:
-                fnc_log(FNC_LOG_ERR, "ECONNRESET error\n");
+                fnc_log(FNC_LOG_ERR, "ECONNRESET error");
                 break;
             case EDESTADDRREQ:
-                fnc_log(FNC_LOG_ERR, "EDESTADDRREQ error\n");
+                fnc_log(FNC_LOG_ERR, "EDESTADDRREQ error");
                 break;
             case EFAULT:
-                fnc_log(FNC_LOG_ERR, "EFAULT error\n");
+                fnc_log(FNC_LOG_ERR, "EFAULT error");
                 break;
             case EINTR:
-                fnc_log(FNC_LOG_ERR, "EINTR error\n");
+                fnc_log(FNC_LOG_ERR, "EINTR error");
                 break;
             case EINVAL:
-                fnc_log(FNC_LOG_ERR, "EINVAL error\n");
+                fnc_log(FNC_LOG_ERR, "EINVAL error");
                 break;
             case EISCONN:
-                fnc_log(FNC_LOG_ERR, "EISCONN error\n");
+                fnc_log(FNC_LOG_ERR, "EISCONN error");
                 break;
             case EMSGSIZE:
-                fnc_log(FNC_LOG_ERR, "EMSGSIZE error\n");
+                fnc_log(FNC_LOG_ERR, "EMSGSIZE error");
                 break;
             case ENOBUFS:
-                fnc_log(FNC_LOG_ERR, "ENOBUFS error\n");
+                fnc_log(FNC_LOG_ERR, "ENOBUFS error");
                 break;
             case ENOMEM:
-                fnc_log(FNC_LOG_ERR, "ENOMEM error\n");
+                fnc_log(FNC_LOG_ERR, "ENOMEM error");
                 break;
             case ENOTCONN:
-                fnc_log(FNC_LOG_ERR, "ENOTCONN error\n");
+                fnc_log(FNC_LOG_ERR, "ENOTCONN error");
                 break;
             case ENOTSOCK:
-                fnc_log(FNC_LOG_ERR, "ENOTSOCK error\n");
+                fnc_log(FNC_LOG_ERR, "ENOTSOCK error");
                 break;
             case EOPNOTSUPP:
-                fnc_log(FNC_LOG_ERR, "EOPNOTSUPP error\n");
+                fnc_log(FNC_LOG_ERR, "EOPNOTSUPP error");
                 break;
             case EPIPE:
-                fnc_log(FNC_LOG_ERR, "EPIPE error\n");
+                fnc_log(FNC_LOG_ERR, "EPIPE error");
                 break;
             default:
                 break;
         }
-        fnc_log(FNC_LOG_ERR, "Sock_write() error in RTSP_send()\n");
+        fnc_log(FNC_LOG_ERR, "Sock_write() error in RTSP_send()");
         return n;
     }
     //remove tx bytes from buffer
@@ -117,31 +117,18 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
     return n;
 }
 
-/** 
- * Removes a message from the input buffer
- * @param len the size of the message to remove
- * @param rtsp the buffer from which to remove the message
- */
-void RTSP_remove_msg(int len, RTSP_buffer * rtsp)
-{
-    rtsp->in_size -= len;
-    if (rtsp->in_size && len) {    /* discard the message from the in_buffer. */
-        memmove(rtsp->in_buffer, &(rtsp->in_buffer[len]),
-            RTSP_BUFFERSIZE - len);
-        memset(&(rtsp->in_buffer[len]), 0, RTSP_BUFFERSIZE - len);
-    }
-}
-
 /**
  * Removes the last message from the rtsp buffer
  * @param rtsp the buffer from which to discard the message
  */
-void RTSP_discard_msg(RTSP_buffer * rtsp)
+void RTSP_discard_msg(RTSP_buffer * rtsp, int len)
 {
-    int hlen, blen;
-
-    if (RTSP_msg_len(rtsp, &hlen, &blen) > 0)
-        RTSP_remove_msg(hlen + blen, rtsp);
+    if (len > 0 && rtsp->in_size >= len) {    /* discard the message from the in_buffer. */
+        memmove(rtsp->in_buffer, rtsp->in_buffer + len,
+            RTSP_BUFFERSIZE - len);
+        memset(rtsp->in_buffer + len, 0, RTSP_BUFFERSIZE - len);
+        rtsp->in_size -= len;
+    }
 }
 
 /**
@@ -179,7 +166,7 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
             return RTSP_interlvd_rcvd;
         } else {
             fnc_log(FNC_LOG_DEBUG,
-                "Non-complete Interleaved RTP or RTCP packet arrived.\n");
+                "Non-complete Interleaved RTP or RTCP packet arrived.");
             return RTSP_not_full;
         }
 
@@ -187,11 +174,12 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
     eomh = mb = ml = bl = 0;
     while (ml <= rtsp->in_size) {
         /* look for eol. */
-        control = strcspn(&(rtsp->in_buffer[ml]), "\r\n");
-        if (control > 0)
+        control = strcspn(rtsp->in_buffer + ml, RTSP_EL);
+        if (control > 0) {
             ml += control;
-        else
+        } else {
             return ERR_GENERIC;
+        }
 
         if (ml > rtsp->in_size)
             return RTSP_not_full;    /* haven't received the entire message yet. */
@@ -217,9 +205,8 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
          * Otherwise, CRLF is the legal end-of-line marker for all HTTP/1.1
          * protocol compatible message elements.
          */
-        if ((tc > 2)
-            || ((tc == 2)
-            && (rtsp->in_buffer[ml] == rtsp->in_buffer[ml + 1])))
+        if ((tc > 2) || ((tc == 2) && 
+                         (rtsp->in_buffer[ml] == rtsp->in_buffer[ml + 1])))
             eomh = 1;    /* must be the end of the message header */
         ml += tc + ws;
 
@@ -237,9 +224,8 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
          * a message body.
          */
         if (!mb) {    /* content length token not yet encountered. */
-            if (!strncasecmp
-                (&(rtsp->in_buffer[ml]), HDR_CONTENTLENGTH,
-                 strlen(HDR_CONTENTLENGTH))) {
+            if (!strncasecmp (rtsp->in_buffer + ml, HDR_CONTENTLENGTH,
+                 RTSP_BUFFERSIZE - ml)) {
                 mb = 1;    /* there is a message body. */
                 ml += strlen(HDR_CONTENTLENGTH);
                 while (ml < rtsp->in_size) {
@@ -250,10 +236,9 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
                         break;
                 }
 
-                if (sscanf(&(rtsp->in_buffer[ml]), "%d", &bl) !=
-                    1) {
+                if (sscanf(rtsp->in_buffer + ml, "%d", &bl) != 1) {
                     fnc_log(FNC_LOG_ERR,
-                        "RTSP_full_msg_rcvd(): Invalid ContentLength encountered in message.\n");
+                        "RTSP_full_msg_rcvd(): Invalid ContentLength.");
                     return ERR_GENERIC;
                 }
             }

@@ -62,7 +62,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
                     // Invalid answer
                 }
             }
-            RTSP_discard_msg(rtsp);
+            RTSP_discard_msg(rtsp, hlen + blen);
             break;
         case RTSP_interlvd_rcvd:
             m = rtsp->in_buffer[1];
@@ -74,7 +74,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
                 fnc_log(FNC_LOG_DEBUG,
                     "Interleaved RTP or RTCP packet arrived for unknown channel (%d)... discarding.\n",
                     m);
-                RTSP_discard_msg(rtsp);
+                RTSP_discard_msg(rtsp, hlen + blen);
                 break;
             }
             if (m == intlvd->proto.tcp.rtcp_ch) {    // RTCP pkt arrived
@@ -87,14 +87,13 @@ int RTSP_handler(RTSP_buffer * rtsp)
                 fnc_log(FNC_LOG_DEBUG,
                     "Interleaved RTP packet arrived for channel %d.\n",
                     m);
-            RTSP_discard_msg(rtsp);
+            RTSP_discard_msg(rtsp, hlen + blen);
             break;
         default:
             return full_msg;
             break;
         }
     }
-
     return ERR_NOERROR;
 }
 
