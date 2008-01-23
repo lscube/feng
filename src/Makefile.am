@@ -1,6 +1,6 @@
 feniceincludedir = ../include
 
-noinst_LTLIBRARIES = liblog.la libsafectype.la libutils.la libprefs.la
+noinst_LTLIBRARIES = liblog.la libsafectype.la libutils.la
 
 if FENICE_VERBOSE
 noinst_LTLIBRARIES += libdebug.la
@@ -14,21 +14,10 @@ libsafectype_la_SOURCES = safe-ctype.c
 
 libsafectype_la_LDFLAGS = -lm
 
-libprefs_la_SOURCES = prefs.c
-
-libprefs_la_LDFLAGS = -static
-
 if FENICE_VERBOSE
 libdebug_la_SOURCES =	dump_buffer.c \
 			dump_payload.c 
-
-libdebug_la_LDFLAGS = -static
 endif
-
-#libplugins_la_SOURCES = load_plugins.c
-
-#libplugins_la_LDFLAGS = -static
-#libplugins_la_LIBADD = @LIBLTDL@
 
 .NOTPARALLEL: feng
 	
@@ -46,8 +35,7 @@ feng_LDADD =	../eventloop/libeventloop.la \
 		../mediathread/libmediath.la \
 		../multicast/libmulticast.la
 
-feng_LDADD +=	../conf/libcommand.la \
-		../src/libprefs.la \
+feng_LDADD +=	../conf/libconf.la \
 		../src/libutils.la \
 		../src/liblog.la \
 		../src/libsafectype.la
