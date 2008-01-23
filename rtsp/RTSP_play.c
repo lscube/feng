@@ -33,6 +33,16 @@
 #include <gcrypt.h>
 #include <RTSP_utils.h>
 
+static int get_utc(struct tm *t, char *b)
+{
+    if ((sscanf(b,"%4d%2d%2dT%2d%2d%2d",
+            &t->tm_year,&t->tm_mon,&t->tm_mday,
+            &t->tm_hour,&t->tm_min,&t->tm_sec) == 6))
+        return ERR_NOERROR;
+    else
+        return ERR_GENERIC;
+}
+
 /**
  * Parses the RANGE HEADER to get the required play range
  * @param rtsp the buffer from which to get the data
