@@ -26,16 +26,13 @@
 #include <config.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h> /*SOMAXCONN*/
-#include <pwd.h>
-#include <grp.h>
 #include <signal.h>
 #include <errno.h>
 
-#include <netembryo/wsocket.h>
 
+#include <fenice/server.h>
 #include <fenice/eventloop.h>
 #include <fenice/prefs.h>
-#include <fenice/schedule.h>
 #include <fenice/utils.h>
 #include <fenice/command_environment.h>
 #include <fenice/mediathread.h>
@@ -55,8 +52,7 @@ static void terminator_function (int num) {
 
 int main(int argc, char **argv)
 {
-    Sock *main_sock = NULL, *sctp_main_sock = NULL;
-    pthread_t mth;
+    feng *srv = calloc(1,sizeof(feng));
     char *port;
     char *id;
     struct sigaction term_action;
@@ -78,9 +74,9 @@ int main(int argc, char **argv)
 
     /* Bind to the defined listening port */
     port = g_strdup_printf("%d", prefs_get_port());
-    main_sock = Sock_bind(NULL, port, TCP, 0);
+    srv->main_sock = Sock_bind(NULL, port, TCP, 0);
 
-    if(!main_sock) {
+    if(!srv->main_sock) {
         fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP port %s.", port);
         fprintf(stderr,
                 "[fatal] Sock_bind() error in main() for TCP port %s.\n",
@@ -93,7 +89,7 @@ int main(int argc, char **argv)
             port);
     g_free(port);
 
-    if(Sock_listen(main_sock, SOMAXCONN)) {
+    if(Sock_listen(srv->main_sock, SOMAXCONN)) {
         fnc_log(FNC_LOG_ERR, "Sock_listen() error for TCP socket.");
         fprintf(stderr, "[fatal] Sock_listen() error for TCP socket.\n");
         return 1;
@@ -102,9 +98,9 @@ int main(int argc, char **argv)
 #ifdef HAVE_LIBSCTP
     if (prefs_get_sctp_port() >= 0) {
         port = g_strdup_printf("%d", prefs_get_sctp_port());
-        sctp_main_sock = Sock_bind(NULL, port, SCTP, 0);
+        srv->sctp_main_sock = Sock_bind(NULL, port, SCTP, 0);
 
-        if(!sctp_main_sock) {
+        if(!srv->sctp_main_sock) {
             fnc_log(FNC_LOG_ERR,"Sock_bind() error for SCTP port %s.", port);
             fprintf(stderr,
                     "[fatal] Sock_bind() error in main() for SCTP port %s.\n",
@@ -117,7 +113,7 @@ int main(int argc, char **argv)
                 "Waiting for RTSP connections on SCTP port %s...", port);
         g_free(port);
 
-        if(Sock_listen(sctp_main_sock, SOMAXCONN)) {
+        if(Sock_listen(srv->sctp_main_sock, SOMAXCONN)) {
             fnc_log(FNC_LOG_ERR,"Sock_listen() error for SCTP socket." );
             fprintf(stderr, "[fatal] Sock_listen() error for SCTP socket.\n");
             return 1;
@@ -136,6 +132,7 @@ int main(int argc, char **argv)
                 fnc_log(FNC_LOG_WARN,
                     "Cannot setgid to user %s, %s",
                     id, strerror(errno));
+            srv->gid = gr->gr_gid;
         } else {
             fnc_log(FNC_LOG_WARN,
                     "Cannot get group %s id, %s",
@@ -151,6 +148,7 @@ int main(int argc, char **argv)
                 fnc_log(FNC_LOG_WARN,
                     "Cannot setuid to user %s, %s",
                     id, strerror(errno));
+            srv->uid = pw->pw_uid;
         } else {
             fnc_log(FNC_LOG_WARN,
                     "Cannot get user %s id, %s",
@@ -165,7 +163,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    pthread_create(&mth, NULL, mediathread, NULL);
+    pthread_create(&srv->mth, NULL, mediathread, NULL);
 
     /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
      * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
@@ -177,10 +175,10 @@ int main(int argc, char **argv)
     /* eventloop looks for incoming RTSP connections and generates for each
        all the information in the structures RTSP_list, RTP_list, and so on */
 
-        eventloop(main_sock, sctp_main_sock);
+        eventloop(srv->main_sock, srv->sctp_main_sock);
     }
 
-    Sock_close(main_sock);
-    Sock_close(sctp_main_sock);
+    Sock_close(srv->main_sock);
+    Sock_close(srv->sctp_main_sock);
     return 0;
 }
