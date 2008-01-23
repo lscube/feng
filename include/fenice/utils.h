@@ -134,7 +134,6 @@
 int parse_url(const char *url, char *server, size_t, unsigned short *port,
               char *file_name, size_t);
 #define NTP_time(t) ((float)t + 2208988800U)
-int get_field(uint8_t * d, uint32_t bits, uint32_t * offset);
 char *extradata2config(const uint8_t *extradata, int extradata_size);
 void fncheader(void);
 
