@@ -1,6 +1,6 @@
 SUBDIRS =	mediathread \
 		multicast \
-		command_environment \
+		conf \
 		eventloop \
 		rtp \
 		rtcp \

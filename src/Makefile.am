@@ -52,7 +52,7 @@ feng_LDADD =	../eventloop/libeventloop.la \
 		../mediathread/libmediath.la \
 		../multicast/libmulticast.la
 
-feng_LDADD +=	../command_environment/libcommand.la \
+feng_LDADD +=	../conf/libcommand.la \
 		../src/libprefs.la \
 		../src/libutils.la \
 		../src/liblog.la \
