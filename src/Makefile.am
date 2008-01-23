@@ -6,17 +6,11 @@ if FENICE_VERBOSE
 noinst_LTLIBRARIES += libdebug.la
 endif
 
-libutils_la_SOURCES =	get_field.c \
-			sdp_utils.c
+libutils_la_SOURCES = sdp_utils.c
 
-libutils_la_LDFLAGS = -lm
+liblog_la_SOURCES = fnc_log.c 
 
-
-liblog_la_SOURCES =	fnc_log.c 
-
-liblog_la_LDFLAGS = -lm
-
-libsafectype_la_SOURCES =	safe-ctype.c 
+libsafectype_la_SOURCES = safe-ctype.c 
 
 libsafectype_la_LDFLAGS = -lm
 
