@@ -247,24 +247,29 @@ static int h264_init(MediaProperties *properties, void **private_data)
 
     if (!priv) return ERR_ALLOC;
 
-    if(properties->extradata && properties->extradata[0] == 1) {
-	if (properties->extradata_len < 7) goto err_alloc;
-	priv->nal_length_size = (properties->extradata[4]&0x03)+1;
-        priv->is_avc = 1;
-        sprop = encode_avc1_header(properties->extradata,
-                                   properties->extradata_len, FU_A);
-        if (sprop == NULL) goto err_alloc;
-    } else {
-        sprop = encode_header(properties->extradata,
-                              properties->extradata_len, FU_A);
-        if (sprop == NULL) goto err_alloc;
-    }
+    if (properties->extradata) {
+        if(properties->extradata && properties->extradata[0] == 1) {
+        	if (properties->extradata_len < 7) goto err_alloc;
+        	priv->nal_length_size = (properties->extradata[4]&0x03)+1;
+            priv->is_avc = 1;
+            sprop = encode_avc1_header(properties->extradata,
+                                       properties->extradata_len, FU_A);
+            if (sprop == NULL) goto err_alloc;
+        } else {
+            sprop = encode_header(properties->extradata,
+                                  properties->extradata_len, FU_A);
+            if (sprop == NULL) goto err_alloc;
+        }
 
-    sdp_private = g_new(sdp_field, 1);
-    sdp_private->type = fmtp;
-    sdp_private->field = sprop;
-    properties->sdp_private =
-        g_list_prepend(properties->sdp_private, sdp_private);
+        sdp_private = g_new(sdp_field, 1);
+        sdp_private->type = fmtp;
+        sdp_private->field = sprop;
+        properties->sdp_private =
+            g_list_prepend(properties->sdp_private, sdp_private);
+    }
+    else {
+        fnc_log(FNC_LOG_WARN, "[h264] No Extradata, if loaded from a .sd remember to specify the FMTP option\n");
+    }
 
     sdp_private = g_new(sdp_field, 1);
     sdp_private->type = rtpmap;
