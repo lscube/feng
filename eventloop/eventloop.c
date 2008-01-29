@@ -64,7 +64,8 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
     }
     /* Stay here and wait for something happens */
     if (select(max_fd + 1, &rset, &wset, NULL, NULL) < 0) {
-        fnc_log(FNC_LOG_ERR, "select error in eventloop(). %s\n", strerror(errno));
+        fnc_log(FNC_LOG_ERR, "select error in eventloop(). %s\n",
+                strerror(errno));
         /* Maybe we have to force exit here*/
         return;
     }
@@ -89,21 +90,21 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
                 }
             if (!fd_found) {
                 if (conn_count < ONE_FORK_MAX_CONNECTION) {
-                ++conn_count;
-                // ADD A CLIENT
-                add_client(&rtsp_list, client_sock);
+                    ++conn_count;
+                    // ADD A CLIENT
+                    add_client(&rtsp_list, client_sock);
                 } else {
+                #if 0
+                    // Pending complete rewrite
                     if (fork() == 0) {
                         // I'm the child
                         ++child_count;
-                        RTP_port_pool_init
-                            (ONE_FORK_MAX_CONNECTION *
-                             child_count * 2 +
+                        RTP_port_pool_init (ONE_FORK_MAX_CONNECTION *
+                                            child_count * 2 +
                              *((int *) get_pref(PREFS_FIRST_UDP_PORT)));
                         if (schedule_init() == ERR_FATAL) {
-                            fnc_log(FNC_LOG_FATAL,
-                            "Can't start scheduler. "
-                            "Server is aborting.\n");
+                            fnc_log(FNC_LOG_FATAL, "Can't start scheduler. "
+                                    "Server is aborting.\n");
                             return;
                         }
                         conn_count = 1;
@@ -119,6 +120,7 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
                             Sock_close(sctp_main_sock);
 #endif
                     }
+                #endif
                 }
                 num_conn++;
                 fnc_log(FNC_LOG_INFO, "Connection reached: %d\n",
