@@ -31,7 +31,6 @@
 #include <bufferpool/bufferpool.h>
 
 int stop_schedule = 0;
-extern int num_conn;
 
 void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count, 
     fd_set * rset, fd_set * wset, fd_set * xset)
@@ -42,6 +41,7 @@ void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count,
     RTSP_interleaved *intlvd;
 
     while (p != NULL) {
+        feng *srv = p->srv;
         if ((res = rtsp_server(p, rset, wset, xset)) != ERR_NOERROR) {
             if (res == ERR_CONNECTION_CLOSE || res == ERR_GENERIC) {
                 // The connection is closed
@@ -69,7 +69,7 @@ void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count,
                         // if (r->current_media->pkt_buffer);
                         // Release the scheduler entry
                         t = r->next;
-                        schedule_remove(r->sched_id);
+                        schedule_remove(r);
                         r = t;
                     }
                     // Close connection                     
@@ -90,7 +90,7 @@ void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count,
                 // wait for 
                 Sock_close(p->sock);
                 --*conn_count;
-                num_conn--;
+                srv->num_conn--;
                 // Release the RTSP_buffer
                 if (p == *rtsp_list) {
                     *rtsp_list = p->next;

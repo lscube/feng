@@ -72,6 +72,7 @@ int RTP_send_packet(RTP_session * session)
     int res = ERR_NOERROR, bp_frames = 0;
     BPSlot *slot = NULL;
     ssize_t psize_sent = 0;
+    feng *srv = session->srv;
     Track *t = r_selected_track(session->track_selector);
 
     if ((slot = bp_getreader(session->cons))) {

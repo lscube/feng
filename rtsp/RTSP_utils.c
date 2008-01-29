@@ -40,9 +40,6 @@
 
 RTSP_Error const RTSP_Fatal_ErrAlloc = { {0, ""}, ERR_ALLOC };
 
-//! number of currently active connections
-extern int num_conn;
-
 /**
  * gets the reply message from a standard RTSP error code
  * @param err the code of the error
@@ -141,13 +138,12 @@ RTSP_Error validate_url(char *url, ConnectionInfo * cinfo)
     }
 
 //    printf("server: %s\npath: %s\n", cinfo->server, cinfo->object);
-
-    if (strcmp(cinfo->server, prefs_get_hostname()) != 0) {    /* Currently this feature is disabled. */
-        /* wrong server name */
-        //      send_reply(404, 0 , rtsp);  /* Not Found */
+/* XXX FIXME FIXME
+    if (strcmp(cinfo->server, prefs_get_hostname()) != 0) {
+        //      send_reply(404, 0 , rtsp);
         //      return ERR_NOERROR;
     }
-
+*/
     return RTSP_Ok;
 }
 
@@ -224,9 +220,9 @@ RTSP_Error get_cseq(RTSP_buffer * rtsp)
  * @return might return RTSP_NotFound both if the file doesn't exist or
  * @return if a demuxer is not available for the given file
  */
-RTSP_Error get_session_description(ConnectionInfo * cinfo)
+RTSP_Error get_session_description(feng *srv, ConnectionInfo * cinfo)
 {
-    int sdesc_error = sdp_session_descr(cinfo->object, cinfo->descr, sizeof(cinfo->descr));
+    int sdesc_error = sdp_session_descr(srv, cinfo->object, cinfo->descr, sizeof(cinfo->descr));
 
     if ((sdesc_error))
     {
@@ -415,18 +411,6 @@ int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
     rtsp->out_buffer[rtsp->out_size + len] = '\0';
     rtsp->out_size += len;
     return ERR_NOERROR;
-}
-
-/**
- * Checks if the number of active connections is greater then the maximum of supported
- * return ERR_NOERROR or ERR_GENERIC if the number of connections is greater then the maximum
- */
-int max_connection()
-{
-    if (num_conn <= prefs_get_max_session())
-        return ERR_NOERROR;
-
-    return ERR_GENERIC;
 }
 
 /**

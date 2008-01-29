@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     sigset_t block_set;
 
     /* parses the command line and initializes the log*/
-    if (command_environment(argc, argv))
+    if (command_environment(srv, argc, argv))
         return 1;
 
     /* catch TERM and INT signals */
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
     }
     /* Initialises the array of schedule_list sched and creates the thread
      * schedule_do() -> look at schedule.c */
-    if (schedule_init() == ERR_FATAL) {
+    if (schedule_init(srv) == ERR_FATAL) {
         fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.");
         fprintf(stderr, "[fatal] Can't start scheduler. Server is aborting.\n");
         return 1;
@@ -175,7 +175,7 @@ int main(int argc, char **argv)
     /* eventloop looks for incoming RTSP connections and generates for each
        all the information in the structures RTSP_list, RTP_list, and so on */
 
-        eventloop(srv->main_sock, srv->sctp_main_sock);
+        eventloop(srv);
     }
 
     Sock_close(srv->main_sock);

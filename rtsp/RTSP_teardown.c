@@ -131,7 +131,7 @@ int RTSP_teardown(RTSP_buffer * rtsp)
             rtp_curr = rtp_curr->next;
             if (!rtp_temp->is_multicast--) {
                 // Release the scheduler entry
-                schedule_remove(rtp_temp->sched_id);
+                schedule_remove(rtp_temp);
                 fnc_log(FNC_LOG_DEBUG, "[TEARDOWN] Removed %s", filename);
             } else {
                 fnc_log(FNC_LOG_DEBUG, "[TEARDOWN] %s multicast session,"

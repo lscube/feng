@@ -41,7 +41,7 @@ void usage(char *name)
     return;
 }
 
-int command_environment(int argc, char **argv)
+int command_environment(feng *srv, int argc, char **argv)
 {
 
     static const char short_options[] = "f:vVsq";
@@ -71,7 +71,7 @@ int command_environment(int argc, char **argv)
         case 0:    /* Flag setting handled by getopt-long */
             break;
         case 'f':
-            prefs_init(optarg);
+            prefs_init(srv, optarg);
             config_file = 1;
             break;
         case 'q':
@@ -101,7 +101,7 @@ int command_environment(int argc, char **argv)
 
     if (!quiet) fncheader();
 
-    if (!config_file) prefs_init(NULL);
+    if (!config_file) prefs_init(srv, NULL);
 
     fn = fnc_log_init(prefs_get_log(), view_log, progname);
 

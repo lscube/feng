@@ -28,17 +28,6 @@
  * @brief Contains most of lowlevel RTSP functions
  */
 
-/**
- * Initializes an RTSP buffer binding it to a socket
- * @param rtsp the buffer to inizialize
- * @param rtsp_sock the socket to link to the buffer
- */
-void RTSP_initserver(RTSP_buffer * rtsp, Sock *rtsp_sock)
-{
-    rtsp->sock = rtsp_sock;
-    rtsp->session_list = (RTSP_session *) calloc(1, sizeof(RTSP_session));
-    rtsp->session_list->session_id = -1;
-}
 
 /**
  * Sends the rtsp output buffer through the socket

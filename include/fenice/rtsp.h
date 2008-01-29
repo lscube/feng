@@ -72,6 +72,7 @@ typedef struct _RTSP_session {
     struct _RTSP_session *next;
     // mediathread resource
     Resource *resource;
+    feng *srv;
 } RTSP_session;
 
 typedef struct _RTSP_buffer {
@@ -94,6 +95,7 @@ typedef struct _RTSP_buffer {
     char descr[MAX_DESCR_LENGTH];
     RTSP_session *session_list;
     struct _RTSP_buffer *next;
+    feng *srv;
 } RTSP_buffer;
 
 typedef enum {
@@ -155,8 +157,6 @@ int RTSP_valid_response_msg(unsigned short *status, char *msg,
                 RTSP_buffer * rtsp);
 
 int RTSP_validate_method(RTSP_buffer * rtsp);
-
-void RTSP_initserver(RTSP_buffer * rtsp, Sock *rtsp_sock);
 
 int send_reply(int err, char *addon, RTSP_buffer * rtsp);
 

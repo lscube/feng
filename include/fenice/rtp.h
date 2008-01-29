@@ -111,6 +111,7 @@ typedef struct _RTP_session {
     BPConsumer *cons;
     RTCP_stats rtcp_stats[2];    //client and server
     struct _RTP_session *next;
+    struct feng_s *srv;
 } RTP_session;
 
 typedef struct _RTP_header {

@@ -31,6 +31,7 @@
 #include <fenice/mediaparser.h>
 #include <bufferpool/bufferpool.h>
 #include <fenice/sdp_grammar.h>
+#include <fenice/server.h>
 
 #define RESOURCE_OK 0
 #define RESOURCE_NOT_FOUND -1
@@ -98,6 +99,7 @@ typedef struct Resource_s {
     int num_tracks;
     void *private_data; /* Demuxer private data */
     int eos; //!< signals the end of stream
+    feng *srv;
 } Resource;
 
 MObject_def(Trackinfo_s)
@@ -175,7 +177,9 @@ typedef struct {
 // --- functions --- //
 
 // Resources
-Resource *r_open(char *root, char *name);/*open the resource: mkv, sd ...*/
+
+Resource *r_open(feng *srv, char *root, char *name);
+
 void r_close(Resource *);
 
 Selector *r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
@@ -193,6 +197,6 @@ Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 void free_track(Track *, Resource *);
 
 // Resources and Media descriptions
-ResourceDescr *r_descr_get(char *root, char *name);
+ResourceDescr *r_descr_get(feng *srv, char *root, char *name);
 
 #endif // FN_DEMUXER_H

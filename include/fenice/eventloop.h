@@ -26,14 +26,15 @@
 #include <netembryo/wsocket.h>
 #include <fenice/fnc_log.h>
 #include <fenice/rtsp.h>
+#include <fenice/server.h>
 
 #define MAX_FDS 800
 
 typedef int (*event_function) (void *data);
 
-void eventloop(Sock *main_sock, Sock *sctp_main_sock);
+void eventloop(feng *srv);
 int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset);
-void add_client(RTSP_buffer ** rtsp_list, Sock *client_sock);
+void add_client(feng *srv, RTSP_buffer ** rtsp_list, Sock *client_sock);
 void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count, fd_set * rset, fd_set * wset, fd_set * xset);
 void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset, fd_set * wset, fd_set * xset);
 

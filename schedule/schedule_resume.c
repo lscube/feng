@@ -27,11 +27,9 @@
 #include <fenice/rtp.h>
 #include <fenice/utils.h>
 
-extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
-
-int schedule_resume(int id, play_args *args)
+int schedule_resume(RTP_session *session, play_args *args)
 {
-    RTP_session *session = sched[id].rtp_session;
+    feng *srv = session->srv;
     int i;
 
     session->start_time = args->start_time;

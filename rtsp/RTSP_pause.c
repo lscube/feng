@@ -25,7 +25,6 @@
  */
 
 #include <fenice/rtsp.h>
-#include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 
 #include <RTSP_utils.h>

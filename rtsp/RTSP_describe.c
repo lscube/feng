@@ -43,6 +43,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
     char *r;        /* reply message buffer */
     int mb_len;
     char encoded_object[256];
+    feng *srv = rtsp->srv;
 
     /* allocate buffer */
     mb_len = 1512 + strlen(cinfo->descr);
@@ -98,6 +99,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
     char url[255];
     ConnectionInfo cinfo;
     RTSP_Error error;
+    feng *srv = rtsp->srv;
 
     // Set some defaults
     cinfo.descr_format = df_SDP_format;
@@ -121,10 +123,10 @@ int RTSP_describe(RTSP_buffer * rtsp)
     else if ( (error = get_cseq(rtsp)).got_error )
         goto error_management;
     // Get Session Description
-    else if ( (error = get_session_description(&cinfo)).got_error )
+    else if ( (error = get_session_description(srv, &cinfo)).got_error )
         goto error_management;
 
-    if (max_connection() == ERR_GENERIC) {
+    if (srv->num_conn > prefs_get_max_session()) {
         /*redirect */
         return send_redirect_3xx(rtsp, cinfo.object);
     }

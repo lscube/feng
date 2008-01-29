@@ -32,14 +32,16 @@
 
 #define SCHEDULER_TIMING 16000 //16ms. Sleep time suggested by Intel
 
-extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 extern int stop_schedule;
 
-void *schedule_do(void *nothing)
+void *schedule_do(void *arg)
 {
     int i = 0, res;
     unsigned utime = SCHEDULER_TIMING;
     double now;
+    feng *srv = arg;
+    schedule_list *sched = srv->sched;
+
 do {
     // Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
     usleep(utime);
@@ -54,11 +56,6 @@ do {
                 res = ERR_NOERROR;
                 while (res == ERR_NOERROR && now >= session->start_time &&
                     now >= session->start_time + session->send_time) {
-#if 0
-                        fprintf(stderr, "[SCH] PT: %d Sendtime: %f Timestamp: %f Delta: %f\n",
-                                tr->properties->payload_type, session->send_time, session->timestamp - session->seek_time,
-                                session->send_time - (session->timestamp - session->seek_time));
-#endif
 #if 1
 //TODO DSC will be implemented WAY later.
 #else
@@ -80,7 +77,7 @@ do {
                             break;
                         case ERR_ALLOC:
                             fnc_log(FNC_LOG_WARN,"[SCH] Cannot allocate memory");
-                            schedule_stop(i);
+                            schedule_stop(session);
                             break;
                         default:
                             fnc_log(FNC_LOG_WARN,"[SCH] Packet Lost");

@@ -51,9 +51,9 @@ int schedule_init();
 
 void *schedule_do(void *nothing);
 
-int schedule_add(RTP_session * rtp_session /*,RTSP_session *rtsp_session */ );
-int schedule_start(int id, play_args * args);
-void schedule_stop(int id);
-int schedule_remove(int id);
-int schedule_resume(int id, play_args * args);
+int schedule_add(RTP_session * rtp_session);
+int schedule_start(RTP_session * rtp_session, play_args * args);
+void schedule_stop(RTP_session * rtp_session);
+int schedule_remove(RTP_session * rtp_session);
+int schedule_resume(RTP_session * rtp_session, play_args * args);
 #endif // FN_SCHEDULE_H

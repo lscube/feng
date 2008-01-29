@@ -27,7 +27,8 @@
 #include <getopt.h>
 #endif
 #include <fenice/prefs.h>
+#include <fenice/server.h>
 #include <fenice/fnc_log.h>
 
-int command_environment(int, char **);
+int command_environment(feng *srv, int argc, char **argv);
 #endif // FN_COMMAND_ENVIRONMENT_H

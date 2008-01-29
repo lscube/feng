@@ -101,7 +101,7 @@ MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
     return new_m_descrs;
 }
 
-int sdp_session_descr(char *name, char *descr, size_t descr_size)
+int sdp_session_descr(feng *srv, char *name, char *descr, size_t descr_size)
 {
     gint64 size_left=descr_size;
     char *cursor=descr, *ip_addr;
@@ -112,7 +112,7 @@ int sdp_session_descr(char *name, char *descr, size_t descr_size)
     double duration;
 
     fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s", name);
-    if ( !(r_descr=r_descr_get(prefs_get_serv_root(), name)) ) {
+    if ( !(r_descr=r_descr_get(srv, prefs_get_serv_root(), name)) ) {
         fnc_log(FNC_LOG_ERR, "[SDP2] %s not found", name);
         return ERR_NOT_FOUND;
     }

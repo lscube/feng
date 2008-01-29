@@ -29,10 +29,11 @@
 
 #include <fenice/schedule.h>
 
-int num_conn = 0;
-
-void eventloop(Sock *main_sock, Sock *sctp_main_sock)
+void eventloop(feng *srv)
 {
+    Sock *main_sock = srv->main_sock;
+    Sock *sctp_main_sock = srv->sctp_main_sock;
+
     static uint32_t child_count = 0;
     static int conn_count = 0;
     int max_fd;
@@ -47,7 +48,7 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
     FD_ZERO(&wset);
 
     if (conn_count != -1) {
-        /* This is the process allowed for accepting new clients */
+        /* This process is accepting new clients */
         FD_SET(Sock_fd(main_sock), &rset);
         max_fd = Sock_fd(main_sock);
 #ifdef HAVE_LIBSCTP
@@ -92,7 +93,7 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
                 if (conn_count < ONE_FORK_MAX_CONNECTION) {
                     ++conn_count;
                     // ADD A CLIENT
-                    add_client(&rtsp_list, client_sock);
+                    add_client(srv, &rtsp_list, client_sock);
                 } else {
                 #if 0
                     // Pending complete rewrite
@@ -109,7 +110,7 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
                         }
                         conn_count = 1;
                         rtsp_list = NULL;
-                        add_client(&rtsp_list, client_sock);
+                        add_client(srv, &rtsp_list, client_sock);
                     } else {
                         // I'm the father
                         conn_count = -1;
@@ -122,9 +123,9 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
                     }
                 #endif
                 }
-                num_conn++;
+                srv->num_conn++;
                 fnc_log(FNC_LOG_INFO, "Connection reached: %d\n",
-                    num_conn);
+                    srv->num_conn);
             } else
                 fnc_log(FNC_LOG_INFO, "Connection found: %d\n",
                     Sock_fd(client_sock));

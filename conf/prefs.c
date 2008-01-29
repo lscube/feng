@@ -1,34 +1,4 @@
-/* * 
- *  $Id: prefs.c 406 2006-10-17 13:19:51Z shawill $
- *  
- *  This file is part of Feng
- *
- *  Feng -- Standard Streaming Server
- *
- *  Copyright (C) 2007 by
- *      
- *    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
- *    - Francesco Varano    <francesco.varano@polito.it>
- *    - Marco Penno        <marco.penno@polito.it>
- *    - Federico Ridolfo    <federico.ridolfo@polito.it>
- *    - Eugenio Menegatti     <m.eu@libero.it>
- *    - Stefano Cau
- *    - Giuliano Emma
- *    - Stefano Oldrini
- * 
- *  Feng is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  Feng is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with Feng; if not, write to the Free Software
- *  This file is part of Feng
+/* *
  * 
  * Copyright (C) 2007 by LScube team <team@streaming.polito.it> 
  * See AUTHORS for more details 
@@ -55,11 +25,24 @@
 #include <unistd.h>
 
 #include <fenice/prefs.h>
+#include <fenice/server.h>
 #include <fenice/rtp.h> //RTP_DEFAULT_PORT
 
-CREATE_PREFS_DATA;
+static pref_record prefs[PREFS_LAST] = {
+        { STRING, "root", NULL },
+        { INTEGER, "tcp_port", NULL },
+        { INTEGER, "sctp_port", NULL },
+        { INTEGER, "ssl_port", NULL },
+        { INTEGER, "first_udp_port", NULL },
+        { INTEGER, "max_session", NULL },
+        { INTEGER, "buffered_frames", NULL },
+        { STRING, "log_file", NULL },
+        { STRING, "host.name", NULL },
+        { STRING, "user", NULL },
+        { STRING, "group", NULL }
+};
 
-void prefs_init(char *fileconf)
+void prefs_init(feng *srv, char *fileconf)
 {
     FILE *f = NULL;
     char line[256];
@@ -67,7 +50,10 @@ void prefs_init(char *fileconf)
     int l;
     pref_id i;
 
-    prefs_use_default(PREFS_ALL);
+    srv->prefs = prefs; //XXX
+    //malloc(sizeof(pref_record)*PREFS_LAST);
+
+    prefs_use_default(srv, PREFS_ALL);
 
     if (fileconf) {
         if ((f = fopen(fileconf, "rt")) == NULL) {
@@ -90,18 +76,18 @@ void prefs_init(char *fileconf)
             if (cont && line[0] != '#') {
                 p = NULL;
                 for (i = PREFS_FIRST; i < PREFS_LAST && p == NULL; i++) {
-                    p = strstr(line, prefs[i].tag);
+                    p = strstr(line, srv->prefs[i].tag);
                     if (p != NULL) {
                         p = strstr(p, "=");
                         if (p != NULL) {
                             q = p + 1;
-                            if (prefs[i].type == STRING) {
+                            if (srv->prefs[i].type == STRING) {
                                 p = strstr(q,"\n");
                                 if (p != NULL) {
                                     *p = '\0';
                                     SET_STRING_DATA(i, q);
                                 }
-                            } else if (prefs[i].type == INTEGER) {
+                            } else if (srv->prefs[i].type == INTEGER) {
                                 if (sscanf(q, "%i", &l) == 1) {
                                     SET_INTEGER_DATA(i, l);
                                 }
@@ -137,7 +123,7 @@ void prefs_init(char *fileconf)
 #endif
 }
 
-void prefs_use_default(pref_id index)
+void prefs_use_default(feng *srv, pref_id index)
 {
     char buffer[256];
 
@@ -186,10 +172,10 @@ void prefs_use_default(pref_id index)
     }
 }
 
-void *get_pref(pref_id id)
+void *get_pref(feng *srv, pref_id id)
 {
     if (id >= PREFS_FIRST && id < PREFS_LAST)
-        return prefs[id].data;
+        return srv->prefs[id].data;
     else
         return NULL;
 }

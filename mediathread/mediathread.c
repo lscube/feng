@@ -155,9 +155,9 @@ inline void mt_dispose_event_args(mt_event_id id, void ** args) {
     g_free(args);
 }
 
-Resource *mt_resource_open(char * path, char *filename) {
+Resource *mt_resource_open(feng *srv, char * path, char *filename) {
     // TODO: add to a list in order to close resources on shutdown!
-    return r_open(path, filename);
+    return r_open(srv, path, filename);
 }
 
 void mt_resource_close(Resource *resource) {

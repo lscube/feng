@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <fenice/server.h>
 #include <fenice/demuxer.h>
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
@@ -242,7 +243,7 @@ static void properties_free(void *properties)
     g_free(props);
 }
 
-Resource *r_open(char *root, char *n)
+Resource *r_open(struct feng_s *srv, char *root, char *n)
 {
     Resource *r;
     int dmx_idx;
@@ -281,6 +282,7 @@ Resource *r_open(char *root, char *n)
     r->info->name = g_path_get_basename(n);
     r->i_stream = i_stream;
     r->demuxer = demuxers[dmx_idx];
+    r->srv = srv;
 
     if (r->demuxer->init(r)) {
         r_close(r);
@@ -465,7 +467,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 #undef ADD_TRACK_ERROR
 
 
-ResourceDescr *r_descr_get(char *root, char *n)
+ResourceDescr *r_descr_get(struct feng_s *srv, char *root, char *n)
 {
     GList *cache_el;
     char mrl[255];
@@ -476,7 +478,7 @@ ResourceDescr *r_descr_get(char *root, char *n)
 
     if ( !(cache_el=r_descr_find(mrl)) ) {
         Resource *r;
-        if ( !(r = r_open(root, n)) ) // shawill TODO: implement pre_open cache
+        if ( !(r = r_open(srv, root, n)) ) // shawill TODO: implement pre_open cache
             return NULL;
         cache_el = r_descr_find(mrl);
         r_close(r);

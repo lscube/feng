@@ -28,21 +28,27 @@
 #ifndef FN_SERVER_H
 #define FN_SERVER_H
 
-#include <fenice/schedule.h>
+// #include <fenice/schedule.h>
+#include <fenice/prefs.h>
 #include <netembryo/wsocket.h>
 #include <pwd.h>
 #include <grp.h>
 
-typedef struct {
+typedef struct feng_s {
     Sock *main_sock;
     Sock *sctp_main_sock;
     pthread_t mth;
     int port;
-    schedule_list *sched;
+    struct _schedule_list *sched;
+    pref_record *prefs;
     int start_port;
     int *port_pool;
     gid_t gid;
     uid_t uid;
+/** eventloop stuff */
+    int num_conn;
+    int conn_count;
+    int child_count;
 } feng;
 
 #endif // FN_SERVER_H

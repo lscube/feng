@@ -26,10 +26,10 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
-
-int schedule_remove(int id)
+int schedule_remove(RTP_session *session)
 {
+    schedule_list *sched = session->srv->sched;
+    int id = session->sched_id;
     pthread_mutex_lock(&sched[id].mux);
     sched[id].valid = 0;
     if (sched[id].rtp_session) {
