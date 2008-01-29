@@ -244,11 +244,12 @@ static int h264_init(MediaProperties *properties, void **private_data)
     sdp_field *sdp_private;
     h264_priv *priv = calloc(1, sizeof(h264_priv));
     char *sprop = NULL;
+    int err = ERR_ALLOC;
 
     if (!priv) return ERR_ALLOC;
 
     if (properties->extradata) {
-        if(properties->extradata && properties->extradata[0] == 1) {
+        if(properties->extradata[0] == 1) {
         	if (properties->extradata_len < 7) goto err_alloc;
         	priv->nal_length_size = (properties->extradata[4]&0x03)+1;
             priv->is_avc = 1;
@@ -266,9 +267,10 @@ static int h264_init(MediaProperties *properties, void **private_data)
         sdp_private->field = sprop;
         properties->sdp_private =
             g_list_prepend(properties->sdp_private, sdp_private);
-    }
-    else {
-        fnc_log(FNC_LOG_WARN, "[h264] No Extradata, if loaded from a .sd remember to specify the FMTP option\n");
+    } else {
+        fnc_log(FNC_LOG_WARN, "[h264] No Extradata, unsupported\n");
+        err = ERR_UNSUPPORTED_PT;
+        goto err_alloc;
     }
 
     sdp_private = g_new(sdp_field, 1);
@@ -286,7 +288,7 @@ static int h264_init(MediaProperties *properties, void **private_data)
 
     err_alloc:
         free(priv);
-    return ERR_ALLOC;
+    return err;
 }
 
 static int h264_get_frame2(uint8_t *dst, uint32_t dst_nbytes, double *timestamp,
