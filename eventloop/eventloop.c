@@ -34,10 +34,7 @@ void eventloop(feng *srv)
     Sock *main_sock = srv->main_sock;
     Sock *sctp_main_sock = srv->sctp_main_sock;
 
-    static uint32_t child_count = 0;
-    static int conn_count = 0;
     int max_fd;
-    static RTSP_buffer *rtsp_list = NULL;
     RTSP_buffer *p = NULL;
     uint32_t fd_found;
     fd_set rset,wset;
@@ -47,7 +44,7 @@ void eventloop(feng *srv)
     FD_ZERO(&rset);
     FD_ZERO(&wset);
 
-    if (conn_count != -1) {
+    if (srv->conn_count != -1) {
         /* This process is accepting new clients */
         FD_SET(Sock_fd(main_sock), &rset);
         max_fd = Sock_fd(main_sock);
@@ -60,7 +57,7 @@ void eventloop(feng *srv)
     }
 
     /* Add all sockets of all sessions to fd_sets */
-    for (p = rtsp_list; p; p = p->next) {
+    for (p = srv->rtsp_list; p; p = p->next) {
         rtsp_set_fdsets(p, &max_fd, &rset, &wset, NULL);
     }
     /* Stay here and wait for something happens */
@@ -71,9 +68,9 @@ void eventloop(feng *srv)
         return;
     }
     /* transfer data for any RTSP sessions */
-    schedule_connections(&rtsp_list, &conn_count, &rset, &wset, NULL);
+    schedule_connections(&srv->rtsp_list, &srv->conn_count, &rset, &wset, NULL);
     /* handle new connections */
-    if (conn_count != -1) {
+    if (srv->conn_count != -1) {
 #ifdef HAVE_LIBSCTP
         if (sctp_main_sock && FD_ISSET(Sock_fd(sctp_main_sock), &rset)) {
             client_sock = Sock_accept(sctp_main_sock);
@@ -84,16 +81,16 @@ void eventloop(feng *srv)
         }
         // Handle a new connection
         if (client_sock) {
-            for (fd_found = 0, p = rtsp_list; p != NULL; p = p->next)
+            for (fd_found = 0, p = srv->rtsp_list; p != NULL; p = p->next)
                 if (!Sock_compare(client_sock, p->sock)) {
                     fd_found = 1;
                     break;
                 }
             if (!fd_found) {
-                if (conn_count < ONE_FORK_MAX_CONNECTION) {
-                    ++conn_count;
+                if (srv->conn_count < ONE_FORK_MAX_CONNECTION) {
+                    ++srv->conn_count;
                     // ADD A CLIENT
-                    add_client(srv, &rtsp_list, client_sock);
+                    add_client(srv, &srv->rtsp_list, client_sock);
                 } else {
                 #if 0
                     // Pending complete rewrite

@@ -46,6 +46,7 @@ typedef struct feng_s {
     gid_t gid;
     uid_t uid;
 /** eventloop stuff */
+    struct _RTSP_buffer *rtsp_list;
     int num_conn;
     int conn_count;
     int child_count;
