@@ -243,7 +243,7 @@ static void properties_free(void *properties)
     g_free(props);
 }
 
-Resource *r_open(struct feng_s *srv, char *root, char *n)
+Resource *r_open(struct feng *srv, char *root, char *n)
 {
     Resource *r;
     int dmx_idx;
@@ -467,7 +467,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 #undef ADD_TRACK_ERROR
 
 
-ResourceDescr *r_descr_get(struct feng_s *srv, char *root, char *n)
+ResourceDescr *r_descr_get(struct feng *srv, char *root, char *n)
 {
     GList *cache_el;
     char mrl[255];

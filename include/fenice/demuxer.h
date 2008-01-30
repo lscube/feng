@@ -84,14 +84,14 @@ MObject_def(ResourceInfo_s)
     char ttl[4];
 } ResourceInfo;
 
-typedef struct Resource_s {
+typedef struct Resource {
     InputStream *i_stream;
-    struct Demuxer_s *demuxer;
+    struct Demuxer *demuxer;
     ResourceInfo *info;
     /* Timescale fixer callback function for meta-demuxers */
-    double (*timescaler)(struct Resource_s *, double);
+    double (*timescaler)(struct Resource *, double);
     /* EDL specific data */
-    struct Resource_s *edl;
+    struct Resource *edl;
     /* Multiformat related things */
     SelList sel;
     int num_sel;
@@ -152,7 +152,7 @@ typedef struct {
     const char *extensions; // coma separated list of extensions (w/o '.')
 } DemuxerInfo;
 
-typedef struct Demuxer_s {
+typedef struct Demuxer {
     DemuxerInfo *info;
     int (*probe)(InputStream *);
     int (*init)(Resource *);

@@ -31,7 +31,7 @@
 #include <fenice/prefs.h>
 #include <fenice/debug.h>
 
-typedef struct _play_args {
+typedef struct play_args {
     struct tm playback_time;
     short playback_time_valid;
     short seek_time_valid;
@@ -40,7 +40,7 @@ typedef struct _play_args {
     double end_time;
 } play_args;
 
-typedef struct _schedule_list {
+typedef struct schedule_list {
     pthread_mutex_t mux;
     int valid;
     RTP_session *rtp_session;

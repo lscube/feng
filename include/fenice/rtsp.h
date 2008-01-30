@@ -46,7 +46,7 @@
 #define RTSP_RTP_AVP "RTP/AVP"
 
 
-typedef struct _RTSP_interleaved {
+typedef struct RTSP_interleaved {
     Sock *rtp_local;
     Sock *rtcp_local;
     union {
@@ -61,21 +61,21 @@ typedef struct _RTSP_interleaved {
         } sctp;
 #endif
     } proto;
-    struct _RTSP_interleaved *next;
+    struct RTSP_interleaved *next;
 } RTSP_interleaved;
 
-typedef struct _RTSP_session {
+typedef struct RTSP_session {
     int cur_state;
     unsigned long session_id;
     int started;
     RTP_session *rtp_session;
-    struct _RTSP_session *next;
+    struct RTSP_session *next;
     // mediathread resource
     Resource *resource;
     feng *srv;
 } RTSP_session;
 
-typedef struct _RTSP_buffer {
+typedef struct RTSP_buffer {
     Sock *sock;
     //unsigned int port;
     // Buffers      
@@ -94,7 +94,7 @@ typedef struct _RTSP_buffer {
     unsigned int rtsp_cseq;
     char descr[MAX_DESCR_LENGTH];
     RTSP_session *session_list;
-    struct _RTSP_buffer *next;
+    struct RTSP_buffer *next;
     feng *srv;
 } RTSP_buffer;
 

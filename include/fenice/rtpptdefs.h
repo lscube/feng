@@ -33,7 +33,7 @@
 	#endif /* GLOBAL_RTP_DEFS */
 
 
-	typedef struct _RTP_static_payload {
+	typedef struct RTP_static_payload {
 		int PldType;
 	        char *EncName;
 	        int ClockRate;      // In Hz

@@ -80,20 +80,20 @@ typedef struct {
 
 // Functions
 
-struct feng_s;
+struct feng;
 
 /** read the config file and fill the values in the global configuration
  * @parameter fileconf takes a string with the full path or NULL to use defaults
  */
-void prefs_init(struct feng_s *srv, char *fileconf);
+void prefs_init(struct feng *srv, char *fileconf);
 /** returns a pointer to the pref data, NULL if non existent.
  */
-void *get_pref(struct feng_s *srv, pref_id id);
+void *get_pref(struct feng *srv, pref_id id);
 #define get_pref_int(X) (*((int *) get_pref(srv, X)))
 #define get_pref_str(X) ((char *) get_pref(srv, X))
 /** initializes the default prefs for the specific id
  */
-void prefs_use_default(struct feng_s *srv, pref_id id);
+void prefs_use_default(struct feng *srv, pref_id id);
 
 // Macros (for compatibility with old prefs.h
 /// XXX deprecate them 

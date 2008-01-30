@@ -34,19 +34,19 @@
 #include <pwd.h>
 #include <grp.h>
 
-typedef struct feng_s {
+typedef struct feng {
     Sock *main_sock;
     Sock *sctp_main_sock;
     pthread_t mth;
     int port;
-    struct _schedule_list *sched;
+    struct schedule_list *sched;
     pref_record *prefs;
     int start_port;
     int *port_pool;
     gid_t gid;
     uid_t uid;
 /** eventloop stuff */
-    struct _RTSP_buffer *rtsp_list;
+    struct RTSP_buffer *rtsp_list;
     int num_conn;
     int conn_count;
     int child_count;
