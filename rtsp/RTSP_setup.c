@@ -70,7 +70,7 @@ static RTSP_Error unicast_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     char port_buffer[8];
     port_pair ser_ports;
     RTSP_Error error;
-    if (RTP_get_port_pair(&ser_ports) != ERR_NOERROR) {
+    if (RTP_get_port_pair(rtsp->srv, &ser_ports) != ERR_NOERROR) {
         return RTSP_InternalServerError;
     }
     //UDP bind for outgoing RTP packets

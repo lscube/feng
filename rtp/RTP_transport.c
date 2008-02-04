@@ -204,7 +204,7 @@ int RTP_transport_close(RTP_session * session) {
     pair.RTCP = get_local_port(session->transport.rtcp_sock);
     switch (session->transport.rtp_sock->socktype) {
         case UDP:
-            RTP_release_port_pair(&pair);
+            RTP_release_port_pair(session->srv, &pair);
         default:
             break;
     }

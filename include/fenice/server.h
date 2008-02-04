@@ -51,8 +51,8 @@ typedef struct feng {
  * port pool variables
  */
 //@{ 
-    int start_port;                 //!< initial port
-    int *port_pool;
+    int start_port;                 //!< initial rtp port
+    int *port_pool;                 //!< list of allocated ports
 //@}
 /** 
  * @name user

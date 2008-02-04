@@ -158,9 +158,9 @@ typedef int (*RTP_play_action) (RTP_session * sess);
  * @{
  */
 
-void RTP_port_pool_init(int port);
-int RTP_get_port_pair(port_pair * pair);
-int RTP_release_port_pair(port_pair * pair);
+void RTP_port_pool_init(feng *srv, int port);
+int RTP_get_port_pair(feng *srv, port_pair * pair);
+int RTP_release_port_pair(feng *srv, port_pair * pair);
 
 /**
  * @}

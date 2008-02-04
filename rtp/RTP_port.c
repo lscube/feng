@@ -27,19 +27,17 @@
 
 #include <fenice/rtp.h>
 
-int start_port = RTP_DEFAULT_PORT;       //!< Initial port, the RTP ports will start from here
-int port_pool[ONE_FORK_MAX_CONNECTION];  //!< List of allocated ports
-
 /**
  * Initializes the pool of ports and the initial port from the given one
  * @param port The first port from which to start allocating connections
  */
-void RTP_port_pool_init(int port)
+void RTP_port_pool_init(feng *srv, int port)
 {
     int i;
-    start_port = port;
+    srv->start_port = port;
+    srv->port_pool = malloc(ONE_FORK_MAX_CONNECTION * sizeof(int));
     for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i) {
-        port_pool[i] = i + start_port;
+        srv->port_pool[i] = i + srv->start_port;
     }
 }
 
@@ -48,16 +46,16 @@ void RTP_port_pool_init(int port)
  * @param pair where to set the group of available ports
  * @return ERR_NOERROR or ERR_GENERIC if there isn't an available port
  */
-int RTP_get_port_pair(port_pair * pair)
+int RTP_get_port_pair(feng *srv, port_pair * pair)
 {
     int i;
 
     for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i) {
-        if (port_pool[i] != 0) {
+        if (srv->port_pool[i] != 0) {
             pair->RTP =
-                (port_pool[i] - start_port) * 2 + start_port;
+                (srv->port_pool[i] - srv->start_port) * 2 + srv->start_port;
             pair->RTCP = pair->RTP + 1;
-            port_pool[i] = 0;
+            srv->port_pool[i] = 0;
             return ERR_NOERROR;
         }
     }
@@ -69,13 +67,13 @@ int RTP_get_port_pair(port_pair * pair)
  * @param pair the group of ports to release
  * @return ERR_NOERROR or ERR_GENERIC if the ports were not allocated
  */
-int RTP_release_port_pair(port_pair * pair)
+int RTP_release_port_pair(feng *srv, port_pair * pair)
 {
     int i;
     for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i) {
-        if (port_pool[i] == 0) {
-            port_pool[i] =
-                (pair->RTP - start_port) / 2 + start_port;
+        if (srv->port_pool[i] == 0) {
+            srv->port_pool[i] =
+                (pair->RTP - srv->start_port) / 2 + srv->start_port;
             return ERR_NOERROR;
         }
     }
