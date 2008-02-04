@@ -36,7 +36,7 @@ void eventloop(feng *srv)
 
     int max_fd;
     RTSP_buffer *p = NULL;
-    uint32_t fd_found;
+    int fd_found;
     fd_set rset,wset;
     Sock *client_sock = NULL;
 
