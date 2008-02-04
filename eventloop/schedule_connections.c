@@ -32,16 +32,15 @@
 
 int stop_schedule = 0;
 
-void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count, 
-    fd_set * rset, fd_set * wset, fd_set * xset)
+void schedule_connections(feng *srv, fd_set * rset, fd_set * wset,
+                          fd_set * xset)
 {
     int res;
-    RTSP_buffer *p = *rtsp_list, *pp = NULL;
+    RTSP_buffer *p = srv->rtsp_list, *pp = NULL;
     RTP_session *r = NULL, *t = NULL;
     RTSP_interleaved *intlvd;
 
     while (p != NULL) {
-        feng *srv = p->srv;
         if ((res = rtsp_server(p, rset, wset, xset)) != ERR_NOERROR) {
             if (res == ERR_CONNECTION_CLOSE || res == ERR_GENERIC) {
                 // The connection is closed
@@ -89,20 +88,20 @@ void schedule_connections(RTSP_buffer ** rtsp_list, int *conn_count,
                 }
                 // wait for 
                 Sock_close(p->sock);
-                --*conn_count;
+                --srv->conn_count;
                 srv->num_conn--;
                 // Release the RTSP_buffer
-                if (p == *rtsp_list) {
-                    *rtsp_list = p->next;
+                if (p == srv->rtsp_list) {
+                    srv->rtsp_list = p->next;
                     free(p);
-                    p = *rtsp_list;
+                    p = srv->rtsp_list;
                 } else {
                     pp->next = p->next;
                     free(p);
                     p = pp->next;
                 }
                 // Release the scheduler if necessary
-                if (p == NULL && *conn_count < 0) {
+                if (p == NULL && srv->conn_count < 0) {
                     fnc_log(FNC_LOG_DEBUG,
                         "Thread stopped\n");
                     stop_schedule = 1;

@@ -68,7 +68,7 @@ void eventloop(feng *srv)
         return;
     }
     /* transfer data for any RTSP sessions */
-    schedule_connections(&srv->rtsp_list, &srv->conn_count, &rset, &wset, NULL);
+    schedule_connections(srv, &rset, &wset, NULL);
     /* handle new connections */
     if (srv->conn_count != -1) {
 #ifdef HAVE_LIBSCTP
