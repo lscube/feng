@@ -88,29 +88,13 @@ static void feng_drop_privs(feng *srv)
         }
     }
 }
+/**
+ * Bind to the defined listening port
+ */
 
-int main(int argc, char **argv)
+static int feng_bind_ports(feng *srv)
 {
-    feng *srv = calloc(1,sizeof(feng));
     char *port;
-    struct sigaction term_action;
-    sigset_t block_set;
-
-    /* parses the command line and initializes the log*/
-    if (command_environment(srv, argc, argv))
-        return 1;
-
-    /* catch TERM and INT signals */
-    memset(&term_action, 0, sizeof(term_action));
-    term_action.sa_handler = terminator_function;
-    sigaction(SIGINT, &term_action, NULL);
-    sigaction(SIGTERM, &term_action, NULL);
-    /* block PIPE signal */
-    sigemptyset(&block_set);
-    sigaddset(&block_set, SIGPIPE);
-    sigprocmask(SIG_BLOCK, &block_set, NULL);
-
-    /* Bind to the defined listening port */
     port = g_strdup_printf("%d", prefs_get_port());
     srv->main_sock = Sock_bind(NULL, port, TCP, 0);
 
@@ -158,11 +142,37 @@ int main(int argc, char **argv)
         }
     }
 #endif
+    return 0;
+}
 
-    feng_drop_privs(srv);
+/**
+ * catch TERM and INT signals
+ * block PIPE signal
+ */
 
-    /* Initialises the array of schedule_list sched and creates the thread
-     * schedule_do() -> look at schedule.c */
+static void feng_handle_signals(feng *srv)
+{
+    struct sigaction term_action;
+    sigset_t block_set;
+
+    /* catch TERM and INT signals */
+    memset(&term_action, 0, sizeof(term_action));
+    term_action.sa_handler = terminator_function;
+    sigaction(SIGINT, &term_action, NULL);
+    sigaction(SIGTERM, &term_action, NULL);
+    /* block PIPE signal */
+    sigemptyset(&block_set);
+    sigaddset(&block_set, SIGPIPE);
+    sigprocmask(SIG_BLOCK, &block_set, NULL);
+}
+
+/**
+ * Initialises the array of schedule_list sched and creates the thread
+ * @see schedule_do
+ */
+
+static int feng_start_mt(feng *srv)
+{
     if (schedule_init(srv) == ERR_FATAL) {
         fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.");
         fprintf(stderr, "[fatal] Can't start scheduler. Server is aborting.\n");
@@ -170,6 +180,26 @@ int main(int argc, char **argv)
     }
 
     pthread_create(&srv->mth, NULL, mediathread, NULL);
+    return 0;
+}
+
+int main(int argc, char **argv)
+{
+    feng *srv = calloc(1,sizeof(feng));
+
+    /* parses the command line and initializes the log*/
+    if (command_environment(srv, argc, argv))
+        return 1;
+
+    feng_handle_signals(srv);
+
+    if (feng_bind_ports(srv))
+        return 1;
+
+    feng_drop_privs(srv);
+
+    if (feng_start_mt(srv))
+        return 1;
 
     /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
      * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
