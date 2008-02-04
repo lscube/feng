@@ -35,21 +35,47 @@
 #include <grp.h>
 
 typedef struct feng {
-    Sock *main_sock;
-    Sock *sctp_main_sock;
-    pthread_t mth;
-    int port;
+/** 
+ * @name listening sockets
+ * listening sockets
+ */
+//@{
+    Sock *main_sock;                //!< main tcp socket
+    Sock *sctp_main_sock;           //!< stcp socket (optional)
+//@}
+    pthread_t mth;                  //!< mediathread
     struct schedule_list *sched;
-    pref_record *prefs;
-    int start_port;
+    pref_record *prefs;             //!< global preferences
+/** 
+ * @name port pool
+ * port pool variables
+ */
+//@{ 
+    int start_port;                 //!< initial port
     int *port_pool;
-    gid_t gid;
-    uid_t uid;
-/** eventloop stuff */
+//@}
+/** 
+ * @name user
+ * User id and group id used by the current feng instance
+ */
+//@{
+    gid_t gid;                      //!< group id
+    uid_t uid;                      //!< user id
+//@}
+/** 
+ * @name eventloop state
+ * Includes the 
+ */
+//@{
     struct RTSP_buffer *rtsp_list;
-    int num_conn;
-    int conn_count;
-    int child_count;
+    /**
+     * Once it reaches the maximum the server redirects
+     * to a twin if available
+     */
+    int num_conn;               //!< number of active connections
+    int conn_count;             //!< number of active connections (FIXME)
+    int child_count;            //!< unused
+//@}
 } feng;
 
 #endif // FN_SERVER_H
