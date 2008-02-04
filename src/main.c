@@ -50,11 +50,49 @@ static void terminator_function (int num) {
     running = 0;
 }
 
+/**
+ * Drop privs to a specified user
+ */
+static void feng_drop_privs(feng *srv)
+{
+    char *id = get_pref_str(PREFS_GROUP);
+
+    if (id) {
+        struct group *gr = getgrnam(id);
+        if (gr) {
+            if (setgid(gr->gr_gid) < 0)
+                fnc_log(FNC_LOG_WARN,
+                    "Cannot setgid to user %s, %s",
+                    id, strerror(errno));
+            srv->gid = gr->gr_gid;
+        } else {
+            fnc_log(FNC_LOG_WARN,
+                    "Cannot get group %s id, %s",
+                    id, strerror(errno));
+        }
+    }
+
+    id = get_pref_str(PREFS_USER);
+    if (id) {
+        struct passwd *pw = getpwnam(id);
+        if (pw) {
+            if (setuid(pw->pw_uid) < 0)
+                fnc_log(FNC_LOG_WARN,
+                    "Cannot setuid to user %s, %s",
+                    id, strerror(errno));
+            srv->uid = pw->pw_uid;
+        } else {
+            fnc_log(FNC_LOG_WARN,
+                    "Cannot get user %s id, %s",
+                    id, strerror(errno));
+        }
+    }
+}
+
 int main(int argc, char **argv)
 {
     feng *srv = calloc(1,sizeof(feng));
     char *port;
-    char *id;
     struct sigaction term_action;
     sigset_t block_set;
 
@@ -121,40 +159,8 @@ int main(int argc, char **argv)
     }
 #endif
 
-    /*
-     * Drop privs to a specified user
-     * */
-    id = get_pref_str(PREFS_GROUP);
-    if (id) {
-        struct group *gr = getgrnam(id);
-        if (gr) {
-            if (setgid(gr->gr_gid) < 0)
-                fnc_log(FNC_LOG_WARN,
-                    "Cannot setgid to user %s, %s",
-                    id, strerror(errno));
-            srv->gid = gr->gr_gid;
-        } else {
-            fnc_log(FNC_LOG_WARN,
-                    "Cannot get group %s id, %s",
-                    id, strerror(errno));
-        }
-    }
+    feng_drop_privs(srv);
 
-    id = get_pref_str(PREFS_USER);
-    if (id) {
-        struct passwd *pw = getpwnam(id);
-        if (pw) {
-            if (setuid(pw->pw_uid) < 0)
-                fnc_log(FNC_LOG_WARN,
-                    "Cannot setuid to user %s, %s",
-                    id, strerror(errno));
-            srv->uid = pw->pw_uid;
-        } else {
-            fnc_log(FNC_LOG_WARN,
-                    "Cannot get user %s id, %s",
-                    id, strerror(errno));
-        }
-    }
     /* Initialises the array of schedule_list sched and creates the thread
      * schedule_do() -> look at schedule.c */
     if (schedule_init(srv) == ERR_FATAL) {
