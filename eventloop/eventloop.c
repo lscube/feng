@@ -58,7 +58,7 @@ void eventloop(feng *srv)
 
     /* Add all sockets of all sessions to fd_sets */
     for (p = srv->rtsp_list; p; p = p->next) {
-        rtsp_set_fdsets(p, &max_fd, &rset, &wset, NULL);
+        rtsp_set_fdsets(p, &max_fd, &rset, &wset);
     }
     /* Stay here and wait for something happens */
     if (select(max_fd + 1, &rset, &wset, NULL, NULL) < 0) {
@@ -68,7 +68,7 @@ void eventloop(feng *srv)
         return;
     }
     /* transfer data for any RTSP sessions */
-    schedule_connections(srv, &rset, &wset, NULL);
+    schedule_connections(srv, &rset, &wset);
     /* handle new connections */
     if (srv->conn_count != -1) {
 #ifdef HAVE_LIBSCTP

@@ -32,8 +32,7 @@
 
 int stop_schedule = 0;
 
-void schedule_connections(feng *srv, fd_set * rset, fd_set * wset,
-                          fd_set * xset)
+void schedule_connections(feng *srv, fd_set * rset, fd_set * wset)
 {
     int res;
     RTSP_buffer *p = srv->rtsp_list, *pp = NULL;
@@ -41,7 +40,7 @@ void schedule_connections(feng *srv, fd_set * rset, fd_set * wset,
     RTSP_interleaved *intlvd;
 
     while (p != NULL) {
-        if ((res = rtsp_server(p, rset, wset, xset)) != ERR_NOERROR) {
+        if ((res = rtsp_server(p, rset, wset)) != ERR_NOERROR) {
             if (res == ERR_CONNECTION_CLOSE || res == ERR_GENERIC) {
                 // The connection is closed
                 if (res == ERR_CONNECTION_CLOSE)
