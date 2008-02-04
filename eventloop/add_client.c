@@ -26,9 +26,9 @@
 #include <fenice/eventloop.h>
 
 
-// XXX FIXME FIXME I should return something meaningfull!
+// XXX FIXME FIXME I should return something meaningful!
 
-void add_client(feng *srv, RTSP_buffer ** rtsp_list, Sock *client_sock)
+void add_client(feng *srv, Sock *client_sock)
 {
     RTSP_buffer *p = NULL, *pp = NULL, *new = NULL;
 
@@ -40,10 +40,10 @@ void add_client(feng *srv, RTSP_buffer ** rtsp_list, Sock *client_sock)
     new->srv = srv;
 
     // Add a client
-    if (*rtsp_list == NULL) {
-        *rtsp_list = new;
+    if (srv->rtsp_list == NULL) {
+        srv->rtsp_list = new;
     } else {
-        for (p = *rtsp_list; p != NULL; p = p->next) {
+        for (p = srv->rtsp_list; p != NULL; p = p->next) {
             pp = p;
         }
         if (pp != NULL) {

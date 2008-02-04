@@ -90,7 +90,7 @@ void eventloop(feng *srv)
                 if (srv->conn_count < ONE_FORK_MAX_CONNECTION) {
                     ++srv->conn_count;
                     // ADD A CLIENT
-                    add_client(srv, &srv->rtsp_list, client_sock);
+                    add_client(srv, client_sock);
                 } else {
                 #if 0
                     // Pending complete rewrite
