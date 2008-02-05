@@ -25,33 +25,67 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef FN_CONFIG_PARSER_H
-#define FN_CONFIG_PARSER_H
+#include <sys/types.h>
+#include <sys/stat.h>
 
-#include "array.h"
-#include "buffer.h"
-#include "fenice/server.h"
+#include <unistd.h>
+#include <fcntl.h>
 
-typedef struct {
-    server *srv;
-    int     ok;
-    array  *all_configs;
-    array  *configs_stack; /* to parse nested block */
-    data_config *current; /* current started with { */
-    buffer *basedir;
-} config_t;
-
-void *configparserAlloc(void *(*mallocProc)(size_t));
-void configparserFree(void *p, void (*freeProc)(void*));
-void configparser(void *yyp, int yymajor, buffer *yyminor, config_t *ctx);
-int config_parse_file(server *srv, config_t *context, const char *fn);
-int config_parse_cmd(server *srv, config_t *context, const char *cmd);
-data_unset *configparser_merge_data(data_unset *op1, const data_unset *op2);
-
-//void config_cond_cache_reset(server *srv, connection *con);
-//void config_cond_cache_reset_item(server *srv, connection *con, comp_key_t item);
-
-#define config_cond_cache_reset_all_items(srv, con) \
-    config_cond_cache_reset_item(srv, con, COMP_LAST_ELEMENT);
-
+#include "stream.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
 #endif
+
+#ifdef HAVE_MMAP
+#include <sys/mman.h>
+
+#ifndef MAP_FAILED
+#define MAP_FAILED -1
+#endif
+#endif
+
+#ifndef O_BINARY
+# define O_BINARY 0
+#endif
+
+int stream_open(stream *f, buffer *fn) {
+    struct stat st;
+#ifdef HAVE_MMAP
+    int fd;
+#endif
+
+    f->start = NULL;
+
+    if (-1 == stat(fn->ptr, &st)) {
+        return -1;
+    }
+
+    f->size = st.st_size;
+
+#ifdef HAVE_MMAP
+    if (-1 == (fd = open(fn->ptr, O_RDONLY | O_BINARY))) {
+        return -1;
+    }
+
+    f->start = mmap(0, f->size, PROT_READ, MAP_SHARED, fd, 0);
+
+    close(fd);
+
+    if (MAP_FAILED == f->start) {
+        return -1;
+    }
+#else
+# error no mmap found
+#endif
+
+    return 0;
+}
+
+int stream_close(stream *f) {
+#ifdef HAVE_MMAP
+    if (f->start) munmap(f->start, f->size);
+#endif
+    f->start = NULL;
+
+    return 0;
+}

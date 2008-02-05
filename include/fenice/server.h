@@ -30,6 +30,8 @@
 
 // #include <fenice/schedule.h>
 #include <fenice/prefs.h>
+#include "array.h"
+#include "conf.h"
 #include <netembryo/wsocket.h>
 #include <pwd.h>
 #include <grp.h>
@@ -46,6 +48,19 @@ typedef struct feng {
     pthread_t mth;                  //!< mediathread
     struct schedule_list *sched;
     pref_record *prefs;             //!< global preferences
+/**
+ * @name lighttpd-alike preferences
+ * lemon based, lighttpd alike preferences
+ */
+//@{
+    array *config;
+    array *config_touched;
+
+    array *config_context;
+    specific_config **config_storage;
+
+    server_config srvconf;
+//@}
 /** 
  * @name port pool
  * port pool variables
@@ -77,5 +92,7 @@ typedef struct feng {
     int child_count;            //!< unused
 //@}
 } feng;
+
+typedef feng server;
 
 #endif // FN_SERVER_H
