@@ -72,14 +72,14 @@ MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
     for (m_descr = g_list_first(r_descr->media);
          m_descr;
          m_descr = g_list_next(m_descr)) {
-        found = FALSE;
+        found = 0;
         for (i = 0; i < new_m_descrs->len; ++i) {
             m_descr_list = g_ptr_array_index(new_m_descrs, i);
             if ( (m_descr_type(MEDIA_DESCR(m_descr)) ==
                   m_descr_type(MEDIA_DESCR(m_descr_list))) &&
                  !strcmp(m_descr_name(MEDIA_DESCR(m_descr)),
                          m_descr_name(MEDIA_DESCR(m_descr_list))) ) {
-                found = TRUE;
+                found = 1;
                 break;
             }
         }
