@@ -30,8 +30,6 @@
 #include <fenice/schedule.h>
 #include <bufferpool/bufferpool.h>
 
-int stop_schedule = 0;
-
 void schedule_connections(feng *srv, fd_set * rset, fd_set * wset)
 {
     int res;
@@ -103,7 +101,7 @@ void schedule_connections(feng *srv, fd_set * rset, fd_set * wset)
                 if (p == NULL && srv->conn_count < 0) {
                     fnc_log(FNC_LOG_DEBUG,
                         "Thread stopped\n");
-                    stop_schedule = 1;
+                    srv->stop_schedule = 1;
                 }
             } else {
                 p = p->next;

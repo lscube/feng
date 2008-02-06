@@ -32,8 +32,6 @@
 
 #define SCHEDULER_TIMING 16000 //16ms. Sleep time suggested by Intel
 
-extern int stop_schedule;
-
 void *schedule_do(void *arg)
 {
     int i = 0, res;
@@ -95,9 +93,9 @@ do {
         }
         pthread_mutex_unlock(&sched[i].mux);
     }
-} while (!stop_schedule);
+} while (!srv->stop_schedule);
 
-    stop_schedule=0;
+    srv->stop_schedule = 0;
     return ERR_NOERROR;
 }
 
