@@ -111,14 +111,13 @@ void eventloop(feng *srv)
                     } else {
                         // I'm the father
                         conn_count = -1;
+                #endif
                         Sock_close(client_sock);
                         Sock_close(main_sock);
 #ifdef HAVE_LIBSCTP
                         if (sctp_main_sock)
                             Sock_close(sctp_main_sock);
 #endif
-                    }
-                #endif
                 }
                 srv->num_conn++;
                 fnc_log(FNC_LOG_INFO, "Connection reached: %d\n",
