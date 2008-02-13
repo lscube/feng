@@ -38,12 +38,15 @@
 
 #include "fenice/server.h"
 //#include "log.h"
+
+#define log_error_write(...) {}
+
 #include "stream.h"
 //#include "plugin.h"
 
 #include "configparser.h"
 #include "configfile.h"
-//#include "proc_open.h"
+#include "proc_open.h"
 
 
 static int config_insert(server *srv) {
@@ -312,6 +315,7 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
                             "source:", t->source,
                             "line:", t->line, "pos:", t->line_pos,
                             "use => for assignments in arrays");
+
                     return -1;
                 }
             } else if (t->in_cond) {
@@ -919,35 +923,6 @@ int config_set_defaults(server *srv) {
     specific_config *s = srv->config_storage[0];
     struct stat st1, st2;
 
-    struct ev_map { fdevent_handler_t et; const char *name; } event_handlers[] =
-    {
-        /* - poll is most reliable
-         * - select works everywhere
-         * - linux-* are experimental
-         */
-#ifdef USE_POLL
-        { FDEVENT_HANDLER_POLL,           "poll" },
-#endif
-#ifdef USE_SELECT
-        { FDEVENT_HANDLER_SELECT,         "select" },
-#endif
-#ifdef USE_LINUX_EPOLL
-        { FDEVENT_HANDLER_LINUX_SYSEPOLL, "linux-sysepoll" },
-#endif
-#ifdef USE_LINUX_SIGIO
-        { FDEVENT_HANDLER_LINUX_RTSIG,    "linux-rtsig" },
-#endif
-#ifdef USE_SOLARIS_DEVPOLL
-        { FDEVENT_HANDLER_SOLARIS_DEVPOLL,"solaris-devpoll" },
-#endif
-#ifdef USE_FREEBSD_KQUEUE
-        { FDEVENT_HANDLER_FREEBSD_KQUEUE, "freebsd-kqueue" },
-        { FDEVENT_HANDLER_FREEBSD_KQUEUE, "kqueue" },
-#endif
-        { FDEVENT_HANDLER_UNSET,          NULL }
-    };
-
-
     if (buffer_is_empty(s->document_root)) {
         log_error_write(srv, __FILE__, __LINE__, "s",
                 "a default document-root has to be set");
@@ -955,27 +930,7 @@ int config_set_defaults(server *srv) {
         return -1;
     }
 
-    if (buffer_is_empty(srv->srvconf.changeroot)) {
-        if (-1 == stat(s->document_root->ptr, &st1)) {
-            log_error_write(srv, __FILE__, __LINE__, "sb",
-                    "base-docroot doesn't exist:",
-                    s->document_root);
-            return -1;
-        }
-
-    } else {
-        buffer_copy_string_buffer(srv->tmp_buf, srv->srvconf.changeroot);
-        buffer_append_string_buffer(srv->tmp_buf, s->document_root);
-
-        if (-1 == stat(srv->tmp_buf->ptr, &st1)) {
-            log_error_write(srv, __FILE__, __LINE__, "sb",
-                    "base-docroot doesn't exist:",
-                    srv->tmp_buf);
-            return -1;
-        }
-
-    }
-
+#if 0
     buffer_copy_string_buffer(srv->tmp_buf, s->document_root);
 
     buffer_to_lower(srv->tmp_buf);
@@ -1012,44 +967,10 @@ int config_set_defaults(server *srv) {
             }
         }
     }
+#endif
 
     if (srv->srvconf.port == 0) {
-        srv->srvconf.port = s->is_ssl ? 443 : 80;
-    }
-
-    if (srv->srvconf.event_handler->used == 0) {
-        /* choose a good default
-         *
-         * the event_handler list is sorted by 'goodness'
-         * taking the first available should be the best solution
-         */
-        srv->event_handler = event_handlers[0].et;
-
-        if (FDEVENT_HANDLER_UNSET == srv->event_handler) {
-            log_error_write(srv, __FILE__, __LINE__, "s",
-                    "sorry, there is no event handler for this system");
-
-            return -1;
-        }
-    } else {
-        /*
-         * User override
-         */
-
-        for (i = 0; event_handlers[i].name; i++) {
-            if (0 == strcmp(event_handlers[i].name, srv->srvconf.event_handler->ptr)) {
-                srv->event_handler = event_handlers[i].et;
-                break;
-            }
-        }
-
-        if (FDEVENT_HANDLER_UNSET == srv->event_handler) {
-            log_error_write(srv, __FILE__, __LINE__, "sb",
-                    "the selected event-handler in unknown or not supported:",
-                    srv->srvconf.event_handler );
-
-            return -1;
-        }
+        srv->srvconf.port = s->is_ssl ? 322 : 554;
     }
 
     if (s->is_ssl) {

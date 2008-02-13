@@ -8,7 +8,9 @@ noinst_LTLIBRARIES += liblight.la
 liblight_la_SOURCES = array.c \
 		      buffer.c \
 		      stream.c \
-		      configparser.c
-##		      configfile.c
+		      configparser.c \
+		      proc_open.c \
+		      configfile-glue.c \
+		      configfile.c
 
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)

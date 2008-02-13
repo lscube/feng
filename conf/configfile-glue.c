@@ -1,12 +1,41 @@
+/**
+ * Copyright (c) 2004, Jan Kneschke, incremental
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * - Redistributions of source code must retain the above copyright notice,
+ *   this list of conditions and the following disclaimer.
+ * - Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ * - Neither the name of the 'incremental' nor the names of its contributors
+ *   may be used to endorse or promote products derived from this software
+ *   without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include <string.h>
 
-#include "base.h"
+//#include "base.h"
 #include "buffer.h"
 #include "array.h"
-#include "log.h"
-#include "plugin.h"
+// #include "log.h"
+// #include "plugin.h"
 
 #include "configfile.h"
+
+#define log_error_write(...) {}
 
 /**
  * like all glue code this file contains functions which
@@ -23,7 +52,8 @@
 /* handle global options */
 
 /* parse config array */
-int config_insert_values_internal(server *srv, array *ca, const config_values_t cv[]) {
+int config_insert_values_internal(server *srv, array *ca,
+                                  const config_values_t cv[]) {
     size_t i;
     data_unset *du;
 
@@ -124,13 +154,13 @@ int config_insert_values_internal(server *srv, array *ca, const config_values_t 
         case T_CONFIG_UNSUPPORTED:
             log_error_write(srv, __FILE__, __LINE__, "ssss", "ERROR: found unsupported key:", cv[i].key, "-", (char *)(cv[i].destination));
 
-            srv->config_unsupported = 1;
+//            srv->config_unsupported = 1;
 
             break;
         case T_CONFIG_DEPRECATED:
             log_error_write(srv, __FILE__, __LINE__, "ssss", "ERROR: found deprecated key:", cv[i].key, "-", (char *)(cv[i].destination));
 
-            srv->config_deprecated = 1;
+//            srv->config_deprecated = 1;
 
             break;
         }
@@ -163,7 +193,7 @@ int config_insert_values_global(server *srv, array *ca, const config_values_t cv
 
     return config_insert_values_internal(srv, ca, cv);
 }
-
+#if 0
 unsigned short sock_addr_get_port(sock_addr *addr) {
 #ifdef HAVE_IPV6
     return ntohs(addr->plain.sa_family ? addr->ipv6.sin6_port : addr->ipv4.sin_port);
@@ -526,3 +556,4 @@ int config_append_cond_match_buffer(connection *con, data_config *dc, buffer *bu
     return 1;
 }
 
+#endif
