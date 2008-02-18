@@ -73,11 +73,12 @@ AC_SUBST([LIBTOOL_DEPS])
 
 AC_C_BIGENDIAN([BIGENDIAN="Big Endian"] AC_DEFINE([WORDS_BIGENDIAN], 1, [Define if manchine is big-endian]),[BIGENDIAN="Little Endian"] )
 
-dnl Checks for libraries.
-AC_CHECK_LIB(pthread,pthread_create)
-dnl AC_CHECK_LIB(avcodec,avcodec_open)
+ACX_PTHREAD(,AC_MSG_ERROR([Missing POSIX Threads support]))
 
-dnl Replace `main' with a function in -lm:
+LIBS="$PTHREAD_LIBS $LIBS"
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+CC="$PTHREAD_CC"
+
 AC_CHECK_LIBM
 
 dnl Checks for header files.
