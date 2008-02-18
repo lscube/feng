@@ -18,6 +18,8 @@ EXTRA_DIST = 	include \
 		debian \
 		INSTALL-FAST
 
+ACLOCAL_AMFLAGS = -I m4
+
 FENICE_AVROOT_DIR = $(DESTDIR)@fenice_avroot_dir@
 FENICE_LOG_FILE = `basename @fenice_log_file@`
 
