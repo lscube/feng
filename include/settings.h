@@ -1,6 +1,8 @@
 #ifndef LIGHTTPD_SETTINGS_H
 #define LIGHTTPD_SETTINGS_H
 
+#include <limits.h>
+
 #define BV(x) (1 << x)
 
 #define INET_NTOP_CACHE_MAX 4
