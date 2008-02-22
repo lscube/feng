@@ -20,6 +20,11 @@
  *  
  * */
 
+/**
+ * @file main.c
+ * server main loop
+ */
+
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -28,7 +33,9 @@
 #include <sys/socket.h> /*SOMAXCONN*/
 #include <signal.h>
 #include <errno.h>
-
+#include <buffer.h>
+#include <array.h>
+#include <configfile.h>
 
 #include <fenice/server.h>
 #include <fenice/eventloop.h>
@@ -55,7 +62,7 @@ static void terminator_function (int num) {
  */
 static void feng_drop_privs(feng *srv)
 {
-    char *id = get_pref_str(PREFS_GROUP);
+    char *id = srv->srvconf.groupname->ptr;
 
     if (id) {
         struct group *gr = getgrnam(id);
@@ -72,7 +79,7 @@ static void feng_drop_privs(feng *srv)
         }
     }
 
-    id = get_pref_str(PREFS_USER);
+    id = srv->srvconf.username->ptr;
     if (id) {
         struct passwd *pw = getpwnam(id);
         if (pw) {
@@ -195,6 +202,24 @@ static void usage(char *name)
     return;
 }
 
+static void feng_free(feng* srv)
+{
+#define CLEAN(x) \
+    buffer_free(srv->srvconf.x)
+    CLEAN(bindhost);
+    CLEAN(errorlog_file);
+    CLEAN(username);
+    CLEAN(groupname);
+#undef CLEAN
+
+#define CLEAN(x) \
+    array_free(srv->x)
+    CLEAN(config_context);
+    CLEAN(config_touched);
+    CLEAN(srvconf.modules);
+#undef CLEAN
+}
+
 static int command_environment(feng *srv, int argc, char **argv)
 {
     static const char short_options[] = "f:vVsq";
@@ -224,7 +249,10 @@ static int command_environment(feng *srv, int argc, char **argv)
         case 0:    /* Flag setting handled by getopt-long */
             break;
         case 'f':
-            prefs_init(srv, optarg);
+            if (config_read(srv, optarg)) {
+                feng_free(srv);
+                return -1;
+            }
             config_file = 1;
             break;
         case 'q':
@@ -254,7 +282,11 @@ case 'V':
 
     if (!quiet) fncheader();
 
-    if (!config_file) prefs_init(srv, NULL);
+    if (!config_file)
+        if (config_read(srv, FENICE_CONF_PATH_DEFAULT_STR)) {
+            feng_free(srv);
+            return -1;
+        }
 
     fn = fnc_log_init(prefs_get_log(), view_log, progname);
 
@@ -264,13 +296,46 @@ case 'V':
     return 0;
 }
 
+/**
+ * allocates a new instance variable
+ * @return the new instance or NULL on failure
+ */
+
+static feng *feng_alloc(void)
+{
+    server *srv = calloc(1, sizeof(*srv));
+
+    if (!srv) return NULL;
+
+#define CLEAN(x) \
+    srv->srvconf.x = buffer_init();
+    CLEAN(bindhost);
+    CLEAN(errorlog_file);
+    CLEAN(username);
+    CLEAN(groupname);
+#undef CLEAN
+
+#define CLEAN(x) \
+    srv->x = array_init();
+    CLEAN(config_context);
+    CLEAN(config_touched);
+    CLEAN(srvconf.modules);
+#undef CLEAN
+
+    return srv;
+}
+
 int main(int argc, char **argv)
 {
-    feng *srv = calloc(1,sizeof(feng));
+    feng *srv = feng_alloc(); //calloc(1,sizeof(feng));
+
+    if (!srv) return 1;
 
     /* parses the command line and initializes the log*/
     if (command_environment(srv, argc, argv))
         return 1;
+
+    config_set_defaults(srv);
 
     feng_handle_signals(srv);
 
@@ -285,7 +350,7 @@ int main(int argc, char **argv)
     /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
      * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
 
-    RTP_port_pool_init(srv, get_pref_int(PREFS_FIRST_UDP_PORT));
+    RTP_port_pool_init(srv, srv->srvconf.first_udp_port);
 
     while (running) {
 

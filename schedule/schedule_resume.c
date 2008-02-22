@@ -37,7 +37,7 @@ int schedule_resume(RTP_session *session, play_args *args)
     session->pause=0;
 
     //Preload some frames in bufferpool
-    for (i=0; i < get_pref_int(PREFS_BUFFERED_FRAMES); i++) {
+    for (i=0; i < srv->srvconf.buffered_frames; i++) {
         event_buffer_low(session, r_selected_track(session->track_selector));
     }
 

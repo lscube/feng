@@ -51,11 +51,15 @@ typedef struct {
 } config_values_t;
 
 typedef struct {
-	int port;
+	short port;
 	buffer *bindhost;
 
 	buffer *errorlog_file;
 	int errorlog_use_syslog;
+
+    /* FIXME feng specific stuff */
+        short first_udp_port;
+        short buffered_frames;
 
 //	unsigned short dont_daemonize;
 //	buffer *changeroot;

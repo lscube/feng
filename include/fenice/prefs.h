@@ -97,11 +97,11 @@ void prefs_use_default(struct feng *srv, pref_id id);
 
 // Macros (for compatibility with old prefs.h
 /// XXX deprecate them 
-#define prefs_get_serv_root() ((char *) get_pref(srv, PREFS_ROOT))
-#define prefs_get_port() (*((int *) get_pref(srv, PREFS_TCP_PORT)))
-#define prefs_get_sctp_port() (*((int *) get_pref(srv, PREFS_SCTP_PORT)))
-#define prefs_get_max_session() (*((int *) get_pref(srv, PREFS_MAX_SESSION)))
-#define prefs_get_log() ((char *) get_pref(srv, PREFS_LOG))
-#define prefs_get_hostname() ((char *) get_pref(srv, PREFS_HOSTNAME))
+#define prefs_get_serv_root() srv->config_storage[0]->document_root->ptr
+#define prefs_get_port() srv->srvconf.port
+#define prefs_get_sctp_port() (-1) //FIXME
+#define prefs_get_max_session() srv->srvconf.max_conns
+#define prefs_get_log() srv->srvconf.errorlog_file->ptr
+#define prefs_get_hostname() srv->srvconf.bindhost->ptr
 
 #endif // FN_SERV_PREFS_H

@@ -163,23 +163,6 @@ typedef struct {
 
 data_integer *data_integer_init(void);
 
-typedef struct {
-    DATA_UNSET;
-
-    buffer *host;
-
-    unsigned short port;
-
-    time_t disable_ts;
-    int is_disabled;
-    size_t balance;
-
-    int usage; /* fair-balancing needs the no. of connections active on this host */
-    int last_used_ndx; /* round robin */
-} data_fastcgi;
-
-data_fastcgi *data_fastcgi_init(void);
-
 array *array_init(void);
 array *array_init_array(array *a);
 void array_free(array *a);

@@ -231,8 +231,20 @@ AC_SUBST(fenice_rtsp_port)
 fenice_conf_file=$(eval echo $with_config_file|sed -e "s:/\+:/:g")
 AC_SUBST(fenice_conf_file)
 
-fenice_log_file=$(eval echo $localstatedir/log/$with_log_file|sed -e "s:/\+:/:g")
-fenice_log_file=${fenice_log_file//NONE}
+
+feng_basedir=$(eval echo $localstatedir|sed -e "s:/\+:/:g")
+feng_basedir=${feng_basedir//NONE}
+
+feng_logdir="${feng_basedir}/log/$PACKAGE_NAME"
+AC_SUBST(feng_logdir)
+
+feng_statedir="${feng_basedir}/lib/$PACKAGE_NAME"
+AC_SUBST(feng_statedir)
+
+feng_basedir="${feng_basedir}/$PACKAGE_NAME"
+AC_SUBST(feng_basedir)
+
+fenice_log_file="${feng_basedir}/log/$with_log_file"
 AC_SUBST(fenice_log_file)
 
 fenice_conf_dir=$(eval echo $sysconfdir|sed -e "s:/\+:/:g")
@@ -301,6 +313,7 @@ AC_CONFIG_FILES([conf/Makefile])
 AC_CONFIG_FILES([docs/Makefile])
 AC_CONFIG_FILES([etc/Makefile])
 AC_CONFIG_FILES([avroot/Makefile])
+AC_CONFIG_FILES([etc/feng.conf])
 AC_OUTPUT
 
 AC_MSG_NOTICE([config files successfully generated!

@@ -48,7 +48,7 @@
 
 #include "stream.h"
 //#include "plugin.h"
-
+#include "fenice/rtp.h" // defaults
 #include "configparser.h"
 #include "configfile.h"
 #include "proc_open.h"
@@ -68,7 +68,7 @@ static int config_insert(server *srv) {
 //        { "server.chroot",               NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 3 */
         { "server.username", srv->srvconf.username, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 2 */
         { "server.groupname", srv->srvconf.groupname, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 3 */
-        { "server.port", &(srv->srvconf.port), T_CONFIG_SHORT,  T_CONFIG_SCOPE_SERVER },      /* 4 */
+        { "server.port", &srv->srvconf.port, T_CONFIG_SHORT,  T_CONFIG_SCOPE_SERVER },      /* 4 */
 //        { "server.tag",                  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 6 */
         { "server.use-ipv6",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 5 */
         { "server.modules", srv->srvconf.modules, T_CONFIG_ARRAY, T_CONFIG_SCOPE_SERVER },       /* 6 */
@@ -76,7 +76,7 @@ static int config_insert(server *srv) {
         { "server.document-root", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 7 */
         { "server.name",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 8 */
 
-        { "server.max-fds", &(srv->srvconf.max_fds), T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 9 */
+        { "server.max-fds", &srv->srvconf.max_fds, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 9 */
 #if 0 // HAVE_LSTAT
         { "server.follow-symlink",       NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 12 */
 #else
@@ -92,11 +92,12 @@ static int config_insert(server *srv) {
 
         { "ssl.ca-file",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 13 */
 
-        { "server.errorlog-use-syslog", &(srv->srvconf.errorlog_use_syslog), T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 14 */
-        { "server.max-connections", &(srv->srvconf.max_conns), T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 15 */
+        { "server.errorlog-use-syslog", &srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 14 */
+        { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 15 */
 //        { "server.upload-dirs",          NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },   /* 44 */
         { "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 16 */
-
+        { "server.first_udp_port",  &srv->srvconf.first_udp_port, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },      /* 17 */
+        { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
     };
 
@@ -983,6 +984,8 @@ int config_set_defaults(server *srv) {
     size_t i;
     specific_config *s = srv->config_storage[0];
     struct stat st1, st2;
+    char line[256];
+    int l;
 
     if (buffer_is_empty(s->document_root)) {
         log_error_write(srv, __FILE__, __LINE__, "s",
@@ -1033,6 +1036,21 @@ int config_set_defaults(server *srv) {
     if (srv->srvconf.port == 0) {
         srv->srvconf.port = s->is_ssl ? 322 : 554;
     }
+
+    if (srv->srvconf.max_conns == 0)
+        srv->srvconf.max_conns = 100;
+
+    if (srv->srvconf.first_udp_port == 0)
+        srv->srvconf.first_udp_port = RTP_DEFAULT_PORT;
+    if (srv->srvconf.buffered_frames == 0)
+        srv->srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
+    gethostname(line, sizeof(line));
+    l = strlen(line);
+    if (getdomainname(line + l + 1, sizeof(line) - l) != 0) {
+        line[l] = '.';
+    }
+
+    buffer_copy_string(srv->srvconf.bindhost, line);
 
     if (s->is_ssl) {
         if (buffer_is_empty(s->ssl_pemfile)) {

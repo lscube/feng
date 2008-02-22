@@ -35,7 +35,7 @@ feng_LDADD =	../eventloop/libeventloop.la \
 		../mediathread/libmediath.la \
 		../multicast/libmulticast.la
 
-feng_LDADD +=	../conf/libconf.la \
+feng_LDADD +=	../conf/liblight.la \
 		../src/libutils.la \
 		../src/liblog.la \
 		../src/libsafectype.la
