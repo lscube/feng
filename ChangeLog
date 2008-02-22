@@ -1,5 +1,8 @@
 + Feng changelog
 
+  22 Feb 2008; Luca Barbato <lu_zero@gentoo.org>:
+  Move to the lemon based parser
+
   30 Jan 2008; Luca Barbato <lu_zero@gentoo.org>:
   Instance variable introduction and related refactor
 
