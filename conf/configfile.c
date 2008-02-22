@@ -25,6 +25,11 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file configfile.c
+ * Main configuration parsing functions
+ */
+
 #include <sys/stat.h>
 
 #include <stdlib.h>
@@ -48,6 +53,9 @@
 #include "configfile.h"
 #include "proc_open.h"
 
+/**
+ * Insert the main configuration keys and their defaults
+ */
 
 static int config_insert(server *srv) {
     size_t i;
@@ -272,6 +280,11 @@ static int tokenizer_close(server *srv, tokenizer_t *t) {
     return stream_close(&(t->s));
 }
 #endif
+
+/**
+ * skip any newline (unix, windows, mac style)
+ */
+
 static int config_skip_newline(tokenizer_t *t) {
     int skipped = 1;
     assert(t->input[t->offset] == '\r' || t->input[t->offset] == '\n');
@@ -283,6 +296,11 @@ static int config_skip_newline(tokenizer_t *t) {
     return skipped;
 }
 
+/**
+ * Skip comments
+ * a comment starts with an # and last till a newline
+ */
+
 static int config_skip_comment(tokenizer_t *t) {
     int i;
     assert(t->input[t->offset] == '#');
@@ -292,6 +310,10 @@ static int config_skip_comment(tokenizer_t *t) {
     t->offset += i;
     return i;
 }
+
+/**
+ * Break the configuration in tokens
+ */
 
 static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *token) {
     int tid = 0;
@@ -650,6 +672,11 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
     return 0;
 }
 
+/**
+ * Parse the configuration
+ * @return 0 on success, -1 on failure
+ */
+
 static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
     void *pParser;
     int token_id;
@@ -691,6 +718,10 @@ static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
     return ret == -1 ? -1 : 0;
 }
 
+/**
+ * tokenizer initial state
+ */
+
 static int tokenizer_init(tokenizer_t *t, const buffer *source, const char *input, size_t size) {
 
     t->source = source;
@@ -705,6 +736,14 @@ static int tokenizer_init(tokenizer_t *t, const buffer *source, const char *inpu
     t->in_cond = 0;
     return 0;
 }
+
+/**
+ * Parse a configuration file 
+ * @param srv instance variable
+ * @param context configuration context
+ * @param fn file name, to be searched in context->basedir if set
+ * @return -1 on failure
+ */
 
 int config_parse_file(server *srv, config_t *context, const char *fn) {
     tokenizer_t t;
@@ -739,6 +778,11 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
     buffer_free(filename);
     return ret;
 }
+
+/**
+ * read configuration from output of a command
+ * @return -1 on failure, 0 on success
+ */
 
 int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
     proc_handler_t proc;
@@ -776,6 +820,10 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
     return ret;
 }
 
+/**
+ * init context
+ */
+
 static void context_init(server *srv, config_t *context) {
     context->srv = srv;
     context->ok = 1;
@@ -784,10 +832,19 @@ static void context_init(server *srv, config_t *context) {
     context->basedir = buffer_init();
 }
 
+/**
+ * free context
+ */
+
 static void context_free(config_t *context) {
     array_free(context->configs_stack);
     buffer_free(context->basedir);
 }
+
+/**
+ * load configuration for global
+ * sets the module list.
+ */
 
 int config_read(server *srv, const char *fn) {
     config_t context;
@@ -917,6 +974,10 @@ int config_read(server *srv, const char *fn) {
 
     return 0;
 }
+
+/**
+ * set defaults
+ */
 
 int config_set_defaults(server *srv) {
     size_t i;

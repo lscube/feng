@@ -25,6 +25,19 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file configfile-glue.c
+ * @brief glue code for configuration
+ * like all glue code this file contains functions which
+ * are the external interface of lighttpd. The functions
+ * are used by the server itself and the plugins.
+ *
+ * The main-goal is to have a small library in the end
+ * which is linked against both and which will define
+ * the interface itself in the end.
+ *
+ */
+
 #include <string.h>
 
 //#include "base.h"
@@ -37,21 +50,11 @@
 
 #define log_error_write(...) {}
 
-/**
- * like all glue code this file contains functions which
- * are the external interface of lighttpd. The functions
- * are used by the server itself and the plugins.
- *
- * The main-goal is to have a small library in the end
- * which is linked against both and which will define
- * the interface itself in the end.
- *
- */
 
 
 /* handle global options */
 
-/* parse config array */
+/** parse config array */
 int config_insert_values_internal(server *srv, array *ca,
                                   const config_values_t cv[]) {
     size_t i;
@@ -168,6 +171,10 @@ int config_insert_values_internal(server *srv, array *ca,
 
     return 0;
 }
+
+/**
+ * Insert configuration value into the global array
+ */
 
 int config_insert_values_global(server *srv, array *ca, const config_values_t cv[]) {
     size_t i;
