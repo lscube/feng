@@ -103,7 +103,7 @@ static int feng_bind_ports(feng *srv)
 {
     char *port;
     port = g_strdup_printf("%d", prefs_get_port());
-    srv->main_sock = Sock_bind(NULL, port, TCP, 0);
+    srv->main_sock = Sock_bind(NULL, port, NULL, TCP, NULL);
 
     if(!srv->main_sock) {
         fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP port %s.", port);
@@ -127,7 +127,7 @@ static int feng_bind_ports(feng *srv)
 #ifdef HAVE_LIBSCTP
     if (prefs_get_sctp_port() >= 0) {
         port = g_strdup_printf("%d", prefs_get_sctp_port());
-        srv->sctp_main_sock = Sock_bind(NULL, port, SCTP, 0);
+        srv->sctp_main_sock = Sock_bind(NULL, port, NULL, SCTP, NULL);
 
         if(!srv->sctp_main_sock) {
             fnc_log(FNC_LOG_ERR,"Sock_bind() error for SCTP port %s.", port);
