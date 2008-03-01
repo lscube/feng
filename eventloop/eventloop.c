@@ -20,6 +20,11 @@
  *  
  * */
 
+/**
+ * @file eventloop.c
+ * Network main loop
+ */
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -28,6 +33,46 @@
 #include <fenice/utils.h>
 
 #include <fenice/schedule.h>
+
+/**
+ * adds file descriptors to the set
+ * @param srv the server instance
+ * @param set the file descriptor set
+ * @return the max file descriptor in the set
+ */
+
+static int listen_fd(feng *srv, fd_set *set)
+{
+    int max_fd;
+
+    FD_SET(Sock_fd(srv->main_sock), set);
+    max_fd = Sock_fd(srv->main_sock);
+#ifdef HAVE_LIBSCTP
+    if (srv->sctp_main_sock) {
+        FD_SET(Sock_fd(srv->sctp_main_sock), set);
+        max_fd = max(max_fd, Sock_fd(srv->sctp_main_sock));
+    }
+#endif
+    return max_fd;
+}
+
+/**
+ * Close all the listening sockets
+ */
+
+static void close_main_socks(feng *srv)
+{
+    Sock_close(srv->main_sock);
+#ifdef HAVE_LIBSCTP
+    if (srv->sctp_main_sock)
+        Sock_close(srv->sctp_main_sock);
+#endif
+}
+
+/**
+ * Main loop waiting for clients
+ * @param srv server instance variable.
+ */
 
 void eventloop(feng *srv)
 {
@@ -45,22 +90,14 @@ void eventloop(feng *srv)
     FD_ZERO(&wset);
 
     if (srv->conn_count != -1) {
-        /* This process is accepting new clients */
-        FD_SET(Sock_fd(main_sock), &rset);
-        max_fd = Sock_fd(main_sock);
-#ifdef HAVE_LIBSCTP
-        if (sctp_main_sock) {
-            FD_SET(Sock_fd(sctp_main_sock), &rset);
-            max_fd = max(max_fd, Sock_fd(sctp_main_sock));
-        }
-#endif
+        max_fd = listen_fd(srv, &rset);
     }
 
     /* Add all sockets of all sessions to fd_sets */
     for (p = srv->rtsp_list; p; p = p->next) {
         rtsp_set_fdsets(p, &max_fd, &rset, &wset);
     }
-    /* Stay here and wait for something happens */
+    /* Wait for connections */
     if (select(max_fd + 1, &rset, &wset, NULL, NULL) < 0) {
         fnc_log(FNC_LOG_ERR, "select error in eventloop(). %s\n",
                 strerror(errno));
@@ -113,11 +150,7 @@ void eventloop(feng *srv)
                         conn_count = -1;
                 #endif
                         Sock_close(client_sock);
-                        Sock_close(main_sock);
-#ifdef HAVE_LIBSCTP
-                        if (sctp_main_sock)
-                            Sock_close(sctp_main_sock);
-#endif
+                        close_main_socks(srv);
                 }
                 srv->num_conn++;
                 fnc_log(FNC_LOG_INFO, "Connection reached: %d\n",
