@@ -1,4 +1,4 @@
-feniceincludedir = ../include
+feniceincludedir = $(top_srcdir)/include
 
 noinst_LTLIBRARIES = liblog.la libsafectype.la libutils.la
 
