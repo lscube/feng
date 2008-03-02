@@ -25,6 +25,11 @@
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
 
+/**
+ * Add to the read set the current rtsp sessions fds.
+ * The rtsp/tcp interleaving requires additional care.
+ */
+
 void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset, 
     fd_set * wset) {
     RTSP_session *q = NULL;
@@ -50,13 +55,14 @@ void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset,
             FD_SET(Sock_fd(intlvd->rtcp_local), rset);
             *max_fd = max(*max_fd, Sock_fd(intlvd->rtcp_local));
         }
-        
     }
     // RTCP input
-    for (q = rtsp->session_list, p = q ? q->rtp_session : NULL; p; p = p->next) {
+    for (q = rtsp->session_list, p = q ? q->rtp_session : NULL;
+         p; p = p->next) {
 
         if (!p->started) {
-            q->cur_state = READY_STATE;    // �play finished, go to ready state
+        // play finished, go to ready state
+            q->cur_state = READY_STATE;
             /* TODO: RTP struct to be freed */
         } else if (p->transport.rtcp_sock) {
             FD_SET(Sock_fd(p->transport.rtcp_sock), rset);
