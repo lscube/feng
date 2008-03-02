@@ -30,7 +30,6 @@
 #include <time.h>
 
 static GAsyncQueue *el_head;
-//static GQueue *el_head;
 static pthread_mutex_t el_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mt_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int running = 1;
