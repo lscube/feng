@@ -26,6 +26,10 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
+/**
+ * Send the rtcp payloads in queue
+ */
+
 int RTCP_flush(RTP_session * session)
 {
     fd_set wset;
@@ -42,7 +46,7 @@ int RTCP_flush(RTP_session * session)
     if (select(Sock_fd(rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
         fnc_log(FNC_LOG_ERR, "select error\n");
         /*send_reply(500, NULL, rtsp); */
-        return ERR_GENERIC;    //errore interno al server
+        return ERR_GENERIC;
     }
 
     if (FD_ISSET(Sock_fd(rtcp_sock), &wset)) {
