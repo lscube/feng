@@ -153,7 +153,7 @@ typedef struct {
 } DemuxerInfo;
 
 typedef struct Demuxer {
-    DemuxerInfo *info;
+    const DemuxerInfo *info;
     int (*probe)(InputStream *);
     int (*init)(Resource *);
     int (*read_packet)(Resource *);

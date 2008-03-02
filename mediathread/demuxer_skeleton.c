@@ -22,7 +22,7 @@
 
 #include <fenice/demuxer_module.h>
 
-static DemuxerInfo info = {
+static const DemuxerInfo info = {
     "Skeleton demuxer_module",
     "skel",
     "LScube Team",

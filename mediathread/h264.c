@@ -60,7 +60,7 @@ static inline char *av_base64_encode(char * buf, int buf_len,
     return ret;
 }
 #endif
-static MediaParserInfo info = {
+static const MediaParserInfo info = {
     "H264",
     MP_video
 };

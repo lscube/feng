@@ -232,7 +232,7 @@ static int command_environment(feng *srv, int argc, char **argv)
     char *progname = g_path_get_basename(argv[0]);
     fnc_log_t fn;
 
-    static struct option long_options[] = {
+    static const struct option long_options[] = {
         {"config",   1, 0, 'f'},
         {"quiet",    0, 0, 'q'},
         {"verbose",  0, 0, 'v'},

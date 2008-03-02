@@ -30,7 +30,7 @@
 #include <fenice/fnc_log.h>
 #include <fenice/debug.h>
 
-static MediaParserInfo info = {
+static const MediaParserInfo info = {
     "MPA",
     MP_audio
 };

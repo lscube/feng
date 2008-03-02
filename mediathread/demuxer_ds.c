@@ -33,7 +33,7 @@
 
 #include <fenice/demuxer_module.h>
 
-static DemuxerInfo info = {
+static const DemuxerInfo info = {
     "Dynamic Edit List",
     "sd",
     "BPP Team",

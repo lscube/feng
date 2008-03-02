@@ -47,8 +47,8 @@ RTSP_Error const RTSP_Fatal_ErrAlloc = { {0, ""}, ERR_ALLOC };
  */
 char const *get_stat(int err)
 {
-    struct {
-        char *token;
+    static const struct {
+        char token[36];
         int code;
     } status[] = {
         {
@@ -91,7 +91,7 @@ char const *get_stat(int err)
         "Gateway Time-out", 504}, {
         "RTSP Version Not Supported", 505}, {
         "Extended Error:", 911}, {
-        NULL, -1}
+        "", -1}
     };
     int i;
     const RTSP_Error * err_data = get_RTSP_Error(err);
