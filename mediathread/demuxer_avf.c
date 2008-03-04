@@ -50,7 +50,7 @@
 
 #include <fenice/demuxer_module.h>
 
-#include <avformat.h>
+#include <libavformat/avformat.h>
 
 static const DemuxerInfo info = {
 	"Avformat Demuxer",
