@@ -127,10 +127,12 @@ typedef struct {
 	buffer *ssl_ca_file;
 	buffer *ssl_cipher_list;
 	int ssl_use_sslv2;
-
-	int use_ipv6;
 	int is_ssl;
 
+	int use_ipv6;
+
+        int is_sctp;
+        unsigned short sctp_max_streams;
 //	int allow_http11;
 /*	unsigned short etag_use_inode;
 	unsigned short etag_use_mtime;
