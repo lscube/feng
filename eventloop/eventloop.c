@@ -75,11 +75,11 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
     if (conn_count != -1) {
 #ifdef HAVE_LIBSCTP
         if (sctp_main_sock && FD_ISSET(Sock_fd(sctp_main_sock), &rset)) {
-            client_sock = Sock_accept(sctp_main_sock);
+            client_sock = Sock_accept(sctp_main_sock, NULL);
         } else
 #endif
         if (FD_ISSET(Sock_fd(main_sock), &rset)) {
-            client_sock = Sock_accept(main_sock);
+            client_sock = Sock_accept(main_sock, NULL);
         }
         // Handle a new connection
         if (client_sock) {

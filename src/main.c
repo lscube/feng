@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 
     /* Bind to the defined listening port */
     port = g_strdup_printf("%d", prefs_get_port());
-    main_sock = Sock_bind(NULL, port, TCP, 0);
+    main_sock = Sock_bind(NULL, port, NULL, TCP, 0);
 
     if(!main_sock) {
         fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP port %s.", port);
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
 #ifdef HAVE_LIBSCTP
     if (prefs_get_sctp_port() >= 0) {
         port = g_strdup_printf("%d", prefs_get_sctp_port());
-        sctp_main_sock = Sock_bind(NULL, port, SCTP, 0);
+        sctp_main_sock = Sock_bind(NULL, port, NULL, SCTP, 0);
 
         if(!sctp_main_sock) {
             fnc_log(FNC_LOG_ERR,"Sock_bind() error for SCTP port %s.", port);

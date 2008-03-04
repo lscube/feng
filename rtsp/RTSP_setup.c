@@ -76,10 +76,10 @@ static RTSP_Error unicast_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     }
     //UDP bind for outgoing RTP packets
     snprintf(port_buffer, 8, "%d", ser_ports.RTP);
-    transport->rtp_sock = Sock_bind(NULL, port_buffer, UDP, 0);
+    transport->rtp_sock = Sock_bind(NULL, port_buffer, NULL, UDP, 0);
     //UDP bind for outgoing RTCP packets
     snprintf(port_buffer, 8, "%d", ser_ports.RTCP);
-    transport->rtcp_sock = Sock_bind(NULL, port_buffer, UDP, 0);
+    transport->rtcp_sock = Sock_bind(NULL, port_buffer, NULL, UDP, 0);
     //UDP connection for outgoing RTP packets
     snprintf(port_buffer, 8, "%d", cli_ports.RTP);
     Sock_connect (get_remote_host(rtsp->sock), port_buffer,
