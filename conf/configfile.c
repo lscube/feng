@@ -96,6 +96,8 @@ static int config_insert(server *srv) {
         { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 15 */
 //        { "server.upload-dirs",          NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },   /* 44 */
         { "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 16 */
+        { "sctp.enable",                 NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },
+        { "sctp.max_streams",            NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { "server.first_udp_port",  &srv->srvconf.first_udp_port, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },      /* 17 */
         { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
@@ -116,6 +118,10 @@ static int config_insert(server *srv) {
         s->ssl_ca_file   = buffer_init();
         s->ssl_cipher_list = buffer_init();
         s->use_ipv6      = 0;
+        s->is_ssl        = 0;
+        s->is_sctp       = 0;
+        s->sctp_max_streams = 16;
+
 #ifdef HAVE_LSTAT
         s->follow_symlink = 1;
 #endif
@@ -124,21 +130,24 @@ static int config_insert(server *srv) {
         s->global_bytes_per_second_cnt = 0;
         s->global_bytes_per_second_cnt_ptr = &s->global_bytes_per_second_cnt;
 */
-        cv[5].destination = &(s->use_ipv6);
+        cv[5].destination = &s->use_ipv6;
 
         cv[7].destination = s->document_root;
         cv[8].destination = s->server_name;
         /* 9 -> max-fds */
 #ifdef HAVE_LSTAT
-        cv[10].destination = &(s->follow_symlink);
+        cv[10].destination = &s->follow_symlink;
 #endif
 //        cv[25].destination = &(s->global_kbytes_per_second);
 //        cv[26].destination = &(s->kbytes_per_second);
         cv[11].destination = s->ssl_pemfile;
 
+        cv[12].destination = &s->is_ssl;
         cv[13].destination = s->ssl_ca_file;
-
         cv[16].destination = s->ssl_cipher_list;
+
+        cv[17].destination = &s->is_sctp;
+        cv[18].destination = &s->sctp_max_streams;
 
         srv->config_storage[i] = s;
 

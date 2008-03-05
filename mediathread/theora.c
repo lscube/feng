@@ -46,10 +46,10 @@
 #include <fenice/mediaparser_module.h>
 #include <fenice/utils.h>
 
-#include <ffmpeg/md5.h>
+#include <libavutil/md5.h>
 
 #ifdef HAVE_AVUTIL
-#include <ffmpeg/base64.h>
+#include <libavutil/base64.h>
 #else
 static inline char *av_base64_encode(char * buf, int buf_len,
                                      uint8_t * src, int len)

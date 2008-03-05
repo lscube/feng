@@ -153,13 +153,13 @@ fi
 avformat_msg="no"
 avutil_msg="no"
 if test "x$enable_ffmpeg" = "xyes"; then
-    PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 52.0.0],
+    PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 52.7.0],
         [AC_DEFINE(HAVE_AVFORMAT,,[Define if libavformat support is available])
          avformat_msg="yes"
          ])
          CFLAGS="$CFLAGS $LIBAVFORMAT_CFLAGS"
          LIBS="$LIBS $LIBAVFORMAT_LIBS"
-        PKG_CHECK_MODULES(LIBAVUTIL,[libavutil >= 49.4.0],
+        PKG_CHECK_MODULES(LIBAVUTIL,[libavutil >= 49.6.0],
         [AC_DEFINE(HAVE_AVUTIL,,[Define if libavutil support is available])
          avutil_msg="yes"],
          [avutil_msg="no, using internal"])
