@@ -8,8 +8,8 @@ In order to build feng you need:
 - gnu toolchain (gcc >= 3.4 , make >= 3.80, libtool >= 1.5.20) [1]
 - glib-2 >= 2.10 [2]
 - ffmpeg svn HEAD or any recent snapshot [3].
-- netembryo >= 0.0.3 [4]
-- bufferpool >= 0.0.2 [4]
+- netembryo >= 0.0.6 [4]
+- bufferpool >= 0.0.3 [4]
 - libgcrypt >= 1.2.0 [5]
 
 
