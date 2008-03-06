@@ -104,10 +104,10 @@ static int feng_bind_ports(feng *srv)
     char *port;
     port = g_strdup_printf("%d", srv->srvconf.port);
     if (srv->config_storage[0]->is_sctp)
-        srv->main_sock = Sock_bind(NULL, port, NULL, SCTP, NULL);
+        srv->listen_socks = Sock_bind(NULL, port, NULL, SCTP, NULL);
     else
-        srv->main_sock = Sock_bind(NULL, port, NULL, TCP, NULL);
-    if(!srv->main_sock) {
+        srv->listen_socks = Sock_bind(NULL, port, NULL, TCP, NULL);
+    if(!srv->listen_socks) {
         fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP port %s.", port);
         fprintf(stderr,
                 "[fatal] Sock_bind() error in main() for TCP port %s.\n",
@@ -120,7 +120,7 @@ static int feng_bind_ports(feng *srv)
             port);
     g_free(port);
 
-    if(Sock_listen(srv->main_sock, SOMAXCONN)) {
+    if(Sock_listen(srv->listen_socks, SOMAXCONN)) {
         fnc_log(FNC_LOG_ERR, "Sock_listen() error for TCP socket.");
         fprintf(stderr, "[fatal] Sock_listen() error for TCP socket.\n");
         return 1;
@@ -337,7 +337,6 @@ int main(int argc, char **argv)
         eventloop(srv);
     }
 
-    Sock_close(srv->main_sock);
-    Sock_close(srv->sctp_main_sock);
+    Sock_close(srv->listen_socks);
     return 0;
 }

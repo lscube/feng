@@ -45,14 +45,9 @@ static int listen_fd(feng *srv, fd_set *set)
 {
     int max_fd;
 
-    FD_SET(Sock_fd(srv->main_sock), set);
-    max_fd = Sock_fd(srv->main_sock);
-#ifdef HAVE_LIBSCTP
-    if (srv->sctp_main_sock) {
-        FD_SET(Sock_fd(srv->sctp_main_sock), set);
-        max_fd = max(max_fd, Sock_fd(srv->sctp_main_sock));
-    }
-#endif
+    FD_SET(Sock_fd(srv->listen_socks), set);
+    max_fd = Sock_fd(srv->listen_socks);
+
     return max_fd;
 }
 
@@ -60,13 +55,9 @@ static int listen_fd(feng *srv, fd_set *set)
  * Close all the listening sockets
  */
 
-static void close_main_socks(feng *srv)
+static void close_listen_socks(feng *srv)
 {
-    Sock_close(srv->main_sock);
-#ifdef HAVE_LIBSCTP
-    if (srv->sctp_main_sock)
-        Sock_close(srv->sctp_main_sock);
-#endif
+    Sock_close(srv->listen_socks);
 }
 
 /**
@@ -76,8 +67,7 @@ static void close_main_socks(feng *srv)
 
 void eventloop(feng *srv)
 {
-    Sock *main_sock = srv->main_sock;
-    Sock *sctp_main_sock = srv->sctp_main_sock;
+    Sock *listen_socks = srv->listen_socks;
 
     int max_fd;
     RTSP_buffer *p = NULL;
@@ -108,13 +98,8 @@ void eventloop(feng *srv)
     schedule_connections(srv, &rset, &wset);
     /* handle new connections */
     if (srv->conn_count != -1) {
-#ifdef HAVE_LIBSCTP
-        if (sctp_main_sock && FD_ISSET(Sock_fd(sctp_main_sock), &rset)) {
-            client_sock = Sock_accept(sctp_main_sock, NULL);
-        } else
-#endif
-        if (FD_ISSET(Sock_fd(main_sock), &rset)) {
-            client_sock = Sock_accept(main_sock, NULL);
+        if (FD_ISSET(Sock_fd(listen_socks), &rset)) {
+            client_sock = Sock_accept(listen_socks, NULL);
         }
         // Handle a new connection
         if (client_sock) {
@@ -150,7 +135,7 @@ void eventloop(feng *srv)
                         conn_count = -1;
                 #endif
                         Sock_close(client_sock);
-                        close_main_socks(srv);
+                        close_listen_socks(srv);
                 }
                 srv->num_conn++;
                 fnc_log(FNC_LOG_INFO, "Connection reached: %d\n",

@@ -42,8 +42,7 @@ typedef struct feng {
  * listening sockets
  */
 //@{
-    Sock *main_sock;                //!< main tcp socket
-    Sock *sctp_main_sock;           //!< stcp socket (optional)
+    Sock *listen_socks;             //!< listen sockets
 //@}
     pthread_t mth;                  //!< mediathread
     struct schedule_list *sched;
