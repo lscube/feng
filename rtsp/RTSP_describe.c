@@ -126,7 +126,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
     else if ( (error = get_session_description(srv, &cinfo)).got_error )
         goto error_management;
 
-    if (srv->num_conn > prefs_get_max_session()) {
+    if (srv->num_conn > srv->srvconf.max_conns) {
         /*redirect */
         return send_redirect_3xx(rtsp, cinfo.object);
     }

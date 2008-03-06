@@ -102,9 +102,11 @@ static void feng_drop_privs(feng *srv)
 static int feng_bind_ports(feng *srv)
 {
     char *port;
-    port = g_strdup_printf("%d", prefs_get_port());
-    srv->main_sock = Sock_bind(NULL, port, NULL, TCP, NULL);
-
+    port = g_strdup_printf("%d", srv->srvconf.port);
+    if (srv->config_storage[0]->is_sctp)
+        srv->main_sock = Sock_bind(NULL, port, NULL, SCTP, NULL);
+    else
+        srv->main_sock = Sock_bind(NULL, port, NULL, TCP, NULL);
     if(!srv->main_sock) {
         fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP port %s.", port);
         fprintf(stderr,
@@ -124,31 +126,6 @@ static int feng_bind_ports(feng *srv)
         return 1;
     }
 
-#ifdef HAVE_LIBSCTP
-    if (prefs_get_sctp_port() >= 0) {
-        port = g_strdup_printf("%d", prefs_get_sctp_port());
-        srv->sctp_main_sock = Sock_bind(NULL, port, NULL, SCTP, NULL);
-
-        if(!srv->sctp_main_sock) {
-            fnc_log(FNC_LOG_ERR,"Sock_bind() error for SCTP port %s.", port);
-            fprintf(stderr,
-                    "[fatal] Sock_bind() error in main() for SCTP port %s.\n",
-                    port);
-            g_free(port);
-            return 1;
-        }
-
-        fnc_log(FNC_LOG_INFO,
-                "Waiting for RTSP connections on SCTP port %s...", port);
-        g_free(port);
-
-        if(Sock_listen(srv->sctp_main_sock, SOMAXCONN)) {
-            fnc_log(FNC_LOG_ERR,"Sock_listen() error for SCTP socket." );
-            fprintf(stderr, "[fatal] Sock_listen() error for SCTP socket.\n");
-            return 1;
-        }
-    }
-#endif
     return 0;
 }
 
@@ -288,7 +265,7 @@ case 'V':
             return -1;
         }
 
-    fn = fnc_log_init(prefs_get_log(), view_log, progname);
+    fn = fnc_log_init(srv->srvconf.errorlog_file->ptr, view_log, progname);
 
     Sock_init(fn);
     bp_log_init(fn);

@@ -47,7 +47,6 @@ typedef struct feng {
 //@}
     pthread_t mth;                  //!< mediathread
     struct schedule_list *sched;
-    pref_record *prefs;             //!< global preferences
 /**
  * @name lighttpd-alike preferences
  * lemon based, lighttpd alike preferences
