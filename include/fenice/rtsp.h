@@ -32,6 +32,11 @@
 #include <fenice/sdp2.h>
 #include <fenice/schedule.h>
 
+#ifdef HAVE_LIBSCTP
+#include <netinet/sctp.h>
+#define MAX_SCTP_STREAMS 15
+#endif
+
 #define RTSP_RESERVED 4096
 #define RTSP_BUFFERSIZE (65536 + RTSP_RESERVED)
 

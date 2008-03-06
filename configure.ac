@@ -128,7 +128,7 @@ else
     AC_MSG_WARN([IPv6 disabled: check skipped.])
 fi
 
-PKG_CHECK_MODULES(LIBNETEMBRYO,[libnetembryo >= 0.0.6])
+PKG_CHECK_MODULES(LIBNETEMBRYO,[libnetembryo >= 0.0.8])
 CFLAGS="$CFLAGS $LIBNETEMBRYO_CFLAGS"
 LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 
