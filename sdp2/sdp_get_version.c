@@ -24,6 +24,7 @@
 
 #include <fenice/sdp2.h>
 #include <fenice/utils.h>
+#include <fenice/description.h>
 
 gint sdp_get_version(ResourceDescr *r_descr, char *dest, size_t dest_size)
 {
