@@ -7,7 +7,17 @@ server.modules = (
     "mod_access",
     "mod_accesslog"
 )
-server.port          = @fenice_rtsp_port@
+
+# bind to port (defaults to @fenice_rtsp_port@)
+# server.port         = 8554
+
+# bind to name (defaults to all interfaces)
+# server.bind         = "live.host.tld"
+
+# use sctp instead of tcp
+# sctp.protocol       = "enable"
+# sctp.max_streams    = 16
+
 server.username      = "feng"
 server.groupname     = "feng"
 server.max-connections = @fenice_max_session@
