@@ -101,23 +101,29 @@ static void feng_drop_privs(feng *srv)
 
 static int feng_bind_ports(feng *srv)
 {
-    char *port;
+    char *host, *port;
+    int is_sctp = srv->config_storage[0]->is_sctp;
+
+    host = srv->srvconf.bindhost->ptr;
     port = g_strdup_printf("%d", srv->srvconf.port);
-    if (srv->config_storage[0]->is_sctp)
-        srv->listen_socks = Sock_bind(NULL, port, NULL, SCTP, NULL);
+
+    if (is_sctp)
+        srv->listen_socks = Sock_bind(host, port, NULL, SCTP, NULL);
     else
-        srv->listen_socks = Sock_bind(NULL, port, NULL, TCP, NULL);
+        srv->listen_socks = Sock_bind(host, port, NULL, TCP, NULL);
     if(!srv->listen_socks) {
-        fnc_log(FNC_LOG_ERR,"Sock_bind() error for TCP port %s.", port);
+        fnc_log(FNC_LOG_ERR,"Sock_bind() error for port %s.", port);
         fprintf(stderr,
-                "[fatal] Sock_bind() error in main() for TCP port %s.\n",
+                "[fatal] Sock_bind() error in main() for port %s.\n",
                 port);
         g_free(port);
         return 1;
     }
 
-    fnc_log(FNC_LOG_INFO, "Waiting for RTSP connections on TCP port %s...",
-            port);
+    fnc_log(FNC_LOG_INFO, "Listening to port %s (%s) on %s",
+            port,
+            (is_sctp? "SCTP" : "TCP"),
+            ((host == NULL)? "all interfaces" : host));
     g_free(port);
 
     if(Sock_listen(srv->listen_socks, SOMAXCONN)) {

@@ -993,8 +993,6 @@ int config_set_defaults(server *srv) {
     size_t i;
     specific_config *s = srv->config_storage[0];
     struct stat st1, st2;
-    char line[256];
-    int l;
 
     if (buffer_is_empty(s->document_root)) {
         log_error_write(srv, __FILE__, __LINE__, "s",
@@ -1053,13 +1051,6 @@ int config_set_defaults(server *srv) {
         srv->srvconf.first_udp_port = RTP_DEFAULT_PORT;
     if (srv->srvconf.buffered_frames == 0)
         srv->srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
-    gethostname(line, sizeof(line));
-    l = strlen(line);
-    if (getdomainname(line + l + 1, sizeof(line) - l) != 0) {
-        line[l] = '.';
-    }
-
-    buffer_copy_string(srv->srvconf.bindhost, line);
 
     if (s->is_ssl) {
         if (buffer_is_empty(s->ssl_pemfile)) {
