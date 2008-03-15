@@ -26,12 +26,13 @@
 #include <fenice/utils.h>
 #include <pthread.h>
 
-schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
-int schedule_init()
+int schedule_init(feng *srv)
 {    
     int i;
     pthread_t thread;
+    schedule_list *sched = malloc(ONE_FORK_MAX_CONNECTION *
+                                  sizeof(schedule_list));
 
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
         sched[i].rtp_session = NULL;
@@ -40,7 +41,9 @@ int schedule_init()
         pthread_mutex_init(&sched[i].mux, NULL);
     }
 
-    pthread_create(&thread, NULL, schedule_do, 0);
+    srv->sched = sched;
+
+    pthread_create(&thread, NULL, schedule_do, (void *)srv);
 
     return ERR_NOERROR;
 }

@@ -76,7 +76,7 @@ typedef struct {
 } MediaParserInfo;
 
 typedef struct {
-    MediaParserInfo *info;
+    const MediaParserInfo *info;
 /*! init: inizialize the module
  *    
  *  @param properties: pointer of allocated struct to fill with properties

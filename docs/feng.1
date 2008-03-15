@@ -1,4 +1,4 @@
-.TH Feng 1 "May 31, 2007" "Feng Streaming Server" "LScube Project"
+.TH Feng 1 "May 15, 2008" "Feng Streaming Server" "LScube Project"
 .SH NAME
 \fBFeng\fP \- multimedia streaming server
 .SH SYNOPSIS
@@ -18,31 +18,11 @@ RTP/RTCP \- Real\-Time Transport Protocol/RTP Control Protocol (RFC3550)
 supporting the RTP Profile for Audio and Video Conferences with Minimal Control
 (RFC3551).
 .br
-\fBFeng\fP supports the following encoding standards:
-.sp 1
-.RS
-.I Audio
-.IP
-\(bu
-MP3 (MPEG-1 Layer III) (RFC3119).
-.IP
-\(bu
-Vorbis (draft 05).
-.RE
-.sp 1
-.RS
-.I Video
-.IP
-\(bu
-H264 (RFC3984).
-.IP
-\(bu
-Theora (draft 03).
-.RE
 .sp 1
 \fBFeng\fP is capable of live streaming using external real\-time audio/video
 encoders such as lame, ffmpeg or vlc, even capturing audio and video
-streams from live-recording remote hosts (with Felix \- Feng Live eXtender).
+streams from live-recording remote hosts using 
+.BR felix (1).
 .PP
 .SH OPTIONS
 This program follow the usual GNU command line syntax, with long
@@ -63,47 +43,12 @@ Suppresses the standard output completely.
 Outputs messages to standard error, useful for debug purposes.
 
 .SH CONFIGURATION
-\fBFeng\fP's configuration files are plain-text documents. A line starting
-with a # is a comment. Directives are in the format
-.sp 1
-.RS
-keyword=value
-.RE
-.sp 1
-\fBFeng\fP supports the following keywords:
-.TP
-.B avroot
-Path to the directory containing the multimedia files and the \fIsource
-descrption\fP (.sd) files. \fINote\fP that audio/video resources must be
-de-multiplexed, i.e.  audio and video streams must be available as two or more
-different files: they will be aggregated via source description (.sd) file.
-.sp 1
-Please see on-line documentation for examples of .sd files.
-.TP
-.B tcp_port
-TCP port for incoming RTSP connections. IANA assigned to RTSP services the Well
-Known Port \fI554\fP (root privileges required) and the Registered Port
-\fI8554\fP (user privileges sufficient).
-.TP
-.B sctp_port
-SCTP port for incoming RTSP connections. IANA assigned to RTSP services the Well
-Known Port \fI554\fP (root privileges required) and the Registered Port
-\fI8554\fP (user privileges sufficient). By default is set to -1 (disabled).
-.TP
-.B max_session
-Max number of sessions handled before sending a \fI453 \- Not Enough
-Bandwidth\fP error or a \fI3xx \- Redirection\fP error.
-.TP
-.B log_file
-Log filename including the full path.
+The configuration file use the same syntax used by
+.BR lighttpd (1)
 .SH SEE ALSO
-\fIOn-line Documentation\fP
-.TP
-.BR "Feng":
+\fIOn-line Documentation\fP:
 .UH
 http://live.polito.it/feng
-.sp 1
-.PP
 .SH AUTHORS
 \fBFeng\fP was written by \fBLScube Team\fP.
 .PP

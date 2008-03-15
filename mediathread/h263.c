@@ -26,7 +26,7 @@
 #include <fenice/mediaparser.h>
 #include <fenice/mediaparser_module.h>
 
-static MediaParserInfo info = {
+static const MediaParserInfo info = {
     "H263P",
     MP_video
 };

@@ -1,21 +1,4 @@
-/*
- *  $Id: $
- *
- *  Copyright (C) 2007 by team@streaming.polito.it
- *
- *  Feng is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  Feng is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with Feng; if not, write to the Free Software
- *  This file is part of Feng
+/* *
  * 
  * Copyright (C) 2007 by LScube team <team@streaming.polito.it> 
  * See AUTHORS for more details 
@@ -77,9 +60,8 @@ RTSP_Error check_require_header(RTSP_buffer * rtsp);
 RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer);
 RTSP_Error get_description_format(RTSP_buffer * rtsp, ConnectionInfo * cinfo);
 RTSP_Error get_cseq(RTSP_buffer * rtsp);
-RTSP_Error get_session_description(ConnectionInfo * cinfo);
+RTSP_Error get_session_description(feng *srv, ConnectionInfo * cinfo);
 RTSP_Error get_session_id(RTSP_buffer * rtsp, unsigned long * session_id);
-int max_connection();
 /**
  * @}
  */

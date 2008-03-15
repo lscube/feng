@@ -24,16 +24,12 @@
 #include <fenice/rtp.h>
 #include <fenice/rtcp.h>
 
-extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
-
-void schedule_stop(int id)
+void schedule_stop(RTP_session *session)
 {
-    RTCP_send_packet(sched[id].rtp_session,SR);
-    RTCP_send_packet(sched[id].rtp_session,BYE);
-    RTCP_flush(sched[id].rtp_session);
+    RTCP_send_packet(session,SR);
+    RTCP_send_packet(session,BYE);
+    RTCP_flush(session);
 
-    sched[id].rtp_session->pause=1;
-
-    sched[id].rtp_session->started=0;
-    //sched[id].rtsp_session->cur_state=READY_STATE;
+    session->pause=1;
+    session->started=0;
 }

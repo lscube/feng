@@ -30,56 +30,11 @@
 #include <time.h>
 
 static GAsyncQueue *el_head;
-//static GQueue *el_head;
 static pthread_mutex_t el_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mt_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int running = 1;
 
-void *mediathread(void *arg) {
-    mt_event_item *el_cur;
-
-    if (!g_thread_supported ()) g_thread_init (NULL);
-
-    el_head = g_async_queue_new();
-
-    fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started");
-
-    while(running) { 
-        //this replaces the previous nanosleep loop, 
-        //as this will block until data is available
-        el_cur = g_async_queue_pop (el_head);
-        if (el_cur) {
-            pthread_mutex_lock(&mt_mutex);
-            mt_process_event(el_cur);
-            mt_dispose_event(el_cur);
-            pthread_mutex_unlock(&mt_mutex);
-        }
-    }
-    return NULL;
-}
-
-int mt_add_event(mt_event_id id, void **args) {
-    mt_event_item *item;
-
-    if (!(item = g_new0(mt_event_item, 1))) {
-        mt_dispose_event_args(id, args);
-        fnc_log(FNC_LOG_FATAL, "[MT] Allocation failure in mt_create_event()");
-        return ERR_GENERIC;
-    }
-
-    fnc_log(FNC_LOG_VERBOSE, "[MT] Created event: %#x", item);
-
-    item->id = id;
-    item->args = args;
-
-    pthread_mutex_lock(&el_mutex);
-    g_async_queue_push(el_head, item);
-    pthread_mutex_unlock(&el_mutex);
-
-    return ERR_NOERROR;
-}
-
-inline int mt_process_event(mt_event_item *ev) {
+static inline int mt_process_event(mt_event_item *ev) {
 
     if (!ev)
         return ERR_GENERIC;
@@ -139,15 +94,7 @@ inline int mt_process_event(mt_event_item *ev) {
     return ERR_NOERROR;
 }
 
-inline void mt_dispose_event(mt_event_item *ev) {
-    if (!ev)
-        return;
-    if (ev->args)
-        mt_dispose_event_args(ev->id, ev->args);
-    g_free(ev);
-}
-
-inline void mt_dispose_event_args(mt_event_id id, void ** args) {
+static inline void mt_dispose_event_args(mt_event_id id, void ** args) {
     switch (id) {
     default:
         break;
@@ -155,9 +102,61 @@ inline void mt_dispose_event_args(mt_event_id id, void ** args) {
     g_free(args);
 }
 
-Resource *mt_resource_open(char * path, char *filename) {
+static inline void mt_dispose_event(mt_event_item *ev) {
+    if (!ev)
+        return;
+    if (ev->args)
+        mt_dispose_event_args(ev->id, ev->args);
+    g_free(ev);
+}
+
+int mt_add_event(mt_event_id id, void **args) {
+    mt_event_item *item;
+
+    if (!(item = g_new0(mt_event_item, 1))) {
+        mt_dispose_event_args(id, args);
+        fnc_log(FNC_LOG_FATAL, "[MT] Allocation failure in mt_create_event()");
+        return ERR_GENERIC;
+    }
+
+    fnc_log(FNC_LOG_VERBOSE, "[MT] Created event: %#x", item);
+
+    item->id = id;
+    item->args = args;
+
+    pthread_mutex_lock(&el_mutex);
+    g_async_queue_push(el_head, item);
+    pthread_mutex_unlock(&el_mutex);
+
+    return ERR_NOERROR;
+}
+
+void *mediathread(void *arg) {
+    mt_event_item *el_cur;
+
+    if (!g_thread_supported ()) g_thread_init (NULL);
+
+    el_head = g_async_queue_new();
+
+    fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started");
+
+    while(running) { 
+        //this replaces the previous nanosleep loop, 
+        //as this will block until data is available
+        el_cur = g_async_queue_pop (el_head);
+        if (el_cur) {
+            pthread_mutex_lock(&mt_mutex);
+            mt_process_event(el_cur);
+            mt_dispose_event(el_cur);
+            pthread_mutex_unlock(&mt_mutex);
+        }
+    }
+    return NULL;
+}
+
+Resource *mt_resource_open(feng *srv, char * path, char *filename) {
     // TODO: add to a list in order to close resources on shutdown!
-    return r_open(path, filename);
+    return r_open(srv, path, filename);
 }
 
 void mt_resource_close(Resource *resource) {

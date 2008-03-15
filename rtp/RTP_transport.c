@@ -72,6 +72,7 @@ int RTP_send_packet(RTP_session * session)
     int res = ERR_NOERROR, bp_frames = 0;
     BPSlot *slot = NULL;
     ssize_t psize_sent = 0;
+    feng *srv = session->srv;
     Track *t = r_selected_track(session->track_selector);
 
     if ((slot = bp_getreader(session->cons))) {
@@ -139,7 +140,7 @@ int RTP_send_packet(RTP_session * session)
         }
         bp_gotreader(session->cons);
     }
-    if (!slot || bp_frames <= get_pref_int(PREFS_BUFFERED_FRAMES)) {
+    if (!slot || bp_frames <= srv->srvconf.buffered_frames) {
         res = event_buffer_low(session, t);
     }
     switch (res) {
@@ -203,7 +204,7 @@ int RTP_transport_close(RTP_session * session) {
     pair.RTCP = get_local_port(session->transport.rtcp_sock);
     switch (session->transport.rtp_sock->socktype) {
         case UDP:
-            RTP_release_port_pair(&pair);
+            RTP_release_port_pair(session->srv, &pair);
         default:
             break;
     }

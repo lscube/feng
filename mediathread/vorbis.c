@@ -86,7 +86,7 @@ static inline char *av_base64_encode(char * buf, int buf_len,
 }
 #endif
 
-static MediaParserInfo info = {
+static const MediaParserInfo info = {
     "vorbis",
     MP_audio
 };

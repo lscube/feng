@@ -24,30 +24,16 @@
 #include <fenice/schedule.h>
 #include <fenice/rtp.h>
 
-extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
-
-int schedule_start(int id, play_args *args)
+int schedule_start(RTP_session *session, play_args *args)
 {
-    //double mnow = gettimeinseconds(NULL);
-    RTP_session *session = sched[id].rtp_session;
+    feng *srv = session->srv;
     Track *tr = r_selected_track(session->track_selector);
     int i;
 
     session->cons = bp_ref(tr->buffer);
     if (session->cons == NULL)
         return ERR_ALLOC;
-#if 0
-/* Iff this session is the first session related to this media_entry,
- * then it runs here
- * */
-    if (tr->buffer->control->refs == 1) {
-        if (!args->playback_time_valid) {
-            session->start_time = args->start_time;
-        } else {
-            session->start_time = mktime(&(args->playback_time));
-        }
-    }
-#endif
+
     session->start_time = args->start_time;
     session->send_time = 0.0;
     session->pause = 0;
@@ -59,7 +45,7 @@ int schedule_start(int id, play_args *args)
     session->rtcp_stats[i_client].SR_received = 0;
 
     //Preload some frames in bufferpool
-    for (i=0; i < get_pref_int(PREFS_BUFFERED_FRAMES); i++) {
+    for (i=0; i < srv->srvconf.buffered_frames; i++) {
         event_buffer_low(session, r_selected_track(session->track_selector));
     }
 

@@ -1,4 +1,4 @@
-feniceincludedir = ../include
+feniceincludedir = $(top_srcdir)/include
 
 noinst_LTLIBRARIES = liblog.la libsafectype.la libutils.la
 
@@ -35,7 +35,7 @@ feng_LDADD =	../eventloop/libeventloop.la \
 		../mediathread/libmediath.la \
 		../multicast/libmulticast.la
 
-feng_LDADD +=	../conf/libconf.la \
+feng_LDADD +=	../conf/liblight.la \
 		../src/libutils.la \
 		../src/liblog.la \
 		../src/libsafectype.la

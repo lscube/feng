@@ -34,7 +34,6 @@
 #include <gcrypt.h>
 #include <RTSP_utils.h>
 
-extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 
 /**
@@ -71,23 +70,23 @@ static RTSP_Error unicast_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     char port_buffer[8];
     port_pair ser_ports;
     RTSP_Error error;
-    if (RTP_get_port_pair(&ser_ports) != ERR_NOERROR) {
+    if (RTP_get_port_pair(rtsp->srv, &ser_ports) != ERR_NOERROR) {
         return RTSP_InternalServerError;
     }
     //UDP bind for outgoing RTP packets
     snprintf(port_buffer, 8, "%d", ser_ports.RTP);
-    transport->rtp_sock = Sock_bind(NULL, port_buffer, NULL, UDP, 0);
+    transport->rtp_sock = Sock_bind(NULL, port_buffer, NULL, UDP, NULL);
     //UDP bind for outgoing RTCP packets
     snprintf(port_buffer, 8, "%d", ser_ports.RTCP);
-    transport->rtcp_sock = Sock_bind(NULL, port_buffer, NULL, UDP, 0);
+    transport->rtcp_sock = Sock_bind(NULL, port_buffer, NULL, UDP, NULL);
     //UDP connection for outgoing RTP packets
     snprintf(port_buffer, 8, "%d", cli_ports.RTP);
     Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                  transport->rtp_sock, UDP, 0);
+                  transport->rtp_sock, UDP, NULL);
     //UDP connection for outgoing RTCP packets
     snprintf(port_buffer, 8, "%d", cli_ports.RTCP);
     Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                  transport->rtcp_sock, UDP, 0);
+                  transport->rtcp_sock, UDP, NULL);
 
     if (!transport->rtp_sock) {
         // fnc_log(FNC_LOG_ERR,"Unsupported Transport\n");
@@ -102,13 +101,14 @@ static RTSP_Error unicast_transport(RTSP_buffer *rtsp, RTP_transport *transport,
  * set the sockets for the first multicast request, otherwise provide the
  * already instantiated rtp session
  */
-static RTSP_Error multicast_transport(RTP_transport *transport,
+static RTSP_Error multicast_transport(feng *srv, RTP_transport *transport,
                                       ResourceInfo *info,
                                       Track *tr,
                                       RTP_session **rtp_s)
 {
     char port_buffer[8];
     RTSP_Error error;
+    schedule_list *sched = srv->sched;
     int i;
 
     *rtp_s = NULL;
@@ -331,7 +331,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
     // Transport: RTP/AVP/UDP
     // Transport: RTP/AVP/UDP;multicast
                 else if (*rtsp->session_list->resource->info->multicast) {
-                    return multicast_transport(transport,
+                    return multicast_transport(rtsp->srv, transport,
                                         rtsp->session_list->resource->info,
                                         tr, rtp_s);
                 } else
@@ -468,6 +468,7 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
 static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, Selector * track_sel)
 {
     RTP_session *rtp_s;
+    feng *srv = rtsp->srv;
 
 // Setup the RTP session
     if (rtsp->session_list->rtp_session == NULL) {
@@ -491,6 +492,7 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     gcry_randomize(&rtp_s->start_seq, sizeof(rtp_s->start_seq), GCRY_STRONG_RANDOM);
     rtp_s->seq_no = rtp_s->start_seq - 1;
     rtp_s->track_selector = track_sel;
+    rtp_s->srv = srv;
     rtp_s->sched_id = schedule_add(rtp_s);
     gcry_randomize(&rtp_s->ssrc, sizeof(rtp_s->ssrc), GCRY_STRONG_RANDOM);
 
@@ -510,10 +512,11 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
 static RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
 {
     RTSP_Error error;
+    feng *srv = rtsp_s->srv;
 
     // it should parse the request giving us object!trackname
     if (!rtsp_s->resource) {
-        if (!(rtsp_s->resource = mt_resource_open(prefs_get_serv_root(), cinfo->object))) {
+        if (!(rtsp_s->resource = mt_resource_open(srv, prefs_get_serv_root(), cinfo->object))) {
             error = RTSP_NotFound;
             fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", cinfo->object);
             return error;

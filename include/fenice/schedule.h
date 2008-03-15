@@ -31,7 +31,7 @@
 #include <fenice/prefs.h>
 #include <fenice/debug.h>
 
-typedef struct _play_args {
+typedef struct play_args {
     struct tm playback_time;
     short playback_time_valid;
     short seek_time_valid;
@@ -40,7 +40,7 @@ typedef struct _play_args {
     double end_time;
 } play_args;
 
-typedef struct _schedule_list {
+typedef struct schedule_list {
     pthread_mutex_t mux;
     int valid;
     RTP_session *rtp_session;
@@ -51,9 +51,9 @@ int schedule_init();
 
 void *schedule_do(void *nothing);
 
-int schedule_add(RTP_session * rtp_session /*,RTSP_session *rtsp_session */ );
-int schedule_start(int id, play_args * args);
-void schedule_stop(int id);
-int schedule_remove(int id);
-int schedule_resume(int id, play_args * args);
+int schedule_add(RTP_session * rtp_session);
+int schedule_start(RTP_session * rtp_session, play_args * args);
+void schedule_stop(RTP_session * rtp_session);
+int schedule_remove(RTP_session * rtp_session);
+int schedule_resume(RTP_session * rtp_session, play_args * args);
 #endif // FN_SCHEDULE_H

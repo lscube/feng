@@ -32,6 +32,11 @@
 #include <fenice/sdp2.h>
 #include <fenice/schedule.h>
 
+#ifdef HAVE_LIBSCTP
+#include <netinet/sctp.h>
+#define MAX_SCTP_STREAMS 15
+#endif
+
 #define RTSP_RESERVED 4096
 #define RTSP_BUFFERSIZE (65536 + RTSP_RESERVED)
 
@@ -46,7 +51,7 @@
 #define RTSP_RTP_AVP "RTP/AVP"
 
 
-typedef struct _RTSP_interleaved {
+typedef struct RTSP_interleaved {
     Sock *rtp_local;
     Sock *rtcp_local;
     union {
@@ -61,20 +66,21 @@ typedef struct _RTSP_interleaved {
         } sctp;
 #endif
     } proto;
-    struct _RTSP_interleaved *next;
+    struct RTSP_interleaved *next;
 } RTSP_interleaved;
 
-typedef struct _RTSP_session {
+typedef struct RTSP_session {
     int cur_state;
     unsigned long session_id;
     int started;
     RTP_session *rtp_session;
-    struct _RTSP_session *next;
+    struct RTSP_session *next;
     // mediathread resource
     Resource *resource;
+    feng *srv;
 } RTSP_session;
 
-typedef struct _RTSP_buffer {
+typedef struct RTSP_buffer {
     Sock *sock;
     //unsigned int port;
     // Buffers      
@@ -93,7 +99,8 @@ typedef struct _RTSP_buffer {
     unsigned int rtsp_cseq;
     char descr[MAX_DESCR_LENGTH];
     RTSP_session *session_list;
-    struct _RTSP_buffer *next;
+    struct RTSP_buffer *next;
+    feng *srv;
 } RTSP_buffer;
 
 typedef enum {
@@ -155,8 +162,6 @@ int RTSP_valid_response_msg(unsigned short *status, char *msg,
                 RTSP_buffer * rtsp);
 
 int RTSP_validate_method(RTSP_buffer * rtsp);
-
-void RTSP_initserver(RTSP_buffer * rtsp, Sock *rtsp_sock);
 
 int send_reply(int err, char *addon, RTSP_buffer * rtsp);
 

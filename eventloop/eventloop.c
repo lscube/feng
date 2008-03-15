@@ -20,6 +20,11 @@
  *  
  * */
 
+/**
+ * @file eventloop.c
+ * Network main loop
+ */
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -29,16 +34,44 @@
 
 #include <fenice/schedule.h>
 
-int num_conn = 0;
+/**
+ * adds file descriptors to the set
+ * @param srv the server instance
+ * @param set the file descriptor set
+ * @return the max file descriptor in the set
+ */
 
-void eventloop(Sock *main_sock, Sock *sctp_main_sock)
+static int listen_fd(feng *srv, fd_set *set)
 {
-    static uint32_t child_count = 0;
-    static int conn_count = 0;
     int max_fd;
-    static RTSP_buffer *rtsp_list = NULL;
+
+    FD_SET(Sock_fd(srv->listen_socks), set);
+    max_fd = Sock_fd(srv->listen_socks);
+
+    return max_fd;
+}
+
+/**
+ * Close all the listening sockets
+ */
+
+static void close_listen_socks(feng *srv)
+{
+    Sock_close(srv->listen_socks);
+}
+
+/**
+ * Main loop waiting for clients
+ * @param srv server instance variable.
+ */
+
+void eventloop(feng *srv)
+{
+    Sock *listen_socks = srv->listen_socks;
+
+    int max_fd;
     RTSP_buffer *p = NULL;
-    uint32_t fd_found;
+    int fd_found;
     fd_set rset,wset;
     Sock *client_sock = NULL;
 
@@ -46,23 +79,15 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
     FD_ZERO(&rset);
     FD_ZERO(&wset);
 
-    if (conn_count != -1) {
-        /* This is the process allowed for accepting new clients */
-        FD_SET(Sock_fd(main_sock), &rset);
-        max_fd = Sock_fd(main_sock);
-#ifdef HAVE_LIBSCTP
-        if (sctp_main_sock) {
-            FD_SET(Sock_fd(sctp_main_sock), &rset);
-            max_fd = max(max_fd, Sock_fd(sctp_main_sock));
-        }
-#endif
+    if (srv->conn_count != -1) {
+        max_fd = listen_fd(srv, &rset);
     }
 
     /* Add all sockets of all sessions to fd_sets */
-    for (p = rtsp_list; p; p = p->next) {
-        rtsp_set_fdsets(p, &max_fd, &rset, &wset, NULL);
+    for (p = srv->rtsp_list; p; p = p->next) {
+        rtsp_set_fdsets(p, &max_fd, &rset, &wset);
     }
-    /* Stay here and wait for something happens */
+    /* Wait for connections */
     if (select(max_fd + 1, &rset, &wset, NULL, NULL) < 0) {
         fnc_log(FNC_LOG_ERR, "select error in eventloop(). %s\n",
                 strerror(errno));
@@ -70,29 +95,24 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
         return;
     }
     /* transfer data for any RTSP sessions */
-    schedule_connections(&rtsp_list, &conn_count, &rset, &wset, NULL);
+    schedule_connections(srv, &rset, &wset);
     /* handle new connections */
-    if (conn_count != -1) {
-#ifdef HAVE_LIBSCTP
-        if (sctp_main_sock && FD_ISSET(Sock_fd(sctp_main_sock), &rset)) {
-            client_sock = Sock_accept(sctp_main_sock, NULL);
-        } else
-#endif
-        if (FD_ISSET(Sock_fd(main_sock), &rset)) {
-            client_sock = Sock_accept(main_sock, NULL);
+    if (srv->conn_count != -1) {
+        if (FD_ISSET(Sock_fd(listen_socks), &rset)) {
+            client_sock = Sock_accept(listen_socks, NULL);
         }
         // Handle a new connection
         if (client_sock) {
-            for (fd_found = 0, p = rtsp_list; p != NULL; p = p->next)
+            for (fd_found = 0, p = srv->rtsp_list; p != NULL; p = p->next)
                 if (!Sock_compare(client_sock, p->sock)) {
                     fd_found = 1;
                     break;
                 }
             if (!fd_found) {
-                if (conn_count < ONE_FORK_MAX_CONNECTION) {
-                    ++conn_count;
+                if (srv->conn_count < ONE_FORK_MAX_CONNECTION) {
+                    ++srv->conn_count;
                     // ADD A CLIENT
-                    add_client(&rtsp_list, client_sock);
+                    add_client(srv, client_sock);
                 } else {
                 #if 0
                     // Pending complete rewrite
@@ -109,22 +129,17 @@ void eventloop(Sock *main_sock, Sock *sctp_main_sock)
                         }
                         conn_count = 1;
                         rtsp_list = NULL;
-                        add_client(&rtsp_list, client_sock);
+                        add_client(srv, &rtsp_list, client_sock);
                     } else {
                         // I'm the father
                         conn_count = -1;
-                        Sock_close(client_sock);
-                        Sock_close(main_sock);
-#ifdef HAVE_LIBSCTP
-                        if (sctp_main_sock)
-                            Sock_close(sctp_main_sock);
-#endif
-                    }
                 #endif
+                        Sock_close(client_sock);
+                        close_listen_socks(srv);
                 }
-                num_conn++;
+                srv->num_conn++;
                 fnc_log(FNC_LOG_INFO, "Connection reached: %d\n",
-                    num_conn);
+                    srv->num_conn);
             } else
                 fnc_log(FNC_LOG_INFO, "Connection found: %d\n",
                     Sock_fd(client_sock));

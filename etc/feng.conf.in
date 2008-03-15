@@ -1,9 +1,26 @@
-#include <config.h>
-## default configuration
-root=FENICE_AVROOT_DIR_DEFAULT
-tcp_port=FENICE_RTSP_PORT_DEFAULT
-sctp_port=-1
-max_session=FENICE_MAX_SESSION_DEFAULT
-log_file=FENICE_LOG_FILE_DEFAULT
-## user=feng
-## group=feng
+## lighttpd like configuration
+var.basedir  = "@feng_basedir@"
+var.logdir   = "@feng_logdir@"
+var.statedir = "@feng_statedir@"
+
+server.modules = (
+    "mod_access",
+    "mod_accesslog"
+)
+
+# bind to port (defaults to @fenice_rtsp_port@)
+# server.port         = 8554
+
+# bind to name (defaults to all interfaces)
+# server.bind         = "live.host.tld"
+
+# use sctp instead of tcp
+# sctp.protocol       = "enable"
+# sctp.max_streams    = 16
+
+server.username      = "feng"
+server.groupname     = "feng"
+server.max-connections = @fenice_max_session@
+server.document-root = var.basedir + "/avroot"
+server.errorlog      = var.logdir  + "/error.log"
+accesslog.filename   = var.logdir + "/access.log"

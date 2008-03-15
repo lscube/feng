@@ -124,7 +124,7 @@ static int ff_split_xiph_headers(uint8_t *extradata, int extradata_size,
 #endif
 
 
-static MediaParserInfo info = {
+static const MediaParserInfo info = {
     "theora",
     MP_video
 };

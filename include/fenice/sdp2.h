@@ -39,7 +39,7 @@
 
 gint sdp_session_id(char *, size_t);
 gint sdp_get_version(ResourceDescr *, char *, size_t);
-int sdp_session_descr(char *, char *, size_t);
+int sdp_session_descr(feng *srv, char *, char *, size_t);
 int sdp_media_descr(MediaDescrList, char *, size_t);
 
 #endif // FN_SDP2_H

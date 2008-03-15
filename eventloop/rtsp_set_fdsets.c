@@ -1,34 +1,4 @@
-/* * 
-*
-*  This file is part of Feng
-*
-*  Feng -- Standard Streaming Server
-*
-*  Copyright (C) 2007 by
-*
-*    - Giampaolo Mancini    <giampaolo.mancini@polito.it>
-*    - Francesco Varano    <francesco.varano@polito.it>
-*    - Marco Penno        <marco.penno@polito.it>
-*    - Federico Ridolfo    <federico.ridolfo@polito.it>
-*    - Eugenio Menegatti     <m.eu@libero.it>
-*    - Stefano Cau
-*    - Giuliano Emma
-*    - Stefano Oldrini
-*    - Dario Gallucci    <dario.gallucci@gmail.com>
-* 
-*  Feng is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  Feng is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with Feng; if not, write to the Free Software
-*  This file is part of Feng
+/* *
  * 
  * Copyright (C) 2007 by LScube team <team@streaming.polito.it> 
  * See AUTHORS for more details 
@@ -46,8 +16,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Feng; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-*  
-* */
+ *
+ * */
 
 #include <stdio.h>
 #include <string.h>
@@ -55,8 +25,13 @@
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
 
+/**
+ * Add to the read set the current rtsp sessions fds.
+ * The rtsp/tcp interleaving requires additional care.
+ */
+
 void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset, 
-    fd_set * wset, fd_set * xset) {
+    fd_set * wset) {
     RTSP_session *q = NULL;
     RTP_session *p = NULL;
     RTSP_interleaved *intlvd;
@@ -80,13 +55,14 @@ void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset,
             FD_SET(Sock_fd(intlvd->rtcp_local), rset);
             *max_fd = max(*max_fd, Sock_fd(intlvd->rtcp_local));
         }
-        
     }
     // RTCP input
-    for (q = rtsp->session_list, p = q ? q->rtp_session : NULL; p; p = p->next) {
+    for (q = rtsp->session_list, p = q ? q->rtp_session : NULL;
+         p; p = p->next) {
 
         if (!p->started) {
-            q->cur_state = READY_STATE;    // �play finished, go to ready state
+        // play finished, go to ready state
+            q->cur_state = READY_STATE;
             /* TODO: RTP struct to be freed */
         } else if (p->transport.rtcp_sock) {
             FD_SET(Sock_fd(p->transport.rtcp_sock), rset);

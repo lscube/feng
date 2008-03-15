@@ -235,12 +235,12 @@ do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
             rtsp_sess->started = 1;
             if (!rtp_sess->started) {
                 // Start new
-                if (schedule_start (rtp_sess->sched_id, args) == ERR_ALLOC)
+                if (schedule_start (rtp_sess, args) == ERR_ALLOC)
                         return RTSP_Fatal_ErrAlloc;
             } else {
                 // Resume existing
                 if (rtp_sess->pause) {
-                    schedule_resume (rtp_sess->sched_id, args);
+                    schedule_resume (rtp_sess, args);
                 }
             }
         }
@@ -271,6 +271,7 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object,
     char r[1024];
     char temp[256];
     RTP_session *p = rtsp_session->rtp_session;
+    feng *srv = p->srv;
     Track *t;
     /* build a reply message */
     sprintf(r,

@@ -26,7 +26,7 @@
 #include <fenice/eventloop.h>
 #include <fenice/utils.h>
 
-int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset, fd_set * xset)
+int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
 {
     int size;
     char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */

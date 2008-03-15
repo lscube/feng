@@ -25,11 +25,12 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-extern schedule_list sched[ONE_FORK_MAX_CONNECTION];
 
 int schedule_add(RTP_session *rtp_session)
 {
     int i;
+    feng *srv = rtp_session->srv;
+    schedule_list *sched = srv->sched;
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
     pthread_mutex_lock(&sched[i].mux);
         if (!sched[i].valid) {

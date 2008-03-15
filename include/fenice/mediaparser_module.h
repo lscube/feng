@@ -28,7 +28,7 @@
 
 #define INIT_PROPS properties->media_type = info.media_type;
 
-#define FNC_LIB_MEDIAPARSER(x) MediaParser fnc_mediaparser_##x =\
+#define FNC_LIB_MEDIAPARSER(x) const MediaParser fnc_mediaparser_##x =\
 {\
 	&info, \
 	x##_init, \

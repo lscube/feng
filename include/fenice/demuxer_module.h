@@ -25,7 +25,7 @@
 #ifndef FN_DEMUXER_MODULE_H
 #define FN_DEMUXER_MODULE_H
 
-#define FNC_LIB_DEMUXER(x) Demuxer fnc_demuxer_##x =\
+#define FNC_LIB_DEMUXER(x) const Demuxer fnc_demuxer_##x =\
 {\
 	&info, \
 	x##_probe, \

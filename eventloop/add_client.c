@@ -26,22 +26,24 @@
 #include <fenice/eventloop.h>
 
 
+// XXX FIXME FIXME I should return something meaningful!
 
-
-void add_client(RTSP_buffer ** rtsp_list, Sock *client_sock)
+void add_client(feng *srv, Sock *client_sock)
 {
     RTSP_buffer *p = NULL, *pp = NULL, *new = NULL;
 
-    if (!(new = (RTSP_buffer *) calloc(1, sizeof(RTSP_buffer)))) {
+    if (!(new = calloc(1, sizeof(RTSP_buffer)))) {
         fnc_log(FNC_LOG_FATAL, "Could not alloc memory in add_client()\n");
         return;
     }
 
+    new->srv = srv;
+
     // Add a client
-    if (*rtsp_list == NULL) {
-        *rtsp_list = new;
+    if (srv->rtsp_list == NULL) {
+        srv->rtsp_list = new;
     } else {
-        for (p = *rtsp_list; p != NULL; p = p->next) {
+        for (p = srv->rtsp_list; p != NULL; p = p->next) {
             pp = p;
         }
         if (pp != NULL) {
@@ -50,8 +52,16 @@ void add_client(RTSP_buffer ** rtsp_list, Sock *client_sock)
         }
     }
 
-    RTSP_initserver(new, client_sock);
+    new->sock = client_sock;
+    if (!(new->session_list = calloc(1, sizeof(RTSP_session)))) {
+        fnc_log(FNC_LOG_FATAL, "Could not alloc memory in add_client()\n");
+        return;
+    }
+
+    new->session_list->session_id = -1;
+    new->session_list->srv = srv;
 
     fnc_log(FNC_LOG_INFO,
-        "Incoming RTSP connection accepted on socket: %d\n", Sock_fd(client_sock));
+        "Incoming RTSP connection accepted on socket: %d\n",
+        Sock_fd(client_sock));
 }

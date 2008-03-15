@@ -28,6 +28,7 @@
 #include <pthread.h>
 
 #include <fenice/demuxer.h>
+#include <fenice/server.h>
 #include <fenice/InputStream.h>
 
 #define MT_BUFFERSIZE 8192
@@ -46,21 +47,20 @@ typedef struct {
     void **args;        //! args[0] = sender
 } mt_event_item;
 
-typedef struct mt_excl_ins_s {
+typedef struct mt_excl_ins {
     InputStream *i_stream;
-    struct mt_excl_ins_s *next;
+    struct mt_excl_ins *next;
 } mt_excl_ins;
 
 void *mediathread(void *arg);
 
 int mt_add_event(mt_event_id, void **args);
-inline int mt_process_event(mt_event_item *);
-inline void mt_dispose_event(mt_event_item *);
-inline void mt_dispose_event_args(mt_event_id, void **args);
 int mt_shutdown();
 int event_buffer_low(void *sender, Track *src);
 
-Resource *mt_resource_open(char *, char *);
+struct feng;
+
+Resource *mt_resource_open(struct feng *srv, char * path, char *filename);
 void mt_resource_close(Resource *);
 int mt_resource_seek(Resource *, double);
 

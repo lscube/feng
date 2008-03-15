@@ -44,7 +44,7 @@ typedef enum {
     PRIV = 8
 } rtcp_info;
 
-typedef struct _RTCP_header {
+typedef struct RTCP_header {
 #if (BYTE_ORDER == LITTLE_ENDIAN)
     uint8_t count:5;    //< SC or RC
     uint8_t padding:1;
@@ -60,7 +60,7 @@ typedef struct _RTCP_header {
     uint16_t length;
 } RTCP_header;
 
-typedef struct _RTCP_header_SR {
+typedef struct RTCP_header_SR {
     uint32_t ssrc;
     uint32_t ntp_timestampH;
     uint32_t ntp_timestampL;
@@ -69,11 +69,11 @@ typedef struct _RTCP_header_SR {
     uint32_t octet_count;
 } RTCP_header_SR;
 
-typedef struct _RTCP_header_RR {
+typedef struct RTCP_header_RR {
     uint32_t ssrc;
 } RTCP_header_RR;
 
-typedef struct _RTCP_header_SR_report_block {
+typedef struct RTCP_header_SR_report_block {
     uint32_t ssrc;
     uint8_t fract_lost;
     uint8_t pck_lost[3];
@@ -83,13 +83,13 @@ typedef struct _RTCP_header_SR_report_block {
     uint32_t delay_last_SR;
 } RTCP_header_SR_report_block;
 
-typedef struct _RTCP_header_SDES {
+typedef struct RTCP_header_SDES {
     uint32_t ssrc;
     uint8_t attr_name;
     uint8_t len;
 } __attribute__((__packed__)) RTCP_header_SDES;
 
-typedef struct _RTCP_header_BYE {
+typedef struct RTCP_header_BYE {
     uint32_t ssrc;
     uint8_t length;
 } __attribute__((__packed__)) RTCP_header_BYE;

@@ -51,14 +51,14 @@ typedef enum {
     rtcp_proto
 } rtp_protos;
 
-typedef struct _RTP_transport {
+typedef struct RTP_transport {
     Sock *rtp_sock;
     Sock *rtcp_sock;
     struct sockaddr_storage last_stg;
     int rtp_ch, rtcp_ch;
 } RTP_transport;
 
-typedef struct _RTCP_stats {
+typedef struct RTCP_stats {
     unsigned int RR_received;
     unsigned int SR_received;
     unsigned long dest_SSRC;
@@ -72,7 +72,7 @@ typedef struct _RTCP_stats {
     unsigned int delay_since_last_SR;
 } RTCP_stats;
 
-typedef struct _RTP_session {
+typedef struct RTP_session {
     RTP_transport transport;
     uint8_t rtcp_inbuffer[RTCP_BUFFERSIZE];
     size_t rtcp_insize;
@@ -110,10 +110,11 @@ typedef struct _RTP_session {
     //Consumer has transferred itself here
     BPConsumer *cons;
     RTCP_stats rtcp_stats[2];    //client and server
-    struct _RTP_session *next;
+    struct RTP_session *next;
+    struct feng *srv;
 } RTP_session;
 
-typedef struct _RTP_header {
+typedef struct RTP_header {
     /* byte 0 */
 #if (BYTE_ORDER == LITTLE_ENDIAN)
     uint8_t csrc_len:4;   /* expect 0 */
@@ -157,9 +158,9 @@ typedef int (*RTP_play_action) (RTP_session * sess);
  * @{
  */
 
-void RTP_port_pool_init(int port);
-int RTP_get_port_pair(port_pair * pair);
-int RTP_release_port_pair(port_pair * pair);
+void RTP_port_pool_init(feng *srv, int port);
+int RTP_get_port_pair(feng *srv, port_pair * pair);
+int RTP_release_port_pair(feng *srv, port_pair * pair);
 
 /**
  * @}

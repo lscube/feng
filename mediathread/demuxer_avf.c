@@ -52,7 +52,7 @@
 
 #include <libavformat/avformat.h>
 
-static DemuxerInfo info = {
+static const DemuxerInfo info = {
 	"Avformat Demuxer",
 	"avf",
 	"LScube Team",
@@ -422,7 +422,7 @@ static int avf_uninit(Resource * r)
             priv->avfc = NULL;
         }
         url_fclose(priv->pb);
-        free(priv);
+        av_freep(priv);
         r->private_data = NULL;
     }
 
