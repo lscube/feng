@@ -238,14 +238,14 @@ feng_basedir=${feng_basedir//NONE}
 feng_logdir="${feng_basedir}/log/$PACKAGE_NAME"
 AC_SUBST(feng_logdir)
 
+fenice_log_file="${feng_basedir}/log/$with_log_file"
+AC_SUBST(fenice_log_file)
+
 feng_statedir="${feng_basedir}/lib/$PACKAGE_NAME"
 AC_SUBST(feng_statedir)
 
 feng_basedir="${feng_basedir}/$PACKAGE_NAME"
 AC_SUBST(feng_basedir)
-
-fenice_log_file="${feng_basedir}/log/$with_log_file"
-AC_SUBST(fenice_log_file)
 
 fenice_conf_dir=$(eval echo $sysconfdir|sed -e "s:/\+:/:g")
 fenice_conf_dir=${fenice_conf_dir//NONE}
