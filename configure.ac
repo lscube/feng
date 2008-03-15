@@ -29,7 +29,7 @@ AC_ARG_ENABLE(ipv6,
         enable_ipv6="yes")
 
 AC_ARG_ENABLE(libavformat,
-[  --enable-libavformat    enable ffmpeg's libavformat  support [[default=yes]]],,
+[  --enable-libavformat    enable ffmpeg's libavformat support [[default=yes]]],,
         enable_ffmpeg="yes")
 
 AC_ARG_ENABLE(debug,
@@ -58,10 +58,10 @@ AC_ARG_ENABLE(dump,
 AC_ARG_ENABLE(errors,
 [  --enable-errors         make gcc warnings behave like errors: none, normal, pedantic [[default=none]]],,
     enable_errors="none")
+
 AC_ARG_ENABLE(sctp,
 [  --enable-sctp           enable SCTP support [[default=autodetected]]],,         enable_sctp="yes")
 
-dnl Check for LibTool Dynamic Loading
 m4_undefine([AC_PROG_CXX])
 m4_defun([AC_PROG_CXX],[])
 m4_undefine([AC_PROG_F77])
@@ -115,9 +115,9 @@ AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 
 dnl CFLAGS=""
 
-AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Fe.NG uses Glib. Please install it (you need devel files).]), gthread)
+AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Feng uses Glib. Please install it (you need devel files).]), gthread)
 AM_PATH_LIBGCRYPT(1.2.0, [CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
-                          LIBS="$LIBS $LIBGCRYPT_LIBS"], AC_MSG_ERROR([Fe.NG uses libgcrypts. Please install it.]))
+                          LIBS="$LIBS $LIBGCRYPT_LIBS"], AC_MSG_ERROR([Feng uses libgcrypts. Please install it.]))
 dnl test enable
 if test "x$enable_ipv6" = "xyes"; then
     AC_CHECK_TYPE(struct sockaddr_in6,
@@ -288,7 +288,7 @@ AC_DEFINE_UNQUOTED(FENICE_CONF_DIR_DEFAULT,
 
 AC_DEFINE_UNQUOTED(FENICE_CONF_PATH_DEFAULT_STR,
                     "$(eval echo ${fenice_conf_dir}/${fenice_conf_file}|sed -e s:/\+:/:g)",
-                    [Define absolute path string for Fe.NG configuration file])
+                    [Define absolute path string for Feng configuration file])
 
 AC_DEFINE_UNQUOTED(FENICE_STATE_DIR,
                     $fenice_state_dir,
@@ -335,7 +335,7 @@ debug enabled ................ : $enable_debug
 verbose enabled .............. : $enable_verbose
  dump enabled ................ : $enable_dump
 
- 'make' will now compile Fe.NG and 'su -c make install' will install it.
+ 'make' will now compile Feng and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.
 ])
 
