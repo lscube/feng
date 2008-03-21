@@ -265,13 +265,12 @@ do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
  * @param rtsp_session the session for which to generate the reply
  * @return ERR_NOERROR
  */
-static int send_play_reply(RTSP_buffer * rtsp, char *object,
+static int send_play_reply(RTSP_buffer * rtsp, ConnectionInfo *cinfo,
                            RTSP_session * rtsp_session, play_args * args)
 {
     char r[1024];
     char temp[256];
     RTP_session *p = rtsp_session->rtp_session;
-    feng *srv = p->srv;
     Track *t;
     /* build a reply message */
     sprintf(r,
@@ -297,7 +296,7 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object,
         strcat(r, "url=");
         // TODO: we MUST be sure to send the correct url
         strcat (r, "rtsp://");
-        strcat (r, prefs_get_hostname());
+        strcat (r, cinfo->server);
         strcat (r, "/");
         Url_encode(temp, p->sd_filename, sizeof(temp));
         strcat (r, temp);
@@ -323,7 +322,7 @@ static int send_play_reply(RTSP_buffer * rtsp, char *object,
     bwrite(r, (unsigned short) strlen(r), rtsp);
 
 
-    fnc_log(FNC_LOG_CLIENT, "200 - %s ", object);
+    fnc_log(FNC_LOG_CLIENT, "200 - %s ", cinfo->object);
 
     return ERR_NOERROR;
 }
@@ -377,7 +376,7 @@ int RTSP_play(RTSP_buffer * rtsp)
     }
 
     fnc_log(FNC_LOG_INFO, "PLAY %s RTSP/1.0 ", url);
-    send_play_reply(rtsp, cinfo.object, rtsp_sess, &args);
+    send_play_reply(rtsp, &cinfo, rtsp_sess, &args);
     log_user_agent(rtsp); // See User-Agent
     return ERR_NOERROR;
 

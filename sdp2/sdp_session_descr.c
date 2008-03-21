@@ -101,10 +101,11 @@ MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
     return new_m_descrs;
 }
 
-int sdp_session_descr(feng *srv, char *name, char *descr, size_t descr_size)
+int sdp_session_descr(feng *srv, char *server, char *name, char *descr,
+                      size_t descr_size)
 {
     gint64 size_left=descr_size;
-    char *cursor=descr, *ip_addr;
+    char *cursor=descr;
     ResourceDescr *r_descr;
     MediaDescrListArray m_descrs;
     sdp_field_list sdp_private;
@@ -117,10 +118,6 @@ int sdp_session_descr(feng *srv, char *name, char *descr, size_t descr_size)
         return ERR_NOT_FOUND;
     }
 
-    if(!(ip_addr = prefs_get_hostname())) {
-        fnc_log(FNC_LOG_ERR, "[SDP2] missing local ip address");
-        return ERR_PARSE;
-    }
     // v=
     DESCRCAT(g_snprintf(cursor, size_left, "v=%d"SDP2_EL, SDP2_VERSION))
     // o=
@@ -131,7 +128,7 @@ int sdp_session_descr(feng *srv, char *name, char *descr, size_t descr_size)
     DESCRCAT(g_strlcat(cursor," ", size_left))
     DESCRCAT(sdp_get_version(r_descr, cursor, size_left))
     DESCRCAT(g_strlcat(cursor, " IN IP4 ", size_left))  /* Network type: Internet; Address type: IP4. */
-    DESCRCAT(g_strlcat(cursor, ip_addr, size_left))
+    DESCRCAT(g_strlcat(cursor, server, size_left))
     DESCRCAT(g_strlcat(cursor, SDP2_EL, size_left))
 
     // s=

@@ -71,7 +71,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
     Url_encode (encoded_object, cinfo->object, sizeof(encoded_object));
     snprintf(r + strlen(r), mb_len - strlen(r),
              "Content-Base: rtsp://%s/%s/" RTSP_EL,
-             prefs_get_hostname(), encoded_object);
+             cinfo->server, encoded_object);
     snprintf(r + strlen(r), mb_len - strlen(r),
              "Content-Length: %d" RTSP_EL,
              strlen(cinfo->descr));

@@ -222,7 +222,10 @@ RTSP_Error get_cseq(RTSP_buffer * rtsp)
  */
 RTSP_Error get_session_description(feng *srv, ConnectionInfo * cinfo)
 {
-    int sdesc_error = sdp_session_descr(srv, cinfo->object, cinfo->descr, sizeof(cinfo->descr));
+    int sdesc_error = sdp_session_descr(srv,
+                                        cinfo->server,
+                                        cinfo->object,
+                                        cinfo->descr, sizeof(cinfo->descr));
 
     if ((sdesc_error))
     {

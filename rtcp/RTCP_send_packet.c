@@ -37,7 +37,6 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
     RTCP_header hdr;
     unsigned pkt_size = 0, hdr_s = 0, payload_s = 0;
     Track *t = r_selected_track(session->track_selector);
-    feng *srv = session->srv;
 
     hdr.version = 2;
     hdr.padding = 0;
@@ -80,7 +79,7 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
     }
     case SDES:{
         RTCP_header_SDES hdr_sdes;
-        char *name = prefs_get_hostname();
+        char *name = session->transport.rtcp_sock->local_host;
         int hdr_sdes_s = sizeof(hdr_sdes);
         int name_s = strlen(name);
         payload_s = hdr_sdes_s + name_s;
