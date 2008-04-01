@@ -15,8 +15,10 @@ server.modules = (
 # server.bind         = "live.host.tld"
 
 # use sctp instead of tcp
-# sctp.protocol       = "enable"
-# sctp.max_streams    = 16
+# $SERVER["socket"] == "localhost:5554" {
+#   sctp.protocol       = "enable"
+#   sctp.max_streams    = 16
+# }
 
 server.username      = "feng"
 server.groupname     = "feng"

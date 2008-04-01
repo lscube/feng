@@ -33,6 +33,7 @@
 #include "array.h"
 #include "conf.h"
 #include <netembryo/wsocket.h>
+#include <glib/garray.h>
 #include <pwd.h>
 #include <grp.h>
 
@@ -42,7 +43,10 @@ typedef struct feng {
  * listening sockets
  */
 //@{
-    Sock *listen_socks;             //!< listen sockets
+    GPtrArray *listen_socks;        //!< listen sockets
+    fd_set rset;
+    fd_set wset;
+    int max_fd;
 //@}
     pthread_t mth;                  //!< mediathread
     struct schedule_list *sched;

@@ -99,24 +99,21 @@ static void feng_drop_privs(feng *srv)
  * Bind to the defined listening port
  */
 
-static int feng_bind_ports(feng *srv)
+static int feng_bind_port(feng *srv,
+                          char *host, char *port, specific_config *s)
 {
-    char *host, *port;
-    int is_sctp = srv->config_storage[0]->is_sctp;
-
-    host = srv->srvconf.bindhost->ptr;
-    port = g_strdup_printf("%d", srv->srvconf.port);
+    int is_sctp = s->is_sctp;
+    Sock *sock;
 
     if (is_sctp)
-        srv->listen_socks = Sock_bind(host, port, NULL, SCTP, NULL);
+        sock = Sock_bind(host, port, NULL, SCTP, NULL);
     else
-        srv->listen_socks = Sock_bind(host, port, NULL, TCP, NULL);
-    if(!srv->listen_socks) {
+        sock = Sock_bind(host, port, NULL, TCP, NULL);
+    if(!sock) {
         fnc_log(FNC_LOG_ERR,"Sock_bind() error for port %s.", port);
         fprintf(stderr,
                 "[fatal] Sock_bind() error in main() for port %s.\n",
                 port);
-        g_free(port);
         return 1;
     }
 
@@ -124,12 +121,67 @@ static int feng_bind_ports(feng *srv)
             port,
             (is_sctp? "SCTP" : "TCP"),
             ((host == NULL)? "all interfaces" : host));
-    g_free(port);
 
-    if(Sock_listen(srv->listen_socks, SOMAXCONN)) {
+    g_ptr_array_add(srv->listen_socks, sock);
+
+    if(Sock_listen(sock, SOMAXCONN)) {
         fnc_log(FNC_LOG_ERR, "Sock_listen() error for TCP socket.");
         fprintf(stderr, "[fatal] Sock_listen() error for TCP socket.\n");
         return 1;
+    }
+
+    return 0;
+}
+
+static int feng_bind_ports(feng *srv)
+{
+    int i, err = 0;
+    char *host = srv->srvconf.bindhost->ptr;
+    char *port = g_strdup_printf("%d", srv->srvconf.port);
+
+    if ((err = feng_bind_port(srv, host, port, srv->config_storage[0]))) {
+        g_free(port);
+        return err;
+    }
+
+    g_free(port);
+
+   /* check for $SERVER["socket"] */
+    for (i = 1; i < srv->config_context->used; i++) {
+        data_config *dc = (data_config *)srv->config_context->data[i];
+        specific_config *s = srv->config_storage[i];
+//        size_t j;
+
+        /* not our stage */
+        if (COMP_SERVER_SOCKET != dc->comp) continue;
+
+        if (dc->cond != CONFIG_COND_EQ) {
+            fnc_log(FNC_LOG_ERR,"only == is allowed for $SERVER[\"socket\"].");
+            return 1;
+        }
+        /* check if we already know this socket,
+         * if yes, don't init it */
+
+        /* split the host:port line */
+        host = dc->string->ptr;
+        port = strrchr(host, ':');
+        if (!port) {
+            fnc_log(FNC_LOG_ERR,"Cannot parse \"%s\" as host:port",
+                                dc->string->ptr);
+            return 1;
+        }
+
+        port[0] = '\0';
+
+        if (host[0] == '[' && port[-1] == ']') {
+            port[-1] = '\0';
+            host++;
+            s->use_ipv6 = 1; //XXX
+        }
+
+        port++;
+
+        if (feng_bind_port(srv, host, port, s)) return 1;
     }
 
     return 0;
@@ -201,6 +253,7 @@ static void feng_free(feng* srv)
     CLEAN(config_touched);
     CLEAN(srvconf.modules);
 #undef CLEAN
+    g_ptr_array_free(srv->listen_socks, FALSE); // XXX Socks aren't g_mallocated yet
 }
 
 static int command_environment(feng *srv, int argc, char **argv)
@@ -304,8 +357,14 @@ static feng *feng_alloc(void)
     CLEAN(config_touched);
     CLEAN(srvconf.modules);
 #undef CLEAN
+    srv->listen_socks = g_ptr_array_new();
 
     return srv;
+}
+
+static void free_sock(gpointer data, gpointer user_data)
+{
+    Sock_close(data);
 }
 
 int main(int argc, char **argv)
@@ -343,6 +402,7 @@ int main(int argc, char **argv)
         eventloop(srv);
     }
 
-    Sock_close(srv->listen_socks);
+    g_ptr_array_foreach(srv->listen_socks, free_sock, NULL);
+
     return 0;
 }

@@ -34,6 +34,16 @@
 
 #include <fenice/schedule.h>
 
+static void add_sock_fd(gpointer data, gpointer user_data)
+{
+    Sock *sock = data;
+    feng *srv = user_data;
+
+    FD_SET(Sock_fd(sock), &srv->rset);
+    srv->max_fd = max(Sock_fd(sock), srv->max_fd);
+}
+
+
 /**
  * adds file descriptors to the set
  * @param srv the server instance
@@ -41,24 +51,55 @@
  * @return the max file descriptor in the set
  */
 
-static int listen_fd(feng *srv, fd_set *set)
+static void listen_fd(feng *srv)
 {
-    int max_fd;
+    g_ptr_array_foreach(srv->listen_socks, add_sock_fd, srv);
+}
 
-    FD_SET(Sock_fd(srv->listen_socks), set);
-    max_fd = Sock_fd(srv->listen_socks);
+static void new_connection(gpointer data, gpointer user_data)
+{
+    Sock *sock = data;
+    feng *srv = user_data;
+    int fd_found;
+    Sock *client_sock = NULL;
+    RTSP_buffer *p = NULL;
 
-    return max_fd;
+    if (FD_ISSET(Sock_fd(sock), &srv->rset)) {
+        client_sock = Sock_accept(sock, NULL);
+    }
+
+    // Handle a new connection
+    if (client_sock) {
+        for (fd_found = 0, p = srv->rtsp_list; p != NULL; p = p->next)
+            if (!Sock_compare(client_sock, p->sock)) {
+                fd_found = 1;
+                break;
+            }
+        if (!fd_found) {
+            if (srv->conn_count < ONE_FORK_MAX_CONNECTION) {
+                ++srv->conn_count;
+                // ADD A CLIENT
+                add_client(srv, client_sock);
+            } else {
+                Sock_close(client_sock);
+            }
+            srv->num_conn++;
+            fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->num_conn);
+        } else
+            fnc_log(FNC_LOG_INFO, "Connection found: %d\n",
+                Sock_fd(client_sock));
+    }
 }
 
 /**
- * Close all the listening sockets
+ * Manage new connections, it iterates over the listen sockets
  */
 
-static void close_listen_socks(feng *srv)
+static void new_connections(feng *srv)
 {
-    Sock_close(srv->listen_socks);
+    g_ptr_array_foreach(srv->listen_socks, new_connection, srv);
 }
+
 
 /**
  * Main loop waiting for clients
@@ -67,82 +108,32 @@ static void close_listen_socks(feng *srv)
 
 void eventloop(feng *srv)
 {
-    Sock *listen_socks = srv->listen_socks;
-
-    int max_fd;
     RTSP_buffer *p = NULL;
-    int fd_found;
-    fd_set rset,wset;
-    Sock *client_sock = NULL;
 
     //Init of scheduler
-    FD_ZERO(&rset);
-    FD_ZERO(&wset);
+    FD_ZERO(&srv->rset);
+    FD_ZERO(&srv->wset);
 
     if (srv->conn_count != -1) {
-        max_fd = listen_fd(srv, &rset);
+        listen_fd(srv);
     }
 
     /* Add all sockets of all sessions to fd_sets */
     for (p = srv->rtsp_list; p; p = p->next) {
-        rtsp_set_fdsets(p, &max_fd, &rset, &wset);
+        rtsp_set_fdsets(p, &srv->max_fd, &srv->rset, &srv->wset);
     }
     /* Wait for connections */
-    if (select(max_fd + 1, &rset, &wset, NULL, NULL) < 0) {
+    if (select(srv->max_fd + 1, &srv->rset, &srv->wset, NULL, NULL) < 0) {
         fnc_log(FNC_LOG_ERR, "select error in eventloop(). %s\n",
                 strerror(errno));
         /* Maybe we have to force exit here*/
         return;
     }
     /* transfer data for any RTSP sessions */
-    schedule_connections(srv, &rset, &wset);
+    schedule_connections(srv, &srv->rset, &srv->wset);
     /* handle new connections */
+
     if (srv->conn_count != -1) {
-        if (FD_ISSET(Sock_fd(listen_socks), &rset)) {
-            client_sock = Sock_accept(listen_socks, NULL);
-        }
-        // Handle a new connection
-        if (client_sock) {
-            for (fd_found = 0, p = srv->rtsp_list; p != NULL; p = p->next)
-                if (!Sock_compare(client_sock, p->sock)) {
-                    fd_found = 1;
-                    break;
-                }
-            if (!fd_found) {
-                if (srv->conn_count < ONE_FORK_MAX_CONNECTION) {
-                    ++srv->conn_count;
-                    // ADD A CLIENT
-                    add_client(srv, client_sock);
-                } else {
-                #if 0
-                    // Pending complete rewrite
-                    if (fork() == 0) {
-                        // I'm the child
-                        ++child_count;
-                        RTP_port_pool_init (ONE_FORK_MAX_CONNECTION *
-                                            child_count * 2 +
-                             *((int *) get_pref(PREFS_FIRST_UDP_PORT)));
-                        if (schedule_init() == ERR_FATAL) {
-                            fnc_log(FNC_LOG_FATAL, "Can't start scheduler. "
-                                    "Server is aborting.\n");
-                            return;
-                        }
-                        conn_count = 1;
-                        rtsp_list = NULL;
-                        add_client(srv, &rtsp_list, client_sock);
-                    } else {
-                        // I'm the father
-                        conn_count = -1;
-                #endif
-                        Sock_close(client_sock);
-                        close_listen_socks(srv);
-                }
-                srv->num_conn++;
-                fnc_log(FNC_LOG_INFO, "Connection reached: %d\n",
-                    srv->num_conn);
-            } else
-                fnc_log(FNC_LOG_INFO, "Connection found: %d\n",
-                    Sock_fd(client_sock));
-        }
-    } // shawill: and... if not?  END OF "HANDLE NEW CONNECTIONS"
+        new_connections(srv);
+    }
 }
