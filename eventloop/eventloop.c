@@ -34,6 +34,10 @@
 
 #include <fenice/schedule.h>
 
+/**
+ * Add the socket fd to the rset
+ */
+
 static void add_sock_fd(gpointer data, gpointer user_data)
 {
     Sock *sock = data;
@@ -45,16 +49,18 @@ static void add_sock_fd(gpointer data, gpointer user_data)
 
 
 /**
- * adds file descriptors to the set
+ * Add file descriptors to the rset for all the listening sockets.
  * @param srv the server instance
- * @param set the file descriptor set
- * @return the max file descriptor in the set
  */
 
 static void listen_fd(feng *srv)
 {
     g_ptr_array_foreach(srv->listen_socks, add_sock_fd, srv);
 }
+
+/**
+ * Accepts the new connection if possible.
+ */
 
 static void new_connection(gpointer data, gpointer user_data)
 {
