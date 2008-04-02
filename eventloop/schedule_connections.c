@@ -30,11 +30,18 @@
 #include <fenice/schedule.h>
 #include <bufferpool/bufferpool.h>
 
-void schedule_connections(feng *srv, fd_set * rset, fd_set * wset)
+/**
+ * Handle established connections and
+ * clean up in case of unexpected disconnections
+ */
+
+void schedule_connections(feng *srv)
 {
     int res;
     RTSP_buffer *p = srv->rtsp_list, *pp = NULL;
     RTP_session *r = NULL, *t = NULL;
+    fd_set *rset = &srv->rset;
+    fd_set *wset = &srv->wset;
     RTSP_interleaved *intlvd;
 
     while (p != NULL) {
@@ -47,7 +54,6 @@ void schedule_connections(feng *srv, fd_set * rset, fd_set * wset)
                 else
                     fnc_log(FNC_LOG_INFO,
                         "RTSP connection closed by server.");
-        //if client truncated RTSP connection before sending TEARDOWN: error
 
                 if (p->session_list != NULL) {
 #if 0 // Do not use it, is just for testing...

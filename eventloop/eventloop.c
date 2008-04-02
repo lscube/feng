@@ -130,7 +130,7 @@ void eventloop(feng *srv)
         return;
     }
     /* transfer data for any RTSP sessions */
-    schedule_connections(srv, &srv->rset, &srv->wset);
+    schedule_connections(srv);
     /* handle new connections */
 
     if (srv->conn_count != -1) {
