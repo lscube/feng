@@ -1,5 +1,8 @@
 + Feng changelog
 
+  03 Apr 2008; Luca Barbato <lu_zero@gentoo.org>:
+  Rationalize eventloop
+
   22 Feb 2008; Luca Barbato <lu_zero@gentoo.org>:
   Move to the lemon based parser
 
