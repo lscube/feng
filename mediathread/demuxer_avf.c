@@ -213,7 +213,7 @@ static int avf_init(Resource * r)
     AVFormatParameters ap;
     lavf_priv_t *priv =  av_mallocz(sizeof(lavf_priv_t));
     MediaProperties props;
-    Track *track;
+    Track *track = NULL;
     TrackInfo trackinfo;
     int i, pt = 96;
 
@@ -264,7 +264,7 @@ static int avf_init(Resource * r)
 
     r->info->duration = (double)avfc->duration /AV_TIME_BASE;
 
-    for(i=0; i<avfc->nb_streams; i++){
+    for(i=0; i<avfc->nb_streams; i++) {
         AVStream *st= avfc->streams[i];
         AVCodecContext *codec= st->codec;
         trackinfo.id = i;
@@ -325,10 +325,13 @@ static int avf_init(Resource * r)
             break;
         }
     }
-    fnc_log(FNC_LOG_DEBUG, "[avf] duration %f", r->info->duration);
-    r->private_data = priv;
-    r->timescaler = avf_timescaler;
-    return RESOURCE_OK;
+
+    if (track) {
+        fnc_log(FNC_LOG_DEBUG, "[avf] duration %f", r->info->duration);
+        r->private_data = priv;
+        r->timescaler = avf_timescaler;
+        return RESOURCE_OK;
+    }
 
 err_alloc:
     av_freep(&priv);
