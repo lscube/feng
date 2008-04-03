@@ -53,7 +53,7 @@ $ start-stop-daemon --stop -p /var/run/feng.pid
 
 ++ Metademuxer
 Feng container layer provides a powerful infrastructure to enable customized
-stream management. Currently there are two example provided.
+stream management. Currently there are two examples provided.
 
 +++ ds - compositor metademuxer
 the compositor metademuxer handles lists (see the examples provided in the avroot directory) of coherent resources (same encoding, same resolution, same streams number presents) allowing the creation of resources made out of the files/excerpts aggregation.
