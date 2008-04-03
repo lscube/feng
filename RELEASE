@@ -1,8 +1,9 @@
 
-    Release notes for feng 0.1.16
+    Release notes for feng 0.1.99
 
-This is a second maintenance release most of the invasive work is being done in
-separate branches while the mainline is getting the improvement once they are
-deemed stable enough.
-Beside the scheduler improvements and the improved codec support, this release
-fixes lots of security issues.
+Most of the invasive changes got already merged and are apparently stable
+enough to grant a release. The most visible change is in the configuration,
+that has been rewritten using lighttpd lemon based parser, the server now can
+listen on an arbitrary number of sockets, the connection limits is really
+configurable and some stale code got removed.
+
