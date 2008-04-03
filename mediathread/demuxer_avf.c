@@ -79,7 +79,7 @@ typedef struct id_tag {
 } id_tag;
 
 //FIXME this should be simplified!
-const id_tag id_tags[] = {
+static const id_tag id_tags[] = {
    { CODEC_ID_MPEG1VIDEO, 32, "MPV" },
    { CODEC_ID_MPEG2VIDEO, 32, "MPV" },
    { CODEC_ID_H264, 96, "H264" },
@@ -270,15 +270,12 @@ static int avf_init(Resource * r)
         trackinfo.id = i;
         const char *id = tag_from_id(codec->codec_id);
 
-// XXX: Check!
-        MObject_init(MOBJECT(&props));
-        MObject_0(MOBJECT(&props), MediaProperties);
-        props.clock_rate = 90000; //Default
-        props.extradata = codec->extradata;
-        props.extradata_len = codec->extradata_size;
-        // make them pointers?
-        if (id) 
-        {
+        if (id) {
+            MObject_init(MOBJECT(&props));
+            MObject_0(MOBJECT(&props), MediaProperties);
+            props.clock_rate = 90000; //Default
+            props.extradata = codec->extradata;
+            props.extradata_len = codec->extradata_size;
             strncpy(props.encoding_name, id, 11);
             props.codec_id = codec->codec_id;
             props.codec_sub_id = codec->sub_id;
@@ -290,7 +287,7 @@ static int avf_init(Resource * r)
         } else {
             fnc_log(FNC_LOG_DEBUG, "[avf] Cannot map stream id %d",
                     codec->codec_id);
-            goto err_alloc;
+            continue;
         }
         switch(codec->codec_type){
             case CODEC_TYPE_AUDIO:
@@ -340,7 +337,7 @@ err_alloc:
 
 static int avf_read_packet(Resource * r)
 {
-    int ret = -1;
+    int ret = RESOURCE_OK;
 #if 0
     Selector *sel;
 #else
