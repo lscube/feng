@@ -33,9 +33,9 @@
 typedef int (*event_function) (void *data);
 
 void eventloop(feng *srv);
-int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset);
-void add_client(feng *srv, Sock *client_sock);
-void schedule_connections(feng *srv);
-void rtsp_set_fdsets(RTSP_buffer * rtsp, int * max_fd , fd_set * rset, fd_set * wset);
+void established_connections(feng *srv);
+void established_fd(feng *srv);
+void incoming_connections(feng *srv);
+void incoming_fd(feng *srv);
 
 #endif // FN_EVENTLOOP_H
