@@ -1,28 +1,18 @@
-
 feniceincludedir = $(top_srcdir)/include
+
+SUBDIRS = parser \
+	  demuxer
 
 noinst_LTLIBRARIES = libmediath.la
 
+libmediath_la_LIBADD = parser/libparser.la \
+		       demuxer/libdemuxer.la
+
 libmediath_la_SOURCES =	cache.c \
 			demuxer.c \
-			demuxer_sd.c \
 			InputStream.c \
 			MediaParser.c \
 			mediathread.c \
-			mediautils.c \
-			mpeg12.c \
-			mpegaudio.c \
-			mpeg2t.c \
-			demuxer_ds.c
-if FENICE_FFMPEG
-libmediath_la_SOURCES += demuxer_avf.c \
-			h264.c \
-			vorbis.c \
-			theora.c \
-			aac.c \
-			mp4ves.c \
-			h263.c
-endif
+			mediautils.c
 
-# libmediath_la_LDFLAGS = -static
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)

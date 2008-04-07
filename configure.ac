@@ -300,10 +300,11 @@ AC_DEFINE_UNQUOTED(FENIC_STATE_DIR_STR,
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([mediathread/Makefile])
+AC_CONFIG_FILES([mediathread/parser/Makefile])
+AC_CONFIG_FILES([mediathread/demuxer/Makefile])
 AC_CONFIG_FILES([eventloop/Makefile])
 AC_CONFIG_FILES([rtp/Makefile])
 AC_CONFIG_FILES([rtcp/Makefile])
-AC_CONFIG_FILES([intnet/Makefile])
 AC_CONFIG_FILES([rtsp/Makefile])
 AC_CONFIG_FILES([sdp2/Makefile])
 AC_CONFIG_FILES([src/Makefile])
