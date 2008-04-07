@@ -44,7 +44,6 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-#include <fenice/multicast.h>	/*is_valid_multicast_address */
 #include <fenice/rtsp.h>	/*parse_url */
 #include <fenice/rtpptdefs.h>	/*payload type definitions */
 
