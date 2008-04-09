@@ -291,20 +291,6 @@ static int h264_init(MediaProperties *properties, void **private_data)
     return err;
 }
 
-static int h264_get_frame2(uint8_t *dst, uint32_t dst_nbytes, double *timestamp,
-                      InputStream *istream, MediaProperties *properties,
-                      void *private_data)
-{
-
-return ERR_PARSE;
-}
-
-static int h264_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src, uint32_t src_nbytes, MediaProperties *properties, void *private_data)
-{
-
-return ERR_PARSE;
-}
-
 // h264 has provisions for
 //  - collating NALS 
 //  - fragmenting

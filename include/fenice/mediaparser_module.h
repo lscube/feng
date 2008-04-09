@@ -24,7 +24,6 @@
 #define FN_MEDIAPARSER_MODULE_H
 
 #include <fenice/mediaparser.h>
-#include <fenice/InputStream.h>
 
 #define INIT_PROPS properties->media_type = info.media_type;
 
@@ -32,8 +31,6 @@
 {\
 	&info, \
 	x##_init, \
-	x##_get_frame2, \
-	x##_packetize, \
         x##_parse, \
 	x##_uninit \
 }

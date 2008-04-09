@@ -56,20 +56,8 @@ static const DemuxerInfo info = {
 	"avf",
 	"LScube Team",
 	"",
-	"mov, nut, mkv, mxf" // the others are a problem
+	"mov, nut, mkv, mxf"
 };
-
-/*
-Demuxer fnc_demuxer_avf =
-{
-        &info,
-        probe,
-        init,
-        read_packet,
-        seek,
-        uninit
-};
-*/
 
 typedef struct id_tag {
     const int id;
@@ -122,61 +110,6 @@ static int pt_from_id(int id)
     } 
     return 0;
 }
-
-#if 0
-//if we want to use inputstream we need to implement some more functions...
-static int fnc_open(URLContext *h, const char *filename, int flags){
-    return 0;
-}
-
-static int fnc_write(URLContext *h, unsigned char *buf, int size){
-    return -1;
-}
-
-static int fnc_close(URLContext *h){
-    return 0;
-}
-
-static int fnc_read(URLContext *h, unsigned char *buf, int size){
-    InputStream *stream = (InputStream*)h->priv_data;
-    int ret;
-
-    ret = istream_read(size, buf, stream);
-
-    fnc_log(FNC_LOG_DEBUG, "%d=fnc_read(%p, %p, %d)", ret, h, buf, size);
-
-    return ret;
-}
-
-static offset_t fnc_seek(URLContext *h, offset_t pos, int whence){
-    InputStream *stream = (InputStream*)h->priv_data;
-    
-    fnc_log(FNC_LOG_DEBUG, "fnc_seek(%p, %d, %d)", h, (int)pos, whence);
-
-    if(whence == SEEK_CUR)
-        pos += istream_tell(stream);
-    else if(whence == SEEK_END)
-        pos += stream->end_pos;
-    else if(whence != SEEK_SET)
-        return -1;
-
-    if(pos<stream->end_pos && stream->eof)
-        istream_reset(stream);
-    if(istream_seek(stream, pos)==0)
-        return -1;
-
-    return pos;
-}
-
-static URLProtocol fnc_protocol = {
-    "fnc",
-    fnc_open,
-    fnc_read,
-    fnc_write,
-    fnc_seek,
-    fnc_close,
-};
-#endif
 
 #define PROBE_BUF_SIZE 2048
 

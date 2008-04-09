@@ -173,7 +173,8 @@ static int sd_init(Resource * r)
                 // SD_MEDIA_SOURCE
                 sscanf(line, "%*s%10s", sparam);
                 if (strcasecmp(sparam, "STORED") == 0)
-                    props_hints.media_source = MS_stored;
+//                    props_hints.media_source = MS_stored;
+                    return RESOURCE_DAMAGED;
                 if (strcasecmp(sparam, "LIVE") == 0)
                     props_hints.media_source = MS_live;
             } else if (!strcasecmp(keyword, SD_MEDIA_TYPE)) {

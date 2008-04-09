@@ -53,24 +53,6 @@ static inline int mt_process_event(mt_event_item *ev) {
             case RESOURCE_OK:
                 fnc_log(FNC_LOG_VERBOSE, "[MT] Done!");
                 break;
-            case RESOURCE_NOT_PARSEABLE:
-                {
-                    static uint8_t buffer[MT_BUFFERSIZE];
-                    long n;
-                    if((n = t->parser->get_frame(buffer, MT_BUFFERSIZE,
-                                                 &(t->properties->mtime),
-                                                 t->i_stream, t->properties,
-                                                 t->parser_private)) > 0) {
-                        fnc_log(FNC_LOG_VERBOSE, "[MT] Timestamp: %f!",
-                                                         t->properties->mtime);
-                        t->parser->parse(t, buffer, n, NULL, 0);
-                    } else {
-                        // Signal the end of stream
-                        r->eos = 1;
-                    }
-                    fnc_log(FNC_LOG_VERBOSE, "[MT] Done legacy!");
-                }
-                break;
             case RESOURCE_EOF:
                 // Signal the end of stream
                 r->eos = 1;

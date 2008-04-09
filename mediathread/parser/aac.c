@@ -75,20 +75,6 @@ static int aac_init(MediaProperties *properties, void **private_data)
     return ERR_NOERROR;
 }
 
-static int aac_get_frame2(uint8_t *dst, uint32_t dst_nbytes, double *timestamp,
-                      InputStream *istream, MediaProperties *properties,
-                      void *private_data)
-{
-
-return ERR_PARSE;
-}
-
-static int aac_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src, uint32_t src_nbytes, MediaProperties *properties, void *private_data)
-{
-
-return ERR_PARSE;
-}
-
 #define AU_HEADER_SIZE 4
 
 /* au header

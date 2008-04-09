@@ -43,16 +43,6 @@ static int speex_init(MediaProperties *properties, void **private_data)
     return ERR_NOERROR;
 }
 
-static int speex_get_frame2(uint8_t *dst, uint32_t dst_nbytes, double *timestamp, InputStream *istream, MediaProperties *properties, void *private_data)
-{
-    return ERR_PARSE;
-}
-
-static int speex_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src, uint32_t src_nbytes, MediaProperties *properties, void *private_data)
-{
-    return ERR_PARSE;
-}
-
 static int speex_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
           long extradata_len)
 {

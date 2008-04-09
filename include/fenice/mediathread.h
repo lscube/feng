@@ -29,7 +29,6 @@
 
 #include <fenice/demuxer.h>
 #include <fenice/server.h>
-#include <fenice/InputStream.h>
 
 #define MT_BUFFERSIZE 8192
 

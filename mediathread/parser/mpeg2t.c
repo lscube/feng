@@ -58,6 +58,8 @@ typedef struct {
 #define TIME_ADJUSTMENT_FACTOR 0.8
 #define MAX_PLAYOUT_BUFFER_DURATION 0.1
 
+#if 0
+
 static void mp2t_pid_status_init(mp2t_pid_status* pid_status, double clock,
                                  double now)
 {
@@ -65,6 +67,8 @@ static void mp2t_pid_status_init(mp2t_pid_status* pid_status, double clock,
     pid_status->first_time = pid_status->last_seen_time = now;
     pid_status->last_pkt_num = 0;
 }
+
+#endif
 
 static void value_destroy(gpointer data)
 {
@@ -95,7 +99,7 @@ static int mp2t_init(MediaProperties *properties, void **private_data)
     INIT_PROPS
     return 0;
 }
-
+#if 0
 static void update_ts_pkt_duration(mp2t_priv* priv, uint8_t* pkt, double now)
 {
     uint8_t adaption_field_control, adaption_field_length,
@@ -231,6 +235,7 @@ static int mp2t_get_frame2(uint8_t *dst, uint32_t dst_nbytes,
 
     return bytes_read;
 }
+#endif
 
 static int mp2t_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src,
                           uint32_t src_nbytes, MediaProperties *properties,
