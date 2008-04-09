@@ -419,7 +419,7 @@ int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
 /**
  * Adds a timestamp to a buffer
  * @param b the buffer where to write the timestamp
- * @crlf whenever to put the message terminator or not
+ * @param crlf whenever to put the message terminator or not
  */
 void add_time_stamp(char *b, int crlf)
 {

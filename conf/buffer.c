@@ -230,11 +230,11 @@ int buffer_append_string_rfill(buffer *b, const char *s, size_t maxlen) {
  * append a string to the end of the buffer
  *
  * the resulting buffer is terminated with a '\0'
- * s is treated as a un-terminated string (a \0 is handled a normal character)
+ * s is treated as a un-terminated string (a '\0' is handled a normal character)
  *
  * @param b a buffer
  * @param s the string
- * @param s_len size of the string (without the terminating \0)
+ * @param s_len size of the string (without the terminating '\0')
  */
 
 int buffer_append_string_len(buffer *b, const char *s, size_t s_len) {

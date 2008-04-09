@@ -261,7 +261,7 @@ do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
 /**
  * Sends the reply for the play method
  * @param rtsp the buffer where to write the reply
- * @param object the object that we wanted to play
+ * @param cinfo the cinfo related to the object that we wanted to play
  * @param rtsp_session the session for which to generate the reply
  * @return ERR_NOERROR
  */

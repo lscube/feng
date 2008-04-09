@@ -59,15 +59,16 @@ static GList *descr_cache=NULL;
 
 // private functions for specific demuxer
 
-/*! This function finds the correct demuxer for the given
- * <tt>resource_name</tt>.
- * First of all, it tries to match the <tt>resource_name</tt>'s extension with
- * one of those served by the demuxers and, if found, probes that demuxer.  If
- * no demuxer can be found this way, then it tries everyone from demuxer list.
- * @param resource_name the name of the resource.
+/**
+ * Find the correct demuxer for the given resource.
+ * First of all, it tries to match the resource extension with one of those
+ * served by the demuxers and, if found, probes that demuxer.
+ * If no demuxer can be found this way, then it tries every demuxer available.
+ * @param i_stream the resource.
  * @return the index of the valid demuxer in the list or -1 if it could not be
  * found.
  * */
+
 static int find_demuxer(InputStream *i_stream)
 {
     // this int will contain the index of the demuxer already probed second
@@ -394,18 +395,19 @@ int r_changed(ResourceDescr *descr)
     return 0;
 }
 
-/*! Add track to resource tree.  This function adds a new track data struct to
- * resource tree. It used by specific demuxer function in order to obtain the
- * struct to fill.
- * @param r pointer to resource.
- * @return pointer to newly allocated track struct.
- * */
 #define ADD_TRACK_ERROR(level, ...) \
     { \
         fnc_log(level, __VA_ARGS__); \
         free_track(t, r); \
         return NULL; \
     }
+
+/*! Add track to resource tree.  This function adds a new track data struct to
+ * resource tree. It used by specific demuxer function in order to obtain the
+ * struct to fill.
+ * @param r pointer to resource.
+ * @return pointer to newly allocated track struct.
+ * */
 
 Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 {

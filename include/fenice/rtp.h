@@ -148,7 +148,7 @@ typedef struct RTP_header {
 typedef int (*RTP_play_action) (RTP_session * sess);
 
 /**
- * @defgroup RTP
+ * @defgroup RTP RTP Layer
  * @{
  */
 

@@ -119,7 +119,7 @@ typedef struct {
 
 /** 
  * MediaParser Interface, pending overhaul
- * @defgroup MediaParser
+ * @defgroup MediaParser MediaParser Interface
  * @{
  */
 MediaParser *add_media_parser(void); 

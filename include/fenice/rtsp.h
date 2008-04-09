@@ -109,7 +109,7 @@ typedef enum {
 
 
 /**
- * @defgroup RTSP
+ * @defgroup RTSP RTSP Layer
  * @{
  */
 /** 
