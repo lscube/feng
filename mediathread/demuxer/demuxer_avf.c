@@ -72,9 +72,9 @@ static const id_tag id_tags[] = {
    { CODEC_ID_H264, 96, "H264" },
    { CODEC_ID_MP2, 14, "MPA" },
    { CODEC_ID_MP3, 14, "MPA" },
-   { CODEC_ID_VORBIS, 97, "VORBIS" },
+   { CODEC_ID_VORBIS, 96, "VORBIS" },
    { CODEC_ID_THEORA, 96, "THEORA" },
-   { CODEC_ID_AAC, 97, "AAC" },
+   { CODEC_ID_AAC, 96, "AAC" },
    { CODEC_ID_MPEG4, 96, "MP4V-ES" },
    { CODEC_ID_H263, 96, "H263P" },
    { CODEC_ID_NONE, 0, "NONE"} //XXX ...
@@ -150,8 +150,6 @@ static int avf_init(Resource * r)
     int i, pt = 96;
 
     memset(&ap, 0, sizeof(AVFormatParameters));
-// make avf use our stuff or not?
-//register_protocol(&fnc_protocol);
 
     avfc = av_alloc_format_context();
     ap.prealloced_context = 1;
@@ -159,12 +157,8 @@ static int avf_init(Resource * r)
     avfc->flags |= AVFMT_FLAG_GENPTS;
 
     url_fopen(&priv->pb, r->info->mrl, URL_RDONLY);
-// same as before...
-//((URLContext*)(priv->pb.opaque))->priv_data = r->i_stream; 
-    
-//    if(av_open_input_stream(&avfc, &priv->pb, r->i_stream->name,
-//                            priv->avif, &ap)<0) {
-     if (av_open_input_file(&avfc, r->info->mrl, NULL, 0, &ap)) {
+
+    if (av_open_input_file(&avfc, r->info->mrl, NULL, 0, &ap)) {
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot open %s", r->info->mrl);
         goto err_alloc;
     }
