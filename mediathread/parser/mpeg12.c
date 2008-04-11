@@ -150,36 +150,36 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         }
 
         if (payload>0) {
-        h = 0;
-        h |= temporal_reference << 16;
-        h |= begin_of_sequence << 13;
-        h |= b << 12;
-        h |= e << 11;
-        h |= frame_type << 8;
-        h |= fbv << 7;
-        h |= bfc << 4;
-        h |= ffv << 3;
-        h |= ffc;
+            h = 0;
+            h |= temporal_reference << 16;
+            h |= begin_of_sequence << 13;
+            h |= b << 12;
+            h |= e << 11;
+            h |= frame_type << 8;
+            h |= fbv << 7;
+            h |= bfc << 4;
+            h |= ffv << 3;
+            h |= ffc;
 
-        q = dst;
-        *q++ = h >> 24;
-        *q++ = h >> 16;
-        *q++ = h >> 8;
-        *q++ = h;
+            q = dst;
+            *q++ = h >> 24;
+            *q++ = h >> 16;
+            *q++ = h >> 8;
+            *q++ = h;
 
-        memcpy(q, data, payload);
-        q += payload;
+            memcpy(q, data, payload);
+            q += payload;
 
-        if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, (payload == rem),
-                     dst, q - dst)) {
-            fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
-            return ERR_ALLOC;
-        }
-        b = e;
-        e = 0;
-        data += payload;
-        rem -= payload;
-        begin_of_sequence = 0;
+            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0,
+                         (payload == rem), dst, q - dst)) {
+                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
+                return ERR_ALLOC;
+            }
+            b = e;
+            e = 0;
+            data += payload;
+            rem -= payload;
+            begin_of_sequence = 0;
         } else rem = 0;
     }
     return ERR_NOERROR;
