@@ -149,6 +149,7 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             }
         }
 
+        if (payload>0) {
         h = 0;
         h |= temporal_reference << 16;
         h |= begin_of_sequence << 13;
@@ -179,6 +180,7 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         data += payload;
         rem -= payload;
         begin_of_sequence = 0;
+        } else rem = 0;
     }
     return ERR_NOERROR;
 }
