@@ -79,7 +79,8 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
     }
     case SDES:{
         RTCP_header_SDES hdr_sdes;
-        char *name = session->transport.rtcp_sock->local_host;
+        char *name = session->transport.rtcp_sock->local_host ? 
+                     session->transport.rtcp_sock->local_host : "::";
         int hdr_sdes_s = sizeof(hdr_sdes);
         int name_s = strlen(name);
         payload_s = hdr_sdes_s + name_s;
