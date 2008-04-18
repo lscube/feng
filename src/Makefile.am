@@ -28,7 +28,7 @@ feng_SOURCES =	main.c \
 
 feng_LDADD =	../eventloop/libeventloop.la \
 		../rtsp/librtsp.la \
-		../sdp2/libsdp2.la \
+		../sdp/libsdp.la \
 		../schedule/libschedule.la \
 		../rtcp/librtcp.la \
 		../rtp/librtp.la \

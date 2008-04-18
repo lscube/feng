@@ -12,7 +12,5 @@ librtsp_la_SOURCES =	RTSP_utils.c \
 			RTSP_options.c \
 			RTSP_describe.c \
 			RTSP_set_parameter.c
-			 
-						
-librtsp_la_LDFLAGS = -static
+
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)

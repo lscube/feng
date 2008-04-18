@@ -6,7 +6,7 @@ SUBDIRS =	mediathread \
 		rtcp \
 		rtsp
 
-SUBDIRS +=	sdp2 \
+SUBDIRS +=	sdp \
 		schedule \
 		src \
 		docs \

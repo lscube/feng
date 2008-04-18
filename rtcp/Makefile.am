@@ -12,5 +12,4 @@ librtcp_la_SOURCES =	RTCP_send_packet.c \
 			RTCP_get_total_packet.c \
 			RTCP_get_total_payload_octet.c 
 			
-librtcp_la_LDFLAGS = -static
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)
