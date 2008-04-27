@@ -2,10 +2,6 @@ feniceincludedir = $(top_srcdir)/include
 
 noinst_LTLIBRARIES = liblog.la libsafectype.la libutils.la
 
-if FENICE_VERBOSE
-noinst_LTLIBRARIES += libdebug.la
-endif
-
 libutils_la_SOURCES = sdp_utils.c
 
 liblog_la_SOURCES = fnc_log.c 
@@ -13,11 +9,6 @@ liblog_la_SOURCES = fnc_log.c
 libsafectype_la_SOURCES = safe-ctype.c 
 
 libsafectype_la_LDFLAGS = -lm
-
-if FENICE_VERBOSE
-libdebug_la_SOURCES =	dump_buffer.c \
-			dump_payload.c 
-endif
 
 .NOTPARALLEL: feng
 	
@@ -39,10 +30,6 @@ feng_LDADD +=	../conf/liblight.la \
 		../src/libutils.la \
 		../src/liblog.la \
 		../src/libsafectype.la
-
-if FENICE_VERBOSE
-feng_LDADD += ../src/libdebug.la
-endif
 
 feng_LDFLAGS =
 

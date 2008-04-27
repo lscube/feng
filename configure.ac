@@ -46,15 +46,6 @@ AC_ARG_ENABLE(mudflap,
                           (implies --enable-debug) [[default=no]]],,
     enable_mudflap="no")
 
-AC_ARG_ENABLE(verbose,
-[  --enable-verbose        make feng verbose [[default=no]]],,
-    enable_verbose="no")
-
-AC_ARG_ENABLE(dump,
-[  --enable-dump          enable dump 
-              (this will involve --enable-verbose) [[default=no]]],,
-    enable_dump="no")
-
 AC_ARG_ENABLE(errors,
 [  --enable-errors         make gcc warnings behave like errors: none, normal, pedantic [[default=none]]],,
     enable_errors="none")
@@ -190,21 +181,6 @@ else
     CFLAGS="$CFLAGS -O2 -Wall"
 fi
 
-
-AM_CONDITIONAL(FENICE_DUMP, [test "$enable_dump" = "yes"])
-if test "$enable_dump" = "yes"; then
-    AC_DEFINE(ENABLE_DUMP, 1,[Dump enabled])
-    enable_verbose=yes
-else
-    AC_DEFINE(ENABLE_DUMP, 0,[Dump disabled])
-fi
-
-AM_CONDITIONAL(FENICE_VERBOSE, [test "$enable_verbose" = "yes"])
-if test "$enable_verbose" = "yes"; then
-    AC_DEFINE(ENABLE_VERBOSE, 1,[verbosity enabled])
-    enable_verbose=yes
-fi
-
 case "$enable_errors" in
     pedantic)
         CFLAGS="$CFLAGS -pedantic-errors -Werror"
@@ -333,8 +309,6 @@ avutil support enabled ....... : $avutil_msg
 debug enabled ................ : $enable_debug
  duma enabled ................ : $enable_duma
  mudflap enabled ............. : $enable_mudflap
-verbose enabled .............. : $enable_verbose
- dump enabled ................ : $enable_dump
 
  'make' will now compile Feng and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.
