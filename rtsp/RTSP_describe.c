@@ -43,7 +43,6 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
     char *r;        /* reply message buffer */
     int mb_len;
     char encoded_object[256];
-    feng *srv = rtsp->srv;
 
     /* allocate buffer */
     mb_len = 1512 + strlen(cinfo->descr);

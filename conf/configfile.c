@@ -990,9 +990,11 @@ int config_read(server *srv, const char *fn) {
  */
 
 int config_set_defaults(server *srv) {
-    size_t i;
     specific_config *s = srv->config_storage[0];
+#if 0
+    size_t i;
     struct stat st1, st2;
+#endif
 
     if (buffer_is_empty(s->document_root)) {
         log_error_write(srv, __FILE__, __LINE__, "s",
