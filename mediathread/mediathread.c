@@ -32,7 +32,7 @@
 static GAsyncQueue *el_head;
 static pthread_mutex_t el_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mt_mutex = PTHREAD_MUTEX_INITIALIZER;
-static int running = 1;
+static int stopped = 0;
 
 static inline int mt_process_event(mt_event_item *ev) {
 
@@ -65,7 +65,7 @@ static inline int mt_process_event(mt_event_item *ev) {
         }
         break;
     case MT_EV_SHUTDOWN:
-        running = 0;
+        stopped = 1;
         break;
     case MT_EV_CLOSE:
         r_close(ev->args[0]); 
@@ -122,7 +122,7 @@ void *mediathread(void *arg) {
 
     fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started");
 
-    while(running) { 
+    while(!stopped) { 
         //this replaces the previous nanosleep loop, 
         //as this will block until data is available
         el_cur = g_async_queue_pop (el_head);

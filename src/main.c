@@ -48,13 +48,13 @@
 
 #include <pthread.h>
 
-int running = 1;
+int stopped = 0;
 
 static void terminator_function (int num) {
     fnc_log(FNC_LOG_INFO, "Exiting...");
 //    fprintf(stderr, "Exiting...\n");
     mt_shutdown();
-    running = 0;
+    stopped = 1;
 }
 
 /**
@@ -394,7 +394,7 @@ int main(int argc, char **argv)
 
     RTP_port_pool_init(srv, srv->srvconf.first_udp_port);
 
-    while (running) {
+    while (!stopped) {
 
     /* eventloop looks for incoming RTSP connections and generates for each
        all the information in the structures RTSP_list, RTP_list, and so on */
