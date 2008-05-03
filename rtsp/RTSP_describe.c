@@ -72,7 +72,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
              "Content-Base: rtsp://%s/%s/" RTSP_EL,
              cinfo->server, encoded_object);
     snprintf(r + strlen(r), mb_len - strlen(r),
-             "Content-Length: %d" RTSP_EL,
+             "Content-Length: %zd" RTSP_EL,
              strlen(cinfo->descr));
     // end of message
     strcat(r, RTSP_EL);
