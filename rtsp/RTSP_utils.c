@@ -301,13 +301,12 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
     char ver[32];
 
 
-    if (addon != NULL) {
+    if (addon != NULL)
         len = 256 + strlen(addon);
-    } else {
+    else
         len = 256;
-    }
 
-    b = (char *) malloc(len);
+    b = malloc(len);
     if (b == NULL) {
         fnc_log(FNC_LOG_ERR,
             "send_reply(): memory allocation error.\n");
@@ -393,7 +392,6 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
     fnc_log(FNC_LOG_VERBOSE, "REDIRECT response sent.\n");
 #endif
     return ERR_NOERROR;
-
 }
 
 /**
@@ -405,7 +403,7 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
  */
 int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
 {
-    if ((rtsp->out_size + len) > (int) sizeof(rtsp->out_buffer)) {
+    if ((rtsp->out_size + len) > sizeof(rtsp->out_buffer)) {
         fnc_log(FNC_LOG_ERR,
             "bwrite(): not enough free space in out message buffer.\n");
         return ERR_ALLOC;
@@ -466,7 +464,8 @@ int parse_url(const char *url, char *server, size_t server_len,
         goto quit_function;
     }
 
-    if ((strlen(turl.hostname) >= server_len) || (strlen(turl.path) >= file_name_len)) {
+    if ((strlen(turl.hostname) >= server_len) ||
+        (strlen(turl.path) >= file_name_len)) {
         exit_status = 1;
         goto quit_function;
     }
@@ -489,83 +488,3 @@ quit_function:
     Url_destroy(&turl);
     return exit_status;
 }
-
-#if 0
-int parse_url(const char *url, char *server, size_t server_len,
-          unsigned short *port, char *file_name, size_t file_name_len)
-// Note: this routine comes from BP
-{
-    /* expects format '[rtsp://server[:port/]]filename' */
-
-    int not_valid_url = 1;
-    /* copy url */
-    char *full = malloc(strlen(url) + 1);
-    strcpy(full, url);
-    if (strncmp(full, "rtsp://", 7) == 0) {
-        char *token;
-        int has_port = 0;
-        /* BEGIN Altered by Ed Hogan, Trusted Info. Sys. Inc. */
-        /* Need to look to see if it has a port on the first host or not. */
-        char *aSubStr = malloc(strlen(url) + 1);
-        strcpy(aSubStr, &full[7]);
-        if (strchr(aSubStr, '/')) {
-            int len = 0;
-            unsigned short i = 0;
-            char *end_ptr;
-            end_ptr = strchr(aSubStr, '/');
-            len = end_ptr - aSubStr;
-            for (; (i < strlen(url)); i++)
-                aSubStr[i] = 0;
-            strncpy(aSubStr, &full[7], len);
-        }
-        if (strchr(aSubStr, ':'))
-            has_port = 1;
-        free(aSubStr);
-        /* END   Altered by Ed Hogan, Trusted Info. Sys. Inc. */
-
-        token = strtok(&full[7], " :/\t\n");
-        if (token) {
-            strncpy(server, token, server_len);
-            if (server[server_len - 1]) {
-                free(full);
-                return -1;    // internal error
-            }
-            if (has_port) {
-                char *port_str =
-                    strtok(&full[strlen(server) + 7 + 1],
-                       " /\t\n");
-                if (port_str)
-                    *port = (unsigned short) atol(port_str);
-                else
-                    *port = FENICE_RTSP_PORT_DEFAULT;
-            } else
-                *port = FENICE_RTSP_PORT_DEFAULT;
-            /* don't require a file name */
-            not_valid_url = 0;
-            token = strtok(NULL, " ");
-            if (token) {
-                strncpy(file_name, token, file_name_len);
-                if (file_name[file_name_len - 1]) {
-                    free(full);
-                    return -1;    // internal error
-                }
-            } else
-                file_name[0] = '\0';
-        }
-    } else {
-        /* try just to extract a file name */
-        char *token = strtok(full, " \t\n");
-        if (token) {
-            strncpy(file_name, token, file_name_len);
-            if (file_name[file_name_len - 1]) {
-                free(full);
-                return -1;    // internal error
-            }
-            server[0] = '\0';
-            not_valid_url = 0;
-        }
-    }
-    free(full);
-    return not_valid_url;
-}
-#endif
