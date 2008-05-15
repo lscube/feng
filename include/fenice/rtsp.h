@@ -165,6 +165,12 @@ int RTSP_validate_method(RTSP_buffer * rtsp);
 
 int send_reply(int err, char *addon, RTSP_buffer * rtsp);
 
+#ifdef TRACE
+#define send_reply(a, b, c) \
+    fnc_log(FNC_LOG_INFO,"%s", __PRETTY_FUNCTION__);\
+    send_reply(a,b,c);
+#endif
+
 ssize_t RTSP_send(RTSP_buffer * rtsp);
 
 #if 0 // To support multiple session per socket...

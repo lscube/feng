@@ -38,6 +38,8 @@
 #include <fenice/sdp2.h>
 #include <fenice/fnc_log.h>
 
+#undef send_reply
+
 RTSP_Error const RTSP_Fatal_ErrAlloc = { {0, ""}, ERR_ALLOC };
 
 /**

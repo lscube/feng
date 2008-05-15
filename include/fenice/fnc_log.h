@@ -44,6 +44,11 @@ typedef void (*fnc_log_t)(int, const char*, va_list);
 
 void fnc_log(int level, const char *fmt, ...);
 
+#ifdef TRACE
+#define fnc_log(level, fmt, string...) \
+    fnc_log(level, "[%s - %d]" fmt, __FILE__, __LINE__ , ## string)
+#endif
+
 fnc_log_t fnc_log_init(char *file, int out, char *name);
 
 #endif // FN_FNC_LOG_H 
