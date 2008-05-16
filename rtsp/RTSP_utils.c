@@ -33,6 +33,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <glib.h>
+#include <glib/gprintf.h>
+
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include <fenice/sdp2.h>
@@ -295,37 +298,19 @@ void log_user_agent(RTSP_buffer * rtsp)
  */
 int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 {
-    unsigned int len;
-    char *b;
+    gchar *b;
     int res;
-    char method[32];
-    char object[256];
-    char ver[32];
 
-
-    if (addon != NULL)
-        len = 256 + strlen(addon);
-    else
-        len = 256;
-
-    b = malloc(len);
-    if (b == NULL) {
-        fnc_log(FNC_LOG_ERR,
-            "send_reply(): memory allocation error.\n");
-        return ERR_ALLOC;
-    }
-    memset(b, 0, sizeof(b));
-    sprintf(b, "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL, RTSP_VER, err,
-        get_stat(err), rtsp->rtsp_cseq);
-    //---patch coerenza con rfc in caso di errore
-    // strcat(b, "\r\n");
-    strcat(b, RTSP_EL);
+    b = g_strdup_printf("%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL,
+                        RTSP_VER,
+                        err,
+                        get_stat(err),
+                        rtsp->rtsp_cseq);
 
     res = bwrite(b, (unsigned short) strlen(b), rtsp);
-    free(b);
+    g_free(b);
 
-    sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, object, ver);
-    fnc_log(FNC_LOG_ERR, "%s %s %s %d - - ", method, object, ver, err);
+    fnc_log(FNC_LOG_ERR, "%s %d - - ", get_stat(err), err);
     log_user_agent(rtsp);
 
     return res;
