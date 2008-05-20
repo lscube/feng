@@ -48,10 +48,8 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
         return ERR_NOERROR;
     }
     if (FD_ISSET(Sock_fd(rtsp->sock), wset)) { // first of all: there is some data to send?
-        //char is_interlvd = rtsp->interleaved_size ? 1 : 0; 
-        // There are RTSP packets to send
         if ( (n = RTSP_send(rtsp)) < 0) {
-            send_reply(500, NULL, rtsp);
+//            send_reply(500, NULL, rtsp); FIXME
             return ERR_GENERIC;// internal server error
         }
 #ifdef VERBOSE
@@ -85,7 +83,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
             fnc_log(FNC_LOG_DEBUG,
                 "Sock_read() error in rtsp_server()\n");
             send_reply(500, NULL, rtsp);
-            return ERR_GENERIC;    //errore interno al server                           
+            return ERR_GENERIC;
         }
         if (Sock_type(rtsp->sock) == TCP
 #ifdef HAVE_LIBSCTP
@@ -325,10 +323,14 @@ void established_connections(feng *srv)
                         "WARNING! RTSP connection truncated before ending operations.\n");
                 }
                 // close localfds
-                for (intlvd=p->interleaved; intlvd; intlvd = intlvd->next) {
+                for (intlvd = p->interleaved; intlvd;) {
+                    RTSP_interleaved *intlvdt = intlvdt;
                     Sock_close(intlvd->rtp_local);
                     Sock_close(intlvd->rtcp_local);
+                    intlvd = intlvd->next;
+                    free(intlvdt);
                 }
+
                 // wait for 
                 Sock_close(p->sock);
                 --srv->conn_count;
