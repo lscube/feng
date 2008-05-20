@@ -36,6 +36,10 @@ AC_ARG_ENABLE(debug,
 [  --enable-debug          enable gcc dubugging flags [[default=no]]],,
     enable_debug="no")
 
+AC_ARG_ENABLE(trace,
+[  --enable-trace          enable additional informations in log [[default=no]]],,
+    enable_trace="no")
+
 AC_ARG_ENABLE(duma,
 [  --enable-duma           link against DUMA library to debug memory usage
                           (implies --enable-debug) [[default=no]]],,
@@ -179,6 +183,10 @@ if test "$enable_debug" = "yes"; then
 else
     AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
     CFLAGS="$CFLAGS -O2 -Wall"
+fi
+
+if test "$enable_trace" = "yes"; then
+    AC_DEFINE(TRACE, 1,[Trace enabled])
 fi
 
 case "$enable_errors" in
