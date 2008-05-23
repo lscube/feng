@@ -52,12 +52,6 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
 //            send_reply(500, NULL, rtsp); FIXME
             return ERR_GENERIC;// internal server error
         }
-#ifdef VERBOSE
-         else if (*rtsp->out_buffer != '$') {
-            fnc_log(FNC_LOG_VERBOSE, "OUTPUT_BUFFER was:\n");
-            dump_buffer(rtsp->out_buffer);
-        }
-#endif
     }
     if (FD_ISSET(Sock_fd(rtsp->sock), rset)) {
         // There are RTSP or RTCP packets to read in
@@ -96,10 +90,6 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
                 send_reply(500, NULL, rtsp);
                 return ERR_GENERIC;    //errore da comunicare
             }
-#ifdef VERBOSE
-            fnc_log(FNC_LOG_VERBOSE, "INPUT_BUFFER was:\n");
-            dump_buffer(buffer);
-#endif
             memcpy(&(rtsp->in_buffer[rtsp->in_size]), buffer, n);
             rtsp->in_size += n;
             if ((res = RTSP_handler(rtsp)) == ERR_GENERIC) {
