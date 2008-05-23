@@ -30,18 +30,46 @@
 #include <fenice/schedule.h>
 #include <bufferpool/bufferpool.h>
 
+
+static inline
+int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
+{
+    int n;
+#ifdef HAVE_LIBSCTP
+    struct sctp_sndrcvinfo sctp_info;
+    if (Sock_type(sock) == SCTP) {
+        memset(&sctp_info, 0, sizeof(sctp_info));
+        n = Sock_read(sock, buffer, size, &sctp_info, 0);
+        *stream = sctp_info.sinfo_stream;
+        fnc_log(FNC_LOG_DEBUG,
+            "Sock_read() received %d bytes from sctp stream %d\n", n, stream);
+    } else    // RTSP protocol is TCP
+#endif    // HAVE_LIBSCTP
+
+    n = Sock_read(sock, buffer, size, NULL, 0);
+
+    return n;
+}
+
+#ifdef HAVE_LIBSCTP
+#   define Sock_interleaved(a) \
+     (Sock_type(a) == TCP || Sock_type(a) == SCTP)
+#else
+#   define Sock_interleaved(a) \
+     (Sock_type(a) == TCP)
+#endif
+
 int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
 {
-    int size;
     char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
     int i, n;
     int res;
     RTSP_session *q = NULL;
     RTP_session *p = NULL;
     RTSP_interleaved *intlvd;
+    int m = 0;
 #ifdef HAVE_LIBSCTP
     struct sctp_sndrcvinfo sctp_info;
-    int m = 0;
 #endif
 
     if (rtsp == NULL) {
@@ -56,20 +84,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
     if (FD_ISSET(Sock_fd(rtsp->sock), rset)) {
         // There are RTSP or RTCP packets to read in
         memset(buffer, 0, sizeof(buffer));
-        size = sizeof(buffer) - 1;
-#ifdef HAVE_LIBSCTP
-        if (Sock_type(rtsp->sock) == SCTP) {
-            memset(&sctp_info, 0, sizeof(sctp_info));
-            n = Sock_read(rtsp->sock, buffer, size, &sctp_info, 0);
-            m = sctp_info.sinfo_stream;
-            fnc_log(FNC_LOG_DEBUG,
-                "Sock_read() received %d bytes from sctp stream %d\n", n, m);
-        } else {    // RTSP protocol is TCP
-#endif    // HAVE_LIBSCTP
-            n = Sock_read(rtsp->sock, buffer, size, NULL, 0);
-#ifdef HAVE_LIBSCTP
-        }
-#endif    // HAVE_LIBSCTP
+        n = rtsp_sock_read(rtsp->sock, &m, buffer, sizeof(buffer) - 1);
         if (n == 0) {
             return ERR_CONNECTION_CLOSE;
         }
@@ -79,11 +94,7 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
             send_reply(500, NULL, rtsp);
             return ERR_GENERIC;
         }
-        if (Sock_type(rtsp->sock) == TCP
-#ifdef HAVE_LIBSCTP
-            || (Sock_type(rtsp->sock) == SCTP&& m == 0)
-#endif    // HAVE_LIBSCTP 
-                        ) {
+        if (Sock_interleaved(rtsp->sock) && m == 0) {
             if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
                 fnc_log(FNC_LOG_DEBUG,
                     "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
