@@ -324,11 +324,11 @@ void established_connections(feng *srv)
                 }
                 // close localfds
                 for (intlvd = p->interleaved; intlvd;) {
-                    RTSP_interleaved *intlvdt = intlvdt;
+                    RTSP_interleaved *intlvd_temp = intlvd;
                     Sock_close(intlvd->rtp_local);
                     Sock_close(intlvd->rtcp_local);
                     intlvd = intlvd->next;
-                    free(intlvdt);
+                    free(intlvd_temp);
                 }
 
                 // wait for 
