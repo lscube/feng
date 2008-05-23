@@ -64,7 +64,6 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
     char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
     int i, n;
     int res;
-    RTSP_session *q = NULL;
     RTP_session *p = NULL;
     RTSP_interleaved *intlvd;
     int m = 0;
@@ -162,7 +161,8 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
             }
         }
         if ( FD_ISSET(Sock_fd(intlvd->rtp_local), rset) ) {
-            if ( (n = Sock_read(intlvd->rtp_local, buffer, RTSP_BUFFERSIZE, NULL, 0)) < 0) {
+            if ( (n = Sock_read(intlvd->rtp_local, buffer,
+                        RTSP_BUFFERSIZE, NULL, 0)) < 0) {
             // if ( (n = read(intlvd->rtp_fd, intlvd->out_buffer, sizeof(intlvd->out_buffer))) < 0) {
                 fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
                 continue;
@@ -171,7 +171,8 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
             case TCP:
                 if ((i = rtsp->out_size) + n < RTSP_BUFFERSIZE - RTSP_RESERVED) {
                     rtsp->out_buffer[i] = '$';
-                    rtsp->out_buffer[i + 1] = (unsigned char) intlvd->proto.tcp.rtp_ch;
+                    rtsp->out_buffer[i + 1] =
+                        (unsigned char) intlvd->proto.tcp.rtp_ch;
                     *((uint16_t *) & rtsp->out_buffer[i + 2]) =
                         htons((uint16_t) n);
                     rtsp->out_size += n + 4;
@@ -184,7 +185,8 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
             break;
 #ifdef HAVE_LIBSCTP
             case SCTP:
-                memcpy(&sctp_info, &(intlvd->proto.sctp.rtp), sizeof(struct sctp_sndrcvinfo));
+                memcpy(&sctp_info, &(intlvd->proto.sctp.rtp),
+                    sizeof(struct sctp_sndrcvinfo));
                 Sock_write(rtsp->sock, buffer, n, &sctp_info, MSG_DONTWAIT | MSG_EOR);
                 break;
 #endif
@@ -193,8 +195,10 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
             }
         }
     }
-    for (q = rtsp->session_list, p = q ? q->rtp_session : NULL; p; p = p->next) {
-        if ( (p->transport.rtcp_sock) && 
+
+    p = rtsp->session_list ? rtsp->session_list->rtp_session : NULL;
+    for (; p; p = p->next) {
+        if ( (p->transport.rtcp_sock) &&
                 FD_ISSET(Sock_fd(p->transport.rtcp_sock), rset)) {
             // There are RTCP packets to read in
             if (RTP_recv(p, rtcp_proto) < 0) {
@@ -205,15 +209,6 @@ int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
             }
             fnc_log(FNC_LOG_VERBOSE, "IN RTCP\n");
         }
-        /*---------SEE rtcp/RTCP_handler.c-----------------*/
-        /* if (FD_ISSET(p->rtcp_fd_out,wset)) {
-         *     // There are RTCP packets to send
-         *     if ((psize_sent=sendto(p->rtcp_fd_out,p->rtcp_outbuffer,p->rtcp_outsize,0,&(p->rtcp_out_peer),sizeof(p->rtcp_out_peer)))<0) {
-         *         fnc_log(FNC_LOG_VERBOSE,"RTCP Packet Lost\n");
-         *     }
-         *     p->rtcp_outsize=0;
-         *     fnc_log(FNC_LOG_VERBOSE,"OUT RTCP\n");
-         * } */
     }
     
     return ERR_NOERROR;
