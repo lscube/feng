@@ -1,23 +1,5 @@
 /*
- *  $Id: $
- *
- *  Copyright (C) 2006 by Luca Barbato
- *
- *  Feng is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  libnms is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with libnms; if not, write to the Free Software
- *  This file is part of Feng
- * 
- * Copyright (C) 2007 by LScube team <team@streaming.polito.it> 
+ * Copyright (C) 2008 by LScube team <team@streaming.polito.it> 
  * See AUTHORS for more details 
  *  
  * Feng is free software; you can redistribute it and/or 
@@ -74,6 +56,7 @@ static const id_tag id_tags[] = {
    { CODEC_ID_MP3, 14, "MPA" },
    { CODEC_ID_VORBIS, 96, "VORBIS" },
    { CODEC_ID_THEORA, 96, "THEORA" },
+   { CODEC_ID_SPEEX, 96, "SPEEX" },
    { CODEC_ID_AAC, 96, "AAC" },
    { CODEC_ID_MPEG4, 96, "MP4V-ES" },
    { CODEC_ID_H263, 96, "H263P" },
