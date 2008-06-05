@@ -1,7 +1,7 @@
 /* *
  *  This file is part of Feng
  *
- * Ogg Speex parser based on the current draft
+ * Speex parser based on the current draft
  *
  * Copyright (C) 2007 by LScube team <team@streaming.polito.it>
  * See AUTHORS for more details
