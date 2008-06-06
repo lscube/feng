@@ -388,7 +388,7 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
  * @param rtsp where the output buffer is saved
  * @return ERR_NOERROR or ERR_ALLOC if it was not possible to allocate enough space
  */
-int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
+int bwrite(char *buffer, size_t len, RTSP_buffer * rtsp)
 {
     if ((rtsp->out_size + len) > sizeof(rtsp->out_buffer)) {
         fnc_log(FNC_LOG_ERR,
