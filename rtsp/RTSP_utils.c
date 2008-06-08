@@ -298,17 +298,19 @@ void log_user_agent(RTSP_buffer * rtsp)
  */
 int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 {
-    gchar *b;
+    gchar *body;
     int res;
+    char *message = addon ? addon : "";
 
-    b = g_strdup_printf("%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL,
-                        RTSP_VER,
-                        err,
-                        get_stat(err),
-                        rtsp->rtsp_cseq);
+    body = g_strdup_printf("%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "%s",
+                           RTSP_VER,
+                           err,
+                           get_stat(err),
+                           rtsp->rtsp_cseq,
+                           message);
 
-    res = bwrite(b, strlen(b), rtsp);
-    g_free(b);
+    res = bwrite(body, strlen(body), rtsp);
+    g_free(body);
 
     fnc_log(FNC_LOG_ERR, "%s %d - - ", get_stat(err), err);
     log_user_agent(rtsp);
