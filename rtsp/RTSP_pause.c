@@ -49,7 +49,7 @@ static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
     sprintf(temp, "%lu", rtsp_session->session_id);
     strcat(r, temp);
     strcat(r, RTSP_EL RTSP_EL);
-    bwrite(r, (unsigned short) strlen(r), rtsp);
+    bwrite(r, strlen(r), rtsp);
     fnc_log(FNC_LOG_CLIENT, "200 - - ");
 
     return ERR_NOERROR;

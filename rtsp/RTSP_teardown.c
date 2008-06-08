@@ -54,7 +54,7 @@ static int send_teardown_reply(RTSP_buffer * rtsp, unsigned long session_id)
     sprintf(temp, "%lu", session_id);
     strcat(r, temp);
     strcat(r, RTSP_EL RTSP_EL);
-    bwrite(r, (unsigned short) strlen(r), rtsp);
+    bwrite(r, strlen(r), rtsp);
 
     fnc_log(FNC_LOG_CLIENT, "200 - - ");
 

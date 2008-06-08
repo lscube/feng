@@ -604,7 +604,7 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
 
     strcat(r, RTSP_EL RTSP_EL);
 
-    bwrite(r, (unsigned short) strlen(r), rtsp);
+    bwrite(r, strlen(r), rtsp);
 
     fnc_log(FNC_LOG_CLIENT, "200 - %s ",
             r_selected_track(rtp_s->track_selector)->info->name);

@@ -42,7 +42,7 @@ static int send_set_parameter_reply(RTSP_buffer * rtsp)
     sprintf(r, "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL, RTSP_VER, 451,
         get_stat(451), cseq);
     strcat(r, RTSP_EL);
-    bwrite(r, (unsigned short) strlen(r), rtsp);
+    bwrite(r, strlen(r), rtsp);
 
     fnc_log(FNC_LOG_CLIENT, "451 - - ");
 

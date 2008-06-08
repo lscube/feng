@@ -319,7 +319,7 @@ static int send_play_reply(RTSP_buffer * rtsp, ConnectionInfo *cinfo,
     // end of message
     strcat(r, RTSP_EL);
 
-    bwrite(r, (unsigned short) strlen(r), rtsp);
+    bwrite(r, strlen(r), rtsp);
 
 
     fnc_log(FNC_LOG_CLIENT, "200 - %s ", cinfo->object);

@@ -79,7 +79,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
 
     // concatenate description
     strcat(r, cinfo->descr);
-    bwrite(r, (unsigned short) strlen(r), rtsp);
+    bwrite(r, strlen(r), rtsp);
 
     free(r);
 

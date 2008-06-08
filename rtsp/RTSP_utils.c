@@ -307,7 +307,7 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
                         get_stat(err),
                         rtsp->rtsp_cseq);
 
-    res = bwrite(b, (unsigned short) strlen(b), rtsp);
+    res = bwrite(b, strlen(b), rtsp);
     g_free(b);
 
     fnc_log(FNC_LOG_ERR, "%s %d - - ", get_stat(err), err);
@@ -371,7 +371,7 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
     strcat(r, RTSP_EL);
 
 
-    bwrite(r, (unsigned short) strlen(r), rtsp);
+    bwrite(r, strlen(r), rtsp);
 
     free(mb);
     free(r);
