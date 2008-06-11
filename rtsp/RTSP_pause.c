@@ -1,7 +1,7 @@
 /* * 
  *  This file is part of Feng
  * 
- * Copyright (C) 2007 by LScube team <team@streaming.polito.it> 
+ * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
  * See AUTHORS for more details 
  *  
  * Feng is free software; you can redistribute it and/or 
@@ -84,11 +84,11 @@ int RTSP_pause(RTSP_buffer * rtsp)
 
     s = rtsp->session_list;
     if (s == NULL) {
-        send_reply(415, 0, rtsp);    // Internal server error
+        send_reply(415, NULL, rtsp);    // Internal server error
         return ERR_GENERIC;
     }
     if (s->session_id != session_id) {
-        send_reply(454, 0, rtsp);    /* Session Not Found */
+        send_reply(454, NULL, rtsp);    /* Session Not Found */
         return ERR_NOERROR;
     }
 

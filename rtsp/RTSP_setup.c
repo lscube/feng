@@ -1,7 +1,7 @@
 /* * 
  *  This file is part of Feng
  * 
- * Copyright (C) 2007 by LScube team <team@streaming.polito.it> 
+ * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
  * See AUTHORS for more details 
  *  
  * Feng is free software; you can redistribute it and/or 
@@ -304,7 +304,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
 
 /*    if (getpeername(rtsp->fd, (struct sockaddr *) &rtsp_peer, &namelen) !=
         0) {
-        send_reply(415, 0, rtsp);    // Internal server error
+        send_reply(415, NULL, rtsp);    // Internal server error
         return ERR_GENERIC;
     }*/
 

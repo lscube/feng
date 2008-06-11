@@ -1,7 +1,7 @@
 /* * 
  *  This file is part of Feng
  * 
- * Copyright (C) 2007 by LScube team <team@streaming.polito.it> 
+ * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
  * See AUTHORS for more details 
  *  
  * Feng is free software; you can redistribute it and/or 
@@ -50,7 +50,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
     if (!r) {
         fnc_log(FNC_LOG_ERR,
             "send_describe_reply(): unable to allocate memory\n");
-        send_reply(500, 0, rtsp);    /* internal server error */
+        send_reply(500, NULL, rtsp);    /* internal server error */
         return ERR_ALLOC;
     }
 

@@ -5,7 +5,7 @@
  *
  *  theora parser based on the current draft
  *
- *  Copyright (C) 2007 by Luca Barbato <lu_zero@gentoo.org>
+ *  Copyright (C) 2008 by Luca Barbato <lu_zero@gentoo.org>
  *
  *  Feng is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *  along with Feng; if not, write to the Free Software
  *  This file is part of Feng
  * 
- * Copyright (C) 2007 by LScube team <team@streaming.polito.it> 
+ * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
  * See AUTHORS for more details 
  *  
  * Feng is free software; you can redistribute it and/or 

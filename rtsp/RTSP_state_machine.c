@@ -1,7 +1,7 @@
 /* * 
  *  This file is part of Feng
  * 
- * Copyright (C) 2007 by LScube team <team@streaming.polito.it> 
+ * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
  * See AUTHORS for more details 
  *  
  * Feng is free software; you can redistribute it and/or 
@@ -113,7 +113,7 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
         if (sscanf(s, "%*s %lu", &session_id) != 1) {
             fnc_log(FNC_LOG_INFO,
                 "Invalid Session number in Session header\n");
-            send_reply(454, 0, rtsp);    /* Session Not Found */
+            send_reply(454, NULL, rtsp);    /* Session Not Found */
             return;
         }
     }
