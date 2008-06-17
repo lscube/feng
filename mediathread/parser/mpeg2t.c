@@ -297,7 +297,7 @@ static int mp2t_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     return ERR_NOERROR;
 }
 
-int mp2t_uninit(void *private_data)
+static int mp2t_uninit(void *private_data)
 {
     mp2t_priv* priv = (mp2t_priv*)private_data;
 

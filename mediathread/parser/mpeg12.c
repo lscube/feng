@@ -186,7 +186,7 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 }
 
 
-int mpv_uninit(void *private_data)
+static int mpv_uninit(void *private_data)
 {
     if (private_data)
         free(private_data);

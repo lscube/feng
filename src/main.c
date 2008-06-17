@@ -48,7 +48,7 @@
 
 #include <pthread.h>
 
-int stopped = 0;
+static int stopped = 0;
 
 static void terminator_function (int num) {
     fnc_log(FNC_LOG_INFO, "Exiting...");
