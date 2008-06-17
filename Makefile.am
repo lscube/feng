@@ -14,8 +14,7 @@ SUBDIRS +=	sdp \
 		avroot
 
 EXTRA_DIST = 	include \
-		config \
-		INSTALL-FAST
+		config
 
 ACLOCAL_AMFLAGS = -I m4
 
