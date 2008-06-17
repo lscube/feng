@@ -119,12 +119,6 @@ int read_c(uint32_t nbytes, uint8_t *buf, Cache **c, int fd, stream_type type)
     return bytes_read ? bytes_read : ERR_EOF;
 }
 
-void flush_cache(Cache *c)
-{
-    if(c!=NULL)
-        c->bytes_left=0;
-} 
-
 void free_cache(Cache *c)
 {
     if(c!=NULL){

@@ -63,7 +63,6 @@ Cache *create_cache(stream_type);
 
 /*Interface to Cache*/
 int read_c(uint32_t nbytes, uint8_t *buf, Cache **c, int fd, stream_type);
-void flush_cache(Cache *c); 
 void free_cache(Cache *c); 
 
 typedef enum { // XXX: all initialized to a power of 2 number.

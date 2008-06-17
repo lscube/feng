@@ -155,24 +155,6 @@ data_unset *array_get_element(array *a, const char *key) {
     return NULL;
 }
 
-data_unset *array_get_unused_element(array *a, data_type_t t) {
-    data_unset *ds = NULL;
-
-    UNUSED(t);
-
-    if (a->size == 0) return NULL;
-
-    if (a->used == a->size) return NULL;
-
-    if (a->data[a->used]) {
-        ds = a->data[a->used];
-
-        a->data[a->used] = NULL;
-    }
-
-    return ds;
-}
-
 /* replace or insert data, return the old one with the same key */
 data_unset *array_replace(array *a, data_unset *du) {
     int ndx;

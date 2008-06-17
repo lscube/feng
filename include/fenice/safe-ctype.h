@@ -150,7 +150,6 @@ extern const unsigned short _sch_istable[256];
 
 /* Character transformation.  */
 extern const unsigned char  _sch_toupper[256];
-extern const unsigned char  _sch_tolower[256];
 #define TOUPPER(c) _sch_toupper[(c) & 0xff]
 #define TOLOWER(c) _sch_tolower[(c) & 0xff]
 

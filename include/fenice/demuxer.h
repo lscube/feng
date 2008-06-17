@@ -184,7 +184,6 @@ void r_close(Resource *);
 
 Selector *r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
-inline int r_seek(Resource *, long int /*time_sec*/ );/*seeks the resource: mkv, sd ...*/
 int r_changed(ResourceDescr *);
 
 //Selector handling functions

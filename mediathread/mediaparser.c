@@ -75,26 +75,3 @@ void mparser_unreg(MediaParser *p, void *private_data)
 {
     if (p) p->uninit(private_data);
 }
-
-// shawill: probably these functions will be removed sooner ir later.
-MediaParser *add_media_parser(void) 
-{
-    MediaParser *p;
-
-    if(!(p=malloc(sizeof(MediaParser)))) {
-        return NULL;
-    }
-
-    p->info = NULL;
-
-    return p;
-}
-
-void free_parser(MediaParser *p)
-{
-    if(p) {
-        // p->uninit(p->private_data);
-        p->uninit(NULL);
-        // free(p);    
-    }
-}

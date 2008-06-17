@@ -28,16 +28,6 @@
 #include <glib.h>
 
 #include <fenice/mediautils.h>
-void *MObject_malloc(size_t size)
-{
-    MObject *new_obj;
-    
-    new_obj = g_malloc(size);
-    new_obj->refs=1;
-    MObject_destructor(new_obj, g_free);
-
-    return new_obj;
-}
 
 void *MObject_calloc(size_t size)
 {

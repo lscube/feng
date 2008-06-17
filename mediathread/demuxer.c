@@ -371,11 +371,6 @@ void r_close_tracks(Selector *s) // UNUSED
     free(s);
 }
 
-inline int r_seek(Resource *r, long int time_sec)
-{
-    return r->demuxer->seek(r,time_sec);
-}
-
 int r_changed(ResourceDescr *descr)
 {
     GList *m_descr = g_list_first(descr->media);

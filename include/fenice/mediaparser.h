@@ -108,10 +108,8 @@ typedef struct {
  * @defgroup MediaParser MediaParser Interface
  * @{
  */
-MediaParser *add_media_parser(void); 
 MediaParser *mparser_find(const char *);
 void mparser_unreg(MediaParser *, void *);
-void free_parser(MediaParser *);
 /**
  * @}
  */

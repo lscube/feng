@@ -43,7 +43,6 @@ typedef struct {
 #define MObject_destructor(object, destr) (object)->destructor=destr
 
 // void *MObject_new(size_t);
-void *MObject_malloc(size_t);
 void *MObject_calloc(size_t);
 //inline void *MObject_alloca(size_t);
 void MObject_init(MObject *);
