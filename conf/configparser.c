@@ -1192,9 +1192,9 @@ static void yy_reduce(
   if (NULL != (dc = (data_config *)array_get_element(ctx->all_configs, b->ptr))) {
     configparser_push(ctx, dc, 0);
   } else {
-    struct {
+    static const struct {
       comp_key_t comp;
-      char *comp_key;
+      char comp_key[20];
       size_t len;
     } comps[] = {
       { COMP_SERVER_SOCKET,      CONST_STR_LEN("SERVER[\"socket\"]"   ) },
@@ -1205,7 +1205,7 @@ static void yy_reduce(
       { COMP_HTTP_COOKIE,        CONST_STR_LEN("HTTP[\"cookie\"]"     ) },
       { COMP_HTTP_REMOTEIP,      CONST_STR_LEN("HTTP[\"remoteip\"]"   ) },
       { COMP_HTTP_QUERYSTRING,   CONST_STR_LEN("HTTP[\"querystring\"]") },
-      { COMP_UNSET, NULL, 0 },
+      { COMP_UNSET, "", 0 },
     };
     size_t i;
 
@@ -1219,7 +1219,7 @@ static void yy_reduce(
     buffer_append_string_len(dc->comp_key, CONST_STR_LEN("\"]"));
     dc->cond = yymsp[-1].minor.yy27;
 
-    for (i = 0; comps[i].comp_key; i ++) {
+    for (i = 0; comps[i].len; i ++) {
       if (buffer_is_equal_string(
             dc->comp_key, comps[i].comp_key, comps[i].len)) {
         dc->comp = comps[i].comp;
