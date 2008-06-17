@@ -45,6 +45,8 @@ noinst_HEADERS = \
 	include/array.h \
 	include/buffer.h
 
+EXTRA_DIST = Doxyfile RELEASE
+
 ACLOCAL_AMFLAGS = -I m4
 
 FENICE_AVROOT_DIR = @fenice_avroot_dir@
