@@ -6,7 +6,7 @@ AM_INIT_AUTOMAKE(dist-bzip2 check-news)
 
 AC_PREFIX_DEFAULT("/usr")
 
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADER([config.h])
 
 AC_ARG_WITH(rtsp-port,
     AS_HELP_STRING([--with-rtsp-port], [default RTSP listening port (default=554, alternative=8554)]),,
