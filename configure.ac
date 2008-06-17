@@ -282,6 +282,8 @@ AC_DEFINE_UNQUOTED(FENIC_STATE_DIR_STR,
                     "$fenice_state_dir",
                     [Define default string dir for Certificate (pem format)])
 
+AC_CONFIG_MACRO_DIR([m4])
+
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([mediathread/Makefile])
 AC_CONFIG_FILES([mediathread/parser/Makefile])
