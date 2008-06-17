@@ -20,6 +20,6 @@ EXTRA_DIST = 	include \
 
 ACLOCAL_AMFLAGS = -I m4
 
-FENICE_AVROOT_DIR = $(DESTDIR)@fenice_avroot_dir@
+FENICE_AVROOT_DIR = @fenice_avroot_dir@
 FENICE_LOG_FILE = `basename @fenice_log_file@`
 
