@@ -15,7 +15,6 @@ SUBDIRS +=	sdp \
 
 EXTRA_DIST = 	include \
 		config \
-		debian \
 		INSTALL-FAST
 
 ACLOCAL_AMFLAGS = -I m4
