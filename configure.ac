@@ -9,31 +9,31 @@ AC_PREFIX_DEFAULT("/usr")
 AM_CONFIG_HEADER(config.h)
 
 AC_ARG_WITH(rtsp-port,
-[  --with-rtsp-port        default RTSP listening port [[default=554, alternative=8554]]],,
+    AS_HELP_STRING([--with-rtsp-port], [default RTSP listening port (default=554, alternative=8554)]),,
     with_rtsp_port=554)
 
 AC_ARG_WITH(config-file,
-[  --with-config-file      name for the configuration file in sysconfdir [[default=feng.conf]]],,
+    AS_HELP_STRING([--with-config-file], [name for the configuration file in sysconfdir (default=feng.conf)]),,
     with_config_file="feng.conf")
 
 AC_ARG_WITH(log-file,
-[  --with-log-file         name for the log file [[default=feng.log]]],,
+    AS_HELP_STRING([--with-log-file], [name for the log file (default=feng.log)]),,
     with_log_file="feng.log")
 
 AC_ARG_WITH(max-session,
-[  --with-max-session      max number of incoming sessions [[default=100]]],,
+    AS_HELP_STRING([--with-max-session], [max number of incoming sessions (default=100)]),,
     with_max_session=100)
 
 AC_ARG_ENABLE(ipv6,
-[  --enable-ipv6           enable IPv6 support [[default=autodetected]]],,
+    AS_HELP_STRING([--enable-ipv6], [enable IPv6 support (default=autodetected)]),,
         enable_ipv6="yes")
 
 AC_ARG_ENABLE(libavformat,
-[  --enable-libavformat    enable ffmpeg's libavformat support [[default=yes]]],,
+    AS_HELP_STRING([--enable-libavformat], [enable ffmpeg's libavformat support (default=yes)]),,
         enable_ffmpeg="yes")
 
 AC_ARG_ENABLE(debug,
-[  --enable-debug          enable gcc dubugging flags [[default=no]]],,
+    AS_HELP_STRING([--enable-debug], [enable gcc debugging flags (default=no)]),,
     enable_debug="no")
 
 AC_ARG_ENABLE(trace,
@@ -41,21 +41,20 @@ AC_ARG_ENABLE(trace,
     enable_trace="no")
 
 AC_ARG_ENABLE(duma,
-[  --enable-duma           link against DUMA library to debug memory usage
-                          (implies --enable-debug) [[default=no]]],,
+    AS_HELP_STRING([--enable-duma], [link against DUMA library to debug memory usage (implies --enable-debug) (default=no)]),,
     enable_duma="no")
 
 AC_ARG_ENABLE(mudflap,
-[  --enable-mudflap        enable mudflap support
-                          (implies --enable-debug) [[default=no]]],,
+    AS_HELP_STRING([--enable-mudflap], [enable mudflap support (implies --enable-debug) (default=no)]),,
     enable_mudflap="no")
 
 AC_ARG_ENABLE(errors,
-[  --enable-errors         make gcc warnings behave like errors: none, normal, pedantic [[default=none]]],,
+    AS_HELP_STRING([--enable-errors], [make gcc warnings behave like errors: none, normal, pedantic (default=none)]),,
     enable_errors="none")
 
 AC_ARG_ENABLE(sctp,
-[  --enable-sctp           enable SCTP support [[default=autodetected]]],,         enable_sctp="yes")
+    AS_HELP_STRING([--enable-sctp], [enable SCTP support (default=autodetected)]),,
+    enable_sctp="yes")
 
 m4_undefine([AC_PROG_CXX])
 m4_defun([AC_PROG_CXX],[])
