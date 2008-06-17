@@ -56,7 +56,8 @@ AC_ARG_ENABLE(sctp,
     AS_HELP_STRING([--enable-sctp], [enable SCTP support (default=autodetected)]),,
     enable_sctp="yes")
 
-AC_PROG_LIBTOOL
+LT_PREREQ([2.2])
+LT_INIT
 LIBTOOL="$LIBTOOL --silent"
 AC_SUBST([LIBTOOL_DEPS])
 
