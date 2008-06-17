@@ -4,7 +4,8 @@ noinst_LTLIBRARIES = libparser.la
 
 libparser_la_SOURCES = mpeg12.c \
 			mpegaudio.c \
-			mpeg2t.c
+			mpeg2t.c \
+			mpeg.h
 
 if FENICE_FFMPEG
 libparser_la_SOURCES += h264.c \
