@@ -102,7 +102,7 @@ AC_CHECK_LIB([c], [shm_open], [SHM_LIB=],
     [AC_CHECK_LIB([rt], [shm_open], [SHM_LIB=-lrt])])
 AC_SUBST(SHM_LIB)
 
-fenice_state_dir=$(eval echo ${localstatedir}/local/lib/feng/certs)
+fenice_state_dir=$(eval echo ${localstatedir}/feng)
 AC_SUBST(fenice_state_dir)
 
 dnl check if we have the generic struct for net addresses the has max possible size
