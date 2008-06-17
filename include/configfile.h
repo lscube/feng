@@ -49,7 +49,8 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd);
 data_unset *configparser_merge_data(data_unset *op1, const data_unset *op2);
 int config_read(server *srv, const char *fn);
 int config_set_defaults(server *srv);
-
+int config_insert_values_global(server *srv, array *ca, 
+                                const config_values_t cv[]);
 //void config_cond_cache_reset(server *srv, connection *con);
 //void config_cond_cache_reset_item(server *srv, connection *con, comp_key_t item);
 
