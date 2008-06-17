@@ -13,8 +13,7 @@ SUBDIRS +=	sdp \
 		etc \
 		avroot
 
-EXTRA_DIST = 	include \
-		config
+EXTRA_DIST = 	include
 
 ACLOCAL_AMFLAGS = -I m4
 
