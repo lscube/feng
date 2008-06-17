@@ -140,7 +140,7 @@ inline int istream_reset(InputStream *is)
         return ERR_ALLOC;
 }
 
-stream_type parse_mrl(char *mrl, char **resource_name)
+static stream_type parse_mrl(char *mrl, char **resource_name)
 {
 	char *colon;
 	stream_type res;

@@ -118,8 +118,6 @@ typedef enum {
  * @{
  */
 
-void RTSP_state_machine(RTSP_buffer * rtsp, int method_code);
-
 int RTSP_describe(RTSP_buffer * rtsp);
 
 int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session);
@@ -157,11 +155,6 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len);
 #define RTSP_msg_len RTSP_full_msg_rcvd
 
 void RTSP_discard_msg(RTSP_buffer * rtsp, int len);
-
-int RTSP_valid_response_msg(unsigned short *status, char *msg,
-                RTSP_buffer * rtsp);
-
-int RTSP_validate_method(RTSP_buffer * rtsp);
 
 int send_reply(int err, char *addon, RTSP_buffer * rtsp);
 

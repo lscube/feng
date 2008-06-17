@@ -92,7 +92,7 @@ static inline void mt_dispose_event(mt_event_item *ev) {
     g_free(ev);
 }
 
-int mt_add_event(mt_event_id id, void **args) {
+static int mt_add_event(mt_event_id id, void **args) {
     mt_event_item *item;
 
     if (!(item = g_new0(mt_event_item, 1))) {

@@ -57,6 +57,8 @@ static GList *descr_cache=NULL;
  * */
 #define r_descr_find(mrl) g_list_find_custom(descr_cache, mrl, cache_cmp)
 
+static int r_changed(ResourceDescr *descr);
+
 // private functions for specific demuxer
 
 /**
@@ -295,7 +297,7 @@ Resource *r_open(struct feng *srv, char *root, char *n)
     return r;
 }
 
-void free_track(Track *t, Resource *r)
+static void free_track(Track *t, Resource *r)
 {
     if (!t)
         return;
@@ -371,7 +373,7 @@ void r_close_tracks(Selector *s) // UNUSED
     free(s);
 }
 
-int r_changed(ResourceDescr *descr)
+static int r_changed(ResourceDescr *descr)
 {
     GList *m_descr = g_list_first(descr->media);
 

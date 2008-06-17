@@ -28,6 +28,11 @@
  * @brief Contains RTSP message dispatchment functions
  */
 
+static void RTSP_state_machine(RTSP_buffer * rtsp, int method_code);
+static int RTSP_valid_response_msg(unsigned short *status, char *msg,
+				   RTSP_buffer * rtsp);
+static int RTSP_validate_method(RTSP_buffer * rtsp);
+
 /**
  * Handles incoming RTSP message, validates them and then dispatches them 
  * with RTSP_state_machine
@@ -103,7 +108,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
  * @param rtsp the buffer containing the message to dispatch
  * @param method the id of the method to execute
  */
-void RTSP_state_machine(RTSP_buffer * rtsp, int method)
+static void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 {
     char *s;
     RTSP_session *p;
@@ -234,7 +239,7 @@ void RTSP_state_machine(RTSP_buffer * rtsp, int method)
  * @param rtsp the buffer containing the message
  * @return the message id or -1 if something doesn't work in the request 
  */
-int RTSP_validate_method(RTSP_buffer * rtsp)
+static int RTSP_validate_method(RTSP_buffer * rtsp)
 {
     char method[32], hdr[16];
     char object[256];
@@ -312,7 +317,7 @@ int RTSP_validate_method(RTSP_buffer * rtsp)
  * @return 0 if the parsed message wasn't a response message
  * @return ERR_GENERIC on generic error
  */ 
-int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rtsp)
+static int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rtsp)
 // This routine is from BP.
 {
     char ver[32];

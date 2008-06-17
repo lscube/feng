@@ -306,7 +306,7 @@ int buffer_is_empty(buffer *b) {
  * alignment properly.
  */
 
-int buffer_is_equal(buffer *a, buffer *b) {
+static int buffer_is_equal(buffer *a, buffer *b) {
     if (a->used != b->used) return 0;
     if (a->used == 0) return 1;
 

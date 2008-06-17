@@ -120,7 +120,7 @@ static void proc_close_childs(proc_handler_t *proc) {
 /* }}} */
 
 /* {{{ proc_close */
-int proc_close(proc_handler_t *proc) {
+static int proc_close(proc_handler_t *proc) {
 	pid_t child = proc->child;
 	int wstatus;
 	pid_t wait_pid;
@@ -142,7 +142,7 @@ int proc_close(proc_handler_t *proc) {
 }
 /* }}} */
 /* {{{ proc_open */
-int proc_open(proc_handler_t *proc, const char *command) {
+static int proc_open(proc_handler_t *proc, const char *command) {
 	pid_t child;
 	const char *shell;
 

@@ -4,6 +4,8 @@
 
 #include "array.h"
 
+static data_count *data_count_init(void);
+
 static data_unset *data_count_copy(const data_unset *s) {
 	data_count *src = (data_count *)s;
 	data_count *ds = data_count_init();
@@ -49,7 +51,7 @@ static void data_count_print(const data_unset *d, int depth) {
 }
 
 
-data_count *data_count_init(void) {
+static data_count *data_count_init(void) {
 	data_count *ds;
 
 	ds = calloc(1, sizeof(*ds));

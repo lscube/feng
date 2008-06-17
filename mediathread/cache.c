@@ -35,7 +35,7 @@ static int read_from_net(int fd, void *buf, size_t nbytes);/*not implemented yet
 static int read_from_device(int fd, void *buf, size_t nbytes);/*not implemented yet*/
 
 // shawill: should we receive cache size as parameter?
-Cache *create_cache(stream_type type)
+static Cache *create_cache(stream_type type)
 {
     uint32_t size;
     Cache *c;

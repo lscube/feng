@@ -176,7 +176,6 @@ int RTP_send_packet(RTP_session * session);
 RTP_session *RTP_session_destroy(RTP_session *);
 
 //! RTP_transport functions
-int RTP_transport_close(RTP_session *);
 //! low-level sent/receive packet functions depending on transport settings.
 ssize_t RTP_recv(RTP_session *, rtp_protos);
 

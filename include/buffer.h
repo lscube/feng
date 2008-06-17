@@ -83,7 +83,6 @@ int buffer_append_string_lfill(buffer *b, const char *s, size_t maxlen);
 int buffer_append_long(buffer *b, long val);
 
 int buffer_is_empty(buffer *b);
-int buffer_is_equal(buffer *a, buffer *b);
 int buffer_is_equal_string(buffer *a, const char *s, size_t b_len);
 int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b_len);
 

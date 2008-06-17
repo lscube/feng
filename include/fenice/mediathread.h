@@ -53,7 +53,6 @@ typedef struct mt_excl_ins {
 
 void *mediathread(void *arg);
 
-int mt_add_event(mt_event_id, void **args);
 int mt_shutdown();
 int event_buffer_low(void *sender, Track *src);
 

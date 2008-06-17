@@ -33,7 +33,12 @@
 #include <netembryo/wsocket.h>
 #include <netembryo/url.h>
 
-#include "sdp_get_version.c"
+static gint sdp_get_version(ResourceDescr *r_descr, char *dest, size_t dest_size)
+{
+	time_t t=r_descr_last_change(r_descr);
+	
+	return g_snprintf(dest, dest_size,"%.0f", t ? NTP_time(t) : NTP_time(time(NULL)));
+}
 
 #define DESCRCAT(x) \
     do { \
@@ -58,7 +63,7 @@
  *  It will contain the MediaDescrList array
  * @return the dimension of the array or an interger < 0 if an error occurred.
  * */
-MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
+static MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
 {
     MediaDescrListArray new_m_descrs;
     MediaDescrList m_descr_list, m_descr;

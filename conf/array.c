@@ -328,6 +328,9 @@ int array_print(array *a, int depth) {
 }
 
 #ifdef DEBUG_ARRAY
+
+#include "data_count.c"
+
 int main (int argc, char **argv) {
     array *a;
     data_string *ds;

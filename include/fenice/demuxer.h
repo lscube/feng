@@ -184,7 +184,6 @@ void r_close(Resource *);
 
 Selector *r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
-int r_changed(ResourceDescr *);
 
 //Selector handling functions
 inline Track *r_selected_track(Selector *);
@@ -193,7 +192,6 @@ inline Track *r_selected_track(Selector *);
 
 // Tracks
 Track *add_track(Resource *, TrackInfo *, MediaProperties *);
-void free_track(Track *, Resource *);
 
 // Resources and Media descriptions
 ResourceDescr *r_descr_get(feng *srv, char *root, char *name);

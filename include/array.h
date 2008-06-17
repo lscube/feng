@@ -74,8 +74,6 @@ typedef struct {
     int count;
 } data_count;
 
-data_count *data_count_init(void);
-
 typedef struct {
     DATA_UNSET;
 

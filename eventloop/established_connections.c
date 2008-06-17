@@ -59,7 +59,7 @@ int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
      (Sock_type(a) == TCP)
 #endif
 
-int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
+static int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
 {
     char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
     int i, n;

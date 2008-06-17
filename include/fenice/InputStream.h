@@ -56,7 +56,6 @@ typedef struct {
 
 typedef enum { st_unknown=-1, st_file=0, st_net, st_pipe, st_device} stream_type;
 
-Cache *create_cache(stream_type);
 // shawill: define static in cache.c
 // int read_from_net(int fd, void *buf, size_t nbytes);/*not implemented yet*/
 // int read_from_device(int fd, void *buf, size_t nbytes);/*not implemented yet*/
@@ -93,7 +92,6 @@ void istream_close(InputStream *);
 
 inline int istream_read(InputStream *is, uint8_t *buf, uint32_t nbytes); 
 inline int istream_reset(InputStream *is);
-stream_type parse_mrl(char *mrl, char **resource_name);
 time_t mrl_mtime(char *mrl);
 int mrl_changed(char *mrl, time_t *last_change);
 

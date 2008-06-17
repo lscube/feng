@@ -198,7 +198,7 @@ ssize_t RTP_recv(RTP_session * session, rtp_protos proto)
  * @param session the RTP session for which to close the transport
  * @return always 0
  */
-int RTP_transport_close(RTP_session * session) {
+static int RTP_transport_close(RTP_session * session) {
     port_pair pair;
     pair.RTP = get_local_port(session->transport.rtp_sock);
     pair.RTCP = get_local_port(session->transport.rtcp_sock);
