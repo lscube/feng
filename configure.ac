@@ -58,7 +58,7 @@ AC_ARG_ENABLE(sctp,
     enable_sctp="yes")
 
 LT_PREREQ([2.2])
-LT_INIT
+LT_INIT([disable-shared no-pic])
 LIBTOOL="$LIBTOOL --silent"
 AC_SUBST([LIBTOOL_DEPS])
 
