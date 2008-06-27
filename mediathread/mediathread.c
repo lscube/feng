@@ -138,6 +138,11 @@ void *mediathread(void *arg) {
 
 Resource *mt_resource_open(feng *srv, char * path, char *filename) {
     // TODO: add to a list in order to close resources on shutdown!
+
+    // TODO: METADATI Inizio
+    // TODO: operazioni di verifica e caricamento metadati su db
+    // TODO: METADATI Fine
+
     return r_open(srv, path, filename);
 }
 
@@ -152,7 +157,9 @@ void mt_resource_close(Resource *resource) {
 
 int mt_resource_seek(Resource *resource, double time) {
     int res;
-
+    // TODO: METADATI Inizio
+    // TODO: seek metadati
+    // TODO: METADATI Fine
     pthread_mutex_lock(&mt_mutex);
     res = resource->demuxer->seek(resource, time);
     pthread_mutex_unlock(&mt_mutex);
