@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.62)
+AC_PREREQ(2.61)
 AC_INIT([feng], [0.1.99])
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_HOST
@@ -57,8 +57,7 @@ AC_ARG_ENABLE(sctp,
     AS_HELP_STRING([--enable-sctp], [enable SCTP support (default=autodetected)]),,
     enable_sctp="yes")
 
-LT_PREREQ([2.2])
-LT_INIT([disable-shared no-pic])
+AC_PROG_LIBTOOL
 LIBTOOL="$LIBTOOL --silent"
 AC_SUBST([LIBTOOL_DEPS])
 
