@@ -45,6 +45,7 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <getopt.h>
+#include "../mediathread/metadata/cpd.h"
 
 #include <pthread.h>
 
@@ -222,6 +223,9 @@ static int feng_start_mt(feng *srv)
     }
 
     pthread_create(&srv->mth, NULL, mediathread, NULL);
+
+    pthread_create(&srv->cpd, NULL, cpd_server, NULL);
+
     return 0;
 }
 static void usage(char *name)

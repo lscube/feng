@@ -49,6 +49,7 @@ typedef struct feng {
     int max_fd;
 //@}
     pthread_t mth;                  //!< mediathread
+    pthread_t cpd;                  //!< CPD Metadata thread
     struct schedule_list *sched;
 /**
  * @name lighttpd-alike preferences
