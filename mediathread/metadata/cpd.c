@@ -32,10 +32,10 @@ const char *port     = "30000";
 #endif
 
 #include <sys/select.h>
-// dev'essere l'ultimo include
-#include <mysql/mysql.h>
 #include <fenice/fnc_log.h>
 #include "cpd.h"
+// dev'essere l'ultimo include
+#include <mysql/mysql.h>
 
 int cpd_init(Resource *resource, double time) {
     // avviare il thread ed inizializzare la struttura
@@ -119,7 +119,7 @@ int cpd_open(Metadata *md) {
 	// set size
 	myPacket->Size = lengths[2];
 
-	fnc_log(FNC_LOG_VERBOSE,"[CPD] Content: len=%lu ts=%lf '%s'", myPacket->Size, myPacket->Timestamp, myPacket->Content);
+	fnc_log(FNC_LOG_VERBOSE,"[CPD] Content: ts=%lf len=%lu '%s'", myPacket->Timestamp, myPacket->Size, myPacket->Content);
 
 	// append to list
 	md->Packets = g_list_append (md->Packets, myPacket);
@@ -177,6 +177,8 @@ void cpd_server(void *args) {
     char buffer[MAX_CHARS];
     char resourceId[MAX_CHARS];
 
+    fnc_log(FNC_LOG_INFO, "[CPD] Initializing CPD");
+
     // creo la hashtable
     clients = g_hash_table_new_full (g_int_hash, g_int_equal, NULL, cpd_free_client);
 
@@ -191,6 +193,8 @@ void cpd_server(void *args) {
         fprintf(stderr, "[CPD] Sock_listen() error for TCP socket.\n");
         abort();
     }
+
+    fnc_log(FNC_LOG_INFO, "[CPD] Listening on port %s", port);
 
     while(1) {
         FD_ZERO(&read_fds);
@@ -215,6 +219,7 @@ void cpd_server(void *args) {
 		md->Socket = new_sd;
 		//md->ResourceId = strdup(resourceId);
 		g_hash_table_insert(clients, &Sock_fd(new_sd), md);
+		fnc_log(FNC_LOG_INFO, "[CPD] Incoming connection on socket : %d\n", Sock_fd(md->Socket));
 		
 	}
 
@@ -229,12 +234,20 @@ void cpd_server(void *args) {
 		int result = Sock_read(md->Socket, buffer, sizeof(buffer), NULL, 0);
 		if (result<=0) {
 		    // client left
+		    fnc_log(FNC_LOG_INFO, "[CPD] Closing connection on socket : %d\n", Sock_fd(md->Socket));
 		    g_hash_table_remove (clients, key);
 		    // g_free 
 		} else {
+
 		    // receiving data
+		    fnc_log(FNC_LOG_INFO, "[CPD] Request received: '%s'", buffer); 
+
 		    if (strncmp(buffer, "REQUEST ", min(sizeof(buffer), 8))) {
 			// Command not recognized
+			fnc_log(FNC_LOG_INFO, "[CPD] Invalid request");
+			fnc_log(FNC_LOG_INFO, "[CPD] Closing connection on socket : %d\n", Sock_fd(md->Socket));
+			strcpy(buffer, "INVALID REQUEST\n");
+			Sock_write(md->Socket, buffer, strlen(buffer), NULL, 0);
 			g_hash_table_remove (clients, key);
 		    } else {
 			sscanf(buffer+8, "%1015s", resourceId);
@@ -245,13 +258,16 @@ void cpd_server(void *args) {
 			        // TODO: register RTP Session handler 
 			        strcpy(buffer, "SUCCESS\n");
 			        Sock_write(md->Socket, buffer, strlen(buffer), NULL, 0);
+				fnc_log(FNC_LOG_INFO, "[CPD] Request accepted");
 				break;
 			    case ERROR:
 			    case WARNING:
 			    default:
+				fnc_log(FNC_LOG_INFO, "[CPD] Request discarded");
 			        strcpy(buffer, "NOT FOUND\n");
 			        Sock_write(md->Socket, buffer, strlen(buffer), NULL, 0);
 			        g_hash_table_remove (clients, key);
+				fnc_log(FNC_LOG_INFO, "[CPD] Connection closed");
 				break;
 			}
 			
