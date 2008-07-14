@@ -686,6 +686,12 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         rtsp_s->rtp_session = rtp_s;
     }
 
+    // Setup Metadata Session
+    if (rtsp_s->resource->metadata!=NULL)
+	rtp_s->Metadata = rtsp_s->resource->metadata;
+    else
+	rtp_s->Metadata = NULL;
+
     // Setup the RTSP session
     rtsp_s->session_id = session_id;
     *new_session = rtsp_s;

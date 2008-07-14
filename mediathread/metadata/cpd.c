@@ -55,8 +55,9 @@ int cpd_open(Metadata *md) {
     MYSQL_RES *res;
     MYSQL_ROW row;
     char sql_query[MAX_CHARS];
+    char realpath[MAX_CHARS];
 
-    fnc_log(FNC_LOG_INFO, "[CPD] Initializing resource: '%s'", md->ResourceId); 
+    fnc_log(FNC_LOG_INFO, "[CPD] Initializing resource: '%s'", md->Filename); 
 
     mysql_init(&mysql);
 
@@ -70,11 +71,26 @@ int cpd_open(Metadata *md) {
 
     fnc_log(FNC_LOG_VERBOSE, "[CPD] Logged on to database sucessfully");
 
-    strcpy(sql_query, "SELECT * FROM tmetadatapacket JOIN tresourceinfo ON tmetadatapacket.ResourceId = tresourceinfo.Id WHERE tresourceinfo.ResourceId = '");
-    strncat(sql_query, md->ResourceId, sizeof(sql_query)-strlen(sql_query));
+    // look for actual resource
+    char buf[MAX_CHARS];
+    strcpy(buf, FENICE_AVROOT_DIR_DEFAULT_STR);
+    strncat(buf, "/", sizeof(buf)-strlen(buf));
+    strncat(buf, md->Filename, sizeof(buf)-strlen(buf)); 
+    int nchars = readlink(buf, realpath, MAX_CHARS);
+    if (nchars < 0 || nchars == MAX_CHARS) {
+	fnc_log(FNC_LOG_FATAL, "[CPD] Failed to follow symbolic link.");
+        return ERROR;
+    }
+    realpath[nchars] = '\0';
+
+    fnc_log(FNC_LOG_INFO, "[CPD] Found actual resource: '%s'", realpath); 
+
+
+    strcpy(sql_query, "SELECT * FROM tmetadatapacket JOIN tresourceinfo ON tmetadatapacket.ResourceId = tresourceinfo.Id WHERE tresourceinfo.ResourcePath = '");
+    strncat(sql_query, realpath, sizeof(sql_query)-strlen(sql_query));
     strncat(sql_query, "' ORDER BY tmetadatapacket.PresentationTime ASC", sizeof(sql_query)-strlen(sql_query));
 
-    fnc_log(FNC_LOG_VERBOSE,"[CPD] Query: '%s'", sql_query);
+    fnc_log(FNC_LOG_INFO,"[CPD] Query: '%s'", sql_query);
 
     if (mysql_real_query (&mysql, sql_query, strlen(sql_query)) != 0) {
 	mysql_close (&mysql);
@@ -150,7 +166,7 @@ void cpd_free_client(void *arg) {
     Sock_close(md->Socket);
 
     // free della struttura metadata
-    free(md->ResourceId);
+    free(md->Filename);
     g_list_foreach(md->Packets, (GFunc)cpd_free_element, NULL);
     g_list_free (md->Packets);
     g_free (md);
@@ -175,12 +191,15 @@ void cpd_server(void *args) {
     //int nbytes;
 
     char buffer[MAX_CHARS];
-    char resourceId[MAX_CHARS];
+    char filename[MAX_CHARS];
+
+    feng *main_srv = (feng *) args;
 
     fnc_log(FNC_LOG_INFO, "[CPD] Initializing CPD");
 
     // creo la hashtable
     clients = g_hash_table_new_full (g_int_hash, g_int_equal, NULL, cpd_free_client);
+    main_srv->metadata_clients = clients;
 
     // apro il socket
     if(!(cpd_srv = Sock_bind("localhost", "30000", NULL, TCP, NULL))) {
@@ -250,8 +269,8 @@ void cpd_server(void *args) {
 			Sock_write(md->Socket, buffer, strlen(buffer), NULL, 0);
 			g_hash_table_remove (clients, key);
 		    } else {
-			sscanf(buffer+8, "%1015s", resourceId);
-			md->ResourceId = strdup(resourceId);
+			sscanf(buffer+8, "%1015s", filename);
+			md->Filename = strdup(filename);
 			// TODO: find in DB
 			switch (cpd_open(md)) {
 			    case OK:

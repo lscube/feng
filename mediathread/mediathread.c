@@ -28,6 +28,7 @@
 #include <fenice/fnc_log.h>
 #include <fenice/utils.h>
 #include <time.h>
+#include "metadata/cpd.h"
 
 static GAsyncQueue *el_head;
 static pthread_mutex_t el_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -139,11 +140,35 @@ void *mediathread(void *arg) {
 Resource *mt_resource_open(feng *srv, char * path, char *filename) {
     // TODO: add to a list in order to close resources on shutdown!
 
+    gpointer key, value;
+    GHashTableIter iter;
+    GHashTable *clients = (GHashTable *) srv->metadata_clients;
+    Resource *res;
+
+    // open AV resource
+    res = r_open(srv, path, filename);
+
     // TODO: METADATI Inizio
-    // TODO: operazioni di verifica e caricamento metadati su db
+    // TODO: operazioni di verifica metadati
+
+    fnc_log(FNC_LOG_INFO, "[MT] Checking Metadata for requested file: %s", filename);
+
+    g_hash_table_iter_init (&iter, clients);
+    while (g_hash_table_iter_next (&iter, &key, &value)) {
+	Metadata *md = value;
+	if (!strncmp(filename, md->Filename, min(sizeof(filename), sizeof(md->Filename)))) {
+	    fnc_log(FNC_LOG_INFO, "[MT] Metadata request found");
+	    res->metadata = md;
+	} else {
+	    res->metadata = NULL;
+	    fnc_log(FNC_LOG_INFO, "[MT] Metadata request not found");
+	}
+    }
+
     // TODO: METADATI Fine
 
-    return r_open(srv, path, filename);
+
+    return res;
 }
 
 void mt_resource_close(Resource *resource) {

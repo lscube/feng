@@ -52,8 +52,9 @@ do {
             if (!session->pause || tr->properties->media_source == MS_live) {
                 now = gettimeinseconds(NULL);
 		// TODO: METADATI Inizio
-                if (session->metadataSend) {
-                    session->metadataSend(session, now);
+                if (session->Metadata) {
+                    //session->metadataSend(session, now);
+		    fnc_log(FNC_LOG_INFO,"[SCH] Streaming Metadata: timestamp %f", now);
                 }
 		// TODO: METADATI Fine
                 res = ERR_NOERROR;

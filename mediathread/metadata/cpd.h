@@ -17,7 +17,7 @@ typedef struct {
 
 typedef struct {
     Sock* Socket;
-    char* ResourceId;
+    char* Filename;
     GList* Packets;
 } Metadata;
 
