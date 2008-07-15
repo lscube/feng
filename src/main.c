@@ -45,7 +45,7 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <getopt.h>
-#include "../mediathread/metadata/cpd.h"
+#include <metadata/cpd.h>
 
 #include <pthread.h>
 
@@ -224,10 +224,11 @@ static int feng_start_mt(feng *srv)
 
     pthread_create(&srv->mth, NULL, mediathread, NULL);
 
-    pthread_create(&srv->cpd, NULL, cpd_server, srv); //TODO: da mettere a posto
+    pthread_create(&srv->cpd, NULL, cpd_server, (void *) srv); //TODO: da mettere a posto
 
     return 0;
 }
+
 static void usage(char *name)
 {
     fprintf(stdout,

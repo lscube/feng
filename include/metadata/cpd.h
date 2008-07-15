@@ -9,10 +9,14 @@
 #include <fenice/rtp.h>
 #include <fenice/mediathread.h>
 
+G_LOCK_DEFINE_STATIC (g_hash_global);
+G_LOCK_DEFINE_STATIC (g_db_global);
+
 typedef struct {
     double Timestamp;
     char *Content;
     size_t Size;
+    uint8_t Sent;
 } MDPacket;
 
 typedef struct {
@@ -21,12 +25,11 @@ typedef struct {
     GList* Packets;
 } Metadata;
 
-int cpd_init(Resource *resource, double time);
 int cpd_open(Metadata *md);
+void cpd_find_request(feng *srv, Resource *res, char *filename);
+void cpd_send(RTP_session *session, double now);
 void cpd_free_client(void *arg);
-int cpd_send(RTP_session *session, double now);
-void cpd_server(void *args);
-int cpd_seek(Resource *resource, double seekTime);
-int cpd_close(Resource *resource, double time);
+void* cpd_server(void *args);
+void cpd_close(RTP_session *session);
 
 #endif

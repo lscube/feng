@@ -29,6 +29,7 @@
 #include <fenice/utils.h>
 #include <fenice/debug.h>
 #include <fenice/fnc_log.h>
+#include <metadata/cpd.h>
 
 #define SCHEDULER_TIMING 16000 //16ms. Sleep time suggested by Intel
 
@@ -51,12 +52,12 @@ do {
             Track *tr = r_selected_track(session->track_selector);
             if (!session->pause || tr->properties->media_source == MS_live) {
                 now = gettimeinseconds(NULL);
-		// TODO: METADATI Inizio
-                if (session->Metadata) {
-                    //session->metadataSend(session, now);
-		    fnc_log(FNC_LOG_INFO,"[SCH] Streaming Metadata: timestamp %f", now);
-                }
-		// TODO: METADATI Fine
+
+		// TODO: METADATA begin
+                if (session->Metadata)
+		    cpd_send(session, now);
+		// TODO: METADATI end
+
                 res = ERR_NOERROR;
                 while (res == ERR_NOERROR && now >= session->start_time &&
                     now >= session->start_time + session->send_time) {

@@ -33,23 +33,42 @@ const char *port     = "30000";
 
 #include <sys/select.h>
 #include <fenice/fnc_log.h>
-#include "cpd.h"
+#include <metadata/cpd.h>
 // dev'essere l'ultimo include
 #include <mysql/mysql.h>
 
-int cpd_init(Resource *resource, double time) {
-    // avviare il thread ed inizializzare la struttura
-    return OK;
-}
-
-int cpd_check_user(/* risorsa e IP*/) {
+void cpd_find_request(feng *srv, Resource *res, char *filename) {
     // controlla se l'utente ha richiesto la risorsa AV associata
     // restituisce la chiave dell'hash table (socket_descriptor) se trova l'utente
     // viene chiamata da mediathread
-    return ERROR;
+
+    G_LOCK (g_hash_global);
+
+    gpointer key, value;
+    GHashTableIter iter;
+    GHashTable *clients = (GHashTable *) srv->metadata_clients;
+
+    fnc_log(FNC_LOG_INFO, "[CPD] Looking for Metadata request");
+
+    g_hash_table_iter_init (&iter, clients);
+    while (g_hash_table_iter_next (&iter, &key, &value)) {
+	Metadata *md = value;
+	if (!strncmp(filename, md->Filename, min(sizeof(filename), sizeof(md->Filename)))) {
+	    fnc_log(FNC_LOG_INFO, "[CPD] Metadata request found");
+	    res->metadata = md;
+	} else {
+	    res->metadata = NULL;
+	    fnc_log(FNC_LOG_INFO, "[CPD] Metadata request not found");
+	}
+    }
+
+    G_UNLOCK (g_hash_global);
+
 }
 
 int cpd_open(Metadata *md) {
+
+    G_LOCK(g_db_global);
 
     MYSQL mysql;
     MYSQL_RES *res;
@@ -83,14 +102,14 @@ int cpd_open(Metadata *md) {
     }
     realpath[nchars] = '\0';
 
-    fnc_log(FNC_LOG_INFO, "[CPD] Found actual resource: '%s'", realpath); 
+    fnc_log(FNC_LOG_VERBOSE, "[CPD] Found actual resource: '%s'", realpath); 
 
 
     strcpy(sql_query, "SELECT * FROM tmetadatapacket JOIN tresourceinfo ON tmetadatapacket.ResourceId = tresourceinfo.Id WHERE tresourceinfo.ResourcePath = '");
     strncat(sql_query, realpath, sizeof(sql_query)-strlen(sql_query));
     strncat(sql_query, "' ORDER BY tmetadatapacket.PresentationTime ASC", sizeof(sql_query)-strlen(sql_query));
 
-    fnc_log(FNC_LOG_INFO,"[CPD] Query: '%s'", sql_query);
+    fnc_log(FNC_LOG_VERBOSE,"[CPD] Query: '%s'", sql_query);
 
     if (mysql_real_query (&mysql, sql_query, strlen(sql_query)) != 0) {
 	mysql_close (&mysql);
@@ -127,6 +146,7 @@ int cpd_open(Metadata *md) {
 	
 	// set timestamp
 	myPacket->Timestamp = strtol(row[1], NULL, 10);
+	myPacket->Timestamp /= 1000;
 
 	//set content
 	myPacket->Content = g_new0(char, lengths[2] + 1);
@@ -134,6 +154,9 @@ int cpd_open(Metadata *md) {
 
 	// set size
 	myPacket->Size = lengths[2];
+
+	// set Sent to false
+	myPacket->Sent = 0;
 
 	fnc_log(FNC_LOG_VERBOSE,"[CPD] Content: ts=%lf len=%lu '%s'", myPacket->Timestamp, myPacket->Size, myPacket->Content);
 
@@ -146,6 +169,8 @@ int cpd_open(Metadata *md) {
 
     /* close the connection */
     mysql_close (&mysql);
+
+    G_UNLOCK(g_db_global);
 
     return OK;
 
@@ -172,14 +197,47 @@ void cpd_free_client(void *arg) {
     g_free (md);
 }
 
-int cpd_send(RTP_session *session, double now) {
-    // accedo alla struttura
-    // controllo se ci sono dati da inviare
-    // se ci sono li mando sul socket (previo controllo apertura)
-    return ERR_NOERROR;
+int cpd_connection_alive (RTP_session *session, Sock *socket) {
+
+    G_LOCK (g_hash_global);
+    GHashTable *clients = (GHashTable *) session->srv->metadata_clients;
+    if (g_hash_table_lookup(clients, &Sock_fd(socket))) {
+	G_UNLOCK (g_hash_global);
+	return OK;
+    } else {
+	G_UNLOCK (g_hash_global);
+	return ERROR;
+    }
+
 }
 
-void cpd_server(void *args) {
+void cpd_send(RTP_session *session, double now) {
+
+    //fnc_log(FNC_LOG_INFO,"[CPD] Streaming Metadata: playing time %f", now - session->start_time + session->seek_time);
+    double timestamp = now - session->start_time + session->seek_time;
+    Metadata *md = session->Metadata;
+    GList *i;
+
+    if (cpd_connection_alive(session, md->Socket)==ERROR) {
+	fnc_log(FNC_LOG_INFO, "[CPD] Metadata Connection closed by client");
+	session->Metadata = NULL;
+	return;
+    }
+
+    if (md->Packets)
+    for (i = g_list_first (md->Packets); i ; i = g_list_next (i)) {
+	// i->data
+	MDPacket *packet = (MDPacket *) i->data;
+	if (packet)
+	if (timestamp >= packet->Timestamp && !packet->Sent)
+	{
+	    Sock_write(md->Socket, packet->Content, strlen(packet->Content), NULL, 0);
+	    packet->Sent = 1;
+	}
+    }
+}
+
+void *cpd_server(void *args) {
     Sock *cpd_srv = NULL;
     fd_set read_fds;
     int max_fd;
@@ -220,6 +278,8 @@ void cpd_server(void *args) {
 	FD_SET(Sock_fd(cpd_srv), &read_fds);
 	max_fd = Sock_fd(cpd_srv);
 
+	G_LOCK (g_hash_global);
+
 	g_hash_table_iter_init (&iter, clients);
 
         while (g_hash_table_iter_next (&iter, &key, NULL)) 
@@ -229,6 +289,9 @@ void cpd_server(void *args) {
 	    if (fd>max_fd)
 		max_fd = fd;
         }
+	
+	G_UNLOCK (g_hash_global);
+
 
 	// TODO: ciclo for che aggiunge i socket volta per volta
 	select(max_fd+1, &read_fds, NULL, NULL, NULL);
@@ -237,13 +300,16 @@ void cpd_server(void *args) {
 		Metadata* md = g_new0(Metadata, 1); 
 		md->Socket = new_sd;
 		//md->ResourceId = strdup(resourceId);
+		G_LOCK (g_hash_global);
 		g_hash_table_insert(clients, &Sock_fd(new_sd), md);
 		fnc_log(FNC_LOG_INFO, "[CPD] Incoming connection on socket : %d\n", Sock_fd(md->Socket));
+		G_UNLOCK (g_hash_global);
 		
 	}
 
-	g_hash_table_iter_init (&iter, clients);
+	G_LOCK (g_hash_global);
 
+	g_hash_table_iter_init (&iter, clients);
         while (g_hash_table_iter_next (&iter, &key, &value)) 
         {
 	    int fd = *((int *)key);
@@ -259,7 +325,7 @@ void cpd_server(void *args) {
 		} else {
 
 		    // receiving data
-		    fnc_log(FNC_LOG_INFO, "[CPD] Request received: '%s'", buffer); 
+		    fnc_log(FNC_LOG_INFO, "[CPD] Metadata Request received"); 
 
 		    if (strncmp(buffer, "REQUEST ", min(sizeof(buffer), 8))) {
 			// Command not recognized
@@ -283,10 +349,10 @@ void cpd_server(void *args) {
 			    case WARNING:
 			    default:
 				fnc_log(FNC_LOG_INFO, "[CPD] Request discarded");
+				fnc_log(FNC_LOG_INFO, "[CPD] Closing connection on socket : %d\n", Sock_fd(md->Socket));
 			        strcpy(buffer, "NOT FOUND\n");
 			        Sock_write(md->Socket, buffer, strlen(buffer), NULL, 0);
 			        g_hash_table_remove (clients, key);
-				fnc_log(FNC_LOG_INFO, "[CPD] Connection closed");
 				break;
 			}
 			
@@ -294,29 +360,17 @@ void cpd_server(void *args) {
 		}
 	    }
         }
+	G_UNLOCK (g_hash_global);
 
 
     }
 }
 
-int cpd_seek(Resource *resource, double seekTime) {
-    // TODO: bp~flush
-    // TODO: ottenere lista >seekTime
-    for(;;)//tutti gli elementi)
-    {
-        if (0) { //bp_write(bufferpool, 0, timestamp, 0, 0, pacchetto, lunghezza_pacchetto)) {
-                fnc_log(FNC_LOG_ERR, "[CPD] Cannot write bufferpool");
-                return ERR_ALLOC;
-            }
-    }
-
-    return OK;
-
-}
-
-int cpd_close(Resource *resource, double time) {
-    // TODO: bp~flush
-    // TODO: bp_close(bufferpool);
-    return OK;
-
+void cpd_close(RTP_session *session) {
+    G_LOCK (g_hash_global);
+    GHashTable *clients = (GHashTable *) session->srv->metadata_clients;
+    Metadata *md = (Metadata *) session->Metadata;
+    fnc_log(FNC_LOG_INFO, "[CPD] Closing connection on socket : %d\n", Sock_fd(md->Socket));
+    g_hash_table_remove (clients, &Sock_fd(md->Socket));
+    G_UNLOCK (g_hash_global);
 }
