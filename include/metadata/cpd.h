@@ -9,9 +9,6 @@
 #include <fenice/rtp.h>
 #include <fenice/mediathread.h>
 
-G_LOCK_DEFINE_STATIC (g_hash_global);
-G_LOCK_DEFINE_STATIC (g_db_global);
-
 typedef struct {
     double Timestamp;
     char *Content;

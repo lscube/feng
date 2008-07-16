@@ -20,13 +20,6 @@
 *  
 * */
 
-const char *host     = "localhost";
-const char *user     = "javauser";
-const char *password = "javadude";
-const char *table    = "chillout_cpd";
-
-const char *port     = "30000";
-
 #ifdef HAVE_CONFIG
 #include <config.h>
 #endif
@@ -37,10 +30,24 @@ const char *port     = "30000";
 // dev'essere l'ultimo include
 #include <mysql/mysql.h>
 
+const char *db_host     = "localhost";
+const char *db_user     = "javauser";
+const char *db_password = "javadude";
+const char *db_name    = "chillout_cpd";
+
+const char *port     = "30000";
+
+G_LOCK_DEFINE_STATIC (g_hash_global);
+G_LOCK_DEFINE_STATIC (g_db_global);
+
+void cpd_init(feng *srv) {
+
+
+}
 void cpd_find_request(feng *srv, Resource *res, char *filename) {
-    // controlla se l'utente ha richiesto la risorsa AV associata
-    // restituisce la chiave dell'hash table (socket_descriptor) se trova l'utente
-    // viene chiamata da mediathread
+    // This function checks if the associated AV Resource has been requested.
+    // If it's true, it returns the hash table key (socket_descriptor).
+    // It is called by the mediathread.
 
     G_LOCK (g_hash_global);
 
@@ -68,7 +75,7 @@ void cpd_find_request(feng *srv, Resource *res, char *filename) {
 
 int cpd_open(Metadata *md) {
 
-    G_LOCK(g_db_global);
+    G_LOCK(g_db_global); // useless
 
     MYSQL mysql;
     MYSQL_RES *res;
@@ -80,7 +87,7 @@ int cpd_open(Metadata *md) {
 
     mysql_init(&mysql);
 
-    if (!mysql_real_connect(&mysql, host, user, password, table, 0, NULL,CLIENT_IGNORE_SIGPIPE))
+    if (!mysql_real_connect(&mysql, db_host, db_user, db_password, db_name, 0, NULL,CLIENT_IGNORE_SIGPIPE))
     {
 	fnc_log(FNC_LOG_FATAL, "[CPD] Failed to connect to MySQL. Error: %s", mysql_error(&mysql));
         return ERROR;
@@ -90,7 +97,7 @@ int cpd_open(Metadata *md) {
 
     fnc_log(FNC_LOG_VERBOSE, "[CPD] Logged on to database sucessfully");
 
-    // look for actual resource
+    // looking for actual resource
     char buf[MAX_CHARS];
     strcpy(buf, FENICE_AVROOT_DIR_DEFAULT_STR);
     strncat(buf, "/", sizeof(buf)-strlen(buf));
@@ -117,57 +124,57 @@ int cpd_open(Metadata *md) {
         return ERROR;
     }
 
-    /* store the result */
+    /* storing the result */
     if ( (res = mysql_store_result (&mysql)) == NULL) {
 	mysql_close (&mysql);
 	fnc_log(FNC_LOG_FATAL, "[CPD] Failed to Store Result from DB. Error: %s", mysql_error(&mysql));
         return ERROR;
     }
 
-    /* Check if there is some data */
+    /* Checking if there is some data */
     if (mysql_num_rows(res) == 0) {
 	mysql_close(&mysql);
 	fnc_log(FNC_LOG_WARN, "[CPD] Warning: No Metadata!");
         return WARNING;
     }
 
-    // create packet list
+    // creating packet list
     md->Packets = g_list_alloc();
     
 
-    // fetch rows
+    // fetching rows
     while  ( (row = mysql_fetch_row (res)) != NULL) {
 
-	//fetch lengths
+	//fetching lengths
 	unsigned long* lengths = mysql_fetch_lengths(res);
 
-	// create packet
+	// creating packet
 	MDPacket *myPacket = g_new0(MDPacket, 1);
 	
-	// set timestamp
+	// setting timestamp
 	myPacket->Timestamp = strtol(row[1], NULL, 10);
-	myPacket->Timestamp /= 1000;
+	myPacket->Timestamp /= 1000;  // Milliseconds to Seconds Conversion
 
-	//set content
+	//setting content
 	myPacket->Content = g_new0(char, lengths[2] + 1);
 	memcpy (myPacket->Content, row[2], lengths[2]);
 
-	// set size
+	// setting size
 	myPacket->Size = lengths[2];
 
-	// set Sent to false
+	// setting Sent to false
 	myPacket->Sent = 0;
 
 	fnc_log(FNC_LOG_VERBOSE,"[CPD] Content: ts=%lf len=%lu '%s'", myPacket->Timestamp, myPacket->Size, myPacket->Content);
 
-	// append to list
+	// appending to list
 	md->Packets = g_list_append (md->Packets, myPacket);
     }
 
-    /* free the result */
+    /* freeing the result */
     mysql_free_result (res);
 
-    /* close the connection */
+    /* closing the connection */
     mysql_close (&mysql);
 
     G_UNLOCK(g_db_global);
@@ -187,10 +194,10 @@ void cpd_free_element(void *arg, void *fake) {
 void cpd_free_client(void *arg) {
     Metadata *md = arg;
 
-    // chiudo il socket
+    // closing socket
     Sock_close(md->Socket);
 
-    // free della struttura metadata
+    // freeing metadata structure
     free(md->Filename);
     g_list_foreach(md->Packets, (GFunc)cpd_free_element, NULL);
     g_list_free (md->Packets);
@@ -232,6 +239,7 @@ void cpd_send(RTP_session *session, double now) {
 	if (timestamp >= packet->Timestamp && !packet->Sent)
 	{
 	    Sock_write(md->Socket, packet->Content, strlen(packet->Content), NULL, 0);
+	    Sock_write(md->Socket, "\n", 1, NULL, 0);
 	    packet->Sent = 1;
 	}
     }
@@ -255,12 +263,14 @@ void *cpd_server(void *args) {
 
     fnc_log(FNC_LOG_INFO, "[CPD] Initializing CPD");
 
-    // creo la hashtable
+    cpd_init(main_srv);
+
+    // creating hashtable
     clients = g_hash_table_new_full (g_int_hash, g_int_equal, NULL, cpd_free_client);
     main_srv->metadata_clients = clients;
 
-    // apro il socket
-    if(!(cpd_srv = Sock_bind("localhost", "30000", NULL, TCP, NULL))) {
+    // opening socket
+    if(!(cpd_srv = Sock_bind("localhost", port, NULL, TCP, NULL))) {
 	fnc_log(FNC_LOG_FATAL, "[CPD] Failed to create Metadata Socket");
         abort();
     }
@@ -293,7 +303,7 @@ void *cpd_server(void *args) {
 	G_UNLOCK (g_hash_global);
 
 
-	// TODO: ciclo for che aggiunge i socket volta per volta
+	// adding sockets one by one
 	select(max_fd+1, &read_fds, NULL, NULL, NULL);
 	if (FD_ISSET(Sock_fd(cpd_srv), &read_fds)) {
 		Sock* new_sd = Sock_accept(cpd_srv, NULL);
@@ -337,10 +347,8 @@ void *cpd_server(void *args) {
 		    } else {
 			sscanf(buffer+8, "%1015s", filename);
 			md->Filename = strdup(filename);
-			// TODO: find in DB
 			switch (cpd_open(md)) {
 			    case OK:
-			        // TODO: register RTP Session handler 
 			        strcpy(buffer, "SUCCESS\n");
 			        Sock_write(md->Socket, buffer, strlen(buffer), NULL, 0);
 				fnc_log(FNC_LOG_INFO, "[CPD] Request accepted");

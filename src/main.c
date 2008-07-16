@@ -224,7 +224,7 @@ static int feng_start_mt(feng *srv)
 
     pthread_create(&srv->mth, NULL, mediathread, NULL);
 
-    pthread_create(&srv->cpd, NULL, cpd_server, (void *) srv); //TODO: da mettere a posto
+    pthread_create(&srv->cpd, NULL, cpd_server, (void *) srv);
 
     return 0;
 }

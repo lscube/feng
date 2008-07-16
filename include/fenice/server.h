@@ -50,8 +50,10 @@ typedef struct feng {
 //@}
     pthread_t mth;                  //!< mediathread
 
+    // Metadata begin
     pthread_t cpd;                  //!< CPD Metadata thread
-    void *metadata_clients;
+    void *metadata_clients;	    //!< CPD Clients
+    // Metadata end
 
     struct schedule_list *sched;
 /**

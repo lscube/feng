@@ -99,7 +99,7 @@ static int config_insert(server *srv) {
         { "sctp.protocol",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },
         { "sctp.max_streams",            NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { "server.first_udp_port",  &srv->srvconf.first_udp_port, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },      /* 17 */
-        { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
+        { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },      /* 18 */
         { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
     };
 
@@ -154,6 +154,7 @@ static int config_insert(server *srv) {
         if (0 != (ret = config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv))) {
             break;
         }
+
     }
 
     return ret;
