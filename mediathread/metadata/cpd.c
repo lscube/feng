@@ -39,8 +39,17 @@ const char *port     = "30000";
 
 G_LOCK_DEFINE_STATIC (g_hash_global);
 G_LOCK_DEFINE_STATIC (g_db_global);
+G_LOCK_DEFINE_STATIC (g_sending_packet);
 
 void cpd_init(feng *srv) {
+
+    char *id = srv->srvconf.cpd_port->ptr;
+fnc_log(FNC_LOG_INFO, "[CPD] cpd_port Value: %s", srv->srvconf.cpd_port->ptr);
+    if (id != NULL)
+        fnc_log(FNC_LOG_INFO, "[CPD] cpd_port Value: %s", id);
+    else
+        fnc_log(FNC_LOG_INFO, "[CPD] cpd_port Value: nada");
+
 
 
 }
@@ -236,11 +245,22 @@ void cpd_send(RTP_session *session, double now) {
 	// i->data
 	MDPacket *packet = (MDPacket *) i->data;
 	if (packet)
-	if (timestamp >= packet->Timestamp && !packet->Sent)
 	{
-	    Sock_write(md->Socket, packet->Content, strlen(packet->Content), NULL, 0);
-	    Sock_write(md->Socket, "\n", 1, NULL, 0);
-	    packet->Sent = 1;
+	    G_LOCK (g_sending_packet);
+	    if (timestamp >= packet->Timestamp && !packet->Sent)
+	    {
+		packet->Sent = 1;
+
+		char packetLength[MAX_CHARS];
+		sprintf(packetLength, "%d", strlen(packet->Content));
+
+		Sock_write(md->Socket, "Packet-length: ", 15, NULL, 0);
+		Sock_write(md->Socket, packetLength, strlen(packetLength), NULL, 0);
+		Sock_write(md->Socket, "\n", 1, NULL, 0);
+		Sock_write(md->Socket, packet->Content, strlen(packet->Content), NULL, 0);
+		Sock_write(md->Socket, "\n", 1, NULL, 0);
+	    }
+	    G_UNLOCK (g_sending_packet);
 	}
     }
 }

@@ -92,6 +92,10 @@ typedef struct {
 	} stat_cache_engine;
 	unsigned short enable_cores;
 */
+
+	// Metadata begin
+	buffer *cpd_port;
+	// Metadata end
 } server_config;
 
 typedef struct {
@@ -160,6 +164,8 @@ typedef struct {
 	 *
 	 */
 //	off_t *global_bytes_per_second_cnt_ptr; /*  */
+
+	buffer *cpd_port;
 
 #ifdef USE_OPENSSL
 	SSL_CTX *ssl_ctx;

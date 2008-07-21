@@ -100,7 +100,9 @@ static int config_insert(server *srv) {
         { "sctp.max_streams",            NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { "server.first_udp_port",  &srv->srvconf.first_udp_port, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },      /* 17 */
         { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },      /* 18 */
+        { "server.cpd_port", srv->srvconf.cpd_port, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 19 */
         { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
+
     };
 
     srv->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
@@ -121,6 +123,9 @@ static int config_insert(server *srv) {
         s->is_ssl        = 0;
         s->is_sctp       = 0;
         s->sctp_max_streams = 16;
+
+	s->cpd_port = buffer_init();
+	srv->srvconf.cpd_port = buffer_init();
 
 #ifdef HAVE_LSTAT
         s->follow_symlink = 1;
@@ -148,6 +153,9 @@ static int config_insert(server *srv) {
 
         cv[17].destination = &s->is_sctp;
         cv[18].destination = &s->sctp_max_streams;
+
+
+        cv[19].destination = &s->cpd_port;
 
         srv->config_storage[i] = s;
 
