@@ -44,11 +44,11 @@ G_LOCK_DEFINE_STATIC (g_sending_packet);
 void cpd_init(feng *srv) {
 
     char *id = srv->srvconf.cpd_port->ptr;
-fnc_log(FNC_LOG_INFO, "[CPD] cpd_port Value: %s", srv->srvconf.cpd_port->ptr);
-    if (id != NULL)
-        fnc_log(FNC_LOG_INFO, "[CPD] cpd_port Value: %s", id);
-    else
-        fnc_log(FNC_LOG_INFO, "[CPD] cpd_port Value: nada");
+    //fnc_log(FNC_LOG_INFO, "[CPD] cpd_port Value: %s", srv->srvconf.cpd_port->ptr);
+    //if (id != NULL)
+    //    fnc_log(FNC_LOG_INFO, "[CPD] cpd_port Value: %s", id);
+    //else
+    //    fnc_log(FNC_LOG_INFO, "[CPD] cpd_port Value: nada");
 
 
 
