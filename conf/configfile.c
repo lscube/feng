@@ -98,11 +98,17 @@ static int config_insert(server *srv) {
         { "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 16 */
         { "sctp.protocol",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },
         { "sctp.max_streams",            NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
-        { "server.first_udp_port",  &srv->srvconf.first_udp_port, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },      /* 17 */
-        { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },      /* 18 */
-        { "server.cpd_port", srv->srvconf.cpd_port, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 19 */
-        { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 
+	// Metadata begin
+        { "cpd.port",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
+        { "cpd.db.host",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
+        { "cpd.db.user",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
+        { "cpd.db.password",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
+        { "cpd.db.name",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
+        { "server.first_udp_port",  &srv->srvconf.first_udp_port, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
+        { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
+	// Metadata end
+        { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
     };
 
     srv->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
@@ -124,8 +130,13 @@ static int config_insert(server *srv) {
         s->is_sctp       = 0;
         s->sctp_max_streams = 16;
 
-	s->cpd_port = buffer_init();
-	srv->srvconf.cpd_port = buffer_init();
+	// Metadata begin
+        s->cpd_port = buffer_init();
+        s->cpd_db_host = buffer_init();
+        s->cpd_db_user = buffer_init();
+        s->cpd_db_password = buffer_init();
+        s->cpd_db_name = buffer_init();
+	// Metadata end
 
 #ifdef HAVE_LSTAT
         s->follow_symlink = 1;
@@ -154,8 +165,13 @@ static int config_insert(server *srv) {
         cv[17].destination = &s->is_sctp;
         cv[18].destination = &s->sctp_max_streams;
 
-
-        cv[19].destination = &s->cpd_port;
+	// Metadata begin
+        cv[19].destination = s->cpd_port;
+        cv[20].destination = s->cpd_db_host;
+        cv[21].destination = s->cpd_db_user;
+        cv[22].destination = s->cpd_db_password;
+        cv[23].destination = s->cpd_db_name;
+	// Metadata end
 
         srv->config_storage[i] = s;
 

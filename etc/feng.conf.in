@@ -10,7 +10,7 @@ var.statedir = "@feng_statedir@"
 #)
 
 # bind to port (defaults to @fenice_rtsp_port@)
-# server.port         = 8554
+server.port         = 8554
 
 # bind to name (defaults to all interfaces)
 # server.bind         = "live.host.tld"
@@ -27,3 +27,10 @@ server.max-connections = @fenice_max_session@
 server.document-root = var.basedir + "/avroot"
 server.errorlog      = var.logdir  + "/error.log"
 accesslog.filename   = var.logdir + "/access.log"
+
+# CPD
+#cpd.port			= "30000"
+#cpd.db.host			= "localhost"
+#cpd.db.user			= "javauser"
+#cpd.db.password		= "javadude"
+#cpd.db.name			= "chillout_cpd"

@@ -123,6 +123,8 @@ static int feng_bind_port(feng *srv,
             (is_sctp? "SCTP" : "TCP"),
             ((host == NULL)? "all interfaces" : host));
 
+    //fnc_log(FNC_LOG_INFO, "CPD port %s", s->cpd_port->ptr);
+
     g_ptr_array_add(srv->listen_socks, sock);
 
     if(Sock_listen(sock, SOMAXCONN)) {

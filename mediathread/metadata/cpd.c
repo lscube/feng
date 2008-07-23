@@ -30,12 +30,19 @@
 // dev'essere l'ultimo include
 #include <mysql/mysql.h>
 
-const char *db_host     = "localhost";
-const char *db_user     = "javauser";
-const char *db_password = "javadude";
-const char *db_name    = "chillout_cpd";
+const char *default_db_host     = "localhost";
+const char *default_db_user     = "javauser";
+const char *default_db_password = "javadude";
+const char *default_db_name    = "chillout_cpd";
 
-const char *port     = "30000";
+const char *default_port     = "30000";
+
+char *db_host;
+char *db_user;
+char *db_password;
+char *db_name;
+
+char *port;
 
 G_LOCK_DEFINE_STATIC (g_hash_global);
 G_LOCK_DEFINE_STATIC (g_db_global);
@@ -43,16 +50,40 @@ G_LOCK_DEFINE_STATIC (g_sending_packet);
 
 void cpd_init(feng *srv) {
 
-    char *id = srv->srvconf.cpd_port->ptr;
-    //fnc_log(FNC_LOG_INFO, "[CPD] cpd_port Value: %s", srv->srvconf.cpd_port->ptr);
-    //if (id != NULL)
-    //    fnc_log(FNC_LOG_INFO, "[CPD] cpd_port Value: %s", id);
-    //else
-    //    fnc_log(FNC_LOG_INFO, "[CPD] cpd_port Value: nada");
+    specific_config *s = srv->config_storage[0];
 
+    if (s->cpd_port->ptr!=NULL) {
+	port = s->cpd_port->ptr;
+    } else {
+	port = strdup(default_port);
+    }
 
+    if (s->cpd_db_host->ptr!=NULL) {
+	db_host = s->cpd_db_host->ptr;
+    } else {
+	db_host = strdup(default_db_host);
+    }
+
+    if (s->cpd_db_user->ptr!=NULL) {
+	db_user = s->cpd_db_user->ptr;
+    } else {
+	db_user = strdup(default_db_user);
+    }
+
+    if (s->cpd_db_password->ptr!=NULL) {
+	db_password = s->cpd_db_password->ptr;
+    } else {
+	db_password = strdup(default_db_password);
+    }
+
+    if (s->cpd_db_name->ptr!=NULL) {
+	db_name = s->cpd_db_name->ptr;
+    } else {
+	db_name = strdup(default_db_name);
+    }
 
 }
+
 void cpd_find_request(feng *srv, Resource *res, char *filename) {
     // This function checks if the associated AV Resource has been requested.
     // If it's true, it returns the hash table key (socket_descriptor).
