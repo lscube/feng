@@ -69,7 +69,6 @@ AC_SUBST([LIBTOOL_DEPS])
 AC_C_BIGENDIAN([BIGENDIAN="Big Endian"] AC_DEFINE([WORDS_BIGENDIAN], 1, [Define if manchine is big-endian]),[BIGENDIAN="Little Endian"] )
 
 ACX_PTHREAD(,AC_MSG_ERROR([Missing POSIX Threads support]))
-WITH_MYSQL()
 
 LIBS="$PTHREAD_LIBS $LIBS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
@@ -123,6 +122,11 @@ if test "x$enable_ipv6" = "xyes"; then
 else
     AC_MSG_WARN([IPv6 disabled: check skipped.])
 fi
+
+dnl MYSQL
+AX_LIB_MYSQL([5.0])
+LIBS="$LIBS $MYSQL_LDFLAGS"
+CFLAGS="$CFLAGS $MYSQL_CFLAGS"
 
 PKG_CHECK_MODULES(LIBNETEMBRYO,[libnetembryo >= 0.0.8])
 CFLAGS="$CFLAGS $LIBNETEMBRYO_CFLAGS"
