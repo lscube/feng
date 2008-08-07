@@ -33,10 +33,6 @@ AC_ARG_ENABLE(libavformat,
     AS_HELP_STRING([--enable-libavformat], [enable ffmpeg's libavformat support (default=yes)]),,
         enable_ffmpeg="yes")
 
-AC_ARG_ENABLE(debug,
-    AS_HELP_STRING([--enable-debug], [enable gcc debugging flags (default=no)]),,
-    enable_debug="no")
-
 AC_ARG_ENABLE(trace,
 [  --enable-trace          enable additional informations in log [[default=no]]],,
     enable_trace="no")
@@ -44,14 +40,6 @@ AC_ARG_ENABLE(trace,
 AC_ARG_ENABLE(duma,
     AS_HELP_STRING([--enable-duma], [link against DUMA library to debug memory usage (implies --enable-debug) (default=no)]),,
     enable_duma="no")
-
-AC_ARG_ENABLE(mudflap,
-    AS_HELP_STRING([--enable-mudflap], [enable mudflap support (implies --enable-debug) (default=no)]),,
-    enable_mudflap="no")
-
-AC_ARG_ENABLE(errors,
-    AS_HELP_STRING([--enable-errors], [make gcc warnings behave like errors: none, normal, pedantic (default=none)]),,
-    enable_errors="none")
 
 AC_ARG_ENABLE(sctp,
     AS_HELP_STRING([--enable-sctp], [enable SCTP support (default=autodetected)]),,
@@ -165,36 +153,12 @@ if test "$enable_duma" = "yes"; then
     LIBS="$LIBS -lduma"
 fi
 
-if test "$enable_mudflap" = "yes"; then
-    CFLAGS="$CFLAGS -fmudflapth"
-    LIBS="$LIBS -lmudflapth"
-    enable_debug=yes
-fi
-
-AM_CONDITIONAL(FENICE_DEBUG, [test "$enable_debug" = "yes"])
-if test "$enable_debug" = "yes"; then
-    CFLAGS="$CFLAGS -g -ggdb -Wall"
-    AC_DEFINE(ENABLE_DEBUG, 1,[Debug enabled])
-else
-    AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
-    CFLAGS="$CFLAGS -O2 -Wall"
-fi
+LSC_ERRORS
+LSC_DEBUG
 
 if test "$enable_trace" = "yes"; then
     AC_DEFINE(TRACE, 1,[Trace enabled])
 fi
-
-case "$enable_errors" in
-    pedantic)
-        CFLAGS="$CFLAGS -pedantic-errors -Werror"
-    ;;
-    normal | yes)
-        CFLAGS="$CFLAGS -Werror"
-    ;;
-    none | *)
-        CFLAGS="$CFLAGS"
-    ;;
-esac
 
 fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot|sed -e "s:/\+:/:g")
 fenice_avroot_dir=${fenice_avroot_dir//NONE}
@@ -298,6 +262,7 @@ AC_CONFIG_FILES([avroot/Makefile])
 AC_CONFIG_FILES([etc/feng.conf])
 AC_OUTPUT
 
+LSC_DEBUG_STATUS
 AC_MSG_NOTICE([config files successfully generated!
  
 Feng Install prefix .......... : $prefix
@@ -311,9 +276,7 @@ Byte order ................... : this is a $BIGENDIAN machine
 sctp support enabled ......... : $enable_sctp
 avformat support enabled ..... : $avformat_msg
 avutil support enabled ....... : $avutil_msg
-debug enabled ................ : $enable_debug
  duma enabled ................ : $enable_duma
- mudflap enabled ............. : $enable_mudflap
 
  'make' will now compile Feng and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.
