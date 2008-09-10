@@ -320,8 +320,10 @@ void *cpd_server(void *args) {
     clients = g_hash_table_new_full (g_int_hash, g_int_equal, NULL, cpd_free_client);
     main_srv->metadata_clients = clients;
 
+    char *host = main_srv->srvconf.bindhost->ptr;
+
     // opening socket
-    if(!(cpd_srv = Sock_bind("localhost", port, NULL, TCP, NULL))) {
+    if(!(cpd_srv = Sock_bind(host, port, NULL, TCP, NULL))) {
 	fnc_log(FNC_LOG_FATAL, "[CPD] Failed to create Metadata Socket");
         abort();
     }
