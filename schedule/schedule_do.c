@@ -26,7 +26,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include <pthread.h>
 #include <fenice/schedule.h>
 #include <fenice/rtcp.h>
 #include <fenice/utils.h>
@@ -48,7 +47,7 @@ do {
     usleep(utime);
     utime = SCHEDULER_TIMING;
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
-        pthread_mutex_lock(&sched[i].mux);
+        g_mutex_lock(sched[i].mux);
         if (sched[i].valid && sched[i].rtp_session->started) {
             RTP_session * session = sched[i].rtp_session;
             Track *tr = r_selected_track(session->track_selector);
@@ -94,7 +93,7 @@ do {
                 }
             }
         }
-        pthread_mutex_unlock(&sched[i].mux);
+        g_mutex_unlock(sched[i].mux);
     }
 } while (!srv->stop_schedule);
 

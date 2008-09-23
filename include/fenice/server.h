@@ -34,6 +34,7 @@
 #include "conf.h"
 #include <netembryo/wsocket.h>
 #include <glib/garray.h>
+#include <glib/gthread.h>
 #include <pwd.h>
 #include <grp.h>
 #include <sys/select.h>
@@ -49,7 +50,7 @@ typedef struct feng {
     fd_set wset;
     int max_fd;
 //@}
-    pthread_t mth;                  //!< mediathread
+    GThread *mth;                  //!< mediathread
     struct schedule_list *sched;
 /**
  * @name lighttpd-alike preferences

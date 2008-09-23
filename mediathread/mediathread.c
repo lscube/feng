@@ -30,8 +30,8 @@
 #include <time.h>
 
 static GAsyncQueue *el_head;
-static pthread_mutex_t el_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t mt_mutex = PTHREAD_MUTEX_INITIALIZER;
+static GStaticMutex el_mutex = G_STATIC_MUTEX_INIT;
+static GStaticMutex mt_mutex = G_STATIC_MUTEX_INIT;
 static int stopped = 0;
 
 static inline int mt_process_event(mt_event_item *ev) {
@@ -106,14 +106,14 @@ static int mt_add_event(mt_event_id id, void **args) {
     item->id = id;
     item->args = args;
 
-    pthread_mutex_lock(&el_mutex);
+    g_static_mutex_lock(&el_mutex);
     g_async_queue_push(el_head, item);
-    pthread_mutex_unlock(&el_mutex);
+    g_static_mutex_unlock(&el_mutex);
 
     return ERR_NOERROR;
 }
 
-void *mediathread(void *arg) {
+gpointer *mediathread(gpointer *arg) {
     mt_event_item *el_cur;
 
     if (!g_thread_supported ()) g_thread_init (NULL);
@@ -127,10 +127,10 @@ void *mediathread(void *arg) {
         //as this will block until data is available
         el_cur = g_async_queue_pop (el_head);
         if (el_cur) {
-            pthread_mutex_lock(&mt_mutex);
+            g_static_mutex_lock(&mt_mutex);
             mt_process_event(el_cur);
             mt_dispose_event(el_cur);
-            pthread_mutex_unlock(&mt_mutex);
+            g_static_mutex_unlock(&mt_mutex);
         }
     }
     return NULL;
@@ -153,9 +153,9 @@ void mt_resource_close(Resource *resource) {
 int mt_resource_seek(Resource *resource, double time) {
     int res;
 
-    pthread_mutex_lock(&mt_mutex);
+    g_static_mutex_lock(&mt_mutex);
     res = resource->demuxer->seek(resource, time);
-    pthread_mutex_unlock(&mt_mutex);
+    g_static_mutex_unlock(&mt_mutex);
 
     return res;
 }

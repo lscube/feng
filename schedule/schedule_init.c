@@ -20,17 +20,14 @@
  *  
  * */
 
-#include <fenice/schedule.h>
-#include <fenice/rtp.h>
-#include <time.h>
-#include <fenice/utils.h>
-#include <pthread.h>
-
+#include "fenice/schedule.h"
+#include "fenice/rtp.h"
+#include "fenice/utils.h"
 
 int schedule_init(feng *srv)
 {    
     int i;
-    pthread_t thread;
+    GThread *thread;
     schedule_list *sched = malloc(ONE_FORK_MAX_CONNECTION *
                                   sizeof(schedule_list));
 
@@ -38,12 +35,12 @@ int schedule_init(feng *srv)
         sched[i].rtp_session = NULL;
         sched[i].play_action = NULL;
         sched[i].valid = 0;
-        pthread_mutex_init(&sched[i].mux, NULL);
+	sched[i].mux = g_mutex_new();
     }
 
     srv->sched = sched;
 
-    pthread_create(&thread, NULL, schedule_do, (void *)srv);
+    thread = g_thread_create(schedule_do, srv, FALSE, NULL);
 
     return ERR_NOERROR;
 }

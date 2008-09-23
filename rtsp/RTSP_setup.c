@@ -113,7 +113,7 @@ static RTSP_Error multicast_transport(feng *srv, RTP_transport *transport,
 
     *rtp_s = NULL;
     for (i = 0; !*rtp_s && i<ONE_FORK_MAX_CONNECTION; ++i) {
-        pthread_mutex_lock(&sched[i].mux);
+        g_mutex_lock(sched[i].mux);
         if (sched[i].valid) {
             Track *tr2 = r_selected_track(
                                 sched[i].rtp_session->track_selector);
@@ -123,7 +123,7 @@ static RTSP_Error multicast_transport(feng *srv, RTP_transport *transport,
                         "Found multicast instance.");
             }
         }
-        pthread_mutex_unlock(&sched[i].mux);
+        g_mutex_unlock(sched[i].mux);
     }
 
     if (!*rtp_s) {

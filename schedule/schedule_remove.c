@@ -30,13 +30,13 @@ int schedule_remove(RTP_session *session)
 {
     schedule_list *sched = session->srv->sched;
     int id = session->sched_id;
-    pthread_mutex_lock(&sched[id].mux);
+    g_mutex_lock(sched[id].mux);
     sched[id].valid = 0;
     if (sched[id].rtp_session) {
         RTP_session_destroy(sched[id].rtp_session);
         sched[id].rtp_session = NULL;
         fnc_log(FNC_LOG_INFO, "rtp session closed\n");
     }
-    pthread_mutex_unlock(&sched[id].mux);
+    g_mutex_unlock(sched[id].mux);
     return ERR_NOERROR;
 }

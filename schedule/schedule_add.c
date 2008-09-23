@@ -32,15 +32,15 @@ int schedule_add(RTP_session *rtp_session)
     feng *srv = rtp_session->srv;
     schedule_list *sched = srv->sched;
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
-    pthread_mutex_lock(&sched[i].mux);
+    g_mutex_lock(sched[i].mux);
         if (!sched[i].valid) {
             sched[i].valid = 1;
             sched[i].rtp_session = rtp_session;
             sched[i].play_action = RTP_send_packet;
-            pthread_mutex_unlock(&sched[i].mux);
+            g_mutex_unlock(sched[i].mux);
             return i;
         }
-    pthread_mutex_unlock(&sched[i].mux);
+    g_mutex_unlock(sched[i].mux);
     }
     // if (i >= MAX_SESSION) {
     return ERR_GENERIC;

@@ -45,9 +45,8 @@
 #include <fenice/mediathread.h>
 #include <glib.h>
 #include <glib/gprintf.h>
+#include <glib/gthread.h>
 #include <getopt.h>
-
-#include <pthread.h>
 
 static int stopped = 0;
 
@@ -222,7 +221,7 @@ static int feng_start_mt(feng *srv)
         return 1;
     }
 
-    pthread_create(&srv->mth, NULL, mediathread, NULL);
+    srv->mth = g_thread_create(mediathread, NULL, FALSE, NULL);
     return 0;
 }
 static void usage(char *name)
@@ -386,6 +385,8 @@ int main(int argc, char **argv)
         return 1;
 
     feng_drop_privs(srv);
+
+    if (!g_thread_supported ()) g_thread_init (NULL);
 
     if (feng_start_mt(srv))
         return 1;

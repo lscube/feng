@@ -26,7 +26,7 @@
 
 #include <time.h>
 #include <sys/time.h>
-#include <pthread.h>
+#include <glib/gthread.h>
 #include <fenice/rtp.h>
 #include <fenice/prefs.h>
 #include <fenice/debug.h>
@@ -41,7 +41,7 @@ typedef struct play_args {
 } play_args;
 
 typedef struct schedule_list {
-    pthread_mutex_t mux;
+    GMutex *mux;
     int valid;
     RTP_session *rtp_session;
     RTP_play_action play_action;

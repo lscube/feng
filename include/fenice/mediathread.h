@@ -25,7 +25,7 @@
 
 #define ENABLE_MEDIATHREAD 1
 
-#include <pthread.h>
+#include <glib/gthread.h>
 
 #include <fenice/demuxer.h>
 #include <fenice/server.h>
@@ -51,7 +51,7 @@ typedef struct mt_excl_ins {
     struct mt_excl_ins *next;
 } mt_excl_ins;
 
-void *mediathread(void *arg);
+gpointer *mediathread(gpointer *arg);
 
 int mt_shutdown();
 int event_buffer_low(void *sender, Track *src);
