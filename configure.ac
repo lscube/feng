@@ -25,10 +25,6 @@ AC_ARG_WITH(max-session,
     AS_HELP_STRING([--with-max-session], [max number of incoming sessions (default=100)]),,
     with_max_session=100)
 
-AC_ARG_ENABLE(ipv6,
-    AS_HELP_STRING([--enable-ipv6], [enable IPv6 support (default=autodetected)]),,
-        enable_ipv6="yes")
-
 AC_ARG_ENABLE(libavformat,
     AS_HELP_STRING([--enable-libavformat], [enable ffmpeg's libavformat support (default=yes)]),,
         enable_ffmpeg="yes")
@@ -40,10 +36,6 @@ AC_ARG_ENABLE(trace,
 AC_ARG_ENABLE(duma,
     AS_HELP_STRING([--enable-duma], [link against DUMA library to debug memory usage (implies --enable-debug) (default=no)]),,
     enable_duma="no")
-
-AC_ARG_ENABLE(sctp,
-    AS_HELP_STRING([--enable-sctp], [enable SCTP support (default=autodetected)]),,
-    enable_sctp="yes")
 
 AC_PROG_LIBTOOL
 LIBTOOL="$LIBTOOL --silent"
@@ -94,37 +86,24 @@ dnl CFLAGS=""
 AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Feng uses Glib. Please install it (you need devel files).]), gthread)
 AM_PATH_LIBGCRYPT(1.2.0, [CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
                           LIBS="$LIBS $LIBGCRYPT_LIBS"], AC_MSG_ERROR([Feng uses libgcrypts. Please install it.]))
-dnl test enable
-if test "x$enable_ipv6" = "xyes"; then
-    AC_CHECK_TYPE(struct sockaddr_in6,
-        AC_DEFINE([IPV6], 1, [Define IPv6 support]),
-        ,
-        [#include <netinet/in.h>])
-else
-    AC_MSG_WARN([IPv6 disabled: check skipped.])
-fi
 
-PKG_CHECK_MODULES(LIBNETEMBRYO,[libnetembryo >= 0.0.8])
-CFLAGS="$CFLAGS $LIBNETEMBRYO_CFLAGS"
+LSC_CHECK_IPV6
+LSC_CHECK_SCTP
+LIBS="$LIBS $SCTP_LIBS"
+
+AS_IF([test "x$have_sctp" = "xyes"],
+  [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.0.8"],
+  [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.0.8"])
+
+PKG_CHECK_MODULES(LIBNETEMBRYO,[$LIBNETEMBRYO_REQUIRES])
+AC_SUBST(LIBNETEMBRYO_REQUIRES)
+
+CPPFLAGS="$CPPFLAGS $LIBNETEMBRYO_CFLAGS"
 LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 
 PKG_CHECK_MODULES(LIBBUFFERPOOL,[libbufferpool >= 0.0.3])
 CFLAGS="$CFLAGS $LIBBUFFERPOOL_CFLAGS"
 LIBS="$LIBS $LIBBUFFERPOOL_LIBS"
-
-dnl Check for SCTP support
-if test "$enable_sctp" = "yes"; then
-    if test "${LIBNETEMBRYO_LIBS//sctp}" = "${LIBNETEMBRYO_LIBS}"; then
-        AC_MSG_WARN([sctp required but netembryo does not support it, rebuild netembryo first.])
-    fi
-        AC_CHECK_TYPE(struct sctp_sndrcvinfo, [
-         AC_CHECK_LIB(sctp,sctp_recvmsg)],
-         [enable_sctp=no,
-         AC_MSG_WARN([SCTP disabled: headers not found])],
-         [#include <netinet/sctp.h>])
-else
-    AC_MSG_WARN([SCTP disabled: check skipped.])
-fi
 
 avformat_msg="no"
 avutil_msg="no"
