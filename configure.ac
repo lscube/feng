@@ -81,9 +81,6 @@ AC_SUBST(fenice_state_dir)
 dnl check if we have the generic struct for net addresses the has max possible size
 AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 
-dnl CFLAGS=""
-
-AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Feng uses Glib. Please install it (you need devel files).]), gthread)
 AM_PATH_LIBGCRYPT(1.2.0, [CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
                           LIBS="$LIBS $LIBGCRYPT_LIBS"], AC_MSG_ERROR([Feng uses libgcrypts. Please install it.]))
 
@@ -104,6 +101,10 @@ LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 PKG_CHECK_MODULES(LIBBUFFERPOOL,[libbufferpool >= 0.0.3])
 CFLAGS="$CFLAGS $LIBBUFFERPOOL_CFLAGS"
 LIBS="$LIBS $LIBBUFFERPOOL_LIBS"
+
+PKG_CHECK_MODULES([GLIB], [glib-2.0 gthread-2.0])
+CFLAGS="$CFLAGS $GLIB_CFLAGS"
+LIBS="$LIBS $GLIB_LIBS"
 
 avformat_msg="no"
 avutil_msg="no"
