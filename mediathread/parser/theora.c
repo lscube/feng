@@ -48,43 +48,6 @@
 
 #include <libavutil/md5.h>
 
-#ifdef HAVE_AVUTIL
-#include <libavutil/base64.h>
-#else
-static inline char *av_base64_encode(char * buf, int buf_len,
-                                     uint8_t * src, int len)
-{
-    static const char b64[] =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    char *ret, *dst;
-    unsigned i_bits = 0;
-    int i_shift = 0;
-    int bytes_remaining = len;
-
-    if (len >= UINT_MAX / 4 ||
-        buf_len < len * 4 / 3 + 12)
-        return NULL;
-    ret = dst = buf;
-    if (len) {  // special edge case, what should we really do here?
-        while (bytes_remaining) {
-            i_bits = (i_bits << 8) + *src++;
-            bytes_remaining--;
-            i_shift += 8;
-
-            do {
-                *dst++ = b64[(i_bits << 6 >> i_shift) & 0x3f];
-                i_shift -= 6;
-            } while (i_shift > 6 || (bytes_remaining == 0 && i_shift > 0));
-        }
-        while ((dst - ret) & 3)
-            *dst++ = '=';
-    }
-    *dst = '\0';
-
-    return ret;
-}
-#endif
-
 #if 1
 #define AV_RB16(x)  ((((uint8_t*)(x))[0] << 8) | ((uint8_t*)(x))[1])
 static int ff_split_xiph_headers(uint8_t *extradata, int extradata_size,
@@ -214,7 +177,7 @@ static int theora_init(MediaProperties *properties, void **private_data)
 {
     sdp_field *sdp_private;
     theora_priv *priv = calloc(1, sizeof(theora_priv));
-    int err, buf_len;
+    int err;
     char *buf;
 
     if (!priv) return ERR_ALLOC;
@@ -227,12 +190,9 @@ static int theora_init(MediaProperties *properties, void **private_data)
 
     if (err) goto err_alloc;
 
-    buf_len = priv->conf_len * 4 / 3 + 12;
-    buf = g_malloc(buf_len);
-
+    buf = g_base64_encode(priv->conf, priv->conf_len);
     if (!buf) goto err_alloc;
-    av_base64_encode(buf, buf_len, priv->conf, priv->conf_len);
-
+    
     sdp_private = g_new(sdp_field, 1);
     sdp_private->type = fmtp;
     sdp_private->field = 
