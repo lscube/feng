@@ -207,7 +207,7 @@ static int avf_init(Resource * r)
                 // Make props an int...
                 props.sample_rate    = codec->sample_rate;
                 props.frame_duration       = (double)1 / codec->sample_rate;
-                props.bit_per_sample   = codec->bits_per_sample;
+                props.bit_per_sample   = codec->bits_per_coded_sample;
                 snprintf(trackinfo.name, sizeof(trackinfo.name), "%d", i);
                 if (!(track = add_track(r, &trackinfo, &props)))
                     goto err_alloc;
