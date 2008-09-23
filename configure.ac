@@ -30,7 +30,7 @@ AC_ARG_ENABLE(libavformat,
         enable_ffmpeg="yes")
 
 AC_ARG_ENABLE(trace,
-[  --enable-trace          enable additional informations in log [[default=no]]],,
+    AS_HELP_STRING([--enable-trace], [enable additional informations in log [[default=no]]]),,
     enable_trace="no")
 
 AC_ARG_ENABLE(duma,
