@@ -34,13 +34,4 @@ typedef enum { HANDLER_UNSET,
 } handler_t;
 
 
-/* we use it in a enum */
-#ifdef TRUE
-#undef TRUE
-#endif
-
-#ifdef FALSE
-#undef FALSE
-#endif
-
 #endif
