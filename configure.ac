@@ -236,6 +236,7 @@ AC_CONFIG_FILES([docs/Makefile])
 AC_CONFIG_FILES([etc/Makefile])
 AC_CONFIG_FILES([avroot/Makefile])
 AC_CONFIG_FILES([etc/feng.conf])
+AC_CONFIG_FILES([etc/feng-uninstalled.conf])
 AC_OUTPUT
 
 LSC_DEBUG_STATUS
