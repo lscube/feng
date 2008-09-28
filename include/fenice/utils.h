@@ -22,6 +22,9 @@
 
 #ifndef FN_UTILS_H
 #define FN_UTILS_H
+
+#include "config.h"
+
 #include <time.h>
 #include <sys/time.h>
 #include <ctype.h>
@@ -150,7 +153,7 @@ void fncheader(void);
 /**
  * Returns the current time in seconds
  */
-#if _POSIX_C_SOURCE >= 199309L
+#ifdef HAVE_CLOCK_GETTIME
 static inline double gettimeinseconds(struct timespec *now) {
     struct timespec tmp;
     if (!now) {

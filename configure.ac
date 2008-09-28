@@ -13,6 +13,9 @@ AS_IF([test "x$ac_cv_prog_cc_c99" = "xno"], [
   AC_MSG_ERROR([no C99 compiler found, feng requires a C99 compiler.])
 ])
 
+dnl Force usage of POSIX.1-2001 (clock_gettime)
+CPPFLAGS="${CPPFLAGS} -D_POSIX_C_SOURCE=200112L"
+
 AC_CONFIG_HEADER([config.h])
 
 AC_ARG_WITH(rtsp-port,
@@ -74,6 +77,9 @@ AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_CHECK_FUNCS(select socket gettimeofday uname getcwd getwd strcspn strdup strtoul strerror strstr setenv getopt_long uname)
 AC_CHECK_FUNC(getaddrinfo)
+
+AC_SEARCH_LIBS([clock_gettime], [rt],
+  [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define this if you have clock_gettime])])
 
 AC_CHECK_LIB([c], [shm_open], [SHM_LIB=], 
     [AC_CHECK_LIB([rt], [shm_open], [SHM_LIB=-lrt])])
