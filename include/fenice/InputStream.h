@@ -91,8 +91,8 @@ typedef struct {
 InputStream *istream_open(char *mrl);
 void istream_close(InputStream *);
 
-inline int istream_read(InputStream *is, uint8_t *buf, uint32_t nbytes); 
-inline int istream_reset(InputStream *is);
+int istream_read(InputStream *is, uint8_t *buf, uint32_t nbytes); 
+int istream_reset(InputStream *is);
 time_t mrl_mtime(char *mrl);
 int mrl_changed(char *mrl, time_t *last_change);
 

@@ -186,7 +186,7 @@ Selector *r_open_tracks(Resource *, char *track_name, Capabilities *capabilities
 void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
 
 //Selector handling functions
-inline Track *r_selected_track(Selector *);
+Track *r_selected_track(Selector *);
 
 // TrackList handling functions
 
