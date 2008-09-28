@@ -8,6 +8,11 @@ AM_MAINTAINER_MODE
 
 AC_PREFIX_DEFAULT("/usr")
 
+AC_PROG_CC_C99
+AS_IF([test "x$ac_cv_prog_cc_c99" = "xno"], [
+  AC_MSG_ERROR([no C99 compiler found, feng requires a C99 compiler.])
+])
+
 AC_CONFIG_HEADER([config.h])
 
 AC_ARG_WITH(rtsp-port,
