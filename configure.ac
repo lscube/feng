@@ -81,10 +81,6 @@ AC_CHECK_FUNC(getaddrinfo)
 AC_SEARCH_LIBS([clock_gettime], [rt],
   [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define this if you have clock_gettime])])
 
-AC_CHECK_LIB([c], [shm_open], [SHM_LIB=], 
-    [AC_CHECK_LIB([rt], [shm_open], [SHM_LIB=-lrt])])
-AC_SUBST(SHM_LIB)
-
 fenice_state_dir=$(eval echo ${localstatedir}/feng)
 AC_SUBST(fenice_state_dir)
 
