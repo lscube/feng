@@ -13,6 +13,7 @@ AS_IF([test "x$ac_cv_prog_cc_c99" = "xno"], [
   AC_MSG_ERROR([no C99 compiler found, feng requires a C99 compiler.])
 ])
 
+AC_USE_SYSTEM_EXTENSIONS
 dnl Force usage of POSIX.1-2001 (clock_gettime)
 CPPFLAGS="${CPPFLAGS} -D_POSIX_C_SOURCE=200112L"
 
