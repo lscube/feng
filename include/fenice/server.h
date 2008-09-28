@@ -36,6 +36,7 @@
 #include <glib/garray.h>
 #include <pwd.h>
 #include <grp.h>
+#include <sys/select.h>
 
 typedef struct feng {
 /** 

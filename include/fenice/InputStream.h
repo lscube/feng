@@ -24,6 +24,7 @@
 #define FN_INPUTSTREAM_H
 
 #include <stdint.h>
+#include <sys/time.h>
 
 #define CACHE_FILE_SIZE     65536
 #define CACHE_NET_SIZE      65536
