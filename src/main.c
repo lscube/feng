@@ -25,10 +25,11 @@
  * server main loop
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#include <config.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h> /*SOMAXCONN*/
 #include <signal.h>
