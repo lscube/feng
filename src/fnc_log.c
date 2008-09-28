@@ -18,12 +18,13 @@
  *  
  * */
 
+#include <config.h>
 
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
 #include <syslog.h>
-#include <config.h>
+#include <stdarg.h>
 
 #include <fenice/fnc_log.h>
 #include <fenice/debug.h>
