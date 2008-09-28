@@ -4,6 +4,7 @@ AC_INIT([feng], [0.1.99])
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_HOST
 AM_INIT_AUTOMAKE(dist-bzip2 no-dist-gzip foreign)
+AM_MAINTAINER_MODE
 
 AC_PREFIX_DEFAULT("/usr")
 
