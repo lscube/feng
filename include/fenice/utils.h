@@ -147,9 +147,6 @@ void fncheader(void);
 #define max(x,y) ((x) > (y) ? (x) : (y))
 #endif
 
-//XXX we should use the mathlib one if available! (C99)
-#define lround(x) (x - floor(x) < 0.5) ? floor(x): ceil(x)
-
 /**
  * Returns the current time in seconds
  */
