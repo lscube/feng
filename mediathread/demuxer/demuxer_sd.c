@@ -20,6 +20,7 @@
  *
  * */
 #include <string.h>
+#include <strings.h>
 #include <stdio.h>
 
 #include <fenice/utils.h>

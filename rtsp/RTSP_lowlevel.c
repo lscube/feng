@@ -20,6 +20,8 @@
  *  
  * */
 
+#include <strings.h>
+
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
 #include <fenice/utils.h>
