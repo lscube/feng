@@ -31,13 +31,8 @@
 #include <fenice/multicast.h>
 #include <fenice/utils.h>
 
-#ifndef IN_IS_ADDR_MULTICAST
-#define IN_IS_ADDR_MULTICAST(a)    ((((in_addr_t)(a)) & 0xf0000000) == 0xe0000000)
-#endif
-
-#ifndef IN6_IS_ADDR_MULTICAST
-#define IN6_IS_ADDR_MULTICAST(a) (((__const uint8_t *) (a))[0] == 0xff)
-#endif
+#define FENG_IN_IS_ADDR_MULTICAST(a)  ((((in_addr_t)(a)) & 0xf0000000) == 0xe0000000)
+#define FENG_IN6_IS_ADDR_MULTICAST(a) (((__const uint8_t *) (a))[0] == 0xff)
 
 
 /* The following two functions were adapted from glibc's
@@ -190,13 +185,13 @@ int is_valid_multicast_address(char *ip)
             if(!inet_aton(ip, &haddr))
                 return ERR_PARSE;  /* not a valid address */
 
-            if (IN_IS_ADDR_MULTICAST(htonl( haddr.s_addr )))
+            if (FENG_IN_IS_ADDR_MULTICAST(htonl( haddr.s_addr )))
                 return ERR_NOERROR;
 
         }
 #ifdef  IPV6
         case AF_INET6: {
-            if (IN6_IS_ADDR_MULTICAST(ip))
+            if (FENG_IN6_IS_ADDR_MULTICAST(ip))
                 return ERR_NOERROR;
         }
 #endif
