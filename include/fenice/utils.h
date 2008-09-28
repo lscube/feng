@@ -29,7 +29,6 @@
 #include <sys/types.h>
 #include <math.h>
 #include <string.h>
-#include <features.h>
 
 //XXX should me moved somewhere else
 #ifdef WIN32
