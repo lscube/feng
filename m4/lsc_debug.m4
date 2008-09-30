@@ -26,11 +26,12 @@ AC_DEFUN([LSC_DEBUG], [
   AC_REQUIRE([LSC_MUDFLAP])
 
   AS_IF([test "$enable_debug" = "yes"], [
-    CFLAGS="$CFLAGS -g -ggdb -Wall"
+    CC_CHECK_CFLAGS([-g], [CFLAGS="$CFLAGS -g"])
+    CC_CHECK_CFLAGS([-ggdb], [CFLAGS="$CFLAGS -ggdb"])
+    CC_CHECK_CFLAGS([-Wall], [CFLAGS="$CFLAGS -Wall"])
     AC_DEFINE(ENABLE_DEBUG, 1,[Debug enabled])
   ], [
     AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
-    CFLAGS="$CFLAGS -O2 -Wall"
   ])
 ])
 
