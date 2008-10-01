@@ -111,7 +111,7 @@ static int read_mmap(uint32_t nbytes, uint8_t *buf, InputStream *is)
 /*! InputStream read function
  * If buf pointer is NULL then the function act like a forward seek
  * */
-inline int istream_read(InputStream *is, uint8_t *buf, uint32_t nbytes)
+int istream_read(InputStream *is, uint8_t *buf, uint32_t nbytes)
 {
     if (is) {
 #ifdef HAVE_MMAP
@@ -127,7 +127,7 @@ inline int istream_read(InputStream *is, uint8_t *buf, uint32_t nbytes)
 /*! InputStream reset function
  * Move the pointer to begin of file
  * */
-inline int istream_reset(InputStream *is)
+int istream_reset(InputStream *is)
 {
     if (is) {
 #ifdef HAVE_MMAP
