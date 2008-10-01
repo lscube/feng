@@ -64,10 +64,6 @@ typedef GPtrArray *MediaDescrListArray;
 #define array_data(x) x->pdata
 #define array_index(x, y) x->pdata[y]
 
-typedef struct {
-
-} Capabilities;
-
 MObject_def(ResourceInfo_s)
     char *mrl;
     char *name;
@@ -182,7 +178,7 @@ Resource *r_open(feng *srv, char *root, char *name);
 
 void r_close(Resource *);
 
-Selector *r_open_tracks(Resource *, char *track_name, Capabilities *capabilities);/*open the right tracks*/
+Selector *r_open_tracks(Resource *, char *track_name);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
 
 //Selector handling functions
