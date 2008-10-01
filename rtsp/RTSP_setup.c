@@ -523,7 +523,7 @@ static RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * 
         }
     }
 
-    if (!(*track_sel = r_open_tracks(rtsp_s->resource, trackname, NULL))) {
+    if (!(*track_sel = r_open_tracks(rtsp_s->resource, trackname))) {
         error = RTSP_NotFound;
         fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
                 trackname, cinfo->object);
