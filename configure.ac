@@ -17,6 +17,11 @@ AC_USE_SYSTEM_EXTENSIONS
 dnl Force usage of POSIX.1-2001 (clock_gettime)
 CPPFLAGS="${CPPFLAGS} -D_POSIX_C_SOURCE=200112L"
 
+dnl Workaround Darwin
+AS_IF([test "x$(uname)" = "xDarwin"],[
+  CPPFLAGS="${CPPFLAGS} -D_DARWIN_C_SOURCE"
+])
+
 AC_CONFIG_HEADER([config.h])
 
 AC_ARG_WITH(rtsp-port,
