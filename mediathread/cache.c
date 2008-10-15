@@ -27,6 +27,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <glib/gmem.h>
+
 #include <fenice/InputStream.h>
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
@@ -40,7 +42,7 @@ static Cache *create_cache(stream_type type)
     uint32_t size;
     Cache *c;
     
-    if ( !(c=(Cache *)malloc(sizeof(Cache))) )
+    if ( !(c=g_new0(Cache, 1)) )
         return NULL;
 
     switch(type) {
@@ -65,12 +67,12 @@ static Cache *create_cache(stream_type type)
             c->read_data=read;
             break;
     }
-    if ( !(c->cache = malloc(size)) ) {
-        free(c);
+    if ( !(c->cache = g_malloc0(size)) ) {
+        g_free(c);
         return NULL;
     }
     if(c->cache==NULL){
-        free(c);
+        g_free(c);
         return NULL;
     }
     c->max_cache_size=size;
@@ -122,9 +124,9 @@ int read_c(uint32_t nbytes, uint8_t *buf, Cache **c, int fd, stream_type type)
 void free_cache(Cache *c)
 {
     if(c!=NULL){
-        free(c->cache);
+        g_free(c->cache);
         c->cache=NULL;
-        free(c);
+        g_free(c);
         c=NULL;
     }
 }

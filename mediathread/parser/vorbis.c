@@ -159,7 +159,7 @@ static int vorbis_uninit(void *private_data)
     if (priv) {
         if (priv->conf_len) g_free(priv->conf);
         if (priv->len) g_free(priv->packet);
-        free(private_data);
+        g_free(private_data);
     }
     return ERR_NOERROR;
 }
@@ -167,7 +167,7 @@ static int vorbis_uninit(void *private_data)
 static int vorbis_init(MediaProperties *properties, void **private_data)
 {
     sdp_field *sdp_private;
-    vorbis_priv *priv = calloc(1, sizeof(vorbis_priv));
+    vorbis_priv *priv = g_new0(vorbis_priv, 1);
     int err;
     char *buf;
 
@@ -221,7 +221,7 @@ static int vorbis_parse(void *track, uint8_t *data, long len, uint8_t *extradata
     int frag, off = 0;
     uint32_t mtu = DEFAULT_MTU;  //FIXME get it from SETUP
     uint32_t payload = mtu - XIPH_HEADER_SIZE;
-    uint8_t *packet = calloc(1, mtu);
+    uint8_t *packet = g_malloc0(mtu);
 
     if(!packet) return ERR_ALLOC;
 
@@ -265,11 +265,11 @@ static int vorbis_parse(void *track, uint8_t *data, long len, uint8_t *extradata
         goto err_alloc;
     }
 
-    free(packet);
+    g_free(packet);
     return ERR_NOERROR;
 
     err_alloc:
-    free(packet);
+    g_free(packet);
     return ERR_ALLOC;
 }
 

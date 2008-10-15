@@ -20,6 +20,7 @@
  * */
 
 #include <fenice/utils.h>
+#include <glib.h>
 
 // Ripped from ffmpeg, see sdp.c
 
@@ -46,7 +47,7 @@ static char *data_to_hex(char *buff, const uint8_t *src, int s)
 
 char *extradata2config(const uint8_t *extradata, int extradata_size)
 {
-    char *config = malloc(extradata_size * 2 + 1);
+    char *config = g_malloc(extradata_size * 2 + 1);
 
     if (config == NULL) {
         return NULL;

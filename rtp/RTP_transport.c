@@ -89,7 +89,7 @@ int RTP_send_packet(RTP_session * session)
                                 t->properties->clock_rate, slot));
             fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(r.timestamp));
             r.ssrc = htonl(session->ssrc);
-            packet = calloc(1, slot->data_size + hdr_size);
+            packet = g_malloc0(slot->data_size + hdr_size);
             if (packet == NULL) {
                 return ERR_ALLOC;
             }
@@ -133,7 +133,7 @@ int RTP_send_packet(RTP_session * session)
                 session->rtcp_stats[i_server].pkt_count += slot->seq_delta;
                 session->rtcp_stats[i_server].octet_count += slot->data_size;
             }
-            free(packet);
+            g_free(packet);
         } else {
 #warning Remove as soon as bufferpool is fixed
             usleep(1000);
@@ -232,7 +232,7 @@ RTP_session *RTP_session_destroy(RTP_session * session)
 
 
     // Deallocate memory
-    free(session);
+    g_free(session);
 
     return next;
 }

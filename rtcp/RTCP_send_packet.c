@@ -61,7 +61,7 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
 
         hdr_sr.pkt_count = htonl(session->rtcp_stats[i_server].pkt_count);
         hdr_sr.octet_count = htonl(session->rtcp_stats[i_server].octet_count);
-        payload = calloc(1, payload_s);
+        payload = g_malloc0(payload_s);
         if (payload == NULL)
             return ERR_ALLOC;
         memcpy(payload, &hdr_sr, payload_s);
@@ -71,7 +71,7 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
         RTCP_header_RR hdr_rr;
         payload_s = sizeof(hdr_rr);
         hdr_rr.ssrc = htonl(session->ssrc);
-        payload = calloc(1, payload_s);
+        payload = g_malloc0(payload_s);
         if (payload == NULL)
             return ERR_ALLOC;
         memcpy(payload, &hdr_rr, payload_s);
@@ -86,7 +86,7 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
         payload_s = hdr_sdes_s + name_s;
         // Padding
         payload_s += (((hdr_s + payload_s) % 4) ? 1 : 0);
-        payload = calloc(1, payload_s);
+        payload = g_malloc0(payload_s);
         if (payload == NULL)
             return ERR_ALLOC;
         hdr.count = 1;
@@ -105,7 +105,7 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
         hdr.count = 1;
         hdr_bye.ssrc = htonl(session->ssrc);
         hdr_bye.length = htonl(strlen(reason));
-        payload = calloc(1, payload_s);
+        payload = g_malloc0(payload_s);
         if (payload == NULL)
             return ERR_ALLOC;
         memcpy(payload, &hdr_bye, hdr_bye_s);
@@ -127,6 +127,6 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
     } else {
         fnc_log(FNC_LOG_VERBOSE, "Output RTCP packet lost\n");
     }
-    free(payload);
+    g_free(payload);
     return ERR_NOERROR;
 }

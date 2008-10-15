@@ -270,7 +270,7 @@ Resource *r_open(struct feng *srv, char *root, char *n)
 
 // allocation of all data structures
 
-    if( !(r = calloc(1, sizeof(Resource))) ) {
+    if( !(r = g_new0(Resource, 1)) ) {
         fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
         istream_close(i_stream);
         return NULL;
@@ -312,7 +312,7 @@ static void free_track(Track *t, Resource *r)
     istream_close(t->i_stream);
 
     r->tracks = g_list_remove(r->tracks, t);
-    free(t);
+    g_free(t);
     r->num_tracks--;
 }
 
@@ -327,7 +327,7 @@ void r_close(Resource *r)
         if(r->tracks)
             g_list_foreach(r->tracks, (GFunc)free_track, r);
 
-        free(r);
+        g_free(r);
     }
 }
 
@@ -346,7 +346,7 @@ Selector *r_open_tracks(Resource *r, char *track_name) // RTSP_setup.c uses it !
     if (!sel_tracks)
         return NULL;
     
-    if((s=(Selector*)malloc(sizeof(Selector)))==NULL) {
+    if((s=g_new(Selector, 1))==NULL) {
         fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
         return NULL;
     }
@@ -369,7 +369,7 @@ inline Track *r_selected_track(Selector *selector) // UNUSED
 
 void r_close_tracks(Selector *s) // UNUSED
 {
-    free(s);
+    g_free(s);
 }
 
 static int r_changed(ResourceDescr *descr)
@@ -415,7 +415,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     if(r->num_tracks>=MAX_TRACKS)
         return NULL;
 
-    if( !(t=(Track *)calloc(1, sizeof(Track))) ) {
+    if( !(t=g_new0(Track, 1)) ) {
         fnc_log(FNC_LOG_FATAL, "Memory allocation problems\n");
         return NULL;
     }

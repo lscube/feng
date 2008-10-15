@@ -35,7 +35,7 @@ void RTP_port_pool_init(feng *srv, int port)
 {
     int i;
     srv->start_port = port;
-    srv->port_pool = malloc(ONE_FORK_MAX_CONNECTION * sizeof(int));
+    srv->port_pool = g_new(int, ONE_FORK_MAX_CONNECTION);
     for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i) {
         srv->port_pool[i] = i + srv->start_port;
     }

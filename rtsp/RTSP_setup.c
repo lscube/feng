@@ -155,7 +155,7 @@ static RTSP_Error tcp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     RTSP_interleaved *intlvd;
     Sock *sock_pair[2];
 
-    if ( !(intlvd = calloc(1, sizeof(RTSP_interleaved))) ) {
+    if ( !(intlvd = g_new0(RTSP_interleaved, 1)) ) {
         set_RTSP_Error(&error, 500, "");
         return error;
     }
@@ -165,7 +165,7 @@ static RTSP_Error tcp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
         fnc_log(FNC_LOG_ERR,
                 "Cannot create AF_LOCAL socketpair for rtp\n");
         set_RTSP_Error(&error, 500, "");
-        free(intlvd);
+        g_free(intlvd);
         return error;
     }
 
@@ -179,7 +179,7 @@ static RTSP_Error tcp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
         set_RTSP_Error(&error, 500, "");
         Sock_close(transport->rtp_sock);
         Sock_close(intlvd->rtp_local);
-        free(intlvd);
+        g_free(intlvd);
         return error;
     }
 
@@ -209,7 +209,7 @@ static RTSP_Error sctp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     RTSP_interleaved *intlvd;
     Sock *sock_pair[2];
 
-    if ( !(intlvd = calloc(1, sizeof(RTSP_interleaved))) ) {
+    if ( !(intlvd = g_new0(RTSP_interleaved, 1)) ) {
         set_RTSP_Error(&error, 500, "");
         return error;
     }
@@ -217,7 +217,7 @@ static RTSP_Error sctp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     if ( !((rtp_ch < MAX_SCTP_STREAMS) && (rtcp_ch < MAX_SCTP_STREAMS))) {
         fnc_log(FNC_LOG_ERR, "Stream id over limit\n");
         set_RTSP_Error(&error, 500, "Stream id over limit");
-        free(intlvd);
+        g_free(intlvd);
         return error;
     }
     // RTP local sockpair
@@ -225,7 +225,7 @@ static RTSP_Error sctp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
         fnc_log(FNC_LOG_ERR,
                 "Cannot create AF_LOCAL socketpair for rtp\n");
         set_RTSP_Error(&error, 500, "");
-        free(intlvd);
+        g_free(intlvd);
         return error;
     }
 
@@ -239,7 +239,7 @@ static RTSP_Error sctp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
         set_RTSP_Error(&error, 500, "");
         Sock_close(transport->rtp_sock);
         Sock_close(intlvd->rtp_local);
-        free(intlvd);
+        g_free(intlvd);
         return error;
     }
 
@@ -435,12 +435,12 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
     // XXX Append a new session if one isn't present already!
 #if 1
     if (!rtsp->session_list) {
-        rtsp->session_list = calloc(1, sizeof(RTSP_session));
+        rtsp->session_list = g_new0(RTSP_session, 1);
     }
     rtsp_s = rtsp->session_list;
 #else // To support multiple session per socket...
     if (!rtsp->session_list) {
-        rtsp->session_list = calloc(1, sizeof(RTSP_session));
+        rtsp->session_list = g_new0(RTSP_session, 1);
         rtsp_s = rtsp->session_list;
     } else {
         RTSP_session *rtsp_s_prec;
@@ -448,7 +448,7 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
              rtsp_s = rtsp_s->next) {
             rtsp_s_prec = rtsp_s;
         }
-        rtsp_s_prec->next = calloc(1, sizeof(RTP_session));
+        rtsp_s_prec->next = g_new0(RTP_session, 1);
         rtsp_s = rtsp_s_prec->next;
     }
 #endif
@@ -472,14 +472,14 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
 
 // Setup the RTP session
     if (rtsp->session_list->rtp_session == NULL) {
-        rtsp->session_list->rtp_session = calloc(1, sizeof(RTP_session));
+        rtsp->session_list->rtp_session = g_new0(RTP_session, 1);
         rtp_s = rtsp->session_list->rtp_session;
     } else {
         rtp_s = rtsp_s->rtp_session;
         while (rtp_s->next !=  NULL) {
             rtp_s = rtp_s->next;
         };
-        rtp_s->next = calloc(1, sizeof(RTP_session));
+        rtp_s->next = g_new0(RTP_session, 1);
         rtp_s = rtp_s->next;
     }
 

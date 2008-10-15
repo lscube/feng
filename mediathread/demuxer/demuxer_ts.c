@@ -67,7 +67,7 @@ static double timescaler(Resource *r, double res_time) {
 
 static void value_destroy(gpointer data)
 {
-    free(data);
+    g_free(data);
 }
 
 static guint pid_hash(gconstpointer pid)
@@ -82,7 +82,7 @@ static gboolean pid_equal(gconstpointer v1, gconstpointer v2)
 
 static int mpegts_init(Resource * r)
 {
-    mp2t_priv *priv = calloc(1, sizeof(mp2t_priv));
+    mp2t_priv *priv = g_new0(mp2t_priv, 1);
     MediaProperties props;
     Track *track = NULL;
     TrackInfo trackinfo;
@@ -106,7 +106,7 @@ static int mpegts_init(Resource * r)
     return RESOURCE_OK;
 
 err_alloc:
-    av_freep(&priv);
+    g_free(priv);
     return ERR_PARSE;
 }
 
@@ -163,7 +163,7 @@ static void update_ts_pkt_duration(mp2t_priv* priv, uint8_t* pkt, double now)
                                         (gconstpointer)pid);
     if(!pid_status) {
         //we haven't seen this pid before
-        pid_status = calloc(1, sizeof(mp2t_pid_status));
+        pid_status = g_new0(mp2t_pid_status, 1);
         mp2t_pid_status_init(pid_status, clock, now);
         
         g_hash_table_insert(priv->pid_status_table, (gpointer)pid, pid_status);
@@ -227,7 +227,7 @@ static int mpegts_uninit(Resource * r)
 
     if(priv) {
         g_hash_table_destroy(priv->pid_status_table);
-        free(priv);
+        g_free(priv);
     }
 
     return RESOURCE_OK;

@@ -206,7 +206,7 @@ static char *encode_header(uint8_t *p, unsigned int len, int packet_mode)
 static int h264_init(MediaProperties *properties, void **private_data)
 {
     sdp_field *sdp_private;
-    h264_priv *priv = calloc(1, sizeof(h264_priv));
+    h264_priv *priv = g_new0(h264_priv, 1);
     char *sprop = NULL;
     int err = ERR_ALLOC;
 
@@ -251,7 +251,7 @@ static int h264_init(MediaProperties *properties, void **private_data)
     return ERR_NOERROR;
 
     err_alloc:
-        free(priv);
+        g_free(priv);
     return err;
 }
 
@@ -366,7 +366,7 @@ static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 static int h264_uninit(void *private_data)
 {
     //that's all?
-    if (private_data) free(private_data);
+    if (private_data) g_free(private_data);
     return ERR_NOERROR;
 }
 

@@ -57,7 +57,7 @@ static int aac_init(MediaProperties *properties, void **private_data)
         g_strdup_printf("streamtype=5;profile-level-id=1;"
                         "mode=AAC-hbr;sizeLength=13;indexLength=3;"
                         "indexDeltaLength=3; config=%s;", config);
-    free(config);
+    g_free(config);
 
     properties->sdp_private =
         g_list_prepend(properties->sdp_private, sdp_private);
@@ -107,7 +107,7 @@ static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     int off = 0;
     uint32_t mtu = DEFAULT_MTU;  //FIXME get it from SETUP
     uint32_t payload = mtu - AU_HEADER_SIZE;
-    uint8_t *packet = calloc(1, mtu);
+    uint8_t *packet = g_malloc0(mtu);
 
     if(!packet) return ERR_ALLOC;
 
@@ -141,11 +141,11 @@ static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         goto err_alloc;
     }
 
-    free(packet);
+    g_free(packet);
     return ERR_NOERROR;
 
     err_alloc:
-    free(packet);
+    g_free(packet);
     return ERR_ALLOC;
 }
 

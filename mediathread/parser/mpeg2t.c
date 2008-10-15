@@ -72,7 +72,7 @@ static void mp2t_pid_status_init(mp2t_pid_status* pid_status, double clock,
 
 static void value_destroy(gpointer data)
 {
-    free(data);
+    g_free(data);
 }
 
 static guint pid_hash(gconstpointer pid)
@@ -89,7 +89,7 @@ static gboolean pid_equal(gconstpointer v1, gconstpointer v2)
 static int mp2t_init(MediaProperties *properties, void **private_data)
 {
     mp2t_priv* priv;
-    *private_data = calloc(1, sizeof(mp2t_priv));
+    *private_data = g_new0(mp2t_priv, 1);
 
     priv = (mp2t_priv*)*private_data;
     priv->pid_status_table = g_hash_table_new_full(pid_hash, pid_equal,
@@ -152,7 +152,7 @@ static void update_ts_pkt_duration(mp2t_priv* priv, uint8_t* pkt, double now)
                                         (gconstpointer)pid);
     if(!pid_status) {
         //we haven't seen this pid before
-        pid_status = calloc(1, sizeof(mp2t_pid_status));
+        pid_status = g_new0(mp2t_pid_status, 1);
         mp2t_pid_status_init(pid_status, clock, now);
         
         g_hash_table_insert(priv->pid_status_table, (gpointer)pid, pid_status);
@@ -303,7 +303,7 @@ static int mp2t_uninit(void *private_data)
 
     if(priv) {
         g_hash_table_destroy(priv->pid_status_table);
-        free(private_data);
+        g_free(private_data);
     }
     return ERR_NOERROR;
 }

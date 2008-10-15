@@ -339,7 +339,7 @@ case 'V':
 
 static feng *feng_alloc(void)
 {
-    server *srv = calloc(1, sizeof(*srv));
+    server *srv = g_new0(server, 1);
 
     if (!srv) return NULL;
 
@@ -369,7 +369,7 @@ static void free_sock(gpointer data, gpointer user_data)
 
 int main(int argc, char **argv)
 {
-    feng *srv = feng_alloc(); //calloc(1,sizeof(feng));
+    feng *srv = feng_alloc();
 
     if (!srv) return 1;
 

@@ -28,8 +28,7 @@ int schedule_init(feng *srv)
 {    
     int i;
     GThread *thread;
-    schedule_list *sched = malloc(ONE_FORK_MAX_CONNECTION *
-                                  sizeof(schedule_list));
+    schedule_list *sched = g_new(schedule_list, ONE_FORK_MAX_CONNECTION);
 
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
         sched[i].rtp_session = NULL;

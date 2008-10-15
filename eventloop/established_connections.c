@@ -313,7 +313,7 @@ void established_connections(feng *srv)
                     // Release the mediathread resource
                     mt_resource_close(p->session_list->resource);
                     // Release the RTSP session
-                    free(p->session_list);
+                    g_free(p->session_list);
                     p->session_list = NULL;
                     fnc_log(FNC_LOG_WARN,
                         "WARNING! RTSP connection truncated before ending operations.\n");
@@ -324,7 +324,7 @@ void established_connections(feng *srv)
                     Sock_close(intlvd->rtp_local);
                     Sock_close(intlvd->rtcp_local);
                     intlvd = intlvd->next;
-                    free(intlvd_temp);
+                    g_free(intlvd_temp);
                 }
 
                 // wait for 
@@ -334,11 +334,11 @@ void established_connections(feng *srv)
                 // Release the RTSP_buffer
                 if (p == srv->rtsp_list) {
                     srv->rtsp_list = p->next;
-                    free(p);
+                    g_free(p);
                     p = srv->rtsp_list;
                 } else {
                     pp->next = p->next;
-                    free(p);
+                    g_free(p);
                     p = pp->next;
                 }
                 // Release the scheduler if necessary

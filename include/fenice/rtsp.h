@@ -186,7 +186,7 @@ static inline rtsp_session_list_free( RTSP_buffer *rtsp )
          cur != NULL;) {
          tmp = cur;
          cur = cur->next;
-         free(tmp);
+         g_free(tmp);
     }
 }
 #endif 

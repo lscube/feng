@@ -46,7 +46,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
 
     /* allocate buffer */
     mb_len = 1512 + strlen(cinfo->descr);
-    r = malloc(mb_len);
+    r = g_malloc(mb_len);
     if (!r) {
         fnc_log(FNC_LOG_ERR,
             "send_describe_reply(): unable to allocate memory\n");
@@ -81,7 +81,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
     strcat(r, cinfo->descr);
     bwrite(r, strlen(r), rtsp);
 
-    free(r);
+    g_free(r);
 
     fnc_log(FNC_LOG_CLIENT, "200 %d %s ", strlen(cinfo->descr), cinfo->object);
 

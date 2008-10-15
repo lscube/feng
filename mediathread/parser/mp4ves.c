@@ -55,7 +55,7 @@ static int mp4ves_init(MediaProperties *properties, void **private_data)
 
     sdp_private->field = 
         g_strdup_printf("profile-level-id=1;config=%s;", config);
-    free(config);
+    g_free(config);
 
     properties->sdp_private =
         g_list_prepend(properties->sdp_private, sdp_private);

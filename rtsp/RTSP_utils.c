@@ -349,17 +349,17 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
     }
     /* allocate buffer */
     mb_len = 2048;
-    mb = malloc(mb_len);
-    r = malloc(mb_len + 1512);
+    mb = g_malloc(mb_len);
+    r = g_malloc(mb_len + 1512);
     if (!r || !mb) {
         fnc_log(FNC_LOG_ERR,
             "send_redirect(): unable to allocate memory\n");
         send_reply(500, 0, rtsp);    /* internal server error */
         if (r) {
-            free(r);
+            g_free(r);
         }
         if (mb) {
-            free(mb);
+            g_free(mb);
         }
         return ERR_ALLOC;
     }
@@ -375,8 +375,8 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
 
     bwrite(r, strlen(r), rtsp);
 
-    free(mb);
-    free(r);
+    g_free(mb);
+    g_free(r);
 
     fnc_log(FNC_LOG_VERBOSE, "REDIRECT response sent.\n");
 #endif

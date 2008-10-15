@@ -46,6 +46,8 @@
 #include <sys/mman.h>
 #endif
 
+#include <glib/gmem.h>
+
 static int open_mrl(char *, InputStream *);
 static int open_mrl_st_file(InputStream *);
 static int open_mrl_st_udp(InputStream *);
@@ -61,7 +63,7 @@ InputStream *istream_open(char *mrl)
 {
 	InputStream *is;
 
-	if ( !(is=(InputStream *)calloc(1, sizeof(InputStream))) ) {
+	if ( !(is=g_new0(InputStream, 1)) ) {
 		fnc_log(FNC_LOG_FATAL,"Could not allocate memory for InputStream\n");
 		return NULL;
 	}
@@ -69,7 +71,7 @@ InputStream *istream_open(char *mrl)
 	is->fd = -1;
 	if(open_mrl(mrl, is)!=ERR_NOERROR) {
 		fnc_log(FNC_LOG_ERR," %s is not a valid mrl\n", mrl);
-		free(is);
+		g_free(is);
 		return NULL;
 	}
 
@@ -82,7 +84,7 @@ void istream_close(InputStream *is)
 		close_fd(is);
 		free_cache(is->cache);
 		is->cache=NULL;
-		free(is);
+		g_free(is);
 		is=NULL;
 	}
 }
