@@ -124,7 +124,7 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, int method)
             return;
         }
     }
-    p = rtsp->session_list;
+    p = rtsp->session;
     if (p == NULL) {
         return;
     }

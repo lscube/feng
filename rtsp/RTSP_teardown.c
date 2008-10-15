@@ -88,7 +88,7 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     else if ( (error = get_session_id(rtsp, &session_id)).got_error ) // Get Session id
         goto error_management;
 
-    s = rtsp->session_list;
+    s = rtsp->session;
     if (s == NULL) {
         send_reply(415, 0, rtsp);    // Internal server error
         return ERR_GENERIC;
@@ -146,10 +146,10 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 
     if (s->rtp_session == NULL) {
     // Release mediathread resource
-        mt_resource_close(rtsp->session_list->resource);
+        mt_resource_close(rtsp->session->resource);
         // Release the RTSP session
-        g_free(rtsp->session_list);
-        rtsp->session_list = NULL;
+        g_free(rtsp->session);
+        rtsp->session = NULL;
     }
 
     g_free(filename);

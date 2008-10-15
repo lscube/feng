@@ -74,7 +74,6 @@ typedef struct RTSP_session {
     unsigned long session_id;
     int started;
     RTP_session *rtp_session;
-    struct RTSP_session *next;
     // mediathread resource
     Resource *resource;
     feng *srv;
@@ -98,7 +97,7 @@ typedef struct RTSP_buffer {
     // Run-Time
     unsigned int rtsp_cseq;
     char descr[MAX_DESCR_LENGTH];
-    RTSP_session *session_list;
+    RTSP_session *session;
     struct RTSP_buffer *next;
     feng *srv;
 } RTSP_buffer;
@@ -165,31 +164,6 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp);
 #endif
 
 ssize_t RTSP_send(RTSP_buffer * rtsp);
-
-#if 0 // To support multiple session per socket...
-static inline RTSP_session *rtsp_session_from_id(RTSP_buffer *rtsp,
-                                                 unsigned long session_id )
-{
-    RTSP_session *rtsp_sess;
-
-    for (rtsp_sess = rtsp->session_list;
-         rtsp_sess != NULL;
-         rtsp_sess = rtsp_sess->next)
-            if (rtsp_sess->session_id == session_id) break;
-
-    return rtsp_sess;
-}
-static inline rtsp_session_list_free( RTSP_buffer *rtsp )
-{
-    RTSP_session *cur, *tmp;
-    for (cur = rtsp->session_list;
-         cur != NULL;) {
-         tmp = cur;
-         cur = cur->next;
-         g_free(tmp);
-    }
-}
-#endif 
 
 /**
  * @}

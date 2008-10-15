@@ -82,7 +82,7 @@ int RTSP_pause(RTSP_buffer * rtsp)
     else if ( (error = get_session_id(rtsp, &session_id)).got_error ) // Get Session id
         goto error_management;
 
-    s = rtsp->session_list;
+    s = rtsp->session;
     if (s == NULL) {
         send_reply(415, NULL, rtsp);    // Internal server error
         return ERR_GENERIC;

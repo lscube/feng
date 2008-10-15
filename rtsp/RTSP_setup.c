@@ -330,9 +330,9 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
     // Transport: RTP/AVP;multicast
     // Transport: RTP/AVP/UDP
     // Transport: RTP/AVP/UDP;multicast
-                else if (*rtsp->session_list->resource->info->multicast) {
+                else if (*rtsp->session->resource->info->multicast) {
                     return multicast_transport(rtsp->srv, transport,
-                                        rtsp->session_list->resource->info,
+                                        rtsp->session->resource->info,
                                         tr, rtp_s);
                 } else
                     continue;
@@ -433,25 +433,10 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
     RTSP_session *rtsp_s;
 
     // XXX Append a new session if one isn't present already!
-#if 1
-    if (!rtsp->session_list) {
-        rtsp->session_list = g_new0(RTSP_session, 1);
+    if (!rtsp->session) {
+        rtsp->session = g_new0(RTSP_session, 1);
     }
-    rtsp_s = rtsp->session_list;
-#else // To support multiple session per socket...
-    if (!rtsp->session_list) {
-        rtsp->session_list = g_new0(RTSP_session, 1);
-        rtsp_s = rtsp->session_list;
-    } else {
-        RTSP_session *rtsp_s_prec;
-        for (rtsp_s = rtsp->session_list; rtsp_s != NULL;
-             rtsp_s = rtsp_s->next) {
-            rtsp_s_prec = rtsp_s;
-        }
-        rtsp_s_prec->next = g_new0(RTP_session, 1);
-        rtsp_s = rtsp_s_prec->next;
-    }
-#endif
+    rtsp_s = rtsp->session;
 
     return rtsp_s;
 }
@@ -471,9 +456,9 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     feng *srv = rtsp->srv;
 
 // Setup the RTP session
-    if (rtsp->session_list->rtp_session == NULL) {
-        rtsp->session_list->rtp_session = g_new0(RTP_session, 1);
-        rtp_s = rtsp->session_list->rtp_session;
+    if (rtsp->session->rtp_session == NULL) {
+        rtsp->session->rtp_session = g_new0(RTP_session, 1);
+        rtp_s = rtsp->session->rtp_session;
     } else {
         rtp_s = rtsp_s->rtp_session;
         while (rtp_s->next !=  NULL) {

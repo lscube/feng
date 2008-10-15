@@ -196,7 +196,7 @@ static int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
         }
     }
 
-    p = rtsp->session_list ? rtsp->session_list->rtp_session : NULL;
+    p = rtsp->session ? rtsp->session->rtp_session : NULL;
     for (; p; p = p->next) {
         if ( (p->transport.rtcp_sock) &&
                 FD_ISSET(Sock_fd(p->transport.rtcp_sock), rset)) {
@@ -248,7 +248,7 @@ void established_fd(feng *srv)
             }
         }
         // RTCP input
-        for (q = rtsp->session_list, p = q ? q->rtp_session : NULL;
+        for (q = rtsp->session, p = q ? q->rtp_session : NULL;
              p; p = p->next) {
 
             if (!p->started) {
@@ -289,16 +289,16 @@ void established_connections(feng *srv)
                     fnc_log(FNC_LOG_INFO,
                         "RTSP connection closed by server.");
 
-                if (p->session_list != NULL) {
+                if (p->session != NULL) {
 #if 0 // Do not use it, is just for testing...
-                    if (p->session_list->resource->info->multicast[0]) {
+                    if (p->session->resource->info->multicast[0]) {
                         fnc_log(FNC_LOG_INFO,
                             "RTSP connection closed by client during"
                             " a multicast session, ignoring...");
                         continue;
                     }
 #endif
-                    r = p->session_list->rtp_session;
+                    r = p->session->rtp_session;
 
                     // Release all RTP sessions
                     while (r != NULL) {
@@ -309,12 +309,12 @@ void established_connections(feng *srv)
                         r = t;
                     }
                     // Close connection                     
-                    //close(p->session_list->fd);
+                    //close(p->session->fd);
                     // Release the mediathread resource
-                    mt_resource_close(p->session_list->resource);
+                    mt_resource_close(p->session->resource);
                     // Release the RTSP session
-                    g_free(p->session_list);
-                    p->session_list = NULL;
+                    g_free(p->session);
+                    p->session = NULL;
                     fnc_log(FNC_LOG_WARN,
                         "WARNING! RTSP connection truncated before ending operations.\n");
                 }

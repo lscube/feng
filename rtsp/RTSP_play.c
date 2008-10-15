@@ -146,16 +146,10 @@ static RTSP_Error
 get_session(RTSP_buffer * rtsp, unsigned long session_id,
             RTSP_session **rtsp_sess)
 {
-#if 0
-    for (rtsp_sess = rtsp->session_list; rtsp_sess != NULL; rtsp_sess++)
-        if (rtsp_sess->session_id == session_id) break;
-    if (rtsp_sess == NULL) {
-#else
     // XXX Feng supports single session atm
-    if (((*rtsp_sess = rtsp->session_list) == NULL) ||
+    if (((*rtsp_sess = rtsp->session) == NULL) ||
         ((*rtsp_sess)->session_id != session_id))
     {
-#endif
         return RTSP_SessionNotFound;
     }
 

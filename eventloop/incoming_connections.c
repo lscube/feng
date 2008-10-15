@@ -53,13 +53,13 @@ static void add_client(feng *srv, Sock *client_sock)
     }
 
     new->sock = client_sock;
-    if (!(new->session_list = g_new0(RTSP_session, 1))) {
+    if (!(new->session = g_new0(RTSP_session, 1))) {
         fnc_log(FNC_LOG_FATAL, "Could not alloc memory in add_client()\n");
         return;
     }
 
-    new->session_list->session_id = -1;
-    new->session_list->srv = srv;
+    new->session->session_id = -1;
+    new->session->srv = srv;
 
     fnc_log(FNC_LOG_INFO,
         "Incoming RTSP connection accepted on socket: %d\n",
