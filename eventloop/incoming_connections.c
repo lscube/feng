@@ -30,29 +30,16 @@
 
 static void add_client(feng *srv, Sock *client_sock)
 {
-    RTSP_buffer *p = NULL, *pp = NULL, *new = NULL;
+    RTSP_buffer *new = NULL;
 
     if (!(new = g_new0(RTSP_buffer, 1))) {
         fnc_log(FNC_LOG_FATAL, "Could not alloc memory in add_client()\n");
         return;
     }
-
+    
     new->srv = srv;
-
-    // Add a client
-    if (srv->rtsp_list == NULL) {
-        srv->rtsp_list = new;
-    } else {
-        for (p = srv->rtsp_list; p != NULL; p = p->next) {
-            pp = p;
-        }
-        if (pp != NULL) {
-            pp->next = new;
-            new->next = NULL;
-        }
-    }
-
     new->sock = client_sock;
+
     if (!(new->session = g_new0(RTSP_session, 1))) {
         fnc_log(FNC_LOG_FATAL, "Could not alloc memory in add_client()\n");
         return;
@@ -60,6 +47,8 @@ static void add_client(feng *srv, Sock *client_sock)
 
     new->session->session_id = -1;
     new->session->srv = srv;
+
+    srv->clients = g_slist_prepend(srv->clients, new);
 
     fnc_log(FNC_LOG_INFO,
         "Incoming RTSP connection accepted on socket: %d\n",
@@ -91,6 +80,18 @@ void incoming_fd(feng *srv)
 }
 
 /**
+ * @brief Search function for connections in the clients list
+ * @param value Current entry
+ * @param compare Socket to find in the list
+ */
+static gboolean connections_compare_socket(gconstpointer value, gconstpointer compare)
+{
+  RTSP_buffer *p = (RTSP_buffer*)value;
+
+  return !!Sock_compare((Sock *)compare, p->sock);
+}
+
+/**
  * Accepts the new connection if possible.
  */
 
@@ -98,35 +99,36 @@ static void incoming_connection(gpointer data, gpointer user_data)
 {
     Sock *sock = data;
     feng *srv = user_data;
-    int fd_found;
     Sock *client_sock = NULL;
-    RTSP_buffer *p = NULL;
+    GSList *p = NULL;
 
     if (FD_ISSET(Sock_fd(sock), &srv->rset)) {
         client_sock = Sock_accept(sock, NULL);
     }
 
     // Handle a new connection
-    if (client_sock) {
-        for (fd_found = 0, p = srv->rtsp_list; p != NULL; p = p->next)
-            if (!Sock_compare(client_sock, p->sock)) {
-                fd_found = 1;
-                break;
-            }
-        if (!fd_found) {
-            if (srv->conn_count < ONE_FORK_MAX_CONNECTION) {
-                ++srv->conn_count;
-                // ADD A CLIENT
-                add_client(srv, client_sock);
-            } else {
-                Sock_close(client_sock);
-            }
-            srv->num_conn++;
-            fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->num_conn);
-        } else
-            fnc_log(FNC_LOG_INFO, "Connection found: %d\n",
-                Sock_fd(client_sock));
+    if (!client_sock)
+      return;
+
+    p = g_slist_find_custom(srv->clients, client_sock,
+                            connections_compare_socket);
+
+    if ( p == NULL ) {
+      if (srv->conn_count < ONE_FORK_MAX_CONNECTION) {
+	++srv->conn_count;
+	// ADD A CLIENT
+	add_client(srv, client_sock);
+      } else {
+	Sock_close(client_sock);
+      }
+      srv->num_conn++;
+      fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->num_conn);
+
+      return;
     }
+
+    fnc_log(FNC_LOG_INFO, "Connection found: %d\n",
+	    Sock_fd(client_sock));
 }
 
 /**
@@ -137,5 +139,3 @@ void incoming_connections(feng *srv)
 {
     g_ptr_array_foreach(srv->listen_socks, incoming_connection, srv);
 }
-
-

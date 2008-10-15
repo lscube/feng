@@ -357,7 +357,9 @@ static feng *feng_alloc(void)
     CLEAN(config_touched);
     CLEAN(srvconf.modules);
 #undef CLEAN
+
     srv->listen_socks = g_ptr_array_new();
+    srv->clients = NULL;
 
     return srv;
 }

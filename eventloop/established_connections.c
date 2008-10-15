@@ -215,144 +215,130 @@ static int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
 }
 
 /**
- * Add to the read set the current rtsp sessions fds.
+ * Add to the read set the current rtsp session fd.
  * The rtsp/tcp interleaving requires additional care.
  */
-
-void established_fd(feng *srv)
+void established_each_fd(gpointer data, gpointer user_data)
 {
-    RTSP_buffer *rtsp;
-    for (rtsp = srv->rtsp_list; rtsp; rtsp = rtsp->next) {
-        RTSP_session *q = NULL;
-        RTP_session *p = NULL;
-        RTSP_interleaved *intlvd;
+  feng *srv = (feng*)user_data;
+  RTSP_buffer *rtsp = (RTSP_buffer*)data;
 
-        if (rtsp == NULL) {
-            return;
-        }
-        // FD used for RTSP connection
-        FD_SET(Sock_fd(rtsp->sock), &srv->rset);
-        srv->max_fd = max(srv->max_fd, Sock_fd(rtsp->sock));
-        if (rtsp->out_size > 0) {
-            FD_SET(Sock_fd(rtsp->sock), &srv->wset);
-        }
-        // Local FDS for interleaved trasmission
-        for (intlvd=rtsp->interleaved; intlvd; intlvd=intlvd->next) {
-            if (intlvd->rtp_local) {
-                FD_SET(Sock_fd(intlvd->rtp_local), &srv->rset);
-                srv->max_fd = max(srv->max_fd, Sock_fd(intlvd->rtp_local));
-            }
-            if (intlvd->rtcp_local) {
-                FD_SET(Sock_fd(intlvd->rtcp_local), &srv->rset);
-                srv->max_fd = max(srv->max_fd, Sock_fd(intlvd->rtcp_local));
-            }
-        }
-        // RTCP input
-        for (q = rtsp->session, p = q ? q->rtp_session : NULL;
-             p; p = p->next) {
+  RTSP_session *q = NULL;
+  RTP_session *p = NULL;
+  RTSP_interleaved *intlvd;
 
-            if (!p->started) {
-            // play finished, go to ready state
-                q->cur_state = READY_STATE;
-                /* TODO: RTP struct to be freed */
-            } else if (p->transport.rtcp_sock) {
-                FD_SET(Sock_fd(p->transport.rtcp_sock), &srv->rset);
-                srv->max_fd =
-                    max(srv->max_fd, Sock_fd(p->transport.rtcp_sock));
-            }
-        }
+  // FD used for RTSP connection
+  FD_SET(Sock_fd(rtsp->sock), &srv->rset);
+  srv->max_fd = max(srv->max_fd, Sock_fd(rtsp->sock));
+  if (rtsp->out_size > 0) {
+    FD_SET(Sock_fd(rtsp->sock), &srv->wset);
+  }
+  // Local FDS for interleaved trasmission
+  for (intlvd=rtsp->interleaved; intlvd; intlvd=intlvd->next) {
+    if (intlvd->rtp_local) {
+      FD_SET(Sock_fd(intlvd->rtp_local), &srv->rset);
+      srv->max_fd = max(srv->max_fd, Sock_fd(intlvd->rtp_local));
     }
+    if (intlvd->rtcp_local) {
+      FD_SET(Sock_fd(intlvd->rtcp_local), &srv->rset);
+      srv->max_fd = max(srv->max_fd, Sock_fd(intlvd->rtcp_local));
+    }
+  }
+  // RTCP input
+  for (q = rtsp->session, p = q ? q->rtp_session : NULL;
+       p; p = p->next) {
+
+    if (!p->started) {
+      // play finished, go to ready state
+      q->cur_state = READY_STATE;
+      /* TODO: RTP struct to be freed */
+    } else if (p->transport.rtcp_sock) {
+      FD_SET(Sock_fd(p->transport.rtcp_sock), &srv->rset);
+      srv->max_fd =
+	max(srv->max_fd, Sock_fd(p->transport.rtcp_sock));
+    }
+  }
 }
 
 /**
- * Handle established connections and
- * clean up in case of unexpected disconnections
+ * Handle established connection and clean up in case of unexpected
+ * disconnection
  */
 
-void established_connections(feng *srv)
+void established_each_connection(gpointer data, gpointer user_data)
 {
-    int res;
-    RTSP_buffer *p = srv->rtsp_list, *pp = NULL;
-    RTP_session *r = NULL, *t = NULL;
-    fd_set *rset = &srv->rset;
-    fd_set *wset = &srv->wset;
-    RTSP_interleaved *intlvd;
+  feng *srv = (feng*)user_data;
+  RTSP_buffer *p = (RTSP_buffer*)data;
+  
+  int res;
+  RTP_session *r = NULL, *t = NULL;
+  fd_set *rset = &srv->rset;
+  fd_set *wset = &srv->wset;
+  RTSP_interleaved *intlvd;
 
-    while (p != NULL) {
-        if ((res = rtsp_server(p, rset, wset)) != ERR_NOERROR) {
-            if (res == ERR_CONNECTION_CLOSE || res == ERR_GENERIC) {
-                // The connection is closed
-                if (res == ERR_CONNECTION_CLOSE)
-                    fnc_log(FNC_LOG_INFO,
-                        "RTSP connection closed by client.");
-                else
-                    fnc_log(FNC_LOG_INFO,
-                        "RTSP connection closed by server.");
+  if ((res = rtsp_server(p, rset, wset)) == ERR_NOERROR)
+    return;
+  
+  if (res != ERR_CONNECTION_CLOSE && res != ERR_GENERIC)
+    return;
 
-                if (p->session != NULL) {
+  // The connection is closed
+  if (res == ERR_CONNECTION_CLOSE)
+    fnc_log(FNC_LOG_INFO,
+	    "RTSP connection closed by client.");
+  else
+    fnc_log(FNC_LOG_INFO,
+	    "RTSP connection closed by server.");
+
+  if (p->session != NULL) {
 #if 0 // Do not use it, is just for testing...
-                    if (p->session->resource->info->multicast[0]) {
-                        fnc_log(FNC_LOG_INFO,
-                            "RTSP connection closed by client during"
-                            " a multicast session, ignoring...");
-                        continue;
-                    }
-#endif
-                    r = p->session->rtp_session;
-
-                    // Release all RTP sessions
-                    while (r != NULL) {
-                        // if (r->current_media->pkt_buffer);
-                        // Release the scheduler entry
-                        t = r->next;
-                        schedule_remove(r);
-                        r = t;
-                    }
-                    // Close connection                     
-                    //close(p->session->fd);
-                    // Release the mediathread resource
-                    mt_resource_close(p->session->resource);
-                    // Release the RTSP session
-                    g_free(p->session);
-                    p->session = NULL;
-                    fnc_log(FNC_LOG_WARN,
-                        "WARNING! RTSP connection truncated before ending operations.\n");
-                }
-                // close localfds
-                for (intlvd = p->interleaved; intlvd;) {
-                    RTSP_interleaved *intlvd_temp = intlvd;
-                    Sock_close(intlvd->rtp_local);
-                    Sock_close(intlvd->rtcp_local);
-                    intlvd = intlvd->next;
-                    g_free(intlvd_temp);
-                }
-
-                // wait for 
-                Sock_close(p->sock);
-                --srv->conn_count;
-                srv->num_conn--;
-                // Release the RTSP_buffer
-                if (p == srv->rtsp_list) {
-                    srv->rtsp_list = p->next;
-                    g_free(p);
-                    p = srv->rtsp_list;
-                } else {
-                    pp->next = p->next;
-                    g_free(p);
-                    p = pp->next;
-                }
-                // Release the scheduler if necessary
-                if (p == NULL && srv->conn_count < 0) {
-                    fnc_log(FNC_LOG_DEBUG,
-                        "Thread stopped\n");
-                    srv->stop_schedule = 1;
-                }
-            } else {
-                p = p->next;
-            }
-        } else {
-            pp = p;
-            p = p->next;
-        }
+    if (p->session->resource->info->multicast[0]) {
+      fnc_log(FNC_LOG_INFO,
+	      "RTSP connection closed by client during"
+	      " a multicast session, ignoring...");
+      continue;
     }
+#endif
+    r = p->session->rtp_session;
+
+    // Release all RTP sessions
+    while (r != NULL) {
+      // if (r->current_media->pkt_buffer);
+      // Release the scheduler entry
+      t = r->next;
+      schedule_remove(r);
+      r = t;
+    }
+    // Close connection                     
+    //close(p->session->fd);
+    // Release the mediathread resource
+    mt_resource_close(p->session->resource);
+    // Release the RTSP session
+    g_free(p->session);
+    p->session = NULL;
+    fnc_log(FNC_LOG_WARN,
+	    "WARNING! RTSP connection truncated before ending operations.\n");
+  }
+  // close localfds
+  for (intlvd = p->interleaved; intlvd;) {
+    RTSP_interleaved *intlvd_temp = intlvd;
+    Sock_close(intlvd->rtp_local);
+    Sock_close(intlvd->rtcp_local);
+    intlvd = intlvd->next;
+    g_free(intlvd_temp);
+  }
+
+  // wait for 
+  Sock_close(p->sock);
+  --srv->conn_count;
+  srv->num_conn--;
+  // Release the RTSP_buffer
+  g_slist_remove(srv->clients, p);
+  g_free(p);
+  // Release the scheduler if necessary
+  if (p == NULL && srv->conn_count < 0) {
+    fnc_log(FNC_LOG_DEBUG,
+	    "Thread stopped\n");
+    srv->stop_schedule = 1;
+  }
 }

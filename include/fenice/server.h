@@ -34,6 +34,7 @@
 #include "conf.h"
 #include <netembryo/wsocket.h>
 #include <glib/garray.h>
+#include <glib/gslist.h>
 #include <glib/gthread.h>
 #include <pwd.h>
 #include <grp.h>
@@ -86,7 +87,7 @@ typedef struct feng {
  * Includes the 
  */
 //@{
-    struct RTSP_buffer *rtsp_list;
+    GSList *clients; // of type RTSP_buffer
     /**
      * Once it reaches the maximum the server redirects
      * to a twin if available

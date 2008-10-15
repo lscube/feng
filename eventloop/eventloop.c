@@ -50,7 +50,8 @@ void eventloop(feng *srv)
     }
 
     /* Add all sockets of all sessions to rset and wset */
-    established_fd(srv);
+    g_slist_foreach(srv->clients, established_each_fd, srv);
+
     /* Wait for connections */
     if (select(srv->max_fd + 1, &srv->rset, &srv->wset, NULL, NULL) < 0) {
         fnc_log(FNC_LOG_ERR, "select error in eventloop(). %s\n",
@@ -59,9 +60,9 @@ void eventloop(feng *srv)
         return;
     }
     /* transfer data for any RTSP sessions */
-    established_connections(srv);
-    /* handle new connections */
+    g_slist_foreach(srv->clients, established_each_connection, srv);
 
+    /* handle new connections */
     if (srv->conn_count != -1) {
         incoming_connections(srv);
     }
