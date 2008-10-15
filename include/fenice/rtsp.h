@@ -100,7 +100,6 @@ typedef struct RTSP_buffer {
     unsigned int rtsp_cseq;
     char descr[MAX_DESCR_LENGTH];
     RTSP_session *session;
-    struct RTSP_buffer *next;
     feng *srv;
 } RTSP_buffer;
 
