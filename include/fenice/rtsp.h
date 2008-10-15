@@ -25,6 +25,9 @@
 
 #include <time.h>
 #include <config.h>
+
+#include <glib/gslist.h>
+
 #include <fenice/utils.h>
 #include <netembryo/wsocket.h>
 #include <fenice/rtp.h>
@@ -66,7 +69,6 @@ typedef struct RTSP_interleaved {
         } sctp;
 #endif
     } proto;
-    struct RTSP_interleaved *next;
 } RTSP_interleaved;
 
 typedef struct RTSP_session {
@@ -92,7 +94,7 @@ typedef struct RTSP_buffer {
      * this size is used to remenber how much data should be grouped in one
      * pkt with  MSG_MORE flag.
      * */
-    RTSP_interleaved *interleaved;
+    GSList *interleaved; // of type RTSP_interleaved
 
     // Run-Time
     unsigned int rtsp_cseq;

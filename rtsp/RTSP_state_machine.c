@@ -35,6 +35,14 @@ static int RTSP_valid_response_msg(unsigned short *status, char *msg,
 				   RTSP_buffer * rtsp);
 static int RTSP_validate_method(RTSP_buffer * rtsp);
 
+static gboolean find_tcp_interleaved(gconstpointer value, gconstpointer target)
+{
+  RTSP_interleaved *i = (RTSP_interleaved *)value;
+  gint m = GPOINTER_TO_INT(target);
+
+  return (i->proto.tcp.rtp_ch == m || i->proto.tcp.rtcp_ch == m);
+}
+
 /**
  * Handles incoming RTSP message, validates them and then dispatches them 
  * with RTSP_state_machine
@@ -73,10 +81,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
             break;
         case RTSP_interlvd_rcvd:
             m = rtsp->in_buffer[1];
-            for (intlvd = rtsp->interleaved;
-                 intlvd && !((intlvd->proto.tcp.rtp_ch == m)
-                || (intlvd->proto.tcp.rtcp_ch == m));
-                 intlvd = intlvd->next);
+	    intlvd = g_slist_find_custom(rtsp->interleaved, GINT_TO_POINTER(m), find_tcp_interleaved)->data;
             if (!intlvd) {    // session not found
                 fnc_log(FNC_LOG_DEBUG,
                     "Interleaved RTP or RTCP packet arrived for unknown channel (%d)... discarding.\n",

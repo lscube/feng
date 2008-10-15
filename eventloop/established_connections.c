@@ -59,17 +59,100 @@ int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
      (Sock_type(a) == TCP)
 #endif
 
-static int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
+#ifdef HAVE_LIBSCTP
+static gboolean find_sctp_interleaved(gconstpointer value, gconstpointer target)
 {
-    char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
-    int i, n;
-    int res;
-    RTP_session *p = NULL;
-    RTSP_interleaved *intlvd;
-    int m = 0;
+  RTSP_interleaved *i = (RTSP_interleaved *)value;
+  gint m = GPOINTER_TO_INT(target);
+
+  return (i->proto.sctp.rtp.sinfo_stream == m || i->proto.sctp.rtcp.sinfo_stream == m);
+}
+#endif
+
+static void interleaved_read(gpointer element, gpointer user_data)
+{
+  RTSP_buffer *rtsp = (RTSP_buffer *)user_data;
+  RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
+
+  char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
+  int i, n;
 #ifdef HAVE_LIBSCTP
     struct sctp_sndrcvinfo sctp_info;
 #endif
+
+  if ( FD_ISSET(Sock_fd(intlvd->rtcp_local), &rtsp->srv->rset) ) {
+    if ( (n = Sock_read(intlvd->rtcp_local, buffer, RTSP_BUFFERSIZE, NULL, 0)) < 0) {
+      fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
+      return;
+    }
+    switch (Sock_type(rtsp->sock)){
+    case TCP:
+      if ((i = rtsp->out_size) + n < RTSP_BUFFERSIZE - RTSP_RESERVED) {
+	rtsp->out_buffer[i] = '$';
+	rtsp->out_buffer[i + 1] = (unsigned char) intlvd->proto.tcp.rtcp_ch;
+	*((uint16_t *) & rtsp->out_buffer[i + 2]) = 
+	  htons((uint16_t) n);
+	rtsp->out_size += n + 4;
+	memcpy(rtsp->out_buffer + i + 4, buffer, n);
+	if ( (n = RTSP_send(rtsp)) < 0) {
+	  send_reply(500, NULL, rtsp);
+	  return;// internal server error
+	}
+      }
+      break;
+#ifdef HAVE_LIBSCTP
+    case SCTP:
+      memcpy(&sctp_info, &(intlvd->proto.sctp.rtcp), sizeof(struct sctp_sndrcvinfo));
+      Sock_write(rtsp->sock, buffer, n, &sctp_info, MSG_DONTWAIT | MSG_EOR);
+      break;
+#endif
+    default:
+      break;
+    }
+  }
+  if ( FD_ISSET(Sock_fd(intlvd->rtp_local), &rtsp->srv->rset) ) {
+    if ( (n = Sock_read(intlvd->rtp_local, buffer,
+                        RTSP_BUFFERSIZE, NULL, 0)) < 0) {
+      // if ( (n = read(intlvd->rtp_fd, intlvd->out_buffer, sizeof(intlvd->out_buffer))) < 0) {
+      fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
+      return;
+    }
+    switch (Sock_type(rtsp->sock)){
+    case TCP:
+      if ((i = rtsp->out_size) + n < RTSP_BUFFERSIZE - RTSP_RESERVED) {
+	rtsp->out_buffer[i] = '$';
+	rtsp->out_buffer[i + 1] =
+	  (unsigned char) intlvd->proto.tcp.rtp_ch;
+	*((uint16_t *) & rtsp->out_buffer[i + 2]) =
+	  htons((uint16_t) n);
+	rtsp->out_size += n + 4;
+	memcpy(rtsp->out_buffer + i + 4, buffer, n);
+	if ( (n = RTSP_send(rtsp)) < 0) {
+	  send_reply(500, NULL, rtsp);
+	  return;// internal server error
+	}
+      }
+      break;
+#ifdef HAVE_LIBSCTP
+    case SCTP:
+      memcpy(&sctp_info, &(intlvd->proto.sctp.rtp),
+	     sizeof(struct sctp_sndrcvinfo));
+      Sock_write(rtsp->sock, buffer, n, &sctp_info, MSG_DONTWAIT | MSG_EOR);
+      break;
+#endif
+    default:
+      break;
+    }
+  }
+}
+
+static int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
+{
+    char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
+    int n;
+    int res;
+    RTP_session *p = NULL;
+    gint m = 0;
 
     if (rtsp == NULL) {
         return ERR_NOERROR;
@@ -109,92 +192,26 @@ static int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
             }
         } else {    /* if (rtsp->proto == SCTP && m != 0) */
 #ifdef HAVE_LIBSCTP
-            for (intlvd = rtsp->interleaved;
-                 intlvd && !((intlvd->proto.sctp.rtp.sinfo_stream == m)
-                || (intlvd->proto.sctp.rtcp.sinfo_stream == m));
-                 intlvd = intlvd->next);
-            if (intlvd) {
-                if (m == intlvd->proto.sctp.rtcp.sinfo_stream) {
-                    Sock_write(intlvd->rtcp_local, buffer, n, NULL, 0);
-                } else {    // RTP pkt arrived: do nothing...
-                    fnc_log(FNC_LOG_DEBUG,
-                        "Interleaved RTP packet arrived from stream %d.\n",
-                        m);
-                }
-            } else {
-                fnc_log(FNC_LOG_DEBUG,
+	  RTSP_interleaved *intlvd = g_slist_find_custom(rtsp->interleaved, GINT_TO_POINTER(m), find_sctp_interleaved)->data;
+
+	  if (intlvd) {
+	    if (m == intlvd->proto.sctp.rtcp.sinfo_stream) {
+	      Sock_write(intlvd->rtcp_local, buffer, n, NULL, 0);
+	    } else {    // RTP pkt arrived: do nothing...
+	      fnc_log(FNC_LOG_DEBUG,
+		      "Interleaved RTP packet arrived from stream %d.\n",
+		      m);
+	    }
+	  } else {
+	    fnc_log(FNC_LOG_DEBUG,
                     "Packet arrived from unknown stream (%d)... ignoring.\n",
                     m);
-            }
+	  }
 #endif    // HAVE_LIBSCTP
         }
     }
-    for (intlvd=rtsp->interleaved; intlvd; intlvd=intlvd->next) {
-        if ( FD_ISSET(Sock_fd(intlvd->rtcp_local), rset) ) {
-            if ( (n = Sock_read(intlvd->rtcp_local, buffer, RTSP_BUFFERSIZE, NULL, 0)) < 0) {
-                fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
-                continue;
-            }
-            switch (Sock_type(rtsp->sock)){
-            case TCP:
-                if ((i = rtsp->out_size) + n < RTSP_BUFFERSIZE - RTSP_RESERVED) {
-                    rtsp->out_buffer[i] = '$';
-                    rtsp->out_buffer[i + 1] = (unsigned char) intlvd->proto.tcp.rtcp_ch;
-                    *((uint16_t *) & rtsp->out_buffer[i + 2]) = 
-                        htons((uint16_t) n);
-                    rtsp->out_size += n + 4;
-                    memcpy(rtsp->out_buffer + i + 4, buffer, n);
-                    if ( (n = RTSP_send(rtsp)) < 0) {
-                        send_reply(500, NULL, rtsp);
-                        return ERR_GENERIC;// internal server error
-                    }
-                }
-                break;
-#ifdef HAVE_LIBSCTP
-            case SCTP:
-                memcpy(&sctp_info, &(intlvd->proto.sctp.rtcp), sizeof(struct sctp_sndrcvinfo));
-                Sock_write(rtsp->sock, buffer, n, &sctp_info, MSG_DONTWAIT | MSG_EOR);
-                break;
-#endif
-            default:
-                break;
-            }
-        }
-        if ( FD_ISSET(Sock_fd(intlvd->rtp_local), rset) ) {
-            if ( (n = Sock_read(intlvd->rtp_local, buffer,
-                        RTSP_BUFFERSIZE, NULL, 0)) < 0) {
-            // if ( (n = read(intlvd->rtp_fd, intlvd->out_buffer, sizeof(intlvd->out_buffer))) < 0) {
-                fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
-                continue;
-            }
-            switch (Sock_type(rtsp->sock)){
-            case TCP:
-                if ((i = rtsp->out_size) + n < RTSP_BUFFERSIZE - RTSP_RESERVED) {
-                    rtsp->out_buffer[i] = '$';
-                    rtsp->out_buffer[i + 1] =
-                        (unsigned char) intlvd->proto.tcp.rtp_ch;
-                    *((uint16_t *) & rtsp->out_buffer[i + 2]) =
-                        htons((uint16_t) n);
-                    rtsp->out_size += n + 4;
-                    memcpy(rtsp->out_buffer + i + 4, buffer, n);
-                    if ( (n = RTSP_send(rtsp)) < 0) {
-                        send_reply(500, NULL, rtsp);
-                        return ERR_GENERIC;// internal server error
-                    }
-                }
-            break;
-#ifdef HAVE_LIBSCTP
-            case SCTP:
-                memcpy(&sctp_info, &(intlvd->proto.sctp.rtp),
-                    sizeof(struct sctp_sndrcvinfo));
-                Sock_write(rtsp->sock, buffer, n, &sctp_info, MSG_DONTWAIT | MSG_EOR);
-                break;
-#endif
-            default:
-                break;
-            }
-        }
-    }
+
+    g_slist_foreach(rtsp->interleaved, interleaved_read, rtsp);
 
     p = rtsp->session ? rtsp->session->rtp_session : NULL;
     for (; p; p = p->next) {
@@ -214,6 +231,21 @@ static int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
     return ERR_NOERROR;
 }
 
+void interleaved_set_fds(gpointer element, gpointer user_data)
+{
+  RTSP_buffer *rtsp = (RTSP_buffer *)user_data;
+  RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
+
+  if (intlvd->rtp_local) {
+    FD_SET(Sock_fd(intlvd->rtp_local), &rtsp->srv->rset);
+    rtsp->srv->max_fd = max(rtsp->srv->max_fd, Sock_fd(intlvd->rtp_local));
+  }
+  if (intlvd->rtcp_local) {
+    FD_SET(Sock_fd(intlvd->rtcp_local), &rtsp->srv->rset);
+    rtsp->srv->max_fd = max(rtsp->srv->max_fd, Sock_fd(intlvd->rtcp_local));
+  }
+}
+
 /**
  * Add to the read set the current rtsp session fd.
  * The rtsp/tcp interleaving requires additional care.
@@ -225,7 +257,6 @@ void established_each_fd(gpointer data, gpointer user_data)
 
   RTSP_session *q = NULL;
   RTP_session *p = NULL;
-  RTSP_interleaved *intlvd;
 
   // FD used for RTSP connection
   FD_SET(Sock_fd(rtsp->sock), &srv->rset);
@@ -234,16 +265,8 @@ void established_each_fd(gpointer data, gpointer user_data)
     FD_SET(Sock_fd(rtsp->sock), &srv->wset);
   }
   // Local FDS for interleaved trasmission
-  for (intlvd=rtsp->interleaved; intlvd; intlvd=intlvd->next) {
-    if (intlvd->rtp_local) {
-      FD_SET(Sock_fd(intlvd->rtp_local), &srv->rset);
-      srv->max_fd = max(srv->max_fd, Sock_fd(intlvd->rtp_local));
-    }
-    if (intlvd->rtcp_local) {
-      FD_SET(Sock_fd(intlvd->rtcp_local), &srv->rset);
-      srv->max_fd = max(srv->max_fd, Sock_fd(intlvd->rtcp_local));
-    }
-  }
+  g_slist_foreach(rtsp->interleaved, interleaved_set_fds, rtsp);
+
   // RTCP input
   for (q = rtsp->session, p = q ? q->rtp_session : NULL;
        p; p = p->next) {
@@ -260,6 +283,15 @@ void established_each_fd(gpointer data, gpointer user_data)
   }
 }
 
+static void interleaved_close_fds(gpointer element, gpointer user_data)
+{
+  RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
+
+  Sock_close(intlvd->rtp_local);
+  Sock_close(intlvd->rtcp_local);
+  g_free(intlvd);
+}
+
 /**
  * Handle established connection and clean up in case of unexpected
  * disconnection
@@ -274,7 +306,6 @@ void established_each_connection(gpointer data, gpointer user_data)
   RTP_session *r = NULL, *t = NULL;
   fd_set *rset = &srv->rset;
   fd_set *wset = &srv->wset;
-  RTSP_interleaved *intlvd;
 
   if ((res = rtsp_server(p, rset, wset)) == ERR_NOERROR)
     return;
@@ -319,21 +350,17 @@ void established_each_connection(gpointer data, gpointer user_data)
     fnc_log(FNC_LOG_WARN,
 	    "WARNING! RTSP connection truncated before ending operations.\n");
   }
-  // close localfds
-  for (intlvd = p->interleaved; intlvd;) {
-    RTSP_interleaved *intlvd_temp = intlvd;
-    Sock_close(intlvd->rtp_local);
-    Sock_close(intlvd->rtcp_local);
-    intlvd = intlvd->next;
-    g_free(intlvd_temp);
-  }
+
+  // close local fds
+  g_slist_foreach(p->interleaved, interleaved_close_fds, NULL);
+  g_slist_free(p->interleaved);
 
   // wait for 
   Sock_close(p->sock);
   --srv->conn_count;
   srv->num_conn--;
   // Release the RTSP_buffer
-  g_slist_remove(srv->clients, p);
+  srv->clients = g_slist_remove(srv->clients, p);
   g_free(p);
   // Release the scheduler if necessary
   if (p == NULL && srv->conn_count < 0) {

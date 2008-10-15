@@ -191,8 +191,7 @@ static RTSP_Error tcp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     transport->rtcp_ch = intlvd->proto.tcp.rtcp_ch = rtcp_ch;
 
     // insert new interleaved stream in the list
-    intlvd->next = rtsp->interleaved;
-    rtsp->interleaved = intlvd;
+    rtsp->interleaved = g_slist_prepend(rtsp->interleaved, intlvd);
 
     return RTSP_Ok;
 }
@@ -251,8 +250,7 @@ static RTSP_Error sctp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     transport->rtcp_ch = intlvd->proto.sctp.rtcp.sinfo_stream = rtcp_ch;
 
     // insert new interleaved stream in the list
-    intlvd->next = rtsp->interleaved;
-    rtsp->interleaved = intlvd;
+    rtsp->interleaved = g_slist_prepend(rtsp->interleaved, intlvd);
 
     return RTSP_Ok;
 }
@@ -281,7 +279,6 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
 
     char *saved_ptr, *transport_tkn;
     int max_interlvd;
-    RTSP_interleaved *ilvd_s;
     int rtp_ch = 0, rtcp_ch = 0;
 
     // Start parsing the Transport header
@@ -350,10 +347,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                         rtcp_ch = rtp_ch + 1;
                 } else {    // search for max used interleved channel.
                     max_interlvd = -1;
-                    for (ilvd_s = (rtsp->interleaved);
-                         ilvd_s;
-                         ilvd_s = ilvd_s->next)
-                        max_interlvd = max(max_interlvd, rtcp_ch);
+		    max_interlvd = max(max_interlvd, rtcp_ch);
                     rtp_ch = max_interlvd + 1;
                     rtcp_ch = max_interlvd + 2;
                 }
@@ -381,10 +375,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                         rtcp_ch = rtp_ch + 1;
                 } else {    // search for max used stream.
                     max_interlvd = -1;
-                    for (ilvd_s = (rtsp->interleaved);
-                         ilvd_s;
-                         ilvd_s = ilvd_s->next)
-                        max_interlvd = max(max_interlvd, rtcp_ch);
+		    max_interlvd = max(max_interlvd, rtcp_ch);
                     rtp_ch = max_interlvd + 1;
                     rtcp_ch = max_interlvd + 2;
                 }
