@@ -17,10 +17,11 @@ AC_USE_SYSTEM_EXTENSIONS
 dnl Force usage of POSIX.1-2001 (clock_gettime)
 CPPFLAGS="${CPPFLAGS} -D_POSIX_C_SOURCE=200112L"
 
-dnl Workaround Darwin
-AS_IF([test "x$(uname)" = "xDarwin"],[
-  CPPFLAGS="${CPPFLAGS} -D_DARWIN_C_SOURCE"
-])
+dnl Enable Darwin extensions (AC_USE_SYSTEM_EXTENSIONS does not enable
+dnl them in 2.63)
+AC_CANONICAL_HOST
+AS_CASE([$host_os],
+	[darwin*], [CPPFLAGS="${CPPFLAGS} -D_DARWIN_C_SOURCE"])
 
 AC_CONFIG_HEADER([config.h])
 
