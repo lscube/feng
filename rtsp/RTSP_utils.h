@@ -74,6 +74,7 @@ RTSP_Error get_session_id(RTSP_buffer * rtsp, unsigned long * session_id);
 int send_redirect_3xx(RTSP_buffer *, char *);
 int bwrite(char *buffer, size_t len, RTSP_buffer * rtsp);
 void add_time_stamp(char *b, int crlf);
+void add_time_stamp_g(GString *str, int crlf);
 /**
  * @}
  */

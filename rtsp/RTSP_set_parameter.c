@@ -36,13 +36,15 @@
  */
 static int send_set_parameter_reply(RTSP_buffer * rtsp)
 {
-    char r[1024];
+    GString *reply = g_string_new("");
     long int cseq = rtsp->rtsp_cseq;
 
-    sprintf(r, "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL, RTSP_VER, 451,
-        get_stat(451), cseq);
-    strcat(r, RTSP_EL);
-    bwrite(r, strlen(r), rtsp);
+    g_string_printf(reply,
+		    "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL RTSP_EL, RTSP_VER, 451,
+		    get_stat(451), cseq);
+
+    bwrite(reply->str, reply->len, rtsp);
+    g_string_free(reply, TRUE);
 
     fnc_log(FNC_LOG_CLIENT, "451 - - ");
 

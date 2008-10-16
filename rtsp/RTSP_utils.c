@@ -298,19 +298,20 @@ void log_user_agent(RTSP_buffer * rtsp)
  */
 int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 {
-    gchar *body;
+    GString *reply = g_string_new("");
     int res;
     char *message = addon ? addon : "";
 
-    body = g_strdup_printf("%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "%s",
-                           RTSP_VER,
-                           err,
-                           get_stat(err),
-                           rtsp->rtsp_cseq,
-                           message);
+    g_string_printf(reply,
+		    "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "%s",
+		    RTSP_VER,
+		    err,
+		    get_stat(err),
+		    rtsp->rtsp_cseq,
+		    message);
 
-    res = bwrite(body, strlen(body), rtsp);
-    g_free(body);
+    res = bwrite(reply->str, reply->len, rtsp);
+    g_string_free(reply, TRUE);
 
     fnc_log(FNC_LOG_ERR, "%s %d - - ", get_stat(err), err);
     log_user_agent(rtsp);
@@ -425,6 +426,12 @@ void add_time_stamp(char *b, int crlf)
         strcat(b, "\r\n");    /* add a message header terminator (CRLF) */
 }
 
+void add_time_stamp_g(GString *str, int crlf) {
+  char buffer[41] = { 0, };
+  
+  add_time_stamp(buffer, crlf);
+  g_string_append(str, buffer);
+}
 
 /**
  * Parses an url giving back the server, the port and the requested file

@@ -511,31 +511,33 @@ static RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * 
  */
 static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_session * rtp_s)
 {
-    char r[1024];
-    int w_pos = 0;
+    GString *reply = g_string_new("");
 
-    snprintf(r, sizeof(r),
+    g_string_printf(reply,
         "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
         RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
         VERSION);
-    add_time_stamp(r, 0);
-    w_pos = strlen(r);
-    w_pos += snprintf(r + w_pos, sizeof(r) - w_pos, "Session: %lu" RTSP_EL,
-                      session->session_id);
 
-    w_pos += snprintf(r + w_pos, sizeof(r) - w_pos, "Transport: ");
+    add_time_stamp_g(reply, 0);
+
+    g_string_append_printf(reply,
+			   "Session: %lu" RTSP_EL,
+			   session->session_id);
+
+    g_string_append(reply, "Transport: ");
+
     if (!rtp_s || !rtp_s->transport.rtp_sock)
         return ERR_GENERIC;
     switch (Sock_type(rtp_s->transport.rtp_sock)) {
     case UDP:
         if (Sock_flags(rtp_s->transport.rtp_sock)== IS_MULTICAST) {
-            w_pos += sprintf(r + w_pos,
-                    "RTP/AVP;multicast;ttl=%d;destination=%s;port=",
-//                    session->resource->info->ttl,
-                    DEFAULT_TTL,
-                    session->resource->info->multicast);
+	  g_string_append_printf(reply,
+				 "RTP/AVP;multicast;ttl=%d;destination=%s;port=",
+				 // session->resource->info->ttl,
+				 DEFAULT_TTL,
+				 session->resource->info->multicast);
         } else { // XXX handle TLS here
-            w_pos += snprintf(r + w_pos, sizeof(r) - w_pos,
+	  g_string_append_printf(reply,
                     "RTP/AVP;unicast;source=%s;"
                     "client_port=%d-%d;server_port=",
                     get_local_host(rtsp->sock),
@@ -543,34 +545,32 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
                     get_remote_port(rtp_s->transport.rtcp_sock));
         }
 
-        w_pos +=
-            snprintf(r + w_pos, sizeof(r) - w_pos, "%d-%d",
-                get_local_port(rtp_s->transport.rtp_sock),
-                get_local_port(rtp_s->transport.rtcp_sock));
+	g_string_append_printf(reply, "%d-%d",
+			       get_local_port(rtp_s->transport.rtp_sock),
+			       get_local_port(rtp_s->transport.rtcp_sock));
 
         break;
     case LOCAL:
         if (Sock_type(rtsp->sock) == TCP) {
-            w_pos += snprintf(r + w_pos, sizeof(r) - w_pos,
-                 "RTP/AVP/TCP;interleaved=%d-%d",
-                 rtp_s->transport.rtp_ch,
-                 rtp_s->transport.rtcp_ch);
+	  g_string_append_printf(reply,
+				 "RTP/AVP/TCP;interleaved=%d-%d",
+				 rtp_s->transport.rtp_ch,
+				 rtp_s->transport.rtcp_ch);
         }
         else if (Sock_type(rtsp->sock) == SCTP) {
-            w_pos += snprintf(r + w_pos, sizeof(r) - w_pos,
-                 "RTP/AVP/SCTP;server_streams=%d-%d",
-                 rtp_s->transport.rtp_ch,
-                 rtp_s->transport.rtcp_ch);
+	  g_string_append_printf(reply,
+				 "RTP/AVP/SCTP;server_streams=%d-%d",
+				 rtp_s->transport.rtp_ch,
+				 rtp_s->transport.rtcp_ch);
         }
         break;
     default:
         break;
     }
-    snprintf(r + w_pos, sizeof(r) - w_pos, ";ssrc=%08X", rtp_s->ssrc);
+    g_string_append_printf(reply, ";ssrc=%08X" RTSP_EL RTSP_EL, rtp_s->ssrc);
 
-    strcat(r, RTSP_EL RTSP_EL);
-
-    bwrite(r, strlen(r), rtsp);
+    bwrite(reply->str, reply->len, rtsp);
+    g_string_free(reply, TRUE);
 
     fnc_log(FNC_LOG_CLIENT, "200 - %s ",
             r_selected_track(rtp_s->track_selector)->info->name);

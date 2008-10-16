@@ -262,37 +262,33 @@ do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
 }
 
 typedef struct {
-  char *r;
+  GString *reply;
   char *server;
 } rtp_session_send_play_reply_pair;
 
 static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
 {
-  char temp[256];
-
   rtp_session_send_play_reply_pair *pair = (rtp_session_send_play_reply_pair *)user_data;
 
-  char *r = pair->r;
   RTP_session *p = (RTP_session *)element;
-
   Track *t = r_selected_track(p->track_selector);
-  strcat(r, "url=");
-  // TODO: we MUST be sure to send the correct url
-  strcat (r, "rtsp://");
-  strcat (r, pair->server);
-  strcat (r, "/");
+
+  char temp[256];
   Url_encode(temp, p->sd_filename, sizeof(temp));
-  strcat (r, temp);
-  strcat (r, "/");
-  strcat (r, SDP2_TRACK_ID"=");
+
+  g_string_append_printf(pair->reply,
+			 "url=rtsp://%s/%s/"SDP2_TRACK_ID"=", pair->server, temp);
+
   Url_encode(temp, t->info->name, sizeof(temp));
-  strcat (r, temp);
-  strcat(r, ";");
-  sprintf(r + strlen(r), "seq=%u", p->start_seq);
-  if (t->properties->media_source != MS_live) {
-    sprintf(r + strlen(r), ";rtptime=%u", p->start_rtptime);
-  }
-  strcat(r, ",");
+
+  g_string_append_printf(pair->reply,
+			 "%s;seq=%u", temp, p->start_seq);
+
+  if (t->properties->media_source != MS_live)
+    g_string_append_printf(pair->reply,
+			   ";rtptime=%u", p->start_rtptime);
+
+  g_string_append(pair->reply, ",");
 }
 
 /**
@@ -305,43 +301,41 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
 static int send_play_reply(RTSP_buffer * rtsp, ConnectionInfo *cinfo,
                            RTSP_session * rtsp_session, play_args * args)
 {
-    char r[1024];
-    char temp[256];
+    GString *reply = g_string_new("");
     rtp_session_send_play_reply_pair pair = {
-      .r = (char*)&r,
+      .reply = reply,
       .server = cinfo->server
     };
 
     /* build a reply message */
-    sprintf(r,
+    g_string_printf(reply,
         "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
         RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
         VERSION);
-    add_time_stamp(r, 0);
-    strcat(r, "Range: npt=");
-    sprintf(temp, "%f-", args->begin_time);
-    strcat(r, temp);
-    if (args->end_time != HUGE_VAL) {
-        sprintf(temp, "%f", args->end_time);
-        strcat(r, temp);
-    }
-    strcat(r, RTSP_EL);
-    strcat(r, "Session: ");
-    sprintf(temp, "%lu", rtsp_session->session_id);
-    strcat(r, temp);
-    strcat(r, RTSP_EL);
-    strcat(r, "RTP-info: ");
+
+    add_time_stamp_g(reply, 0);
+    g_string_append_printf(reply, "Range: npt=%f-", args->begin_time);
+
+    if (args->end_time != HUGE_VAL)
+      g_string_append_printf(reply, "%f", args->end_time);
+
+    g_string_append(reply, RTSP_EL);
+
+    g_string_append_printf(reply, "Session: %lu" RTSP_EL, rtsp_session->session_id);
+
+    g_string_append(reply, "RTP-info: ");
 
     g_slist_foreach(rtsp_session->rtp_sessions, rtp_session_send_play_reply, &pair);
 
-    r[strlen(r)-1] = '\0';
-    strcat(r, RTSP_EL);
+    g_string_truncate(reply, reply->len-1);
+    
+    g_string_append(reply, RTSP_EL);
 
     // end of message
-    strcat(r, RTSP_EL);
+    g_string_append(reply, RTSP_EL);
 
-    bwrite(r, strlen(r), rtsp);
-
+    bwrite(reply->str, reply->len, rtsp);
+    g_string_free(reply, TRUE);
 
     fnc_log(FNC_LOG_CLIENT, "200 - %s ", cinfo->object);
 

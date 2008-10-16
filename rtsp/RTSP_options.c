@@ -36,14 +36,19 @@
  */
 static int send_options_reply(RTSP_buffer * rtsp)
 {
-    char r[1024];
+    GString *reply = g_string_new("");
     long int cseq = rtsp->rtsp_cseq;
 
-    sprintf(r, "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL, RTSP_VER, 200,
-        get_stat(200), cseq);
-    strcat(r, "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN,SET_PARAMETER" RTSP_EL);
-    strcat(r, RTSP_EL);
-    bwrite(r, strlen(r), rtsp);
+    g_string_printf(reply,
+		    "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL, RTSP_VER, 200,
+		    get_stat(200), cseq);
+
+    g_string_append(reply,
+		    "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN,SET_PARAMETER" RTSP_EL);
+    g_string_append(reply, RTSP_EL);
+
+    bwrite(reply->str, reply->len, rtsp);
+    g_string_free(reply, TRUE);
 
     fnc_log(FNC_LOG_CLIENT, "200 - - ");
 

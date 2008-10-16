@@ -40,14 +40,11 @@
  */
 static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
 {
-    char *r;        /* reply message buffer */
-    int mb_len;
+    GString *reply = g_string_new("");
     char encoded_object[256];
 
     /* allocate buffer */
-    mb_len = 1512 + strlen(cinfo->descr);
-    r = g_malloc(mb_len);
-    if (!r) {
+    if (!reply) {
         fnc_log(FNC_LOG_ERR,
             "send_describe_reply(): unable to allocate memory\n");
         send_reply(500, NULL, rtsp);    /* internal server error */
@@ -55,33 +52,37 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
     }
 
     /*describe */
-    snprintf(r, mb_len,
+    g_string_printf(reply,
         "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
         RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
         VERSION);
-    add_time_stamp(r, 0);
+
+    add_time_stamp_g(reply, 0);
+
     switch (cinfo->descr_format) {
         // Add new formats here
     case df_SDP_format:{
-            strcat(r, "Content-Type: application/sdp" RTSP_EL);
+	    g_string_append(reply, "Content-Type: application/sdp" RTSP_EL);
             break;
         }
     }
     Url_encode (encoded_object, cinfo->object, sizeof(encoded_object));
-    snprintf(r + strlen(r), mb_len - strlen(r),
-             "Content-Base: rtsp://%s/%s/" RTSP_EL,
-             cinfo->server, encoded_object);
-    snprintf(r + strlen(r), mb_len - strlen(r),
-             "Content-Length: %zd" RTSP_EL,
-             strlen(cinfo->descr));
+    g_string_append_printf(reply,
+			   "Content-Base: rtsp://%s/%s/" RTSP_EL,
+			   cinfo->server, encoded_object);
+             
+    g_string_append_printf(reply,
+			   "Content-Length: %zd" RTSP_EL,
+			   strlen(cinfo->descr));
+             
     // end of message
-    strcat(r, RTSP_EL);
+    g_string_append(reply, RTSP_EL);
 
     // concatenate description
-    strcat(r, cinfo->descr);
-    bwrite(r, strlen(r), rtsp);
+    g_string_append(reply, cinfo->descr);
 
-    g_free(r);
+    bwrite(reply->str, reply->len, rtsp);
+    g_string_free(reply, TRUE);
 
     fnc_log(FNC_LOG_CLIENT, "200 %d %s ", strlen(cinfo->descr), cinfo->object);
 

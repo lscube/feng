@@ -41,20 +41,22 @@
  */
 static int send_teardown_reply(RTSP_buffer * rtsp, unsigned long session_id)
 {
-    char r[1024];
-    char temp[30];
+    GString *reply = g_string_new("");
     long int cseq = rtsp->rtsp_cseq;
 
     /* build a reply message */
-    sprintf(r,
+    g_string_printf(reply,
         "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL "Server: %s/%s" RTSP_EL,
         RTSP_VER, 200, get_stat(200), cseq, PACKAGE, VERSION);
-    add_time_stamp(r, 0);
-    strcat(r, "Session: ");
-    sprintf(temp, "%lu", session_id);
-    strcat(r, temp);
-    strcat(r, RTSP_EL RTSP_EL);
-    bwrite(r, strlen(r), rtsp);
+
+    add_time_stamp_g(reply, 0);
+    
+    g_string_append_printf(reply,
+			   "Session: %lu" RTSP_EL RTSP_EL,
+			   session_id);
+
+    bwrite(reply->str, reply->len, rtsp);
+    g_string_free(reply, TRUE);
 
     fnc_log(FNC_LOG_CLIENT, "200 - - ");
 
