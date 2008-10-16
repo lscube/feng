@@ -26,7 +26,6 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-#include <fenice/rtsp.h>	/*parse_url */
 #include <fenice/rtpptdefs.h>	/*payload type definitions */
 
 #include <fenice/demuxer_module.h>
