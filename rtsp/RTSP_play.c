@@ -233,7 +233,7 @@ do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
   RTSP_Error error = RTSP_Ok;
     char *q = NULL;
 
-    if (!(q = strchr(cinfo->object, '='))) {
+    if (!(q = strchr(cinfo->url.path, '='))) {
         //if '=' is not present then a file has not been specified
         // aggregate content requested
         // Perform seek if needed
@@ -254,7 +254,7 @@ do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
         // resource!trackname
 //        strcpy (trackname, q + 1);
         // XXX Not really nice...
-        while (cinfo->object != q) if (*--q == '/') break;
+        while (cinfo->url.path != q) if (*--q == '/') break;
         *q = '\0';
     }
 
@@ -304,7 +304,7 @@ static int send_play_reply(RTSP_buffer * rtsp, ConnectionInfo *cinfo,
     GString *reply = g_string_new("");
     rtp_session_send_play_reply_pair pair = {
       .reply = reply,
-      .server = cinfo->server
+      .server = cinfo->url.hostname
     };
 
     /* build a reply message */
@@ -337,7 +337,7 @@ static int send_play_reply(RTSP_buffer * rtsp, ConnectionInfo *cinfo,
     bwrite(reply->str, reply->len, rtsp);
     g_string_free(reply, TRUE);
 
-    fnc_log(FNC_LOG_CLIENT, "200 - %s ", cinfo->object);
+    fnc_log(FNC_LOG_CLIENT, "200 - %s ", cinfo->url.path);
 
     return ERR_NOERROR;
 }

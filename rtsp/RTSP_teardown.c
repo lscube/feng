@@ -137,10 +137,10 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     send_teardown_reply(rtsp, session_id);
     log_user_agent(rtsp); // See User-Agent 
 
-    if (strchr(cinfo.object, '='))    /*Compatibility with RealOne and RealPlayer */
-        filename = strchr(cinfo.object, '=') + 1;
+    if (strchr(cinfo.url.path, '='))    /*Compatibility with RealOne and RealPlayer */
+        filename = strchr(cinfo.url.path, '=') + 1;
     else
-        filename = cinfo.object;
+        filename = cinfo.url.path;
 
     filename = g_path_get_basename(filename);
 

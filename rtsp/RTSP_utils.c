@@ -116,7 +116,7 @@ char const *get_stat(int err)
  */
 RTSP_Error check_forbidden_path(ConnectionInfo * cinfo)
 {
-    if ( strstr(cinfo->object, "../") || strstr(cinfo->object, "./") )
+    if ( strstr(cinfo->url.path, "../") || strstr(cinfo->url.path, "./") )
         return RTSP_Forbidden;
 
     return RTSP_Ok;
@@ -130,25 +130,20 @@ RTSP_Error check_forbidden_path(ConnectionInfo * cinfo)
  */
 RTSP_Error validate_url(char *url, ConnectionInfo * cinfo)
 {
-    switch (parse_url(url, cinfo->server, sizeof(cinfo->server),
-            &cinfo->port, cinfo->object, sizeof(cinfo->object))) {
-    case 1:        // bad request
-        return RTSP_BadRequest;
-        break;
-    case -1:        // internal server error
-        return RTSP_InternalServerError;
-        break;
-    default:
-        break;
+    char *decoded_url = g_malloc(strlen(url)+1);
+    
+    if ( Url_decode( decoded_url, url, strlen(url) ) < 0 )
+      return RTSP_BadRequest;
+
+    Url_init(&cinfo->url, decoded_url);
+
+    g_free(decoded_url);
+
+    if ( cinfo->url.path == NULL ) {
+      Url_destroy(&cinfo->url);
+      return RTSP_BadRequest;
     }
 
-//    printf("server: %s\npath: %s\n", cinfo->server, cinfo->object);
-/* XXX FIXME FIXME
-    if (strcmp(cinfo->server, prefs_get_hostname()) != 0) {
-        //      send_reply(404, 0 , rtsp);
-        //      return ERR_NOERROR;
-    }
-*/
     return RTSP_Ok;
 }
 
@@ -228,8 +223,8 @@ RTSP_Error get_cseq(RTSP_buffer * rtsp)
 RTSP_Error get_session_description(feng *srv, ConnectionInfo * cinfo)
 {
     int sdesc_error = sdp_session_descr(srv,
-                                        cinfo->server,
-                                        cinfo->object,
+                                        cinfo->url.hostname,
+                                        cinfo->url.path,
                                         cinfo->descr, sizeof(cinfo->descr));
 
     if ((sdesc_error))
@@ -431,56 +426,4 @@ void add_time_stamp_g(GString *str, int crlf) {
   
   add_time_stamp(buffer, crlf);
   g_string_append(str, buffer);
-}
-
-/**
- * Parses an url giving back the server, the port and the requested file
- * @param url the url to parse
- * @param server where to save the server address
- * @param server_len the maximum size of the server address buffer
- * @param port where to save the connection port
- * @param file_name where to save the requested file name
- * @param file_name_len the maximum size of the file name buffer
- * @return 0 if the URL is valid, 1 if the URL is not valid, -1 on internal error (some buffer too small)
- */
-int parse_url(const char *url, char *server, size_t server_len,
-          unsigned short *port, char *file_name, size_t file_name_len)
-{
-    int exit_status = 0;
-
-    Url turl;
-    char decoded_url[1024];
-
-    if (Url_decode( decoded_url, url, sizeof(decoded_url) ) < 0)
-        return 1;
-    Url_init(&turl, decoded_url);
-
-    if (!turl.path) {
-        exit_status = 1;
-        goto quit_function;
-    }
-
-    if ((strlen(turl.hostname) >= server_len) ||
-        (strlen(turl.path) >= file_name_len)) {
-        exit_status = 1;
-        goto quit_function;
-    }
-
-    if (turl.port) {
-        if (strlen(turl.port) > 5) {
-            exit_status = 1;
-            goto quit_function;
-        }
-        *port = atoi(turl.port);
-    }
-    else {
-        *port = FENICE_RTSP_PORT_DEFAULT;
-    }
-
-    strcpy(server, turl.hostname);
-    strcpy(file_name, turl.path);
-
-quit_function:
-    Url_destroy(&turl);
-    return exit_status;
 }

@@ -48,13 +48,13 @@ static RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, 
     char * p;
 
     //if '=' is not present then a file has not been specified
-    if (!(p = strchr(cinfo->object, '=')))
+    if (!(p = strchr(cinfo->url.path, '=')))
         return RTSP_InternalServerError;
     else {
         // SETUP resource!trackname
         g_strlcpy(trackname, p + 1, trackname_max_len);
         // XXX Not really nice...
-        while (cinfo->object != p) if (*--p == '/') break;
+        while (cinfo->url.path != p) if (*--p == '/') break;
         *p = '\0';
     }
 
@@ -450,7 +450,7 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
 
     rtp_s->pause = 1;
-    rtp_s->sd_filename = g_strdup(cinfo->object);
+    rtp_s->sd_filename = g_strdup(cinfo->url.path);
 
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
     gcry_randomize(&rtp_s->start_rtptime, sizeof(rtp_s->start_rtptime), GCRY_STRONG_RANDOM);
@@ -481,9 +481,9 @@ static RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * 
 
     // it should parse the request giving us object!trackname
     if (!rtsp_s->resource) {
-        if (!(rtsp_s->resource = mt_resource_open(srv, prefs_get_serv_root(), cinfo->object))) {
+        if (!(rtsp_s->resource = mt_resource_open(srv, prefs_get_serv_root(), cinfo->url.path))) {
             error = RTSP_NotFound;
-            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", cinfo->object);
+            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", cinfo->url.path);
             return error;
         }
     }
@@ -491,7 +491,7 @@ static RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * 
     if (!(*track_sel = r_open_tracks(rtsp_s->resource, trackname))) {
         error = RTSP_NotFound;
         fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
-                trackname, cinfo->object);
+                trackname, cinfo->url.path);
         return error;
     }
 

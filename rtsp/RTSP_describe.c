@@ -66,10 +66,10 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
             break;
         }
     }
-    Url_encode (encoded_object, cinfo->object, sizeof(encoded_object));
+    Url_encode (encoded_object, cinfo->url.path, sizeof(encoded_object));
     g_string_append_printf(reply,
 			   "Content-Base: rtsp://%s/%s/" RTSP_EL,
-			   cinfo->server, encoded_object);
+			   cinfo->url.hostname, encoded_object);
              
     g_string_append_printf(reply,
 			   "Content-Length: %zd" RTSP_EL,
@@ -84,7 +84,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
     bwrite(reply->str, reply->len, rtsp);
     g_string_free(reply, TRUE);
 
-    fnc_log(FNC_LOG_CLIENT, "200 %d %s ", strlen(cinfo->descr), cinfo->object);
+    fnc_log(FNC_LOG_CLIENT, "200 %d %s ", strlen(cinfo->descr), cinfo->url.path);
 
     return ERR_NOERROR;
 }
@@ -128,7 +128,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
 
     if (srv->num_conn > srv->srvconf.max_conns) {
         /*redirect */
-        return send_redirect_3xx(rtsp, cinfo.object);
+        return send_redirect_3xx(rtsp, cinfo.url.path);
     }
 
     fnc_log(FNC_LOG_INFO, "DESCRIBE %s RTSP/1.0 ", url);

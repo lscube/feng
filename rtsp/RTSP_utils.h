@@ -41,9 +41,7 @@
   */
 typedef struct
 {
-    char object[255]; //!< path of the required media
-    char server[255]; //!< local hostname
-    unsigned short port; //!< local port where the server is listening for requests
+    Url url; //!< URL of the requested media
 
     description_format descr_format; //!< format of the media description
     char descr[MAX_DESCR_LENGTH]; //!< media description
