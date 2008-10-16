@@ -26,7 +26,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <fenice/safe-ctype.h> /*ISXDIGIT*/
+#include <stdbool.h>
+
+#include <glib/gstrfuncs.h>
 
 #include <fenice/multicast.h>
 #include <fenice/utils.h>
@@ -108,9 +110,9 @@ static bool is_valid_ipv6_address (const char *str, const char *end)
         int ch = *str++;
 
         /* if ch is a number, add it to val. */
-        if (ISXDIGIT (ch)) {
+        if (g_ascii_isxdigit (ch)) {
             val <<= 4;
-            val |= XDIGIT_TO_NUM (ch);
+            val |= g_ascii_xdigit_value (ch);
             if (val > 0xffff)
                 return false;
             saw_xdigit = true;

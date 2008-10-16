@@ -37,7 +37,6 @@ noinst_HEADERS = \
 	include/fenice/sdp_grammar.h \
 	include/fenice/demuxer.h \
 	include/fenice/mediautils.h \
-	include/fenice/safe-ctype.h \
 	include/conf.h \
 	include/settings.h \
 	include/stream.h \

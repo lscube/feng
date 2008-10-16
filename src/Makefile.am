@@ -1,14 +1,10 @@
 feniceincludedir = $(top_srcdir)/include
 
-noinst_LTLIBRARIES = liblog.la libsafectype.la libutils.la
+noinst_LTLIBRARIES = liblog.la libutils.la
 
 libutils_la_SOURCES = sdp_utils.c
 
 liblog_la_SOURCES = fnc_log.c 
-
-libsafectype_la_SOURCES = safe-ctype.c 
-
-libsafectype_la_LDFLAGS = -lm
 
 .NOTPARALLEL: feng
 	
@@ -28,8 +24,7 @@ feng_LDADD =	../eventloop/libeventloop.la \
 
 feng_LDADD +=	../conf/liblight.la \
 		../src/libutils.la \
-		../src/liblog.la \
-		../src/libsafectype.la
+		../src/liblog.la
 
 feng_LDFLAGS =
 
