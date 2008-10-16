@@ -52,7 +52,7 @@ static RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, 
         return RTSP_InternalServerError;
     else {
         // SETUP resource!trackname
-        strncpy (trackname, p + 1, trackname_max_len);
+        g_strlcpy(trackname, p + 1, trackname_max_len);
         // XXX Not really nice...
         while (cinfo->object != p) if (*--p == '/') break;
         *p = '\0';
