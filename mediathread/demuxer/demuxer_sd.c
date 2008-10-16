@@ -27,7 +27,6 @@
 #include <fenice/fnc_log.h>
 
 #include <fenice/multicast.h>    /*is_valid_multicast_address */
-#include <fenice/rtsp.h>    /*parse_url */
 #include <fenice/rtpptdefs.h>    /*payload type definitions */
 
 #include <fenice/demuxer_module.h>
@@ -55,8 +54,6 @@ static int sd_init(Resource * r)
 {
     char keyword[80], line[1024], sparam[256];
     Track *track;
-    char object[255], server[255];
-    unsigned short port;
     char content_base[256] = "", *separator, track_file[256];
     sdp_field *sdp_private = NULL;
 
@@ -93,8 +90,7 @@ static int sd_init(Resource * r)
             /* validate twin */
             if (!strcasecmp(keyword, SD_TWIN)) {
                 sscanf(line, "%*s%255s", r->info->twin);
-                parse_url(r->info->twin, server, sizeof(server),
-                          &port, object, sizeof (object));    //FIXME
+		// FIXME: removed a parse_url that was never used.
             /* validate multicast */
             } else if (!strcasecmp(keyword, SD_MULTICAST)) {
                 sscanf(line, "%*s%15s", r->info->multicast);
