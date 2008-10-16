@@ -59,7 +59,7 @@ RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer);
 RTSP_Error get_description_format(RTSP_buffer * rtsp, ConnectionInfo * cinfo);
 RTSP_Error get_cseq(RTSP_buffer * rtsp);
 RTSP_Error get_session_description(feng *srv, ConnectionInfo * cinfo);
-RTSP_Error get_session_id(RTSP_buffer * rtsp, unsigned long * session_id);
+RTSP_Error get_session_id(RTSP_buffer * rtsp, guint64 * session_id);
 /**
  * @}
  */

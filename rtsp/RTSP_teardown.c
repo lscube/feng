@@ -24,6 +24,8 @@
  * @brief Contains TEARDOWN method and reply handlers
  */
 
+#include <inttypes.h> /* For PRIu64 */
+
 #include <RTSP_utils.h>
 
 #include <fenice/rtsp.h>
@@ -39,7 +41,7 @@
  * @param session_id the id of the session closed
  * @return ERR_NOERROR
  */
-static int send_teardown_reply(RTSP_buffer * rtsp, unsigned long session_id)
+static int send_teardown_reply(RTSP_buffer * rtsp, guint64 session_id)
 {
     GString *reply = g_string_new("");
     long int cseq = rtsp->rtsp_cseq;
@@ -52,7 +54,7 @@ static int send_teardown_reply(RTSP_buffer * rtsp, unsigned long session_id)
     add_time_stamp_g(reply, 0);
     
     g_string_append_printf(reply,
-			   "Session: %lu" RTSP_EL RTSP_EL,
+			   "Session: %"PRIu64 RTSP_EL RTSP_EL,
 			   session_id);
 
     bwrite(reply->str, reply->len, rtsp);
@@ -103,7 +105,7 @@ static void rtp_session_release(gpointer element, gpointer user_data)
 int RTSP_teardown(RTSP_buffer * rtsp)
 {
     ConnectionInfo cinfo;
-    unsigned long session_id;
+    guint64 session_id;
     RTSP_session *s;
     char *filename;
     char url[255];

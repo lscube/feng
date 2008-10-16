@@ -24,13 +24,16 @@
  *  @brief Contains PLAY method and reply handlers
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+
 #include <bufferpool/bufferpool.h>
 #include <fenice/rtsp.h>
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <math.h>
 #include <netembryo/url.h>
-#include <gcrypt.h>
+#include <glib.h>
 #include <RTSP_utils.h>
 
 static int get_utc(struct tm *t, char *b)
@@ -143,7 +146,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
  * @return RTSP_Ok or RTSP_SessionNotFound
  */
 static RTSP_Error
-get_session(RTSP_buffer * rtsp, unsigned long session_id,
+get_session(RTSP_buffer * rtsp, guint64 session_id,
             RTSP_session **rtsp_sess)
 {
     // XXX Feng supports single session atm
@@ -166,8 +169,7 @@ static void rtp_session_seek(gpointer value, gpointer user_data)
     rtp_sess->pause = 1;
   }
   rtp_sess->start_seq = 1 + rtp_sess->seq_no;
-  gcry_randomize(&rtp_sess->start_rtptime,
-		 sizeof(rtp_sess->start_rtptime), GCRY_STRONG_RANDOM);
+  rtp_sess->start_rtptime = g_random_int();
   rtp_sess->seek_time = args->begin_time;
 
   if (rtp_sess->cons) {
@@ -321,7 +323,7 @@ static int send_play_reply(RTSP_buffer * rtsp, ConnectionInfo *cinfo,
 
     g_string_append(reply, RTSP_EL);
 
-    g_string_append_printf(reply, "Session: %lu" RTSP_EL, rtsp_session->session_id);
+    g_string_append_printf(reply, "Session: %" PRIu64 RTSP_EL, rtsp_session->session_id);
 
     g_string_append(reply, "RTP-info: ");
 
@@ -351,7 +353,7 @@ int RTSP_play(RTSP_buffer * rtsp)
 {
     ConnectionInfo cinfo;
     char url[255];
-    unsigned long session_id;
+    guint64 session_id;
     RTSP_session *rtsp_sess;
     play_args args;
 

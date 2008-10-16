@@ -24,6 +24,8 @@
  * @brief Contains SETUP method and reply handlers
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <glib.h>
 
 #include <fenice/rtsp.h>
@@ -31,9 +33,7 @@
 #include <fenice/multicast.h>
 #include <fenice/fnc_log.h>
 #include <fenice/schedule.h>
-#include <gcrypt.h>
 #include <RTSP_utils.h>
-
 
 
 /**
@@ -397,19 +397,15 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
  * Generates a random session id
  * @return the random session id (actually a number)
  */
-static unsigned long generate_session_id()
+static guint64 generate_session_id()
 {
-    unsigned long session_id;
+    guint64 session_id = 0;
 
-    // Generate a random Session number
-    gcry_randomize(&session_id, sizeof(session_id), GCRY_STRONG_RANDOM);
-    if (session_id == 0) {
-        session_id++;
+    while (session_id == 0) {
+      session_id   = g_random_int();
+      session_id <<= 32;
+      session_id  |= g_random_int();
     }
-#if 0 // To support multiple session per socket...
-    while (rtsp_session_from_id(rtsp, session_id))
-        gcry_randomize(&session_id, sizeof(session_id), GCRY_STRONG_RANDOM);
-#endif
 
     return session_id;
 }
@@ -453,13 +449,13 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     rtp_s->sd_filename = g_strdup(cinfo->url.path);
 
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
-    gcry_randomize(&rtp_s->start_rtptime, sizeof(rtp_s->start_rtptime), GCRY_STRONG_RANDOM);
-    gcry_randomize(&rtp_s->start_seq, sizeof(rtp_s->start_seq), GCRY_STRONG_RANDOM);
+    rtp_s->start_rtptime = g_random_int();
+    rtp_s->start_seq = g_random_int_range(0, G_MAXUINT16);
     rtp_s->seq_no = rtp_s->start_seq - 1;
     rtp_s->track_selector = track_sel;
     rtp_s->srv = srv;
     rtp_s->sched_id = schedule_add(rtp_s);
-    gcry_randomize(&rtp_s->ssrc, sizeof(rtp_s->ssrc), GCRY_STRONG_RANDOM);
+    rtp_s->ssrc = g_random_int();
 
     return rtp_s;
 }
@@ -520,7 +516,7 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
     add_time_stamp_g(reply, 0);
 
     g_string_append_printf(reply,
-			   "Session: %lu" RTSP_EL,
+			   "Session: %" PRIu64 RTSP_EL,
 			   session->session_id);
 
     g_string_append(reply, "Transport: ");
@@ -587,7 +583,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
     ConnectionInfo cinfo;
     char url[255];
-    unsigned long session_id = 0;
+    guint64 session_id = 0;
     char trackname[255];
     RTP_transport transport;
 

@@ -24,6 +24,9 @@
  * @brief Contains PAUSE method and reply handlers
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
 
@@ -48,7 +51,7 @@ static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
     add_time_stamp_g(reply, 0);
 
     g_string_append_printf(reply,
-			   "Session: %lu" RTSP_EL RTSP_EL,
+			   "Session: %" PRIu64 RTSP_EL RTSP_EL,
 			   rtsp_session->session_id);
 
     bwrite(reply->str, reply->len, rtsp);
@@ -74,7 +77,7 @@ void rtp_session_pause(gpointer element, gpointer user_data)
 int RTSP_pause(RTSP_buffer * rtsp)
 {
     ConnectionInfo cinfo;
-    unsigned long session_id;
+    guint64 session_id;
     RTSP_session *s;
     char url[255];
 

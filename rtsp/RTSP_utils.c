@@ -32,6 +32,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h> /* For SCNu64 */
 
 #include <glib.h>
 
@@ -244,13 +245,13 @@ RTSP_Error get_session_description(feng *srv, ConnectionInfo * cinfo)
  * @param session_id where to save the retrieved session id
  * @return RTSP_Ok or RTSP_SessionNotFound if it is not possible to parse the id
  */
-RTSP_Error get_session_id(RTSP_buffer * rtsp, unsigned long * session_id)
+RTSP_Error get_session_id(RTSP_buffer * rtsp, guint64 * session_id)
 {
     char * p;
 
     // Session
     if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(p, "%*s %lu", session_id) != 1)
+        if (sscanf(p, "%*s %"SCNu64, session_id) != 1)
             return RTSP_SessionNotFound;
     } else {
         *session_id = 0;

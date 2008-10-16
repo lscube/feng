@@ -21,6 +21,7 @@
  * */
 
 #include <strings.h>
+#include <inttypes.h> /* For SCNu64 */
 
 #include <fenice/rtsp.h>
 #include <fenice/utils.h>
@@ -119,10 +120,10 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, int method)
 {
     char *s;
     RTSP_session *p;
-    unsigned long session_id;
+    guint64 session_id;
 
     if ((s = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(s, "%*s %lu", &session_id) != 1) {
+        if (sscanf(s, "%*s %"SCNu64, &session_id) != 1) {
             fnc_log(FNC_LOG_INFO,
                 "Invalid Session number in Session header\n");
             send_reply(454, NULL, rtsp);    /* Session Not Found */

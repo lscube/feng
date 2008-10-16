@@ -73,7 +73,7 @@ typedef struct RTSP_interleaved {
 
 typedef struct RTSP_session {
     int cur_state;
-    unsigned long session_id;
+    guint64 session_id;
     int started;
     GSList *rtp_sessions; // Of type RTP_session
     // mediathread resource
