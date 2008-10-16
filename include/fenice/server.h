@@ -33,9 +33,7 @@
 #include "array.h"
 #include "conf.h"
 #include <netembryo/wsocket.h>
-#include <glib/garray.h>
-#include <glib/gslist.h>
-#include <glib/gthread.h>
+#include <glib.h>
 #include <pwd.h>
 #include <grp.h>
 #include <sys/select.h>

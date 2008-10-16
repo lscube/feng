@@ -34,7 +34,6 @@
 #include <string.h>
 
 #include <glib.h>
-#include <glib/gprintf.h>
 
 #include <fenice/utils.h>
 #include <fenice/prefs.h>

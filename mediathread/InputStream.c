@@ -46,7 +46,7 @@
 #include <sys/mman.h>
 #endif
 
-#include <glib/gmem.h>
+#include <glib.h>
 
 static int open_mrl(char *, InputStream *);
 static int open_mrl_st_file(InputStream *);

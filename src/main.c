@@ -44,8 +44,6 @@
 #include <fenice/utils.h>
 #include <fenice/mediathread.h>
 #include <glib.h>
-#include <glib/gprintf.h>
-#include <glib/gthread.h>
 #include <getopt.h>
 
 static int stopped = 0;

@@ -28,7 +28,7 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 
-#include <glib/gstrfuncs.h>
+#include <glib.h>
 
 #include <fenice/multicast.h>
 #include <fenice/utils.h>

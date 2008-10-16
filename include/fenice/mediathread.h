@@ -25,7 +25,7 @@
 
 #define ENABLE_MEDIATHREAD 1
 
-#include <glib/gthread.h>
+#include <glib.h>
 
 #include <fenice/demuxer.h>
 #include <fenice/server.h>

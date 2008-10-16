@@ -26,7 +26,7 @@
 
 #include <time.h>
 #include <sys/time.h>
-#include <glib/gthread.h>
+#include <glib.h>
 #include <fenice/rtp.h>
 #include <fenice/prefs.h>
 #include <fenice/debug.h>

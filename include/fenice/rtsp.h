@@ -26,7 +26,7 @@
 #include <time.h>
 #include <config.h>
 
-#include <glib/gslist.h>
+#include <glib.h>
 
 #include <fenice/utils.h>
 #include <netembryo/wsocket.h>
