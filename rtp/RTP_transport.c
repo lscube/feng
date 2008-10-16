@@ -103,26 +103,26 @@ int RTP_send_packet(RTP_session * session)
                 fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
             } else {
 #if ENABLE_DUMP
-                char fname[255];
-                char crtp[255];
-                memset(fname, 0, sizeof(fname));
-                strcpy(fname, "dump_fenice.");
-                strcat(fname,
-                   session->current_media->description.
-                   encoding_name);
-                strcat(fname, ".");
-                sprintf(crtp, "%d", session->transport.rtp_fd);
-                strcat(fname, crtp);
+	        GString *fname = g_string_new("dump_fenice.");
+
+		g_string_append(fname,
+				session->current_media->description.
+				encoding_name);
+		g_string_append_printf(fname,
+				       ".%d",
+				       session->transport.rtp_fd);
                 if (strcmp
                     (session->current_media->description.encoding_name,
                     "MPV") == 0
                     || strcmp(session->current_media->description.
                       encoding_name, "MPA") == 0)
                 dump_payload(packet + 16, psize_sent - 16,
-                         fname);
+                         fname.str);
                 else
                     dump_payload(packet + 12, psize_sent - 12,
-                         fname);
+                         fname.str);
+
+		g_string_free(fname, TRUE);
 #endif
                 if (!session->send_time) {
                     session->send_time = slot->timestamp - session->seek_time;
