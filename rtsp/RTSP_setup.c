@@ -347,7 +347,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                         rtcp_ch = rtp_ch + 1;
                 } else {    // search for max used interleved channel.
                     max_interlvd = -1;
-		    max_interlvd = max(max_interlvd, rtcp_ch);
+		    max_interlvd = MAX(max_interlvd, rtcp_ch);
                     rtp_ch = max_interlvd + 1;
                     rtcp_ch = max_interlvd + 2;
                 }
@@ -375,7 +375,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                         rtcp_ch = rtp_ch + 1;
                 } else {    // search for max used stream.
                     max_interlvd = -1;
-		    max_interlvd = max(max_interlvd, rtcp_ch);
+		    max_interlvd = MAX(max_interlvd, rtcp_ch);
                     rtp_ch = max_interlvd + 1;
                     rtcp_ch = max_interlvd + 2;
                 }

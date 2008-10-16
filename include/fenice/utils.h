@@ -139,14 +139,6 @@ int parse_url(const char *url, char *server, size_t, unsigned short *port,
 char *extradata2config(const uint8_t *extradata, int extradata_size);
 void fncheader(void);
 
-//XXX check and maybe use something saner...
-#ifndef min
-#define min(x,y) ((x) < (y) ? (x) : (y))
-#endif
-#ifndef max
-#define max(x,y) ((x) > (y) ? (x) : (y))
-#endif
-
 /**
  * Returns the current time in seconds
  */

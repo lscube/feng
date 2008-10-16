@@ -242,11 +242,11 @@ void interleaved_set_fds(gpointer element, gpointer user_data)
 
   if (intlvd->rtp_local) {
     FD_SET(Sock_fd(intlvd->rtp_local), &rtsp->srv->rset);
-    rtsp->srv->max_fd = max(rtsp->srv->max_fd, Sock_fd(intlvd->rtp_local));
+    rtsp->srv->max_fd = MAX(rtsp->srv->max_fd, Sock_fd(intlvd->rtp_local));
   }
   if (intlvd->rtcp_local) {
     FD_SET(Sock_fd(intlvd->rtcp_local), &rtsp->srv->rset);
-    rtsp->srv->max_fd = max(rtsp->srv->max_fd, Sock_fd(intlvd->rtcp_local));
+    rtsp->srv->max_fd = MAX(rtsp->srv->max_fd, Sock_fd(intlvd->rtcp_local));
   }
 }
 
@@ -262,7 +262,7 @@ static void rtp_session_set_fd(gpointer element, gpointer user_data)
   } else if (p->transport.rtcp_sock) {
     FD_SET(Sock_fd(p->transport.rtcp_sock), &p->srv->rset);
     p->srv->max_fd =
-      max(p->srv->max_fd, Sock_fd(p->transport.rtcp_sock));
+      MAX(p->srv->max_fd, Sock_fd(p->transport.rtcp_sock));
   }
 }
 
@@ -277,7 +277,7 @@ void established_each_fd(gpointer data, gpointer user_data)
 
   // FD used for RTSP connection
   FD_SET(Sock_fd(rtsp->sock), &srv->rset);
-  srv->max_fd = max(srv->max_fd, Sock_fd(rtsp->sock));
+  srv->max_fd = MAX(srv->max_fd, Sock_fd(rtsp->sock));
   if (rtsp->out_size > 0) {
     FD_SET(Sock_fd(rtsp->sock), &srv->wset);
   }

@@ -65,7 +65,7 @@ static void add_sock_fd(gpointer data, gpointer user_data)
     feng *srv = user_data;
 
     FD_SET(Sock_fd(sock), &srv->rset);
-    srv->max_fd = max(Sock_fd(sock), srv->max_fd);
+    srv->max_fd = MAX(Sock_fd(sock), srv->max_fd);
 }
 
 
