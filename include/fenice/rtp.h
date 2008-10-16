@@ -99,7 +99,7 @@ typedef struct RTP_session {
 
     uint32_t ssrc;
 
-    char sd_filename[255]; //!< resource name, including path from avroot
+    gchar *sd_filename; //!< resource name, including path from avroot
 
     //mediathread - TODO: find better placement
     Selector *track_selector;

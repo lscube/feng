@@ -229,5 +229,6 @@ void RTP_session_destroy(RTP_session * session)
     bp_unref(session->cons);
 
     // Deallocate memory
+    g_free(session->sd_filename);
     g_free(session);
 }

@@ -450,8 +450,7 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
 
     rtp_s->pause = 1;
-    //XXX use strdup
-    strncpy(rtp_s->sd_filename, cinfo->object, sizeof(rtp_s->sd_filename));
+    rtp_s->sd_filename = g_strdup(cinfo->object);
 
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
     gcry_randomize(&rtp_s->start_rtptime, sizeof(rtp_s->start_rtptime), GCRY_STRONG_RANDOM);
