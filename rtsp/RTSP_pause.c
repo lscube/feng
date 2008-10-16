@@ -55,6 +55,12 @@ static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
     return ERR_NOERROR;
 }
 
+void rtp_session_pause(gpointer element, gpointer user_data)
+{
+  RTP_session *r = (RTP_session *)element;
+
+  r->pause = 1;
+}
 
 /**
  * RTSP PAUSE method handler
@@ -66,7 +72,6 @@ int RTSP_pause(RTSP_buffer * rtsp)
     ConnectionInfo cinfo;
     unsigned long session_id;
     RTSP_session *s;
-    RTP_session *r;
     char url[255];
 
     RTSP_Error error;
@@ -91,10 +96,8 @@ int RTSP_pause(RTSP_buffer * rtsp)
         send_reply(454, NULL, rtsp);    /* Session Not Found */
         return ERR_NOERROR;
     }
-
-    for (r = s->rtp_session; r != NULL; r = r->next) {
-        r->pause = 1;
-    }
+    
+    g_slist_foreach(s->rtp_sessions, rtp_session_pause, NULL);
 
     fnc_log(FNC_LOG_INFO, "PAUSE %s RTSP/1.0 ", url);
     send_pause_reply(rtsp, s);

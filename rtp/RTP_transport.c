@@ -218,10 +218,8 @@ static int RTP_transport_close(RTP_session * session) {
  * @param session the RTP session to remove
  * @return the subsequent session
  */
-RTP_session *RTP_session_destroy(RTP_session * session)
+void RTP_session_destroy(RTP_session * session)
 {
-    RTP_session *next = session->next;
-
     RTP_transport_close(session);
 
     // Close track selector
@@ -230,9 +228,6 @@ RTP_session *RTP_session_destroy(RTP_session * session)
     // destroy consumer
     bp_unref(session->cons);
 
-
     // Deallocate memory
     g_free(session);
-
-    return next;
 }

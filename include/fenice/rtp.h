@@ -110,7 +110,6 @@ typedef struct RTP_session {
     //Consumer has transferred itself here
     BPConsumer *cons;
     RTCP_stats rtcp_stats[2];    //client and server
-    struct RTP_session *next;
     struct feng *srv;
 } RTP_session;
 
@@ -173,7 +172,7 @@ int RTP_release_port_pair(feng *srv, port_pair * pair);
  */
 
 int RTP_send_packet(RTP_session * session);
-RTP_session *RTP_session_destroy(RTP_session *);
+void RTP_session_destroy(RTP_session *);
 
 //! RTP_transport functions
 //! low-level sent/receive packet functions depending on transport settings.

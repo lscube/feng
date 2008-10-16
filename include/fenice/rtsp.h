@@ -75,7 +75,7 @@ typedef struct RTSP_session {
     int cur_state;
     unsigned long session_id;
     int started;
-    RTP_session *rtp_session;
+    GSList *rtp_sessions; // Of type RTP_session
     // mediathread resource
     Resource *resource;
     feng *srv;

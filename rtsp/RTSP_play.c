@@ -156,6 +156,28 @@ get_session(RTSP_buffer * rtsp, unsigned long session_id,
     return RTSP_Ok;
 }
 
+static void rtp_session_seek(gpointer value, gpointer user_data)
+{
+  RTP_session *rtp_sess = (RTP_session *)value;
+  play_args *args = (play_args *)user_data;
+
+  if (rtp_sess->started && !rtp_sess->pause) {
+    /* Pause scheduler while reiniting RTP session */
+    rtp_sess->pause = 1;
+  }
+  rtp_sess->start_seq = 1 + rtp_sess->seq_no;
+  gcry_randomize(&rtp_sess->start_rtptime,
+		 sizeof(rtp_sess->start_rtptime), GCRY_STRONG_RANDOM);
+  rtp_sess->seek_time = args->begin_time;
+
+  if (rtp_sess->cons) {
+    while (bp_getreader(rtp_sess->cons)) {
+      /* Drop spurious packets after seek */
+      bp_gotreader(rtp_sess->cons);
+    }
+  }
+}
+
 /**
  * Actually seek through the media using mediathread
  * @param rtsp_sess the session for which to start playing
@@ -165,7 +187,6 @@ get_session(RTSP_buffer * rtsp, unsigned long session_id,
 static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
 {
     Resource *r = rtsp_sess->resource;
-    RTP_session *rtp_sess;
 
     if (args->seek_time_valid &&
         ((rtsp_sess->started && args->begin_time == 0.0)
@@ -173,24 +194,7 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
         if(mt_resource_seek(r, args->begin_time)) {
             return RTSP_HeaderFieldNotValidforResource;
         }
-        for (rtp_sess = rtsp_sess->rtp_session; rtp_sess;
-             rtp_sess = rtp_sess->next) {
-            if (rtp_sess->started && !rtp_sess->pause) {
-                /* Pause scheduler while reiniting RTP session */
-                rtp_sess->pause = 1;
-            }
-            rtp_sess->start_seq = 1 + rtp_sess->seq_no;
-            gcry_randomize(&rtp_sess->start_rtptime,
-                           sizeof(rtp_sess->start_rtptime), GCRY_STRONG_RANDOM);
-            rtp_sess->seek_time = args->begin_time;
-
-            if (rtp_sess->cons) {
-                while (bp_getreader(rtp_sess->cons)) {
-                    /* Drop spurious packets after seek */
-                    bp_gotreader(rtp_sess->cons);
-                }
-            }
-        }
+	g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_seek, args);
     } else if (args->begin_time < 0.0) {
         fnc_log(FNC_LOG_DEBUG,"[RTSP] Negative seek to %f", args->begin_time);
         return RTSP_InvalidRange;
@@ -199,6 +203,22 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
     return RTSP_Ok;
 }
 
+static void rtp_session_play(gpointer value, gpointer user_data)
+{
+  RTP_session *rtp_sess = (RTP_session *)value;
+  play_args *args = (play_args *)user_data;
+
+  // Start playing all the presentation
+  if (!rtp_sess->started) {
+    // Start new -- assume no allocation error
+    schedule_start (rtp_sess, args);
+  } else {
+    // Resume existing
+    if (rtp_sess->pause) {
+      schedule_resume (rtp_sess, args);
+    }
+  }
+}
 
 /**
  * Actually starts playing the media using mediathread
@@ -210,8 +230,7 @@ static RTSP_Error do_seek(RTSP_session * rtsp_sess, play_args * args)
 static RTSP_Error
 do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
 {
-    RTSP_Error error = RTSP_Ok;
-    RTP_session *rtp_sess;
+  RTSP_Error error = RTSP_Ok;
     char *q = NULL;
 
     if (!(q = strchr(cinfo->object, '='))) {
@@ -221,23 +240,13 @@ do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
         if ((error = do_seek(rtsp_sess, args)).got_error) {
             return error;
         }
-        for (rtp_sess = rtsp_sess->rtp_session; rtp_sess;
-             rtp_sess = rtp_sess->next)
-        {
-            if (rtp_sess->is_multicast) return RTSP_Ok;
-            // Start playing all the presentation
-            rtsp_sess->started = 1;
-            if (!rtp_sess->started) {
-                // Start new
-                if (schedule_start (rtp_sess, args) == ERR_ALLOC)
-                        return RTSP_Fatal_ErrAlloc;
-            } else {
-                // Resume existing
-                if (rtp_sess->pause) {
-                    schedule_resume (rtp_sess, args);
-                }
-            }
-        }
+	if ( rtsp_sess->rtp_sessions &&
+	     ((RTP_session*)(rtsp_sess->rtp_sessions->data))->is_multicast )
+	  return RTSP_Ok;
+
+	rtsp_sess->started = 1;
+
+	g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_play, args);
     } else {
         // FIXME complete with the other stuff
         return RTSP_InternalServerError; /* Internal server error */
@@ -252,6 +261,40 @@ do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
     return RTSP_Ok;
 }
 
+typedef struct {
+  char *r;
+  char *server;
+} rtp_session_send_play_reply_pair;
+
+static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
+{
+  char temp[256];
+
+  rtp_session_send_play_reply_pair *pair = (rtp_session_send_play_reply_pair *)user_data;
+
+  char *r = pair->r;
+  RTP_session *p = (RTP_session *)element;
+
+  Track *t = r_selected_track(p->track_selector);
+  strcat(r, "url=");
+  // TODO: we MUST be sure to send the correct url
+  strcat (r, "rtsp://");
+  strcat (r, pair->server);
+  strcat (r, "/");
+  Url_encode(temp, p->sd_filename, sizeof(temp));
+  strcat (r, temp);
+  strcat (r, "/");
+  strcat (r, SDP2_TRACK_ID"=");
+  Url_encode(temp, t->info->name, sizeof(temp));
+  strcat (r, temp);
+  strcat(r, ";");
+  sprintf(r + strlen(r), "seq=%u", p->start_seq);
+  if (t->properties->media_source != MS_live) {
+    sprintf(r + strlen(r), ";rtptime=%u", p->start_rtptime);
+  }
+  strcat(r, ",");
+}
+
 /**
  * Sends the reply for the play method
  * @param rtsp the buffer where to write the reply
@@ -264,8 +307,11 @@ static int send_play_reply(RTSP_buffer * rtsp, ConnectionInfo *cinfo,
 {
     char r[1024];
     char temp[256];
-    RTP_session *p = rtsp_session->rtp_session;
-    Track *t;
+    rtp_session_send_play_reply_pair pair = {
+      .r = (char*)&r,
+      .server = cinfo->server
+    };
+
     /* build a reply message */
     sprintf(r,
         "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
@@ -285,31 +331,12 @@ static int send_play_reply(RTSP_buffer * rtsp, ConnectionInfo *cinfo,
     strcat(r, temp);
     strcat(r, RTSP_EL);
     strcat(r, "RTP-info: ");
-    do {
-        t = r_selected_track(p->track_selector);
-        strcat(r, "url=");
-        // TODO: we MUST be sure to send the correct url
-        strcat (r, "rtsp://");
-        strcat (r, cinfo->server);
-        strcat (r, "/");
-        Url_encode(temp, p->sd_filename, sizeof(temp));
-        strcat (r, temp);
-        strcat (r, "/");
-        strcat (r, SDP2_TRACK_ID"=");
-        Url_encode(temp, t->info->name, sizeof(temp));
-        strcat (r, temp);
-        strcat(r, ";");
-        sprintf(r + strlen(r), "seq=%u", p->start_seq);
-        if (t->properties->media_source != MS_live) {
-            sprintf(r + strlen(r), ";rtptime=%u", p->start_rtptime);
-        }
-        if (p->next != NULL) {
-            strcat(r, ",");
-        } else {
-            strcat(r, RTSP_EL);
-        }
-        p = p->next;
-    } while (p != NULL);
+
+    g_slist_foreach(rtsp_session->rtp_sessions, rtp_session_send_play_reply, &pair);
+
+    r[strlen(r)-1] = '\0';
+    strcat(r, RTSP_EL);
+
     // end of message
     strcat(r, RTSP_EL);
 

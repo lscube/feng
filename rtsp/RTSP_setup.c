@@ -443,21 +443,11 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
  */
 static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, Selector * track_sel)
 {
-    RTP_session *rtp_s;
     feng *srv = rtsp->srv;
+    RTP_session *rtp_s = g_new0(RTP_session, 1);
 
-// Setup the RTP session
-    if (rtsp->session->rtp_session == NULL) {
-        rtsp->session->rtp_session = g_new0(RTP_session, 1);
-        rtp_s = rtsp->session->rtp_session;
-    } else {
-        rtp_s = rtsp_s->rtp_session;
-        while (rtp_s->next !=  NULL) {
-            rtp_s = rtp_s->next;
-        };
-        rtp_s->next = g_new0(RTP_session, 1);
-        rtp_s = rtp_s->next;
-    }
+    // Setup the RTP session
+    rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
 
     rtp_s->pause = 1;
     //XXX use strdup
@@ -659,7 +649,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         rtp_s = setup_rtp_session(&cinfo, rtsp, rtsp_s, &transport, track_sel);
     else { // multicast
         rtp_s->is_multicast++;
-        rtsp_s->rtp_session = rtp_s;
+        rtsp_s->rtp_sessions = g_slist_prepend(NULL, rtp_s);
     }
 
     // Setup the RTSP session

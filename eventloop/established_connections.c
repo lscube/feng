@@ -146,12 +146,28 @@ static void interleaved_read(gpointer element, gpointer user_data)
   }
 }
 
+static void rtp_session_read(gpointer element, gpointer user_data)
+{
+  RTP_session *p = (RTP_session*)element;
+  
+  if ( (p->transport.rtcp_sock) &&
+       FD_ISSET(Sock_fd(p->transport.rtcp_sock), &p->srv->rset)) {
+    // There are RTCP packets to read in
+    if (RTP_recv(p, rtcp_proto) < 0) {
+      fnc_log(FNC_LOG_VERBOSE,
+	      "Input RTCP packet Lost\n");
+    } else {
+      RTCP_recv_packet(p);
+    }
+    fnc_log(FNC_LOG_VERBOSE, "IN RTCP\n");
+  }
+}
+
 static int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
 {
     char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
     int n;
     int res;
-    RTP_session *p = NULL;
     gint m = 0;
 
     if (rtsp == NULL) {
@@ -213,21 +229,9 @@ static int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
 
     g_slist_foreach(rtsp->interleaved, interleaved_read, rtsp);
 
-    p = rtsp->session ? rtsp->session->rtp_session : NULL;
-    for (; p; p = p->next) {
-        if ( (p->transport.rtcp_sock) &&
-                FD_ISSET(Sock_fd(p->transport.rtcp_sock), rset)) {
-            // There are RTCP packets to read in
-            if (RTP_recv(p, rtcp_proto) < 0) {
-                fnc_log(FNC_LOG_VERBOSE,
-                    "Input RTCP packet Lost\n");
-            } else {
-                RTCP_recv_packet(p);
-            }
-            fnc_log(FNC_LOG_VERBOSE, "IN RTCP\n");
-        }
-    }
-    
+    if ( rtsp->session != NULL )
+      g_slist_foreach(rtsp->session->rtp_sessions, rtp_session_read, NULL);
+
     return ERR_NOERROR;
 }
 
@@ -246,6 +250,22 @@ void interleaved_set_fds(gpointer element, gpointer user_data)
   }
 }
 
+static void rtp_session_set_fd(gpointer element, gpointer user_data)
+{
+  RTP_session *p = (RTP_session*)element;
+  RTSP_session *q = (RTSP_session*)user_data;
+
+  if (!p->started) {
+    // play finished, go to ready state
+    q->cur_state = READY_STATE;
+    /* TODO: RTP struct to be freed */
+  } else if (p->transport.rtcp_sock) {
+    FD_SET(Sock_fd(p->transport.rtcp_sock), &p->srv->rset);
+    p->srv->max_fd =
+      max(p->srv->max_fd, Sock_fd(p->transport.rtcp_sock));
+  }
+}
+
 /**
  * Add to the read set the current rtsp session fd.
  * The rtsp/tcp interleaving requires additional care.
@@ -254,9 +274,6 @@ void established_each_fd(gpointer data, gpointer user_data)
 {
   feng *srv = (feng*)user_data;
   RTSP_buffer *rtsp = (RTSP_buffer*)data;
-
-  RTSP_session *q = NULL;
-  RTP_session *p = NULL;
 
   // FD used for RTSP connection
   FD_SET(Sock_fd(rtsp->sock), &srv->rset);
@@ -268,19 +285,8 @@ void established_each_fd(gpointer data, gpointer user_data)
   g_slist_foreach(rtsp->interleaved, interleaved_set_fds, rtsp);
 
   // RTCP input
-  for (q = rtsp->session, p = q ? q->rtp_session : NULL;
-       p; p = p->next) {
-
-    if (!p->started) {
-      // play finished, go to ready state
-      q->cur_state = READY_STATE;
-      /* TODO: RTP struct to be freed */
-    } else if (p->transport.rtcp_sock) {
-      FD_SET(Sock_fd(p->transport.rtcp_sock), &srv->rset);
-      srv->max_fd =
-	max(srv->max_fd, Sock_fd(p->transport.rtcp_sock));
-    }
-  }
+  if ( rtsp->session )
+    g_slist_foreach(rtsp->session->rtp_sessions, rtp_session_set_fd, rtsp->session);
 }
 
 static void interleaved_close_fds(gpointer element, gpointer user_data)
@@ -290,6 +296,17 @@ static void interleaved_close_fds(gpointer element, gpointer user_data)
   Sock_close(intlvd->rtp_local);
   Sock_close(intlvd->rtcp_local);
   g_free(intlvd);
+}
+
+static void rtp_session_remove_schedule(gpointer element, gpointer user_data)
+{
+  RTP_session *p = (RTP_session*)element;
+  RTSP_session *q = (RTSP_session*)user_data;
+  
+  // Release the scheduler entry
+  schedule_remove(p);
+  
+  q->rtp_sessions = g_slist_remove(q->rtp_sessions, p);
 }
 
 /**
@@ -303,7 +320,6 @@ void established_each_connection(gpointer data, gpointer user_data)
   RTSP_buffer *p = (RTSP_buffer*)data;
   
   int res;
-  RTP_session *r = NULL, *t = NULL;
   fd_set *rset = &srv->rset;
   fd_set *wset = &srv->wset;
 
@@ -330,16 +346,10 @@ void established_each_connection(gpointer data, gpointer user_data)
       continue;
     }
 #endif
-    r = p->session->rtp_session;
 
     // Release all RTP sessions
-    while (r != NULL) {
-      // if (r->current_media->pkt_buffer);
-      // Release the scheduler entry
-      t = r->next;
-      schedule_remove(r);
-      r = t;
-    }
+    g_slist_foreach(p->session->rtp_sessions, rtp_session_remove_schedule, p->session);
+
     // Close connection                     
     //close(p->session->fd);
     // Release the mediathread resource

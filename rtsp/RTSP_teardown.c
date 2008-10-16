@@ -61,6 +61,38 @@ static int send_teardown_reply(RTSP_buffer * rtsp, unsigned long session_id)
     return ERR_NOERROR;
 }
 
+typedef struct {
+  RTSP_session *s;
+  gchar *filename;
+} rtp_session_release_pair;
+
+static void rtp_session_release(gpointer element, gpointer user_data)
+{
+  RTP_session *rtp_curr = (RTP_session *)element;
+  rtp_session_release_pair *pair = (rtp_session_release_pair *)user_data;
+
+  if (!strcmp(
+	      r_selected_track(rtp_curr->track_selector)->info->name,
+	      pair->filename) || 
+      !strcmp(
+	      r_selected_track(rtp_curr->track_selector)->parent->info->name,
+	      pair->filename)
+      // if multicast don't touch the rtp shared session
+      ) {
+    pair->s->rtp_sessions = g_slist_remove(pair->s->rtp_sessions, rtp_curr);
+
+    if (!rtp_curr->is_multicast--) {
+      // Release the scheduler entry
+      schedule_remove(rtp_curr);
+      fnc_log(FNC_LOG_DEBUG, "[TEARDOWN] Removed %s", pair->filename);
+    } else {
+      fnc_log(FNC_LOG_DEBUG, "[TEARDOWN] %s multicast session,"
+	      " %d clients listening",
+	      pair->filename, rtp_curr->is_multicast);
+    }
+  }
+}
+
 /**
  * RTSP TEARDOWN method handler
  * @param rtsp the buffer for which to handle the method
@@ -71,9 +103,9 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     ConnectionInfo cinfo;
     unsigned long session_id;
     RTSP_session *s;
-    RTP_session *rtp_curr, *rtp_prev = NULL, *rtp_temp;
     char *filename;
     char url[255];
+    rtp_session_release_pair pair;
 
     RTSP_Error error;
 
@@ -111,41 +143,11 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     filename = g_path_get_basename(filename);
 
     // Release all URI RTP session
-    rtp_curr = s->rtp_session;
-    while (rtp_curr != NULL) {
+    pair.filename = filename; pair.s = s;
+    g_slist_foreach(s->rtp_sessions, rtp_session_release, &pair);
 
-        if (!strcmp(
-                r_selected_track(rtp_curr->track_selector)->info->name,
-                                 filename) || 
-            !strcmp(
-                r_selected_track(rtp_curr->track_selector)->parent->info->name,
-                                 filename)
-            // if multicast don't touch the rtp shared session
-            ) {
-            rtp_temp = rtp_curr;
-            if (rtp_prev != NULL)
-                rtp_prev->next = rtp_curr->next;
-            else
-                s->rtp_session = rtp_curr->next;
-
-            rtp_curr = rtp_curr->next;
-            if (!rtp_temp->is_multicast--) {
-                // Release the scheduler entry
-                schedule_remove(rtp_temp);
-                fnc_log(FNC_LOG_DEBUG, "[TEARDOWN] Removed %s", filename);
-            } else {
-                fnc_log(FNC_LOG_DEBUG, "[TEARDOWN] %s multicast session,"
-                                       " %d clients listening",
-                                        filename, rtp_temp->is_multicast);
-            }
-        } else {
-            rtp_prev = rtp_curr;
-            rtp_curr = rtp_curr->next;
-        }
-    }
-
-    if (s->rtp_session == NULL) {
-    // Release mediathread resource
+    if (s->rtp_sessions == NULL) {
+      // Release mediathread resource
         mt_resource_close(rtsp->session->resource);
         // Release the RTSP session
         g_free(rtsp->session);
