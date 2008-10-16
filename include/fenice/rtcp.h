@@ -45,11 +45,11 @@ typedef enum {
 } rtcp_info;
 
 typedef struct RTCP_header {
-#if (BYTE_ORDER == LITTLE_ENDIAN)
+#if (G_BYTE_ORDER == G_LITTLE_ENDIAN)
     uint8_t count:5;    //< SC or RC
     uint8_t padding:1;
     uint8_t version:2;
-#elif (BYTE_ORDER == BIG_ENDIAN)
+#elif (G_BYTE_ORDER == G_BIG_ENDIAN)
     uint8_t version:2;
     uint8_t padding:1;
     uint8_t count:5;    //< SC or RC

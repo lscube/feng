@@ -41,7 +41,7 @@ static const MediaParserInfo info = {
 
 typedef struct
 {
-#if BYTE_ORDER == LITTLE_ENDIAN
+#if G_BYTE_ORDER == G_LITTLE_ENDIAN
     uint16_t plen1:1;       /* Length in bytes of the extra picture header */
     uint16_t v:1;           /* Video Redundancy Coding */
     uint16_t p:1;           /* picture/GOB/slice/EOS/EOSBS start code */
@@ -49,7 +49,7 @@ typedef struct
 
     uint16_t pebit:3;       /* Bits to ignore in the last byte of the header */
     uint16_t plen2:5;       /* Length in bytes of the extra picture header */
-#elif BYTE_ORDER == BIG_ENDIAN
+#elif G_BYTE_ORDER == G_BIG_ENDIAN
     uint16_t rr:5;          /* Reserved. Shall be zero. */
     uint16_t p:1;           /* picture/GOB/slice/EOS/EOSBS start code */
     uint16_t v:1;           /* Video Redundancy Coding */

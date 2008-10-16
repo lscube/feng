@@ -115,12 +115,12 @@ typedef struct RTP_session {
 
 typedef struct RTP_header {
     /* byte 0 */
-#if (BYTE_ORDER == LITTLE_ENDIAN)
+#if (G_BYTE_ORDER == G_LITTLE_ENDIAN)
     uint8_t csrc_len:4;   /* expect 0 */
     uint8_t extension:1;  /* expect 1, see RTP_OP below */
     uint8_t padding:1;    /* expect 0 */
     uint8_t version:2;    /* expect 2 */
-#elif (BYTE_ORDER == BIG_ENDIAN)
+#elif (G_BYTE_ORDER == G_BIG_ENDIAN)
     uint8_t version:2;
     uint8_t padding:1;
     uint8_t extension:1;
@@ -129,10 +129,10 @@ typedef struct RTP_header {
 #error Neither big nor little
 #endif
     /* byte 1 */
-#if (BYTE_ORDER == LITTLE_ENDIAN)
+#if (G_BYTE_ORDER == G_LITTLE_ENDIAN)
     uint8_t payload:7;    /* RTP_PAYLOAD_RTSP */
     uint8_t marker:1;     /* expect 1 */
-#elif (BYTE_ORDER == BIG_ENDIAN)
+#elif (G_BYTE_ORDER == G_BIG_ENDIAN)
     uint8_t marker:1;
     uint8_t payload:7;
 #endif
