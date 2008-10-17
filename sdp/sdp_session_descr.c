@@ -185,7 +185,7 @@ GString *sdp_session_descr(feng *srv, char *server, char *name)
              sdp_private = list_next(sdp_private)) {
             switch (SDP_FIELD(sdp_private)->type) {
                 case empty_field:
-		  g_string_append_printf("%s"SDP2_EL,
+		  g_string_append_printf(descr, "%s"SDP2_EL,
 					 SDP_FIELD(sdp_private)->field);
                     break;
                 // other supported private fields?

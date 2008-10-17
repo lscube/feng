@@ -386,14 +386,14 @@ int RTSP_play(RTSP_buffer * rtsp)
     // Check for Forbidden Paths
     if ( (error = check_forbidden_path(&ne_url)).got_error )
         goto error_management;
-    if ( (error = do_play(&url, rtsp_sess, &args)).got_error ) {
+    if ( (error = do_play(&ne_url, rtsp_sess, &args)).got_error ) {
         if (error.got_error == ERR_ALLOC)
             return ERR_ALLOC;
         goto error_management;
     }
 
     fnc_log(FNC_LOG_INFO, "PLAY %s RTSP/1.0 ", url);
-    send_play_reply(rtsp, &url, rtsp_sess, &args);
+    send_play_reply(rtsp, &ne_url, rtsp_sess, &args);
     log_user_agent(rtsp); // See User-Agent
     return ERR_NOERROR;
 
