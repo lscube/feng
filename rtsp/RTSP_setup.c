@@ -581,8 +581,7 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
  */
 int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
-    Url ne_url;
-    char url[255];
+    Url url;
     guint64 session_id = 0;
     char trackname[255];
     RTP_transport transport;
@@ -601,20 +600,12 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
     // Parse the input message
 
-    // Extract the URL
-    if ( (error = extract_url(rtsp, url)).got_error )
+    // Extract and validate the URL
+    if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
 	goto error_management;
 
-    // Validate URL
-    if ( (error = validate_url(url, &ne_url)).got_error )
-    	goto error_management;
-
-    // Check for Forbidden Paths
-    if ( (error = check_forbidden_path(&ne_url)).got_error )
-    	goto error_management;
-
     // Split resource!trackname
-    if ( (error = split_resource_path(&ne_url, trackname, sizeof(trackname))).got_error )
+    if ( (error = split_resource_path(&url, trackname, sizeof(trackname))).got_error )
         goto error_management;
 
     // Get the CSeq
@@ -631,7 +622,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     rtsp_s = append_session(rtsp);
 
     // Get the selected track
-    if ( (error = select_requested_track(&ne_url, rtsp_s, trackname, &track_sel, &req_track)).got_error )
+    if ( (error = select_requested_track(&url, rtsp_s, trackname, &track_sel, &req_track)).got_error )
         goto error_management;
 
     // Parse the RTP/AVP/something string
@@ -641,7 +632,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     // Setup the RTP session
     // XXX refactor
     if (!rtp_s)
-        rtp_s = setup_rtp_session(&ne_url, rtsp, rtsp_s, &transport, track_sel);
+        rtp_s = setup_rtp_session(&url, rtsp, rtsp_s, &transport, track_sel);
     else { // multicast
         rtp_s->is_multicast++;
         rtsp_s->rtp_sessions = g_slist_prepend(NULL, rtp_s);
@@ -651,7 +642,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     rtsp_s->session_id = session_id;
     *new_session = rtsp_s;
 
-    fnc_log(FNC_LOG_INFO, "SETUP %s RTSP/1.0 ", url);
+    fnc_log(FNC_LOG_INFO, "SETUP %s://%s/%s RTSP/1.0 ",
+	    url.protocol, url.hostname, url.path);
     if(send_setup_reply(rtsp, rtsp_s, rtp_s)) {
         set_RTSP_Error(&error, 500, "Can't write answer");
         goto error_management;

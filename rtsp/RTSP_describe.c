@@ -118,7 +118,6 @@ static RTSP_description_format get_description_format(RTSP_buffer *rtsp)
  */
 int RTSP_describe(RTSP_buffer * rtsp)
 {
-    char urlstr[255];
     RTSP_Error error;
     feng *srv = rtsp->srv;
 
@@ -127,14 +126,9 @@ int RTSP_describe(RTSP_buffer * rtsp)
     RTSP_description_format descr_format;
 
     // Extract the URL
-    if ( (error = extract_url(rtsp, urlstr)).got_error )
-        goto error_management;
-    // Validate URL
-    if ( (error = validate_url(urlstr, &url)).got_error )
-        goto error_management;
-    // Check for Forbidden Paths 
-    if ( (error = check_forbidden_path(&url)).got_error )
-        goto error_management;
+    // Extract and validate the URL
+    if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
+	goto error_management;
     // Disallow Header REQUIRE
     if ( (error = check_require_header(rtsp)).got_error )
         goto error_management;

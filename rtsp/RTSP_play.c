@@ -353,8 +353,7 @@ static int send_play_reply(RTSP_buffer * rtsp, Url *url,
  */
 int RTSP_play(RTSP_buffer * rtsp)
 {
-    Url ne_url;
-    char url[255];
+    Url url;
     guint64 session_id;
     RTSP_session *rtsp_sess;
     play_args args;
@@ -379,23 +378,19 @@ int RTSP_play(RTSP_buffer * rtsp)
 
     // Pick correct session
     if ( (error = get_session(rtsp, session_id, &rtsp_sess)).got_error )                goto error_management;
-    // Extract the URL
-    if ( (error = extract_url(rtsp, url)).got_error )
-	    goto error_management;
-    // Validate URL
-    if ( (error = validate_url(url, &ne_url)).got_error )
-    	goto error_management;
-    // Check for Forbidden Paths
-    if ( (error = check_forbidden_path(&ne_url)).got_error )
-        goto error_management;
-    if ( (error = do_play(&ne_url, rtsp_sess, &args)).got_error ) {
+    // Extract and validate the URL
+    if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
+	goto error_management;
+
+    if ( (error = do_play(&url, rtsp_sess, &args)).got_error ) {
         if (error.got_error == ERR_ALLOC)
             return ERR_ALLOC;
         goto error_management;
     }
 
-    fnc_log(FNC_LOG_INFO, "PLAY %s RTSP/1.0 ", url);
-    send_play_reply(rtsp, &ne_url, rtsp_sess, &args);
+    fnc_log(FNC_LOG_INFO, "PLAY %s://%s/%s RTSP/1.0 ",
+	    url.protocol, url.hostname, url.path);
+    send_play_reply(rtsp, &url, rtsp_sess, &args);
     log_user_agent(rtsp); // See User-Agent
     return ERR_NOERROR;
 

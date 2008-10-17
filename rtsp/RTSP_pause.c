@@ -76,21 +76,17 @@ void rtp_session_pause(gpointer element, gpointer user_data)
  */
 int RTSP_pause(RTSP_buffer * rtsp)
 {
-    Url ne_url;
+    Url url;
     guint64 session_id;
     RTSP_session *s;
-    char url[255];
 
     RTSP_Error error;
 
     if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
         goto error_management;
-    if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
-        goto error_management;
-    if ( (error = validate_url(url, &ne_url)).got_error ) // Validate URL
-    	goto error_management;
-    if ( (error = check_forbidden_path(&ne_url)).got_error ) // Check for Forbidden Paths
-    	goto error_management;
+    // Extract and validate the URL
+    if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
+	goto error_management;
     if ( (error = get_session_id(rtsp, &session_id)).got_error ) // Get Session id
         goto error_management;
 
@@ -106,7 +102,8 @@ int RTSP_pause(RTSP_buffer * rtsp)
     
     g_slist_foreach(s->rtp_sessions, rtp_session_pause, NULL);
 
-    fnc_log(FNC_LOG_INFO, "PAUSE %s RTSP/1.0 ", url);
+    fnc_log(FNC_LOG_INFO, "PAUSE %s://%s/%s RTSP/1.0 ",
+	    url.protocol, url.hostname, url.path);
     send_pause_reply(rtsp, s);
     log_user_agent(rtsp); // See User-Agent 
 

@@ -41,10 +41,8 @@
  * @defgroup rtsp_validation RTSP requests parsing and validation
  * @{
  */
-RTSP_Error check_forbidden_path(Url *url);
-RTSP_Error validate_url(char *url_str, Url *url);
+RTSP_Error rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url);;
 RTSP_Error check_require_header(RTSP_buffer * rtsp);
-RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer);
 RTSP_Error get_cseq(RTSP_buffer * rtsp);
 RTSP_Error get_session_id(RTSP_buffer * rtsp, guint64 * session_id);
 /**

@@ -114,7 +114,7 @@ char const *get_stat(int err)
  * @param cinfo the connection informations containing the path to be checked
  * @return RTSP_Ok or RTSP_Forbidden if the path is out of avroot
  */
-RTSP_Error check_forbidden_path(Url *url)
+static RTSP_Error check_forbidden_path(Url *url)
 {
     if ( strstr(url->path, "../") || strstr(url->path, "./") )
         return RTSP_Forbidden;
@@ -126,9 +126,9 @@ RTSP_Error check_forbidden_path(Url *url)
  * Validates the url requested and sets up the connection informations for the given url
  * @param url the url of the request
  * @param cinfo where the connection informations retrieved from the url should be placed
- * @return RTSP_Ok or RTSP_BadRequest if the url is malformed (might return RTSP_InternalServerError on url parsing errors)
+ * @return RTSP_Ok or RTSP_BadRequest if the url is malformed
  */
-RTSP_Error validate_url(char *urlstr, Url * url)
+static RTSP_Error validate_url(char *urlstr, Url * url)
 {
     char *decoded_url = g_malloc(strlen(urlstr)+1);
     
@@ -148,6 +148,46 @@ RTSP_Error validate_url(char *urlstr, Url * url)
 }
 
 /**
+ * Extracts the required url from the buffer
+ * @param rtsp the buffer of the request from which to extract the url
+ * @param url_buffer the buffer where to write the url (must be big enough)
+ * @return RTSP_Ok or RTSP_BadRequest if no url is present
+ */
+static RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer)
+{
+    if (!sscanf(rtsp->in_buffer, " %*s %254s ", url_buffer)) {
+        return RTSP_BadRequest;
+    }
+
+    return RTSP_Ok;
+}
+
+/**
+ * @brief Takes care of extracting and validating an URL from the buffer
+ *
+ * @param rtsp The buffer from where to extract the URL
+ * @param url The netembryo Url structure where to save the buffer
+ *
+ * @retval RTSP_Ok The URL was found, validated and is allowed.
+ * @rteval RTSP_BadRequest URL not found or malformed.
+ * @retval RTSP_Forbidden The URL contains forbidden character sequences.
+ */
+RTSP_Error rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url) {
+  char urlstr[256];
+  RTSP_Error error = RTSP_Ok;
+  
+  if ( (error = extract_url(rtsp, urlstr)).got_error )
+    goto end;
+  if ( (error = validate_url(urlstr, url)).got_error )
+    goto end;
+  if ( (error = check_forbidden_path(url)).got_error )
+    goto end;
+
+ end:
+  return error;
+}
+
+/**
  * Checks if the RTSP message is a request of the supported options
  * actually HDR_REQUIRE header is not supported by feng.
  * @param rtsp the buffer of the request to check
@@ -157,21 +197,6 @@ RTSP_Error check_require_header(RTSP_buffer * rtsp)
 {
     if (strstr(rtsp->in_buffer, HDR_REQUIRE))
         return RTSP_OptionNotSupported;
-
-    return RTSP_Ok;
-}
-
-/**
- * Extracts the required url from the buffer
- * @param rtsp the buffer of the request from which to extract the url
- * @param url_buffer the buffer where to write the url (must be big enough)
- * @return RTSP_Ok or RTSP_BadRequest if no url is present
- */
-RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer)
-{
-    if (!sscanf(rtsp->in_buffer, " %*s %254s ", url_buffer)) {
-        return RTSP_BadRequest;
-    }
 
     return RTSP_Ok;
 }
