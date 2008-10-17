@@ -242,6 +242,13 @@ static void feng_free(feng* srv)
     g_ptr_array_free(srv->listen_socks, FALSE); // XXX Socks aren't g_mallocated yet
 }
 
+static void fncheader()
+{
+    printf("\n%s - Feng %s\n LScube Project - Politecnico di Torino\n",
+            PACKAGE,
+            VERSION);
+}
+
 static gboolean show_version(const gchar *option_name, const gchar *value,
 			     gpointer data, GError **error)
 {

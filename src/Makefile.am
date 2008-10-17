@@ -8,8 +8,7 @@ liblog_la_SOURCES = fnc_log.c
 
 bin_PROGRAMS = feng
 
-feng_SOURCES =	main.c \
-			fncheader.c
+feng_SOURCES =	main.c
 
 feng_LDADD =	../eventloop/libeventloop.la \
 		../rtsp/librtsp.la \
