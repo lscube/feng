@@ -30,21 +30,12 @@
 
 static void add_client(feng *srv, Sock *client_sock)
 {
-    RTSP_buffer *new = NULL;
+    RTSP_buffer *new = g_new0(RTSP_buffer, 1);
 
-    if (!(new = g_new0(RTSP_buffer, 1))) {
-        fnc_log(FNC_LOG_FATAL, "Could not alloc memory in add_client()\n");
-        return;
-    }
-    
     new->srv = srv;
     new->sock = client_sock;
 
-    if (!(new->session = g_new0(RTSP_session, 1))) {
-        fnc_log(FNC_LOG_FATAL, "Could not alloc memory in add_client()\n");
-        return;
-    }
-
+    new->session = g_new0(RTSP_session, 1);
     new->session->session_id = -1;
     new->session->srv = srv;
 
