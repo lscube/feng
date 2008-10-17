@@ -26,6 +26,21 @@
 #include <fenice/utils.h>
 #include <netembryo/url.h>
 
+/**
+ * @brief Append the description for a given media to an SDP
+ *        description.
+ *
+ * @param m_descr_list List of MediaDescr instances to fetch the data
+ *                     from.
+ * @param descr GString instance to append the description to
+ *
+ * @retval ERR_NOERROR No error.
+ * @retval ERR_INPUT_PARAM NULL media description or invalid type.
+ *
+ * @TODO Move this to sdp_session_descr.c and staticize.
+ * @TODO The return value is ignored, should return void and
+ *       eventually log a warning.
+ */
 int sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
 {
     MediaDescr *m_descr = m_descr_list ? MEDIA_DESCR(m_descr_list) : NULL;
@@ -58,8 +73,8 @@ int sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
 	  break;
     }
 
-    // shawill: TODO: probably the transport should not be hard coded,
-        // but obtained in some way
+    /// @TODO shawill: probably the transport should not be hard coded,
+    /// but obtained in some way
     g_string_append_printf(descr, "%d RTP/AVP",
 			   m_descr_rtp_port(m_descr));
 

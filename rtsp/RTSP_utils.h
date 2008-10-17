@@ -31,41 +31,16 @@
 #include <netembryo/rtsp_errors.h>
 #include <netembryo/url.h>
 
-/**
- * @addtogroup RTSP
- * @{
- */
-
-/**
- * RTSP Header and request parsing and validation functions
- * @defgroup rtsp_validation RTSP requests parsing and validation
- * @{
- */
 RTSP_Error rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url);;
 RTSP_Error check_require_header(RTSP_buffer * rtsp);
 RTSP_Error get_cseq(RTSP_buffer * rtsp);
 RTSP_Error get_session_id(RTSP_buffer * rtsp, guint64 * session_id);
-/**
- * @}
- */
 
-/**
- * RTSP Message generation and logging functions
- * @defgroup rtsp_msg_gen RTSP Message Generation
- * @{
- */
 int send_redirect_3xx(RTSP_buffer *, char *);
 int bwrite(char *buffer, size_t len, RTSP_buffer * rtsp);
 void add_time_stamp(char *b, int crlf);
 void add_time_stamp_g(GString *str, int crlf);
-/**
- * @}
- */
 
 char const *get_stat(int err);
 void log_user_agent(RTSP_buffer * rtsp);
 extern RTSP_Error const RTSP_Fatal_ErrAlloc;
-
-/**
- * @}
- */

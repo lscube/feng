@@ -34,18 +34,16 @@
 #include <netembryo/url.h>
 
 /**
- * This function creates an array of MediaDescrList containing media
- * descriptions.
- * This array is returned to function caller.
- * Each element of the array is a MediaDescrList that contain all the
- * media of the same type with the same name.
- * All the elements of each list can be included together in the sdp
- * description in a single m= block.
- * @param r_descr Resource description that contains all the media
- * @param m_descrs this is a return parameter.
- *  It will contain the MediaDescrList array
- * @return the dimension of the array or an interger < 0 if an error occurred.
- * */
+ * @brief Creates an array of MediaDescrList containing media
+ *        descriptions.
+ *
+ * @return An array, each element of which is a MediaDescrList
+ *         containing all the media of the same type with the same
+ *         name. All the elements in each list can be included
+ *         together in the sdp description, in a single 'm=' block.
+ *
+ * @param r_descr Resource description containing all the media.
+ */
 static MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
 {
     MediaDescrListArray new_m_descrs;
@@ -89,6 +87,22 @@ static MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
     return new_m_descrs;
 }
 
+/**
+ * @brief Create description for an SDP session
+ *
+ * @param srv Pointer to the server-specific data instance.
+ * @param server Hostname of the server used for the request.
+ * @param name Name of the resource to describe.
+ *
+ * @return A new GString containing the complete description of the
+ *         session or NULL if the resource was not found or no demuxer
+ *         was found to handle it.
+ *
+ * @TODO Consider returning a pointer to character rather than a
+ *       GString since it's already complete.
+ * @TODO Consider receiving a netembryo Url structure pointer instead
+ *       of separated server and resource names.
+ */
 GString *sdp_session_descr(feng *srv, char *server, char *name)
 {
     GString *descr = NULL;
@@ -152,7 +166,7 @@ GString *sdp_session_descr(feng *srv, char *server, char *name)
 	  g_string_append_printf(descr, "%s"SDP2_EL,
 				 r_descr_ttl(r_descr));
         else
-	  /*TODO: the possibility to change ttl.
+	  /* @TODO the possibility to change ttl.
 	   * See multicast.h, RTSP_setup.c, send_setup_reply.c*/
 	  g_string_append_printf(descr, "%d"SDP2_EL,
 				 DEFAULT_TTL);
@@ -169,7 +183,7 @@ GString *sdp_session_descr(feng *srv, char *server, char *name)
     // type attribute. We offer only broadcast
     g_string_append(descr, "a=type:broadcast"SDP2_EL);
     // tool attribute. Feng promo
-    /// @TODO: choose a better session description
+    /// @TODO choose a better session description
     g_string_append_printf(descr, "a=tool:%s %s Streaming Server"SDP2_EL,
 		    PACKAGE, VERSION);		    
     // control attribute. We should look if aggregate metod is supported?
@@ -197,7 +211,7 @@ GString *sdp_session_descr(feng *srv, char *server, char *name)
     // media
     m_descrs = r_descr_get_media(r_descr);
 
-    for (i=0;i<m_descrs->len;i++) { // TODO: wrap g_array functions
+    for (i=0;i<m_descrs->len;i++) { /// @TODO wrap g_array functions
         sdp_media_descr(array_data(m_descrs)[i], descr);
     }
 

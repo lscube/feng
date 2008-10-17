@@ -43,6 +43,11 @@
 
 #undef send_reply
 
+/**
+ * @addtogroup RTSP
+ * @{
+ */
+
 RTSP_Error const RTSP_Fatal_ErrAlloc = { {0, ""}, ERR_ALLOC };
 
 /**
@@ -110,9 +115,20 @@ char const *get_stat(int err)
 }
 
 /**
- * Checks if the path required by the connection is inside the avroot
- * @param cinfo the connection informations containing the path to be checked
- * @return RTSP_Ok or RTSP_Forbidden if the path is out of avroot
+ * RTSP Header and request parsing and validation functions
+ * @defgroup rtsp_validation RTSP requests parsing and validation
+ * @{
+ */
+
+/**
+ * @brief Checks if the path required by the connection is inside the
+ *        avroot.
+ *
+ * @param url The netembryo Url structure to validate.
+ *
+ * @retval RTSP_Ok The URL does not contian any forbidden sequence.
+ * @retval RTSP_Forbidden The URL contains forbidden sequences that
+ *         might have malicious intent.
  */
 static RTSP_Error check_forbidden_path(Url *url)
 {
@@ -123,10 +139,16 @@ static RTSP_Error check_forbidden_path(Url *url)
 }
 
 /**
- * Validates the url requested and sets up the connection informations for the given url
- * @param url the url of the request
- * @param cinfo where the connection informations retrieved from the url should be placed
- * @return RTSP_Ok or RTSP_BadRequest if the url is malformed
+ * Validates the url requested and sets up the connection informations
+ * for the given url
+ *
+ * @param urlstr The string contianing the raw URL that has to be
+ *               validated and split.
+ * @param[out] url The netembryo Url structure to fill with the
+ *                 validate Url.
+ *
+ * @retval RTSP_Ok The URL has been filled in url.
+ * @retval RTSP_BadRequest The URL is malformed.
  */
 static RTSP_Error validate_url(char *urlstr, Url * url)
 {
@@ -149,9 +171,15 @@ static RTSP_Error validate_url(char *urlstr, Url * url)
 
 /**
  * Extracts the required url from the buffer
- * @param rtsp the buffer of the request from which to extract the url
- * @param url_buffer the buffer where to write the url (must be big enough)
- * @return RTSP_Ok or RTSP_BadRequest if no url is present
+ *
+ * @param rtsp the buffer of the request from which to extract the
+ *             url.
+ *
+ * @param[out] url_buffer the buffer where to write the url (must be
+ *                        big enough).
+ * 
+ * @retval RTSP_Ok URL identified and copied in the buffer.
+ * @retval RTSP_BadRequest URL not found in the buffer.
  */
 static RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer)
 {
@@ -166,10 +194,10 @@ static RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer)
  * @brief Takes care of extracting and validating an URL from the buffer
  *
  * @param rtsp The buffer from where to extract the URL
- * @param url The netembryo Url structure where to save the buffer
+ * @param[out] url The netembryo Url structure where to save the buffer
  *
  * @retval RTSP_Ok The URL was found, validated and is allowed.
- * @rteval RTSP_BadRequest URL not found or malformed.
+ * @retval RTSP_BadRequest URL not found or malformed.
  * @retval RTSP_Forbidden The URL contains forbidden character sequences.
  */
 RTSP_Error rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url) {
@@ -188,10 +216,17 @@ RTSP_Error rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url) {
 }
 
 /**
- * Checks if the RTSP message is a request of the supported options
- * actually HDR_REQUIRE header is not supported by feng.
+ * @brief Checks if the RTSP message is a request with supported
+ *        options
+ *
+ * The HDR_REQUIRE header is not supported by feng so it will always
+ * be not supported if present.
+ * 
  * @param rtsp the buffer of the request to check
- * @return RTSP_Ok if it is not present a REQUIRE header, RTSP_OptionNotSupported else
+ *
+ * @retval RTS_Ok No Require header present.
+ * @retval RTSP_OptionNotSupported Require header present, not
+ *         supported.
  */
 RTSP_Error check_require_header(RTSP_buffer * rtsp)
 {
@@ -202,10 +237,15 @@ RTSP_Error check_require_header(RTSP_buffer * rtsp)
 }
 
 /**
- * Gets the CSeq from the buffer
+ * @brief Gets the CSeq from the buffer
+ * 
+ * Search for the CSEQ header and fills rtsp->rtsp_cseq with its
+ * value.
+ *
  * @param rtsp the buffer of the request
- * @return RTSP_Ok or RTSP_BadRequest if there is not a CSEQ header
- * @return or it is not possible to parse it
+ *
+ * @retval RTSP_Ok No error.
+ * @retval RTSP_BadRequest CSEQ header not found or not valid.
  */
 RTSP_Error get_cseq(RTSP_buffer * rtsp)
 {
@@ -220,10 +260,17 @@ RTSP_Error get_cseq(RTSP_buffer * rtsp)
 }
 
 /**
- * Gets the id of the requested session
- * @param rtsp the buffer from which to parse the session id
- * @param session_id where to save the retrieved session id
- * @return RTSP_Ok or RTSP_SessionNotFound if it is not possible to parse the id
+ * @brief Gets the ID of the requested session
+ *
+ * Looks for the Session ID in the RTSP buffer, and saves it in the
+ * variable pointed at by @p session_id; the variable is set to zero
+ * if no Session ID is found.
+ *
+ * @param rtsp the buffer from which to parse the Session ID
+ * @param[out] session_id where to save the retrieved Session ID
+ *
+ * @retval RTSP_Ok No error.
+ * @retval RTSP_SessionNotFound Session ID not valid.
  */
 RTSP_Error get_session_id(RTSP_buffer * rtsp, guint64 * session_id)
 {
@@ -239,9 +286,13 @@ RTSP_Error get_session_id(RTSP_buffer * rtsp, guint64 * session_id)
 
     return RTSP_Ok;
 }
+/**
+ * @}
+ */
 
 /**
- * prints out various informations about the user agent
+ * @brief Print to log various informations about the user agent.
+ *
  * @param rtsp the buffer containing the USER_AGENT header
  */
 void log_user_agent(RTSP_buffer * rtsp)
@@ -259,17 +310,23 @@ void log_user_agent(RTSP_buffer * rtsp)
         fnc_log(FNC_LOG_CLIENT, "-");
 }
 
-
-// ------------------------------------------------------
-// Message Functions
-// ------------------------------------------------------
+/**
+ * RTSP Message generation and logging functions
+ * @defgroup rtsp_msg_gen RTSP Message Generation
+ * @{
+ */
 
 /**
- * Sends a reply message to the client
+ * @brief Sends a reply message to the client
+ *
  * @param err the message code
  * @param addon the text to append to the message
  * @param rtsp the buffer where to write the output message
- * @return ERR_NOERROR or ERR_ALLOC if it was not possible to allocate enough space
+ *
+ * @retval ERR_NOERROR No error.
+ * @retval ERR_ALLOC Not enough space to complete the request
+ *
+ * @note The return value is the one from @ref bwrite function.
  */
 int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 {
@@ -295,10 +352,18 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 }
 
 /**
- * Redirects the client to another server
+ * @brief Redirects the client to another server
+ *
  * @param rtsp the buffer of the rtsp connection
- * @param object the requested object for which the client is redirected
- * @return ERR_NOERROR or ERR_ALLOC if it was not possible to allocate enough space
+ * @param object the requested object for which the client is
+ *               redirected
+ *
+ * @retval ERR_NOERROR No Error.
+ * @retval ERR_ALLOC Not enough space to complete the request.
+ *
+ * @TODO This is not currently implemented for mediathread, so it
+ *       results in an internal server error right now.
+ * @TODO The non-mediathread code needs to be audited and cleaned up.
  */
 int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
 {
@@ -360,11 +425,14 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
 }
 
 /**
- * Writes a buffer to the output buffer of an RTSP connection
+ * @brief Writes a buffer to the output buffer of an RTSP connection
+ *
  * @param buffer the buffer from which to get the data to send
  * @param len the size of the data to send
  * @param rtsp where the output buffer is saved
- * @return ERR_NOERROR or ERR_ALLOC if it was not possible to allocate enough space
+ *
+ * @retval ERR_NOERROR No error.
+ * @retval ERR_ALLOC Not enough space in the output buffer.
  */
 int bwrite(char *buffer, size_t len, RTSP_buffer * rtsp)
 {
@@ -383,6 +451,10 @@ int bwrite(char *buffer, size_t len, RTSP_buffer * rtsp)
  * Adds a timestamp to a buffer
  * @param b the buffer where to write the timestamp
  * @param crlf whenever to put the message terminator or not
+ *
+ * @TODO Make crlf a gboolean
+ * @TODO Ensure the function is still relevant to be exported
+ * @TODO Ensure crlf is still relevant as a parameter
  */
 void add_time_stamp(char *b, int crlf)
 {
@@ -401,9 +473,28 @@ void add_time_stamp(char *b, int crlf)
         strcat(b, "\r\n");    /* add a message header terminator (CRLF) */
 }
 
+/**
+ * @brief Add a timestamp to a GString
+ * 
+ * Wrapper around @ref add_time_stamp() that appends to a GString
+ * rather than a raw buffer.
+ *
+ * @param str GString instance to append the text to
+ * @param crlf Whether to put the message terminator or not
+ *
+ * @TODO Make crlf a boolean
+ * @TODO Ensure crlf is still relevant as a parameter
+ */
 void add_time_stamp_g(GString *str, int crlf) {
   char buffer[41] = { 0, };
   
   add_time_stamp(buffer, crlf);
   g_string_append(str, buffer);
 }
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

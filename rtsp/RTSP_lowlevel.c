@@ -111,6 +111,7 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
 /**
  * Removes the last message from the rtsp buffer
  * @param rtsp the buffer from which to discard the message
+ * @param len Length of data to remove.
  */
 void RTSP_discard_msg(RTSP_buffer * rtsp, int len)
 {
@@ -124,14 +125,18 @@ void RTSP_discard_msg(RTSP_buffer * rtsp, int len)
 
 /**
  * Recieves an RTSP message and puts it into the buffer
+ *
+ * @param rtsp Buffer to receive the data from.
  * @param hdr_len where to save the header length
  * @param body_len where to save the message body length
- * @return -1 on ERROR
- * @return RTSP_not_full (0) if a full RTSP message is NOT present in the in_buffer yet.
- * @return RTSP_method_rcvd (1) if a full RTSP message is present in the in_buffer and is
- * ready to be handled.
- * @return RTSP_interlvd_rcvd (2) if a complete RTP/RTCP interleaved packet is present.  
- * terminate on really ugly cases.
+ *
+ * @retval -1 Error happened.
+ * @retval RTSP_not_full A full RTSP message is *not* present in
+ *         rtsp->in_buffer yet.
+ * @retval RTSP_method_rcvd A full RTSP message is present in
+ *         rtsp->in_buffer and is ready to be handled.
+ * @retval RTSP_interlvd_rcvd A complete RTP/RTCP interleaved packet
+ *         is present.
  */
 int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
 {
