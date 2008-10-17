@@ -36,6 +36,5 @@
 #define MAX_DESCR_LENGTH 63000
 
 GString *sdp_session_descr(feng *srv, char *server, char *name);
-int sdp_media_descr(MediaDescrList, GString *descr);
 
 #endif // FN_SDP2_H
