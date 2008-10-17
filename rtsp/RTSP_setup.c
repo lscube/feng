@@ -38,23 +38,23 @@
 
 /**
  * Splits the path of a requested media finding the trackname and the removing it from the object
- * @param cinfo the connection for which to split the object
+ * @param url the Url for which to split the object
  * @param trackname where to save the trackname removed from the object
  * @param trackname_max_len maximum length of the trackname buffer 
  * @return RTSP_Ok or RTSP_InternalServerError if there was no trackname
  */
-static RTSP_Error split_resource_path(ConnectionInfo * cinfo, char * trackname, size_t trackname_max_len)
+static RTSP_Error split_resource_path(Url * url, char * trackname, size_t trackname_max_len)
 {
     char * p;
 
     //if '=' is not present then a file has not been specified
-    if (!(p = strchr(cinfo->url.path, '=')))
+    if (!(p = strchr(url->path, '=')))
         return RTSP_InternalServerError;
     else {
         // SETUP resource!trackname
         g_strlcpy(trackname, p + 1, trackname_max_len);
         // XXX Not really nice...
-        while (cinfo->url.path != p) if (*--p == '/') break;
+        while (url->path != p) if (*--p == '/') break;
         *p = '\0';
     }
 
@@ -430,14 +430,14 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
 
 /**
  * sets up the RTP session
- * @param cinfo the object for which to generate the session
+ * @param url the Url for which to generate the session
  * @param rtsp the buffer for which to generate the session
  * @param rtsp_s the RTSP session to use
  * @param transport the transport to use
  * @param track_sel the track for which to generate the session
  * @return The newly generated RTP session
  */
-static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, Selector * track_sel)
+static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, Selector * track_sel)
 {
     feng *srv = rtsp->srv;
     RTP_session *rtp_s = g_new0(RTP_session, 1);
@@ -446,7 +446,7 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
     rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
 
     rtp_s->pause = 1;
-    rtp_s->sd_filename = g_strdup(cinfo->url.path);
+    rtp_s->sd_filename = g_strdup(url->path);
 
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
     rtp_s->start_rtptime = g_random_int();
@@ -462,7 +462,7 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
 
 /**
  * Gets the track requested for the object
- * @param cinfo the object for which to get the requested track
+ * @param url the object for which to get the requested track
  * @param rtsp_s the session where to save the addressed resource
  * @param trackname the name of the track to open
  * @param track_sel where to save the selector for the opened track
@@ -470,16 +470,16 @@ static RTP_session * setup_rtp_session(ConnectionInfo * cinfo, RTSP_buffer * rts
  * @return RTSP_Ok or RTSP_NotFound if the object or the track was not found
  * @return RTSP_InternalServerError if it was not possible to retrieve the data of the opened track
  */
-static RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
+static RTSP_Error select_requested_track(Url *url, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
 {
     RTSP_Error error;
     feng *srv = rtsp_s->srv;
 
     // it should parse the request giving us object!trackname
     if (!rtsp_s->resource) {
-        if (!(rtsp_s->resource = mt_resource_open(srv, prefs_get_serv_root(), cinfo->url.path))) {
+        if (!(rtsp_s->resource = mt_resource_open(srv, prefs_get_serv_root(), url->path))) {
             error = RTSP_NotFound;
-            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", cinfo->url.path);
+            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", url->path);
             return error;
         }
     }
@@ -487,7 +487,7 @@ static RTSP_Error select_requested_track(ConnectionInfo * cinfo, RTSP_session * 
     if (!(*track_sel = r_open_tracks(rtsp_s->resource, trackname))) {
         error = RTSP_NotFound;
         fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
-                trackname, cinfo->url.path);
+                trackname, url->path);
         return error;
     }
 
@@ -581,7 +581,7 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
  */
 int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
-    ConnectionInfo cinfo;
+    Url ne_url;
     char url[255];
     guint64 session_id = 0;
     char trackname[255];
@@ -606,15 +606,15 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 	goto error_management;
 
     // Validate URL
-    if ( (error = validate_url(url, &cinfo)).got_error )
+    if ( (error = validate_url(url, &ne_url)).got_error )
     	goto error_management;
 
     // Check for Forbidden Paths
-    if ( (error = check_forbidden_path(&cinfo)).got_error )
+    if ( (error = check_forbidden_path(&ne_url)).got_error )
     	goto error_management;
 
     // Split resource!trackname
-    if ( (error = split_resource_path(&cinfo, trackname, sizeof(trackname))).got_error )
+    if ( (error = split_resource_path(&ne_url, trackname, sizeof(trackname))).got_error )
         goto error_management;
 
     // Get the CSeq
@@ -631,7 +631,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     rtsp_s = append_session(rtsp);
 
     // Get the selected track
-    if ( (error = select_requested_track(&cinfo, rtsp_s, trackname, &track_sel, &req_track)).got_error )
+    if ( (error = select_requested_track(&ne_url, rtsp_s, trackname, &track_sel, &req_track)).got_error )
         goto error_management;
 
     // Parse the RTP/AVP/something string
@@ -641,7 +641,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     // Setup the RTP session
     // XXX refactor
     if (!rtp_s)
-        rtp_s = setup_rtp_session(&cinfo, rtsp, rtsp_s, &transport, track_sel);
+        rtp_s = setup_rtp_session(&ne_url, rtsp, rtsp_s, &transport, track_sel);
     else { // multicast
         rtp_s->is_multicast++;
         rtsp_s->rtp_sessions = g_slist_prepend(NULL, rtp_s);

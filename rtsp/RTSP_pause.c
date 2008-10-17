@@ -76,7 +76,7 @@ void rtp_session_pause(gpointer element, gpointer user_data)
  */
 int RTSP_pause(RTSP_buffer * rtsp)
 {
-    ConnectionInfo cinfo;
+    Url ne_url;
     guint64 session_id;
     RTSP_session *s;
     char url[255];
@@ -87,9 +87,9 @@ int RTSP_pause(RTSP_buffer * rtsp)
         goto error_management;
     else if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
 	    goto error_management;
-    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
+    else if ( (error = validate_url(url, &ne_url)).got_error ) // Validate URL
     	goto error_management;
-    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
+    else if ( (error = check_forbidden_path(&ne_url)).got_error ) // Check for Forbidden Paths
     	goto error_management;
     else if ( (error = get_session_id(rtsp, &session_id)).got_error ) // Get Session id
         goto error_management;

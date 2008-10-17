@@ -224,18 +224,18 @@ static void rtp_session_play(gpointer value, gpointer user_data)
 
 /**
  * Actually starts playing the media using mediathread
- * @param cinfo the connection for which to start playing
+ * @param url the Url for which to start playing
  * @param rtsp_sess the session for which to start playing
  * @param args the range to play
  * @return RTSP_Ok or RTSP_InternalServerError
  */
 static RTSP_Error
-do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
+do_play(Url *url, RTSP_session * rtsp_sess, play_args * args)
 {
   RTSP_Error error = RTSP_Ok;
     char *q = NULL;
 
-    if (!(q = strchr(cinfo->url.path, '='))) {
+    if (!(q = strchr(url->path, '='))) {
         //if '=' is not present then a file has not been specified
         // aggregate content requested
         // Perform seek if needed
@@ -256,7 +256,7 @@ do_play(ConnectionInfo * cinfo, RTSP_session * rtsp_sess, play_args * args)
         // resource!trackname
 //        strcpy (trackname, q + 1);
         // XXX Not really nice...
-        while (cinfo->url.path != q) if (*--q == '/') break;
+        while (url->path != q) if (*--q == '/') break;
         *q = '\0';
     }
 
@@ -296,17 +296,17 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
 /**
  * Sends the reply for the play method
  * @param rtsp the buffer where to write the reply
- * @param cinfo the cinfo related to the object that we wanted to play
+ * @param url the Url related to the object that we wanted to play
  * @param rtsp_session the session for which to generate the reply
  * @return ERR_NOERROR
  */
-static int send_play_reply(RTSP_buffer * rtsp, ConnectionInfo *cinfo,
+static int send_play_reply(RTSP_buffer * rtsp, Url *url,
                            RTSP_session * rtsp_session, play_args * args)
 {
     GString *reply = g_string_new("");
     rtp_session_send_play_reply_pair pair = {
       .reply = reply,
-      .server = cinfo->url.hostname
+      .server = url->hostname
     };
 
     /* build a reply message */
@@ -339,7 +339,7 @@ static int send_play_reply(RTSP_buffer * rtsp, ConnectionInfo *cinfo,
     bwrite(reply->str, reply->len, rtsp);
     g_string_free(reply, TRUE);
 
-    fnc_log(FNC_LOG_CLIENT, "200 - %s ", cinfo->url.path);
+    fnc_log(FNC_LOG_CLIENT, "200 - %s ", url->path);
 
     return ERR_NOERROR;
 }
@@ -351,7 +351,7 @@ static int send_play_reply(RTSP_buffer * rtsp, ConnectionInfo *cinfo,
  */
 int RTSP_play(RTSP_buffer * rtsp)
 {
-    ConnectionInfo cinfo;
+    Url ne_url;
     char url[255];
     guint64 session_id;
     RTSP_session *rtsp_sess;
@@ -381,19 +381,19 @@ int RTSP_play(RTSP_buffer * rtsp)
     else if ( (error = extract_url(rtsp, url)).got_error )
 	    goto error_management;
     // Validate URL
-    else if ( (error = validate_url(url, &cinfo)).got_error )
+    else if ( (error = validate_url(url, &ne_url)).got_error )
     	goto error_management;
     // Check for Forbidden Paths
-    else if ( (error = check_forbidden_path(&cinfo)).got_error )
+    else if ( (error = check_forbidden_path(&ne_url)).got_error )
         goto error_management;
-    else if ( (error = do_play(&cinfo, rtsp_sess, &args)).got_error ) {
+    else if ( (error = do_play(&url, rtsp_sess, &args)).got_error ) {
         if (error.got_error == ERR_ALLOC)
             return ERR_ALLOC;
         goto error_management;
     }
 
     fnc_log(FNC_LOG_INFO, "PLAY %s RTSP/1.0 ", url);
-    send_play_reply(rtsp, &cinfo, rtsp_sess, &args);
+    send_play_reply(rtsp, &url, rtsp_sess, &args);
     log_user_agent(rtsp); // See User-Agent
     return ERR_NOERROR;
 

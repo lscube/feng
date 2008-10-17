@@ -114,9 +114,9 @@ char const *get_stat(int err)
  * @param cinfo the connection informations containing the path to be checked
  * @return RTSP_Ok or RTSP_Forbidden if the path is out of avroot
  */
-RTSP_Error check_forbidden_path(ConnectionInfo * cinfo)
+RTSP_Error check_forbidden_path(Url *url)
 {
-    if ( strstr(cinfo->url.path, "../") || strstr(cinfo->url.path, "./") )
+    if ( strstr(url->path, "../") || strstr(url->path, "./") )
         return RTSP_Forbidden;
 
     return RTSP_Ok;
@@ -128,19 +128,19 @@ RTSP_Error check_forbidden_path(ConnectionInfo * cinfo)
  * @param cinfo where the connection informations retrieved from the url should be placed
  * @return RTSP_Ok or RTSP_BadRequest if the url is malformed (might return RTSP_InternalServerError on url parsing errors)
  */
-RTSP_Error validate_url(char *url, ConnectionInfo * cinfo)
+RTSP_Error validate_url(char *urlstr, Url * url)
 {
-    char *decoded_url = g_malloc(strlen(url)+1);
+    char *decoded_url = g_malloc(strlen(urlstr)+1);
     
-    if ( Url_decode( decoded_url, url, strlen(url) ) < 0 )
+    if ( Url_decode( decoded_url, urlstr, strlen(urlstr) ) < 0 )
       return RTSP_BadRequest;
 
-    Url_init(&cinfo->url, decoded_url);
+    Url_init(url, decoded_url);
 
     g_free(decoded_url);
 
-    if ( cinfo->url.path == NULL ) {
-      Url_destroy(&cinfo->url);
+    if ( url->path == NULL ) {
+      Url_destroy(url);
       return RTSP_BadRequest;
     }
 

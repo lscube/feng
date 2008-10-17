@@ -52,8 +52,8 @@ typedef struct
  * @defgroup rtsp_validation RTSP requests parsing and validation
  * @{
  */
-RTSP_Error check_forbidden_path(ConnectionInfo * cinfo);
-RTSP_Error validate_url(char *url, ConnectionInfo * cinfo);
+RTSP_Error check_forbidden_path(Url *url);
+RTSP_Error validate_url(char *url_str, Url *url);
 RTSP_Error check_require_header(RTSP_buffer * rtsp);
 RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer);
 RTSP_Error get_description_format(RTSP_buffer * rtsp, ConnectionInfo * cinfo);

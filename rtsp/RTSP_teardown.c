@@ -104,7 +104,7 @@ static void rtp_session_release(gpointer element, gpointer user_data)
  */
 int RTSP_teardown(RTSP_buffer * rtsp)
 {
-    ConnectionInfo cinfo;
+    Url ne_url;
     guint64 session_id;
     RTSP_session *s;
     char *filename;
@@ -117,9 +117,9 @@ int RTSP_teardown(RTSP_buffer * rtsp)
         goto error_management;
     else if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
 	    goto error_management;
-    else if ( (error = validate_url(url, &cinfo)).got_error ) // Validate URL
+    else if ( (error = validate_url(url, &ne_url)).got_error ) // Validate URL
     	goto error_management;
-    else if ( (error = check_forbidden_path(&cinfo)).got_error ) // Check for Forbidden Paths
+    else if ( (error = check_forbidden_path(&ne_url)).got_error ) // Check for Forbidden Paths
     	goto error_management;
     else if ( (error = get_session_id(rtsp, &session_id)).got_error ) // Get Session id
         goto error_management;
@@ -139,10 +139,10 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     send_teardown_reply(rtsp, session_id);
     log_user_agent(rtsp); // See User-Agent 
 
-    if (strchr(cinfo.url.path, '='))    /*Compatibility with RealOne and RealPlayer */
-        filename = strchr(cinfo.url.path, '=') + 1;
+    if (strchr(ne_url.path, '='))    /*Compatibility with RealOne and RealPlayer */
+        filename = strchr(ne_url.path, '=') + 1;
     else
-        filename = cinfo.url.path;
+        filename = ne_url.path;
 
     filename = g_path_get_basename(filename);
 
