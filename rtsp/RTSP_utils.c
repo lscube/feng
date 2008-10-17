@@ -225,7 +225,7 @@ RTSP_Error get_session_description(feng *srv, ConnectionInfo * cinfo)
     int sdesc_error = sdp_session_descr(srv,
                                         cinfo->url.hostname,
                                         cinfo->url.path,
-                                        cinfo->descr, sizeof(cinfo->descr));
+					cinfo->descr);
 
     if ((sdesc_error))
     {

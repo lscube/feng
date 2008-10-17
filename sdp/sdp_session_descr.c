@@ -33,23 +33,6 @@
 #include <netembryo/wsocket.h>
 #include <netembryo/url.h>
 
-static gint sdp_get_version(ResourceDescr *r_descr, char *dest, size_t dest_size)
-{
-	time_t t=r_descr_last_change(r_descr);
-	
-	return g_snprintf(dest, dest_size,"%.0f", t ? NTP_time(t) : NTP_time(time(NULL)));
-}
-
-#define DESCRCAT(x) \
-    do { \
-        if ( (size_left -= x) < 0) {\
-            fnc_log(FNC_LOG_ERR, "[SDP2] buffer overflow (%d)", size_left); \
-            return ERR_ALLOC; \
-        } \
-        else \
-            cursor = descr + descr_size - size_left; \
-    } while(0);
-
 /**
  * This function creates an array of MediaDescrList containing media
  * descriptions.
@@ -106,16 +89,17 @@ static MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
     return new_m_descrs;
 }
 
-int sdp_session_descr(feng *srv, char *server, char *name, char *descr,
-                      size_t descr_size)
+int sdp_session_descr(feng *srv, char *server, char *name, GString *descr)
 {
-    gint64 size_left=descr_size;
-    char *cursor=descr;
     ResourceDescr *r_descr;
     MediaDescrListArray m_descrs;
     sdp_field_list sdp_private;
     guint i;
     double duration;
+
+    const char *resname;
+    time_t restime;
+    float currtime_float, restime_float;
 
     fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s", name);
     if ( !(r_descr=r_descr_get(srv, prefs_get_serv_root(), name)) ) {
@@ -123,74 +107,74 @@ int sdp_session_descr(feng *srv, char *server, char *name, char *descr,
         return ERR_NOT_FOUND;
     }
 
-    // v=
-    DESCRCAT(g_snprintf(cursor, size_left, "v=%d"SDP2_EL, SDP2_VERSION))
-    // o=
-    DESCRCAT(g_strlcat(cursor, "o=", size_left ))
-    DESCRCAT(g_strlcat(cursor, "-", size_left))
-    DESCRCAT(g_strlcat(cursor, " ", size_left))
-    DESCRCAT(sdp_session_id(cursor, size_left))
-    DESCRCAT(g_strlcat(cursor," ", size_left))
-    DESCRCAT(sdp_get_version(r_descr, cursor, size_left))
-    DESCRCAT(g_strlcat(cursor, " IN IP4 ", size_left))  /* Network type: Internet; Address type: IP4. */
-    DESCRCAT(g_strlcat(cursor, server, size_left))
-    DESCRCAT(g_strlcat(cursor, SDP2_EL, size_left))
+    /* Near enough approximation to run it now */
+    currtime_float = NTP_time(time(NULL));
+    restime = r_descr_last_change(r_descr);
+    restime_float = restime ? NTP_time(restime) : currtime_float;
 
-    // s=
-    if (r_descr_name(r_descr))
-        DESCRCAT(g_snprintf(cursor, size_left, "s=%s"SDP2_EL,
-                 r_descr_name(r_descr)))
-    else
-        // TODO: choose a better session name
-        DESCRCAT(g_strlcat(cursor, "s=RTSP Session"SDP2_EL, size_left))
-    // i=
+    if ( (resname = r_descr_name(r_descr)) == NULL )
+      resname = "RTSP Session";
+
+    g_string_append_printf(descr, "v=%d"SDP2_EL, SDP2_VERSION);
+
+    /* Network type: Internet; Address type: IP4. */
+    g_string_append_printf(descr, "o=- %.0f %.0f IN IP4 %s"SDP2_EL,
+			   currtime_float, restime_float, server);
+
+    g_string_append_printf(descr, "s=%s"SDP2_EL,
+			   resname);
     // u=
     if (r_descr_descrURI(r_descr))
-        DESCRCAT(g_snprintf(cursor, size_left, "u=%s"SDP2_EL,
-                 r_descr_descrURI(r_descr)))
+      g_string_append_printf(descr, "u=%s"SDP2_EL,
+			     r_descr_descrURI(r_descr));
+
     // e=
     if (r_descr_email(r_descr))
-        DESCRCAT(g_snprintf(cursor, size_left, "e=%s"SDP2_EL,
-                 r_descr_email(r_descr)))
+      g_string_append_printf(descr, "e=%s"SDP2_EL,
+			     r_descr_email(r_descr));
     // p=
     if (r_descr_phone(r_descr))
-        DESCRCAT(g_snprintf(cursor, size_left, "p=%s"SDP2_EL,
-                 r_descr_phone(r_descr)))
+      g_string_append_printf(descr, "p=%s"SDP2_EL,
+			     r_descr_phone(r_descr));
+
     // c=
-    DESCRCAT(g_strlcat(cursor, "c=", size_left))
     /* Network type: Internet. */
-    DESCRCAT(g_strlcat(cursor, "IN ", size_left))
     /* Address type: IP4. */
-    DESCRCAT(g_strlcat(cursor, "IP4 ", size_left))
+    g_string_append(descr, "c=IN IP4 ");
 
     if(r_descr_multicast(r_descr)) {
-        DESCRCAT(g_strlcat(cursor, r_descr_multicast(r_descr), size_left))
-        DESCRCAT(g_strlcat(cursor, "/", size_left))
+        g_string_append_printf(descr, "%s/",
+			       r_descr_multicast(r_descr));
         if (r_descr_ttl(r_descr))
-            DESCRCAT(g_snprintf(cursor, size_left, "%s"SDP2_EL,
-                     r_descr_ttl(r_descr)))
+	  g_string_append_printf(descr, "%s"SDP2_EL,
+				 r_descr_ttl(r_descr));
         else
-        /*TODO: the possibility to change ttl.
-         * See multicast.h, RTSP_setup.c, send_setup_reply.c*/
-            DESCRCAT(g_snprintf(cursor, size_left, "%d"SDP2_EL, DEFAULT_TTL))
+	  /*TODO: the possibility to change ttl.
+	   * See multicast.h, RTSP_setup.c, send_setup_reply.c*/
+	  g_string_append_printf(descr, "%d"SDP2_EL,
+				 DEFAULT_TTL);
     } else
-        DESCRCAT(g_strlcat(cursor, "0.0.0.0"SDP2_EL, size_left))
+	g_string_append(descr, "0.0.0.0"SDP2_EL);
+
     // b=
     // t=
-    DESCRCAT(g_snprintf(cursor, size_left, "t=0 0"SDP2_EL))
+    g_string_append(descr, "t=0 0"SDP2_EL);
     // r=
     // z=
     // k=
     // a=
     // type attribute. We offer only broadcast
-    DESCRCAT(g_snprintf(cursor, size_left, "a=type:broadcast"SDP2_EL))
+    g_string_append(descr, "a=type:broadcast"SDP2_EL);
     // tool attribute. Feng promo
-    DESCRCAT(g_snprintf(cursor, size_left, "a=tool:%s %s Streaming Server"SDP2_EL,
-             PACKAGE, VERSION)) // TODO: choose a better session description
+    /// @TODO: choose a better session description
+    g_string_append_printf(descr, "a=tool:%s %s Streaming Server"SDP2_EL,
+		    PACKAGE, VERSION);		    
     // control attribute. We should look if aggregate metod is supported?
-    DESCRCAT(g_snprintf(cursor, size_left, "a=control:*"SDP2_EL))
+    g_string_append(descr, "a=control:*"SDP2_EL);
+
     if ((duration = r_descr_time(r_descr)) > 0)
-        DESCRCAT(g_snprintf(cursor, size_left, "a=range:npt=0-%f"SDP2_EL, duration))
+      g_string_append_printf(descr, "a=range:npt=0-%f"SDP2_EL, duration);
+
     // other private data
     if ( (sdp_private=r_descr_sdp_private(r_descr)) )
         for (sdp_private = list_first(sdp_private);
@@ -198,8 +182,8 @@ int sdp_session_descr(feng *srv, char *server, char *name, char *descr,
              sdp_private = list_next(sdp_private)) {
             switch (SDP_FIELD(sdp_private)->type) {
                 case empty_field:
-                    DESCRCAT(g_snprintf(cursor, size_left, "%s"SDP2_EL,
-                        SDP_FIELD(sdp_private)->field))
+		  g_string_append_printf("%s"SDP2_EL,
+					 SDP_FIELD(sdp_private)->field);
                     break;
                 // other supported private fields?
                 default: // ignore private field
@@ -211,11 +195,10 @@ int sdp_session_descr(feng *srv, char *server, char *name, char *descr,
     m_descrs = r_descr_get_media(r_descr);
 
     for (i=0;i<m_descrs->len;i++) { // TODO: wrap g_array functions
-        sdp_media_descr(array_data(m_descrs)[i], cursor, size_left);
+        sdp_media_descr(array_data(m_descrs)[i], descr);
     }
 
     fnc_log(FNC_LOG_INFO, "[SDP2] description:\n%s", descr);
 
     return ERR_NOERROR;
 }
-#undef DESCRCAT

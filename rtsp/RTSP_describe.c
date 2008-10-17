@@ -73,18 +73,18 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
              
     g_string_append_printf(reply,
 			   "Content-Length: %zd" RTSP_EL,
-			   strlen(cinfo->descr));
+			   cinfo->descr->len);
              
     // end of message
     g_string_append(reply, RTSP_EL);
 
     // concatenate description
-    g_string_append(reply, cinfo->descr);
+    g_string_append(reply, cinfo->descr->str);
 
     bwrite(reply->str, reply->len, rtsp);
     g_string_free(reply, TRUE);
 
-    fnc_log(FNC_LOG_CLIENT, "200 %d %s ", strlen(cinfo->descr), cinfo->url.path);
+    fnc_log(FNC_LOG_CLIENT, "200 %d %s ", cinfo->descr->len, cinfo->url.path);
 
     return ERR_NOERROR;
 }
@@ -97,12 +97,14 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
 int RTSP_describe(RTSP_buffer * rtsp)
 {
     char url[255];
-    ConnectionInfo cinfo;
     RTSP_Error error;
     feng *srv = rtsp->srv;
 
     // Set some defaults
-    cinfo.descr_format = df_SDP_format;
+    ConnectionInfo cinfo = {
+      .descr_format = df_SDP_format,
+      .descr = g_string_new("")
+    };
 
     // Extract the URL
     if ( (error = extract_url(rtsp, url)).got_error )
@@ -134,6 +136,8 @@ int RTSP_describe(RTSP_buffer * rtsp)
     fnc_log(FNC_LOG_INFO, "DESCRIBE %s RTSP/1.0 ", url);
     send_describe_reply(rtsp, &cinfo);
     log_user_agent(rtsp); // See User-Agent 
+
+    g_string_free(cinfo.descr, TRUE);
 
     return ERR_NOERROR;
 

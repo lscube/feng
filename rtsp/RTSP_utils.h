@@ -44,7 +44,7 @@ typedef struct
     Url url; //!< URL of the requested media
 
     description_format descr_format; //!< format of the media description
-    char descr[MAX_DESCR_LENGTH]; //!< media description
+    GString *descr; //!< media description
 } ConnectionInfo;
 
 /**
