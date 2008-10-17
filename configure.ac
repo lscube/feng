@@ -66,8 +66,8 @@ dnl possible size
 AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 
 dnl Checks used by conf/*
-AC_CHECK_HEADERS([pcre.h fam.h])
-AC_CHECK_FUNCS([lstat])
+dnl AC_CHECK_HEADERS([pcre.h fam.h])
+dnl AC_CHECK_FUNCS([lstat])
 
 fenice_state_dir=$(eval echo ${localstatedir}/feng)
 AC_SUBST(fenice_state_dir)
