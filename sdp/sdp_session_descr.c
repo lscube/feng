@@ -20,7 +20,14 @@
  *
  * */
 
-#include <stdio.h>
+/**
+ * @file
+ * @brief SDP session description
+ *
+ * This file contains the function used to generate the SDP session
+ * description as needed by @ref RTSP_describe.
+ */
+
 #include <string.h>
 
 #include <fenice/prefs.h>
@@ -28,8 +35,6 @@
 #include <fenice/sdp2.h>
 #include <fenice/description.h>
 #include <fenice/multicast.h>
-/*x-x*/
-//#include <fenice/socket.h>
 #include <netembryo/wsocket.h>
 #include <netembryo/url.h>
 
