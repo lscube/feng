@@ -38,8 +38,8 @@ RTSP_Error get_session_id(RTSP_buffer * rtsp, guint64 * session_id);
 
 int send_redirect_3xx(RTSP_buffer *, char *);
 int bwrite(char *buffer, size_t len, RTSP_buffer * rtsp);
-void append_time_stamp(GString *str);
+GString *rtsp_generate_response(guint code, guint cseq);
+GString *rtsp_generate_ok_response(guint cseq, guint64 session);
 
-char const *get_stat(int err);
 void log_user_agent(RTSP_buffer * rtsp);
 extern RTSP_Error const RTSP_Fatal_ErrAlloc;

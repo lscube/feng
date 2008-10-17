@@ -43,19 +43,8 @@
  */
 static int send_teardown_reply(RTSP_buffer * rtsp, guint64 session_id)
 {
-    GString *reply = g_string_new("");
-    long int cseq = rtsp->rtsp_cseq;
-
-    /* build a reply message */
-    g_string_printf(reply,
-        "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL "Server: %s/%s" RTSP_EL,
-        RTSP_VER, 200, get_stat(200), cseq, PACKAGE, VERSION);
-
-    append_time_stamp(reply);
-    
-    g_string_append_printf(reply,
-			   "Session: %"PRIu64 RTSP_EL RTSP_EL,
-			   session_id);
+    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, session_id);
+    g_string_append(reply, RTSP_EL);
 
     bwrite(reply->str, reply->len, rtsp);
     g_string_free(reply, TRUE);

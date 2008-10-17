@@ -43,7 +43,7 @@
 static int send_describe_reply(RTSP_buffer * rtsp, Url *url, GString *descr,
 			       RTSP_description_format descr_format)
 {
-    GString *reply = g_string_new("");
+    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, 0);
     char encoded_object[256];
 
     /* allocate buffer */
@@ -53,14 +53,6 @@ static int send_describe_reply(RTSP_buffer * rtsp, Url *url, GString *descr,
         send_reply(500, NULL, rtsp);    /* internal server error */
         return ERR_ALLOC;
     }
-
-    /*describe */
-    g_string_printf(reply,
-        "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
-        RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
-        VERSION);
-
-    append_time_stamp(reply);
 
     switch (descr_format) {
         // Add new formats here

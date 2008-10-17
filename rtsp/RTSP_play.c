@@ -305,27 +305,18 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
 static int send_play_reply(RTSP_buffer * rtsp, Url *url,
                            RTSP_session * rtsp_session, play_args * args)
 {
-    GString *reply = g_string_new("");
+    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, rtsp_session->session_id);
     rtp_session_send_play_reply_pair pair = {
       .reply = reply,
       .server = url->hostname
     };
 
-    /* build a reply message */
-    g_string_printf(reply,
-        "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
-        RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
-        VERSION);
-
-    append_time_stamp(reply);
     g_string_append_printf(reply, "Range: npt=%f-", args->begin_time);
 
     if (args->end_time != HUGE_VAL)
       g_string_append_printf(reply, "%f", args->end_time);
 
     g_string_append(reply, RTSP_EL);
-
-    g_string_append_printf(reply, "Session: %" PRIu64 RTSP_EL, rtsp_session->session_id);
 
     g_string_append(reply, "RTP-info: ");
 

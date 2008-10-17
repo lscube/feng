@@ -40,19 +40,7 @@
  */
 static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
 {
-    GString *reply = g_string_new("");
-
-    /* build a reply message */
-    g_string_printf(reply,
-        "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
-        RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
-        VERSION);
-
-    append_time_stamp(reply);
-
-    g_string_append_printf(reply,
-			   "Session: %" PRIu64 RTSP_EL RTSP_EL,
-			   rtsp_session->session_id);
+    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, rtsp_session->session_id);
 
     bwrite(reply->str, reply->len, rtsp);
     g_string_free(reply, TRUE);

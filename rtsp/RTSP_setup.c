@@ -506,18 +506,7 @@ static RTSP_Error select_requested_track(Url *url, RTSP_session * rtsp_s, char *
  */
 static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_session * rtp_s)
 {
-    GString *reply = g_string_new("");
-
-    g_string_printf(reply,
-        "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
-        RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
-        VERSION);
-
-    append_time_stamp(reply);
-
-    g_string_append_printf(reply,
-			   "Session: %" PRIu64 RTSP_EL,
-			   session->session_id);
+    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, session->session_id);
 
     g_string_append(reply, "Transport: ");
 

@@ -36,12 +36,7 @@
  */
 static int send_options_reply(RTSP_buffer * rtsp)
 {
-    GString *reply = g_string_new("");
-    long int cseq = rtsp->rtsp_cseq;
-
-    g_string_printf(reply,
-		    "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL, RTSP_VER, 200,
-		    get_stat(200), cseq);
+    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, 0);
 
     g_string_append(reply,
 		    "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN,SET_PARAMETER" RTSP_EL);

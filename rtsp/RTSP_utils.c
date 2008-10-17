@@ -55,7 +55,7 @@ RTSP_Error const RTSP_Fatal_ErrAlloc = { {0, ""}, ERR_ALLOC };
  * @param err the code of the error
  * @return the string format of the error corresponding to the given code
  */
-char const *get_stat(int err)
+static const char const *get_stat(int err)
 {
     static const struct {
         char token[36];
@@ -330,17 +330,11 @@ void log_user_agent(RTSP_buffer * rtsp)
  */
 int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 {
-    GString *reply = g_string_new("");
+    GString *reply = rtsp_generate_response(err, rtsp->rtsp_cseq);
     int res;
-    char *message = addon ? addon : "";
 
-    g_string_printf(reply,
-		    "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "%s",
-		    RTSP_VER,
-		    err,
-		    get_stat(err),
-		    rtsp->rtsp_cseq,
-		    message);
+    if (addon)
+      g_string_append(reply, addon);
 
     res = bwrite(reply->str, reply->len, rtsp);
     g_string_free(reply, TRUE);
@@ -455,7 +449,7 @@ int bwrite(char *buffer, size_t len, RTSP_buffer * rtsp)
  * Concatenates a GString instance with a time stamp in the format of
  * "Date: 23 Jan 1997 15:35:06 GMT"
  */
-void append_time_stamp(GString *str) {
+static void append_time_stamp(GString *str) {
   char buffer[39] = { 0, };
 
   time_t now = time(NULL);
@@ -466,9 +460,54 @@ void append_time_stamp(GString *str) {
   
   g_string_append(str, buffer);
 }
+
+/**
+ * @brief Generates the basic RTSP response string
+ *
+ * @param code The response code to use for generation.
+ * @param cseq The CSeq value for the response.
+ *
+ * @return A new GString instance with the response heading.
+ */
+GString *rtsp_generate_response(guint code, guint cseq) {
+  GString *response = g_string_new("");
+  
+  g_string_printf(response,
+		  "%s %d %s" RTSP_EL
+		  "CSeq: %u" RTSP_EL,
+		  RTSP_VER, code, get_stat(code), cseq);
+
+  return response;
+}
 /**
  * @}
  */
+
+/**
+ * @brief Generates a positive RTSP response string
+ *
+ * @param cseq The CSeq value for the response.
+ * @param session Session-ID to provide with the response
+ *                (will be omitted if zero)
+ *
+ * @return A new GString instance with the response heading.
+ */
+GString *rtsp_generate_ok_response(guint cseq, guint64 session) {
+  GString *response = rtsp_generate_response(200, cseq);
+
+  g_string_append_printf(response,
+			 "Server: %s/%s" RTSP_EL,
+			 PACKAGE, VERSION);
+
+  append_time_stamp(response);
+  
+  if ( session != 0 )
+    g_string_append_printf(response,
+			    "Session: %" PRIu64 RTSP_EL,
+			    session);
+
+  return response;
+}
 
 /**
  * @}

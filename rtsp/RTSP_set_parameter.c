@@ -36,12 +36,7 @@
  */
 static int send_set_parameter_reply(RTSP_buffer * rtsp)
 {
-    GString *reply = g_string_new("");
-    long int cseq = rtsp->rtsp_cseq;
-
-    g_string_printf(reply,
-		    "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL RTSP_EL, RTSP_VER, 451,
-		    get_stat(451), cseq);
+    GString *reply = rtsp_generate_response(451, rtsp->rtsp_cseq);
 
     bwrite(reply->str, reply->len, rtsp);
     g_string_free(reply, TRUE);
