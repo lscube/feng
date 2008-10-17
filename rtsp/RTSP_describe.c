@@ -32,24 +32,16 @@
 
 #include <RTSP_utils.h>
 
-/** 
-  * RTSP connection informations used by RTSP method functions
-  */
-typedef struct
-{
-    Url url; //!< URL of the requested media
-
-    description_format descr_format; //!< format of the media description
-    GString *descr; //!< media description
-} ConnectionInfo;
-
 /**
  * Sends the reply for the describe method
  * @param rtsp the buffer where to write the reply
- * @param cinfo the connection for which to send the reply
+ * @param url the URL for the resource to describe
+ * @param descr the description string to send
+ * @param descr_format the description format to use
  * @return ERR_NOERROR or ERR_ALLOC on buffer allocation errors
  */
-static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
+static int send_describe_reply(RTSP_buffer * rtsp, Url *url, GString *descr,
+			       RTSP_description_format descr_format)
 {
     GString *reply = g_string_new("");
     char encoded_object[256];
@@ -70,32 +62,32 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
 
     add_time_stamp_g(reply, 0);
 
-    switch (cinfo->descr_format) {
+    switch (descr_format) {
         // Add new formats here
     case df_SDP_format:{
 	    g_string_append(reply, "Content-Type: application/sdp" RTSP_EL);
             break;
         }
     }
-    Url_encode (encoded_object, cinfo->url.path, sizeof(encoded_object));
+    Url_encode (encoded_object, url->path, sizeof(encoded_object));
     g_string_append_printf(reply,
 			   "Content-Base: rtsp://%s/%s/" RTSP_EL,
-			   cinfo->url.hostname, encoded_object);
+			   url->hostname, encoded_object);
              
     g_string_append_printf(reply,
 			   "Content-Length: %zd" RTSP_EL,
-			   cinfo->descr->len);
+			   descr->len);
              
     // end of message
     g_string_append(reply, RTSP_EL);
 
     // concatenate description
-    g_string_append(reply, cinfo->descr->str);
+    g_string_append(reply, descr->str);
 
     bwrite(reply->str, reply->len, rtsp);
     g_string_free(reply, TRUE);
 
-    fnc_log(FNC_LOG_CLIENT, "200 %d %s ", cinfo->descr->len, cinfo->url.path);
+    fnc_log(FNC_LOG_CLIENT, "200 %d %s ", descr->len, url->path);
 
     return ERR_NOERROR;
 }
@@ -103,20 +95,20 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
 /**
  * Gets the required media description format from the RTSP request
  * @param rtsp the buffer of the request
- * @param cinfo the connection informations where to store the description format
- * @return RTSP_Ok or RTSP_OptionNotSupported if the required format is not SDP
+ * @return The enumeration for the format
  */
-static RTSP_Error get_description_format(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
+static RTSP_description_format get_description_format(RTSP_buffer *rtsp)
 {
     if (strstr(rtsp->in_buffer, HDR_ACCEPT) != NULL) {
-        if (strstr(rtsp->in_buffer, "application/sdp") != NULL) {
-            cinfo->descr_format = df_SDP_format;
-        } else {
-            return RTSP_OptionNotSupported; // Add here new description formats
-        }
+        if (strstr(rtsp->in_buffer, "application/sdp") != NULL)
+	  return df_SDP_format;
+	else
+	  return df_Unsupported; // Add here new description formats
     }
-
-    return RTSP_Ok;
+    
+    return df_SDP_format;
+    // For now default to SDP if unknown
+    // return df_Unknown;
 }
 
 /**
@@ -126,54 +118,56 @@ static RTSP_Error get_description_format(RTSP_buffer * rtsp, ConnectionInfo * ci
  */
 int RTSP_describe(RTSP_buffer * rtsp)
 {
-    char url[255];
+    char urlstr[255];
     RTSP_Error error;
     feng *srv = rtsp->srv;
 
-    // Set some defaults
-    ConnectionInfo cinfo = {
-      .descr_format = df_SDP_format
-    };
+    Url url;
+    GString *descr;
+    RTSP_description_format descr_format;
 
     // Extract the URL
-    if ( (error = extract_url(rtsp, url)).got_error )
+    if ( (error = extract_url(rtsp, urlstr)).got_error )
         goto error_management;
     // Validate URL
-    else if ( (error = validate_url(url, &cinfo.url)).got_error )
+    else if ( (error = validate_url(urlstr, &url)).got_error )
         goto error_management;
     // Check for Forbidden Paths 
-    else if ( (error = check_forbidden_path(&cinfo.url)).got_error )
+    else if ( (error = check_forbidden_path(&url)).got_error )
         goto error_management;
     // Disallow Header REQUIRE
     else if ( (error = check_require_header(rtsp)).got_error )
-        goto error_management;
-    // Get the description format. SDP is recommended
-    else if ( (error = get_description_format(rtsp, &cinfo)).got_error )
         goto error_management;
     // Get the CSeq
     else if ( (error = get_cseq(rtsp)).got_error )
         goto error_management;
 
+    // Get the description format. SDP is the only supported
+    if ( (descr_format = get_description_format(rtsp)) == df_Unsupported ) {
+      error = RTSP_OptionNotSupported;
+      goto error_management;
+    }
+    
     if (srv->num_conn > srv->srvconf.max_conns) {
         /*redirect */
-        return send_redirect_3xx(rtsp, cinfo.url.path);
+        return send_redirect_3xx(rtsp, url.path);
     }
 
     // Get Session Description
-    cinfo.descr = sdp_session_descr(srv, cinfo.url.hostname, cinfo.url.path);
+    descr = sdp_session_descr(srv, url.hostname, url.path);
 
     /* The only error we may have here is when the file does not exist
        or if a demuxer is not available for the given file */
-    if ( cinfo.descr == NULL ) {
+    if ( descr == NULL ) {
       error = RTSP_NotFound;
       goto error_management;
     }
 
     fnc_log(FNC_LOG_INFO, "DESCRIBE %s RTSP/1.0 ", url);
-    send_describe_reply(rtsp, &cinfo);
+    send_describe_reply(rtsp, &url, descr, descr_format);
     log_user_agent(rtsp); // See User-Agent 
 
-    g_string_free(cinfo.descr, TRUE);
+    g_string_free(descr, TRUE);
 
     return ERR_NOERROR;
 
