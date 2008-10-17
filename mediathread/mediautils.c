@@ -71,3 +71,40 @@ void MObject_unref(MObject *mobject)
         mobject->destructor(mobject);
 }
 
+// Ripped from ffmpeg, see sdp.c
+
+static void digit_to_char(gchar *dst, guint8 src)
+{
+    if (src < 10) {
+        *dst = '0' + src;
+    } else {
+        *dst = 'A' + src - 10;
+    }
+}
+
+static gchar *data_to_hex(gchar *buff, const guint8 *src, gint s)
+{
+    gint i;
+
+    for(i = 0; i < s; i++) {
+        digit_to_char(buff + 2 * i, src[i] >> 4);
+        digit_to_char(buff + 2 * i + 1, src[i] & 0xF);
+    }
+
+    return buff;
+}
+
+gchar *extradata2config(const guint8 *extradata, gint extradata_size)
+{
+    gchar *config = g_malloc(extradata_size * 2 + 1);
+
+    if (config == NULL) {
+        return NULL;
+    }
+
+    data_to_hex(config, extradata, extradata_size);
+
+    config[extradata_size * 2] = '\0';
+
+    return config;
+}

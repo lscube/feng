@@ -133,7 +133,6 @@
 #define SD_CREATOR "CREATOR"
 
 #define NTP_time(t) ((float)t + 2208988800U)
-char *extradata2config(const uint8_t *extradata, int extradata_size);
 
 /**
  * Returns the current time in seconds

@@ -23,6 +23,8 @@
 #ifndef FN_MEDIAUTILS_H
 #define FN_MEDIAUTILS_H
 
+#include <glib.h>
+
 #define MOBJECT_COMMONS	int refs; \
 			void (*destructor)(void *)
 
@@ -49,6 +51,8 @@ void MObject_init(MObject *);
 void MObject_zero(MObject *, size_t);
 void *MObject_dup(void *, size_t);
 void MObject_unref(MObject *);
+
+gchar *extradata2config(const guint8 *extradata, gint extradata_size);
 
 #endif // FN_MEDIAUTILS_H
 

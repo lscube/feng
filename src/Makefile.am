@@ -1,8 +1,6 @@
 feniceincludedir = $(top_srcdir)/include
 
-noinst_LTLIBRARIES = liblog.la libutils.la
-
-libutils_la_SOURCES = sdp_utils.c
+noinst_LTLIBRARIES = liblog.la
 
 liblog_la_SOURCES = fnc_log.c 
 
@@ -20,7 +18,6 @@ feng_LDADD =	../eventloop/libeventloop.la \
 		../multicast/libmulticast.la
 
 feng_LDADD +=	../conf/liblight.la \
-		libutils.la \
 		liblog.la
 
 feng_LDFLAGS =

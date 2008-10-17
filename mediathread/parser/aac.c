@@ -23,7 +23,7 @@
 #include <fenice/fnc_log.h>
 #include <fenice/mediaparser.h>
 #include <fenice/mediaparser_module.h>
-#include <fenice/utils.h>
+#include <fenice/mediautils.h>
 
 static const MediaParserInfo info = {
     "aac",
