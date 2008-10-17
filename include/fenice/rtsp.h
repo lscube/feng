@@ -103,8 +103,10 @@ typedef struct RTSP_buffer {
 } RTSP_buffer;
 
 typedef enum {
-       df_SDP_format = 0
-} description_format;
+  df_Unsupported = -2,
+  df_Unknown = -1,
+  df_SDP_format = 0
+} RTSP_description_format;
 
 
 /**
