@@ -3,12 +3,9 @@ feniceincludedir = $(top_srcdir)/include
 SUBDIRS = parser \
 	  demuxer
 
-noinst_LTLIBRARIES = libmediath.la
+noinst_LIBRARIES = libmediath.a
 
-libmediath_la_LIBADD = parser/libparser.la \
-		       demuxer/libdemuxer.la
-
-libmediath_la_SOURCES =	cache.c \
+libmediath_a_SOURCES =	cache.c \
 			demuxer.c \
 			InputStream.c \
 			mediaparser.c \

@@ -1,24 +1,26 @@
 feniceincludedir = $(top_srcdir)/include
 
-noinst_LTLIBRARIES = liblog.la
+noinst_LIBRARIES = liblog.a
 
-liblog_la_SOURCES = fnc_log.c 
+liblog_a_SOURCES = fnc_log.c 
 
 bin_PROGRAMS = feng
 
 feng_SOURCES =	main.c
 
-feng_LDADD =	../eventloop/libeventloop.la \
-		../rtsp/librtsp.la \
-		../sdp/libsdp.la \
-		../schedule/libschedule.la \
-		../rtcp/librtcp.la \
-		../rtp/librtp.la \
-		../mediathread/libmediath.la \
-		../multicast/libmulticast.la
+feng_LDADD =	../eventloop/libeventloop.a \
+		../rtsp/librtsp.a \
+		../sdp/libsdp.a \
+		../schedule/libschedule.a \
+		../rtcp/librtcp.a \
+		../rtp/librtp.a \
+		../mediathread/libmediath.a \
+		../mediathread/demuxer/libdemuxer.a \
+		../mediathread/parser/libparser.a \
+		../multicast/libmulticast.a
 
-feng_LDADD +=	../conf/liblight.la \
-		liblog.la
+feng_LDADD +=	../conf/liblight.a \
+		liblog.a
 
 feng_LDFLAGS =
 

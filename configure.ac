@@ -12,6 +12,8 @@ AS_IF([test "x$ac_cv_prog_cc_c99" = "xno"], [
   AC_MSG_ERROR([no C99 compiler found, feng requires a C99 compiler.])
 ])
 
+AC_PROG_RANLIB
+
 AC_USE_SYSTEM_EXTENSIONS
 dnl Force usage of POSIX.1-2001 (clock_gettime)
 CPPFLAGS="${CPPFLAGS} -D_POSIX_C_SOURCE=200112L"
@@ -51,10 +53,6 @@ AC_ARG_ENABLE(trace,
 AC_ARG_ENABLE(duma,
     AS_HELP_STRING([--enable-duma], [link against DUMA library to debug memory usage (implies --enable-debug) (default=no)]),,
     enable_duma="no")
-
-AC_PROG_LIBTOOL
-LIBTOOL="$LIBTOOL --silent"
-AC_SUBST([LIBTOOL_DEPS])
 
 dnl Checks for header files.
 AC_HEADER_DIRENT

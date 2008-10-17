@@ -1,8 +1,8 @@
 
 feniceincludedir = $(top_srcdir)/include
 
-noinst_LTLIBRARIES = librtcp.la
-librtcp_la_SOURCES =	RTCP_send_packet.c \
+noinst_LIBRARIES = librtcp.a
+librtcp_a_SOURCES =	RTCP_send_packet.c \
 			RTCP_recv_packet.c \
 			RTCP_handler.c
 
