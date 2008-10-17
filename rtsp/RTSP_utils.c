@@ -214,32 +214,6 @@ RTSP_Error get_cseq(RTSP_buffer * rtsp)
 }
 
 /**
- * Gets the session description, the description will be saved in the given cinfo
- * @param the connection for which is required to retrieve the description
- * @return RTSP_Ok or RTSP_InternalServerError on various errors
- * @return might return RTSP_NotFound both if the file doesn't exist or
- * @return if a demuxer is not available for the given file
- */
-RTSP_Error get_session_description(feng *srv, ConnectionInfo * cinfo)
-{
-    int sdesc_error = sdp_session_descr(srv,
-                                        cinfo->url.hostname,
-                                        cinfo->url.path,
-					cinfo->descr);
-
-    if ((sdesc_error))
-    {
-        fnc_log(FNC_LOG_ERR,"[SDP2] error");
-        if (sdesc_error == ERR_NOT_FOUND)
-            return RTSP_NotFound;
-        else
-            return RTSP_InternalServerError;
-    }
-
-    return RTSP_Ok;
-}
-
-/**
  * Gets the id of the requested session
  * @param rtsp the buffer from which to parse the session id
  * @param session_id where to save the retrieved session id

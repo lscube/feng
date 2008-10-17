@@ -102,8 +102,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
 
     // Set some defaults
     ConnectionInfo cinfo = {
-      .descr_format = df_SDP_format,
-      .descr = g_string_new("")
+      .descr_format = df_SDP_format
     };
 
     // Extract the URL
@@ -124,13 +123,20 @@ int RTSP_describe(RTSP_buffer * rtsp)
     // Get the CSeq
     else if ( (error = get_cseq(rtsp)).got_error )
         goto error_management;
-    // Get Session Description
-    else if ( (error = get_session_description(srv, &cinfo)).got_error )
-        goto error_management;
 
     if (srv->num_conn > srv->srvconf.max_conns) {
         /*redirect */
         return send_redirect_3xx(rtsp, cinfo.url.path);
+    }
+
+    // Get Session Description
+    cinfo.descr = sdp_session_descr(srv, cinfo.url.hostname, cinfo.url.path);
+
+    /* The only error we may have here is when the file does not exist
+       or if a demuxer is not available for the given file */
+    if ( cinfo.descr == NULL ) {
+      error = RTSP_NotFound;
+      goto error_management;
     }
 
     fnc_log(FNC_LOG_INFO, "DESCRIBE %s RTSP/1.0 ", url);
