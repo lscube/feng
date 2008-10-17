@@ -208,7 +208,5 @@ int is_valid_multicast_address(char *ip)
         default:
             return ERR_GENERIC;
     }
-    
-    return ERR_GENERIC;
 }
 

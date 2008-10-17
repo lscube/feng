@@ -201,20 +201,14 @@ time_t mrl_mtime(char *mrl)
 				}
 			}
 			return filestat.st_mtime;
-			break;
 		case st_pipe:
 			return 0; // we cannot know if pipe content media-type is changed, we must trust in it!
-			break;
 		case st_net:
 		case st_device:
 			return 0; // TODO other stream types case
-			break;
 		default:
 			return ERR_INPUT_PARAM;
-			break;
 	}
-	
-	return 0;
 }
 
 /*! @brief Checks if the given mrl has been modified

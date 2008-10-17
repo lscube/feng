@@ -252,12 +252,13 @@ do_play(Url *url, RTSP_session * rtsp_sess, play_args * args)
     } else {
         // FIXME complete with the other stuff
         return RTSP_InternalServerError; /* Internal server error */
-
+#if 0
         // resource!trackname
-//        strcpy (trackname, q + 1);
+        strcpy (trackname, q + 1);
         // XXX Not really nice...
         while (url->path != q) if (*--q == '/') break;
         *q = '\0';
+#endif
     }
 
     return RTSP_Ok;

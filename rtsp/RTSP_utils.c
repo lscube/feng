@@ -330,8 +330,8 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
     g_free(r);
 
     fnc_log(FNC_LOG_VERBOSE, "REDIRECT response sent.\n");
-#endif
     return ERR_NOERROR;
+#endif
 }
 
 /**
