@@ -51,7 +51,7 @@ static int send_teardown_reply(RTSP_buffer * rtsp, guint64 session_id)
         "%s %d %s" RTSP_EL "CSeq: %ld" RTSP_EL "Server: %s/%s" RTSP_EL,
         RTSP_VER, 200, get_stat(200), cseq, PACKAGE, VERSION);
 
-    add_time_stamp_g(reply, 0);
+    append_time_stamp(reply);
     
     g_string_append_printf(reply,
 			   "Session: %"PRIu64 RTSP_EL RTSP_EL,

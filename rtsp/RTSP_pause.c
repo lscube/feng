@@ -48,7 +48,7 @@ static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
         RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
         VERSION);
 
-    add_time_stamp_g(reply, 0);
+    append_time_stamp(reply);
 
     g_string_append_printf(reply,
 			   "Session: %" PRIu64 RTSP_EL RTSP_EL,

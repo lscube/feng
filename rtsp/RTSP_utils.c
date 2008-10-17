@@ -448,47 +448,22 @@ int bwrite(char *buffer, size_t len, RTSP_buffer * rtsp)
 }
 
 /**
- * Adds a timestamp to a buffer
- * @param b the buffer where to write the timestamp
- * @param crlf whenever to put the message terminator or not
- *
- * @TODO Make crlf a gboolean
- * @TODO Ensure the function is still relevant to be exported
- * @TODO Ensure crlf is still relevant as a parameter
- */
-void add_time_stamp(char *b, int crlf)
-{
-    struct tm *t;
-    time_t now;
-
-    /*!
-     * concatenates a null terminated string with a
-     * time stamp in the format of "Date: 23 Jan 1997 15:35:06 GMT"
-     */
-    now = time(NULL);
-    t = gmtime(&now);
-    strftime(b + strlen(b), 38, "Date: %a, %d %b %Y %H:%M:%S GMT" RTSP_EL,
-         t);
-    if (crlf)
-        strcat(b, "\r\n");    /* add a message header terminator (CRLF) */
-}
-
-/**
  * @brief Add a timestamp to a GString
  * 
- * Wrapper around @ref add_time_stamp() that appends to a GString
- * rather than a raw buffer.
+ * @param str GString instance to append the timestamp to
  *
- * @param str GString instance to append the text to
- * @param crlf Whether to put the message terminator or not
- *
- * @TODO Make crlf a boolean
- * @TODO Ensure crlf is still relevant as a parameter
+ * Concatenates a GString instance with a time stamp in the format of
+ * "Date: 23 Jan 1997 15:35:06 GMT"
  */
-void add_time_stamp_g(GString *str, int crlf) {
-  char buffer[41] = { 0, };
+void append_time_stamp(GString *str) {
+  char buffer[39] = { 0, };
+
+  time_t now = time(NULL);
+  struct tm *t = gmtime(&now);
+
+  strftime(buffer, 38, "Date: %a, %d %b %Y %H:%M:%S GMT" RTSP_EL,
+	   t);
   
-  add_time_stamp(buffer, crlf);
   g_string_append(str, buffer);
 }
 /**

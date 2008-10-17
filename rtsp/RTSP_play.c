@@ -317,7 +317,7 @@ static int send_play_reply(RTSP_buffer * rtsp, Url *url,
         RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
         VERSION);
 
-    add_time_stamp_g(reply, 0);
+    append_time_stamp(reply);
     g_string_append_printf(reply, "Range: npt=%f-", args->begin_time);
 
     if (args->end_time != HUGE_VAL)

@@ -60,7 +60,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, Url *url, GString *descr,
         RTSP_VER, 200, get_stat(200), rtsp->rtsp_cseq, PACKAGE,
         VERSION);
 
-    add_time_stamp_g(reply, 0);
+    append_time_stamp(reply);
 
     switch (descr_format) {
         // Add new formats here
