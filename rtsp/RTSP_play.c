@@ -26,6 +26,7 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <strings.h>
 
 #include <bufferpool/bufferpool.h>
 #include <fenice/rtsp.h>
