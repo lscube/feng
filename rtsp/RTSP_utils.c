@@ -336,7 +336,7 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
     if (addon)
       g_string_append(reply, addon);
 
-    res = bwrite(reply->str, reply->len, rtsp);
+    res = bwrite(reply, rtsp);
     g_string_free(reply, TRUE);
 
     fnc_log(FNC_LOG_ERR, "%s %d - - ", get_stat(err), err);
@@ -407,7 +407,7 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
 
     strcat(r, RTSP_EL);
 
-
+    /** @TODO port to new interface! */
     bwrite(r, strlen(r), rtsp);
 
     g_free(mb);
@@ -419,25 +419,29 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
 }
 
 /**
- * @brief Writes a buffer to the output buffer of an RTSP connection
+ * @brief Writes a GString to the output buffer of an RTSP connection
  *
- * @param buffer the buffer from which to get the data to send
- * @param len the size of the data to send
+ * @param buffer GString instance from which to get the data to send
  * @param rtsp where the output buffer is saved
  *
  * @retval ERR_NOERROR No error.
  * @retval ERR_ALLOC Not enough space in the output buffer.
+ *
+ * @note This function destroys the buffer after completion.
  */
-int bwrite(char *buffer, size_t len, RTSP_buffer * rtsp)
+int bwrite(GString *buffer, RTSP_buffer * rtsp)
 {
-    if ((rtsp->out_size + len) > sizeof(rtsp->out_buffer)) {
+    if ((rtsp->out_size + buffer->len) > sizeof(rtsp->out_buffer)) {
         fnc_log(FNC_LOG_ERR,
             "bwrite(): not enough free space in out message buffer.\n");
+	g_string_free(buffer, TRUE);
         return ERR_ALLOC;
     }
-    memcpy(&(rtsp->out_buffer[rtsp->out_size]), buffer, len);
-    rtsp->out_buffer[rtsp->out_size + len] = '\0';
-    rtsp->out_size += len;
+    memcpy(&(rtsp->out_buffer[rtsp->out_size]), buffer->str, buffer->len);
+    rtsp->out_buffer[rtsp->out_size + buffer->len] = '\0';
+    rtsp->out_size += buffer->len;
+
+    g_string_free(buffer, TRUE);
     return ERR_NOERROR;
 }
 

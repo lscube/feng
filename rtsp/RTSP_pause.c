@@ -42,8 +42,7 @@ static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
 {
     GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, rtsp_session->session_id);
 
-    bwrite(reply->str, reply->len, rtsp);
-    g_string_free(reply, TRUE);
+    bwrite(reply, rtsp);
 
     fnc_log(FNC_LOG_CLIENT, "200 - - ");
 

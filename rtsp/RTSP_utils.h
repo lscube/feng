@@ -37,7 +37,7 @@ RTSP_Error get_cseq(RTSP_buffer * rtsp);
 RTSP_Error get_session_id(RTSP_buffer * rtsp, guint64 * session_id);
 
 int send_redirect_3xx(RTSP_buffer *, char *);
-int bwrite(char *buffer, size_t len, RTSP_buffer * rtsp);
+int bwrite(GString *buffer, RTSP_buffer * rtsp);
 GString *rtsp_generate_response(guint code, guint cseq);
 GString *rtsp_generate_ok_response(guint cseq, guint64 session);
 

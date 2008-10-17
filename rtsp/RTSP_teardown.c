@@ -46,8 +46,7 @@ static int send_teardown_reply(RTSP_buffer * rtsp, guint64 session_id)
     GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, session_id);
     g_string_append(reply, RTSP_EL);
 
-    bwrite(reply->str, reply->len, rtsp);
-    g_string_free(reply, TRUE);
+    bwrite(reply, rtsp);
 
     fnc_log(FNC_LOG_CLIENT, "200 - - ");
 

@@ -553,8 +553,7 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
     }
     g_string_append_printf(reply, ";ssrc=%08X" RTSP_EL RTSP_EL, rtp_s->ssrc);
 
-    bwrite(reply->str, reply->len, rtsp);
-    g_string_free(reply, TRUE);
+    bwrite(reply, rtsp);
 
     fnc_log(FNC_LOG_CLIENT, "200 - %s ",
             r_selected_track(rtp_s->track_selector)->info->name);
