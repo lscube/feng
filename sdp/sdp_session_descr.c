@@ -214,8 +214,6 @@ static int sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
  *         session or NULL if the resource was not found or no demuxer
  *         was found to handle it.
  *
- * @TODO Consider returning a pointer to character rather than a
- *       GString since it's already complete.
  * @TODO Consider receiving a netembryo Url structure pointer instead
  *       of separated server and resource names.
  */
