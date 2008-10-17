@@ -32,6 +32,17 @@
 
 #include <RTSP_utils.h>
 
+/** 
+  * RTSP connection informations used by RTSP method functions
+  */
+typedef struct
+{
+    Url url; //!< URL of the requested media
+
+    description_format descr_format; //!< format of the media description
+    GString *descr; //!< media description
+} ConnectionInfo;
+
 /**
  * Sends the reply for the describe method
  * @param rtsp the buffer where to write the reply
@@ -87,6 +98,25 @@ static int send_describe_reply(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
     fnc_log(FNC_LOG_CLIENT, "200 %d %s ", cinfo->descr->len, cinfo->url.path);
 
     return ERR_NOERROR;
+}
+
+/**
+ * Gets the required media description format from the RTSP request
+ * @param rtsp the buffer of the request
+ * @param cinfo the connection informations where to store the description format
+ * @return RTSP_Ok or RTSP_OptionNotSupported if the required format is not SDP
+ */
+static RTSP_Error get_description_format(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
+{
+    if (strstr(rtsp->in_buffer, HDR_ACCEPT) != NULL) {
+        if (strstr(rtsp->in_buffer, "application/sdp") != NULL) {
+            cinfo->descr_format = df_SDP_format;
+        } else {
+            return RTSP_OptionNotSupported; // Add here new description formats
+        }
+    }
+
+    return RTSP_Ok;
 }
 
 /**

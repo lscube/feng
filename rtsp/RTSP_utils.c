@@ -177,25 +177,6 @@ RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer)
 }
 
 /**
- * Gets the required media description format from the RTSP request
- * @param rtsp the buffer of the request
- * @param cinfo the connection informations where to store the description format
- * @return RTSP_Ok or RTSP_OptionNotSupported if the required format is not SDP
- */
-RTSP_Error get_description_format(RTSP_buffer * rtsp, ConnectionInfo * cinfo)
-{
-    if (strstr(rtsp->in_buffer, HDR_ACCEPT) != NULL) {
-        if (strstr(rtsp->in_buffer, "application/sdp") != NULL) {
-            cinfo->descr_format = df_SDP_format;
-        } else {
-            return RTSP_OptionNotSupported; // Add here new description formats
-        }
-    }
-
-    return RTSP_Ok;
-}
-
-/**
  * Gets the CSeq from the buffer
  * @param rtsp the buffer of the request
  * @return RTSP_Ok or RTSP_BadRequest if there is not a CSEQ header
