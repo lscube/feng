@@ -44,7 +44,7 @@ noinst_HEADERS = \
 	include/array.h \
 	include/buffer.h
 
-EXTRA_DIST = Doxyfile RELEASE
+EXTRA_DIST = RELEASE
 
 ACLOCAL_AMFLAGS = -I m4
 
