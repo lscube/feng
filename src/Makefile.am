@@ -1,12 +1,8 @@
 feniceincludedir = $(top_srcdir)/include
 
-noinst_LIBRARIES = liblog.a
-
-liblog_a_SOURCES = fnc_log.c 
-
 bin_PROGRAMS = feng
 
-feng_SOURCES =	main.c
+feng_SOURCES = main.c fnc_log.c
 
 feng_LDADD =	../eventloop/libeventloop.a \
 		../rtsp/librtsp.a \
@@ -15,15 +11,7 @@ feng_LDADD =	../eventloop/libeventloop.a \
 		../rtcp/librtcp.a \
 		../rtp/librtp.a \
 		../mediathread/libmediath.a \
-		../mediathread/demuxer/libdemuxer.a \
-		../mediathread/parser/libparser.a \
-		../multicast/libmulticast.a
-
-feng_LDADD +=	../conf/liblight.a \
-		liblog.a
-
-feng_LDFLAGS =
-
-feng_LDADD += @GLIB_LIBS@ 
+		../multicast/libmulticast.a \
+		../conf/liblight.a
 
 INCLUDES = -I$(feniceincludedir) -I..
