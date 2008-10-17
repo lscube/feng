@@ -54,34 +54,23 @@ AC_ARG_ENABLE(duma,
     AS_HELP_STRING([--enable-duma], [link against DUMA library to debug memory usage (implies --enable-debug) (default=no)]),,
     enable_duma="no")
 
-dnl Checks for header files.
-AC_HEADER_DIRENT
-AC_HEADER_STDC
-AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/time.h unistd.h strings.h errno.h sys/errno.h fcntl.h malloc.h sys/ioctl.h getopt.h syslog.h) 
-
-dnl Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_TYPE_SIZE_T
-AC_TYPE_UID_T
-AC_TYPE_PID_T
-AC_C_INLINE
-AC_HEADER_TIME
-
-dnl Checks for library functions.
-AC_FUNC_MEMCMP
-AC_FUNC_MMAP
-AC_CHECK_FUNCS(select socket gettimeofday uname getcwd getwd strcspn strdup strtoul strerror strstr setenv getopt_long uname)
-AC_CHECK_FUNC(getaddrinfo)
+dnl Checks used by feng itself
+AC_FUNC_MMAP dnl also by conf/*
+AC_CHECK_HEADERS([syslog.h])
 
 AC_SEARCH_LIBS([clock_gettime], [rt],
   [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define this if you have clock_gettime])])
 
+dnl check if we have the generic struct for net addresses the has max
+dnl possible size
+AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
+
+dnl Checks used by conf/*
+AC_CHECK_HEADERS([pcre.h fam.h])
+AC_CHECK_FUNCS([lstat])
+
 fenice_state_dir=$(eval echo ${localstatedir}/feng)
 AC_SUBST(fenice_state_dir)
-
-dnl check if we have the generic struct for net addresses the has max possible size
-AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 
 LSC_CHECK_IPV6
 LSC_CHECK_SCTP
