@@ -130,16 +130,16 @@ int RTSP_describe(RTSP_buffer * rtsp)
     if ( (error = extract_url(rtsp, urlstr)).got_error )
         goto error_management;
     // Validate URL
-    else if ( (error = validate_url(urlstr, &url)).got_error )
+    if ( (error = validate_url(urlstr, &url)).got_error )
         goto error_management;
     // Check for Forbidden Paths 
-    else if ( (error = check_forbidden_path(&url)).got_error )
+    if ( (error = check_forbidden_path(&url)).got_error )
         goto error_management;
     // Disallow Header REQUIRE
-    else if ( (error = check_require_header(rtsp)).got_error )
+    if ( (error = check_require_header(rtsp)).got_error )
         goto error_management;
     // Get the CSeq
-    else if ( (error = get_cseq(rtsp)).got_error )
+    if ( (error = get_cseq(rtsp)).got_error )
         goto error_management;
 
     // Get the description format. SDP is the only supported

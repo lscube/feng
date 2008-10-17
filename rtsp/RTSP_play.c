@@ -365,12 +365,12 @@ int RTSP_play(RTSP_buffer * rtsp)
     if ( (error = get_cseq(rtsp)).got_error )
         goto error_management;
     // Get the range
-    else if ( (error = parse_play_time_range(rtsp, &args)).got_error )
+    if ( (error = parse_play_time_range(rtsp, &args)).got_error )
         goto error_management;
 
     if ( (error = get_session_id(rtsp, &session_id)).got_error )
         goto error_management;
-    else if ( session_id == 0 ) {
+    if ( session_id == 0 ) {
         set_RTSP_Error(&error, 400, "");
         goto error_management;
     }
@@ -378,15 +378,15 @@ int RTSP_play(RTSP_buffer * rtsp)
     // Pick correct session
     if ( (error = get_session(rtsp, session_id, &rtsp_sess)).got_error )                goto error_management;
     // Extract the URL
-    else if ( (error = extract_url(rtsp, url)).got_error )
+    if ( (error = extract_url(rtsp, url)).got_error )
 	    goto error_management;
     // Validate URL
-    else if ( (error = validate_url(url, &ne_url)).got_error )
+    if ( (error = validate_url(url, &ne_url)).got_error )
     	goto error_management;
     // Check for Forbidden Paths
-    else if ( (error = check_forbidden_path(&ne_url)).got_error )
+    if ( (error = check_forbidden_path(&ne_url)).got_error )
         goto error_management;
-    else if ( (error = do_play(&url, rtsp_sess, &args)).got_error ) {
+    if ( (error = do_play(&url, rtsp_sess, &args)).got_error ) {
         if (error.got_error == ERR_ALLOC)
             return ERR_ALLOC;
         goto error_management;

@@ -115,13 +115,13 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 
     if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
         goto error_management;
-    else if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
-	    goto error_management;
-    else if ( (error = validate_url(url, &ne_url)).got_error ) // Validate URL
+    if ( (error = extract_url(rtsp, url)).got_error ) // Extract the URL
+	goto error_management;
+    if ( (error = validate_url(url, &ne_url)).got_error ) // Validate URL
     	goto error_management;
-    else if ( (error = check_forbidden_path(&ne_url)).got_error ) // Check for Forbidden Paths
+    if ( (error = check_forbidden_path(&ne_url)).got_error ) // Check for Forbidden Paths
     	goto error_management;
-    else if ( (error = get_session_id(rtsp, &session_id)).got_error ) // Get Session id
+    if ( (error = get_session_id(rtsp, &session_id)).got_error ) // Get Session id
         goto error_management;
 
     s = rtsp->session;
