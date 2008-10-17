@@ -6,8 +6,6 @@ libutils_la_SOURCES = sdp_utils.c
 
 liblog_la_SOURCES = fnc_log.c 
 
-.NOTPARALLEL: feng
-
 bin_PROGRAMS = feng
 
 feng_SOURCES =	main.c \
@@ -23,8 +21,8 @@ feng_LDADD =	../eventloop/libeventloop.la \
 		../multicast/libmulticast.la
 
 feng_LDADD +=	../conf/liblight.la \
-		../src/libutils.la \
-		../src/liblog.la
+		libutils.la \
+		liblog.la
 
 feng_LDFLAGS =
 
