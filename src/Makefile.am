@@ -7,7 +7,7 @@ libutils_la_SOURCES = sdp_utils.c
 liblog_la_SOURCES = fnc_log.c 
 
 .NOTPARALLEL: feng
-	
+
 bin_PROGRAMS = feng
 
 feng_SOURCES =	main.c \
