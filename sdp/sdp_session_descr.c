@@ -334,7 +334,7 @@ GString *sdp_session_descr(feng *srv, char *server, char *name)
         sdp_media_descr(array_data(m_descrs)[i], descr);
     }
 
-    fnc_log(FNC_LOG_INFO, "[SDP2] description:\n%s", descr);
+    fnc_log(FNC_LOG_INFO, "[SDP2] description:\n%s", descr->str);
 
     return descr;
 }
