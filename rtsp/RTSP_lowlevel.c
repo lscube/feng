@@ -40,13 +40,15 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
 {
     int n = 0;
 
-    if (!rtsp->out_size) {
+    GString *outpkt = (GString *)g_async_queue_try_pop(rtsp->out_queue);
+
+    if (outpkt == NULL) {
         fnc_log(FNC_LOG_WARN, "RTSP_send called, but no data to be sent");
         return 0;
     }
 
-    if ( (n = Sock_write(rtsp->sock, rtsp->out_buffer, rtsp->out_size,
-          NULL, MSG_DONTWAIT)) < 0) {
+    if ( (n = Sock_write(rtsp->sock, outpkt->str, outpkt->len,
+          NULL, MSG_DONTWAIT)) < outpkt->len) {
         switch (errno) {
             case EACCES:
                 fnc_log(FNC_LOG_ERR, "EACCES error");
@@ -101,10 +103,9 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
                 break;
         }
         fnc_log(FNC_LOG_ERR, "Sock_write() error in RTSP_send()");
-        return n;
     }
-    //remove tx bytes from buffer
-    memmove(rtsp->out_buffer, rtsp->out_buffer + n, (rtsp->out_size -= n));
+
+    g_string_free(outpkt, TRUE);
     return n;
 }
 

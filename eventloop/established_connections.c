@@ -75,7 +75,7 @@ static void interleaved_read(gpointer element, gpointer user_data)
   RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
 
   char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
-  int i, n;
+  int n;
 #ifdef HAVE_LIBSCTP
     struct sctp_sndrcvinfo sctp_info;
 #endif
@@ -86,20 +86,21 @@ static void interleaved_read(gpointer element, gpointer user_data)
       return;
     }
     switch (Sock_type(rtsp->sock)){
-    case TCP:
-      if ((i = rtsp->out_size) + n < RTSP_BUFFERSIZE - RTSP_RESERVED) {
-	rtsp->out_buffer[i] = '$';
-	rtsp->out_buffer[i + 1] = (unsigned char) intlvd->proto.tcp.rtcp_ch;
-	*((uint16_t *) & rtsp->out_buffer[i + 2]) = 
-	  htons((uint16_t) n);
-	rtsp->out_size += n + 4;
-	memcpy(rtsp->out_buffer + i + 4, buffer, n);
-	if ( (n = RTSP_send(rtsp)) < 0) {
-	  send_reply(500, NULL, rtsp);
-	  return;// internal server error
-	}
+    case TCP: {
+      uint16_t ne_n = htons((uint16_t)n);
+      GString *str = g_string_sized_new(n+4);
+      g_string_append_c(str, '$');
+      g_string_append_c(str, (unsigned char)intlvd->proto.tcp.rtcp_ch);
+      g_string_append_len(str, &ne_n, 2);
+      g_string_append_len(str, &buffer, n);
+      
+      g_async_queue_push(rtsp->out_queue, str);
+      if ( (n = RTSP_send(rtsp)) < 0) {
+	send_reply(500, NULL, rtsp);
+	return;// internal server error
       }
-      break;
+    }
+    break;
 #ifdef HAVE_LIBSCTP
     case SCTP:
       memcpy(&sctp_info, &(intlvd->proto.sctp.rtcp), sizeof(struct sctp_sndrcvinfo));
@@ -118,21 +119,20 @@ static void interleaved_read(gpointer element, gpointer user_data)
       return;
     }
     switch (Sock_type(rtsp->sock)){
-    case TCP:
-      if ((i = rtsp->out_size) + n < RTSP_BUFFERSIZE - RTSP_RESERVED) {
-	rtsp->out_buffer[i] = '$';
-	rtsp->out_buffer[i + 1] =
-	  (unsigned char) intlvd->proto.tcp.rtp_ch;
-	*((uint16_t *) & rtsp->out_buffer[i + 2]) =
-	  htons((uint16_t) n);
-	rtsp->out_size += n + 4;
-	memcpy(rtsp->out_buffer + i + 4, buffer, n);
-	if ( (n = RTSP_send(rtsp)) < 0) {
-	  send_reply(500, NULL, rtsp);
-	  return;// internal server error
-	}
+    case TCP: {
+      uint16_t ne_n = htons((uint16_t)n);
+      GString *str = g_string_sized_new(n+4);
+      g_string_append_c(str, '$');
+      g_string_append_c(str, (unsigned char)intlvd->proto.tcp.rtcp_ch);
+      g_string_append_len(str, &ne_n, 2);
+      g_string_append_len(str, &buffer, n);
+      
+      g_async_queue_push(rtsp->out_queue, str);
+      if ( (n = RTSP_send(rtsp)) < 0) {
+	send_reply(500, NULL, rtsp);
+	return;// internal server error
       }
-      break;
+    }
 #ifdef HAVE_LIBSCTP
     case SCTP:
       memcpy(&sctp_info, &(intlvd->proto.sctp.rtp),
@@ -278,7 +278,7 @@ void established_each_fd(gpointer data, gpointer user_data)
   // FD used for RTSP connection
   FD_SET(Sock_fd(rtsp->sock), &srv->rset);
   srv->max_fd = MAX(srv->max_fd, Sock_fd(rtsp->sock));
-  if (rtsp->out_size > 0) {
+  if (g_async_queue_length(rtsp->out_queue) > 0) {
     FD_SET(Sock_fd(rtsp->sock), &srv->wset);
   }
   // Local FDS for interleaved trasmission

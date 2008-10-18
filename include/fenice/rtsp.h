@@ -87,8 +87,7 @@ typedef struct RTSP_buffer {
     // Buffers      
     char in_buffer[RTSP_BUFFERSIZE];
     size_t in_size;
-    char out_buffer[RTSP_BUFFERSIZE + MAX_DESCR_LENGTH];
-    size_t out_size;
+    GAsyncQueue *out_queue;
     /* vars for interleaved data:
      * interleaved pkts will be present only at the beginning of out_buffer.
      * this size is used to remenber how much data should be grouped in one

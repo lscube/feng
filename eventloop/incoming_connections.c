@@ -34,6 +34,7 @@ static void add_client(feng *srv, Sock *client_sock)
 
     new->srv = srv;
     new->sock = client_sock;
+    new->out_queue = g_async_queue_new();
 
     new->session = g_new0(RTSP_session, 1);
     new->session->session_id = -1;

@@ -425,23 +425,13 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
  * @param rtsp where the output buffer is saved
  *
  * @retval ERR_NOERROR No error.
- * @retval ERR_ALLOC Not enough space in the output buffer.
  *
  * @note This function destroys the buffer after completion.
  */
 int bwrite(GString *buffer, RTSP_buffer * rtsp)
 {
-    if ((rtsp->out_size + buffer->len) > sizeof(rtsp->out_buffer)) {
-        fnc_log(FNC_LOG_ERR,
-            "bwrite(): not enough free space in out message buffer.\n");
-	g_string_free(buffer, TRUE);
-        return ERR_ALLOC;
-    }
-    memcpy(&(rtsp->out_buffer[rtsp->out_size]), buffer->str, buffer->len);
-    rtsp->out_buffer[rtsp->out_size + buffer->len] = '\0';
-    rtsp->out_size += buffer->len;
+    g_async_queue_push(rtsp->out_queue, buffer);
 
-    g_string_free(buffer, TRUE);
     return ERR_NOERROR;
 }
 
