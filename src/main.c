@@ -293,8 +293,6 @@ static feng *feng_alloc(void)
     CLEAN(srvconf.modules);
 #undef CLEAN
 
-    srv->clients = NULL;
-
     return srv;
 }
 

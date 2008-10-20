@@ -39,6 +39,7 @@ static GPtrArray *listen_socks;        //!< listen sockets
 static fd_set rset;
 static fd_set wset;
 static int max_fd;
+static GSList *clients; // of type RTSP_buffer
 
 /**
  * Bind to the defined listening port
@@ -402,7 +403,7 @@ static void established_each_connection(gpointer data, gpointer user_data)
   --srv->conn_count;
   srv->num_conn--;
   // Release the RTSP_buffer
-  srv->clients = g_slist_remove(srv->clients, p);
+  clients = g_slist_remove(clients, p);
   g_free(p);
   // Release the scheduler if necessary
   if (p == NULL && srv->conn_count < 0) {
@@ -426,7 +427,7 @@ static void add_client(feng *srv, Sock *client_sock)
     new->session->session_id = -1;
     new->session->srv = srv;
 
-    srv->clients = g_slist_prepend(srv->clients, new);
+    clients = g_slist_prepend(clients, new);
 
     fnc_log(FNC_LOG_INFO,
         "Incoming RTSP connection accepted on socket: %d\n",
@@ -477,7 +478,7 @@ static void incoming_connection(gpointer data, gpointer user_data)
     if (!client_sock)
       return;
 
-    p = g_slist_find_custom(srv->clients, client_sock,
+    p = g_slist_find_custom(clients, client_sock,
                             connections_compare_socket);
 
     if ( p == NULL ) {
@@ -521,7 +522,7 @@ void eventloop(feng *srv)
     }
 
     /* Add all sockets of all sessions to rset and wset */
-    g_slist_foreach(srv->clients, established_each_fd, NULL);
+    g_slist_foreach(clients, established_each_fd, NULL);
 
     /* Wait for connections */
     if (select(max_fd + 1, &rset, &wset, NULL, NULL) < 0) {
@@ -531,7 +532,7 @@ void eventloop(feng *srv)
         return;
     }
     /* transfer data for any RTSP sessions */
-    g_slist_foreach(srv->clients, established_each_connection, NULL);
+    g_slist_foreach(clients, established_each_connection, NULL);
 
     /* handle new connections */
     if (srv->conn_count != -1) {

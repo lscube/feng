@@ -55,7 +55,6 @@ typedef struct feng {
  * Includes the 
  */
 //@{
-    GSList *clients; // of type RTSP_buffer
     /**
      * Once it reaches the maximum the server redirects
      * to a twin if available
