@@ -6,7 +6,6 @@ SUBDIRS =	mediathread \
 		rtsp
 
 SUBDIRS +=	sdp \
-		schedule \
 		src \
 		docs \
 		etc \
