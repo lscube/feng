@@ -39,7 +39,7 @@
 #include <configfile.h>
 
 #include <fenice/server.h>
-#include <fenice/eventloop.h>
+#include "eventloop.h"
 #include <fenice/prefs.h>
 #include <fenice/utils.h>
 #include <fenice/mediathread.h>

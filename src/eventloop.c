@@ -29,7 +29,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <fenice/eventloop.h>
+#include "eventloop.h"
 #include <fenice/utils.h>
 
 #include <fenice/schedule.h>

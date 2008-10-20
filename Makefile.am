@@ -1,7 +1,6 @@
 SUBDIRS =	mediathread \
 		multicast \
 		conf \
-		eventloop \
 		rtp \
 		rtcp \
 		rtsp
@@ -20,7 +19,6 @@ noinst_HEADERS = \
 	include/fenice/sdp2.h \
 	include/fenice/demuxer_module.h \
 	include/fenice/description.h \
-	include/fenice/eventloop.h \
 	include/fenice/fnc_log.h \
 	include/fenice/mediaparser_module.h \
 	include/fenice/multicast.h \

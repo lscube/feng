@@ -20,7 +20,6 @@
  *  
  * */
 
-#include <fenice/eventloop.h>
 #include <fenice/rtcp.h>
 
 #include <fenice/utils.h>
