@@ -163,7 +163,7 @@ static void rtp_session_read(gpointer element, gpointer user_data)
   }
 }
 
-static int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
+static int rtsp_server(RTSP_buffer * rtsp)
 {
     char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
     int n;
@@ -173,13 +173,13 @@ static int rtsp_server(RTSP_buffer * rtsp, fd_set * rset, fd_set * wset)
     if (rtsp == NULL) {
         return ERR_NOERROR;
     }
-    if (FD_ISSET(Sock_fd(rtsp->sock), wset)) { // first of all: there is some data to send?
+    if (FD_ISSET(Sock_fd(rtsp->sock), &rtsp->srv->wset)) { // first of all: there is some data to send?
         if ( (n = RTSP_send(rtsp)) < 0) {
 //            send_reply(500, NULL, rtsp); FIXME
             return ERR_GENERIC;// internal server error
         }
     }
-    if (FD_ISSET(Sock_fd(rtsp->sock), rset)) {
+    if (FD_ISSET(Sock_fd(rtsp->sock), &rtsp->srv->rset)) {
         // There are RTSP or RTCP packets to read in
         memset(buffer, 0, sizeof(buffer));
         n = rtsp_sock_read(rtsp->sock, &m, buffer, sizeof(buffer) - 1);
@@ -272,8 +272,8 @@ static void rtp_session_set_fd(gpointer element, gpointer user_data)
  */
 void established_each_fd(gpointer data, gpointer user_data)
 {
-  feng *srv = (feng*)user_data;
   RTSP_buffer *rtsp = (RTSP_buffer*)data;
+  feng *srv = rtsp->srv;
 
   // FD used for RTSP connection
   FD_SET(Sock_fd(rtsp->sock), &srv->rset);
@@ -316,14 +316,12 @@ static void rtp_session_remove_schedule(gpointer element, gpointer user_data)
 
 void established_each_connection(gpointer data, gpointer user_data)
 {
-  feng *srv = (feng*)user_data;
   RTSP_buffer *p = (RTSP_buffer*)data;
+  feng *srv = p->srv;
   
   int res;
-  fd_set *rset = &srv->rset;
-  fd_set *wset = &srv->wset;
 
-  if ((res = rtsp_server(p, rset, wset)) == ERR_NOERROR)
+  if ((res = rtsp_server(p)) == ERR_NOERROR)
     return;
   
   if (res != ERR_CONNECTION_CLOSE && res != ERR_GENERIC)

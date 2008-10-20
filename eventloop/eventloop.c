@@ -50,7 +50,7 @@ void eventloop(feng *srv)
     }
 
     /* Add all sockets of all sessions to rset and wset */
-    g_slist_foreach(srv->clients, established_each_fd, srv);
+    g_slist_foreach(srv->clients, established_each_fd, NULL);
 
     /* Wait for connections */
     if (select(srv->max_fd + 1, &srv->rset, &srv->wset, NULL, NULL) < 0) {
@@ -60,7 +60,7 @@ void eventloop(feng *srv)
         return;
     }
     /* transfer data for any RTSP sessions */
-    g_slist_foreach(srv->clients, established_each_connection, srv);
+    g_slist_foreach(srv->clients, established_each_connection, NULL);
 
     /* handle new connections */
     if (srv->conn_count != -1) {
