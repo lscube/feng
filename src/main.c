@@ -34,6 +34,8 @@
 #include <sys/socket.h> /*SOMAXCONN*/
 #include <signal.h>
 #include <errno.h>
+#include <grp.h>
+
 #include <buffer.h>
 #include <array.h>
 #include <configfile.h>
@@ -69,7 +71,6 @@ static void feng_drop_privs(feng *srv)
                 fnc_log(FNC_LOG_WARN,
                     "Cannot setgid to user %s, %s",
                     id, strerror(errno));
-            srv->gid = gr->gr_gid;
         } else {
             fnc_log(FNC_LOG_WARN,
                     "Cannot get group %s id, %s",
@@ -85,7 +86,6 @@ static void feng_drop_privs(feng *srv)
                 fnc_log(FNC_LOG_WARN,
                     "Cannot setuid to user %s, %s",
                     id, strerror(errno));
-            srv->uid = pw->pw_uid;
         } else {
             fnc_log(FNC_LOG_WARN,
                     "Cannot get user %s id, %s",
@@ -206,23 +206,6 @@ static void feng_handle_signals(feng *srv)
     sigprocmask(SIG_BLOCK, &block_set, NULL);
 }
 
-/**
- * Initialises the array of schedule_list sched and creates the thread
- * @see schedule_do
- */
-
-static int feng_start_mt(feng *srv)
-{
-    if (schedule_init(srv) == ERR_FATAL) {
-        fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.");
-        fprintf(stderr, "[fatal] Can't start scheduler. Server is aborting.\n");
-        return 1;
-    }
-
-    srv->mth = g_thread_create(mediathread, NULL, FALSE, NULL);
-    return 0;
-}
-
 static void feng_free(feng* srv)
 {
 #define CLEAN(x) \
@@ -327,7 +310,7 @@ static int command_environment(feng *srv, int argc, char **argv)
 
 static feng *feng_alloc(void)
 {
-    server *srv = g_new0(server, 1);
+    struct feng *srv = g_new0(server, 1);
 
     if (!srv) return NULL;
 
@@ -378,8 +361,13 @@ int main(int argc, char **argv)
 
     if (!g_thread_supported ()) g_thread_init (NULL);
 
-    if (feng_start_mt(srv))
+    if (schedule_init(srv) == ERR_FATAL) {
+        fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.");
+        fprintf(stderr, "[fatal] Can't start scheduler. Server is aborting.\n");
         return 1;
+    }
+
+    g_thread_create(mediathread, NULL, FALSE, NULL);
 
     /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
      * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */

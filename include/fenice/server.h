@@ -35,7 +35,6 @@
 #include <netembryo/wsocket.h>
 #include <glib.h>
 #include <pwd.h>
-#include <grp.h>
 #include <sys/select.h>
 
 typedef struct feng {
@@ -49,7 +48,6 @@ typedef struct feng {
     fd_set wset;
     int max_fd;
 //@}
-    GThread *mth;                  //!< mediathread
     struct schedule_list *sched;
 /**
  * @name lighttpd-alike preferences
@@ -71,14 +69,6 @@ typedef struct feng {
 //@{ 
     int start_port;                 //!< initial rtp port
     int *port_pool;                 //!< list of allocated ports
-//@}
-/** 
- * @name user
- * User id and group id used by the current feng instance
- */
-//@{
-    gid_t gid;                      //!< group id
-    uid_t uid;                      //!< user id
 //@}
 /** 
  * @name eventloop state
