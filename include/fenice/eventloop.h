@@ -33,9 +33,5 @@
 typedef int (*event_function) (void *data);
 
 void eventloop(feng *srv);
-void established_each_connection(gpointer data, gpointer user_data);
-void established_each_fd(gpointer data, gpointer user_data);
-void incoming_connections(feng *srv);
-void incoming_fd(feng *srv);
 
 #endif // FN_EVENTLOOP_H
