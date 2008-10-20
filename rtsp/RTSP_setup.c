@@ -108,23 +108,8 @@ static RTSP_Error multicast_transport(feng *srv, RTP_transport *transport,
 {
     char port_buffer[8];
     RTSP_Error error;
-    schedule_list *sched = srv->sched;
-    int i;
 
-    *rtp_s = NULL;
-    for (i = 0; !*rtp_s && i<ONE_FORK_MAX_CONNECTION; ++i) {
-        g_mutex_lock(sched[i].mux);
-        if (sched[i].valid) {
-            Track *tr2 = r_selected_track(
-                                sched[i].rtp_session->track_selector);
-            if (!strncmp(tr2->info->mrl, tr->info->mrl, 255)) {
-                *rtp_s = sched[i].rtp_session;
-                fnc_log(FNC_LOG_DEBUG,
-                        "Found multicast instance.");
-            }
-        }
-        g_mutex_unlock(sched[i].mux);
-    }
+    *rtp_s = schedule_find_multicast(srv, tr->info->mrl);
 
     if (!*rtp_s) {
         snprintf(port_buffer, 8, "%d", tr->info->rtp_port);

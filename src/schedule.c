@@ -209,3 +209,34 @@ void schedule_init(feng *srv)
 
     return ERR_NOERROR;
 }
+
+/**
+ * @brief Find a multicast instance from the MRL parameter
+ *
+ * @param mrl MRL to look for
+ *
+ * @return The RTP instance for the multicast stream, or NULL if none
+ *         is found.
+ */
+RTP_session *schedule_find_multicast(feng *srv, const char *mrl)
+{
+  int i;
+  RTP_session *rtp_s = NULL;
+  schedule_list *sched = srv->sched;
+
+  for (i = 0; !rtp_s && i<ONE_FORK_MAX_CONNECTION; ++i) {
+    g_mutex_lock(sched[i].mux);
+    if (sched[i].valid) {
+      Track *tr2 = r_selected_track(
+				    sched[i].rtp_session->track_selector);
+      if (!strncmp(tr2->info->mrl, mrl, 255)) {
+	rtp_s = sched[i].rtp_session;
+	fnc_log(FNC_LOG_DEBUG,
+		"Found multicast instance.");
+      }
+    }
+    g_mutex_unlock(sched[i].mux);
+  }
+
+  return rtp_s;
+}

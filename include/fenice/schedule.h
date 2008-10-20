@@ -53,4 +53,6 @@ int schedule_add(RTP_session * rtp_session);
 int schedule_start(RTP_session * rtp_session, play_args * args);
 int schedule_remove(RTP_session * rtp_session, void *unused);
 int schedule_resume(RTP_session * rtp_session, play_args * args);
+RTP_session *schedule_find_multicast(feng *srv, const char *mrl);
+
 #endif // FN_SCHEDULE_H
