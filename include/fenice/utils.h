@@ -98,38 +98,6 @@
 #define RTSP_ID_SET_PARAMETER 9
 #define RTSP_ID_TEARDOWN 10
 
-
-//XXX move them in a separate header?
-/*! SD common tags */
-#define SD_STREAM           "stream"
-#define SD_STREAM_END       "stream_end"
-#define SD_FILENAME         "file_name"
-#define SD_CLOCK_RATE       "clock_rate"
-#define SD_PAYLOAD_TYPE     "payload_type"
-#define SD_AUDIO_CHANNELS   "audio_channels"
-#define SD_ENCODING_NAME    "encoding_name"
-#define SD_MEDIA_TYPE       "media_type"
-#define SD_BIT_PER_SAMPLE   "bit_per_sample"
-#define SD_SAMPLE_RATE      "sample_rate"
-#define SD_CODING_TYPE      "coding_type"
-#define SD_FRAME_LEN        "frame_len"
-#define SD_PKT_LEN          "pkt_len"
-#define SD_PRIORITY         "priority"
-#define SD_BITRATE          "bitrate"
-#define SD_FRAME_RATE       "frame_rate"
-#define SD_FORCE_FRAME_RATE "force_frame_rate"
-#define SD_BYTE_PER_PCKT    "byte_per_pckt"
-#define SD_MEDIA_SOURCE     "media_source"
-#define SD_TWIN             "twin"
-#define SD_MULTICAST        "multicast"
-#define SD_PORT             "port"
-#define SD_FMTP             "fmtp"
-/*! Creative commons specific tags */
-#define SD_LICENSE          "license"
-#define SD_RDF              "verify"
-#define SD_TITLE            "title"
-#define SD_CREATOR          "creator"
-
 #define NTP_time(t) ((float)t + 2208988800U)
 
 /**
