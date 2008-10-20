@@ -72,7 +72,7 @@ static RTSP_Error parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
                 return RTSP_BadRequest;    /* Bad Request */
 
             if (sscanf(q + 1, "%lf", &(args->begin_time)) != 1) {
-                if (sscanf(q + 1, "%4s", tmp) != 1 && !strcasecmp(tmp,"now-")) {
+                if (sscanf(q + 1, "%4s", tmp) != 1 && !g_ascii_strcasecmp(tmp,"now-")) {
                     return RTSP_BadRequest;
                 }
             } else {

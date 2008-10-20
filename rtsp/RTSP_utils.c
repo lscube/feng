@@ -377,7 +377,7 @@ int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
         send_reply(500, 0, rtsp);    /* Internal server error */
         return ERR_NOERROR;
     }
-    //if(!strcasecmp(matching_descr->twin,"NONE") || !strcasecmp(matching_descr->twin,"")){
+    //if(!g_ascii_strcasecmp(matching_descr->twin,"NONE") || !g_ascii_strcasecmp(matching_descr->twin,"")){
     if (!(matching_descr->flags & SD_FL_TWIN)) {
         send_reply(453, 0, rtsp);
         return ERR_NOERROR;

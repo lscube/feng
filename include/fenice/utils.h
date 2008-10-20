@@ -35,8 +35,6 @@
 
 //XXX should me moved somewhere else
 #ifdef WIN32
-#define strncasecmp(s1,s2,len)  _strnicmp(s1,s2,len)
-#define strcasecmp(s1,s2)       _stricmp(s1,s2)
 #define open(a, b)   _open(a, b)
 #define read(a,b,c)  _read(a,b,c)
 #define lseek(a,b,c) _lseek(a,b,c)

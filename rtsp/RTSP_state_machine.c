@@ -342,7 +342,7 @@ static int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffe
                 ver, &stat, &seq, msg);
 
     /* check for a valid response token. */
-    if (strncasecmp(ver, "RTSP/", 5))
+    if (g_ascii_strncasecmp(ver, "RTSP/", 5))
         return 0;    /* not a response message */
 
     /* confirm that at least the version, status code and sequence are there. */

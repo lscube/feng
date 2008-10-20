@@ -84,15 +84,15 @@ static int sd_init(Resource * r)
         MObject_0(MOBJECT(&trackinfo), TrackInfo);
 
         *keyword = '\0';
-        while (strcasecmp(keyword, SD_STREAM) && !feof(fd)) {
+        while (g_ascii_strcasecmp(keyword, SD_STREAM) && !feof(fd)) {
             fgets(line, sizeof(line), fd);
             sscanf(line, "%79s", keyword);
             /* validate twin */
-            if (!strcasecmp(keyword, SD_TWIN)) {
+            if (!g_ascii_strcasecmp(keyword, SD_TWIN)) {
                 sscanf(line, "%*s%255s", r->info->twin);
 		// FIXME: removed a parse_url that was never used.
             /* validate multicast */
-            } else if (!strcasecmp(keyword, SD_MULTICAST)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_MULTICAST)) {
                 sscanf(line, "%*s%15s", r->info->multicast);
                 if (!is_valid_multicast_address(r->info->multicast))
                     strcpy(r->info->multicast, DEFAULT_MULTICAST_ADDRESS);
@@ -105,10 +105,10 @@ static int sd_init(Resource * r)
          * (in this case track = elementary stream media file)
          * */
         *keyword = '\0';
-        while (strcasecmp(keyword, SD_STREAM_END) && !feof(fd)) {
+        while (g_ascii_strcasecmp(keyword, SD_STREAM_END) && !feof(fd)) {
             fgets(line, sizeof(line), fd);
             sscanf(line, "%79s", keyword);
-            if (!strcasecmp(keyword, SD_FILENAME)) {
+            if (!g_ascii_strcasecmp(keyword, SD_FILENAME)) {
                 // SD_FILENAME
                 sscanf(line, "%*s%255s", track_file);
                 // if ( *track_file == '/')
@@ -124,16 +124,16 @@ static int sd_init(Resource * r)
                 else
                     g_strlcpy(trackinfo.name, track_file, sizeof(trackinfo.name));
 
-            } else if (!strcasecmp(keyword, SD_ENCODING_NAME)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_ENCODING_NAME)) {
                 // SD_ENCODING_NAME
                 sscanf(line, "%*s%10s", props_hints.encoding_name);
-            } else if (!strcasecmp(keyword, SD_PRIORITY)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_PRIORITY)) {
                 // SD_PRIORITY //XXX once pt change is back...
 //                sscanf(line, "%*s %d\n", &me.data.priority);
-            } else if (!strcasecmp(keyword, SD_BITRATE)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_BITRATE)) {
                 // SD_BITRATE
                 sscanf(line, "%*s %d\n", &props_hints.bit_rate);
-            } else if (!strcasecmp(keyword, SD_PAYLOAD_TYPE)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_PAYLOAD_TYPE)) {
                 // SD_PAYLOAD_TYPE
                 sscanf(line, "%*s %u\n", &props_hints.payload_type);
                 // Automatic media_type detection
@@ -143,45 +143,45 @@ static int sd_init(Resource * r)
                 if (props_hints.payload_type > 23 &&
                     props_hints.payload_type < 96)
                     props_hints.media_type = MP_video;
-            } else if (!strcasecmp(keyword, SD_CLOCK_RATE)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_CLOCK_RATE)) {
                 // SD_CLOCK_RATE
                 sscanf(line, "%*s %u\n", &props_hints.clock_rate);
-            } else if (!strcasecmp(keyword, SD_AUDIO_CHANNELS)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_AUDIO_CHANNELS)) {
                 // SD_AUDIO_CHANNELS
                 sscanf(line, "%*s %d\n", &props_hints.audio_channels);
-            } else if (!strcasecmp(keyword, SD_SAMPLE_RATE)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_SAMPLE_RATE)) {
                 // SD_SAMPLE_RATE
                 sscanf(line, "%*s%f", &props_hints.sample_rate);
-            } else if (!strcasecmp(keyword, SD_BIT_PER_SAMPLE)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_BIT_PER_SAMPLE)) {
                 // SD_BIT_PER_SAMPLE
                 sscanf(line, "%*s%u", &props_hints.bit_per_sample);
-            } else if (!strcasecmp(keyword, SD_CODING_TYPE)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_CODING_TYPE)) {
                 // SD_CODING_TYPE
                 sscanf(line, "%*s%10s", sparam);
             //XXX remove this later...
-                if (strcasecmp(sparam, "FRAME") == 0)
+                if (g_ascii_strcasecmp(sparam, "FRAME") == 0)
                     props_hints.coding_type = mc_frame;
-                else if (strcasecmp(sparam, "SAMPLE") == 0)
+                else if (g_ascii_strcasecmp(sparam, "SAMPLE") == 0)
                     props_hints.coding_type = mc_sample;
-            } else if (!strcasecmp(keyword, SD_FRAME_RATE)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_FRAME_RATE)) {
                 // SD_FRAME_RATE
                 sscanf(line, "%*s%f", &props_hints.frame_rate);
-            } else if (!strcasecmp(keyword, SD_MEDIA_SOURCE)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_MEDIA_SOURCE)) {
                 // SD_MEDIA_SOURCE
                 sscanf(line, "%*s%10s", sparam);
-                if (strcasecmp(sparam, "STORED") == 0)
+                if (g_ascii_strcasecmp(sparam, "STORED") == 0)
 //                    props_hints.media_source = MS_stored;
                     return RESOURCE_DAMAGED;
-                if (strcasecmp(sparam, "LIVE") == 0)
+                if (g_ascii_strcasecmp(sparam, "LIVE") == 0)
                     props_hints.media_source = MS_live;
-            } else if (!strcasecmp(keyword, SD_MEDIA_TYPE)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_MEDIA_TYPE)) {
                 // SD_MEDIA_TYPE
                 sscanf(line, "%*s%10s", sparam);
-                if (strcasecmp(sparam, "AUDIO") == 0)
+                if (g_ascii_strcasecmp(sparam, "AUDIO") == 0)
                     props_hints.media_type = MP_audio;
-                if (strcasecmp(sparam, "VIDEO") == 0)
+                if (g_ascii_strcasecmp(sparam, "VIDEO") == 0)
                     props_hints.media_type = MP_video;
-            } else if (!strcasecmp(keyword, SD_FMTP)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_FMTP)) {
                 char *p = line;
                 while (toupper(*p++) != SD_FMTP[0]);
                 p += strlen(SD_FMTP);
@@ -189,15 +189,15 @@ static int sd_init(Resource * r)
                 sdp_private = g_new(sdp_field, 1);
                 sdp_private->type = fmtp;
                 sdp_private->field = g_strdup(p);
-            } else if (!strcasecmp(keyword, SD_LICENSE)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_LICENSE)) {
 
                 /*******START CC********/
                 // SD_LICENSE
                 sscanf(line, "%*s%255s", trackinfo.commons_deed);
-            } else if (!strcasecmp(keyword, SD_RDF)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_RDF)) {
                 // SD_RDF
                 sscanf(line, "%*s%255s", trackinfo.rdf_page);
-            } else if (!strcasecmp(keyword, SD_TITLE)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_TITLE)) {
                 // SD_TITLE
                 int i = 0;
                 char *p = line;
@@ -210,7 +210,7 @@ static int sd_init(Resource * r)
                     i++;
                 }
                 trackinfo.title[i] = '\0';
-            } else if (!strcasecmp(keyword, SD_CREATOR)) {
+            } else if (!g_ascii_strcasecmp(keyword, SD_CREATOR)) {
                 // SD_CREATOR
                 int i = 0;
                 char *p = line;
@@ -223,10 +223,10 @@ static int sd_init(Resource * r)
                 }
                 trackinfo.author[i] = '\0';
             }  else if (*r->info->multicast &&
-                        (!strcasecmp(keyword, SD_PORT)))
+                        (!g_ascii_strcasecmp(keyword, SD_PORT)))
                 sscanf(line, "%*s%d", &trackinfo.rtp_port);
 /* XXX later
-            if (!strcasecmp(keyword, SD_TTL)) {
+            if (!g_ascii_strcasecmp(keyword, SD_TTL)) {
                 sscanf(line, "%*s%3s", r->info->ttl);
             }
 */

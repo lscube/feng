@@ -221,7 +221,7 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
          * a message body.
          */
         if (!mb) {    /* content length token not yet encountered. */
-            if (!strncasecmp (rtsp->in_buffer + ml, HDR_CONTENTLENGTH,
+            if (!g_ascii_strncasecmp (rtsp->in_buffer + ml, HDR_CONTENTLENGTH,
                  RTSP_BUFFERSIZE - ml)) {
                 mb = 1;    /* there is a message body. */
                 ml += strlen(HDR_CONTENTLENGTH);
