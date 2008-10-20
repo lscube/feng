@@ -85,18 +85,6 @@
 #define RTSP_METHOD_SETUP           "SETUP"
 #define RTSP_METHOD_SET_PARAMETER   "SET_PARAMETER"
 #define RTSP_METHOD_TEARDOWN        "TEARDOWN"
-/*! rtsp method tokens */
-#define RTSP_ID_DESCRIBE 0
-#define RTSP_ID_ANNOUNCE 1
-#define RTSP_ID_GET_PARAMETERS 2
-#define RTSP_ID_OPTIONS 3
-#define RTSP_ID_PAUSE 4
-#define RTSP_ID_PLAY 5
-#define RTSP_ID_RECORD 6
-#define RTSP_ID_REDIRECT 7
-#define RTSP_ID_SETUP 8
-#define RTSP_ID_SET_PARAMETER 9
-#define RTSP_ID_TEARDOWN 10
 
 #define NTP_time(t) ((float)t + 2208988800U)
 

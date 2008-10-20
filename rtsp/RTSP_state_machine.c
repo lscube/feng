@@ -27,14 +27,35 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
+/**
+ * @brief RTSP method tokens
+ *
+ * They are used to identify in which state of the state machines we
+ * are.
+ */
+enum RTSP_method_token {
+  RTSP_ID_ERROR = ERR_GENERIC,
+  RTSP_ID_DESCRIBE,
+  RTSP_ID_ANNOUNCE,
+  RTSP_ID_GET_PARAMETERS,
+  RTSP_ID_OPTIONS,
+  RTSP_ID_PAUSE,
+  RTSP_ID_PLAY,
+  RTSP_ID_RECORD,
+  RTSP_ID_REDIRECT,
+  RTSP_ID_SETUP,
+  RTSP_ID_SET_PARAMETER,
+  RTSP_ID_TEARDOWN
+};
+
 /** @file RTSP_state_machine.c
  * @brief Contains RTSP message dispatchment functions
  */
 
-static void RTSP_state_machine(RTSP_buffer * rtsp, int method_code);
+static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method_code);
 static int RTSP_valid_response_msg(unsigned short *status, char *msg,
 				   RTSP_buffer * rtsp);
-static int RTSP_validate_method(RTSP_buffer * rtsp);
+static enum RTSP_method_token RTSP_validate_method(RTSP_buffer * rtsp);
 
 static gboolean find_tcp_interleaved(gconstpointer value, gconstpointer target)
 {
@@ -58,6 +79,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
     int full_msg;
     RTSP_interleaved *intlvd;
     int hlen, blen;
+    enum RTSP_method_token method;
 
     while (rtsp->in_size) {
         switch ((full_msg = RTSP_full_msg_rcvd(rtsp, &hlen, &blen))) {
@@ -65,13 +87,13 @@ int RTSP_handler(RTSP_buffer * rtsp)
             op = RTSP_valid_response_msg(&status, msg, rtsp);
             if (op == 0) {
                 // There is NOT an input RTSP message, therefore it's a request
-                m = RTSP_validate_method(rtsp);
-                if (m < 0) {
+                method = RTSP_validate_method(rtsp);
+                if (method == RTSP_ID_ERROR) {
                     // Bad request: non-existing method
                     fnc_log(FNC_LOG_INFO, "Bad Request ");
                     send_reply(400, NULL, rtsp);
                 } else
-                    RTSP_state_machine(rtsp, m);
+                    RTSP_state_machine(rtsp, method);
             } else {
                 // There's a RTSP answer in input.
                 if (op == ERR_GENERIC) {
@@ -116,7 +138,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
  * @param rtsp the buffer containing the message to dispatch
  * @param method the id of the method to execute
  */
-static void RTSP_state_machine(RTSP_buffer * rtsp, int method)
+static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method)
 {
     char *s;
     RTSP_session *p;
@@ -247,7 +269,7 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, int method)
  * @param rtsp the buffer containing the message
  * @return the message id or -1 if something doesn't work in the request 
  */
-static int RTSP_validate_method(RTSP_buffer * rtsp)
+static enum RTSP_method_token RTSP_validate_method(RTSP_buffer * rtsp)
 {
     char method[32], hdr[16];
     char object[256];
@@ -255,7 +277,7 @@ static int RTSP_validate_method(RTSP_buffer * rtsp)
     unsigned int seq;
     int pcnt;        /* parameter count */
     char *p;
-    int mid = ERR_GENERIC;
+    enum RTSP_method_token mid = RTSP_ID_ERROR;
 
     *method = *object = '\0';
     seq = 0;
@@ -265,7 +287,7 @@ static int RTSP_validate_method(RTSP_buffer * rtsp)
     if ((pcnt =
          sscanf(rtsp->in_buffer, " %31s %255s %31s ", method,
             object, ver)) != 3)
-        return ERR_GENERIC;
+        return RTSP_ID_ERROR;
 
     p = rtsp->in_buffer;
 
@@ -276,7 +298,7 @@ static int RTSP_validate_method(RTSP_buffer * rtsp)
     }
 
     if (p == NULL)
-        return ERR_GENERIC;
+        return RTSP_ID_ERROR;
 
     if (strcmp(method, RTSP_METHOD_DESCRIBE) == 0) {
         mid = RTSP_ID_DESCRIBE;
