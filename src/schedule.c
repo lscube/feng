@@ -206,8 +206,6 @@ void schedule_init(feng *srv)
     srv->sched = sched;
 
     g_thread_create(schedule_do, srv, FALSE, NULL);
-
-    return ERR_NOERROR;
 }
 
 /**
