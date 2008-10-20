@@ -75,7 +75,7 @@ static void rtp_session_release(gpointer element, gpointer user_data)
 
     if (!rtp_curr->is_multicast--) {
       // Release the scheduler entry
-      schedule_remove(rtp_curr);
+      schedule_remove(rtp_curr, NULL);
       fnc_log(FNC_LOG_DEBUG, "[TEARDOWN] Removed %s", pair->filename);
     } else {
       fnc_log(FNC_LOG_DEBUG, "[TEARDOWN] %s multicast session,"

@@ -31,26 +31,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-int schedule_init(feng *srv)
-{    
-    int i;
-    GThread *thread;
-    schedule_list *sched = g_new(schedule_list, ONE_FORK_MAX_CONNECTION);
-
-    for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
-        sched[i].rtp_session = NULL;
-        sched[i].play_action = NULL;
-        sched[i].valid = 0;
-	sched[i].mux = g_mutex_new();
-    }
-
-    srv->sched = sched;
-
-    thread = g_thread_create(schedule_do, srv, FALSE, NULL);
-
-    return ERR_NOERROR;
-}
-
 int schedule_add(RTP_session *rtp_session)
 {
     int i;
@@ -72,7 +52,7 @@ int schedule_add(RTP_session *rtp_session)
     // }
 }
 
-int schedule_remove(RTP_session *session)
+int schedule_remove(RTP_session *session, void *unused)
 {
     schedule_list *sched = session->srv->sched;
     int id = session->sched_id;
@@ -115,7 +95,7 @@ int schedule_start(RTP_session *session, play_args *args)
     return ERR_NOERROR;
 }
 
-void schedule_stop(RTP_session *session)
+static void schedule_stop(RTP_session *session)
 {
     RTCP_send_packet(session,SR);
     RTCP_send_packet(session,BYE);
@@ -144,7 +124,7 @@ int schedule_resume(RTP_session *session, play_args *args)
 
 #define SCHEDULER_TIMING 16000 //16ms. Sleep time suggested by Intel
 
-void *schedule_do(void *arg)
+static void *schedule_do(void *arg)
 {
     int i = 0, res;
     unsigned utime = SCHEDULER_TIMING;
@@ -211,3 +191,21 @@ void *schedule_do(void *arg)
     return ERR_NOERROR;
 }
 
+void schedule_init(feng *srv)
+{    
+    int i;
+    schedule_list *sched = g_new(schedule_list, ONE_FORK_MAX_CONNECTION);
+
+    for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
+        sched[i].rtp_session = NULL;
+        sched[i].play_action = NULL;
+        sched[i].valid = 0;
+	sched[i].mux = g_mutex_new();
+    }
+
+    srv->sched = sched;
+
+    g_thread_create(schedule_do, srv, FALSE, NULL);
+
+    return ERR_NOERROR;
+}

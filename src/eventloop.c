@@ -342,17 +342,6 @@ static void interleaved_close_fds(gpointer element, gpointer user_data)
   g_free(intlvd);
 }
 
-static void rtp_session_remove_schedule(gpointer element, gpointer user_data)
-{
-  RTP_session *p = (RTP_session*)element;
-  RTSP_session *q = (RTSP_session*)user_data;
-  
-  // Release the scheduler entry
-  schedule_remove(p);
-  
-  q->rtp_sessions = g_slist_remove(q->rtp_sessions, p);
-}
-
 /**
  * Handle established connection and clean up in case of unexpected
  * disconnection
@@ -390,7 +379,8 @@ static void established_each_connection(gpointer data, gpointer user_data)
 #endif
 
     // Release all RTP sessions
-    g_slist_foreach(p->session->rtp_sessions, rtp_session_remove_schedule, p->session);
+    g_slist_foreach(p->session->rtp_sessions, schedule_remove, NULL);
+    g_slist_free(p->session->rtp_sessions);
 
     // Close connection                     
     //close(p->session->fd);

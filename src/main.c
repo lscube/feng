@@ -322,11 +322,7 @@ int main(int argc, char **argv)
 
     if (!g_thread_supported ()) g_thread_init (NULL);
 
-    if (schedule_init(srv) == ERR_FATAL) {
-        fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.");
-        fprintf(stderr, "[fatal] Can't start scheduler. Server is aborting.\n");
-        return 1;
-    }
+    schedule_init(srv);
 
     g_thread_create(mediathread, NULL, FALSE, NULL);
 
