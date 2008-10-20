@@ -49,7 +49,7 @@ static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
     return ERR_NOERROR;
 }
 
-void rtp_session_pause(gpointer element, gpointer user_data)
+static void rtp_session_pause(gpointer element, gpointer user_data)
 {
   RTP_session *r = (RTP_session *)element;
 
