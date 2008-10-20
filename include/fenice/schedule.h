@@ -40,13 +40,6 @@ typedef struct play_args {
     double end_time;
 } play_args;
 
-typedef struct schedule_list {
-    GMutex *mux;
-    int valid;
-    RTP_session *rtp_session;
-    RTP_play_action play_action;
-} schedule_list;
-
 void schedule_init(feng *srv);
 
 int schedule_add(RTP_session * rtp_session);

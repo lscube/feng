@@ -37,7 +37,6 @@
 #include <pwd.h>
 
 typedef struct feng {
-    struct schedule_list *sched;
 /**
  * @name lighttpd-alike preferences
  * lemon based, lighttpd alike preferences

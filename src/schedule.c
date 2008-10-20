@@ -31,11 +31,19 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+typedef struct schedule_list {
+    GMutex *mux;
+    int valid;
+    RTP_session *rtp_session;
+    RTP_play_action play_action;
+} schedule_list;
+
+static struct schedule_list *sched;
+
 int schedule_add(RTP_session *rtp_session)
 {
     int i;
     feng *srv = rtp_session->srv;
-    schedule_list *sched = srv->sched;
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
     g_mutex_lock(sched[i].mux);
         if (!sched[i].valid) {
@@ -54,7 +62,6 @@ int schedule_add(RTP_session *rtp_session)
 
 int schedule_remove(RTP_session *session, void *unused)
 {
-    schedule_list *sched = session->srv->sched;
     int id = session->sched_id;
     g_mutex_lock(sched[id].mux);
     sched[id].valid = 0;
@@ -130,7 +137,6 @@ static void *schedule_do(void *arg)
     unsigned utime = SCHEDULER_TIMING;
     double now;
     feng *srv = arg;
-    schedule_list *sched = srv->sched;
 
     do {
       // Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
@@ -194,7 +200,7 @@ static void *schedule_do(void *arg)
 void schedule_init(feng *srv)
 {    
     int i;
-    schedule_list *sched = g_new(schedule_list, ONE_FORK_MAX_CONNECTION);
+    sched = g_new(schedule_list, ONE_FORK_MAX_CONNECTION);
 
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
         sched[i].rtp_session = NULL;
@@ -202,8 +208,6 @@ void schedule_init(feng *srv)
         sched[i].valid = 0;
 	sched[i].mux = g_mutex_new();
     }
-
-    srv->sched = sched;
 
     g_thread_create(schedule_do, srv, FALSE, NULL);
 }
@@ -220,7 +224,6 @@ RTP_session *schedule_find_multicast(feng *srv, const char *mrl)
 {
   int i;
   RTP_session *rtp_s = NULL;
-  schedule_list *sched = srv->sched;
 
   for (i = 0; !rtp_s && i<ONE_FORK_MAX_CONNECTION; ++i) {
     g_mutex_lock(sched[i].mux);
