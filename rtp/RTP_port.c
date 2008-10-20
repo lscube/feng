@@ -27,6 +27,9 @@
 
 #include <fenice/rtp.h>
 
+static int start_port; //!< initial rtp port
+static int *port_pool; //!< list of allocated ports
+
 /**
  * Initializes the pool of ports and the initial port from the given one
  * @param port The first port from which to start allocating connections
@@ -34,10 +37,10 @@
 void RTP_port_pool_init(feng *srv, int port)
 {
     int i;
-    srv->start_port = port;
-    srv->port_pool = g_new(int, ONE_FORK_MAX_CONNECTION);
+    start_port = port;
+    port_pool = g_new(int, ONE_FORK_MAX_CONNECTION);
     for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i) {
-        srv->port_pool[i] = i + srv->start_port;
+        port_pool[i] = i + start_port;
     }
 }
 
@@ -51,11 +54,11 @@ int RTP_get_port_pair(feng *srv, port_pair * pair)
     int i;
 
     for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i) {
-        if (srv->port_pool[i] != 0) {
+        if (port_pool[i] != 0) {
             pair->RTP =
-                (srv->port_pool[i] - srv->start_port) * 2 + srv->start_port;
+                (port_pool[i] - start_port) * 2 + start_port;
             pair->RTCP = pair->RTP + 1;
-            srv->port_pool[i] = 0;
+            port_pool[i] = 0;
             return ERR_NOERROR;
         }
     }
@@ -71,9 +74,9 @@ int RTP_release_port_pair(feng *srv, port_pair * pair)
 {
     int i;
     for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i) {
-        if (srv->port_pool[i] == 0) {
-            srv->port_pool[i] =
-                (pair->RTP - srv->start_port) / 2 + srv->start_port;
+        if (port_pool[i] == 0) {
+            port_pool[i] =
+                (pair->RTP - start_port) / 2 + start_port;
             return ERR_NOERROR;
         }
     }
