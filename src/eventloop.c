@@ -27,12 +27,55 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/select.h>
 #include <unistd.h>
 
 #include "eventloop.h"
 #include <fenice/utils.h>
 
 #include <fenice/schedule.h>
+
+static GPtrArray *listen_socks;        //!< listen sockets
+static fd_set rset;
+static fd_set wset;
+static int max_fd;
+
+/**
+ * Bind to the defined listening port
+ */
+
+int feng_bind_port(char *host, char *port, specific_config *s)
+{
+    int is_sctp = s->is_sctp;
+    Sock *sock;
+
+    if (is_sctp)
+        sock = Sock_bind(host, port, NULL, SCTP, NULL);
+    else
+        sock = Sock_bind(host, port, NULL, TCP, NULL);
+    if(!sock) {
+        fnc_log(FNC_LOG_ERR,"Sock_bind() error for port %s.", port);
+        fprintf(stderr,
+                "[fatal] Sock_bind() error in main() for port %s.\n",
+                port);
+        return 1;
+    }
+
+    fnc_log(FNC_LOG_INFO, "Listening to port %s (%s) on %s",
+            port,
+            (is_sctp? "SCTP" : "TCP"),
+            ((host == NULL)? "all interfaces" : host));
+
+    g_ptr_array_add(listen_socks, sock);
+
+    if(Sock_listen(sock, SOMAXCONN)) {
+        fnc_log(FNC_LOG_ERR, "Sock_listen() error for TCP socket.");
+        fprintf(stderr, "[fatal] Sock_listen() error for TCP socket.\n");
+        return 1;
+    }
+
+    return 0;
+}
 
 static inline
 int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
@@ -83,7 +126,7 @@ static void interleaved_read(gpointer element, gpointer user_data)
     struct sctp_sndrcvinfo sctp_info;
 #endif
 
-  if ( FD_ISSET(Sock_fd(intlvd->rtcp_local), &rtsp->srv->rset) ) {
+  if ( FD_ISSET(Sock_fd(intlvd->rtcp_local), &rset) ) {
     if ( (n = Sock_read(intlvd->rtcp_local, buffer, RTSP_BUFFERSIZE, NULL, 0)) < 0) {
       fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
       return;
@@ -114,7 +157,7 @@ static void interleaved_read(gpointer element, gpointer user_data)
       break;
     }
   }
-  if ( FD_ISSET(Sock_fd(intlvd->rtp_local), &rtsp->srv->rset) ) {
+  if ( FD_ISSET(Sock_fd(intlvd->rtp_local), &rset) ) {
     if ( (n = Sock_read(intlvd->rtp_local, buffer,
                         RTSP_BUFFERSIZE, NULL, 0)) < 0) {
       // if ( (n = read(intlvd->rtp_fd, intlvd->out_buffer, sizeof(intlvd->out_buffer))) < 0) {
@@ -154,7 +197,7 @@ static void rtp_session_read(gpointer element, gpointer user_data)
   RTP_session *p = (RTP_session*)element;
   
   if ( (p->transport.rtcp_sock) &&
-       FD_ISSET(Sock_fd(p->transport.rtcp_sock), &p->srv->rset)) {
+       FD_ISSET(Sock_fd(p->transport.rtcp_sock), &rset)) {
     // There are RTCP packets to read in
     if (RTP_recv(p, rtcp_proto) < 0) {
       fnc_log(FNC_LOG_VERBOSE,
@@ -176,13 +219,13 @@ static int rtsp_server(RTSP_buffer * rtsp)
     if (rtsp == NULL) {
         return ERR_NOERROR;
     }
-    if (FD_ISSET(Sock_fd(rtsp->sock), &rtsp->srv->wset)) { // first of all: there is some data to send?
+    if (FD_ISSET(Sock_fd(rtsp->sock), &wset)) { // first of all: there is some data to send?
         if ( (n = RTSP_send(rtsp)) < 0) {
 //            send_reply(500, NULL, rtsp); FIXME
             return ERR_GENERIC;// internal server error
         }
     }
-    if (FD_ISSET(Sock_fd(rtsp->sock), &rtsp->srv->rset)) {
+    if (FD_ISSET(Sock_fd(rtsp->sock), &rset)) {
         // There are RTSP or RTCP packets to read in
         memset(buffer, 0, sizeof(buffer));
         n = rtsp_sock_read(rtsp->sock, &m, buffer, sizeof(buffer) - 1);
@@ -240,16 +283,15 @@ static int rtsp_server(RTSP_buffer * rtsp)
 
 static void interleaved_set_fds(gpointer element, gpointer user_data)
 {
-  RTSP_buffer *rtsp = (RTSP_buffer *)user_data;
   RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
 
   if (intlvd->rtp_local) {
-    FD_SET(Sock_fd(intlvd->rtp_local), &rtsp->srv->rset);
-    rtsp->srv->max_fd = MAX(rtsp->srv->max_fd, Sock_fd(intlvd->rtp_local));
+    FD_SET(Sock_fd(intlvd->rtp_local), &rset);
+    max_fd = MAX(max_fd, Sock_fd(intlvd->rtp_local));
   }
   if (intlvd->rtcp_local) {
-    FD_SET(Sock_fd(intlvd->rtcp_local), &rtsp->srv->rset);
-    rtsp->srv->max_fd = MAX(rtsp->srv->max_fd, Sock_fd(intlvd->rtcp_local));
+    FD_SET(Sock_fd(intlvd->rtcp_local), &rset);
+    max_fd = MAX(max_fd, Sock_fd(intlvd->rtcp_local));
   }
 }
 
@@ -263,9 +305,9 @@ static void rtp_session_set_fd(gpointer element, gpointer user_data)
     q->cur_state = READY_STATE;
     /* TODO: RTP struct to be freed */
   } else if (p->transport.rtcp_sock) {
-    FD_SET(Sock_fd(p->transport.rtcp_sock), &p->srv->rset);
-    p->srv->max_fd =
-      MAX(p->srv->max_fd, Sock_fd(p->transport.rtcp_sock));
+    FD_SET(Sock_fd(p->transport.rtcp_sock), &rset);
+    max_fd =
+      MAX(max_fd, Sock_fd(p->transport.rtcp_sock));
   }
 }
 
@@ -276,16 +318,15 @@ static void rtp_session_set_fd(gpointer element, gpointer user_data)
 static void established_each_fd(gpointer data, gpointer user_data)
 {
   RTSP_buffer *rtsp = (RTSP_buffer*)data;
-  feng *srv = rtsp->srv;
 
   // FD used for RTSP connection
-  FD_SET(Sock_fd(rtsp->sock), &srv->rset);
-  srv->max_fd = MAX(srv->max_fd, Sock_fd(rtsp->sock));
+  FD_SET(Sock_fd(rtsp->sock), &rset);
+  max_fd = MAX(max_fd, Sock_fd(rtsp->sock));
   if (g_async_queue_length(rtsp->out_queue) > 0) {
-    FD_SET(Sock_fd(rtsp->sock), &srv->wset);
+    FD_SET(Sock_fd(rtsp->sock), &wset);
   }
   // Local FDS for interleaved trasmission
-  g_slist_foreach(rtsp->interleaved, interleaved_set_fds, rtsp);
+  g_slist_foreach(rtsp->interleaved, interleaved_set_fds, NULL);
 
   // RTCP input
   if ( rtsp->session )
@@ -409,10 +450,9 @@ static void add_client(feng *srv, Sock *client_sock)
 static void add_sock_fd(gpointer data, gpointer user_data)
 {
     Sock *sock = data;
-    feng *srv = user_data;
 
-    FD_SET(Sock_fd(sock), &srv->rset);
-    srv->max_fd = MAX(Sock_fd(sock), srv->max_fd);
+    FD_SET(Sock_fd(sock), &rset);
+    max_fd = MAX(Sock_fd(sock), max_fd);
 }
 
 
@@ -439,7 +479,7 @@ static void incoming_connection(gpointer data, gpointer user_data)
     Sock *client_sock = NULL;
     GSList *p = NULL;
 
-    if (FD_ISSET(Sock_fd(sock), &srv->rset)) {
+    if (FD_ISSET(Sock_fd(sock), &rset)) {
         client_sock = Sock_accept(sock, NULL);
     }
 
@@ -469,6 +509,13 @@ static void incoming_connection(gpointer data, gpointer user_data)
 }
 
 /**
+ * @brief Initialise data structure needed for eventloop
+ */
+void eventloop_init() {
+  listen_socks = g_ptr_array_new();
+}
+
+/**
  * Main loop waiting for clients
  * @param srv server instance variable.
  */
@@ -476,18 +523,18 @@ static void incoming_connection(gpointer data, gpointer user_data)
 void eventloop(feng *srv)
 {
     //Init of scheduler
-    FD_ZERO(&srv->rset);
-    FD_ZERO(&srv->wset);
+    FD_ZERO(&rset);
+    FD_ZERO(&wset);
 
     if (srv->conn_count != -1) {
-      g_ptr_array_foreach(srv->listen_socks, add_sock_fd, srv);
+      g_ptr_array_foreach(listen_socks, add_sock_fd, NULL);
     }
 
     /* Add all sockets of all sessions to rset and wset */
     g_slist_foreach(srv->clients, established_each_fd, NULL);
 
     /* Wait for connections */
-    if (select(srv->max_fd + 1, &srv->rset, &srv->wset, NULL, NULL) < 0) {
+    if (select(max_fd + 1, &rset, &wset, NULL, NULL) < 0) {
         fnc_log(FNC_LOG_ERR, "select error in eventloop(). %s\n",
                 strerror(errno));
         /* Maybe we have to force exit here*/
@@ -498,7 +545,19 @@ void eventloop(feng *srv)
 
     /* handle new connections */
     if (srv->conn_count != -1) {
-      g_ptr_array_foreach(srv->listen_socks, incoming_connection, srv);
+      g_ptr_array_foreach(listen_socks, incoming_connection, srv);
     }
 }
 
+static void free_sock(gpointer data, gpointer user_data)
+{
+    Sock_close(data);
+}
+
+/**
+ * @brief Cleanup data structure needed by the eventloop
+ */
+void eventloop_cleanup() {
+  g_ptr_array_foreach(listen_socks, free_sock, NULL);
+  g_ptr_array_free(listen_socks, FALSE); // XXX Socks aren't g_mallocated yet
+}

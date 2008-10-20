@@ -93,43 +93,6 @@ static void feng_drop_privs(feng *srv)
         }
     }
 }
-/**
- * Bind to the defined listening port
- */
-
-static int feng_bind_port(feng *srv,
-                          char *host, char *port, specific_config *s)
-{
-    int is_sctp = s->is_sctp;
-    Sock *sock;
-
-    if (is_sctp)
-        sock = Sock_bind(host, port, NULL, SCTP, NULL);
-    else
-        sock = Sock_bind(host, port, NULL, TCP, NULL);
-    if(!sock) {
-        fnc_log(FNC_LOG_ERR,"Sock_bind() error for port %s.", port);
-        fprintf(stderr,
-                "[fatal] Sock_bind() error in main() for port %s.\n",
-                port);
-        return 1;
-    }
-
-    fnc_log(FNC_LOG_INFO, "Listening to port %s (%s) on %s",
-            port,
-            (is_sctp? "SCTP" : "TCP"),
-            ((host == NULL)? "all interfaces" : host));
-
-    g_ptr_array_add(srv->listen_socks, sock);
-
-    if(Sock_listen(sock, SOMAXCONN)) {
-        fnc_log(FNC_LOG_ERR, "Sock_listen() error for TCP socket.");
-        fprintf(stderr, "[fatal] Sock_listen() error for TCP socket.\n");
-        return 1;
-    }
-
-    return 0;
-}
 
 static int feng_bind_ports(feng *srv)
 {
@@ -137,7 +100,7 @@ static int feng_bind_ports(feng *srv)
     char *host = srv->srvconf.bindhost->ptr;
     char *port = g_strdup_printf("%d", srv->srvconf.port);
 
-    if ((err = feng_bind_port(srv, host, port, srv->config_storage[0]))) {
+    if ((err = feng_bind_port(host, port, srv->config_storage[0]))) {
         g_free(port);
         return err;
     }
@@ -179,7 +142,7 @@ static int feng_bind_ports(feng *srv)
 
         port++;
 
-        if (feng_bind_port(srv, host, port, s)) return 1;
+        if (feng_bind_port(host, port, s)) return 1;
     }
 
     return 0;
@@ -222,7 +185,8 @@ static void feng_free(feng* srv)
     CLEAN(config_touched);
     CLEAN(srvconf.modules);
 #undef CLEAN
-    g_ptr_array_free(srv->listen_socks, FALSE); // XXX Socks aren't g_mallocated yet
+
+    eventloop_cleanup();
 }
 
 static void fncheader()
@@ -329,15 +293,9 @@ static feng *feng_alloc(void)
     CLEAN(srvconf.modules);
 #undef CLEAN
 
-    srv->listen_socks = g_ptr_array_new();
     srv->clients = NULL;
 
     return srv;
-}
-
-static void free_sock(gpointer data, gpointer user_data)
-{
-    Sock_close(data);
 }
 
 int main(int argc, char **argv)
@@ -353,6 +311,9 @@ int main(int argc, char **argv)
     config_set_defaults(srv);
 
     feng_handle_signals(srv);
+
+    /* This goes before feng_bind_ports */
+    eventloop_init();
 
     if (feng_bind_ports(srv))
         return 1;
@@ -382,7 +343,7 @@ int main(int argc, char **argv)
         eventloop(srv);
     }
 
-    g_ptr_array_foreach(srv->listen_socks, free_sock, NULL);
+    eventloop_cleanup();
 
     return 0;
 }

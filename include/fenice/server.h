@@ -35,19 +35,8 @@
 #include <netembryo/wsocket.h>
 #include <glib.h>
 #include <pwd.h>
-#include <sys/select.h>
 
 typedef struct feng {
-/** 
- * @name listening sockets
- * listening sockets
- */
-//@{
-    GPtrArray *listen_socks;        //!< listen sockets
-    fd_set rset;
-    fd_set wset;
-    int max_fd;
-//@}
     struct schedule_list *sched;
 /**
  * @name lighttpd-alike preferences
@@ -82,7 +71,6 @@ typedef struct feng {
      */
     int num_conn;               //!< number of active connections
     int conn_count;             //!< number of active connections (FIXME)
-    int child_count;            //!< unused
     int stop_schedule;          //!< to be refactored away
 //@}
 } feng;
