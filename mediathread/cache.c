@@ -40,11 +40,8 @@ static int read_from_device(int fd, void *buf, size_t nbytes);/*not implemented 
 static Cache *create_cache(stream_type type)
 {
     uint32_t size;
-    Cache *c;
+    Cache *c = g_new0(Cache, 1);
     
-    if ( !(c=g_new0(Cache, 1)) )
-        return NULL;
-
     switch(type) {
         case st_file:
             size=CACHE_FILE_SIZE;

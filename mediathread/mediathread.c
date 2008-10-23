@@ -93,13 +93,7 @@ static inline void mt_dispose_event(mt_event_item *ev) {
 }
 
 static int mt_add_event(mt_event_id id, void **args) {
-    mt_event_item *item;
-
-    if (!(item = g_new0(mt_event_item, 1))) {
-        mt_dispose_event_args(id, args);
-        fnc_log(FNC_LOG_FATAL, "[MT] Allocation failure in mt_create_event()");
-        return ERR_GENERIC;
-    }
+    mt_event_item *item = g_new0(mt_event_item, 1);
 
     fnc_log(FNC_LOG_VERBOSE, "[MT] Created event: %#x", item);
 

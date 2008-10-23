@@ -270,11 +270,7 @@ Resource *r_open(struct feng *srv, char *root, char *n)
 
 // allocation of all data structures
 
-    if( !(r = g_new0(Resource, 1)) ) {
-        fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-        istream_close(i_stream);
-        return NULL;
-    }
+    r = g_new0(Resource, 1);
 
 // we use MObject_new: that will alloc memory and exits the program
 // if something goes wrong
@@ -415,10 +411,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     if(r->num_tracks>=MAX_TRACKS)
         return NULL;
 
-    if( !(t=g_new0(Track, 1)) ) {
-        fnc_log(FNC_LOG_FATAL, "Memory allocation problems\n");
-        return NULL;
-    }
+    t = g_new0(Track, 1);
 
     if (info)
         t->info = MObject_dup(info, sizeof(TrackInfo));

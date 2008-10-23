@@ -140,19 +140,15 @@ static RTSP_Error tcp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     RTSP_interleaved *intlvd;
     Sock *sock_pair[2];
 
-    if ( !(intlvd = g_new0(RTSP_interleaved, 1)) ) {
-        set_RTSP_Error(&error, 500, "");
-        return error;
-    }
-
     // RTP local sockpair
     if ( Sock_socketpair(sock_pair) < 0) {
         fnc_log(FNC_LOG_ERR,
                 "Cannot create AF_LOCAL socketpair for rtp\n");
         set_RTSP_Error(&error, 500, "");
-        g_free(intlvd);
         return error;
     }
+
+    intlvd = g_new0(RTSP_interleaved, 1);
 
     transport->rtp_sock = sock_pair[0];
     intlvd->rtp_local = sock_pair[1];
@@ -193,15 +189,9 @@ static RTSP_Error sctp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     RTSP_interleaved *intlvd;
     Sock *sock_pair[2];
 
-    if ( !(intlvd = g_new0(RTSP_interleaved, 1)) ) {
-        set_RTSP_Error(&error, 500, "");
-        return error;
-    }
-
     if ( !((rtp_ch < MAX_SCTP_STREAMS) && (rtcp_ch < MAX_SCTP_STREAMS))) {
         fnc_log(FNC_LOG_ERR, "Stream id over limit\n");
         set_RTSP_Error(&error, 500, "Stream id over limit");
-        g_free(intlvd);
         return error;
     }
     // RTP local sockpair
@@ -209,9 +199,10 @@ static RTSP_Error sctp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
         fnc_log(FNC_LOG_ERR,
                 "Cannot create AF_LOCAL socketpair for rtp\n");
         set_RTSP_Error(&error, 500, "");
-        g_free(intlvd);
         return error;
     }
+
+    intlvd = g_new0(RTSP_interleaved, 1);
 
     transport->rtp_sock = sock_pair[0];
     intlvd->rtp_local = sock_pair[1];

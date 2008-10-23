@@ -61,12 +61,7 @@ static void is_setfl(InputStream *, istream_flags);
 /*Interface*/
 InputStream *istream_open(char *mrl)
 {
-	InputStream *is;
-
-	if ( !(is=g_new0(InputStream, 1)) ) {
-		fnc_log(FNC_LOG_FATAL,"Could not allocate memory for InputStream\n");
-		return NULL;
-	}
+	InputStream *is = g_new0(InputStream, 1);
 
 	is->fd = -1;
 	if(open_mrl(mrl, is)!=ERR_NOERROR) {

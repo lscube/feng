@@ -146,9 +146,7 @@ static int ds_init(Resource * r)
         if (!(resource = r_open(srv, prefs_get_serv_root(), mrl))) {
             goto err_alloc;
         }
-        if (!(item = g_new0(edl_item_elem, 1))) {
-            goto err_alloc;
-        }
+	item = g_new0(edl_item_elem, 1);
         // set edl timescaler
         resource->timescaler = edl_timescaler;
         resource->edl = r;
@@ -174,10 +172,8 @@ static int ds_init(Resource * r)
         }
     g_list_foreach(resource->tracks, change_track_parent, r);
     } while (!feof(fd));
-
-    if (!(r->private_data = g_new0(edl_priv_data, 1))) {
-        goto err_alloc;
-    }
+    
+    r->private_data = g_new0(edl_priv_data, 1);
 
 //    r->info->duration = r_offset;
     fnc_log(FNC_LOG_DEBUG, "[ds] duration=%f", r_offset);
