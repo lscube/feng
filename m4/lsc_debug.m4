@@ -25,10 +25,16 @@ AC_DEFUN([LSC_DEBUG], [
   AC_REQUIRE([LSC_DEBUG_ENABLE])
   AC_REQUIRE([LSC_MUDFLAP])
 
+  dnl Check for warning flags, always
+  CC_CHECK_CFLAGS_APPEND([-Wall -Wwrite-strings])
+  dnl Only enable the best of the two
+  CC_CHECK_CFLAGS_APPEND([-Wformat=2 -Wformat], [break;])
+  dnl The new style is likely going to be the only supported one in the future
+  CC_CHECK_CFLAGS_APPEND([-Werror=implicit -Werror-implicit-declaration],
+                         [break;])
+
   AS_IF([test "$enable_debug" = "yes"], [
-    CC_CHECK_CFLAGS([-g], [CFLAGS="$CFLAGS -g"])
-    CC_CHECK_CFLAGS([-ggdb], [CFLAGS="$CFLAGS -ggdb"])
-    CC_CHECK_CFLAGS([-Wall], [CFLAGS="$CFLAGS -Wall"])
+    CC_CHECK_CFLAGS_APPEND([-ggdb -g], [break;])
     AC_DEFINE(ENABLE_DEBUG, 1,[Debug enabled])
   ], [
     AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
