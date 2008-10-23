@@ -11,7 +11,6 @@ libmediath_a_SOURCES =	cache.c \
 			parser/mpeg12.c \
 			parser/mpegaudio.c \
 			parser/mpeg2t.c \
-			parser/mpeg.h \
 			demuxer/demuxer_sd.c \
 			demuxer/demuxer_ds.c
 
