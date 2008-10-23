@@ -42,10 +42,10 @@ void *MObject_calloc(size_t size)
 
 void *MObject_dup(void *obj, size_t size)
 {
-    MObject *new_obj;
+    MObject *new_obj = g_malloc(size);
+    memcpy(new_obj, obj, size);
 
-    if ( (new_obj = g_memdup(obj, size)) )
-        new_obj->refs=1;
+    new_obj->refs=1;
 
     return new_obj;
 }
