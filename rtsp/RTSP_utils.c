@@ -337,7 +337,6 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
       g_string_append(reply, addon);
 
     res = bwrite(reply, rtsp);
-    g_string_free(reply, TRUE);
 
     fnc_log(FNC_LOG_ERR, "%s %d - - ", get_stat(err), err);
     log_user_agent(rtsp);
