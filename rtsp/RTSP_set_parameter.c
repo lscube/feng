@@ -38,6 +38,9 @@ static int send_set_parameter_reply(RTSP_buffer * rtsp)
 {
     GString *reply = rtsp_generate_response(451, rtsp->rtsp_cseq);
 
+    /* No body */
+    g_string_append(reply, RTSP_EL);
+
     bwrite(reply, rtsp);
 
     fnc_log(FNC_LOG_CLIENT, "451 - - ");
