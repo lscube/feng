@@ -128,9 +128,10 @@ int istream_reset(InputStream *is)
 {
     if (is) {
 #ifdef HAVE_MMAP
-        if (is->mmap_on)
-            return (int) (is->mmap_curr = 0);
-        else
+        if (is->mmap_on) {
+	    is->mmap_curr = NULL;
+  	    return 0;
+	} else
 #endif
             return (int) lseek(is->fd, 0, SEEK_SET);
     } else
