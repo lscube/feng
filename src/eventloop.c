@@ -352,6 +352,7 @@ static void established_each_connection(gpointer data, gpointer user_data)
 {
   RTSP_buffer *p = (RTSP_buffer*)data;
   feng *srv = p->srv;
+  GString *outbuf = NULL;
   
   int res;
 
@@ -397,6 +398,13 @@ static void established_each_connection(gpointer data, gpointer user_data)
   // close local fds
   g_slist_foreach(p->interleaved, interleaved_close_fds, NULL);
   g_slist_free(p->interleaved);
+
+  // Remove the output queue
+  g_async_queue_lock(p->out_queue);
+  while( (outbuf = g_async_queue_try_pop_unlocked(p->out_queue)) )
+    g_string_free(outbuf, TRUE);
+  g_async_queue_unlock(p->out_queue);
+  g_async_queue_unref(p->out_queue);
 
   // wait for 
   Sock_close(p->sock);
