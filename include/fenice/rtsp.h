@@ -156,7 +156,7 @@ int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len);
 
 void RTSP_discard_msg(RTSP_buffer * rtsp, int len);
 
-int send_reply(int err, char *addon, RTSP_buffer * rtsp);
+int send_reply(int err, const char *addon, RTSP_buffer * rtsp);
 
 #ifdef TRACE
 #define send_reply(a, b, c) \

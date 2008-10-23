@@ -328,7 +328,7 @@ void log_user_agent(RTSP_buffer * rtsp)
  *
  * @note The return value is the one from @ref bwrite function.
  */
-int send_reply(int err, char *addon, RTSP_buffer * rtsp)
+int send_reply(int err, const char *addon, RTSP_buffer * rtsp)
 {
     GString *reply = rtsp_generate_response(err, rtsp->rtsp_cseq);
     int res;
@@ -358,7 +358,7 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
  *       results in an internal server error right now.
  * @TODO The non-mediathread code needs to be audited and cleaned up.
  */
-int send_redirect_3xx(RTSP_buffer * rtsp, char *object)
+int send_redirect_3xx(RTSP_buffer * rtsp, const char *object)
 {
 #if ENABLE_MEDIATHREAD
 #warning Write mt equivalent
