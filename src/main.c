@@ -44,7 +44,7 @@
 #include "eventloop.h"
 #include <fenice/prefs.h>
 #include <fenice/utils.h>
-#include <fenice/mediathread.h>
+#include "mediathread/mediathread.h"
 #include <glib.h>
 #include <getopt.h>
 

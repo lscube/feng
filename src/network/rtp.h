@@ -28,7 +28,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netembryo/wsocket.h>
-#include <fenice/mediathread.h>
+#include "mediathread/mediathread.h"
 #include <bufferpool/bufferpool.h>
 #include <fenice/prefs.h>
 

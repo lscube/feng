@@ -29,7 +29,7 @@
 
 #include "network/rtpptdefs.h"    /*payload type definitions */
 
-#include <fenice/demuxer_module.h>
+#include "demuxer_module.h"
 
 static const DemuxerInfo info = {
     "Dynamic Edit List",

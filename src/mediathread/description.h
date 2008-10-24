@@ -23,7 +23,7 @@
 #ifndef FN_DESCRIPTION_H
 #define FN_DESCRIPTION_H
 
-#include <fenice/demuxer.h>
+#include "demuxer.h"
 
 /**
  * @file description.h

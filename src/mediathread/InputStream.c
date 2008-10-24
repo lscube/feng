@@ -39,7 +39,7 @@
 #include <unistd.h>
 
 #include <fenice/utils.h>
-#include <fenice/InputStream.h>
+#include "InputStream.h"
 #include <fenice/fnc_log.h>
 
 #ifdef HAVE_MMAP

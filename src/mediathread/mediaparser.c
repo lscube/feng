@@ -22,7 +22,7 @@
 
 #include <string.h>
 
-#include <fenice/mediaparser.h>
+#include "mediaparser.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 

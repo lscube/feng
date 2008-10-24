@@ -29,7 +29,7 @@
 #include <fenice/multicast.h>    /*is_valid_multicast_address */
 #include "network/rtpptdefs.h"    /*payload type definitions */
 
-#include <fenice/demuxer_module.h>
+#include "demuxer_module.h"
 
 /*! SD common tags */
 #define SD_STREAM           "stream"

@@ -21,10 +21,10 @@
  * */
 
 #include <string.h>
-#include <fenice/demuxer.h>
+#include "demuxer.h"
 #include <fenice/fnc_log.h>
-#include <fenice/mediaparser.h>
-#include <fenice/mediaparser_module.h>
+#include "mediaparser.h"
+#include "mediaparser_module.h"
 #include <fenice/utils.h>
 
 static const MediaParserInfo info = {

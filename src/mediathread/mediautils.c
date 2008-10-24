@@ -27,7 +27,7 @@
 #include <string.h>
 #include <glib.h>
 
-#include <fenice/mediautils.h>
+#include "mediautils.h"
 
 void *MObject_calloc(size_t size)
 {

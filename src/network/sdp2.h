@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <glib.h>
 
-#include <fenice/demuxer.h>
+#include <fenice/server.h>
 
 #define SDP2_EL "\r\n"
 #define SDP2_VERSION 0

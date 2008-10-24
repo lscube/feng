@@ -20,7 +20,7 @@
  *
  * */
 
-#include <fenice/demuxer_module.h>
+#include "demuxer_module.h"
 
 static const DemuxerInfo info = {
     "MPEG TS non-demuxer",

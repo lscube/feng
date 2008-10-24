@@ -29,7 +29,7 @@
 
 #include <glib.h>
 
-#include <fenice/InputStream.h>
+#include "InputStream.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 

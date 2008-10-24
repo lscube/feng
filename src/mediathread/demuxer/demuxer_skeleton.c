@@ -20,7 +20,7 @@
  *
  * */
 
-#include <fenice/demuxer_module.h>
+#include "demuxer_module.h"
 
 static const DemuxerInfo info = {
     "Skeleton demuxer_module",

@@ -20,20 +20,20 @@
  *  
  * */
 
-#include <fenice/demuxer.h>
+#ifndef FN_MEDIAPARSER_MODULE_H
+#define FN_MEDIAPARSER_MODULE_H
 
-#ifndef FN_DEMUXER_MODULE_H
-#define FN_DEMUXER_MODULE_H
+#include "mediaparser.h"
 
-#define FNC_LIB_DEMUXER(x) const Demuxer fnc_demuxer_##x =\
+#define INIT_PROPS properties->media_type = info.media_type;
+
+#define FNC_LIB_MEDIAPARSER(x) const MediaParser fnc_mediaparser_##x =\
 {\
 	&info, \
-	x##_probe, \
 	x##_init, \
-	x##_read_packet, \
-	x##_seek, \
+        x##_parse, \
 	x##_uninit \
 }
 
-#endif // FN_DEMUXER_MODULE_H
+#endif // FN_MEDIAPARSER_MODULE_H
 

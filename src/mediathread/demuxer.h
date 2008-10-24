@@ -26,9 +26,9 @@
 #include <glib.h>
 
 #include <fenice/utils.h>
-#include <fenice/mediautils.h>
-#include <fenice/InputStream.h>
-#include <fenice/mediaparser.h>
+#include "mediautils.h"
+#include "InputStream.h"
+#include "mediaparser.h"
 #include <bufferpool/bufferpool.h>
 #include <fenice/sdp_grammar.h>
 #include <fenice/server.h>

@@ -24,7 +24,7 @@
 #include <string.h>
 
 #include <fenice/server.h>
-#include <fenice/demuxer.h>
+#include "demuxer.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 

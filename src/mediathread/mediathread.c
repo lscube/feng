@@ -24,7 +24,7 @@
 #include <config.h>
 #endif
 
-#include <fenice/mediathread.h>
+#include "mediathread.h"
 #include <fenice/fnc_log.h>
 #include <fenice/utils.h>
 #include <time.h>

@@ -27,7 +27,7 @@
 
 #include <glib.h>
 
-#include <fenice/demuxer.h>
+#include "demuxer.h"
 #include <fenice/server.h>
 
 #define MT_BUFFERSIZE 8192

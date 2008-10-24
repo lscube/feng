@@ -33,7 +33,7 @@
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include "sdp2.h"
-#include <fenice/description.h>
+#include "mediathread/description.h"
 #include <fenice/multicast.h>
 #include <netembryo/wsocket.h>
 #include <netembryo/url.h>

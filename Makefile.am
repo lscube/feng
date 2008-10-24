@@ -3,21 +3,13 @@ SUBDIRS =	conf \
 
 noinst_HEADERS = \
 	include/fenice/utils.h \
-	include/fenice/mediaparser.h \
-	include/fenice/demuxer_module.h \
-	include/fenice/description.h \
 	include/fenice/fnc_log.h \
-	include/fenice/mediaparser_module.h \
 	include/fenice/multicast.h \
 	include/fenice/prefs.h \
 	include/fenice/schedule.h \
 	include/fenice/server.h \
-	include/fenice/InputStream.h \
-	include/fenice/mediathread.h \
 	include/fenice/debug.h \
 	include/fenice/sdp_grammar.h \
-	include/fenice/demuxer.h \
-	include/fenice/mediautils.h \
 	include/conf.h \
 	include/settings.h \
 	include/stream.h \

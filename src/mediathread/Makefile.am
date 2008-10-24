@@ -4,10 +4,16 @@ noinst_LIBRARIES = libmediath.a
 
 libmediath_a_SOURCES =	cache.c \
 			demuxer.c \
+			demuxer.h demuxer_module.h \
+			description.h \
 			InputStream.c \
+			InputStream.h \
 			mediaparser.c \
+			mediaparser.h mediaparser_module.h \
 			mediathread.c \
+			mediathread.h \
 			mediautils.c \
+			mediautils.h \
 			parser/mpeg12.c \
 			parser/mpegaudio.c \
 			parser/mpeg2t.c \

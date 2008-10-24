@@ -23,9 +23,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <netinet/in.h>
-#include <fenice/demuxer.h>
-#include <fenice/mediaparser.h>
-#include <fenice/mediaparser_module.h>
+#include "demuxer.h"
+#include "mediaparser.h"
+#include "mediaparser_module.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 #include <fenice/debug.h>

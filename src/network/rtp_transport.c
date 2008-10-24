@@ -24,9 +24,9 @@
 #include <config.h>
 
 #include "rtp.h"
-#include <fenice/demuxer.h>
 #include <bufferpool/bufferpool.h>
-#include <fenice/mediathread.h>
+#include "mediathread/mediathread.h"
+#include "mediathread/demuxer.h"
 #include <fenice/fnc_log.h>
 
 #if ENABLE_DUMP

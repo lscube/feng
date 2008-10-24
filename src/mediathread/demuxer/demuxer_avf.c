@@ -28,7 +28,7 @@
 
 #include "network/rtpptdefs.h"	/*payload type definitions */
 
-#include <fenice/demuxer_module.h>
+#include "demuxer_module.h"
 
 #include <libavformat/avformat.h>
 

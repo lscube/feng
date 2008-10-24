@@ -25,7 +25,7 @@
 #include <glib.h>
 
 #include <bufferpool/bufferpool.h>
-#include <fenice/mediautils.h>
+#include "mediautils.h"
 #include <fenice/sdp_grammar.h>
 
 // return errors
