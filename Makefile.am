@@ -4,7 +4,6 @@ SUBDIRS =	conf \
 noinst_HEADERS = \
 	include/fenice/utils.h \
 	include/fenice/mediaparser.h \
-	include/fenice/sdp2.h \
 	include/fenice/demuxer_module.h \
 	include/fenice/description.h \
 	include/fenice/fnc_log.h \

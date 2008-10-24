@@ -38,7 +38,7 @@
 
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
-#include <fenice/sdp2.h>
+#include "sdp2.h"
 #include <fenice/fnc_log.h>
 
 #undef send_reply

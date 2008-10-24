@@ -32,7 +32,7 @@
 #include <netembryo/wsocket.h>
 #include "rtp.h"
 #include "rtcp.h"
-#include <fenice/sdp2.h>
+#include "sdp2.h"
 #include <fenice/schedule.h>
 
 #ifdef HAVE_LIBSCTP

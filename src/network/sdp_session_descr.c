@@ -32,7 +32,7 @@
 
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
-#include <fenice/sdp2.h>
+#include "sdp2.h"
 #include <fenice/description.h>
 #include <fenice/multicast.h>
 #include <netembryo/wsocket.h>
