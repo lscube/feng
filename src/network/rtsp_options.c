@@ -20,30 +20,31 @@
  *  
  * */
 
-/** @file RTSP_set_parameter.c
- * @brief Contains SET_PARAMETER method and reply handlers
+/** @file RTSP_options.c
+ * @brief Contains OPTIONS method and reply handlers
  */
 
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
 
-#include <RTSP_utils.h>
+#include <rtsp_utils.h>
 
 /**
- * Sends the reply for the set_parameter method
+ * Sends the reply for the options method
  * @param rtsp the buffer where to write the reply
  * @return ERR_NOERROR
  */
-static int send_set_parameter_reply(RTSP_buffer * rtsp)
+static int send_options_reply(RTSP_buffer * rtsp)
 {
-    GString *reply = rtsp_generate_response(451, rtsp->rtsp_cseq);
+    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, 0);
 
-    /* No body */
+    g_string_append(reply,
+		    "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN,SET_PARAMETER" RTSP_EL);
     g_string_append(reply, RTSP_EL);
 
     bwrite(reply, rtsp);
 
-    fnc_log(FNC_LOG_CLIENT, "451 - - ");
+    fnc_log(FNC_LOG_CLIENT, "200 - - ");
 
     return ERR_NOERROR;
 }
@@ -53,7 +54,7 @@ static int send_set_parameter_reply(RTSP_buffer * rtsp)
  * @param rtsp the buffer for which to handle the method
  * @return ERR_NOERROR
  */
-int RTSP_set_parameter(RTSP_buffer * rtsp)
+int RTSP_options(RTSP_buffer * rtsp)
 {
     char url[255];
     char method[255];
@@ -67,7 +68,7 @@ int RTSP_set_parameter(RTSP_buffer * rtsp)
     sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, url, ver);
 
     fnc_log(FNC_LOG_INFO, "%s %s %s ", method, url, ver);
-    send_set_parameter_reply(rtsp);
+    send_options_reply(rtsp);
     log_user_agent(rtsp); // See User-Agent 
 
     return ERR_NOERROR;

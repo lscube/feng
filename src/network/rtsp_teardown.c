@@ -26,7 +26,7 @@
 
 #include <inttypes.h> /* For PRIu64 */
 
-#include <RTSP_utils.h>
+#include <rtsp_utils.h>
 
 #include <fenice/rtsp.h>
 #include <fenice/prefs.h>

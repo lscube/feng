@@ -19,7 +19,7 @@
  *
  */
 
-/** @file RTSP_utils.h
+/** @file rtsp_utils.h
  * @brief Contains definitions of various RTSP utility structures and functions
  *
  * Contains definition of RTSP structures and constants for error management,

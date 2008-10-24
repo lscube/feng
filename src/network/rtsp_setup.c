@@ -33,7 +33,7 @@
 #include <fenice/multicast.h>
 #include <fenice/fnc_log.h>
 #include <fenice/schedule.h>
-#include <RTSP_utils.h>
+#include <rtsp_utils.h>
 
 
 /**

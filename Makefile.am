@@ -1,8 +1,4 @@
-SUBDIRS =	mediathread \
-		conf \
-		rtp \
-		rtcp \
-		rtsp \
+SUBDIRS =	conf \
 		src
 
 noinst_HEADERS = \

@@ -35,7 +35,7 @@
 #include <math.h>
 #include <netembryo/url.h>
 #include <glib.h>
-#include <RTSP_utils.h>
+#include <rtsp_utils.h>
 
 static int get_utc(struct tm *t, char *b)
 {

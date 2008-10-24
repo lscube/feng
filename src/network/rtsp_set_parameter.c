@@ -20,81 +20,54 @@
  *  
  * */
 
-/** @file RTSP_pause.c
- * @brief Contains PAUSE method and reply handlers
+/** @file RTSP_set_parameter.c
+ * @brief Contains SET_PARAMETER method and reply handlers
  */
-
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
 
 #include <fenice/rtsp.h>
 #include <fenice/fnc_log.h>
 
-#include <RTSP_utils.h>
+#include <rtsp_utils.h>
 
 /**
- * Sends the reply for the pause method
+ * Sends the reply for the set_parameter method
  * @param rtsp the buffer where to write the reply
- * @param rtsp_session the session for which to generate the reply
  * @return ERR_NOERROR
  */
-static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
+static int send_set_parameter_reply(RTSP_buffer * rtsp)
 {
-    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, rtsp_session->session_id);
+    GString *reply = rtsp_generate_response(451, rtsp->rtsp_cseq);
 
     /* No body */
     g_string_append(reply, RTSP_EL);
 
     bwrite(reply, rtsp);
 
-    fnc_log(FNC_LOG_CLIENT, "200 - - ");
+    fnc_log(FNC_LOG_CLIENT, "451 - - ");
 
     return ERR_NOERROR;
 }
 
-static void rtp_session_pause(gpointer element, gpointer user_data)
-{
-  RTP_session *r = (RTP_session *)element;
-
-  r->pause = 1;
-}
-
 /**
- * RTSP PAUSE method handler
+ * RTSP OPTIONS method handler
  * @param rtsp the buffer for which to handle the method
  * @return ERR_NOERROR
  */
-int RTSP_pause(RTSP_buffer * rtsp)
+int RTSP_set_parameter(RTSP_buffer * rtsp)
 {
-    Url url;
-    guint64 session_id;
-    RTSP_session *s;
+    char url[255];
+    char method[255];
+    char ver[255];
 
     RTSP_Error error;
 
     if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
         goto error_management;
-    // Extract and validate the URL
-    if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
-	goto error_management;
-    if ( (error = get_session_id(rtsp, &session_id)).got_error ) // Get Session id
-        goto error_management;
 
-    s = rtsp->session;
-    if (s == NULL) {
-        send_reply(415, NULL, rtsp);    // Internal server error
-        return ERR_GENERIC;
-    }
-    if (s->session_id != session_id) {
-        send_reply(454, NULL, rtsp);    /* Session Not Found */
-        return ERR_NOERROR;
-    }
-    
-    g_slist_foreach(s->rtp_sessions, rtp_session_pause, NULL);
+    sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, url, ver);
 
-    fnc_log(FNC_LOG_INFO, "PAUSE %s://%s/%s RTSP/1.0 ",
-	    url.protocol, url.hostname, url.path);
-    send_pause_reply(rtsp, s);
+    fnc_log(FNC_LOG_INFO, "%s %s %s ", method, url, ver);
+    send_set_parameter_reply(rtsp);
     log_user_agent(rtsp); // See User-Agent 
 
     return ERR_NOERROR;

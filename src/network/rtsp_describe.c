@@ -30,7 +30,7 @@
 #include <fenice/sdp2.h>
 #include <fenice/fnc_log.h>
 
-#include <RTSP_utils.h>
+#include <rtsp_utils.h>
 
 /**
  * Sends the reply for the describe method
