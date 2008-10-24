@@ -108,39 +108,7 @@ typedef enum {
 } RTSP_description_format;
 
 
-/**
- * @defgroup RTSP RTSP Layer
- * @{
- */
-
-RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock) ATTR_MALLOC;
-void rtsp_client_destroy(RTSP_buffer *rtsp);
-
-/** 
- * RTSP high level functions, they maps to the rtsp methods
- * @defgroup rtsp_high RTSP high level functions
- * @{
- */
-
-int RTSP_describe(RTSP_buffer * rtsp);
-
-int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session);
-
-int RTSP_play(RTSP_buffer * rtsp);
-
-int RTSP_pause(RTSP_buffer * rtsp);
-
-int RTSP_teardown(RTSP_buffer * rtsp);
-
-int RTSP_options(RTSP_buffer * rtsp);
-
-int RTSP_set_parameter(RTSP_buffer * rtsp);
-
 int RTSP_handler(RTSP_buffer * rtsp);
-
-/**
- * @}
- */
 
 #define RTSP_not_full 0
 #define RTSP_method_rcvd 1

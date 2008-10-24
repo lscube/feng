@@ -27,6 +27,38 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
+/** 
+ * RTSP high level functions, they maps to the rtsp methods
+ * @defgroup rtsp_high RTSP high level functions
+ *
+ * The declaration of these functions are in rtsp_state_machine.c
+ * because the awareness of their existance outside their own
+ * translation unit has to be limited to the state machine function
+ * itself.
+ *
+ * @{
+ */
+
+int RTSP_describe(RTSP_buffer * rtsp);
+
+int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session);
+
+int RTSP_play(RTSP_buffer * rtsp);
+
+int RTSP_pause(RTSP_buffer * rtsp);
+
+int RTSP_teardown(RTSP_buffer * rtsp);
+
+int RTSP_options(RTSP_buffer * rtsp);
+
+int RTSP_set_parameter(RTSP_buffer * rtsp);
+
+int RTSP_handler(RTSP_buffer * rtsp);
+
+/**
+ * @}
+ */
+
 /**
  * @defgroup rtsp_method_strings RTSP Method strings
  * @ingroup RTSP
