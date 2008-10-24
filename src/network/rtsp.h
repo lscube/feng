@@ -53,10 +53,14 @@
 #define RTSP_RESERVED 4096
 #define RTSP_BUFFERSIZE (65536 + RTSP_RESERVED)
 
-    /* FIXME move rtsp states to an enum? */
-#define INIT_STATE      0
-#define READY_STATE     1
-#define PLAY_STATE      2
+/**
+ * @brief state of the state machine
+ */
+enum RTSP_machine_state {
+  INIT_STATE,
+  READY_STATE,
+  PLAY_STATE
+};
 
 #define RTSP_VER "RTSP/1.0"
 
@@ -82,7 +86,7 @@ typedef struct RTSP_interleaved {
 } RTSP_interleaved;
 
 typedef struct RTSP_session {
-    int cur_state;
+    enum RTSP_machine_state cur_state;
     guint64 session_id;
     int started;
     GSList *rtp_sessions; // Of type RTP_session
