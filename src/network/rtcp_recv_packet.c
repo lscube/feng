@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <netinet/in.h>
 
-#include <fenice/rtcp.h>
+#include "rtcp.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 

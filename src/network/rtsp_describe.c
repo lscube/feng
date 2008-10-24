@@ -24,13 +24,13 @@
  * @brief Contains DESCRIBE method and reply handlers
  */
 
-#include <fenice/rtsp.h>
+#include "rtsp.h"
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include <fenice/sdp2.h>
 #include <fenice/fnc_log.h>
 
-#include <rtsp_utils.h>
+#include "rtsp_utils.h"
 
 /**
  * Sends the reply for the describe method

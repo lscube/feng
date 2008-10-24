@@ -4,7 +4,6 @@ SUBDIRS =	conf \
 noinst_HEADERS = \
 	include/fenice/utils.h \
 	include/fenice/mediaparser.h \
-	include/fenice/rtp.h \
 	include/fenice/sdp2.h \
 	include/fenice/demuxer_module.h \
 	include/fenice/description.h \
@@ -12,15 +11,11 @@ noinst_HEADERS = \
 	include/fenice/mediaparser_module.h \
 	include/fenice/multicast.h \
 	include/fenice/prefs.h \
-	include/fenice/rtcp.h \
-	include/fenice/rtpptdefs.h \
 	include/fenice/schedule.h \
 	include/fenice/server.h \
 	include/fenice/InputStream.h \
 	include/fenice/mediathread.h \
-	include/fenice/rtsp.h \
 	include/fenice/debug.h \
-	include/fenice/intnet.h \
 	include/fenice/sdp_grammar.h \
 	include/fenice/demuxer.h \
 	include/fenice/mediautils.h \

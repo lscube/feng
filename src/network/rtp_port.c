@@ -25,7 +25,7 @@
  * Port handling utility functions
  */
 
-#include <fenice/rtp.h>
+#include "rtp.h"
 
 static int start_port; //!< initial rtp port
 static int *port_pool; //!< list of allocated ports

@@ -28,12 +28,12 @@
 #include <inttypes.h>
 #include <glib.h>
 
-#include <fenice/rtsp.h>
+#include "rtsp.h"
 #include <fenice/prefs.h>
 #include <fenice/multicast.h>
 #include <fenice/fnc_log.h>
 #include <fenice/schedule.h>
-#include <rtsp_utils.h>
+#include "rtsp_utils.h"
 
 
 /**

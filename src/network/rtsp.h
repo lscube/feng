@@ -30,8 +30,8 @@
 
 #include <fenice/utils.h>
 #include <netembryo/wsocket.h>
-#include <fenice/rtp.h>
-#include <fenice/rtcp.h>
+#include "rtp.h"
+#include "rtcp.h"
 #include <fenice/sdp2.h>
 #include <fenice/schedule.h>
 

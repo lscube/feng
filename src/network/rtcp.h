@@ -23,7 +23,7 @@
 #ifndef FN_RTCP_H
 #define FN_RTCP_H
 
-#include <fenice/rtp.h>
+#include "rtp.h"
 
 typedef enum {
     SR = 200,

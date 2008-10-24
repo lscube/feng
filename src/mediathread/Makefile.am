@@ -26,4 +26,4 @@ libmediath_a_SOURCES += parser/h264.c \
 endif
 
 
-INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)
+INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)/src

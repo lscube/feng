@@ -29,13 +29,13 @@
 #include <strings.h>
 
 #include <bufferpool/bufferpool.h>
-#include <fenice/rtsp.h>
+#include "rtsp.h"
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <math.h>
 #include <netembryo/url.h>
 #include <glib.h>
-#include <rtsp_utils.h>
+#include "rtsp_utils.h"
 
 static int get_utc(struct tm *t, char *b)
 {

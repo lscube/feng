@@ -23,7 +23,7 @@
 #include <strings.h>
 #include <inttypes.h> /* For SCNu64 */
 
-#include <fenice/rtsp.h>
+#include "rtsp.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 

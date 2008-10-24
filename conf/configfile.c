@@ -48,7 +48,7 @@
 
 #include "stream.h"
 //#include "plugin.h"
-#include "fenice/rtp.h" // defaults
+#include "network/rtp.h" // defaults
 #include "configparser.h"
 #include "configfile.h"
 #include "proc_open.h"

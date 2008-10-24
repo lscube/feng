@@ -28,7 +28,7 @@
  * internal functions
  */
 
-#include <rtsp_utils.h>
+#include "rtsp_utils.h"
 
 #include <stdio.h>
 #include <string.h>

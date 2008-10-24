@@ -23,8 +23,8 @@
 #include "config.h"
 
 #include <fenice/schedule.h>
-#include <fenice/rtp.h>
-#include <fenice/rtcp.h>
+#include "network/rtp.h"
+#include "network/rtcp.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 

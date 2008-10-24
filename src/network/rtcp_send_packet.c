@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <fenice/rtcp.h>
+#include "rtcp.h"
 
 #include <fenice/utils.h>
 #include <fenice/server.h>

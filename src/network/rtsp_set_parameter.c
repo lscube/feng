@@ -24,10 +24,10 @@
  * @brief Contains SET_PARAMETER method and reply handlers
  */
 
-#include <fenice/rtsp.h>
+#include "rtsp.h"
 #include <fenice/fnc_log.h>
 
-#include <rtsp_utils.h>
+#include "rtsp_utils.h"
 
 /**
  * Sends the reply for the set_parameter method

@@ -27,7 +27,7 @@
  * internal functions
  */
 
-#include <fenice/rtsp.h>
+#include "rtsp.h"
 #include <netembryo/rtsp_errors.h>
 #include <netembryo/url.h>
 

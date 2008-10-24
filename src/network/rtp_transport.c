@@ -23,7 +23,7 @@
 
 #include <config.h>
 
-#include <fenice/rtp.h>
+#include "rtp.h"
 #include <fenice/demuxer.h>
 #include <bufferpool/bufferpool.h>
 #include <fenice/mediathread.h>

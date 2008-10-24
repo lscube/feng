@@ -27,7 +27,7 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-#include <fenice/rtpptdefs.h>    /*payload type definitions */
+#include "network/rtpptdefs.h"    /*payload type definitions */
 
 #include <fenice/demuxer_module.h>
 
