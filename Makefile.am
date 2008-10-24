@@ -2,9 +2,8 @@ SUBDIRS =	mediathread \
 		conf \
 		rtp \
 		rtcp \
-		rtsp
-
-SUBDIRS +=	src \
+		rtsp \
+		src \
 		docs \
 		etc \
 		avroot
