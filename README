@@ -2,7 +2,7 @@ Feng - standard compliant streaming server
 
 + What is feng?
 
-Feng is a multimedia streaming server compliant with the IETF's standards for real-time streaming of multimedia contents over Internet. Feng implements RTSP ¿ Real-Time Streaming Protocol (rfc2326) and RTP/RTCP ¿ Real-Time Transport Protocol/RTP Control Protocol (rfc3550) supporting the RTP Profile for Audio and Video Conferences with Minimal Control (rfc3551).
+Feng is a multimedia streaming server compliant with the IETF's standards for real-time streaming of multimedia content over Internet. Feng implements RTSP ¿ Real-Time Streaming Protocol (rfc2326) and RTP/RTCP ¿ Real-Time Transport Protocol/RTP Control Protocol (rfc3550) supporting the RTP Profile for Audio and Video Conferences with Minimal Control (rfc3551).
 
 Feng supports the following encoding standards:
 
@@ -18,7 +18,7 @@ Feng supports the following encoding standards:
           o H.263 / H.263+ (rfc4629)
           o Theora (draft)
 
-The main characteristics of Feng are the container support, the ability to handle seeking, also used internally for the compositor metademuxer, and the modular structure focused to ease the extension of the codec and the protocol support.
+The main characteristics of Feng are the container support, the ability to handle seeking, also used internally for the compositor metademuxer, and the modular structure focused on easing the extension of codec and protocol support.
 
 + Usage
 
@@ -41,7 +41,7 @@ $ mplayer rtsp://localhost/myfile.mov
 ++ Daemon mode
 
 For a full deployment it's advised to use start-stop-daemon as shown below or
-prepare initscripts for you specific distribution.
+prepare initscripts for your specific distribution.
 
 # starting the daemon, messages to the system logging facility
 $ start-stop-daemon --start --quiet --background --make-pidfile \
@@ -56,15 +56,15 @@ Feng container layer provides a powerful infrastructure to enable customized
 stream management. Currently there are two examples provided.
 
 +++ ds - compositor metademuxer
-the compositor metademuxer handles lists (see the examples provided in the avroot directory) of coherent resources (same encoding, same resolution, same streams number presents) allowing the creation of resources made out of the files/excerpts aggregation.
+The compositor metademuxer handles lists (see the examples provided in the avroot directory) of coherent resources (same encoding, same resolution, same streams number presents) allowing the creation of resources made out of the files/excerpts aggregation.
 
 +++ live/sd
-the sd metademuxer is present as backward compatibility with fenice, it has the very same limitation of fenice's streaming support (lack of seek, requires many informations) and should not be used if possible.
+The sd metademuxer is present as backward compatibility with fenice, it has the very same limitation of fenice's streaming support (lack of seek, requires many informations) and should not be used if possible.
 
-Please refer to the man page for further informations.
+Please refer to the man page for further information.
 
 + Bug reports
 
 Please use our bug tracker accessible at https://live.polito.it/roundup/lscube
-using as Topic feng.
+using feng as the Topic.
 
