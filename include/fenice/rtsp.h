@@ -112,6 +112,10 @@ typedef enum {
  * @defgroup RTSP RTSP Layer
  * @{
  */
+
+RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock);
+void rtsp_client_destroy(RTSP_buffer *rtsp);
+
 /** 
  * RTSP high level functions, they maps to the rtsp methods
  * @defgroup rtsp_high RTSP high level functions

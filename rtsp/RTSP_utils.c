@@ -115,6 +115,88 @@ static const char const *get_stat(int err)
 }
 
 /**
+ * Allocate and initialise a new RTSP client structure
+ *
+ * @param srv The feng server that accepted the connection.
+ * @param client_sock The socket the client is connected to.
+ *
+ * @return A pointer to a newly allocated structure.
+ *
+ * @see rtsp_client_destroy()
+ */
+RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
+{
+    RTSP_buffer *new = g_new0(RTSP_buffer, 1);
+
+    new->srv = srv;
+    new->sock = client_sock;
+    new->out_queue = g_async_queue_new();
+
+    new->session = g_new0(RTSP_session, 1);
+    new->session->session_id = -1;
+    new->session->srv = srv;
+
+    return new;
+}
+
+static void interleaved_close_fds(gpointer element, gpointer user_data)
+{
+  RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
+
+  Sock_close(intlvd->rtp_local);
+  Sock_close(intlvd->rtcp_local);
+  g_free(intlvd);
+}
+
+/**
+ * Destroy and free resources for an RTSP client structure
+ *
+ * @param rtsp The client structure to destroy and free
+ *
+ * @see rtsp_client_new()
+ */
+void rtsp_client_destroy(RTSP_buffer *rtsp)
+{
+  GString *outbuf = NULL;
+
+  if (rtsp->session != NULL) {
+#if 0 // Do not use it, is just for testing...
+    if (rtsp->session->resource->info->multicast[0]) {
+      fnc_log(FNC_LOG_INFO,
+	      "RTSP connection closed by client during"
+	      " a multicast session, ignoring...");
+      continue;
+    }
+#endif
+
+    // Release all RTP sessions
+    g_slist_foreach(rtsp->session->rtp_sessions, schedule_remove, NULL);
+    g_slist_free(rtsp->session->rtp_sessions);
+
+    // Close connection                     
+    //close(rtsp->session->fd);
+    // Release the mediathread resource
+    mt_resource_close(rtsp->session->resource);
+    // Release the RTSP session
+    g_free(rtsp->session);
+    rtsp->session = NULL;
+    fnc_log(FNC_LOG_WARN,
+	    "WARNING! RTSP connection truncated before ending operations.\n");
+  }
+
+  // close local fds
+  g_slist_foreach(rtsp->interleaved, interleaved_close_fds, NULL);
+  g_slist_free(rtsp->interleaved);
+
+  // Remove the output queue
+  g_async_queue_lock(rtsp->out_queue);
+  while( (outbuf = g_async_queue_try_pop_unlocked(rtsp->out_queue)) )
+    g_string_free(outbuf, TRUE);
+  g_async_queue_unlock(rtsp->out_queue);
+  g_async_queue_unref(rtsp->out_queue);
+}
+
+/**
  * RTSP Header and request parsing and validation functions
  * @defgroup rtsp_validation RTSP requests parsing and validation
  * @{

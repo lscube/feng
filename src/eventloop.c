@@ -334,15 +334,6 @@ static void established_each_fd(gpointer data, gpointer user_data)
     g_slist_foreach(rtsp->session->rtp_sessions, rtp_session_set_fd, rtsp->session);
 }
 
-static void interleaved_close_fds(gpointer element, gpointer user_data)
-{
-  RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
-
-  Sock_close(intlvd->rtp_local);
-  Sock_close(intlvd->rtcp_local);
-  g_free(intlvd);
-}
-
 /**
  * Handle established connection and clean up in case of unexpected
  * disconnection
@@ -352,7 +343,6 @@ static void established_each_connection(gpointer data, gpointer user_data)
 {
   RTSP_buffer *p = (RTSP_buffer*)data;
   feng *srv = p->srv;
-  GString *outbuf = NULL;
   
   int res;
 
@@ -370,41 +360,7 @@ static void established_each_connection(gpointer data, gpointer user_data)
     fnc_log(FNC_LOG_INFO,
 	    "RTSP connection closed by server.");
 
-  if (p->session != NULL) {
-#if 0 // Do not use it, is just for testing...
-    if (p->session->resource->info->multicast[0]) {
-      fnc_log(FNC_LOG_INFO,
-	      "RTSP connection closed by client during"
-	      " a multicast session, ignoring...");
-      continue;
-    }
-#endif
-
-    // Release all RTP sessions
-    g_slist_foreach(p->session->rtp_sessions, schedule_remove, NULL);
-    g_slist_free(p->session->rtp_sessions);
-
-    // Close connection                     
-    //close(p->session->fd);
-    // Release the mediathread resource
-    mt_resource_close(p->session->resource);
-    // Release the RTSP session
-    g_free(p->session);
-    p->session = NULL;
-    fnc_log(FNC_LOG_WARN,
-	    "WARNING! RTSP connection truncated before ending operations.\n");
-  }
-
-  // close local fds
-  g_slist_foreach(p->interleaved, interleaved_close_fds, NULL);
-  g_slist_free(p->interleaved);
-
-  // Remove the output queue
-  g_async_queue_lock(p->out_queue);
-  while( (outbuf = g_async_queue_try_pop_unlocked(p->out_queue)) )
-    g_string_free(outbuf, TRUE);
-  g_async_queue_unlock(p->out_queue);
-  g_async_queue_unref(p->out_queue);
+  rtsp_client_destroy(p);
 
   // wait for 
   Sock_close(p->sock);
@@ -425,17 +381,7 @@ static void established_each_connection(gpointer data, gpointer user_data)
 
 static void add_client(feng *srv, Sock *client_sock)
 {
-    RTSP_buffer *new = g_new0(RTSP_buffer, 1);
-
-    new->srv = srv;
-    new->sock = client_sock;
-    new->out_queue = g_async_queue_new();
-
-    new->session = g_new0(RTSP_session, 1);
-    new->session->session_id = -1;
-    new->session->srv = srv;
-
-    clients = g_slist_prepend(clients, new);
+    clients = g_slist_prepend(clients, rtsp_client_new(srv, client_sock));
 
     fnc_log(FNC_LOG_INFO,
         "Incoming RTSP connection accepted on socket: %d\n",
