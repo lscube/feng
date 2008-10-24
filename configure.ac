@@ -119,6 +119,10 @@ if test "$enable_duma" = "yes"; then
     LIBS="$LIBS -lduma"
 fi
 
+CC_ATTRIBUTE_MALLOC(
+  [AC_DEFINE([ATTR_MALLOC], [__attribute__((__malloc__))], [Define this if ATTR_MALLOC is supported])],
+  [AC_DEFINE([ATTR_MALLOC], [], [Define this if ATTR_MALLOC is not supported])])
+
 LSC_ERRORS
 LSC_DEBUG
 

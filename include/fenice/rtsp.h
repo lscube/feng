@@ -113,7 +113,7 @@ typedef enum {
  * @{
  */
 
-RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock);
+RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock) ATTR_MALLOC;
 void rtsp_client_destroy(RTSP_buffer *rtsp);
 
 /** 
