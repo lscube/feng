@@ -20,6 +20,10 @@
  *  
  * */
 
+/** @file
+ * @brief Contains RTSP message dispatchment functions
+ */
+
 #include <strings.h>
 #include <inttypes.h> /* For SCNu64 */
 
@@ -30,6 +34,7 @@
 /** 
  * RTSP high level functions, they maps to the rtsp methods
  * @defgroup rtsp_high RTSP high level functions
+ * @ingroup RTSP
  *
  * The declaration of these functions are in rtsp_state_machine.c
  * because the awareness of their existance outside their own
@@ -100,10 +105,6 @@ enum RTSP_method_token {
   RTSP_ID_SET_PARAMETER,
   RTSP_ID_TEARDOWN
 };
-
-/** @file
- * @brief Contains RTSP message dispatchment functions
- */
 
 /**
  * Removes the last message from the rtsp buffer

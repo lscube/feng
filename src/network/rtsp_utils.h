@@ -19,6 +19,15 @@
  *
  */
 
+#include "rtsp.h"
+#include <netembryo/rtsp_errors.h>
+#include <netembryo/url.h>
+
+/**
+ * @addtogroup RTSP
+ * @{
+ */
+
 /** @file
  * @brief Contains definitions of various RTSP utility structures and functions
  *
@@ -26,10 +35,6 @@
  * definition of various RTSP requests validation functions and various
  * internal functions
  */
-
-#include "rtsp.h"
-#include <netembryo/rtsp_errors.h>
-#include <netembryo/url.h>
 
 RTSP_Error rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url);;
 RTSP_Error check_require_header(RTSP_buffer * rtsp);
@@ -43,3 +48,7 @@ GString *rtsp_generate_ok_response(guint cseq, guint64 session);
 
 void log_user_agent(RTSP_buffer * rtsp);
 extern RTSP_Error const RTSP_Fatal_ErrAlloc;
+
+/**
+ * @}
+ */

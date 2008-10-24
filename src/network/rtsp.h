@@ -20,6 +20,16 @@
  *  
  * */
 
+/**
+ * @addtogroup RTSP
+ * @{
+ */
+
+/**
+ * @file
+ * @brief feng-wide RTSP definitions
+ */
+
 #ifndef FN_RTSP_H
 #define FN_RTSP_H
 
