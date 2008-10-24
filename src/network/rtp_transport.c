@@ -34,7 +34,7 @@
 #endif
 
 /**
- * @file RTP_transport.c
+ * @file
  * RTP packets sending and receiving with session handling
  */
 

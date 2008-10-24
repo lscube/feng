@@ -20,7 +20,7 @@
  *  
  * */
 
-/** @file RTSP_options.c
+/** @file
  * @brief Contains OPTIONS method and reply handlers
  */
 

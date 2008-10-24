@@ -101,7 +101,7 @@ enum RTSP_method_token {
   RTSP_ID_TEARDOWN
 };
 
-/** @file RTSP_state_machine.c
+/** @file
  * @brief Contains RTSP message dispatchment functions
  */
 

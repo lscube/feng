@@ -20,7 +20,7 @@
  *  
  * */
 
-/** @file RTSP_setup.c
+/** @file
  * @brief Contains SETUP method and reply handlers
  */
 

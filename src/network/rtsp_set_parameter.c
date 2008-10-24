@@ -20,7 +20,7 @@
  *  
  * */
 
-/** @file RTSP_set_parameter.c
+/** @file
  * @brief Contains SET_PARAMETER method and reply handlers
  */
 

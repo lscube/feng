@@ -26,7 +26,7 @@
 #include <fenice/fnc_log.h>
 #include <fenice/utils.h>
 
-/** @file RTSP_lowlevel.c
+/** @file
  * @brief Contains most of lowlevel RTSP functions
  */
 

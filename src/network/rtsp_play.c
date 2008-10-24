@@ -20,7 +20,7 @@
  *
  * */
 
-/** @file RTSP_play.c
+/** @file
  *  @brief Contains PLAY method and reply handlers
  */
 

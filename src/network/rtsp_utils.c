@@ -20,7 +20,7 @@
  *
  */
 
-/** @file RTSP_utils.c
+/** @file
  * @brief Contains declarations of various RTSP utility structures and functions
  * 
  * Contains declaration of RTSP structures and constants for error management,

@@ -20,7 +20,7 @@
  *  
  * */
 
-/** @file RTSP_describe.c
+/** @file
  * @brief Contains DESCRIBE method and reply handlers
  */
 

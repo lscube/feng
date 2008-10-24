@@ -20,7 +20,7 @@
  *  
  * */
 
-/** @file RTSP_pause.c
+/** @file
  * @brief Contains PAUSE method and reply handlers
  */
 

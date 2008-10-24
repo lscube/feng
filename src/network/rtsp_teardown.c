@@ -20,7 +20,7 @@
  *  
  * */
 
-/** @file RTSP_teardown.c
+/** @file
  * @brief Contains TEARDOWN method and reply handlers
  */
 
