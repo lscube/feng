@@ -47,9 +47,9 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 {
     Track *tr = (Track *)track;
     uint32_t mtu = DEFAULT_MTU; //FIXME get it from SETUP
-    int32_t offset, rem;
+    int32_t offset;
     uint8_t dst[mtu];
-    rem = len;
+    long rem = len;
 
     if (mtu >= len + 4) {
         memset (dst, 0, 4);

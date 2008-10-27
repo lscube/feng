@@ -47,7 +47,7 @@
  * @return RTP Timestamp (in local endianess)
  */
 static inline uint32_t RTP_calc_rtptime(RTP_session *session, int clock_rate, BPSlot *slot) {
-    uint32_t calc_rtptime = (slot->timestamp - session->seek_time) * clock_rate;
+    uint32_t calc_rtptime = (uint32_t)((slot->timestamp - session->seek_time) * clock_rate);
     return (session->start_rtptime + (slot->rtp_time ? slot->rtp_time : calc_rtptime));
 }
 
@@ -82,8 +82,8 @@ int RTP_send_packet(RTP_session * session)
             r.padding = 0;
             r.extension = 0;
             r.csrc_len = 0;
-            r.marker = slot->marker;
-            r.payload = t->properties->payload_type;
+            r.marker = slot->marker & 0x1;
+            r.payload = t->properties->payload_type & 0x7f;
             r.seq_no = htons(session->seq_no += slot->seq_delta);
             r.timestamp = htonl(RTP_calc_rtptime(session,
                                 t->properties->clock_rate, slot));

@@ -35,7 +35,7 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
 {
     unsigned char *payload = NULL;
     RTCP_header hdr;
-    unsigned pkt_size = 0, hdr_s = 0, payload_s = 0;
+    size_t pkt_size = 0, hdr_s = 0, payload_s = 0;
     Track *t = r_selected_track(session->track_selector);
 
     hdr.version = 2;
@@ -82,7 +82,7 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
         const char *name = session->transport.rtcp_sock->local_host ? 
 	  session->transport.rtcp_sock->local_host : "::";
         int hdr_sdes_s = sizeof(hdr_sdes);
-        int name_s = strlen(name);
+        size_t name_s = strlen(name);
         payload_s = hdr_sdes_s + name_s;
         // Padding
         payload_s += (((hdr_s + payload_s) % 4) ? 1 : 0);
@@ -100,11 +100,11 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
     case BYE:{
         RTCP_header_BYE hdr_bye;
         int hdr_bye_s = sizeof(hdr_bye);
-        char reason[20] = "The medium is over.";
+        static const char reason[20] = "The medium is over.";
         payload_s = hdr_bye_s + sizeof(reason);
         hdr.count = 1;
         hdr_bye.ssrc = htonl(session->ssrc);
-        hdr_bye.length = htonl(strlen(reason));
+        hdr_bye.length = htonl(sizeof(reason)-1);
         payload = g_malloc0(payload_s);
         if (payload == NULL)
             return ERR_ALLOC;
