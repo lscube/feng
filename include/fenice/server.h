@@ -30,8 +30,8 @@
 
 // #include <fenice/schedule.h>
 #include <fenice/prefs.h>
-#include "array.h"
-#include "conf.h"
+#include "conf/array.h"
+#include "conf/conf.h"
 #include <netembryo/wsocket.h>
 #include <glib.h>
 #include <pwd.h>

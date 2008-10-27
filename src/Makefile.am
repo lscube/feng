@@ -1,4 +1,4 @@
-SUBDIRS = mediathread network .
+SUBDIRS = mediathread network conf .
 
 feniceincludedir = $(top_srcdir)/include
 
@@ -11,6 +11,6 @@ feng_SOURCES = main.c fnc_log.c \
 
 feng_LDADD =	network/libnetwork.a \
 		mediathread/libmediath.a \
-		../conf/liblight.a
+		conf/liblight.a
 
 INCLUDES = -I$(feniceincludedir) -I..
