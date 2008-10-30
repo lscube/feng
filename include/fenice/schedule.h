@@ -27,7 +27,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <glib.h>
-#include <fenice/rtp.h>
+#include "network/rtp.h"
 #include <fenice/prefs.h>
 #include <fenice/debug.h>
 

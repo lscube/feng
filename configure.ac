@@ -214,11 +214,9 @@ AC_DEFINE_UNQUOTED(FENIC_STATE_DIR_STR,
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([mediathread/Makefile])
-AC_CONFIG_FILES([rtp/Makefile])
-AC_CONFIG_FILES([rtcp/Makefile])
-AC_CONFIG_FILES([rtsp/Makefile])
 AC_CONFIG_FILES([src/Makefile])
+AC_CONFIG_FILES([src/mediathread/Makefile])
+AC_CONFIG_FILES([src/network/Makefile])
 AC_CONFIG_FILES([conf/Makefile])
 AC_CONFIG_FILES([etc/feng.conf])
 AC_CONFIG_FILES([etc/feng-uninstalled.conf])

@@ -20,21 +20,21 @@
  *  
  * */
 
-#ifndef FN_EVENTLOOP_H
-#define FN_EVENTLOOP_H
+#ifndef FN_SDP2_H
+#define FN_SDP2_H
 
-#include <netembryo/wsocket.h>
-#include <fenice/fnc_log.h>
-#include "network/rtsp.h"
+#include <sys/types.h>
+#include <unistd.h>
+#include <glib.h>
+
 #include <fenice/server.h>
 
-#define MAX_FDS 800
+#define SDP2_EL "\r\n"
+#define SDP2_VERSION 0
+#define SDP2_TRACK_ID "TrackID"
 
-typedef int (*event_function) (void *data);
+#define MAX_DESCR_LENGTH 63000
 
-int feng_bind_port(char *host, char *port, specific_config *s);
-void eventloop_init();
-void eventloop(feng *srv);
-void eventloop_cleanup();
+GString *sdp_session_descr(feng *srv, char *server, char *name);
 
-#endif // FN_EVENTLOOP_H
+#endif // FN_SDP2_H

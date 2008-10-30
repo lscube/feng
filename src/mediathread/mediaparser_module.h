@@ -20,21 +20,20 @@
  *  
  * */
 
-#ifndef FN_EVENTLOOP_H
-#define FN_EVENTLOOP_H
+#ifndef FN_MEDIAPARSER_MODULE_H
+#define FN_MEDIAPARSER_MODULE_H
 
-#include <netembryo/wsocket.h>
-#include <fenice/fnc_log.h>
-#include "network/rtsp.h"
-#include <fenice/server.h>
+#include "mediaparser.h"
 
-#define MAX_FDS 800
+#define INIT_PROPS properties->media_type = info.media_type;
 
-typedef int (*event_function) (void *data);
+#define FNC_LIB_MEDIAPARSER(x) const MediaParser fnc_mediaparser_##x =\
+{\
+	&info, \
+	x##_init, \
+        x##_parse, \
+	x##_uninit \
+}
 
-int feng_bind_port(char *host, char *port, specific_config *s);
-void eventloop_init();
-void eventloop(feng *srv);
-void eventloop_cleanup();
+#endif // FN_MEDIAPARSER_MODULE_H
 
-#endif // FN_EVENTLOOP_H

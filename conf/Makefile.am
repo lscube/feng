@@ -17,4 +17,4 @@ liblight_a_SOURCES = array.c \
 		     data_config.c \
 		     data_string.c
 
-INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)
+INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)/src

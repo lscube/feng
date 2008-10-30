@@ -20,21 +20,20 @@
  *  
  * */
 
-#ifndef FN_EVENTLOOP_H
-#define FN_EVENTLOOP_H
+#include "demuxer.h"
 
-#include <netembryo/wsocket.h>
-#include <fenice/fnc_log.h>
-#include "network/rtsp.h"
-#include <fenice/server.h>
+#ifndef FN_DEMUXER_MODULE_H
+#define FN_DEMUXER_MODULE_H
 
-#define MAX_FDS 800
+#define FNC_LIB_DEMUXER(x) const Demuxer fnc_demuxer_##x =\
+{\
+	&info, \
+	x##_probe, \
+	x##_init, \
+	x##_read_packet, \
+	x##_seek, \
+	x##_uninit \
+}
 
-typedef int (*event_function) (void *data);
+#endif // FN_DEMUXER_MODULE_H
 
-int feng_bind_port(char *host, char *port, specific_config *s);
-void eventloop_init();
-void eventloop(feng *srv);
-void eventloop_cleanup();
-
-#endif // FN_EVENTLOOP_H

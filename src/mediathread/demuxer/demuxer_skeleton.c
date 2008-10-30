@@ -17,24 +17,44 @@
  * You should have received a copy of the GNU General Public License
  * along with Feng; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *  
+ *
  * */
 
-#ifndef FN_EVENTLOOP_H
-#define FN_EVENTLOOP_H
+#include "demuxer_module.h"
 
-#include <netembryo/wsocket.h>
-#include <fenice/fnc_log.h>
-#include "network/rtsp.h"
-#include <fenice/server.h>
+static const DemuxerInfo info = {
+    "Skeleton demuxer_module",
+    "skel",
+    "LScube Team",
+    "",
+    "skl"
+};
 
-#define MAX_FDS 800
 
-typedef int (*event_function) (void *data);
+static int skel_probe(InputStream * i_stream)
+{
+    return RESOURCE_NOT_FOUND;
+}
 
-int feng_bind_port(char *host, char *port, specific_config *s);
-void eventloop_init();
-void eventloop(feng *srv);
-void eventloop_cleanup();
+static int skel_init(Resource * r)
+{
+    return RESOURCE_DAMAGED;
+}
 
-#endif // FN_EVENTLOOP_H
+static int skel_read_packet(Resource * r)
+{
+    return RESOURCE_NOT_PARSEABLE;
+}
+
+static int skel_seek(Resource * r, double time_sec)
+{
+    return RESOURCE_NOT_SEEKABLE;
+}
+
+static int skel_uninit(Resource * r)
+{
+    return RESOURCE_OK;
+}
+
+FNC_LIB_DEMUXER(skel);
+
