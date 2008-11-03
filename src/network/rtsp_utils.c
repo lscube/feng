@@ -55,61 +55,7 @@
  */
 static const char const *get_stat(int err)
 {
-    static const struct {
-        char token[36];
-        int code;
-    } status[] = {
-        {
-        "Continue", 100}, {
-        "Created", 201}, {
-        "Accepted", 202}, {
-        "Non-Authoritative Information", 203}, {
-        "No Content", 204}, {
-        "Reset Content", 205}, {
-        "Partial Content", 206}, {
-        "Multiple Choices", 300}, {
-        "Moved Permanently", 301}, {
-        "Moved Temporarily", 302}, {
-        "Unauthorized", 401}, {
-        "Payment Required", 402}, {
-        "Method Not Allowed", 405}, {
-        "Not Acceptable", 406}, {
-        "Proxy Authentication Required", 407}, {
-        "Request Time-out", 408}, {
-        "Conflict", 409}, {
-        "Gone", 410}, {
-        "Length Required", 411}, {
-        "Precondition Failed", 412}, {
-        "Request Entity Too Large", 413}, {
-        "Request-URI Too Large", 414}, {
-        "Unsupported Media Type", 415}, {
-        "Bad Extension", 420}, {
-        "Invalid Parameter", 450}, {
-        "Parameter Not Understood", 451}, {
-        "Conference Not Found", 452}, {
-        "Not Enough Bandwidth", 453}, {
-        "Method Not Valid In This State", 455}, {
-        "Header Field Not Valid for Resource", 456}, {
-        "Invalid Range", 457}, {
-        "Parameter Is Read-Only", 458}, {
-        "Unsupported transport", 461}, {
-        "Not Implemented", 501}, {
-        "Bad Gateway", 502}, {
-        "Service Unavailable", 503}, {
-        "Gateway Time-out", 504}, {
-        "RTSP Version Not Supported", 505}, {
-        "Extended Error:", 911}, {
-        "", -1}
-    };
-    int i;
-    const RTSP_Error * err_data = get_RTSP_Error(err);
-
-    if (err_data == NULL) {
-        for (i = 0; status[i].code != err && status[i].code != -1; ++i);
-        return status[i].token;
-    }
-    else
-        return err_data->message.reply_str;
+    return reply_get_rtsp(err).message;
 }
 
 /**
