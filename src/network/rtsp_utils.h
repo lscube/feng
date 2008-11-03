@@ -41,7 +41,7 @@ ProtocolReply rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url);;
 
 int send_redirect_3xx(RTSP_buffer *, const char *);
 int bwrite(GString *buffer, RTSP_buffer * rtsp);
-GString *rtsp_generate_response(guint code, guint cseq);
+GString *rtsp_generate_response(ProtocolReply reply, guint cseq);
 GString *rtsp_generate_ok_response(guint cseq, guint64 session);
 
 void log_user_agent(RTSP_buffer * rtsp);

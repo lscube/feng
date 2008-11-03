@@ -396,9 +396,9 @@ static void append_time_stamp(GString *str) {
  *
  * @return A new GString instance with the response heading.
  */
-GString *rtsp_generate_response(guint code, guint cseq)
+GString *rtsp_generate_response(ProtocolReply reply, guint cseq)
 {
-    GString *response = protocol_response_new(RTSP_1_0, code);
+    GString *response = protocol_response_new_reply(RTSP_1_0, reply);
   
     protocol_append_header_uint(response, "CSeq", cseq);
 
@@ -415,10 +415,8 @@ GString *rtsp_generate_response(guint code, guint cseq)
  * @return A new GString instance with the response heading.
  */
 GString *rtsp_generate_ok_response(guint cseq, guint64 session) {
-    GString *response = protocol_response_new_reply(RTSP_1_0, RTSP_Ok);
+    GString *response = rtsp_generate_response(RTSP_Ok, cseq);
 
-    protocol_append_header_uint(response, "CSeq", cseq);
-    
     g_string_append_printf(response,
                            "Server: %s/%s" RTSP_EL,
                            PACKAGE, VERSION);

@@ -36,7 +36,8 @@
  */
 static int send_set_parameter_reply(RTSP_buffer * rtsp)
 {
-    GString *reply = rtsp_generate_response(451, rtsp->rtsp_cseq);
+    GString *reply = rtsp_generate_response(RTSP_ParameterNotUnderstood,
+                                            rtsp->rtsp_cseq);
 
     /* No body */
     g_string_append(reply, RTSP_EL);
