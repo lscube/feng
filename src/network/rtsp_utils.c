@@ -34,6 +34,7 @@
 #include <string.h>
 #include <inttypes.h> /* For SCNu64 */
 
+#include <netembryo/protocol_responses.h>
 #include <glib.h>
 
 #include <fenice/utils.h>
@@ -399,48 +400,15 @@ int bwrite(GString *buffer, RTSP_buffer * rtsp)
  * "Date: 23 Jan 1997 15:35:06 GMT"
  */
 static void append_time_stamp(GString *str) {
-  char buffer[39] = { 0, };
+  char buffer[37] = { 0, };
 
   time_t now = time(NULL);
   struct tm *t = gmtime(&now);
 
-  strftime(buffer, 38, "Date: %a, %d %b %Y %H:%M:%S GMT" RTSP_EL,
+  strftime(buffer, 36, "Date: %a, %d %b %Y %H:%M:%S GMT",
 	   t);
-  
-  g_string_append(str, buffer);
-}
 
-/**
- * @brief Append an unsigned integer header to a response
- *
- * @param response The GString instance to append the header to.
- * @param header String with the name of the header.
- * @param value Value of the header to append.
- */
-static void rtsp_response_append_unsigned(GString *response,
-                                          const char *header,
-                                          guint value)
-{
-    g_string_append_printf(response, "%s: %u" RTSP_EL,
-                           header, value);
-}
-
-/**
- * @brief Internal method to generate the basic RTSP response string.
- *
- * @param code Reply code for the response.
- * @param str Description string of the response
- *
- * @return A new GString isntance with the first line of the response.
- */
-static GString *rtsp_generate_response_internal(guint16 code,
-                                                const char *str)
-{
-    GString *response = g_string_new("");
-    
-    g_string_printf(response,
-                    "%s %d %s" RTSP_EL,
-                    RTSP_VER, code, str);
+  protocol_append_header(str, buffer);
 }
 
 /**
@@ -453,24 +421,9 @@ static GString *rtsp_generate_response_internal(guint16 code,
  */
 GString *rtsp_generate_response(guint code, guint cseq)
 {
-    GString *response =
-        rtsp_generate_response_internal(code, reply_get_rtsp(code).message);
+    GString *response = protocol_response_new(RTSP_1_0, code);
   
-    rtsp_response_append_unsigned(response, "CSeq", cseq);
-
-    return response;
-}
-
-/**
- * @brief Generates the basic RTSP response string using ProtocolReply
- *
- * @param reply The ProtocolReply to use for the respones
- */
-static GString *rtsp_generate_protocol_response(ProtocolReply reply)
-{
-    GString *response =
-        rtsp_generate_response_internal(reply.code,
-                                        reply.message);
+    protocol_append_header_uint(response, "CSeq", cseq);
 
     return response;
 }
@@ -485,22 +438,22 @@ static GString *rtsp_generate_protocol_response(ProtocolReply reply)
  * @return A new GString instance with the response heading.
  */
 GString *rtsp_generate_ok_response(guint cseq, guint64 session) {
-  GString *response = rtsp_generate_protocol_response(RTSP_Ok);
+    GString *response = protocol_response_new_reply(RTSP_1_0, RTSP_Ok);
 
-  rtsp_response_append_unsigned(response, "CSeq", cseq);
-
-  g_string_append_printf(response,
-			 "Server: %s/%s" RTSP_EL,
-			 PACKAGE, VERSION);
-
-  append_time_stamp(response);
-  
-  if ( session != 0 )
+    protocol_append_header_uint(response, "CSeq", cseq);
+    
     g_string_append_printf(response,
-			    "Session: %" PRIu64 RTSP_EL,
-			    session);
-
-  return response;
+                           "Server: %s/%s" RTSP_EL,
+                           PACKAGE, VERSION);
+    
+    append_time_stamp(response);
+    
+    if ( session != 0 )
+        g_string_append_printf(response,
+                               "Session: %" PRIu64 RTSP_EL,
+                               session);
+    
+    return response;
 }
 
 /**
