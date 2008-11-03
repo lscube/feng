@@ -339,6 +339,42 @@ int RTSP_handler(RTSP_buffer * rtsp)
 }
 
 /**
+ * @brief Check for and identify session.
+ * @param rtsp Client to get the session data from
+ * @return A pointer to the correct RTSP session, or NULL in case of error.
+ */
+static RTSP_session *get_session(RTSP_buffer *rtsp)
+{
+    guint64 session_id = 0;
+    char *s;
+    RTSP_session *p;
+
+    /* Check if a Session-ID header is present, and if it is ensure it is valid.
+     */
+    if ((s = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
+        if (sscanf(s, "%*s %"SCNu64, &session_id) != 1) {
+            fnc_log(FNC_LOG_INFO,
+                "Invalid Session number in Session header\n");
+            return NULL;
+        }
+    }
+
+    /* make sure that there is a session connected to the stream */
+    p = rtsp->session;
+    if (p == NULL) {
+        return NULL;
+    }
+
+    /* If there is a session id for the stream, make sure it is the same as the
+     * session it's linked to */
+    if ( session_id != 0 && p->session_id != session_id ) {
+        return NULL;
+    }
+
+    return p;
+}
+
+/**
  * All state transitions are made here except when the last stream packet
  * is sent during a PLAY.  That transition is located in stream_event().
  * @param rtsp the buffer containing the message to dispatch
@@ -346,38 +382,15 @@ int RTSP_handler(RTSP_buffer * rtsp)
  */
 static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method)
 {
-    guint64 session_id;
-    char *s;
-    RTSP_session *p;
+    RTSP_session *p = get_session(rtsp);
 
-    /* Check if a Session-ID header is present, and if it is ensure it is valid.
-     * Respond with a 454 reply if it's not the case.
-     */
-    if ((s = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(s, "%*s %"SCNu64, &session_id) != 1) {
-            fnc_log(FNC_LOG_INFO,
-                "Invalid Session number in Session header\n");
-            send_protocol_reply(RTSP_SessionNotFound, rtsp);
-            return;
-        }
-    } else {
-        session_id = 0;
-    }
-
-    /* make sure that there is a session connected to the stream,
-     * if there isn't, respond with a 415 reply.
-     */
-    p = rtsp->session;
-    if (p == NULL) {
-        send_protocol_reply(RTSP_ParameterNotUnderstood, rtsp);
+    if ( p == NULL ) {
+        send_protocol_reply(RTSP_SessionNotFound, rtsp);
         return;
     }
 
-    /* If there is a session id for the stream, make sure it is the same as the
-     * session it's linked to, if not, respond with a 454 reply.
-     */
-    if ( session_id != 0 && p->session_id != session_id ) {
-        send_protocol_reply(RTSP_SessionNotFound, rtsp);
+    if ( !get_cseq(rtsp) ) {
+        send_protocol_reply(RTSP_BadRequest, rtsp);
         return;
     }
 
