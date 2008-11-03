@@ -574,6 +574,5 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
 error_management:
     send_protocol_reply(error, rtsp);
-    reply_free(error);
     return ERR_GENERIC;
 }
