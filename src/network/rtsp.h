@@ -63,8 +63,6 @@ enum RTSP_machine_state {
   PLAY_STATE
 };
 
-#define RTSP_VER "RTSP/1.0"
-
 #define RTSP_EL "\r\n"
 #define RTSP_RTP_AVP "RTP/AVP"
 
