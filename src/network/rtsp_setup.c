@@ -541,8 +541,10 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     }
 
     // If there's a Session header we have an aggregate control
-    if ( (error = get_session_id(rtsp, &session_id)).got_error )
+    if ( !get_session_id(rtsp, &session_id) ) {
+        error = RTSP_SessionNotFound;
         goto error_management;
+    }
     if (session_id == 0)
         session_id = generate_session_id();
 

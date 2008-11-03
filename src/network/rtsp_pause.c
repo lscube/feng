@@ -78,9 +78,11 @@ int RTSP_pause(RTSP_buffer * rtsp)
     }
     // Extract and validate the URL
     if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
-	goto error_management;
-    if ( (error = get_session_id(rtsp, &session_id)).got_error ) // Get Session id
         goto error_management;
+    if ( !get_session_id(rtsp, &session_id) ) {
+        error = RTSP_SessionNotFound;
+        goto error_management;
+    }
 
     s = rtsp->session;
     if (s == NULL) {

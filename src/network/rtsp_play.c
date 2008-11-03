@@ -360,8 +360,10 @@ int RTSP_play(RTSP_buffer * rtsp)
     if ( (error = parse_play_time_range(rtsp, &args)).got_error )
         goto error_management;
 
-    if ( (error = get_session_id(rtsp, &session_id)).got_error )
+    if ( !get_session_id(rtsp, &session_id) ) {
+        error = RTSP_SessionNotFound;
         goto error_management;
+    }
     if ( session_id == 0 ) {
         set_RTSP_Error(&error, 400, "");
         goto error_management;
