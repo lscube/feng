@@ -276,34 +276,6 @@ gboolean get_cseq(RTSP_buffer * rtsp)
 
     return true;
 }
-
-/**
- * @brief Gets the ID of the requested session
- *
- * Looks for the Session ID in the RTSP buffer, and saves it in the
- * variable pointed at by @p session_id; the variable is set to zero
- * if no Session ID is found.
- *
- * @param rtsp the buffer from which to parse the Session ID
- * @param[out] session_id where to save the retrieved Session ID
- *
- * @retval true No error.
- * @retval false Session ID not valid.
- */
-gboolean get_session_id(RTSP_buffer * rtsp, guint64 * session_id)
-{
-    char * p;
-
-    // Session
-    if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(p, "%*s %"SCNu64, session_id) != 1)
-            return false;
-    } else {
-        *session_id = 0;
-    }
-
-    return true;
-}
 /**
  * @}
  */

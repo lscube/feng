@@ -39,7 +39,6 @@
 
 ProtocolReply rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url);;
 gboolean get_cseq(RTSP_buffer * rtsp);
-gboolean get_session_id(RTSP_buffer * rtsp, guint64 * session_id);
 
 int send_redirect_3xx(RTSP_buffer *, const char *);
 int bwrite(GString *buffer, RTSP_buffer * rtsp);
