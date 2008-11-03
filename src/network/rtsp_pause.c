@@ -72,8 +72,10 @@ int RTSP_pause(RTSP_buffer * rtsp)
 
     RTSP_Error error;
 
-    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
+    if ( !get_cseq(rtsp) ) {
+        error = RTSP_BadRequest;
         goto error_management;
+    }
     // Extract and validate the URL
     if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
 	goto error_management;

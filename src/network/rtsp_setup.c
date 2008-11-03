@@ -535,9 +535,10 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     if ( (error = split_resource_path(&url, trackname, sizeof(trackname))).got_error )
         goto error_management;
 
-    // Get the CSeq
-    if ( (error = get_cseq(rtsp)).got_error )
+    if ( !get_cseq(rtsp) ) {
+        error = RTSP_BadRequest;
         goto error_management;
+    }
 
     // If there's a Session header we have an aggregate control
     if ( (error = get_session_id(rtsp, &session_id)).got_error )

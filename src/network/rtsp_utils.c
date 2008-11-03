@@ -262,19 +262,19 @@ ProtocolReply rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url) {
  *
  * @param rtsp the buffer of the request
  *
- * @retval RTSP_Ok No error.
- * @retval RTSP_BadRequest CSEQ header not found or not valid.
+ * @retval true No error.
+ * @retval false CSEQ header not found or not valid.
  */
-RTSP_Error get_cseq(RTSP_buffer * rtsp)
+gboolean get_cseq(RTSP_buffer * rtsp)
 {
     char * p;
 
     if ( (p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL )
-        return RTSP_BadRequest;
+        return false;
     else if ( sscanf(p, "%*s %d", &(rtsp->rtsp_cseq)) != 1 )
-        return RTSP_BadRequest;
+        return false;
 
-    return RTSP_Ok;
+    return true;
 }
 
 /**

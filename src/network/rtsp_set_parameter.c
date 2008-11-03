@@ -61,8 +61,10 @@ int RTSP_set_parameter(RTSP_buffer * rtsp)
 
     RTSP_Error error;
 
-    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
+    if ( !get_cseq(rtsp) ) {
+        error = RTSP_BadRequest;
         goto error_management;
+    }
 
     sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, url, ver);
 

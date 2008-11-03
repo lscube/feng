@@ -352,9 +352,10 @@ int RTSP_play(RTSP_buffer * rtsp)
 
     // Parse the input message
 
-    // Get the CSeq
-    if ( (error = get_cseq(rtsp)).got_error )
+    if ( !get_cseq(rtsp) ) {
+        error = RTSP_BadRequest;
         goto error_management;
+    }
     // Get the range
     if ( (error = parse_play_time_range(rtsp, &args)).got_error )
         goto error_management;
