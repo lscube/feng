@@ -176,10 +176,12 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
  * Parses the TRANSPORT header from the RTSP buffer
  * @param rtsp the buffer for which to parse the header
  * @param transport where to save the data of the header
- * @return RTSP_Ok or RTSP_BadRequest if the header is malformed
- * @return an RTSP_Error with reply_code 406 if the transport header is missing
- * @return an RTSP_Error with reply_code 461 if the required transport is unsupported
- * @return an RTSP_Error with reply_code 500 if it wasn't possible to allocate a socket for the client
+ *
+ * @retval RTSP_Ok No error
+ * @retval RTSP_BadRequest Malformed header
+ * @retval ProtocolReply(406) Transport header missing
+ * @retval ProtocolReply(461) Transport not supported
+ * @retval ProtocolReply(500) Impossible to allocate a socket for the client
  */
 static ProtocolReply parse_transport_header(RTSP_buffer * rtsp,
                                             RTP_transport * transport,
