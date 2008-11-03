@@ -120,14 +120,7 @@ int RTSP_handler(RTSP_buffer * rtsp);
  * @{
  */
 
-int send_reply(int err, const char *addon, RTSP_buffer * rtsp);
 int send_protocol_reply(ProtocolReply reply, RTSP_buffer *rtsp);
-
-#ifdef TRACE
-#define send_reply(a, b, c) \
-    fnc_log(FNC_LOG_INFO,"%s", __PRETTY_FUNCTION__);\
-    send_reply(a,b,c);
-#endif
 
 ssize_t RTSP_send(RTSP_buffer * rtsp);
 

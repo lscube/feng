@@ -42,8 +42,6 @@
 #include "sdp2.h"
 #include <fenice/fnc_log.h>
 
-#undef send_reply
-
 /**
  * @addtogroup RTSP
  * @{
@@ -252,34 +250,6 @@ void log_user_agent(RTSP_buffer * rtsp)
  * @defgroup rtsp_msg_gen RTSP Message Generation
  * @{
  */
-
-/**
- * @brief Sends a reply message to the client
- *
- * @param err the message code
- * @param addon the text to append to the message
- * @param rtsp the buffer where to write the output message
- *
- * @retval ERR_NOERROR No error.
- * @retval ERR_ALLOC Not enough space to complete the request
- *
- * @note The return value is the one from @ref bwrite function.
- */
-int send_reply(int err, const char *addon, RTSP_buffer * rtsp)
-{
-    GString *reply = rtsp_generate_response(err, rtsp->rtsp_cseq);
-    int res;
-
-    if (addon)
-      g_string_append(reply, addon);
-
-    res = bwrite(reply, rtsp);
-
-    fnc_log(FNC_LOG_ERR, "%s %d - - ", addon, err);
-    log_user_agent(rtsp);
-
-    return res;
-}
 
 /**
  * @brief Sends a reply message to the client using ProtocolReply
