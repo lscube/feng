@@ -211,27 +211,6 @@ static gboolean validate_url(char *urlstr, Url * url)
 }
 
 /**
- * Extracts the required url from the buffer
- *
- * @param rtsp the buffer of the request from which to extract the
- *             url.
- *
- * @param[out] url_buffer the buffer where to write the url (must be
- *                        big enough).
- * 
- * @retval true URL identified and copied in the buffer.
- * @retval false URL not found in the buffer.
- */
-static gboolean extract_url(RTSP_buffer * rtsp, char * url_buffer)
-{
-    if (!sscanf(rtsp->in_buffer, " %*s %254s ", url_buffer)) {
-        return false;
-    }
-
-    return true;
-}
-
-/**
  * @brief Takes care of extracting and validating an URL from the buffer
  *
  * @param rtsp The buffer from where to extract the URL
@@ -243,8 +222,8 @@ static gboolean extract_url(RTSP_buffer * rtsp, char * url_buffer)
  */
 ProtocolReply rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url) {
   char urlstr[256];
-  
-  if ( !extract_url(rtsp, urlstr) )
+
+  if ( !sscanf(rtsp->in_buffer, " %*s %254s ", urlstr) )
       return RTSP_BadRequest;
   if ( !validate_url(urlstr, url) )
       return RTSP_BadRequest;
