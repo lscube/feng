@@ -38,19 +38,15 @@
 /**
  * Sends the reply for the teardown method
  * @param rtsp the buffer where to write the reply
- * @param session_id the id of the session closed
- * @return ERR_NOERROR
  */
-static int send_teardown_reply(RTSP_buffer * rtsp, guint64 session_id)
+static void send_teardown_reply(RTSP_buffer * rtsp)
 {
-    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, session_id);
+    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, rtsp->session->session_id);
     g_string_append(reply, RTSP_EL);
 
     bwrite(reply, rtsp);
 
     fnc_log(FNC_LOG_CLIENT, "200 - - ");
-
-    return ERR_NOERROR;
 }
 
 typedef struct {
@@ -108,19 +104,10 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	goto error_management;
 
     s = rtsp->session;
-    if (s == NULL) {
-        send_reply(415, 0, rtsp);    // Internal server error
-        return ERR_GENERIC;
-    }
-
-    if (s->session_id != rtsp->session_id) {
-        send_reply(454, 0, rtsp);    /* Session Not Found */
-        return ERR_PARSE;
-    }
 
     fnc_log(FNC_LOG_INFO, "TEARDOWN %s://%s/%s RTSP/1.0 ",
 	    url.protocol, url.hostname, url.path);
-    send_teardown_reply(rtsp, rtsp->session_id);
+    send_teardown_reply(rtsp);
     log_user_agent(rtsp); // See User-Agent 
 
     if (strchr(url.path, '='))    /*Compatibility with RealOne and RealPlayer */

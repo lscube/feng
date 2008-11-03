@@ -139,21 +139,6 @@ static gboolean parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
     return true;
 }
 
-/**
- * Gets the correct session for the given session_id (actually only 1 session is supported)
- * @param rtsp the buffer from which to get the session
- * @return The identified session or NULL if not found.
- */
-static RTSP_session *get_session(RTSP_buffer * rtsp)
-{
-    // XXX Feng supports single session atm
-    if (rtsp->session == NULL ||
-        rtsp->session->session_id != rtsp->session_id)
-        return NULL;
-
-    return rtsp->session;
-}
-
 static void rtp_session_seek(gpointer value, gpointer user_data)
 {
   RTP_session *rtp_sess = (RTP_session *)value;
@@ -359,12 +344,9 @@ int RTSP_play(RTSP_buffer * rtsp)
         error = RTSP_BadRequest;
         goto error_management;
     }
+
+    rtsp_sess = rtsp->session;
     
-    // Pick correct session
-    if ( (rtsp_sess = get_session(rtsp)) == NULL ) {
-        error = RTSP_SessionNotFound;
-        goto error_management;
-    }
     // Extract and validate the URL
     if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
         goto error_management;

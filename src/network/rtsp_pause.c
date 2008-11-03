@@ -80,14 +80,6 @@ int RTSP_pause(RTSP_buffer * rtsp)
         goto error_management;
 
     s = rtsp->session;
-    if (s == NULL) {
-        send_reply(415, NULL, rtsp);    // Internal server error
-        return ERR_GENERIC;
-    }
-    if (s->session_id != rtsp->session_id) {
-        send_reply(454, NULL, rtsp);    /* Session Not Found */
-        return ERR_NOERROR;
-    }
     
     g_slist_foreach(s->rtp_sessions, rtp_session_pause, NULL);
 
