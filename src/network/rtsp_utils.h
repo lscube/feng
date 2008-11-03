@@ -21,7 +21,7 @@
  * */
 
 #include "rtsp.h"
-#include <netembryo/rtsp_errors.h>
+#include <netembryo/protocol_replies.h>
 #include <netembryo/url.h>
 
 /**
