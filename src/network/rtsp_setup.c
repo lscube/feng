@@ -519,11 +519,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         goto error_management;
     }
 
-    if ( !get_cseq(rtsp) ) {
-        error = RTSP_BadRequest;
-        goto error_management;
-    }
-
     // Add an RTSP session if necessary
     rtsp_s = append_session(rtsp);
 

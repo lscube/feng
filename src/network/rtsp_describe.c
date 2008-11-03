@@ -142,11 +142,6 @@ int RTSP_describe(RTSP_buffer * rtsp)
         error = RTSP_OptionNotSupported;
         goto error_management;
     }
-    // Get the CSeq
-    if ( !get_cseq(rtsp) ) {
-        error = RTSP_BadRequest;
-        goto error_management;
-    }
 
     // Get the description format. SDP is the only supported
     if ( (descr_format = get_description_format(rtsp)) == df_Unsupported ) {

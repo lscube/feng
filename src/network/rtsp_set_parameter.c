@@ -59,11 +59,6 @@ int RTSP_set_parameter(RTSP_buffer * rtsp)
     char method[255];
     char ver[255];
 
-    if ( !get_cseq(rtsp) ) {
-        send_protocol_reply(RTSP_BadRequest, rtsp);
-        return ERR_GENERIC;
-    }
-
     sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, url, ver);
 
     fnc_log(FNC_LOG_INFO, "%s %s %s ", method, url, ver);

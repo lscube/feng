@@ -95,10 +95,6 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 
     ProtocolReply error;
 
-    if ( !get_cseq(rtsp) ) {
-        error = RTSP_BadRequest;
-        goto error_management;
-    }
     // Extract and validate the URL
     if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
 	goto error_management;
