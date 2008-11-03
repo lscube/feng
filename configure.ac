@@ -85,8 +85,8 @@ LSC_CHECK_SCTP
 LIBS="$LIBS $SCTP_LIBS"
 
 AS_IF([test "x$have_sctp" = "xyes"],
-  [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.0.9"],
-  [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.0.9"])
+  [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.1.0"],
+  [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.1.0"])
 
 PKG_CHECK_MODULES(LIBNETEMBRYO,[$LIBNETEMBRYO_REQUIRES])
 AC_SUBST(LIBNETEMBRYO_REQUIRES)
