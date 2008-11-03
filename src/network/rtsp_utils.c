@@ -260,10 +260,7 @@ void log_user_agent(RTSP_buffer * rtsp)
  * @retval ERR_NOERROR No error.
  * @retval ERR_ALLOC Not enough space to complete the request
  *
- * @note The return value is the one from @ref send_reply function.
- *
- * This is a wrapper around send_reply that does not require all the callers to
- * expand the objects' attributes.
+ * @note The return value is the one from @ref bwrite function.
  */
 int send_protocol_reply(ProtocolReply reply, RTSP_buffer *rtsp)
 {
@@ -302,6 +299,8 @@ int bwrite(GString *buffer, RTSP_buffer * rtsp)
  *
  * Concatenates a GString instance with a time stamp in the format of
  * "Date: 23 Jan 1997 15:35:06 GMT"
+ *
+ * @todo This should be moved to netembryo too.
  */
 static void append_time_stamp(GString *str) {
   char buffer[37] = { 0, };
@@ -309,8 +308,7 @@ static void append_time_stamp(GString *str) {
   time_t now = time(NULL);
   struct tm *t = gmtime(&now);
 
-  strftime(buffer, 36, "Date: %a, %d %b %Y %H:%M:%S GMT",
-	   t);
+  strftime(buffer, 36, "Date: %a, %d %b %Y %H:%M:%S GMT", t);
 
   protocol_append_header(str, buffer);
 }
@@ -318,7 +316,7 @@ static void append_time_stamp(GString *str) {
 /**
  * @brief Generates the basic RTSP response string
  *
- * @param code The response code to use for generation.
+ * @param reply The reply object to use for code and message.
  * @param cseq The CSeq value for the response.
  *
  * @return A new GString instance with the response heading.
