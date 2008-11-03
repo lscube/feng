@@ -367,7 +367,7 @@ int RTSP_play(RTSP_buffer * rtsp)
         goto error_management;
     }
     if ( session_id == 0 ) {
-        set_RTSP_Error(&error, 400, "");
+        error = RTSP_BadRequest;
         goto error_management;
     }
     
