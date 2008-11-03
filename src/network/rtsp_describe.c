@@ -150,8 +150,10 @@ int RTSP_describe(RTSP_buffer * rtsp)
     }
     
     if (srv->num_conn > srv->srvconf.max_conns) {
-        /*redirect */
-        return send_redirect_3xx(rtsp, url.path);
+        /* @todo should redirect, but we haven't the code to do that just
+         * yet. */
+        send_protocol_reply(RTSP_InternalServerError, rtsp);
+        return ERR_GENERIC;
     }
 
     // Get Session Description
