@@ -111,16 +111,12 @@ static RTSP_description_format get_description_format(RTSP_buffer *rtsp)
  * 
  * @param rtsp the buffer of the request to check
  *
- * @retval RTS_Ok No Require header present.
- * @retval RTSP_OptionNotSupported Require header present, not
- *         supported.
+ * @retval true No Require header present.
+ * @retval false Require header present, not supported.
  */
-static RTSP_Error check_require_header(RTSP_buffer * rtsp)
+static gboolean check_require_header(RTSP_buffer * rtsp)
 {
-    if (strstr(rtsp->in_buffer, HDR_REQUIRE))
-        return RTSP_OptionNotSupported;
-
-    return RTSP_Ok;
+    return strstr(rtsp->in_buffer, HDR_REQUIRE) == NULL;
 }
 
 /**
@@ -130,7 +126,7 @@ static RTSP_Error check_require_header(RTSP_buffer * rtsp)
  */
 int RTSP_describe(RTSP_buffer * rtsp)
 {
-    RTSP_Error error;
+    ProtocolReply error;
     feng *srv = rtsp->srv;
 
     Url url;
@@ -139,11 +135,13 @@ int RTSP_describe(RTSP_buffer * rtsp)
 
     // Extract the URL
     // Extract and validate the URL
-    if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
+    if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
 	goto error_management;
     // Disallow Header REQUIRE
-    if ( (error = check_require_header(rtsp)).got_error )
+    if ( !check_require_header(rtsp) ) {
+        error = RTSP_OptionNotSupported;
         goto error_management;
+    }
     // Get the CSeq
     if ( !get_cseq(rtsp) ) {
         error = RTSP_BadRequest;
@@ -180,6 +178,6 @@ int RTSP_describe(RTSP_buffer * rtsp)
     return ERR_NOERROR;
 
 error_management:
-    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
+    send_protocol_reply(error, rtsp);
     return ERR_GENERIC;
 }

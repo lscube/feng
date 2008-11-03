@@ -40,6 +40,7 @@
 
 #include <fenice/utils.h>
 #include <netembryo/wsocket.h>
+#include <netembryo/protocol_replies.h>
 #include "rtp.h"
 #include "rtcp.h"
 #include "sdp2.h"
@@ -119,8 +120,8 @@ int RTSP_handler(RTSP_buffer * rtsp);
  * @{
  */
 
-
 int send_reply(int err, const char *addon, RTSP_buffer * rtsp);
+int send_protocol_reply(ProtocolReply reply, RTSP_buffer *rtsp);
 
 #ifdef TRACE
 #define send_reply(a, b, c) \

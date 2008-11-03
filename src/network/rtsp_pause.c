@@ -70,14 +70,14 @@ int RTSP_pause(RTSP_buffer * rtsp)
     guint64 session_id;
     RTSP_session *s;
 
-    RTSP_Error error;
+    ProtocolReply error;
 
     if ( !get_cseq(rtsp) ) {
         error = RTSP_BadRequest;
         goto error_management;
     }
     // Extract and validate the URL
-    if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
+    if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
         goto error_management;
     if ( !get_session_id(rtsp, &session_id) ) {
         error = RTSP_SessionNotFound;
@@ -104,6 +104,6 @@ int RTSP_pause(RTSP_buffer * rtsp)
     return ERR_NOERROR;
 
 error_management:
-    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
+    send_protocol_reply(error, rtsp);
     return ERR_GENERIC;
 }

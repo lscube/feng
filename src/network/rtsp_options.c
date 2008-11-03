@@ -60,11 +60,9 @@ int RTSP_options(RTSP_buffer * rtsp)
     char method[255];
     char ver[255];
 
-    RTSP_Error error;
-
     if ( !get_cseq(rtsp) ) {
-        error = RTSP_BadRequest;
-        goto error_management;
+        send_protocol_reply(RTSP_BadRequest, rtsp);
+        return ERR_GENERIC;
     }
 
     sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, url, ver);
@@ -74,8 +72,4 @@ int RTSP_options(RTSP_buffer * rtsp)
     log_user_agent(rtsp); // See User-Agent 
 
     return ERR_NOERROR;
-
-error_management:
-    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
-    return ERR_GENERIC;
 }

@@ -98,14 +98,14 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     char *filename;
     rtp_session_release_pair pair;
 
-    RTSP_Error error;
+    ProtocolReply error;
 
     if ( !get_cseq(rtsp) ) {
         error = RTSP_BadRequest;
         goto error_management;
     }
     // Extract and validate the URL
-    if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
+    if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
 	goto error_management;
 
     if ( !get_session_id(rtsp, &session_id) ) {
@@ -153,6 +153,6 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     return ERR_NOERROR;
 
 error_management:
-    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
+    send_protocol_reply(error, rtsp);
     return ERR_GENERIC;
 }

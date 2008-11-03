@@ -363,6 +363,25 @@ int send_reply(int err, const char *addon, RTSP_buffer * rtsp)
 }
 
 /**
+ * @brief Sends a reply message to the client using ProtocolReply
+ *
+ * @param reply The ProtocolReply object to get the data from
+ * @param rtsp The buffer where to write the output message.
+ *
+ * @retval ERR_NOERROR No error.
+ * @retval ERR_ALLOC Not enough space to complete the request
+ *
+ * @note The return value is the one from @ref send_reply function.
+ *
+ * This is a wrapper around send_reply that does not require all the callers to
+ * expand the objects' attributes.
+ */
+int send_protocol_reply(ProtocolReply reply, RTSP_buffer *rtsp)
+{
+    return send_reply(reply.code, reply.message, rtsp);
+}
+
+/**
  * @brief Redirects the client to another server
  *
  * @param rtsp the buffer of the rtsp connection

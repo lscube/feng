@@ -45,13 +45,13 @@ void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd);
  * @param trackname_max_len maximum length of the trackname buffer
  * @return RTSP_Ok or RTSP_InternalServerError if there was no trackname
  */
-static RTSP_Error split_resource_path(Url * url, char * trackname, size_t trackname_max_len)
+static gboolean split_resource_path(Url * url, char * trackname, size_t trackname_max_len)
 {
     char * p;
 
     //if '=' is not present then a file has not been specified
     if (!(p = strchr(url->path, '=')))
-        return RTSP_InternalServerError;
+        return false;
     else {
         // SETUP resource!trackname
         g_strlcpy(trackname, p + 1, trackname_max_len);
@@ -60,18 +60,18 @@ static RTSP_Error split_resource_path(Url * url, char * trackname, size_t trackn
         *p = '\0';
     }
 
-    return RTSP_Ok;
+    return true;
 }
 
 /**
  * bind&connect the socket
  */
-static RTSP_Error unicast_transport(RTSP_buffer *rtsp, RTP_transport *transport,
+static ProtocolReply unicast_transport(RTSP_buffer *rtsp, RTP_transport *transport,
                                     port_pair cli_ports)
 {
     char port_buffer[8];
     port_pair ser_ports;
-    RTSP_Error error;
+
     if (RTP_get_port_pair(rtsp->srv, &ser_ports) != ERR_NOERROR) {
         return RTSP_InternalServerError;
     }
@@ -90,11 +90,8 @@ static RTSP_Error unicast_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     Sock_connect (get_remote_host(rtsp->sock), port_buffer,
                   transport->rtcp_sock, UDP, NULL);
 
-    if (!transport->rtp_sock) {
-        // fnc_log(FNC_LOG_ERR,"Unsupported Transport\n");
-        set_RTSP_Error(&error, 461, "Unsupported Transport");
-        return error;
-    }
+    if (!transport->rtp_sock)
+        return RTSP_UnsupportedTransport;
 
     return RTSP_Ok;
 }
@@ -103,13 +100,12 @@ static RTSP_Error unicast_transport(RTSP_buffer *rtsp, RTP_transport *transport,
  * set the sockets for the first multicast request, otherwise provide the
  * already instantiated rtp session
  */
-static RTSP_Error multicast_transport(feng *srv, RTP_transport *transport,
-                                      ResourceInfo *info,
-                                      Track *tr,
-                                      RTP_session **rtp_s)
+static ProtocolReply multicast_transport(feng *srv, RTP_transport *transport,
+                                         ResourceInfo *info,
+                                         Track *tr,
+                                         RTP_session **rtp_s)
 {
     char port_buffer[8];
-    RTSP_Error error;
 
     *rtp_s = schedule_find_multicast(srv, tr->info->mrl);
 
@@ -121,10 +117,8 @@ static RTSP_Error multicast_transport(feng *srv, RTP_transport *transport,
         transport->rtcp_sock = Sock_connect(info->multicast, port_buffer,
                                                 transport->rtcp_sock, UDP, 0);
 
-        if (!transport->rtp_sock) {
-            set_RTSP_Error(&error, 461, "Unsupported Transport");
-            return error;
-        }
+        if (!transport->rtp_sock)
+            return RTSP_UnsupportedTransport;
     }
 
     fnc_log(FNC_LOG_DEBUG,"Multicast socket set");
@@ -135,11 +129,10 @@ static RTSP_Error multicast_transport(feng *srv, RTP_transport *transport,
  * interleaved transport
  */
 
-static RTSP_Error
+static ProtocolReply
 interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
                       int rtp_ch, int rtcp_ch)
 {
-    RTSP_Error error;
     RTSP_interleaved *intlvd;
     Sock *sock_pair[2];
 
@@ -147,8 +140,7 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     if ( Sock_socketpair(sock_pair) < 0) {
         fnc_log(FNC_LOG_ERR,
                 "Cannot create AF_LOCAL socketpair for rtp\n");
-        set_RTSP_Error(&error, 500, "");
-        return error;
+        return RTSP_InternalServerError;
     }
 
     intlvd = g_new0(RTSP_interleaved, 2);
@@ -160,11 +152,10 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     if ( Sock_socketpair(sock_pair) < 0) {
         fnc_log(FNC_LOG_ERR,
                 "Cannot create AF_LOCAL socketpair for rtcp\n");
-        set_RTSP_Error(&error, 500, "");
         Sock_close(transport->rtp_sock);
         Sock_close(intlvd[0].local);
         g_free(intlvd);
-        return error;
+        return RTSP_InternalServerError;
     }
 
     transport->rtcp_sock = sock_pair[0];
@@ -190,12 +181,12 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
  * @return an RTSP_Error with reply_code 461 if the required transport is unsupported
  * @return an RTSP_Error with reply_code 500 if it wasn't possible to allocate a socket for the client
  */
-static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
-                                         RTP_transport * transport,
-                                         RTP_session **rtp_s,
-                                         Track *tr)
+static ProtocolReply parse_transport_header(RTSP_buffer * rtsp,
+                                            RTP_transport * transport,
+                                            RTP_session **rtp_s,
+                                            Track *tr)
 {
-    RTSP_Error error;
+    ProtocolReply error;
 
     port_pair cli_ports;
 
@@ -311,8 +302,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
     } while ((transport_tkn = strtok_r(NULL, ",", &saved_ptr)));
 
     // No supported transport found.
-    set_RTSP_Error(&error, 461, "Unsupported Transport");
-    return error;
+    return RTSP_UnsupportedTransport;
     malformed:
     fnc_log(FNC_LOG_ERR, "Malformed Transport string from client");
     return RTSP_BadRequest;
@@ -409,25 +399,22 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
  * @retval RTSP_InternalServerError Impossible to retrieve the data of the opened
  *                                  track
  */
-static RTSP_Error select_requested_track(Url *url, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
+static ProtocolReply select_requested_track(Url *url, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
 {
-    RTSP_Error error;
     feng *srv = rtsp_s->srv;
 
     // it should parse the request giving us object!trackname
     if (!rtsp_s->resource) {
         if (!(rtsp_s->resource = mt_resource_open(srv, prefs_get_serv_root(), url->path))) {
-            error = RTSP_NotFound;
             fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", url->path);
-            return error;
+            return RTSP_NotFound;
         }
     }
 
     if (!(*track_sel = r_open_tracks(rtsp_s->resource, trackname))) {
-        error = RTSP_NotFound;
         fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
                 trackname, url->path);
-        return error;
+        return RTSP_NotFound;
     }
 
     if (!(*req_track = r_selected_track(*track_sel)))
@@ -520,7 +507,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     RTP_session *rtp_s = NULL;
     RTSP_session *rtsp_s;
 
-    RTSP_Error error;
+    ProtocolReply error;
 
     // init
     memset(&transport, 0, sizeof(transport));
@@ -528,12 +515,14 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     // Parse the input message
 
     // Extract and validate the URL
-    if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
+    if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
 	goto error_management;
 
     // Split resource!trackname
-    if ( (error = split_resource_path(&url, trackname, sizeof(trackname))).got_error )
+    if ( !split_resource_path(&url, trackname, sizeof(trackname)) ) {
+        error = RTSP_InternalServerError;
         goto error_management;
+    }
 
     if ( !get_cseq(rtsp) ) {
         error = RTSP_BadRequest;
@@ -552,11 +541,11 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     rtsp_s = append_session(rtsp);
 
     // Get the selected track
-    if ( (error = select_requested_track(&url, rtsp_s, trackname, &track_sel, &req_track)).got_error )
+    if ( (error = select_requested_track(&url, rtsp_s, trackname, &track_sel, &req_track)).error )
         goto error_management;
 
     // Parse the RTP/AVP/something string
-    if ( (error = parse_transport_header(rtsp, &transport, &rtp_s, req_track)).got_error )
+    if ( (error = parse_transport_header(rtsp, &transport, &rtp_s, req_track)).error )
         goto error_management;
 
     // Setup the RTP session
@@ -593,6 +582,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     return ERR_NOERROR;
 
 error_management:
-    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
+    send_protocol_reply(error, rtsp);
     return ERR_GENERIC;
 }
