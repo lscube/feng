@@ -215,6 +215,7 @@ void schedule_init(feng *srv)
 /**
  * @brief Find a multicast instance from the MRL parameter
  *
+ * @param srv The server instance in use (for ONE_FORK_MAX_CONNECTION)
  * @param mrl MRL to look for
  *
  * @return The RTP instance for the multicast stream, or NULL if none

@@ -32,6 +32,7 @@ static int *port_pool; //!< list of allocated ports
 
 /**
  * Initializes the pool of ports and the initial port from the given one
+ * @param srv The server instance in use (for ONE_FORK_MAX_CONNECTION)
  * @param port The first port from which to start allocating connections
  */
 void RTP_port_pool_init(feng *srv, int port)
@@ -46,8 +47,12 @@ void RTP_port_pool_init(feng *srv, int port)
 
 /**
  * Gives a group of available ports for a new connection
+ *
+ * @param srv The server instance in use (for ONE_FORK_MAX_CONNECTION)
  * @param pair where to set the group of available ports
- * @return ERR_NOERROR or ERR_GENERIC if there isn't an available port
+ *
+ * @retval ERR_NOERROR No error
+ * @retval ERR_GENERIC No port available
  */
 int RTP_get_port_pair(feng *srv, port_pair * pair)
 {
@@ -67,8 +72,12 @@ int RTP_get_port_pair(feng *srv, port_pair * pair)
 
 /**
  * Sets a group of ports as available for a new connection
+ *
+ * @param srv The server instance in use (for ONE_FORK_MAX_CONNECTION)
  * @param pair the group of ports to release
- * @return ERR_NOERROR or ERR_GENERIC if the ports were not allocated
+ *
+ * @retval ERR_NOERROR No error
+ * @retval ERR_GENERIC Ports not allocated
  */
 int RTP_release_port_pair(feng *srv, port_pair * pair)
 {
