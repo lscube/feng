@@ -31,6 +31,7 @@
 #include <unistd.h>
 
 #include "eventloop.h"
+#include "network/rtsp_utils.h"
 #include <fenice/utils.h>
 
 #include <fenice/schedule.h>
@@ -138,8 +139,8 @@ static void interleaved_read(gpointer element, gpointer user_data)
       GString *str = g_string_sized_new(n+4);
       g_string_append_c(str, '$');
       g_string_append_c(str, (unsigned char)intlvd->proto.tcp.rtcp_ch);
-      g_string_append_len(str, &ne_n, 2);
-      g_string_append_len(str, &buffer, n);
+      g_string_append_len(str, (gchar *)&ne_n, 2);
+      g_string_append_len(str, (gchar *)&buffer, n);
       
       g_async_queue_push(rtsp->out_queue, str);
       if ( (n = RTSP_send(rtsp)) < 0) {
@@ -171,8 +172,8 @@ static void interleaved_read(gpointer element, gpointer user_data)
       GString *str = g_string_sized_new(n+4);
       g_string_append_c(str, '$');
       g_string_append_c(str, (unsigned char)intlvd->proto.tcp.rtcp_ch);
-      g_string_append_len(str, &ne_n, 2);
-      g_string_append_len(str, &buffer, n);
+      g_string_append_len(str, (gchar *)&ne_n, 2);
+      g_string_append_len(str, (gchar *)&buffer, n);
       
       g_async_queue_push(rtsp->out_queue, str);
       if ( (n = RTSP_send(rtsp)) < 0) {

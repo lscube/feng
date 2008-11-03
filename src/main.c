@@ -36,9 +36,9 @@
 #include <errno.h>
 #include <grp.h>
 
-#include <buffer.h>
-#include <array.h>
-#include <configfile.h>
+#include "conf/buffer.h"
+#include "conf/array.h"
+#include "conf/configfile.h"
 
 #include <fenice/server.h>
 #include "eventloop.h"

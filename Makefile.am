@@ -1,5 +1,4 @@
-SUBDIRS =	conf \
-		src
+SUBDIRS = src
 
 noinst_HEADERS = \
 	include/fenice/utils.h \
@@ -9,13 +8,7 @@ noinst_HEADERS = \
 	include/fenice/schedule.h \
 	include/fenice/server.h \
 	include/fenice/debug.h \
-	include/fenice/sdp_grammar.h \
-	include/conf.h \
-	include/settings.h \
-	include/stream.h \
-	include/configfile.h \
-	include/array.h \
-	include/buffer.h
+	include/fenice/sdp_grammar.h
 
 EXTRA_DIST = RELEASE
 
