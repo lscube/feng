@@ -348,16 +348,18 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
 {
     char *s;
     RTSP_session *p;
-    guint64 session_id;
 
     if ((s = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(s, "%*s %"SCNu64, &session_id) != 1) {
+        if (sscanf(s, "%*s %"SCNu64, &rtsp->session_id) != 1) {
             fnc_log(FNC_LOG_INFO,
                 "Invalid Session number in Session header\n");
-            send_reply(454, NULL, rtsp);    /* Session Not Found */
+            send_protocol_reply(RTSP_SessionNotFound, rtsp);
             return;
         }
+    } else {
+        rtsp->session_id = 0;
     }
+
     p = rtsp->session;
     if (p == NULL) {
         return;
