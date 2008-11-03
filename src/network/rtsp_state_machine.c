@@ -349,6 +349,9 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
     char *s;
     RTSP_session *p;
 
+    /* Check if a Session-ID header is present, and if it is ensure it is valid.
+     * Respond with a 454 reply if it's not the case.
+     */
     if ((s = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
         if (sscanf(s, "%*s %"SCNu64, &rtsp->session_id) != 1) {
             fnc_log(FNC_LOG_INFO,
@@ -360,10 +363,23 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
         rtsp->session_id = 0;
     }
 
+    /* make sure that there is a session connected to the stream,
+     * if there isn't, respond with a 415 reply.
+     */
     p = rtsp->session;
     if (p == NULL) {
+        send_protocol_reply(RTSP_ParameterNotUnderstood, rtsp);
         return;
     }
+
+    /* If there is a session id for the stream, make sure it is the same as the
+     * session it's linked to, if not, respond with a 454 reply.
+     */
+    if ( rtsp->session_id != 0 && p->session_id != rtsp->session_id ) {
+        send_protocol_reply(RTSP_SessionNotFound, rtsp);
+        return;
+    }
+
     switch (p->cur_state) {
     case INIT_STATE:{
             switch (method) {
