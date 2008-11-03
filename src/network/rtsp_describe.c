@@ -103,6 +103,27 @@ static RTSP_description_format get_description_format(RTSP_buffer *rtsp)
 }
 
 /**
+ * @brief Checks if the RTSP message is a request with supported
+ *        options
+ *
+ * The HDR_REQUIRE header is not supported by feng so it will always
+ * be not supported if present.
+ * 
+ * @param rtsp the buffer of the request to check
+ *
+ * @retval RTS_Ok No Require header present.
+ * @retval RTSP_OptionNotSupported Require header present, not
+ *         supported.
+ */
+static RTSP_Error check_require_header(RTSP_buffer * rtsp)
+{
+    if (strstr(rtsp->in_buffer, HDR_REQUIRE))
+        return RTSP_OptionNotSupported;
+
+    return RTSP_Ok;
+}
+
+/**
  * RTSP DESCRIBE method handler
  * @param rtsp the buffer for which to handle the method
  * @return ERR_NOERROR

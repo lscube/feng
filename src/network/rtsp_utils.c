@@ -255,27 +255,6 @@ ProtocolReply rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url) {
 }
 
 /**
- * @brief Checks if the RTSP message is a request with supported
- *        options
- *
- * The HDR_REQUIRE header is not supported by feng so it will always
- * be not supported if present.
- * 
- * @param rtsp the buffer of the request to check
- *
- * @retval RTS_Ok No Require header present.
- * @retval RTSP_OptionNotSupported Require header present, not
- *         supported.
- */
-RTSP_Error check_require_header(RTSP_buffer * rtsp)
-{
-    if (strstr(rtsp->in_buffer, HDR_REQUIRE))
-        return RTSP_OptionNotSupported;
-
-    return RTSP_Ok;
-}
-
-/**
  * @brief Gets the CSeq from the buffer
  * 
  * Search for the CSEQ header and fills rtsp->rtsp_cseq with its
