@@ -158,21 +158,23 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
  */
 
 /**
- * @brief Checks if the path required by the connection is inside the
- *        avroot.
+ * @brief Checks if the path required by the connection is inside the avroot.
  *
  * @param url The netembryo Url structure to validate.
  *
- * @retval RTSP_Ok The URL does not contian any forbidden sequence.
- * @retval RTSP_Forbidden The URL contains forbidden sequences that
- *         might have malicious intent.
+ * @retval true The URL does not contian any forbidden sequence.
+ * @retval false The URL contains forbidden sequences that might have malicious
+ *         intent.
+ *
+ * @todo This function should be moved to netembryo.
+ * @todo This function does not check properly for paths.
  */
-static RTSP_Error check_forbidden_path(Url *url)
+static gboolean check_forbidden_path(Url *url)
 {
     if ( strstr(url->path, "../") || strstr(url->path, "./") )
-        return RTSP_Forbidden;
+        return false;
 
-    return RTSP_Ok;
+    return true;
 }
 
 /**
@@ -184,15 +186,17 @@ static RTSP_Error check_forbidden_path(Url *url)
  * @param[out] url The netembryo Url structure to fill with the
  *                 validate Url.
  *
- * @retval RTSP_Ok The URL has been filled in url.
- * @retval RTSP_BadRequest The URL is malformed.
+ * @retval true The URL has been filled in url.
+ * @retval false The URL is malformed.
+ *
+ * @todo This function should be moved to netembryo.
  */
-static RTSP_Error validate_url(char *urlstr, Url * url)
+static gboolean validate_url(char *urlstr, Url * url)
 {
     char *decoded_url = g_malloc(strlen(urlstr)+1);
     
     if ( Url_decode( decoded_url, urlstr, strlen(urlstr) ) < 0 )
-      return RTSP_BadRequest;
+      return false;
 
     Url_init(url, decoded_url);
 
@@ -200,10 +204,10 @@ static RTSP_Error validate_url(char *urlstr, Url * url)
 
     if ( url->path == NULL ) {
       Url_destroy(url);
-      return RTSP_BadRequest;
+      return false;
     }
 
-    return RTSP_Ok;
+    return true;
 }
 
 /**
@@ -215,16 +219,16 @@ static RTSP_Error validate_url(char *urlstr, Url * url)
  * @param[out] url_buffer the buffer where to write the url (must be
  *                        big enough).
  * 
- * @retval RTSP_Ok URL identified and copied in the buffer.
- * @retval RTSP_BadRequest URL not found in the buffer.
+ * @retval true URL identified and copied in the buffer.
+ * @retval false URL not found in the buffer.
  */
-static RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer)
+static gboolean extract_url(RTSP_buffer * rtsp, char * url_buffer)
 {
     if (!sscanf(rtsp->in_buffer, " %*s %254s ", url_buffer)) {
-        return RTSP_BadRequest;
+        return false;
     }
 
-    return RTSP_Ok;
+    return true;
 }
 
 /**
@@ -237,19 +241,17 @@ static RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer)
  * @retval RTSP_BadRequest URL not found or malformed.
  * @retval RTSP_Forbidden The URL contains forbidden character sequences.
  */
-RTSP_Error rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url) {
+ProtocolReply rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url) {
   char urlstr[256];
-  RTSP_Error error = RTSP_Ok;
   
-  if ( (error = extract_url(rtsp, urlstr)).got_error )
-    goto end;
-  if ( (error = validate_url(urlstr, url)).got_error )
-    goto end;
-  if ( (error = check_forbidden_path(url)).got_error )
-    goto end;
+  if ( !extract_url(rtsp, urlstr) )
+      return RTSP_BadRequest;
+  if ( !validate_url(urlstr, url) )
+      return RTSP_BadRequest;
+  if ( !check_forbidden_path(url) )
+      return RTSP_Forbidden;
 
- end:
-  return error;
+  return RTSP_Ok;
 }
 
 /**

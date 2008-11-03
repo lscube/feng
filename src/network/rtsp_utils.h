@@ -37,7 +37,7 @@
  * internal functions
  */
 
-RTSP_Error rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url);;
+ProtocolReply rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url);;
 RTSP_Error check_require_header(RTSP_buffer * rtsp);
 RTSP_Error get_cseq(RTSP_buffer * rtsp);
 RTSP_Error get_session_id(RTSP_buffer * rtsp, guint64 * session_id);
