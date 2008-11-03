@@ -93,7 +93,6 @@ static void rtp_session_release(gpointer element, gpointer user_data)
 int RTSP_teardown(RTSP_buffer * rtsp)
 {
     Url url;
-    guint64 session_id;
     RTSP_session *s;
     char *filename;
     rtp_session_release_pair pair;
@@ -108,26 +107,21 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
 	goto error_management;
 
-    if ( !get_session_id(rtsp, &session_id) ) {
-        error = RTSP_SessionNotFound;
-        goto error_management;
-    }
-
     s = rtsp->session;
     if (s == NULL) {
         send_reply(415, 0, rtsp);    // Internal server error
         return ERR_GENERIC;
     }
 
-    if (s->session_id != session_id) {
+    if (s->session_id != rtsp->session_id) {
         send_reply(454, 0, rtsp);    /* Session Not Found */
         return ERR_PARSE;
     }
 
     fnc_log(FNC_LOG_INFO, "TEARDOWN %s://%s/%s RTSP/1.0 ",
 	    url.protocol, url.hostname, url.path);
-    send_teardown_reply(rtsp, session_id);
-    log_user_agent(rtsp); // See User-Agent
+    send_teardown_reply(rtsp, rtsp->session_id);
+    log_user_agent(rtsp); // See User-Agent 
 
     if (strchr(url.path, '='))    /*Compatibility with RealOne and RealPlayer */
         filename = strchr(url.path, '=') + 1;

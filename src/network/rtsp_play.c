@@ -142,22 +142,16 @@ static gboolean parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
 /**
  * Gets the correct session for the given session_id (actually only 1 session is supported)
  * @param rtsp the buffer from which to get the session
- * @param session_id the id of the session to retrieve
- * @param rtsp_sess where to save the retrieved session
- * @return RTSP_Ok or RTSP_SessionNotFound
+ * @return The identified session or NULL if not found.
  */
-static gboolean
-get_session(RTSP_buffer * rtsp, guint64 session_id,
-            RTSP_session **rtsp_sess)
+static RTSP_session *get_session(RTSP_buffer * rtsp)
 {
     // XXX Feng supports single session atm
-    if (((*rtsp_sess = rtsp->session) == NULL) ||
-        ((*rtsp_sess)->session_id != session_id))
-    {
-        return false;
-    }
+    if (rtsp->session == NULL ||
+        rtsp->session->session_id != rtsp->session_id)
+        return NULL;
 
-    return true;
+    return rtsp->session;
 }
 
 static void rtp_session_seek(gpointer value, gpointer user_data)
@@ -344,7 +338,6 @@ static int send_play_reply(RTSP_buffer * rtsp, Url *url,
 int RTSP_play(RTSP_buffer * rtsp)
 {
     Url url;
-    guint64 session_id;
     RTSP_session *rtsp_sess;
     play_args args;
 
@@ -362,17 +355,13 @@ int RTSP_play(RTSP_buffer * rtsp)
         goto error_management;
     }
     
-    if ( !get_session_id(rtsp, &session_id) ) {
-        error = RTSP_SessionNotFound;
-        goto error_management;
-    }
-    if ( session_id == 0 ) {
+    if ( rtsp->session_id == 0 ) {
         error = RTSP_BadRequest;
         goto error_management;
     }
     
     // Pick correct session
-    if ( !get_session(rtsp, session_id, &rtsp_sess) ) {
+    if ( (rtsp_sess = get_session(rtsp)) == NULL ) {
         error = RTSP_SessionNotFound;
         goto error_management;
     }

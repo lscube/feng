@@ -492,7 +492,6 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
 int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 {
     Url url;
-    guint64 session_id = 0;
     char trackname[255];
     RTP_transport transport;
 
@@ -525,13 +524,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         goto error_management;
     }
 
-    // If there's a Session header we have an aggregate control
-    if ( !get_session_id(rtsp, &session_id) ) {
-        error = RTSP_SessionNotFound;
-        goto error_management;
-    }
-    if (session_id == 0)
-        session_id = generate_session_id();
+    if (rtsp->session_id == 0)
+        rtsp->session_id = generate_session_id();
 
     // Add an RTSP session if necessary
     rtsp_s = append_session(rtsp);
@@ -564,7 +558,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     // Metadata End
 
     // Setup the RTSP session
-    rtsp_s->session_id = session_id;
+    rtsp_s->session_id = rtsp->session_id;
     *new_session = rtsp_s;
 
     fnc_log(FNC_LOG_INFO, "SETUP %s://%s/%s RTSP/1.0 ",

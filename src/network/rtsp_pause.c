@@ -67,7 +67,6 @@ static void rtp_session_pause(gpointer element, gpointer user_data)
 int RTSP_pause(RTSP_buffer * rtsp)
 {
     Url url;
-    guint64 session_id;
     RTSP_session *s;
 
     ProtocolReply error;
@@ -79,17 +78,13 @@ int RTSP_pause(RTSP_buffer * rtsp)
     // Extract and validate the URL
     if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
         goto error_management;
-    if ( !get_session_id(rtsp, &session_id) ) {
-        error = RTSP_SessionNotFound;
-        goto error_management;
-    }
 
     s = rtsp->session;
     if (s == NULL) {
         send_reply(415, NULL, rtsp);    // Internal server error
         return ERR_GENERIC;
     }
-    if (s->session_id != session_id) {
+    if (s->session_id != rtsp->session_id) {
         send_reply(454, NULL, rtsp);    /* Session Not Found */
         return ERR_NOERROR;
     }
