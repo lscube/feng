@@ -48,8 +48,6 @@
  * @{
  */
 
-RTSP_Error const RTSP_Fatal_ErrAlloc = { {0, ""}, ERR_ALLOC };
-
 /**
  * gets the reply message from a standard RTSP error code
  * @param err the code of the error

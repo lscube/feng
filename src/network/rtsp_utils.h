@@ -48,7 +48,6 @@ GString *rtsp_generate_response(guint code, guint cseq);
 GString *rtsp_generate_ok_response(guint cseq, guint64 session);
 
 void log_user_agent(RTSP_buffer * rtsp);
-extern RTSP_Error const RTSP_Fatal_ErrAlloc;
 
 RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock);
 void rtsp_client_destroy(RTSP_buffer *rtsp);
