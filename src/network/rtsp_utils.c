@@ -267,7 +267,7 @@ void log_user_agent(RTSP_buffer * rtsp)
  */
 int send_protocol_reply(ProtocolReply reply, RTSP_buffer *rtsp)
 {
-    GString *response = protocol_response_new_reply(RTSP_1_0, reply);
+    GString *response = protocol_response_new(RTSP_1_0, reply);
 
     int res = bwrite(response, rtsp);
     
@@ -398,7 +398,7 @@ static void append_time_stamp(GString *str) {
  */
 GString *rtsp_generate_response(ProtocolReply reply, guint cseq)
 {
-    GString *response = protocol_response_new_reply(RTSP_1_0, reply);
+    GString *response = protocol_response_new(RTSP_1_0, reply);
   
     protocol_append_header_uint(response, "CSeq", cseq);
 
