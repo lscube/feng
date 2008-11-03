@@ -298,7 +298,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
                 if (method == RTSP_ID_ERROR) {
                     // Bad request: non-existing method
                     fnc_log(FNC_LOG_INFO, "Bad Request ");
-                    send_reply(400, NULL, rtsp);
+                    send_protocol_reply(RTSP_BadRequest, rtsp);
                 } else
                     RTSP_state_machine(rtsp, method);
             } else {
@@ -419,6 +419,11 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
 
     switch (p->cur_state) {
     case INIT_STATE:{
+        static ProtocolReply InvalidMethods =
+            { 455, true, false, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n" };
+        static ProtocolReply NotImplemented =
+            { 501, true, false, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n" };
+
             switch (method) {
             case RTSP_ID_DESCRIBE:
                 RTSP_describe(rtsp);
@@ -438,22 +443,23 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
                 break;
             case RTSP_ID_PLAY:    /* method not valid this state. */
             case RTSP_ID_PAUSE:
-                send_reply(455,
-                       "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n",
-                       rtsp);
+                send_protocol_reply(InvalidMethods, rtsp);
                 break;
             case RTSP_ID_SET_PARAMETER:
                 RTSP_set_parameter(rtsp);
                 break;
             default:
-                send_reply(501,
-                       "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n",
-                       rtsp);
+                send_protocol_reply(NotImplemented, rtsp);
                 break;
             }
             break;
         }        /* INIT state */
     case READY_STATE:{
+        static ProtocolReply InvalidMethods =
+            { 455, true, false, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n" };
+        static ProtocolReply NotImplemented =
+            { 501, true, false, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n" };
+
             switch (method) {
             case RTSP_ID_PLAY:
                 if (RTSP_play(rtsp) == ERR_NOERROR) {
@@ -474,17 +480,13 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
                 RTSP_set_parameter(rtsp);
                 break;
             case RTSP_ID_PAUSE:    /* method not valid this state. */
-                send_reply(455,
-                       "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n",
-                       rtsp);
+                send_protocol_reply(InvalidMethods, rtsp);
                 break;
             case RTSP_ID_DESCRIBE:
                 RTSP_describe(rtsp);
                 break;
             default:
-                send_reply(501,
-                       "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n",
-                       rtsp);
+                send_protocol_reply(NotImplemented, rtsp);
                 break;
             }
             break;

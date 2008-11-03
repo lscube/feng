@@ -169,7 +169,7 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
             if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
                 fnc_log(FNC_LOG_DEBUG,
                     "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
-                send_reply(500, NULL, rtsp);
+                send_protocol_reply(RTSP_InternalServerError, rtsp);
                 n = -1;
             }
             memcpy(&(rtsp->in_buffer[rtsp->in_size]), buffer, n);
@@ -197,7 +197,7 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 
     if (n < 0) {
         fnc_log(FNC_LOG_INFO, "RTSP connection closed by server.");
-        send_reply(500, NULL, rtsp);
+        send_protocol_reply(RTSP_InternalServerError, rtsp);
     }
 
 //  unregister the client

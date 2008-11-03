@@ -50,7 +50,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, Url *url, GString *descr,
     if (!reply) {
         fnc_log(FNC_LOG_ERR,
             "send_describe_reply(): unable to allocate memory\n");
-        send_reply(500, NULL, rtsp);    /* internal server error */
+        send_protocol_reply(RTSP_InternalServerError, rtsp);
         return ERR_ALLOC;
     }
 

@@ -318,8 +318,8 @@ int send_redirect_3xx(RTSP_buffer * rtsp, const char *object)
 {
 #if ENABLE_MEDIATHREAD
 #warning Write mt equivalent
-        send_reply(500, 0, rtsp);       /* Internal server error */
-        return ERR_NOERROR;
+    send_protocol_reply(RTSP_InternalServerError, rtsp);
+    return ERR_NOERROR;
 #else
     char *r;        /* get reply message buffer pointer */
     uint8 *mb;        /* message body buffer pointer */
