@@ -49,16 +49,6 @@
  */
 
 /**
- * gets the reply message from a standard RTSP error code
- * @param err the code of the error
- * @return the string format of the error corresponding to the given code
- */
-static const char const *get_stat(int err)
-{
-    return reply_get_rtsp(err).message;
-}
-
-/**
  * Allocate and initialise a new RTSP client structure
  *
  * @param srv The feng server that accepted the connection.
@@ -284,7 +274,7 @@ int send_reply(int err, const char *addon, RTSP_buffer * rtsp)
 
     res = bwrite(reply, rtsp);
 
-    fnc_log(FNC_LOG_ERR, "%s %d - - ", get_stat(err), err);
+    fnc_log(FNC_LOG_ERR, "%s %d - - ", addon, err);
     log_user_agent(rtsp);
 
     return res;
@@ -421,6 +411,39 @@ static void append_time_stamp(GString *str) {
 }
 
 /**
+ * @brief Append an unsigned integer header to a response
+ *
+ * @param response The GString instance to append the header to.
+ * @param header String with the name of the header.
+ * @param value Value of the header to append.
+ */
+static void rtsp_response_append_unsigned(GString *response,
+                                          const char *header,
+                                          guint value)
+{
+    g_string_append_printf(response, "%s: %u" RTSP_EL,
+                           header, value);
+}
+
+/**
+ * @brief Internal method to generate the basic RTSP response string.
+ *
+ * @param code Reply code for the response.
+ * @param str Description string of the response
+ *
+ * @return A new GString isntance with the first line of the response.
+ */
+static GString *rtsp_generate_response_internal(guint16 code,
+                                                const char *str)
+{
+    GString *response = g_string_new("");
+    
+    g_string_printf(response,
+                    "%s %d %s" RTSP_EL,
+                    RTSP_VER, code, str);
+}
+
+/**
  * @brief Generates the basic RTSP response string
  *
  * @param code The response code to use for generation.
@@ -428,19 +451,29 @@ static void append_time_stamp(GString *str) {
  *
  * @return A new GString instance with the response heading.
  */
-GString *rtsp_generate_response(guint code, guint cseq) {
-  GString *response = g_string_new("");
+GString *rtsp_generate_response(guint code, guint cseq)
+{
+    GString *response =
+        rtsp_generate_response_internal(code, reply_get_rtsp(code).message);
   
-  g_string_printf(response,
-		  "%s %d %s" RTSP_EL
-		  "CSeq: %u" RTSP_EL,
-		  RTSP_VER, code, get_stat(code), cseq);
+    rtsp_response_append_unsigned(response, "CSeq", cseq);
 
-  return response;
+    return response;
 }
+
 /**
- * @}
+ * @brief Generates the basic RTSP response string using ProtocolReply
+ *
+ * @param reply The ProtocolReply to use for the respones
  */
+static GString *rtsp_generate_protocol_response(ProtocolReply reply)
+{
+    GString *response =
+        rtsp_generate_response_internal(reply.code,
+                                        reply.message);
+
+    return response;
+}
 
 /**
  * @brief Generates a positive RTSP response string
@@ -452,7 +485,9 @@ GString *rtsp_generate_response(guint code, guint cseq) {
  * @return A new GString instance with the response heading.
  */
 GString *rtsp_generate_ok_response(guint cseq, guint64 session) {
-  GString *response = rtsp_generate_response(200, cseq);
+  GString *response = rtsp_generate_protocol_response(RTSP_Ok);
+
+  rtsp_response_append_unsigned(response, "CSeq", cseq);
 
   g_string_append_printf(response,
 			 "Server: %s/%s" RTSP_EL,
@@ -467,6 +502,10 @@ GString *rtsp_generate_ok_response(guint cseq, guint64 session) {
 
   return response;
 }
+
+/**
+ * @}
+ */
 
 /**
  * @}
