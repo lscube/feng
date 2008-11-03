@@ -420,9 +420,9 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
     switch (p->cur_state) {
     case INIT_STATE:{
         static ProtocolReply InvalidMethods =
-            { 455, true, false, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n" };
+            { 455, true, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n" };
         static ProtocolReply NotImplemented =
-            { 501, true, false, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n" };
+            { 501, true, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n" };
 
             switch (method) {
             case RTSP_ID_DESCRIBE:
@@ -456,9 +456,9 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
         }        /* INIT state */
     case READY_STATE:{
         static ProtocolReply InvalidMethods =
-            { 455, true, false, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n" };
+            { 455, true, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n" };
         static ProtocolReply NotImplemented =
-            { 501, true, false, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n" };
+            { 501, true, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n" };
 
             switch (method) {
             case RTSP_ID_PLAY:
