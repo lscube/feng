@@ -438,13 +438,17 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
 
 /**
  * Gets the track requested for the object
+ *
  * @param url the object for which to get the requested track
  * @param rtsp_s the session where to save the addressed resource
  * @param trackname the name of the track to open
  * @param track_sel where to save the selector for the opened track
  * @param req_track where to save the data of the opened track
- * @return RTSP_Ok or RTSP_NotFound if the object or the track was not found
- * @return RTSP_InternalServerError if it was not possible to retrieve the data of the opened track
+ *
+ * @retval RTSP_Ok No error
+ * @retval RTSP_NotFound Object or track not found
+ * @retval RTSP_InternalServerError Impossible to retrieve the data of the opened
+ *                                  track
  */
 static RTSP_Error select_requested_track(Url *url, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
 {

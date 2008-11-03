@@ -59,9 +59,9 @@ static inline double calc_send_time(RTP_session *session, BPSlot *slot) {
 /**
  * Sends pending RTP packets for the given session
  * @param session the RTP session for which to send the packets
- * @return ERR_NOERROR
- * @return ERR_ALLOC on buffer allocation errors
- * @return ERR_EOF on stream end
+ * @retval ERR_NOERROR
+ * @retval ERR_ALLOC Buffer allocation errors
+ * @retval ERR_EOF End of stream
  * @return Same error values as event_buffer_low on event emission problems
  */
 int RTP_send_packet(RTP_session * session)

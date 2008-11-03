@@ -544,13 +544,15 @@ static enum RTSP_method_token RTSP_validate_method(RTSP_buffer * rtsp)
 }
 
 /**
- * Validates an incoming response message
+ * @brief Validates an incoming response message
+ *
  * @param status where to save the state specified in the message
  * @param msg where to save the message itself
  * @param rtsp the buffer containing the message
- * @return 1 if everything was fine
- * @return 0 if the parsed message wasn't a response message
- * @return ERR_GENERIC on generic error
+ *
+ * @retval 1 No error
+ * @retval 0 The parsed message wasn't a response message
+ * @retval ERR_GENERIC Error
  */ 
 static int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rtsp)
 // This routine is from BP.
