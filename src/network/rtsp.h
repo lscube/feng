@@ -94,7 +94,6 @@ typedef struct RTSP_buffer {
     GSList *ev_io;
     ev_io *ev_io_write;
     // Run-Time
-    guint64 session_id;
     unsigned int rtsp_cseq;
     RTSP_session *session;
     feng *srv;

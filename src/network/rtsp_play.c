@@ -340,13 +340,13 @@ int RTSP_play(RTSP_buffer * rtsp)
         goto error_management;
     }
     
-    if ( rtsp->session_id == 0 ) {
+    rtsp_sess = rtsp->session;
+    
+    if ( rtsp_sess->session_id == 0 ) {
         error = RTSP_BadRequest;
         goto error_management;
     }
 
-    rtsp_sess = rtsp->session;
-    
     // Extract and validate the URL
     if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
         goto error_management;

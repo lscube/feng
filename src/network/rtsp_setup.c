@@ -524,9 +524,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         goto error_management;
     }
 
-    if (rtsp->session_id == 0)
-        rtsp->session_id = generate_session_id();
-
     // Add an RTSP session if necessary
     rtsp_s = append_session(rtsp);
 
@@ -558,7 +555,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     // Metadata End
 
     // Setup the RTSP session
-    rtsp_s->session_id = rtsp->session_id;
+    rtsp_s->session_id = generate_session_id();
     *new_session = rtsp_s;
 
     fnc_log(FNC_LOG_INFO, "SETUP %s://%s/%s RTSP/1.0 ",
