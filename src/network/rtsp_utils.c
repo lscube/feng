@@ -297,7 +297,14 @@ int send_reply(int err, const char *addon, RTSP_buffer * rtsp)
  */
 int send_protocol_reply(ProtocolReply reply, RTSP_buffer *rtsp)
 {
-    return send_reply(reply.code, reply.message, rtsp);
+    GString *response = protocol_response_new_reply(RTSP_1_0, reply);
+
+    int res = bwrite(response, rtsp);
+    
+    fnc_log(FNC_LOG_ERR, "%s %d - - ", reply.message, reply.code);
+    log_user_agent(rtsp);
+
+    return res;
 }
 
 /**
