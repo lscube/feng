@@ -257,7 +257,7 @@ static int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
     return RTSP_method_rcvd;
 }
 
-static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method_code);
+static void RTSP_state_machine(RTSP_buffer * rtsp);
 static int RTSP_valid_response_msg(unsigned short *status, char *msg,
 				   RTSP_buffer * rtsp);
 static enum RTSP_method_token RTSP_validate_method(RTSP_buffer * rtsp);
@@ -286,7 +286,6 @@ int RTSP_handler(RTSP_buffer * rtsp)
     RTSP_interleaved *intlvd;
     GSList *list;
     int hlen, blen;
-    enum RTSP_method_token method;
 
     while (rtsp->in_size) {
         switch ((full_msg = RTSP_full_msg_rcvd(rtsp, &hlen, &blen))) {
@@ -294,13 +293,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
             op = RTSP_valid_response_msg(&status, msg, rtsp);
             if (op == 0) {
                 // There is NOT an input RTSP message, therefore it's a request
-                method = RTSP_validate_method(rtsp);
-                if (method == RTSP_ID_ERROR) {
-                    // Bad request: non-existing method
-                    fnc_log(FNC_LOG_INFO, "Bad Request ");
-                    send_protocol_reply(RTSP_BadRequest, rtsp);
-                } else
-                    RTSP_state_machine(rtsp, method);
+                RTSP_state_machine(rtsp);
             } else {
                 // There's a RTSP answer in input.
                 if (op == ERR_GENERIC) {
@@ -403,9 +396,15 @@ gboolean get_cseq(RTSP_buffer * rtsp)
  * @param rtsp the buffer containing the message to dispatch
  * @param method the id of the method to execute
  */
-static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method)
+static void RTSP_state_machine(RTSP_buffer * rtsp)
 {
     RTSP_session *p = get_session(rtsp);
+    enum RTSP_method_token method = RTSP_validate_method(rtsp);
+    
+    if ( method == RTSP_ID_ERROR ) {
+        send_protocol_reply(RTSP_BadRequest, rtsp);
+        return;
+    }
 
     if ( p == NULL ) {
         send_protocol_reply(RTSP_SessionNotFound, rtsp);
