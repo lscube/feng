@@ -66,7 +66,6 @@ RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
     new->out_queue = g_async_queue_new();
 
     new->session = g_new0(RTSP_session, 1);
-    new->session->session_id = -1;
     new->session->srv = srv;
 
     return new;
