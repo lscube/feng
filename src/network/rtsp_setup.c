@@ -328,24 +328,6 @@ static guint64 generate_session_id()
     return session_id;
 }
 
-/**
- * Appends a new session to the buffer (actually only 1 session is supported)
- * @param rtsp the buffer where to add the session
- * @return The newly allocated session
- */
-static RTSP_session * append_session(RTSP_buffer * rtsp)
-{
-    RTSP_session *rtsp_s;
-
-    // XXX Append a new session if one isn't present already!
-    if (!rtsp->session) {
-        rtsp->session = g_new0(RTSP_session, 1);
-    }
-    rtsp_s = rtsp->session;
-
-    return rtsp_s;
-}
-
 static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     RTP_recv(w->data);
@@ -493,10 +475,9 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
 /**
  * RTSP SETUP method handler
  * @param rtsp the buffer for which to handle the method
- * @param new_session where to save the newly allocated RTSP session
  * @return ERR_NOERROR
  */
-int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
+int RTSP_setup(RTSP_buffer * rtsp)
 {
     Url url;
     char trackname[255];
@@ -507,7 +488,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 
     //mediathread pointers
     RTP_session *rtp_s = NULL;
-    RTSP_session *rtsp_s;
+    RTSP_session *rtsp_s = rtsp->session;
 
     ProtocolReply error;
 
@@ -526,8 +507,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         goto error_management;
     }
 
-    // Add an RTSP session if necessary
-    rtsp_s = append_session(rtsp);
+    /* Here we'd be adding a new session if we supported more than one */
 
     // Get the selected track
     if ( (error = select_requested_track(&url, rtsp_s, trackname, &track_sel, &req_track)).error )
@@ -559,7 +539,6 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
     // Setup the RTSP session
     if ( rtsp_s->session_id == 0 )
         rtsp_s->session_id = generate_session_id();
-    *new_session = rtsp_s;
 
     fnc_log(FNC_LOG_INFO, "SETUP %s://%s/%s RTSP/1.0 ",
 	    url.protocol, url.hostname, url.path);

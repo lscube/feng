@@ -46,7 +46,7 @@
 
 int RTSP_describe(RTSP_buffer * rtsp);
 
-int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session);
+int RTSP_setup(RTSP_buffer * rtsp);
 
 int RTSP_play(RTSP_buffer * rtsp);
 
@@ -428,7 +428,7 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
                 RTSP_describe(rtsp);
                 break;
             case RTSP_ID_SETUP:
-                if (RTSP_setup(rtsp, &p) == ERR_NOERROR) {
+                if (RTSP_setup(rtsp) == ERR_NOERROR) {
                     p->cur_state = READY_STATE;
                 }
                 break;
@@ -466,9 +466,7 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
                 }
                 break;
             case RTSP_ID_SETUP:
-                if (RTSP_setup(rtsp, &p) == ERR_NOERROR) {
-                    p->cur_state = READY_STATE;
-                }
+                RTSP_setup(rtsp);
                 break;
             case RTSP_ID_TEARDOWN:
                 RTSP_teardown(rtsp);
