@@ -368,29 +368,6 @@ static RTSP_session *get_session(RTSP_buffer *rtsp)
 }
 
 /**
- * @brief Gets the CSeq from the buffer
- * 
- * Search for the CSEQ header and fills rtsp->rtsp_cseq with its
- * value.
- *
- * @param rtsp the buffer of the request
- *
- * @retval true No error.
- * @retval false CSEQ header not found or not valid.
- */
-gboolean get_cseq(RTSP_buffer * rtsp)
-{
-    char * p;
-
-    if ( (p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL )
-        return false;
-    else if ( sscanf(p, "%*s %d", &(rtsp->rtsp_cseq)) != 1 )
-        return false;
-
-    return true;
-}
-
-/**
  * All state transitions are made here except when the last stream packet
  * is sent during a PLAY.  That transition is located in stream_event().
  * @param rtsp the buffer containing the message to dispatch
@@ -406,13 +383,16 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
         return;
     }
 
-    if ( p == NULL ) {
-        send_protocol_reply(RTSP_SessionNotFound, rtsp);
+    /* The CSeq header is parsed by RTSP_validate_method, if it's set to -1 it
+     * means that the header was not found 
+     */
+    if ( rtsp->rtsp_cseq == -1 ) {
+        send_protocol_reply(RTSP_BadRequest, rtsp);
         return;
     }
 
-    if ( !get_cseq(rtsp) ) {
-        send_protocol_reply(RTSP_BadRequest, rtsp);
+    if ( p == NULL ) {
+        send_protocol_reply(RTSP_SessionNotFound, rtsp);
         return;
     }
 
@@ -534,13 +514,12 @@ static enum RTSP_method_token RTSP_validate_method(RTSP_buffer * rtsp)
     char method[32], hdr[16];
     char object[256];
     char ver[32];
-    unsigned int seq;
+    int seq = -1;
     int pcnt;        /* parameter count */
     char *p;
     enum RTSP_method_token mid = RTSP_ID_ERROR;
 
     *method = *object = '\0';
-    seq = 0;
 
     /* parse first line of message header as if it were a request message */
 
