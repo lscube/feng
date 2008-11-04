@@ -33,7 +33,6 @@
 #include <fenice/multicast.h>
 #include <fenice/fnc_log.h>
 #include <fenice/schedule.h>
-#include "rtsp_utils.h"
 
 // XXX move in an header
 void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd);

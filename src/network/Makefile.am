@@ -22,6 +22,5 @@ libnetwork_a_SOURCES = \
 		rtsp_state_machine.c \
 		rtsp_teardown.c \
 		rtsp_utils.c \
-		rtsp_utils.h \
 		sdp2.h \
 		sdp_session_descr.c

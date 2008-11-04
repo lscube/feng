@@ -32,7 +32,7 @@
 #include <ev.h>
 
 #include "eventloop.h"
-#include "network/rtsp_utils.h"
+#include "network/rtsp.h"
 #include <fenice/utils.h>
 
 #include <fenice/schedule.h>

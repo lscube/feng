@@ -41,6 +41,7 @@
 #include <fenice/utils.h>
 #include <netembryo/wsocket.h>
 #include <netembryo/protocol_replies.h>
+#include <netembryo/url.h>
 #include "rtp.h"
 #include "rtcp.h"
 #include "sdp2.h"
@@ -114,6 +115,7 @@ int RTSP_handler(RTSP_buffer * rtsp);
 /** 
  * RTSP low level functions, they handle message specific parsing and
  * communication.
+ *
  * @defgroup rtsp_low RTSP low level functions
  * @{
  */
@@ -121,6 +123,17 @@ int RTSP_handler(RTSP_buffer * rtsp);
 int send_protocol_reply(ProtocolReply reply, RTSP_buffer *rtsp);
 
 ssize_t RTSP_send(RTSP_buffer * rtsp);
+
+ProtocolReply rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url);;
+
+int bwrite(GString *buffer, RTSP_buffer * rtsp);
+GString *rtsp_generate_response(ProtocolReply reply, guint cseq);
+GString *rtsp_generate_ok_response(guint cseq, guint64 session);
+
+void log_user_agent(RTSP_buffer * rtsp);
+
+RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock);
+void rtsp_client_destroy(RTSP_buffer *rtsp);
 
 /**
  * @}

@@ -28,8 +28,6 @@
  * internal functions
  */
 
-#include "rtsp_utils.h"
-
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h> /* For SCNu64 */
@@ -40,6 +38,7 @@
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include "sdp2.h"
+#include "rtsp.h"
 #include <fenice/fnc_log.h>
 
 /**

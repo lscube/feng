@@ -27,7 +27,6 @@
 #include "rtsp.h"
 #include <fenice/fnc_log.h>
 
-#include "rtsp_utils.h"
 
 /**
  * Sends the reply for the options method
