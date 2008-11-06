@@ -153,7 +153,6 @@ static char *encode_header(uint8_t *p, unsigned int len, int packet_mode)
 
     for (q = p; q < end - 3; q++) {
         if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
-            q += 3;
             break;
         }
     }
@@ -181,9 +180,9 @@ static char *encode_header(uint8_t *p, unsigned int len, int packet_mode)
     sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
     g_free(out);
     g_free(buf);
-    p = q + 3;
+    p = q;
 
-    while (p < end) {
+    while (p < end - 3) {
         //seek to the next startcode [0 0 1]
         for (q = p; q < end; q++)
             if (end - q <= 3) continue; // last nal
@@ -195,7 +194,7 @@ static char *encode_header(uint8_t *p, unsigned int len, int packet_mode)
         g_free(sprop);
 	g_free(buf);
         sprop = out;
-        p = q + 3;
+        p = q;
     }
 
     return sprop;
@@ -305,22 +304,20 @@ static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         //seek to the first startcode
         for (p = data; p<data + len - 3; p++) {
             if (p[0] == 0 && p[1] == 0 && p[2] == 1) {
-                p+=3;
                 break;
             }
         }
-        if (p >= data + len - 3) return ERR_PARSE;
+        if (p >= data + len) return ERR_PARSE;
 
         while (1) {
         //seek to the next startcode [0 0 1]
             for (q = p; q<data+len-3;q++) {
                 if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
-                    q+=3;
                     break;
                 }
             }
 
-            if (q >= data + len - 3) break;
+            if (q >= data + len) break;
 
             if (mtu >= q - p) {
                 fnc_log(FNC_LOG_VERBOSE, "[h264] Sending NAL %d",p[0]&0x1f);
