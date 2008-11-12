@@ -28,6 +28,8 @@
 #include <strings.h>
 #include <inttypes.h> /* For SCNu64 */
 
+#include <liberis/headers.h>
+
 #include "rtsp.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
@@ -75,8 +77,10 @@ static void rtsp_free_request(RTSP_Request *req)
 {
     if ( req == NULL )
         return;
-    
-    g_hash_table_destroy(req->headers);
+
+    if ( req->headers )
+        g_hash_table_destroy(req->headers);
+
     g_free(req->version);
     g_free(req->method);
     g_free(req->object);
@@ -174,8 +178,6 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     
     req->client = rtsp;
     req->method_id = RTSP_ID_ERROR;
-    req->headers = g_hash_table_new_full(g_str_hash, g_str_equal,
-                                         g_free, g_free);
 
     ragel_parse_request(req, rtsp->in_buffer);
 
@@ -197,6 +199,12 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     /* Check if the method is a know and supported one */
     if ( req->method_id == RTSP_ID_ERROR ) {
         rtsp_quick_response(req, RTSP_NotImplemented);
+        goto error;
+    }
+
+    /* No headers parsed */
+    if ( req->headers == NULL ) {
+        rtsp_quick_response(req, RTSP_BadRequest);
         goto error;
     }
 
