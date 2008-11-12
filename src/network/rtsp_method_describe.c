@@ -26,6 +26,8 @@
 
 #include <stdbool.h>
 
+#include <liberis/headers.h>
+
 #include "rtsp.h"
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
@@ -47,7 +49,7 @@ static void send_describe_reply(RTSP_Request *req, GString *descr)
 
     /* When we're going to have more than one option, add alternatives here */
     g_hash_table_insert(response->headers,
-                        g_strdup("Content-Type"),
+                        g_strdup(eris_hdr_content_type),
                         g_strdup("application/sdp"));
 
     /* We can trust the req->object value since we already have checked it
@@ -58,7 +60,7 @@ static void send_describe_reply(RTSP_Request *req, GString *descr)
      * stream to different servers, but since we don't do that now...
      */
     g_hash_table_insert(response->headers,
-                        g_strdup("Content-Base"),
+                        g_strdup(eris_hdr_content_base),
                         g_strdup_printf("%s/", req->object));
 
     rtsp_response_send(response);

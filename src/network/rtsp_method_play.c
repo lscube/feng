@@ -29,6 +29,8 @@
 #include <strings.h>
 
 #include <bufferpool/bufferpool.h>
+#include <liberis/headers.h>
+
 #include "rtsp.h"
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
@@ -203,7 +205,7 @@ static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
       g_string_append_printf(str, "%f", args->end_time);
 
     g_hash_table_insert(response->headers,
-                        g_strdup("Range"),
+                        g_strdup(eris_hdr_range),
                         g_string_free(str, false));
 
     /* Create RTP-Info header */
@@ -213,7 +215,7 @@ static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
     g_string_truncate(pair.str, pair.str->len-1);
 
     g_hash_table_insert(response->headers,
-                        g_strdup("RTP-Info"),
+                        g_strdup(eris_hdr_rtp_info),
                         g_string_free(pair.str, false));
 
     rtsp_response_send(response);

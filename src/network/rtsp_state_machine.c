@@ -104,9 +104,9 @@ static void rtsp_free_request(RTSP_Request *req)
  */
 static gboolean check_required_options(RTSP_Request *req) {
     const char *require_hdr =
-        g_hash_table_lookup(req->headers, "Require");
+        g_hash_table_lookup(req->headers, eris_hdr_require);
     const char *proxy_require_hdr =
-        g_hash_table_lookup(req->headers, "Proxy-Require");
+        g_hash_table_lookup(req->headers, eris_hdr_proxy_require);
     RTSP_Response *response;
 
     if ( !require_hdr && !proxy_require_hdr )
@@ -114,7 +114,7 @@ static gboolean check_required_options(RTSP_Request *req) {
 
     response = rtsp_response_new(req, RTSP_OptionNotSupported);
     g_hash_table_insert(response->headers,
-                        g_strdup("Unsupported"),
+                        g_strdup(eris_hdr_unsupported),
                         g_strdup_printf("%s %s",
                                         require_hdr ? require_hdr : "",
                                         proxy_require_hdr ? proxy_require_hdr : "")
@@ -140,7 +140,7 @@ static gboolean check_required_options(RTSP_Request *req) {
 static gboolean check_session(RTSP_Request *req)
 {
     const char *session_hdr =
-        g_hash_table_lookup(req->headers, "Session");
+        g_hash_table_lookup(req->headers, eris_hdr_session);
 
     RTSP_session *session = req->client->session;
 
@@ -209,7 +209,7 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     }
 
     /* No CSeq found */
-    if ( g_hash_table_lookup(req->headers, "CSeq") == NULL ) {
+    if ( g_hash_table_lookup(req->headers, eris_hdr_cseq) == NULL ) {
         /** @todo This should be corrected for RFC! */
         rtsp_quick_response(req, RTSP_BadRequest);
         goto error;

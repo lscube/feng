@@ -29,6 +29,8 @@
 #include <stdbool.h>
 #include <glib.h>
 
+#include <liberis/headers.h>
+
 #include "rtsp.h"
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
@@ -379,14 +381,14 @@ static void send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session
     g_string_append_printf(transport, ";ssrc=%08X", rtp_s->ssrc);
 
     g_hash_table_insert(response->headers,
-                        g_strdup("Transport"),
+                        g_strdup(eris_hdr_transport),
                         g_string_free(transport, false));
 
     /* We add the Session here since it was not added by rtsp_response_new (the
      * incoming request had no session).
      */
     g_hash_table_insert(response->headers,
-                        g_strdup("Session"),
+                        g_strdup(eris_hdr_session),
                         g_strdup(session->session_id));
 
     rtsp_response_send(response);

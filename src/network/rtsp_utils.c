@@ -33,6 +33,7 @@
 #include <string.h>
 #include <inttypes.h> /* For SCNu64 */
 
+#include <liberis/headers.h>
 #include <netembryo/rtsp.h>
 #include <glib.h>
 
@@ -300,7 +301,7 @@ gboolean rtsp_check_invalid_state(const RTSP_Request *req,
     response = rtsp_response_new(req, RTSP_InvalidMethodInState);
     
     g_hash_table_insert(response->headers,
-                        g_strdup("Allow"),
+                        g_strdup(eris_hdr_allow),
                         g_strdup(valid_states[invalid_state]));
 
     rtsp_response_send(response);
