@@ -141,7 +141,7 @@ static void interleaved_read(gpointer element, gpointer user_data)
       g_string_append_c(str, (unsigned char)intlvd->proto.tcp.rtcp_ch);
       g_string_append_len(str, (gchar *)&ne_n, 2);
       g_string_append_len(str, (const gchar *)buffer, n);
-      
+
       g_async_queue_push(rtsp->out_queue, str);
     }
     break;
@@ -170,9 +170,10 @@ static void interleaved_read(gpointer element, gpointer user_data)
       g_string_append_c(str, (unsigned char)intlvd->proto.tcp.rtcp_ch);
       g_string_append_len(str, (gchar *)&ne_n, 2);
       g_string_append_len(str, (const gchar *)buffer, n);
-      
+
       g_async_queue_push(rtsp->out_queue, str);
     }
+    break;
 #ifdef HAVE_LIBSCTP
     case SCTP:
       memcpy(&sctp_info, &(intlvd->proto.sctp.rtp),
