@@ -140,13 +140,9 @@ static void interleaved_read(gpointer element, gpointer user_data)
       g_string_append_c(str, '$');
       g_string_append_c(str, (unsigned char)intlvd->proto.tcp.rtcp_ch);
       g_string_append_len(str, (gchar *)&ne_n, 2);
-      g_string_append_len(str, (gchar *)&buffer, n);
+      g_string_append_len(str, (const gchar *)buffer, n);
       
       g_async_queue_push(rtsp->out_queue, str);
-      if ( (n = RTSP_send(rtsp)) < 0) {
-	send_reply(500, NULL, rtsp);
-	return;// internal server error
-      }
     }
     break;
 #ifdef HAVE_LIBSCTP
@@ -173,13 +169,9 @@ static void interleaved_read(gpointer element, gpointer user_data)
       g_string_append_c(str, '$');
       g_string_append_c(str, (unsigned char)intlvd->proto.tcp.rtcp_ch);
       g_string_append_len(str, (gchar *)&ne_n, 2);
-      g_string_append_len(str, (gchar *)&buffer, n);
+      g_string_append_len(str, (const gchar *)buffer, n);
       
       g_async_queue_push(rtsp->out_queue, str);
-      if ( (n = RTSP_send(rtsp)) < 0) {
-	send_reply(500, NULL, rtsp);
-	return;// internal server error
-      }
     }
 #ifdef HAVE_LIBSCTP
     case SCTP:
@@ -223,7 +215,6 @@ static int rtsp_server(RTSP_buffer * rtsp)
     }
     if (FD_ISSET(Sock_fd(rtsp->sock), &wset)) { // first of all: there is some data to send?
         if ( (n = RTSP_send(rtsp)) < 0) {
-//            send_reply(500, NULL, rtsp); FIXME
             return ERR_GENERIC;// internal server error
         }
     }
