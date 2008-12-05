@@ -167,7 +167,7 @@ static void interleaved_read(gpointer element, gpointer user_data)
       uint16_t ne_n = htons((uint16_t)n);
       GString *str = g_string_sized_new(n+4);
       g_string_append_c(str, '$');
-      g_string_append_c(str, (unsigned char)intlvd->proto.tcp.rtcp_ch);
+      g_string_append_c(str, (unsigned char)intlvd->proto.tcp.rtp_ch);
       g_string_append_len(str, (gchar *)&ne_n, 2);
       g_string_append_len(str, (const gchar *)buffer, n);
 
