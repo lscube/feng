@@ -1,17 +1,17 @@
 /*
  * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
- * See AUTHORS for more details 
- *  
- * Feng is free software; you can redistribute it and/or 
+ * See AUTHORS for more details
+ *
+ * Feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * Feng is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
- * General Public License for more details. 
- * 
+ *
+ * Feng is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
  * You should have received a copy of the GNU General Public License
  * along with Feng; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
@@ -25,8 +25,6 @@
 
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
-
-#include "network/rtpptdefs.h"	/*payload type definitions */
 
 #include "demuxer_module.h"
 
@@ -78,7 +76,7 @@ static const char *tag_from_id(int id)
         if (tags->id == id)
             return tags->tag;
         tags++;
-    } 
+    }
     return NULL;
 }
 
@@ -89,7 +87,7 @@ static int pt_from_id(int id)
         if (tags->id == id)
             return tags->pt;
         tags++;
-    } 
+    }
     return 0;
 }
 
@@ -216,7 +214,7 @@ static int avf_init(Resource * r)
                 props.bit_rate     = codec->bit_rate;
                 props.frame_rate   = av_q2d(st->r_frame_rate);
                 props.frame_duration     = (double)1 / props.frame_rate;
-                props.AspectRatio  = codec->width * 
+                props.AspectRatio  = codec->width *
                                       codec->sample_aspect_ratio.num /
                                       (float)(codec->height *
                                               codec->sample_aspect_ratio.den);

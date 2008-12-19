@@ -1,23 +1,23 @@
-/* * 
+/* *
  *  This file is part of Feng
- * 
+ *
  * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
- * See AUTHORS for more details 
- *  
- * Feng is free software; you can redistribute it and/or 
+ * See AUTHORS for more details
+ *
+ * Feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * Feng is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
- * General Public License for more details. 
- * 
+ *
+ * Feng is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
  * You should have received a copy of the GNU General Public License
  * along with Feng; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *  
+ *
  * */
 #ifndef FN_MEDIAPARSER_H
 #define FN_MEDIAPARSER_H
@@ -32,15 +32,12 @@
 #define MP_PKT_TOO_SMALL -101
 #define MP_NOT_FULL_FRAME -102
 
-typedef enum {mc_undefined=-1, mc_frame=0, mc_sample=1} MediaCodingType;
-
 typedef enum {MP_undef=-1, MP_audio, MP_video, MP_application, MP_data, MP_control} MediaType;
 
 typedef enum {MS_stored=0, MS_live} MediaSource;
 
 MObject_def(MediaProperties_s)
     int bit_rate; /*!< average if VBR or -1 is not useful*/
-    MediaCodingType coding_type;
     int payload_type;
     unsigned int clock_rate;
     char encoding_name[11];
@@ -77,7 +74,7 @@ typedef struct {
 typedef struct {
     const MediaParserInfo *info;
 /*! init: inizialize the module
- *    
+ *
  *  @param properties: pointer of allocated struct to fill with properties
  *  @param private_data: private data of parser will be, if needed, linked to this pointer (double)
  *  @return: 0 on success, non-zero otherwise.
@@ -96,14 +93,14 @@ typedef struct {
     int (*parse)(void *track, uint8_t *data, long len, uint8_t *extradata,
                  long extradata_len);
 /*! uninit: free the media parser structures.
- *  
+ *
  *  @param private_data: pointer to parser specific private data.
  *  @return: 0 on success, non zero otherwise
  * */
     int (*uninit)(void *private_data);
 } MediaParser;
 
-/** 
+/**
  * MediaParser Interface, pending overhaul
  * @defgroup MediaParser MediaParser Interface
  * @{

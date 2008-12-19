@@ -1,19 +1,19 @@
-/* * 
+/* *
  *  This file is part of Feng
- * 
+ *
  * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
- * See AUTHORS for more details 
- *  
- * Feng is free software; you can redistribute it and/or 
+ * See AUTHORS for more details
+ *
+ * Feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * Feng is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
- * General Public License for more details. 
- * 
+ *
+ * Feng is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
  * You should have received a copy of the GNU General Public License
  * along with Feng; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
@@ -27,9 +27,112 @@
 #include <fenice/fnc_log.h>
 
 #include <fenice/multicast.h>    /*is_valid_multicast_address */
-#include "network/rtpptdefs.h"    /*payload type definitions */
 
 #include "demuxer_module.h"
+
+#include "mediathread/mediaparser.h"
+
+
+/*
+ * Struct for automatic probing of live media sources
+ */
+typedef struct RTP_static_payload {
+        int PldType;
+        char const *EncName;
+        int ClockRate;      // In Hz
+        short Channels;
+        int BitPerSample;
+        float PktLen;       // In msec
+} RTP_static_payload;
+
+RTP_static_payload RTP_payload[] ={
+        // Audio
+        { 0 ,"PCMU"   ,8000 ,1 ,8 ,20 },
+        {-1 ,""       ,-1   ,-1,-1,-1 },
+        { 2 ,"G726_32",8000 ,1 ,4 ,20 },
+        { 3 ,"GSM"    ,8000 ,1 ,-1,20 },
+        { 4 ,"G723"   ,8000 ,1 ,-1,30 },
+        { 5 ,"DVI4"   ,8000 ,1 ,4 ,20 },
+        { 6 ,"DVI4"   ,16000,1 ,4 ,20 },
+        { 7 ,"LPC"    ,8000 ,1 ,-1,20 },
+        { 8 ,"PCMA"   ,8000 ,1 ,8 ,20 },
+        { 9 ,"G722"   ,8000 ,1 ,8 ,20 },
+        { 10,"L16"    ,44100,2 ,16,20 },
+        { 11,"L16"    ,44100,1 ,16,20 },
+        { 12,"QCELP"  ,8000 ,1 ,-1,20 },
+        { -1,""       ,  -1 ,-1,-1,-1 },
+        { 14,"MPA"    ,90000,1 ,-1,-1 },
+        { 15,"G728"   ,8000 ,1 ,-1,20 },
+        { 16,"DVI4"   ,11025,1 ,4 ,20 },
+        { 17,"DVI4"   ,22050,1 ,4 ,20 },
+        { 18,"G729"   ,8000 ,1 ,-1,20 },
+        { -1,""       ,-1   ,-1,-1,-1 },
+        { -1,""       ,-1   ,-1,-1,-1 },
+        { -1,""       ,-1   ,-1,-1,-1 },
+        { -1,""       ,-1   ,-1,-1,-1 },
+        { -1,""       ,-1   ,-1,-1,-1 },
+        // Video: 24-95 - Pkt_len in milliseconds is not specified and will be calculated in such a way
+        // that each RTP packet contains a video frame (but no more than 536 byte, for UDP limitations)
+        { -1,""       ,-1   ,-1,-1,-1 },
+        { 25,"CelB"   ,90000,0 ,-1,-1 },
+        { 26,"JPEG"   ,90000,0 ,-1,-1 },
+        { -1,""       ,-1   ,-1,-1,-1 },
+        { 28,"nv"     ,90000,0 ,-1,-1 },
+        { -1,""       ,-1   ,-1,-1,-1 },
+        { -1,""       ,-1   ,-1,-1,-1 },
+        { 31,"H261"   ,90000,0 ,-1,-1 },
+        { 32,"MPV"    ,90000,0 ,-1,-1 },
+        { 33,"MP2T"   ,90000,0 ,-1,-1 },
+        { 34,"H263"   ,90000,0 ,-1,-1 },
+        { -1,""       ,-1   ,-1,-1,-1 },
+        // Dynamic: 96-127
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 },
+        { -1, "", -1, -1, -1, -1 }, { -1, "", -1, -1, -1, -1 }
+};
 
 /*! SD common tags */
 #define SD_STREAM           "stream"
@@ -69,6 +172,17 @@ static const DemuxerInfo info = {
     "sd"
 };
 
+//Probe informations from RTPPTDEFS table form codec_name
+static RTP_static_payload * probe_stream_info(char const *codec_name)
+{
+    int i;
+    for (i=0; i<96; ++i) {
+        if (strcmp(RTP_payload[i].EncName, codec_name) == 0)
+            return &(RTP_payload[i]);
+    }
+
+    return NULL;
+}
 
 static int sd_probe(InputStream * i_stream)
 {
@@ -78,6 +192,20 @@ static int sd_probe(InputStream * i_stream)
         return RESOURCE_OK;
     }
     return RESOURCE_DAMAGED;
+}
+
+//Sets payload type and probes media type from payload type
+static void set_payload_type(MediaProperties *mprops, int payload_type)
+{
+    mprops->payload_type = payload_type;
+
+    // Automatic media_type detection
+    if (mprops->payload_type >= 0 &&
+        mprops->payload_type < 24)
+        mprops->media_type = MP_audio;
+    if (mprops->payload_type > 23 &&
+        mprops->payload_type < 96)
+        mprops->media_type = MP_video;
 }
 
 static int sd_init(Resource * r)
@@ -91,6 +219,9 @@ static int sd_init(Resource * r)
 
     MediaProperties props_hints;
     TrackInfo trackinfo;
+
+    memset(&props_hints, 0, sizeof(MediaProperties));
+    memset(&trackinfo, 0, sizeof(TrackInfo));
 
     fnc_log(FNC_LOG_DEBUG, "[sd] SD init function");
     fd = fdopen(r->i_stream->fd, "r");
@@ -110,8 +241,12 @@ static int sd_init(Resource * r)
     MObject_init(MOBJECT(&trackinfo));
 
     do {
+        int payload_type_forced = 0;
+        int clock_rate_forced = 0;
+
         MObject_0(MOBJECT(&props_hints), MediaProperties);
         MObject_0(MOBJECT(&trackinfo), TrackInfo);
+        props_hints.media_source = MS_live;
 
         *keyword = '\0';
         while (g_ascii_strcasecmp(keyword, SD_STREAM) && !feof(fd)) {
@@ -157,6 +292,16 @@ static int sd_init(Resource * r)
             } else if (!g_ascii_strcasecmp(keyword, SD_ENCODING_NAME)) {
                 // SD_ENCODING_NAME
                 sscanf(line, "%*s%10s", props_hints.encoding_name);
+
+                // Automatic media detection
+                RTP_static_payload *info = probe_stream_info(props_hints.encoding_name);
+                if (info) {
+                    fnc_log(FNC_LOG_INFO, "[.SD] Static Payload Detected, probing info...");
+                    if (!payload_type_forced)
+                        set_payload_type(&props_hints, info->PldType);
+                    if (!clock_rate_forced)
+                        props_hints.clock_rate = info->ClockRate;
+                }
             } else if (!g_ascii_strcasecmp(keyword, SD_PRIORITY)) {
                 // SD_PRIORITY //XXX once pt change is back...
 //                sscanf(line, "%*s %d\n", &me.data.priority);
@@ -166,16 +311,12 @@ static int sd_init(Resource * r)
             } else if (!g_ascii_strcasecmp(keyword, SD_PAYLOAD_TYPE)) {
                 // SD_PAYLOAD_TYPE
                 sscanf(line, "%*s %u\n", &props_hints.payload_type);
-                // Automatic media_type detection
-                if (props_hints.payload_type >= 0 &&
-                    props_hints.payload_type < 24)
-                    props_hints.media_type = MP_audio;
-                if (props_hints.payload_type > 23 &&
-                    props_hints.payload_type < 96)
-                    props_hints.media_type = MP_video;
+                set_payload_type(&props_hints, props_hints.payload_type);
+                payload_type_forced = 1;
             } else if (!g_ascii_strcasecmp(keyword, SD_CLOCK_RATE)) {
                 // SD_CLOCK_RATE
                 sscanf(line, "%*s %u\n", &props_hints.clock_rate);
+                clock_rate_forced = 1;
             } else if (!g_ascii_strcasecmp(keyword, SD_AUDIO_CHANNELS)) {
                 // SD_AUDIO_CHANNELS
                 sscanf(line, "%*s %d\n", &props_hints.audio_channels);
@@ -185,25 +326,9 @@ static int sd_init(Resource * r)
             } else if (!g_ascii_strcasecmp(keyword, SD_BIT_PER_SAMPLE)) {
                 // SD_BIT_PER_SAMPLE
                 sscanf(line, "%*s%u", &props_hints.bit_per_sample);
-            } else if (!g_ascii_strcasecmp(keyword, SD_CODING_TYPE)) {
-                // SD_CODING_TYPE
-                sscanf(line, "%*s%10s", sparam);
-            //XXX remove this later...
-                if (g_ascii_strcasecmp(sparam, "FRAME") == 0)
-                    props_hints.coding_type = mc_frame;
-                else if (g_ascii_strcasecmp(sparam, "SAMPLE") == 0)
-                    props_hints.coding_type = mc_sample;
             } else if (!g_ascii_strcasecmp(keyword, SD_FRAME_RATE)) {
                 // SD_FRAME_RATE
                 sscanf(line, "%*s%f", &props_hints.frame_rate);
-            } else if (!g_ascii_strcasecmp(keyword, SD_MEDIA_SOURCE)) {
-                // SD_MEDIA_SOURCE
-                sscanf(line, "%*s%10s", sparam);
-                if (g_ascii_strcasecmp(sparam, "STORED") == 0)
-//                    props_hints.media_source = MS_stored;
-                    return RESOURCE_DAMAGED;
-                if (g_ascii_strcasecmp(sparam, "LIVE") == 0)
-                    props_hints.media_source = MS_live;
             } else if (!g_ascii_strcasecmp(keyword, SD_MEDIA_TYPE)) {
                 // SD_MEDIA_TYPE
                 sscanf(line, "%*s%10s", sparam);
@@ -269,13 +394,13 @@ static int sd_init(Resource * r)
             track->properties->sdp_private =
                 g_list_prepend(track->properties->sdp_private, sdp_private);
         //XXX could be moved in sdp2
-        if (props_hints.payload_type >= 96) 
+        if (props_hints.payload_type >= 96)
         {
             sdp_private = g_new(sdp_field, 1);
             sdp_private->type = rtpmap;
             switch (props_hints.media_type) {
             case MP_audio:
-                sdp_private->field = 
+                sdp_private->field =
                     g_strdup_printf ("%s/%d/%d",
                                     props_hints.encoding_name,
                                     props_hints.clock_rate,

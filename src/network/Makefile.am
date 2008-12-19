@@ -9,7 +9,6 @@ libnetwork_a_SOURCES = \
 		rtcp_recv_packet.c \
 		rtcp_send_packet.c \
 		rtp.h \
-		rtpptdefs.h \
 		rtp_port.c \
 		rtp_transport.c \
 		rtsp.h \
