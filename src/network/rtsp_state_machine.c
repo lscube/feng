@@ -283,6 +283,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
     int m, op;
     int full_msg;
     RTSP_interleaved *intlvd;
+    GSList *list;
     int hlen, blen;
     enum RTSP_method_token method;
 
@@ -309,14 +310,17 @@ int RTSP_handler(RTSP_buffer * rtsp)
             break;
         case RTSP_interlvd_rcvd:
             m = rtsp->in_buffer[1];
-	    intlvd = g_slist_find_custom(rtsp->interleaved, GINT_TO_POINTER(m), find_tcp_interleaved)->data;
-            if (!intlvd) {    // session not found
+	    list = g_slist_find_custom(rtsp->interleaved,
+                                       GINT_TO_POINTER(m),
+                                       find_tcp_interleaved);
+            if (!list) {    // session not found
                 fnc_log(FNC_LOG_DEBUG,
                     "Interleaved RTP or RTCP packet arrived for unknown channel (%d)... discarding.\n",
                     m);
                 RTSP_discard_msg(rtsp, hlen + blen);
                 break;
             }
+            intlvd = list->data;
             if (m == intlvd->proto.tcp.rtcp_ch) {    // RTCP pkt arrived
                 fnc_log(FNC_LOG_DEBUG,
                     "Interleaved RTCP packet arrived for channel %d (len: %d).\n",
