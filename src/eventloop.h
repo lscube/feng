@@ -32,9 +32,9 @@
 
 typedef int (*event_function) (void *data);
 
-int feng_bind_port(char *host, char *port, specific_config *s);
-void eventloop_init();
+int feng_bind_port(feng *srv, char *host, char *port, specific_config *s);
+void eventloop_init(feng *srv);
 void eventloop(feng *srv);
-void eventloop_cleanup();
+void eventloop_cleanup(feng *srv);
 
 #endif // FN_EVENTLOOP_H

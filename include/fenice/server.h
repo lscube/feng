@@ -35,6 +35,7 @@
 #include <netembryo/wsocket.h>
 #include <glib.h>
 #include <pwd.h>
+#include <ev.h>
 
 typedef struct feng {
 /**
@@ -59,6 +60,7 @@ typedef struct feng {
      * Once it reaches the maximum the server redirects
      * to a twin if available
      */
+    struct ev_loop *loop;       //!< event loop
     int num_conn;               //!< number of active connections
     int conn_count;             //!< number of active connections (FIXME)
     int stop_schedule;          //!< to be refactored away

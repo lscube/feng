@@ -46,6 +46,9 @@ AC_ARG_ENABLE(libavformat,
     AS_HELP_STRING([--enable-libavformat], [enable ffmpeg's libavformat support (default=yes)]),,
         enable_ffmpeg="yes")
 
+AC_CHECK_HEADERS([ev.h])
+AC_SEARCH_LIBS([ev_io_start],[ev])
+
 AC_ARG_ENABLE(trace,
     AS_HELP_STRING([--enable-trace], [enable additional informations in log [[default=no]]]),,
     enable_trace="no")
@@ -77,8 +80,8 @@ LSC_CHECK_SCTP
 LIBS="$LIBS $SCTP_LIBS"
 
 AS_IF([test "x$have_sctp" = "xyes"],
-  [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.0.8"],
-  [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.0.8"])
+  [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.0.9"],
+  [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.0.9"])
 
 PKG_CHECK_MODULES(LIBNETEMBRYO,[$LIBNETEMBRYO_REQUIRES])
 AC_SUBST(LIBNETEMBRYO_REQUIRES)

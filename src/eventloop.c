@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include <unistd.h>
+#include <ev.h>
 
 #include "eventloop.h"
 #include "network/rtsp_utils.h"
@@ -36,48 +37,11 @@
 
 #include <fenice/schedule.h>
 
-static GPtrArray *listen_socks;        //!< listen sockets
+static GPtrArray *io_watchers;        //!< io_watchers
 static fd_set rset;
 static fd_set wset;
 static int max_fd;
 static GSList *clients; // of type RTSP_buffer
-
-/**
- * Bind to the defined listening port
- */
-
-int feng_bind_port(char *host, char *port, specific_config *s)
-{
-    int is_sctp = s->is_sctp;
-    Sock *sock;
-
-    if (is_sctp)
-        sock = Sock_bind(host, port, NULL, SCTP, NULL);
-    else
-        sock = Sock_bind(host, port, NULL, TCP, NULL);
-    if(!sock) {
-        fnc_log(FNC_LOG_ERR,"Sock_bind() error for port %s.", port);
-        fprintf(stderr,
-                "[fatal] Sock_bind() error in main() for port %s.\n",
-                port);
-        return 1;
-    }
-
-    fnc_log(FNC_LOG_INFO, "Listening to port %s (%s) on %s",
-            port,
-            (is_sctp? "SCTP" : "TCP"),
-            ((host == NULL)? "all interfaces" : host));
-
-    g_ptr_array_add(listen_socks, sock);
-
-    if(Sock_listen(sock, SOMAXCONN)) {
-        fnc_log(FNC_LOG_ERR, "Sock_listen() error for TCP socket.");
-        fprintf(stderr, "[fatal] Sock_listen() error for TCP socket.\n");
-        return 1;
-    }
-
-    return 0;
-}
 
 static inline
 int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
@@ -98,14 +62,6 @@ int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
 
     return n;
 }
-
-#ifdef HAVE_LIBSCTP
-#   define Sock_interleaved(a) \
-     (Sock_type(a) == TCP || Sock_type(a) == SCTP)
-#else
-#   define Sock_interleaved(a) \
-     (Sock_type(a) == TCP)
-#endif
 
 #ifdef HAVE_LIBSCTP
 static gboolean find_sctp_interleaved(gconstpointer value, gconstpointer target)
@@ -210,7 +166,6 @@ static int rtsp_server(RTSP_buffer * rtsp)
 {
     char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
     int n;
-    int res;
     gint m = 0;
 
     if (rtsp == NULL) {
@@ -234,16 +189,16 @@ static int rtsp_server(RTSP_buffer * rtsp)
             send_reply(500, NULL, rtsp);
             return ERR_GENERIC;
         }
-        if (Sock_interleaved(rtsp->sock) && m == 0) {
+        if (m == 0) {
             if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
                 fnc_log(FNC_LOG_DEBUG,
                     "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
                 send_reply(500, NULL, rtsp);
-                return ERR_GENERIC;    //errore da comunicare
+                return ERR_GENERIC;
             }
             memcpy(&(rtsp->in_buffer[rtsp->in_size]), buffer, n);
             rtsp->in_size += n;
-            if ((res = RTSP_handler(rtsp)) == ERR_GENERIC) {
+            if (RTSP_handler(rtsp) == ERR_GENERIC) {
                 fnc_log(FNC_LOG_ERR,
                     "Invalid input message.\n");
                 return ERR_GENERIC;
@@ -370,10 +325,94 @@ static void established_each_connection(gpointer data, gpointer user_data)
     }
 }
 
+static void rtsp_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+    char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
+    int n;
+    gint m = 0;
+    RTSP_buffer *rtsp = w->data;
+    feng *srv = rtsp->srv;
+
+    if (revents & EV_WRITE) {
+        RTSP_send(rtsp);
+    }
+    if (revents & EV_READ) {
+        memset(buffer, 0, sizeof(buffer));
+        n = rtsp_sock_read(rtsp->sock, &m, buffer, sizeof(buffer) - 1);
+        if (n > 0) {
+            if (m == 0) {
+                if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
+                    fnc_log(FNC_LOG_DEBUG,
+                        "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
+                    send_reply(500, NULL, rtsp);
+                    n = -1;
+                }
+                memcpy(&(rtsp->in_buffer[rtsp->in_size]), buffer, n);
+                rtsp->in_size += n;
+                if (RTSP_handler(rtsp) == ERR_GENERIC) {
+                    fnc_log(FNC_LOG_ERR, "Invalid input message.\n");
+                    n = -1;
+                }
+            } else {    /* if (rtsp->proto == SCTP && m != 0) */
+    #ifdef HAVE_LIBSCTP
+            RTSP_interleaved *intlvd =
+                    g_slist_find_custom(rtsp->interleaved, GINT_TO_POINTER(m),
+                                        find_sctp_interleaved)->data;
+
+            if (intlvd) {
+                if (m == intlvd->proto.sctp.rtcp.sinfo_stream) {
+                    Sock_write(intlvd->rtcp_local, buffer, n, NULL, 0);
+                } else {    // RTP pkt arrived: do nothing...
+                    fnc_log(FNC_LOG_DEBUG,
+                        "Interleaved RTP packet arrived from stream %d.\n",
+                        m);
+                }
+            } else {
+                fnc_log(FNC_LOG_DEBUG,
+                        "Packet arrived from unknown stream (%d)... ignoring.\n",
+                        m);
+            }
+    #endif    // HAVE_LIBSCTP
+            }
+        }
+        if (n > 0) return;
+        if (n == 0)
+            fnc_log(FNC_LOG_INFO, "RTSP connection closed by client.");
+
+        if (n < 0) {
+            fnc_log(FNC_LOG_INFO, "RTSP connection closed by server.");
+            send_reply(500, NULL, rtsp); 
+        }
+
+    //  unregister the client
+        ev_io_stop(srv->loop, w);
+        g_free(w);
+        rtsp_client_destroy(rtsp);
+
+    // wait for
+        Sock_close(rtsp->sock);
+        --srv->conn_count;
+        srv->num_conn--;
+
+    // Release the RTSP_buffer
+        clients = g_slist_remove(clients, rtsp);
+        g_free(rtsp);
+    }
+}
+
 static void add_client(feng *srv, Sock *client_sock)
 {
-    clients = g_slist_prepend(clients, rtsp_client_new(srv, client_sock));
+    ev_io *ev_io_client = g_new(ev_io, 1);
+    RTSP_buffer *rtsp = rtsp_client_new(srv, client_sock);
 
+    clients = g_slist_prepend(clients, rtsp);
+
+    client_sock->data = srv;
+    ev_io_client->data = rtsp;
+    g_ptr_array_add(io_watchers, ev_io_client);
+    ev_io_init(ev_io_client, rtsp_cb, Sock_fd(client_sock),
+               EV_WRITE | EV_READ);
+    ev_io_start(srv->loop, ev_io_client);
     fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
             Sock_fd(client_sock));
 }
@@ -407,16 +446,14 @@ connections_compare_socket(gconstpointer value, gconstpointer compare)
  * Accepts the new connection if possible.
  */
 
-static void incoming_connection(gpointer data, gpointer user_data)
+static void incoming_connection_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
-    Sock *sock = data;
-    feng *srv = user_data;
+    Sock *sock = w->data;
+    feng *srv = sock->data;
     Sock *client_sock = NULL;
     GSList *p = NULL;
 
-    if (FD_ISSET(Sock_fd(sock), &rset)) {
-        client_sock = Sock_accept(sock, NULL);
-    }
+    client_sock = Sock_accept(sock, NULL);
 
     // Handle a new connection
     if (!client_sock)
@@ -428,7 +465,6 @@ static void incoming_connection(gpointer data, gpointer user_data)
     if ( p == NULL ) {
         if (srv->conn_count < ONE_FORK_MAX_CONNECTION) {
             ++srv->conn_count;
-            // ADD A CLIENT
             add_client(srv, client_sock);
         } else {
             Sock_close(client_sock);
@@ -439,15 +475,59 @@ static void incoming_connection(gpointer data, gpointer user_data)
         return;
     }
 
-    fnc_log(FNC_LOG_INFO, "Connection found: %d\n",
-            Sock_fd(client_sock));
+    Sock_close(client_sock);
+
+    fnc_log(FNC_LOG_INFO, "Connection found: %d\n", Sock_fd(client_sock));
+}
+
+/**
+ * Bind to the defined listening port
+ */
+
+int feng_bind_port(feng *srv, char *host, char *port, specific_config *s)
+{
+    int is_sctp = s->is_sctp;
+    Sock *sock;
+    ev_io *ev_io_listen = g_new(ev_io, 1);
+
+    if (is_sctp)
+        sock = Sock_bind(host, port, NULL, SCTP, NULL);
+    else
+        sock = Sock_bind(host, port, NULL, TCP, NULL);
+    if(!sock) {
+        fnc_log(FNC_LOG_ERR,"Sock_bind() error for port %s.", port);
+        fprintf(stderr,
+                "[fatal] Sock_bind() error in main() for port %s.\n",
+                port);
+        return 1;
+    }
+
+    fnc_log(FNC_LOG_INFO, "Listening to port %s (%s) on %s",
+            port,
+            (is_sctp? "SCTP" : "TCP"),
+            ((host == NULL)? "all interfaces" : host));
+
+    if(Sock_listen(sock, SOMAXCONN)) {
+        fnc_log(FNC_LOG_ERR, "Sock_listen() error for TCP socket.");
+        fprintf(stderr, "[fatal] Sock_listen() error for TCP socket.\n");
+        return 1;
+    }
+    sock->data = srv;
+    ev_io_listen->data = sock;
+    g_ptr_array_add(io_watchers, ev_io_listen);
+    ev_io_init(ev_io_listen, incoming_connection_cb,
+               Sock_fd(sock), EV_READ);
+    ev_io_start(srv->loop, ev_io_listen);
+    return 0;
 }
 
 /**
  * @brief Initialise data structure needed for eventloop
  */
-void eventloop_init() {
-    listen_socks = g_ptr_array_new();
+void eventloop_init(feng *srv)
+{
+    io_watchers = g_ptr_array_new();
+    srv->loop = ev_default_loop(0);
 }
 
 /**
@@ -457,42 +537,20 @@ void eventloop_init() {
 
 void eventloop(feng *srv)
 {
-    //Init of scheduler
-    FD_ZERO(&rset);
-    FD_ZERO(&wset);
-
-    if (srv->conn_count != -1) {
-        g_ptr_array_foreach(listen_socks, add_sock_fd, NULL);
-    }
-
-    /* Add all sockets of all sessions to rset and wset */
-    g_slist_foreach(clients, established_each_fd, NULL);
-
-    /* Wait for connections */
-    if (select(max_fd + 1, &rset, &wset, NULL, NULL) < 0) {
-        fnc_log(FNC_LOG_ERR, "select error in eventloop(). %s\n",
-                strerror(errno));
-        /* Maybe we have to force exit here*/
-        return;
-    }
-    /* transfer data for any RTSP sessions */
-    g_slist_foreach(clients, established_each_connection, NULL);
-
-    /* handle new connections */
-    if (srv->conn_count != -1) {
-        g_ptr_array_foreach(listen_socks, incoming_connection, srv);
-    }
+    ev_loop (srv->loop, 0);
 }
 
-static void free_sock(gpointer data, gpointer user_data)
+/*
+static void free_watchers(gpointer data, gpointer user_data)
 {
     Sock_close(data);
 }
+*/
 
 /**
  * @brief Cleanup data structure needed by the eventloop
  */
-void eventloop_cleanup() {
-    g_ptr_array_foreach(listen_socks, free_sock, NULL);
-    g_ptr_array_free(listen_socks, FALSE); // XXX Socks aren't g_mallocated yet
+void eventloop_cleanup(feng *srv) {
+//    g_ptr_array_foreach(io_watchers, free_watchers, NULL);
+    g_ptr_array_free(io_watchers, TRUE);
 }

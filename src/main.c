@@ -48,13 +48,11 @@
 #include <glib.h>
 #include <getopt.h>
 
-static int stopped = 0;
-
-static void terminator_function (int num) {
-    fnc_log(FNC_LOG_INFO, "Exiting...");
-//    fprintf(stderr, "Exiting...\n");
+static void sigint_cb (struct ev_loop *loop, ev_signal *w, int revents)
+{
+    fnc_log(FNC_LOG_INFO, "SIGINT received, exiting.");
     mt_shutdown();
-    stopped = 1;
+    ev_unloop (loop, EVUNLOOP_ALL);
 }
 
 /**
@@ -100,7 +98,7 @@ static int feng_bind_ports(feng *srv)
     char *host = srv->srvconf.bindhost->ptr;
     char *port = g_strdup_printf("%d", srv->srvconf.port);
 
-    if ((err = feng_bind_port(host, port, srv->config_storage[0]))) {
+    if ((err = feng_bind_port(srv, host, port, srv->config_storage[0]))) {
         g_free(port);
         return err;
     }
@@ -142,7 +140,7 @@ static int feng_bind_ports(feng *srv)
 
         port++;
 
-        if (feng_bind_port(host, port, s)) return 1;
+        if (feng_bind_port(srv, host, port, s)) return 1;
     }
 
     return 0;
@@ -153,16 +151,14 @@ static int feng_bind_ports(feng *srv)
  * block PIPE signal
  */
 
+static ev_signal signal_watcher;
+
 static void feng_handle_signals(feng *srv)
 {
-    struct sigaction term_action;
     sigset_t block_set;
+    ev_signal_init (&signal_watcher, sigint_cb, SIGINT);
+    ev_signal_start (srv->loop, &signal_watcher);
 
-    /* catch TERM and INT signals */
-    memset(&term_action, 0, sizeof(term_action));
-    term_action.sa_handler = terminator_function;
-    sigaction(SIGINT, &term_action, NULL);
-    sigaction(SIGTERM, &term_action, NULL);
     /* block PIPE signal */
     sigemptyset(&block_set);
     sigaddset(&block_set, SIGPIPE);
@@ -186,7 +182,7 @@ static void feng_free(feng* srv)
     CLEAN(srvconf.modules);
 #undef CLEAN
 
-    eventloop_cleanup();
+    eventloop_cleanup(srv);
 }
 
 static void fncheader()
@@ -308,10 +304,10 @@ int main(int argc, char **argv)
 
     config_set_defaults(srv);
 
-    feng_handle_signals(srv);
-
     /* This goes before feng_bind_ports */
-    eventloop_init();
+    eventloop_init(srv);
+
+    feng_handle_signals(srv);
 
     if (feng_bind_ports(srv))
         return 1;
@@ -329,15 +325,9 @@ int main(int argc, char **argv)
 
     RTP_port_pool_init(srv, srv->srvconf.first_udp_port);
 
-    while (!stopped) {
+    eventloop(srv);
 
-    /* eventloop looks for incoming RTSP connections and generates for each
-       all the information in the structures RTSP_list, RTP_list, and so on */
-
-        eventloop(srv);
-    }
-
-    eventloop_cleanup();
+    eventloop_cleanup(srv);
 
     return 0;
 }

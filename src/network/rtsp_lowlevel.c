@@ -42,10 +42,7 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
 
     GString *outpkt = (GString *)g_async_queue_try_pop(rtsp->out_queue);
 
-    if (outpkt == NULL) {
-        fnc_log(FNC_LOG_WARN, "RTSP_send called, but no data to be sent");
-        return 0;
-    }
+    if (outpkt == NULL) return 0;
 
     if ( (n = Sock_write(rtsp->sock, outpkt->str, outpkt->len,
           NULL, MSG_DONTWAIT)) < outpkt->len) {
