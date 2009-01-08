@@ -30,8 +30,6 @@
 
 #define MAX_FDS 800
 
-typedef int (*event_function) (void *data);
-
 int feng_bind_port(feng *srv, char *host, char *port, specific_config *s);
 void eventloop_init(feng *srv);
 void eventloop(feng *srv);

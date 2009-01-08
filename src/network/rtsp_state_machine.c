@@ -262,12 +262,13 @@ static int RTSP_valid_response_msg(unsigned short *status, char *msg,
 				   RTSP_buffer * rtsp);
 static enum RTSP_method_token RTSP_validate_method(RTSP_buffer * rtsp);
 
-static gboolean find_tcp_interleaved(gconstpointer value, gconstpointer target)
+static gboolean 
+find_tcp_interleaved(gconstpointer value, gconstpointer target)
 {
   RTSP_interleaved *i = (RTSP_interleaved *)value;
   gint m = GPOINTER_TO_INT(target);
 
-  return (i->proto.tcp.rtp_ch == m || i->proto.tcp.rtcp_ch == m);
+  return (i->channel == m);
 }
 
 /**
@@ -310,27 +311,23 @@ int RTSP_handler(RTSP_buffer * rtsp)
             break;
         case RTSP_interlvd_rcvd:
             m = rtsp->in_buffer[1];
-	    list = g_slist_find_custom(rtsp->interleaved,
+	    list = g_slist_find_custom(rtsp->interleaved_rtcp,
                                        GINT_TO_POINTER(m),
                                        find_tcp_interleaved);
             if (!list) {    // session not found
                 fnc_log(FNC_LOG_DEBUG,
-                    "Interleaved RTP or RTCP packet arrived for unknown channel (%d)... discarding.\n",
-                    m);
+                        "Interleaved RTP or RTCP packet arrived"
+                        "for unknown channel (%d)... discarding.",
+                        m);
                 RTSP_discard_msg(rtsp, hlen + blen);
                 break;
             }
             intlvd = list->data;
-            if (m == intlvd->proto.tcp.rtcp_ch) {    // RTCP pkt arrived
-                fnc_log(FNC_LOG_DEBUG,
-                    "Interleaved RTCP packet arrived for channel %d (len: %d).\n",
+            fnc_log(FNC_LOG_DEBUG,
+                    "Interleaved RTCP packet arrived for"
+                    "channel %d (len: %d).",
                     m, blen);
-                Sock_write(intlvd->rtcp_local, &rtsp->in_buffer[hlen],
-                      blen, NULL, 0);
-            } else    // RTP pkt arrived: do nothing...
-                fnc_log(FNC_LOG_DEBUG,
-                    "Interleaved RTP packet arrived for channel %d.\n",
-                    m);
+            Sock_write(intlvd->local, &rtsp->in_buffer[hlen], blen, NULL, 0);
             RTSP_discard_msg(rtsp, hlen + blen);
             break;
         default:

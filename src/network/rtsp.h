@@ -67,22 +67,9 @@ enum RTSP_machine_state {
 #define RTSP_EL "\r\n"
 #define RTSP_RTP_AVP "RTP/AVP"
 
-
 typedef struct RTSP_interleaved {
-    Sock *rtp_local;
-    Sock *rtcp_local;
-    union {
-        struct {
-            int rtp_ch;
-            int rtcp_ch;
-        } tcp;
-#ifdef HAVE_LIBSCTP
-        struct {
-            struct sctp_sndrcvinfo rtp;
-            struct sctp_sndrcvinfo rtcp;
-        } sctp;
-#endif
-    } proto;
+    Sock *local;
+    int channel;
 } RTSP_interleaved;
 
 typedef struct RTSP_session {
@@ -102,12 +89,9 @@ typedef struct RTSP_buffer {
     char in_buffer[RTSP_BUFFERSIZE];
     size_t in_size;
     GAsyncQueue *out_queue;
-    /* vars for interleaved data:
-     * interleaved pkts will be present only at the beginning of out_buffer.
-     * this size is used to remenber how much data should be grouped in one
-     * pkt with  MSG_MORE flag.
-     * */
-    GSList *interleaved; // of type RTSP_interleaved
+    GSList *interleaved_rtp;
+    GSList *interleaved_rtcp;
+    GSList *interleaved_ev_io;
 
     // Run-Time
     unsigned int rtsp_cseq;

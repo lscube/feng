@@ -37,11 +37,8 @@
 
 #include <fenice/schedule.h>
 
-static GPtrArray *io_watchers;        //!< io_watchers
-static fd_set rset;
-static fd_set wset;
-static int max_fd;
-static GSList *clients; // of type RTSP_buffer
+static GPtrArray *io_watchers; //!< keep track of ev_io allocated
+static GSList *clients; //!< of type RTSP_buffer
 
 static inline
 int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
@@ -63,90 +60,95 @@ int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
     return n;
 }
 
+static void
+interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+    GString *str;
+    uint16_t ne_n;
+    char buffer[RTSP_BUFFERSIZE + 1];
+    RTSP_interleaved *intlvd = w->data;
+    RTSP_buffer *rtsp = intlvd->local->data;
+    int n;
+
+    if ((n = Sock_read(intlvd->local, buffer,
+                       RTSP_BUFFERSIZE, NULL, 0)) < 0) {
+        fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
+        return;
+    }
+
+    ne_n = htons((uint16_t)n);
+    str = g_string_sized_new(n+4);
+
+    g_string_append_c(str, '$');
+    g_string_append_c(str, (unsigned char)intlvd->channel);
+    g_string_append_len(str, (gchar *)&ne_n, 2);
+    g_string_append_len(str, (const gchar *)buffer, n);
+
+    g_async_queue_push(rtsp->out_queue, str);
+}
+
 #ifdef HAVE_LIBSCTP
-static gboolean find_sctp_interleaved(gconstpointer value, gconstpointer target)
+static void
+interleaved_read_sctp_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+    char buffer[RTSP_BUFFERSIZE + 1];
+    RTSP_interleaved *intlvd = w->data;
+    RTSP_buffer *rtsp = intlvd->local->data;
+    struct sctp_sndrcvinfo sctp_info;
+    int n;
+
+    if ((n = Sock_read(intlvd->local, buffer,
+                       RTSP_BUFFERSIZE, NULL, 0)) < 0) {
+        fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
+        return;
+    }
+
+    sctp_info.sinfo_stream = intlvd->channel;
+    Sock_write(rtsp->sock, buffer, n, &sctp_info, MSG_DONTWAIT | MSG_EOR);
+}
+
+static gboolean
+find_sctp_interleaved(gconstpointer value, gconstpointer target)
 {
     RTSP_interleaved *i = (RTSP_interleaved *)value;
     gint m = GPOINTER_TO_INT(target);
-
-    return (i->proto.sctp.rtp.sinfo_stream == m ||
-            i->proto.sctp.rtcp.sinfo_stream == m);
+    return (i->channel == m);
 }
+
 #endif
 
-static void interleaved_read(gpointer element, gpointer user_data)
+void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd)
 {
-    RTSP_buffer *rtsp = (RTSP_buffer *)user_data;
-    RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
+    void (*cb)(EV_P_ struct ev_io *w, int revents);
+    int i;
 
-    char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
-    int n;
-#ifdef HAVE_LIBSCTP
-    struct sctp_sndrcvinfo sctp_info;
-#endif
-
-    if ( FD_ISSET(Sock_fd(intlvd->rtcp_local), &rset) ) {
-        if ( (n = Sock_read(intlvd->rtcp_local, buffer,
-                            RTSP_BUFFERSIZE, NULL, 0)) < 0) {
-            fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
-            return;
-        }
-        switch (Sock_type(rtsp->sock)) {
-        case TCP: {
-            uint16_t ne_n = htons((uint16_t)n);
-            GString *str = g_string_sized_new(n+4);
-            g_string_append_c(str, '$');
-            g_string_append_c(str, (unsigned char)intlvd->proto.tcp.rtcp_ch);
-            g_string_append_len(str, (gchar *)&ne_n, 2);
-            g_string_append_len(str, (const gchar *)buffer, n);
-
-            g_async_queue_push(rtsp->out_queue, str);
-        }
+    switch (Sock_type(rtsp->sock)) {
+        case TCP:
+            cb = interleaved_read_tcp_cb;
         break;
 #ifdef HAVE_LIBSCTP
         case SCTP:
-            memcpy(&sctp_info, &(intlvd->proto.sctp.rtcp),
-                   sizeof(struct sctp_sndrcvinfo));
-            Sock_write(rtsp->sock, buffer, n, &sctp_info,
-                       MSG_DONTWAIT | MSG_EOR);
+            cb = interleaved_read_sctp_cb;
         break;
-#endif
         default:
-            break;
-        }
+            // Shouldn't be possible
+        return;
+#endif
     }
-    if ( FD_ISSET(Sock_fd(intlvd->rtp_local), &rset) ) {
-        if ( (n = Sock_read(intlvd->rtp_local, buffer,
-                            RTSP_BUFFERSIZE, NULL, 0)) < 0) {
-            fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
-            return;
-        }
-        switch (Sock_type(rtsp->sock)) {
-        case TCP: {
-            uint16_t ne_n = htons((uint16_t)n);
-            GString *str = g_string_sized_new(n+4);
-            g_string_append_c(str, '$');
-            g_string_append_c(str, (unsigned char)intlvd->proto.tcp.rtp_ch);
-            g_string_append_len(str, (gchar *)&ne_n, 2);
-            g_string_append_len(str, (const gchar *)buffer, n);
 
-            g_async_queue_push(rtsp->out_queue, str);
-        }
-        break;
-#ifdef HAVE_LIBSCTP
-        case SCTP:
-            memcpy(&sctp_info, &(intlvd->proto.sctp.rtp),
-                   sizeof(struct sctp_sndrcvinfo));
-            Sock_write(rtsp->sock, buffer, n, &sctp_info,
-                       MSG_DONTWAIT | MSG_EOR);
-        break;
-#endif
-        default:
-            break;
-        }
+    for (i = 0; i < 2; i++) {
+        ev_io *ev_io_listen = g_new(ev_io, 1);
+        Sock *sock = intlvd[i].local;
+        sock->data = rtsp;
+        ev_io_listen->data = intlvd + i;
+        rtsp->interleaved_ev_io =
+            g_slist_prepend(rtsp->interleaved_ev_io, ev_io_listen);
+        ev_io_init(ev_io_listen, cb, Sock_fd(sock), EV_READ);
+        ev_io_start(rtsp->srv->loop, ev_io_listen);
     }
 }
 
+#if 0
 static void rtp_session_read(gpointer element, gpointer user_data)
 {
     RTP_session *p = (RTP_session*)element;
@@ -159,92 +161,6 @@ static void rtp_session_read(gpointer element, gpointer user_data)
         else
             RTCP_recv_packet(p);
         fnc_log(FNC_LOG_VERBOSE, "IN RTCP\n");
-    }
-}
-
-static int rtsp_server(RTSP_buffer * rtsp)
-{
-    char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
-    int n;
-    gint m = 0;
-
-    if (rtsp == NULL) {
-        return ERR_NOERROR;
-    }
-    if (FD_ISSET(Sock_fd(rtsp->sock), &wset)) {
-        if ( (n = RTSP_send(rtsp)) < 0) {
-            return ERR_GENERIC;// internal server error
-        }
-    }
-    if (FD_ISSET(Sock_fd(rtsp->sock), &rset)) {
-        // There are RTSP or RTCP packets to read in
-        memset(buffer, 0, sizeof(buffer));
-        n = rtsp_sock_read(rtsp->sock, &m, buffer, sizeof(buffer) - 1);
-        if (n == 0) {
-            return ERR_CONNECTION_CLOSE;
-        }
-        if (n < 0) {
-            fnc_log(FNC_LOG_DEBUG,
-                "Sock_read() error in rtsp_server()\n");
-            send_reply(500, NULL, rtsp);
-            return ERR_GENERIC;
-        }
-        if (m == 0) {
-            if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
-                fnc_log(FNC_LOG_DEBUG,
-                    "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
-                send_reply(500, NULL, rtsp);
-                return ERR_GENERIC;
-            }
-            memcpy(&(rtsp->in_buffer[rtsp->in_size]), buffer, n);
-            rtsp->in_size += n;
-            if (RTSP_handler(rtsp) == ERR_GENERIC) {
-                fnc_log(FNC_LOG_ERR,
-                    "Invalid input message.\n");
-                return ERR_GENERIC;
-            }
-        } else {    /* if (rtsp->proto == SCTP && m != 0) */
-#ifdef HAVE_LIBSCTP
-        RTSP_interleaved *intlvd =
-                g_slist_find_custom(rtsp->interleaved, GINT_TO_POINTER(m),
-                                    find_sctp_interleaved)->data;
-
-        if (intlvd) {
-            if (m == intlvd->proto.sctp.rtcp.sinfo_stream) {
-                Sock_write(intlvd->rtcp_local, buffer, n, NULL, 0);
-            } else {    // RTP pkt arrived: do nothing...
-                fnc_log(FNC_LOG_DEBUG,
-                    "Interleaved RTP packet arrived from stream %d.\n",
-                    m);
-            }
-        } else {
-            fnc_log(FNC_LOG_DEBUG,
-                    "Packet arrived from unknown stream (%d)... ignoring.\n",
-                    m);
-        }
-#endif    // HAVE_LIBSCTP
-        }
-    }
-
-    g_slist_foreach(rtsp->interleaved, interleaved_read, rtsp);
-
-    if ( rtsp->session != NULL )
-        g_slist_foreach(rtsp->session->rtp_sessions, rtp_session_read, NULL);
-
-    return ERR_NOERROR;
-}
-
-static void interleaved_set_fds(gpointer element, gpointer user_data)
-{
-    RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
-
-    if (intlvd->rtp_local) {
-        FD_SET(Sock_fd(intlvd->rtp_local), &rset);
-        max_fd = MAX(max_fd, Sock_fd(intlvd->rtp_local));
-    }
-    if (intlvd->rtcp_local) {
-        FD_SET(Sock_fd(intlvd->rtcp_local), &rset);
-        max_fd = MAX(max_fd, Sock_fd(intlvd->rtcp_local));
     }
 }
 
@@ -325,6 +241,8 @@ static void established_each_connection(gpointer data, gpointer user_data)
     }
 }
 
+#endif
+
 static void rtsp_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
@@ -356,21 +274,12 @@ static void rtsp_cb(struct ev_loop *loop, ev_io *w, int revents)
             } else {    /* if (rtsp->proto == SCTP && m != 0) */
     #ifdef HAVE_LIBSCTP
             RTSP_interleaved *intlvd =
-                    g_slist_find_custom(rtsp->interleaved, GINT_TO_POINTER(m),
-                                        find_sctp_interleaved)->data;
-
+                g_slist_find_custom(rtsp->interleaved_rtcp, GINT_TO_POINTER(m),
+                                    find_sctp_interleaved)->data;
             if (intlvd) {
-                if (m == intlvd->proto.sctp.rtcp.sinfo_stream) {
-                    Sock_write(intlvd->rtcp_local, buffer, n, NULL, 0);
-                } else {    // RTP pkt arrived: do nothing...
-                    fnc_log(FNC_LOG_DEBUG,
-                        "Interleaved RTP packet arrived from stream %d.\n",
-                        m);
-                }
+                Sock_write(intlvd->local, buffer, n, NULL, 0);
             } else {
-                fnc_log(FNC_LOG_DEBUG,
-                        "Packet arrived from unknown stream (%d)... ignoring.\n",
-                        m);
+                fnc_log(FNC_LOG_DEBUG, "Unknown rtcp stream %d ", m);
             }
     #endif    // HAVE_LIBSCTP
             }
@@ -418,19 +327,6 @@ static void add_client(feng *srv, Sock *client_sock)
 }
 
 /**
- * Add the socket fd to the rset
- */
-
-static void add_sock_fd(gpointer data, gpointer user_data)
-{
-    Sock *sock = data;
-
-    FD_SET(Sock_fd(sock), &rset);
-    max_fd = MAX(Sock_fd(sock), max_fd);
-}
-
-
-/**
  * @brief Search function for connections in the clients list
  * @param value Current entry
  * @param compare Socket to find in the list
@@ -446,7 +342,8 @@ connections_compare_socket(gconstpointer value, gconstpointer compare)
  * Accepts the new connection if possible.
  */
 
-static void incoming_connection_cb(struct ev_loop *loop, ev_io *w, int revents)
+static void 
+incoming_connection_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     Sock *sock = w->data;
     feng *srv = sock->data;
@@ -540,17 +437,9 @@ void eventloop(feng *srv)
     ev_loop (srv->loop, 0);
 }
 
-/*
-static void free_watchers(gpointer data, gpointer user_data)
-{
-    Sock_close(data);
-}
-*/
-
 /**
  * @brief Cleanup data structure needed by the eventloop
  */
 void eventloop_cleanup(feng *srv) {
-//    g_ptr_array_foreach(io_watchers, free_watchers, NULL);
     g_ptr_array_free(io_watchers, TRUE);
 }

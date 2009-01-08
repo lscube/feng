@@ -35,6 +35,8 @@
 #include <fenice/schedule.h>
 #include "rtsp_utils.h"
 
+// XXX move in an header
+void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd);
 
 /**
  * Splits the path of a requested media finding the trackname and the removing it from the object
@@ -130,11 +132,12 @@ static RTSP_Error multicast_transport(feng *srv, RTP_transport *transport,
 }
 
 /**
- * tcp interleaved transport
+ * interleaved transport
  */
 
-static RTSP_Error tcp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
-                                 int rtp_ch, int rtcp_ch)
+static RTSP_Error
+interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
+                      int rtp_ch, int rtcp_ch)
 {
     RTSP_Error error;
     RTSP_interleaved *intlvd;
@@ -148,10 +151,10 @@ static RTSP_Error tcp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
         return error;
     }
 
-    intlvd = g_new0(RTSP_interleaved, 1);
+    intlvd = g_new0(RTSP_interleaved, 2);
 
     transport->rtp_sock = sock_pair[0];
-    intlvd->rtp_local = sock_pair[1];
+    intlvd[0].local = sock_pair[1];
 
     // RTCP local sockpair
     if ( Sock_socketpair(sock_pair) < 0) {
@@ -159,78 +162,27 @@ static RTSP_Error tcp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
                 "Cannot create AF_LOCAL socketpair for rtcp\n");
         set_RTSP_Error(&error, 500, "");
         Sock_close(transport->rtp_sock);
-        Sock_close(intlvd->rtp_local);
+        Sock_close(intlvd[0].local);
         g_free(intlvd);
         return error;
     }
 
     transport->rtcp_sock = sock_pair[0];
-    intlvd->rtcp_local = sock_pair[1];
+    intlvd[1].local = sock_pair[1];
 
     // copy stream number in rtp_transport struct
-    transport->rtp_ch = intlvd->proto.tcp.rtp_ch = rtp_ch;
-    transport->rtcp_ch = intlvd->proto.tcp.rtcp_ch = rtcp_ch;
+    transport->rtp_ch = intlvd[0].channel = rtp_ch;
+    transport->rtcp_ch = intlvd[1].channel = rtcp_ch;
 
-    // insert new interleaved stream in the list
-    rtsp->interleaved = g_slist_prepend(rtsp->interleaved, intlvd);
+    rtsp->interleaved_rtp =
+        g_slist_prepend(rtsp->interleaved_rtp, intlvd);
+    rtsp->interleaved_rtcp =
+        g_slist_prepend(rtsp->interleaved_rtcp, intlvd + 1);
+
+    eventloop_local_callbacks(rtsp, intlvd);
 
     return RTSP_Ok;
 }
-
-/**
- * sctp interleaved transport
- */
-
-#ifdef HAVE_LIBSCTP
-static RTSP_Error sctp_transport(RTSP_buffer *rtsp, RTP_transport *transport,
-                                 int rtp_ch, int rtcp_ch)
-{
-    RTSP_Error error;
-    RTSP_interleaved *intlvd;
-    Sock *sock_pair[2];
-
-    if ( !((rtp_ch < MAX_SCTP_STREAMS) && (rtcp_ch < MAX_SCTP_STREAMS))) {
-        fnc_log(FNC_LOG_ERR, "Stream id over limit\n");
-        set_RTSP_Error(&error, 500, "Stream id over limit");
-        return error;
-    }
-    // RTP local sockpair
-    if ( Sock_socketpair(sock_pair) < 0) {
-        fnc_log(FNC_LOG_ERR,
-                "Cannot create AF_LOCAL socketpair for rtp\n");
-        set_RTSP_Error(&error, 500, "");
-        return error;
-    }
-
-    intlvd = g_new0(RTSP_interleaved, 1);
-
-    transport->rtp_sock = sock_pair[0];
-    intlvd->rtp_local = sock_pair[1];
-
-    // RTCP local sockpair
-    if ( Sock_socketpair(sock_pair) < 0) {
-        fnc_log(FNC_LOG_ERR,
-                "Cannot create AF_LOCAL socketpair for rtcp\n");
-        set_RTSP_Error(&error, 500, "");
-        Sock_close(transport->rtp_sock);
-        Sock_close(intlvd->rtp_local);
-        g_free(intlvd);
-        return error;
-    }
-
-    transport->rtcp_sock = sock_pair[0];
-    intlvd->rtcp_local = sock_pair[1];
-
-    // copy stream number in rtp_transport struct
-    transport->rtp_ch = intlvd->proto.sctp.rtp.sinfo_stream = rtp_ch;
-    transport->rtcp_ch = intlvd->proto.sctp.rtcp.sinfo_stream = rtcp_ch;
-
-    // insert new interleaved stream in the list
-    rtsp->interleaved = g_slist_prepend(rtsp->interleaved, intlvd);
-
-    return RTSP_Ok;
-}
-#endif
 
 /**
  * Parses the TRANSPORT header from the RTSP buffer
@@ -335,7 +287,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                     return error;
                 }
 
-                return tcp_transport(rtsp, transport, rtp_ch, rtcp_ch);
+                return interleaved_transport(rtsp, transport, rtp_ch, rtcp_ch);
 #ifdef HAVE_LIBSCTP
             } else if (Sock_type(rtsp->sock) == SCTP &&
                        !strncmp(p, "/SCTP", 5)) {
@@ -355,7 +307,7 @@ static RTSP_Error parse_transport_header(RTSP_buffer * rtsp,
                     rtp_ch = max_interlvd + 1;
                     rtcp_ch = max_interlvd + 2;
                 }
-                return sctp_transport(rtsp, transport, rtp_ch, rtcp_ch);
+                return interleaved_transport(rtsp, transport, rtp_ch, rtcp_ch);
 #endif
             }
         }
