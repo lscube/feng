@@ -1,23 +1,23 @@
-/* * 
+/* *
  *  This file is part of Feng
- * 
+ *
  * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
- * See AUTHORS for more details 
- *  
- * Feng is free software; you can redistribute it and/or 
+ * See AUTHORS for more details
+ *
+ * Feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * Feng is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
- * General Public License for more details. 
- * 
+ *
+ * Feng is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
  * You should have received a copy of the GNU General Public License
  * along with Feng; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *  
+ *
  * */
 
 /**
@@ -201,66 +201,66 @@ static gboolean show_version(const gchar *option_name, const gchar *value,
 
 static int command_environment(feng *srv, int argc, char **argv)
 {
-  gchar *config_file = NULL;
-  gboolean quiet = FALSE, verbose = FALSE, syslog = FALSE;
+    gchar *config_file = NULL;
+    gboolean quiet = FALSE, verbose = FALSE, syslog = FALSE;
 
-  GOptionEntry optionsTable[] = {
-    { "config", 'f', 0, G_OPTION_ARG_STRING, &config_file,
-      "specify configuration file", NULL },
-    { "quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet,
-      "show as little output as possible", NULL },
-    { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose,
-      "output to standard error (debug)", NULL },
-    { "version", 'V', G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK, show_version,
-      "print version information and exit", NULL },
-    { "syslog", 's', 0, G_OPTION_ARG_NONE, &syslog,
-      "use syslog facility", NULL },
-    { NULL, 0, 0, 0, NULL, NULL, NULL }
-  };
+    GOptionEntry optionsTable[] = {
+        { "config", 'f', 0, G_OPTION_ARG_STRING, &config_file,
+            "specify configuration file", NULL },
+        { "quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet,
+            "show as little output as possible", NULL },
+        { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose,
+            "output to standard error (debug)", NULL },
+        { "version", 'V', G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK, show_version,
+            "print version information and exit", NULL },
+        { "syslog", 's', 0, G_OPTION_ARG_NONE, &syslog,
+            "use syslog facility", NULL },
+        { NULL, 0, 0, 0, NULL, NULL, NULL }
+    };
 
-  GError *error = NULL;
-  GOptionContext *context = g_option_context_new("");
-  g_option_context_add_main_entries(context, optionsTable, PACKAGE_TARNAME);
-  
-  g_option_context_parse(context, &argc, &argv, &error);
+    GError *error = NULL;
+    GOptionContext *context = g_option_context_new("");
+    g_option_context_add_main_entries(context, optionsTable, PACKAGE_TARNAME);
 
-  if ( error != NULL ) {
-    g_critical("%s\n", error->message);
-    exit(-1);
-  }
+    g_option_context_parse(context, &argc, &argv, &error);
 
-  if (!quiet) fncheader();
+    if ( error != NULL ) {
+        g_critical("%s\n", error->message);
+        exit(-1);
+    }
 
-  if ( config_file == NULL )
-    config_file = g_strdup(FENICE_CONF_PATH_DEFAULT_STR);
+    if (!quiet) fncheader();
 
-  if (config_read(srv, config_file)) {
-    g_critical("unable to read configuration file '%s'\n", config_file);
-    feng_free(srv);
-    exit(-1);
-  }
-  
-  {
-    gchar *progname = g_path_get_basename(argv[0]);
-    fnc_log_t fn;
+    if ( config_file == NULL )
+        config_file = g_strdup(FENICE_CONF_PATH_DEFAULT_STR);
 
-    int view_log;
-    if ( verbose )
-      view_log = FNC_LOG_OUT;
-    else if ( syslog )
-      view_log = FNC_LOG_SYS;
-    else
-      view_log = FNC_LOG_FILE;
-    
-    fn = fnc_log_init(srv->srvconf.errorlog_file->ptr, view_log, progname);
-    
-    Sock_init(fn);
-    bp_log_init(fn);
+    if (config_read(srv, config_file)) {
+        g_critical("unable to read configuration file '%s'\n", config_file);
+        feng_free(srv);
+        exit(-1);
+    }
 
-    g_free(progname);
-  }
+    {
+        gchar *progname = g_path_get_basename(argv[0]);
+        fnc_log_t fn;
 
-  return 0;
+        int view_log;
+        if ( verbose )
+            view_log = FNC_LOG_OUT;
+        else if ( syslog )
+            view_log = FNC_LOG_SYS;
+        else
+            view_log = FNC_LOG_FILE;
+
+        fn = fnc_log_init(srv->srvconf.errorlog_file->ptr, view_log, progname);
+
+        Sock_init(fn);
+        bp_log_init(fn);
+
+        g_free(progname);
+    }
+
+    return 0;
 }
 
 /**
