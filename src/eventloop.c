@@ -256,57 +256,57 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
     RTSP_buffer *rtsp = w->data;
     feng *srv = rtsp->srv;
 
-        memset(buffer, 0, sizeof(buffer));
-        n = rtsp_sock_read(rtsp->sock, &m, buffer, sizeof(buffer) - 1);
-        if (n > 0) {
-            if (m == 0) {
-                if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
-                    fnc_log(FNC_LOG_DEBUG,
-                        "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
-                    send_reply(500, NULL, rtsp);
-                    n = -1;
-                }
-                memcpy(&(rtsp->in_buffer[rtsp->in_size]), buffer, n);
-                rtsp->in_size += n;
-                if (RTSP_handler(rtsp) == ERR_GENERIC) {
-                    fnc_log(FNC_LOG_ERR, "Invalid input message.\n");
-                    n = -1;
-                }
-            } else {    /* if (rtsp->proto == SCTP && m != 0) */
-    #ifdef HAVE_LIBSCTP
-            RTSP_interleaved *intlvd =
-                g_slist_find_custom(rtsp->interleaved, GINT_TO_POINTER(m),
-                                    find_sctp_interleaved)->data;
-            if (intlvd) {
-                Sock_write(intlvd->local, buffer, n, NULL, 0);
-            } else {
-                fnc_log(FNC_LOG_DEBUG, "Unknown rtcp stream %d ", m);
+    memset(buffer, 0, sizeof(buffer));
+    n = rtsp_sock_read(rtsp->sock, &m, buffer, sizeof(buffer) - 1);
+    if (n > 0) {
+        if (m == 0) {
+            if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
+                fnc_log(FNC_LOG_DEBUG,
+                    "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
+                send_reply(500, NULL, rtsp);
+                n = -1;
             }
-    #endif    // HAVE_LIBSCTP
+            memcpy(&(rtsp->in_buffer[rtsp->in_size]), buffer, n);
+            rtsp->in_size += n;
+            if (RTSP_handler(rtsp) == ERR_GENERIC) {
+                fnc_log(FNC_LOG_ERR, "Invalid input message.\n");
+                n = -1;
             }
+        } else {    /* if (rtsp->proto == SCTP && m != 0) */
+#ifdef HAVE_LIBSCTP
+        RTSP_interleaved *intlvd =
+            g_slist_find_custom(rtsp->interleaved, GINT_TO_POINTER(m),
+                                find_sctp_interleaved)->data;
+        if (intlvd) {
+            Sock_write(intlvd->local, buffer, n, NULL, 0);
+        } else {
+            fnc_log(FNC_LOG_DEBUG, "Unknown rtcp stream %d ", m);
         }
-        if (n > 0) return;
-        if (n == 0)
-            fnc_log(FNC_LOG_INFO, "RTSP connection closed by client.");
-
-        if (n < 0) {
-            fnc_log(FNC_LOG_INFO, "RTSP connection closed by server.");
-            send_reply(500, NULL, rtsp); 
+#endif    // HAVE_LIBSCTP
         }
+    }
+    if (n > 0) return;
+    if (n == 0)
+        fnc_log(FNC_LOG_INFO, "RTSP connection closed by client.");
 
-    //  unregister the client
-        ev_io_stop(srv->loop, w);
-        g_free(w);
-        rtsp_client_destroy(rtsp);
+    if (n < 0) {
+        fnc_log(FNC_LOG_INFO, "RTSP connection closed by server.");
+        send_reply(500, NULL, rtsp); 
+    }
 
-    // wait for
-        Sock_close(rtsp->sock);
-        --srv->conn_count;
-        srv->num_conn--;
+//  unregister the client
+    ev_io_stop(srv->loop, w);
+    g_free(w);
+    rtsp_client_destroy(rtsp);
 
-    // Release the RTSP_buffer
-        clients = g_slist_remove(clients, rtsp);
-        g_free(rtsp);
+// wait for
+    Sock_close(rtsp->sock);
+    --srv->conn_count;
+    srv->num_conn--;
+
+// Release the RTSP_buffer
+    clients = g_slist_remove(clients, rtsp);
+    g_free(rtsp);
 }
 
 static void add_client(feng *srv, Sock *client_sock)
