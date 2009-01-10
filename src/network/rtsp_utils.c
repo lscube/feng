@@ -143,7 +143,8 @@ static void interleaved_close_fds(gpointer element, gpointer user_data)
 {
     RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
     
-    Sock_close(intlvd->local);
+    Sock_close(intlvd[0].local);
+    Sock_close(intlvd[1].local);
     g_free(intlvd);
 }
 
@@ -192,12 +193,10 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
   }
 
   // close local fds
-  g_slist_foreach(rtsp->interleaved_rtp, interleaved_close_fds, NULL);
-  g_slist_foreach(rtsp->interleaved_rtcp, interleaved_close_fds, NULL);
+  g_slist_foreach(rtsp->interleaved, interleaved_close_fds, NULL);
   g_slist_foreach(rtsp->interleaved_ev_io, interleaved_stop_ev, rtsp->srv);
 
-  g_slist_free(rtsp->interleaved_rtp);
-  g_slist_free(rtsp->interleaved_rtcp);
+  g_slist_free(rtsp->interleaved);
   g_slist_free(rtsp->interleaved_ev_io);
 
   // Remove the output queue

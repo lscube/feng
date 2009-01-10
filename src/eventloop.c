@@ -112,7 +112,7 @@ find_sctp_interleaved(gconstpointer value, gconstpointer target)
 {
     RTSP_interleaved *i = (RTSP_interleaved *)value;
     gint m = GPOINTER_TO_INT(target);
-    return (i->channel == m);
+    return (i[1].channel == m);
 }
 
 #endif
@@ -274,7 +274,7 @@ static void rtsp_cb(struct ev_loop *loop, ev_io *w, int revents)
             } else {    /* if (rtsp->proto == SCTP && m != 0) */
     #ifdef HAVE_LIBSCTP
             RTSP_interleaved *intlvd =
-                g_slist_find_custom(rtsp->interleaved_rtcp, GINT_TO_POINTER(m),
+                g_slist_find_custom(rtsp->interleaved, GINT_TO_POINTER(m),
                                     find_sctp_interleaved)->data;
             if (intlvd) {
                 Sock_write(intlvd->local, buffer, n, NULL, 0);

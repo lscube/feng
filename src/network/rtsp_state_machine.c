@@ -268,7 +268,7 @@ find_tcp_interleaved(gconstpointer value, gconstpointer target)
   RTSP_interleaved *i = (RTSP_interleaved *)value;
   gint m = GPOINTER_TO_INT(target);
 
-  return (i->channel == m);
+  return (i[1].channel == m);
 }
 
 /**
@@ -311,7 +311,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
             break;
         case RTSP_interlvd_rcvd:
             m = rtsp->in_buffer[1];
-	    list = g_slist_find_custom(rtsp->interleaved_rtcp,
+	    list = g_slist_find_custom(rtsp->interleaved,
                                        GINT_TO_POINTER(m),
                                        find_tcp_interleaved);
             if (!list) {    // session not found

@@ -174,10 +174,7 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     transport->rtp_ch = intlvd[0].channel = rtp_ch;
     transport->rtcp_ch = intlvd[1].channel = rtcp_ch;
 
-    rtsp->interleaved_rtp =
-        g_slist_prepend(rtsp->interleaved_rtp, intlvd);
-    rtsp->interleaved_rtcp =
-        g_slist_prepend(rtsp->interleaved_rtcp, intlvd + 1);
+    rtsp->interleaved = g_slist_prepend(rtsp->interleaved, intlvd);
 
     eventloop_local_callbacks(rtsp, intlvd);
 

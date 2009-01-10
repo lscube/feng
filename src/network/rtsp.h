@@ -89,8 +89,7 @@ typedef struct RTSP_buffer {
     char in_buffer[RTSP_BUFFERSIZE];
     size_t in_size;
     GAsyncQueue *out_queue;
-    GSList *interleaved_rtp;
-    GSList *interleaved_rtcp;
+    GSList *interleaved;
     GSList *interleaved_ev_io;
 
     // Run-Time
