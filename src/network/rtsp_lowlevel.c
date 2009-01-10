@@ -42,7 +42,10 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
 
     GString *outpkt = (GString *)g_async_queue_try_pop(rtsp->out_queue);
 
-    if (outpkt == NULL) return 0;
+    if (outpkt == NULL) {
+        ev_io_stop(rtsp->srv->loop, rtsp->ev_io_write);
+        return 0;
+    }
 
     if ( (n = Sock_write(rtsp->sock, outpkt->str, outpkt->len,
           NULL, MSG_DONTWAIT)) < outpkt->len) {

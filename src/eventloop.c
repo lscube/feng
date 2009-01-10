@@ -85,6 +85,7 @@ interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
     g_string_append_len(str, (const gchar *)buffer, n);
 
     g_async_queue_push(rtsp->out_queue, str);
+    ev_io_start(rtsp->srv->loop, rtsp->ev_io_write);
 }
 
 #ifdef HAVE_LIBSCTP
@@ -141,8 +142,7 @@ void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd)
         Sock *sock = intlvd[i].local;
         sock->data = rtsp;
         ev_io_listen->data = intlvd + i;
-        rtsp->interleaved_ev_io =
-            g_slist_prepend(rtsp->interleaved_ev_io, ev_io_listen);
+        rtsp->ev_io = g_slist_prepend(rtsp->ev_io, ev_io_listen);
         ev_io_init(ev_io_listen, cb, Sock_fd(sock), EV_READ);
         ev_io_start(rtsp->srv->loop, ev_io_listen);
     }
@@ -242,8 +242,13 @@ static void established_each_connection(gpointer data, gpointer user_data)
 }
 
 #endif
+static void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+    RTSP_buffer *rtsp = w->data;
+    RTSP_send(rtsp);
+}
 
-static void rtsp_cb(struct ev_loop *loop, ev_io *w, int revents)
+static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
     int n;
@@ -251,10 +256,6 @@ static void rtsp_cb(struct ev_loop *loop, ev_io *w, int revents)
     RTSP_buffer *rtsp = w->data;
     feng *srv = rtsp->srv;
 
-    if (revents & EV_WRITE) {
-        RTSP_send(rtsp);
-    }
-    if (revents & EV_READ) {
         memset(buffer, 0, sizeof(buffer));
         n = rtsp_sock_read(rtsp->sock, &m, buffer, sizeof(buffer) - 1);
         if (n > 0) {
@@ -306,7 +307,6 @@ static void rtsp_cb(struct ev_loop *loop, ev_io *w, int revents)
     // Release the RTSP_buffer
         clients = g_slist_remove(clients, rtsp);
         g_free(rtsp);
-    }
 }
 
 static void add_client(feng *srv, Sock *client_sock)
@@ -319,9 +319,13 @@ static void add_client(feng *srv, Sock *client_sock)
     client_sock->data = srv;
     ev_io_client->data = rtsp;
     g_ptr_array_add(io_watchers, ev_io_client);
-    ev_io_init(ev_io_client, rtsp_cb, Sock_fd(client_sock),
-               EV_WRITE | EV_READ);
+    ev_io_init(ev_io_client, rtsp_read_cb, Sock_fd(client_sock), EV_READ);
     ev_io_start(srv->loop, ev_io_client);
+    ev_io_client = g_new(ev_io, 1);
+    ev_io_client->data = rtsp;
+    ev_io_init(ev_io_client, rtsp_write_cb, Sock_fd(client_sock), EV_WRITE);
+    rtsp->ev_io = g_slist_prepend(rtsp->ev_io, ev_io_client);
+    rtsp->ev_io_write = ev_io_client; // to be started/stopped when necessary
     fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
             Sock_fd(client_sock));
 }

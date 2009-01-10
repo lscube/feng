@@ -90,8 +90,8 @@ typedef struct RTSP_buffer {
     size_t in_size;
     GAsyncQueue *out_queue;
     GSList *interleaved;
-    GSList *interleaved_ev_io;
-
+    GSList *ev_io;
+    ev_io *ev_io_write;
     // Run-Time
     unsigned int rtsp_cseq;
     RTSP_session *session;

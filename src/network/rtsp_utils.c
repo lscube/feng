@@ -148,7 +148,7 @@ static void interleaved_close_fds(gpointer element, gpointer user_data)
     g_free(intlvd);
 }
 
-static void interleaved_stop_ev(gpointer element, gpointer user_data)
+static void stop_ev(gpointer element, gpointer user_data)
 {
     ev_io *io = element;
     feng *srv = user_data;
@@ -194,10 +194,10 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
 
   // close local fds
   g_slist_foreach(rtsp->interleaved, interleaved_close_fds, NULL);
-  g_slist_foreach(rtsp->interleaved_ev_io, interleaved_stop_ev, rtsp->srv);
+  g_slist_foreach(rtsp->ev_io, stop_ev, rtsp->srv);
 
   g_slist_free(rtsp->interleaved);
-  g_slist_free(rtsp->interleaved_ev_io);
+  g_slist_free(rtsp->ev_io);
 
   // Remove the output queue
   g_async_queue_lock(rtsp->out_queue);
@@ -523,6 +523,7 @@ int send_redirect_3xx(RTSP_buffer * rtsp, const char *object)
 int bwrite(GString *buffer, RTSP_buffer * rtsp)
 {
     g_async_queue_push(rtsp->out_queue, buffer);
+    ev_io_start(rtsp->srv->loop, rtsp->ev_io_write);
 
     return ERR_NOERROR;
 }
