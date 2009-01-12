@@ -57,7 +57,7 @@ static const id_tag id_tags[] = {
    { CODEC_ID_AAC, 96, "AAC" },
    { CODEC_ID_MPEG4, 96, "MP4V-ES" },
    { CODEC_ID_H263, 96, "H263P" },
-   { CODEC_ID_AMR_NB, 97, "AMR" },
+   { CODEC_ID_AMR_NB, 96, "AMR" },
    { CODEC_ID_NONE, 0, "NONE"} //XXX ...
 };
 
@@ -187,7 +187,7 @@ static int avf_init(Resource * r)
             props.codec_id = codec->codec_id;
             props.codec_sub_id = codec->sub_id;
             props.payload_type = pt_from_id(codec->codec_id);
-            if (props.payload_type == 96)
+            if (props.payload_type >= 96)
                 props.payload_type = pt++;
             fnc_log(FNC_LOG_DEBUG, "[avf] Parsing AVStream %s",
                     props.encoding_name);
