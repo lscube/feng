@@ -28,6 +28,7 @@ libmediath_a_SOURCES += parser/h264.c \
 			parser/mp4ves.c \
 			parser/speex.c \
 			parser/h263.c \
+			parser/amr.c \
 			demuxer/demuxer_avf.c
 endif
 

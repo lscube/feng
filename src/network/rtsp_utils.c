@@ -394,7 +394,7 @@ void log_user_agent(RTSP_buffer * rtsp)
 
     if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
         strncpy(cut, p, 255);
-        p[255] = '\0';
+        cut[255] = '\0';
         if ((p = strstr(cut, RTSP_EL)) != NULL) {
             *p = '\0';
         }
