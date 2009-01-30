@@ -6,8 +6,8 @@
 #define ERROR -1
 #define WARNING 1
 
-#include <fenice/rtp.h>
-#include <fenice/mediathread.h>
+#include "network/rtp.h"
+#include "mediathread/mediathread.h"
 
 typedef struct {
     double Timestamp;

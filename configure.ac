@@ -1,159 +1,107 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(feng, 0.1.99)
+AC_PREREQ(2.61)
+AC_INIT([feng], [0.1.99])
 AC_CONFIG_AUX_DIR(config)
-AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(dist-bzip2 check-news)
+AM_INIT_AUTOMAKE(dist-bzip2 no-dist-gzip foreign)
+AM_MAINTAINER_MODE
 
 AC_PREFIX_DEFAULT("/usr")
 
-AM_CONFIG_HEADER(config.h)
+AC_PROG_CC_C99
+AS_IF([test "x$ac_cv_prog_cc_c99" = "xno"], [
+  AC_MSG_ERROR([no C99 compiler found, feng requires a C99 compiler.])
+])
+
+AC_PROG_RANLIB
+
+AC_USE_SYSTEM_EXTENSIONS
+dnl Force usage of POSIX.1-2001 (clock_gettime)
+CPPFLAGS="${CPPFLAGS} -D_POSIX_C_SOURCE=200112L"
+
+dnl Enable Darwin extensions (AC_USE_SYSTEM_EXTENSIONS does not enable
+dnl them in 2.63)
+AC_CANONICAL_HOST
+AS_CASE([$host_os],
+	[darwin*], [CPPFLAGS="${CPPFLAGS} -D_DARWIN_C_SOURCE"])
+
+AC_CONFIG_HEADER([config.h])
 
 AC_ARG_WITH(rtsp-port,
-[  --with-rtsp-port        default RTSP listening port [[default=554, alternative=8554]]],,
+    AS_HELP_STRING([--with-rtsp-port], [default RTSP listening port (default=554, alternative=8554)]),,
     with_rtsp_port=554)
 
 AC_ARG_WITH(config-file,
-[  --with-config-file      name for the configuration file in sysconfdir [[default=feng.conf]]],,
+    AS_HELP_STRING([--with-config-file], [name for the configuration file in sysconfdir (default=feng.conf)]),,
     with_config_file="feng.conf")
 
 AC_ARG_WITH(log-file,
-[  --with-log-file         name for the log file [[default=feng.log]]],,
+    AS_HELP_STRING([--with-log-file], [name for the log file (default=feng.log)]),,
     with_log_file="feng.log")
 
 AC_ARG_WITH(max-session,
-[  --with-max-session      max number of incoming sessions [[default=100]]],,
+    AS_HELP_STRING([--with-max-session], [max number of incoming sessions (default=100)]),,
     with_max_session=100)
 
-AC_ARG_ENABLE(ipv6,
-[  --enable-ipv6           enable IPv6 support [[default=autodetected]]],,
-        enable_ipv6="yes")
-
 AC_ARG_ENABLE(libavformat,
-[  --enable-libavformat    enable ffmpeg's libavformat support [[default=yes]]],,
+    AS_HELP_STRING([--enable-libavformat], [enable ffmpeg's libavformat support (default=yes)]),,
         enable_ffmpeg="yes")
 
-AC_ARG_ENABLE(debug,
-[  --enable-debug          enable gcc dubugging flags [[default=no]]],,
-    enable_debug="no")
-
 AC_ARG_ENABLE(trace,
-[  --enable-trace          enable additional informations in log [[default=no]]],,
+    AS_HELP_STRING([--enable-trace], [enable additional informations in log [[default=no]]]),,
     enable_trace="no")
 
 AC_ARG_ENABLE(duma,
-[  --enable-duma           link against DUMA library to debug memory usage
-                          (implies --enable-debug) [[default=no]]],,
+    AS_HELP_STRING([--enable-duma], [link against DUMA library to debug memory usage (implies --enable-debug) (default=no)]),,
     enable_duma="no")
 
-AC_ARG_ENABLE(mudflap,
-[  --enable-mudflap        enable mudflap support
-                          (implies --enable-debug) [[default=no]]],,
-    enable_mudflap="no")
+dnl Checks used by feng itself
+AC_FUNC_MMAP dnl also by conf/*
+AC_CHECK_HEADERS([syslog.h])
 
-AC_ARG_ENABLE(errors,
-[  --enable-errors         make gcc warnings behave like errors: none, normal, pedantic [[default=none]]],,
-    enable_errors="none")
+AC_SEARCH_LIBS([clock_gettime], [rt],
+  [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define this if you have clock_gettime])])
 
-AC_ARG_ENABLE(sctp,
-[  --enable-sctp           enable SCTP support [[default=autodetected]]],,         enable_sctp="yes")
+dnl check if we have the generic struct for net addresses the has max
+dnl possible size
+AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 
-m4_undefine([AC_PROG_CXX])
-m4_defun([AC_PROG_CXX],[])
-m4_undefine([AC_PROG_F77])
-m4_defun([AC_PROG_F77],[])
-
-AC_PROG_LIBTOOL
-LIBTOOL="$LIBTOOL --silent"
-AC_SUBST([LIBTOOL_DEPS])
-
-AC_C_BIGENDIAN([BIGENDIAN="Big Endian"] AC_DEFINE([WORDS_BIGENDIAN], 1, [Define if manchine is big-endian]),[BIGENDIAN="Little Endian"] )
-
-ACX_PTHREAD(,AC_MSG_ERROR([Missing POSIX Threads support]))
-
-LIBS="$PTHREAD_LIBS $LIBS"
-CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-CC="$PTHREAD_CC"
-
-AC_CHECK_LIBM
-
-dnl Checks for header files.
-AC_HEADER_DIRENT
-AC_HEADER_STDC
-AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/time.h unistd.h strings.h errno.h sys/errno.h fcntl.h malloc.h sys/ioctl.h getopt.h syslog.h) 
-
-dnl Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_TYPE_SIZE_T
-AC_TYPE_UID_T
-AC_TYPE_PID_T
-AC_C_INLINE
-AC_HEADER_TIME
-
-dnl Checks for library functions.
-AC_FUNC_ALLOCA
-AC_FUNC_MEMCMP
-AC_FUNC_MMAP
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(select socket gettimeofday uname getcwd getwd strcspn strdup strtoul strerror strstr setenv getopt_long uname)
-AC_CHECK_FUNC(getaddrinfo)
-
-AC_CHECK_LIB([c], [shm_open], [SHM_LIB=], 
-    [AC_CHECK_LIB([rt], [shm_open], [SHM_LIB=-lrt])])
-AC_SUBST(SHM_LIB)
+dnl Checks used by conf/*
+dnl AC_CHECK_HEADERS([pcre.h fam.h])
+dnl AC_CHECK_FUNCS([lstat])
 
 fenice_state_dir=$(eval echo ${localstatedir}/feng)
 AC_SUBST(fenice_state_dir)
 
-dnl check if we have the generic struct for net addresses the has max possible size
-AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
+LSC_CHECK_IPV6
+LSC_CHECK_SCTP
+LIBS="$LIBS $SCTP_LIBS"
 
-dnl CFLAGS=""
+AS_IF([test "x$have_sctp" = "xyes"],
+  [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.0.8"],
+  [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.0.8"])
 
-AM_PATH_GLIB_2_0(2.0.0,CFLAGS="$CFLAGS $GLIB_CFLAGS",AC_MSG_ERROR([Feng uses Glib. Please install it (you need devel files).]), gthread)
-AM_PATH_LIBGCRYPT(1.2.0, [CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
-                          LIBS="$LIBS $LIBGCRYPT_LIBS"], AC_MSG_ERROR([Feng uses libgcrypts. Please install it.]))
-dnl test enable
-if test "x$enable_ipv6" = "xyes"; then
-    AC_CHECK_TYPE(struct sockaddr_in6,
-        AC_DEFINE([IPV6], 1, [Define IPv6 support]),
-        ,
-        [#include <netinet/in.h>])
-else
-    AC_MSG_WARN([IPv6 disabled: check skipped.])
-fi
+PKG_CHECK_MODULES(LIBNETEMBRYO,[$LIBNETEMBRYO_REQUIRES])
+AC_SUBST(LIBNETEMBRYO_REQUIRES)
+CPPFLAGS="$CPPFLAGS $LIBNETEMBRYO_CFLAGS"
+LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 
 dnl MYSQL
 AX_LIB_MYSQL([5.0])
 LIBS="$LIBS $MYSQL_LDFLAGS"
 CFLAGS="$CFLAGS $MYSQL_CFLAGS"
 
-PKG_CHECK_MODULES(LIBNETEMBRYO,[libnetembryo >= 0.0.8])
-CFLAGS="$CFLAGS $LIBNETEMBRYO_CFLAGS"
-LIBS="$LIBS $LIBNETEMBRYO_LIBS"
-
 PKG_CHECK_MODULES(LIBBUFFERPOOL,[libbufferpool >= 0.0.3])
 CFLAGS="$CFLAGS $LIBBUFFERPOOL_CFLAGS"
 LIBS="$LIBS $LIBBUFFERPOOL_LIBS"
 
-dnl Check for SCTP support
-if test "$enable_sctp" = "yes"; then
-    if test "${LIBNETEMBRYO_LIBS//sctp}" = "${LIBNETEMBRYO_LIBS}"; then
-        AC_MSG_WARN([sctp required but netembryo does not support it, rebuild netembryo first.])
-    fi
-        AC_CHECK_TYPE(struct sctp_sndrcvinfo, [
-         AC_CHECK_LIB(sctp,sctp_recvmsg)],
-         [enable_sctp=no,
-         AC_MSG_WARN([SCTP disabled: headers not found])],
-         [#include <netinet/sctp.h>])
-else
-    AC_MSG_WARN([SCTP disabled: check skipped.])
-fi
+PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16 gthread-2.0])
+CFLAGS="$CFLAGS $GLIB_CFLAGS"
+LIBS="$LIBS $GLIB_LIBS"
 
 avformat_msg="no"
 avutil_msg="no"
 if test "x$enable_ffmpeg" = "xyes"; then
-    PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 52.7.0],
+    PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 52.7.0 libavcodec >= 52],
         [AC_DEFINE(HAVE_AVFORMAT,,[Define if libavformat support is available])
          avformat_msg="yes"
          ])
@@ -175,36 +123,16 @@ if test "$enable_duma" = "yes"; then
     LIBS="$LIBS -lduma"
 fi
 
-if test "$enable_mudflap" = "yes"; then
-    CFLAGS="$CFLAGS -fmudflapth"
-    LIBS="$LIBS -lmudflapth"
-    enable_debug=yes
-fi
+CC_ATTRIBUTE_MALLOC(
+  [AC_DEFINE([ATTR_MALLOC], [__attribute__((__malloc__))], [Define this if ATTR_MALLOC is supported])],
+  [AC_DEFINE([ATTR_MALLOC], [], [Define this if ATTR_MALLOC is not supported])])
 
-AM_CONDITIONAL(FENICE_DEBUG, [test "$enable_debug" = "yes"])
-if test "$enable_debug" = "yes"; then
-    CFLAGS="$CFLAGS -g -ggdb -Wall"
-    AC_DEFINE(ENABLE_DEBUG, 1,[Debug enabled])
-else
-    AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
-    CFLAGS="$CFLAGS -O2 -Wall"
-fi
+LSC_ERRORS
+LSC_DEBUG
 
 if test "$enable_trace" = "yes"; then
     AC_DEFINE(TRACE, 1,[Trace enabled])
 fi
-
-case "$enable_errors" in
-    pedantic)
-        CFLAGS="$CFLAGS -pedantic-errors -Werror"
-    ;;
-    normal | yes)
-        CFLAGS="$CFLAGS -Werror"
-    ;;
-    none | *)
-        CFLAGS="$CFLAGS"
-    ;;
-esac
 
 fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot|sed -e "s:/\+:/:g")
 fenice_avroot_dir=${fenice_avroot_dir//NONE}
@@ -290,25 +218,16 @@ AC_DEFINE_UNQUOTED(FENIC_STATE_DIR_STR,
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([mediathread/Makefile])
-AC_CONFIG_FILES([mediathread/parser/Makefile])
-AC_CONFIG_FILES([mediathread/demuxer/Makefile])
-AC_CONFIG_FILES([mediathread/metadata/Makefile])
-AC_CONFIG_FILES([eventloop/Makefile])
-AC_CONFIG_FILES([rtp/Makefile])
-AC_CONFIG_FILES([rtcp/Makefile])
-AC_CONFIG_FILES([rtsp/Makefile])
-AC_CONFIG_FILES([sdp/Makefile])
 AC_CONFIG_FILES([src/Makefile])
-AC_CONFIG_FILES([schedule/Makefile])
-AC_CONFIG_FILES([multicast/Makefile])
-AC_CONFIG_FILES([conf/Makefile])
-AC_CONFIG_FILES([docs/Makefile])
-AC_CONFIG_FILES([etc/Makefile])
-AC_CONFIG_FILES([avroot/Makefile])
+AC_CONFIG_FILES([src/mediathread/Makefile])
+AC_CONFIG_FILES([src/network/Makefile])
+AC_CONFIG_FILES([src/conf/Makefile])
 AC_CONFIG_FILES([etc/feng.conf])
+AC_CONFIG_FILES([etc/feng-uninstalled.conf])
+AC_CONFIG_FILES([Doxyfile])
 AC_OUTPUT
 
+LSC_DEBUG_STATUS
 AC_MSG_NOTICE([config files successfully generated!
  
 Feng Install prefix .......... : $prefix
@@ -322,9 +241,7 @@ Byte order ................... : this is a $BIGENDIAN machine
 sctp support enabled ......... : $enable_sctp
 avformat support enabled ..... : $avformat_msg
 avutil support enabled ....... : $avutil_msg
-debug enabled ................ : $enable_debug
  duma enabled ................ : $enable_duma
- mudflap enabled ............. : $enable_mudflap
 
  'make' will now compile Feng and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.

@@ -30,32 +30,18 @@
 
 // #include <fenice/schedule.h>
 #include <fenice/prefs.h>
-#include "array.h"
-#include "conf.h"
+#include "conf/array.h"
+#include "conf/conf.h"
 #include <netembryo/wsocket.h>
-#include <glib/garray.h>
+#include <glib.h>
 #include <pwd.h>
-#include <grp.h>
 
 typedef struct feng {
-/** 
- * @name listening sockets
- * listening sockets
- */
-//@{
-    GPtrArray *listen_socks;        //!< listen sockets
-    fd_set rset;
-    fd_set wset;
-    int max_fd;
-//@}
-    pthread_t mth;                  //!< mediathread
 
     // Metadata begin
-    pthread_t cpd;                  //!< CPD Metadata thread
+    //pthread_t cpd;                  //!< CPD Metadata thread
     void *metadata_clients;	    //!< CPD Clients
     // Metadata end
-
-    struct schedule_list *sched;
 /**
  * @name lighttpd-alike preferences
  * lemon based, lighttpd alike preferences
@@ -70,34 +56,16 @@ typedef struct feng {
     server_config srvconf;
 //@}
 /** 
- * @name port pool
- * port pool variables
- */
-//@{ 
-    int start_port;                 //!< initial rtp port
-    int *port_pool;                 //!< list of allocated ports
-//@}
-/** 
- * @name user
- * User id and group id used by the current feng instance
- */
-//@{
-    gid_t gid;                      //!< group id
-    uid_t uid;                      //!< user id
-//@}
-/** 
  * @name eventloop state
  * Includes the 
  */
 //@{
-    struct RTSP_buffer *rtsp_list;
     /**
      * Once it reaches the maximum the server redirects
      * to a twin if available
      */
     int num_conn;               //!< number of active connections
     int conn_count;             //!< number of active connections (FIXME)
-    int child_count;            //!< unused
     int stop_schedule;          //!< to be refactored away
 //@}
 } feng;

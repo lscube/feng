@@ -20,32 +20,20 @@
  *  
  * */
 
-#ifndef FN_SCHEDULE_H
-#define FN_SCHEDULE_H
+#include "demuxer.h"
 
+#ifndef FN_DEMUXER_MODULE_H
+#define FN_DEMUXER_MODULE_H
 
-#include <time.h>
-#include <sys/time.h>
-#include <glib.h>
-#include "network/rtp.h"
-#include <fenice/prefs.h>
-#include <fenice/debug.h>
+#define FNC_LIB_DEMUXER(x) const Demuxer fnc_demuxer_##x =\
+{\
+	&info, \
+	x##_probe, \
+	x##_init, \
+	x##_read_packet, \
+	x##_seek, \
+	x##_uninit \
+}
 
-typedef struct play_args {
-    struct tm playback_time;
-    short playback_time_valid;
-    short seek_time_valid;
-    double start_time;   //! time in seconds
-    double begin_time;
-    double end_time;
-} play_args;
+#endif // FN_DEMUXER_MODULE_H
 
-void schedule_init(feng *srv);
-
-int schedule_add(RTP_session * rtp_session);
-int schedule_start(RTP_session * rtp_session, play_args * args);
-int schedule_remove(RTP_session * rtp_session, void *unused);
-int schedule_resume(RTP_session * rtp_session, play_args * args);
-RTP_session *schedule_find_multicast(feng *srv, const char *mrl);
-
-#endif // FN_SCHEDULE_H

@@ -20,32 +20,21 @@
  *  
  * */
 
-#ifndef FN_SCHEDULE_H
-#define FN_SCHEDULE_H
+#ifndef FN_EVENTLOOP_H
+#define FN_EVENTLOOP_H
 
+#include <netembryo/wsocket.h>
+#include <fenice/fnc_log.h>
+#include "network/rtsp.h"
+#include <fenice/server.h>
 
-#include <time.h>
-#include <sys/time.h>
-#include <glib.h>
-#include "network/rtp.h"
-#include <fenice/prefs.h>
-#include <fenice/debug.h>
+#define MAX_FDS 800
 
-typedef struct play_args {
-    struct tm playback_time;
-    short playback_time_valid;
-    short seek_time_valid;
-    double start_time;   //! time in seconds
-    double begin_time;
-    double end_time;
-} play_args;
+typedef int (*event_function) (void *data);
 
-void schedule_init(feng *srv);
+int feng_bind_port(char *host, char *port, specific_config *s);
+void eventloop_init();
+void eventloop(feng *srv);
+void eventloop_cleanup();
 
-int schedule_add(RTP_session * rtp_session);
-int schedule_start(RTP_session * rtp_session, play_args * args);
-int schedule_remove(RTP_session * rtp_session, void *unused);
-int schedule_resume(RTP_session * rtp_session, play_args * args);
-RTP_session *schedule_find_multicast(feng *srv, const char *mrl);
-
-#endif // FN_SCHEDULE_H
+#endif // FN_EVENTLOOP_H

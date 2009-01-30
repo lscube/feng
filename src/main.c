@@ -25,31 +25,31 @@
  * server main loop
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#include <config.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h> /*SOMAXCONN*/
 #include <signal.h>
 #include <errno.h>
-#include <buffer.h>
-#include <array.h>
-#include <configfile.h>
+#include <grp.h>
+
+#include "conf/buffer.h"
+#include "conf/array.h"
+#include "conf/configfile.h"
 
 #include <fenice/server.h>
-#include <fenice/eventloop.h>
+#include "eventloop.h"
 #include <fenice/prefs.h>
 #include <fenice/utils.h>
-#include <fenice/mediathread.h>
+#include "mediathread/mediathread.h"
 #include <glib.h>
-#include <glib/gprintf.h>
 #include <getopt.h>
 #include <metadata/cpd.h>
 
-#include <pthread.h>
-
-int stopped = 0;
+static int stopped = 0;
 
 static void terminator_function (int num) {
     fnc_log(FNC_LOG_INFO, "Exiting...");
@@ -72,7 +72,6 @@ static void feng_drop_privs(feng *srv)
                 fnc_log(FNC_LOG_WARN,
                     "Cannot setgid to user %s, %s",
                     id, strerror(errno));
-            srv->gid = gr->gr_gid;
         } else {
             fnc_log(FNC_LOG_WARN,
                     "Cannot get group %s id, %s",
@@ -88,7 +87,6 @@ static void feng_drop_privs(feng *srv)
                 fnc_log(FNC_LOG_WARN,
                     "Cannot setuid to user %s, %s",
                     id, strerror(errno));
-            srv->uid = pw->pw_uid;
         } else {
             fnc_log(FNC_LOG_WARN,
                     "Cannot get user %s id, %s",
@@ -96,45 +94,8 @@ static void feng_drop_privs(feng *srv)
         }
     }
 }
-/**
- * Bind to the defined listening port
- */
-
-static int feng_bind_port(feng *srv,
-                          char *host, char *port, specific_config *s)
-{
-    int is_sctp = s->is_sctp;
-    Sock *sock;
-
-    if (is_sctp)
-        sock = Sock_bind(host, port, NULL, SCTP, NULL);
-    else
-        sock = Sock_bind(host, port, NULL, TCP, NULL);
-    if(!sock) {
-        fnc_log(FNC_LOG_ERR,"Sock_bind() error for port %s.", port);
-        fprintf(stderr,
-                "[fatal] Sock_bind() error in main() for port %s.\n",
-                port);
-        return 1;
-    }
-
-    fnc_log(FNC_LOG_INFO, "Listening to port %s (%s) on %s",
-            port,
-            (is_sctp? "SCTP" : "TCP"),
-            ((host == NULL)? "all interfaces" : host));
-
     //fnc_log(FNC_LOG_INFO, "CPD port %s", s->cpd_port->ptr);
 
-    g_ptr_array_add(srv->listen_socks, sock);
-
-    if(Sock_listen(sock, SOMAXCONN)) {
-        fnc_log(FNC_LOG_ERR, "Sock_listen() error for TCP socket.");
-        fprintf(stderr, "[fatal] Sock_listen() error for TCP socket.\n");
-        return 1;
-    }
-
-    return 0;
-}
 
 static int feng_bind_ports(feng *srv)
 {
@@ -142,7 +103,7 @@ static int feng_bind_ports(feng *srv)
     char *host = srv->srvconf.bindhost->ptr;
     char *port = g_strdup_printf("%d", srv->srvconf.port);
 
-    if ((err = feng_bind_port(srv, host, port, srv->config_storage[0]))) {
+    if ((err = feng_bind_port(host, port, srv->config_storage[0]))) {
         g_free(port);
         return err;
     }
@@ -184,7 +145,7 @@ static int feng_bind_ports(feng *srv)
 
         port++;
 
-        if (feng_bind_port(srv, host, port, s)) return 1;
+        if (feng_bind_port(host, port, s)) return 1;
     }
 
     return 0;
@@ -211,38 +172,6 @@ static void feng_handle_signals(feng *srv)
     sigprocmask(SIG_BLOCK, &block_set, NULL);
 }
 
-/**
- * Initialises the array of schedule_list sched and creates the thread
- * @see schedule_do
- */
-
-static int feng_start_mt(feng *srv)
-{
-    if (schedule_init(srv) == ERR_FATAL) {
-        fnc_log(FNC_LOG_FATAL,"Can't start scheduler. Server is aborting.");
-        fprintf(stderr, "[fatal] Can't start scheduler. Server is aborting.\n");
-        return 1;
-    }
-
-    pthread_create(&srv->mth, NULL, mediathread, NULL);
-
-    pthread_create(&srv->cpd, NULL, cpd_server, (void *) srv);
-
-    return 0;
-}
-
-static void usage(char *name)
-{
-    fprintf(stdout,
-        "%s [options] \n"
-        "--help\t\t| -h | -? \tshow this message\n"
-        "--quiet\t\t| -q \tshow as little output as possible\n"
-        "--config\t| -f <config> \tspecify configuration file\n"
-        "--verbose\t| -v \t\toutput to standar error (debug)\n"
-        "--version\t| -V \t\tprint version and exit\n"
-        "--syslog\t| -s \t\tuse syslog facility\n", name);
-    return;
-}
 
 static void feng_free(feng* srv)
 {
@@ -260,83 +189,86 @@ static void feng_free(feng* srv)
     CLEAN(config_touched);
     CLEAN(srvconf.modules);
 #undef CLEAN
-    g_ptr_array_free(srv->listen_socks, FALSE); // XXX Socks aren't g_mallocated yet
+
+    eventloop_cleanup();
+}
+
+static void fncheader()
+{
+    printf("\n%s - Feng %s\n LScube Project - Politecnico di Torino\n",
+            PACKAGE,
+            VERSION);
+}
+
+static gboolean show_version(const gchar *option_name, const gchar *value,
+			     gpointer data, GError **error)
+{
+  fncheader();
+  exit(0);
 }
 
 static int command_environment(feng *srv, int argc, char **argv)
 {
-    static const char short_options[] = "f:vVsq";
-    //"m:a:f:n:b:z:T:B:q:o:S:I:r:M:4:2:Q:X:D:g:G:v:V:F:N:tpdsZHOcCPK:E:R:";
+  gchar *config_file = NULL;
+  gboolean quiet = FALSE, verbose = FALSE, syslog = FALSE;
 
-    int n;
-    int config_file = 0;
-    int quiet = 0;
-    int view_log = FNC_LOG_FILE;
-    char *progname = g_path_get_basename(argv[0]);
+  GOptionEntry optionsTable[] = {
+    { "config", 'f', 0, G_OPTION_ARG_STRING, &config_file,
+      "specify configuration file", NULL },
+    { "quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet,
+      "show as little output as possible", NULL },
+    { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose,
+      "output to standard error (debug)", NULL },
+    { "version", 'V', G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK, show_version,
+      "print version information and exit", NULL },
+    { "syslog", 's', 0, G_OPTION_ARG_NONE, &syslog,
+      "use syslog facility", NULL },
+    { NULL, 0, 0, 0, NULL, NULL, NULL }
+  };
+
+  GError *error = NULL;
+  GOptionContext *context = g_option_context_new("");
+  g_option_context_add_main_entries(context, optionsTable, PACKAGE_TARNAME);
+  
+  g_option_context_parse(context, &argc, &argv, &error);
+
+  if ( error != NULL ) {
+    g_critical("%s\n", error->message);
+    exit(-1);
+  }
+
+  if (!quiet) fncheader();
+
+  if ( config_file == NULL )
+    config_file = g_strdup(FENICE_CONF_PATH_DEFAULT_STR);
+
+  if (config_read(srv, config_file)) {
+    g_critical("unable to read configuration file '%s'\n", config_file);
+    feng_free(srv);
+    exit(-1);
+  }
+  
+  {
+    gchar *progname = g_path_get_basename(argv[0]);
     fnc_log_t fn;
 
-    static const struct option long_options[] = {
-        {"config",   1, 0, 'f'},
-        {"quiet",    0, 0, 'q'},
-        {"verbose",  0, 0, 'v'},
-        {"version",  0, 0, 'V'},
-        {"syslog",   0, 0, 's'},
-        {"help",     0, 0, '?'},
-        {0,          0, 0,  0 }
-    };
-
-    while ((n = getopt_long(argc, argv, short_options, long_options, NULL))
-                != -1)
-    {
-        switch (n) {
-        case 0:    /* Flag setting handled by getopt-long */
-            break;
-        case 'f':
-            if (config_read(srv, optarg)) {
-                feng_free(srv);
-                return -1;
-            }
-            config_file = 1;
-            break;
-        case 'q':
-            quiet = 1;
-            break;
-        case 'v':
-            view_log = FNC_LOG_OUT;
-            break;
-        case 's':
-            view_log = FNC_LOG_SYS;
-            break;
-        case '?':
-            fncheader();
-            usage(progname);
-            g_free(progname);
-            return 1;
-            break;
-case 'V':
-            fncheader();
-            g_free(progname);
-            return 1;
-            break;
-        default:
-            break;
-        }
-    }
-
-    if (!quiet) fncheader();
-
-    if (!config_file)
-        if (config_read(srv, FENICE_CONF_PATH_DEFAULT_STR)) {
-            feng_free(srv);
-            return -1;
-        }
-
+    int view_log;
+    if ( verbose )
+      view_log = FNC_LOG_OUT;
+    else if ( syslog )
+      view_log = FNC_LOG_SYS;
+    else
+      view_log = FNC_LOG_FILE;
+    
     fn = fnc_log_init(srv->srvconf.errorlog_file->ptr, view_log, progname);
-
+    
     Sock_init(fn);
     bp_log_init(fn);
 
-    return 0;
+    g_free(progname);
+  }
+
+  return 0;
 }
 
 /**
@@ -346,7 +278,7 @@ case 'V':
 
 static feng *feng_alloc(void)
 {
-    server *srv = calloc(1, sizeof(*srv));
+    struct feng *srv = g_new0(server, 1);
 
     if (!srv) return NULL;
 
@@ -364,19 +296,13 @@ static feng *feng_alloc(void)
     CLEAN(config_touched);
     CLEAN(srvconf.modules);
 #undef CLEAN
-    srv->listen_socks = g_ptr_array_new();
 
     return srv;
 }
 
-static void free_sock(gpointer data, gpointer user_data)
-{
-    Sock_close(data);
-}
-
 int main(int argc, char **argv)
 {
-    feng *srv = feng_alloc(); //calloc(1,sizeof(feng));
+    feng *srv = feng_alloc();
 
     if (!srv) return 1;
 
@@ -388,13 +314,20 @@ int main(int argc, char **argv)
 
     feng_handle_signals(srv);
 
+    /* This goes before feng_bind_ports */
+    eventloop_init();
+
     if (feng_bind_ports(srv))
         return 1;
 
     feng_drop_privs(srv);
 
-    if (feng_start_mt(srv))
-        return 1;
+    if (!g_thread_supported ()) g_thread_init (NULL);
+
+    schedule_init(srv);
+
+    g_thread_create(mediathread, NULL, FALSE, NULL);
+    g_thread_create(cpd_server, (void *) srv, FALSE, NULL);
 
     /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
      * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
@@ -409,7 +342,7 @@ int main(int argc, char **argv)
         eventloop(srv);
     }
 
-    g_ptr_array_foreach(srv->listen_socks, free_sock, NULL);
+    eventloop_cleanup();
 
     return 0;
 }

@@ -17,35 +17,44 @@
  * You should have received a copy of the GNU General Public License
  * along with Feng; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *  
+ *
  * */
 
-#ifndef FN_SCHEDULE_H
-#define FN_SCHEDULE_H
+#include "demuxer_module.h"
+
+static const DemuxerInfo info = {
+    "Skeleton demuxer_module",
+    "skel",
+    "LScube Team",
+    "",
+    "skl"
+};
 
 
-#include <time.h>
-#include <sys/time.h>
-#include <glib.h>
-#include "network/rtp.h"
-#include <fenice/prefs.h>
-#include <fenice/debug.h>
+static int skel_probe(InputStream * i_stream)
+{
+    return RESOURCE_NOT_FOUND;
+}
 
-typedef struct play_args {
-    struct tm playback_time;
-    short playback_time_valid;
-    short seek_time_valid;
-    double start_time;   //! time in seconds
-    double begin_time;
-    double end_time;
-} play_args;
+static int skel_init(Resource * r)
+{
+    return RESOURCE_DAMAGED;
+}
 
-void schedule_init(feng *srv);
+static int skel_read_packet(Resource * r)
+{
+    return RESOURCE_NOT_PARSEABLE;
+}
 
-int schedule_add(RTP_session * rtp_session);
-int schedule_start(RTP_session * rtp_session, play_args * args);
-int schedule_remove(RTP_session * rtp_session, void *unused);
-int schedule_resume(RTP_session * rtp_session, play_args * args);
-RTP_session *schedule_find_multicast(feng *srv, const char *mrl);
+static int skel_seek(Resource * r, double time_sec)
+{
+    return RESOURCE_NOT_SEEKABLE;
+}
 
-#endif // FN_SCHEDULE_H
+static int skel_uninit(Resource * r)
+{
+    return RESOURCE_OK;
+}
+
+FNC_LIB_DEMUXER(skel);
+

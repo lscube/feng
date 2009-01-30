@@ -20,32 +20,20 @@
  *  
  * */
 
-#ifndef FN_SCHEDULE_H
-#define FN_SCHEDULE_H
+#ifndef FN_MEDIAPARSER_MODULE_H
+#define FN_MEDIAPARSER_MODULE_H
 
+#include "mediaparser.h"
 
-#include <time.h>
-#include <sys/time.h>
-#include <glib.h>
-#include "network/rtp.h"
-#include <fenice/prefs.h>
-#include <fenice/debug.h>
+#define INIT_PROPS properties->media_type = info.media_type;
 
-typedef struct play_args {
-    struct tm playback_time;
-    short playback_time_valid;
-    short seek_time_valid;
-    double start_time;   //! time in seconds
-    double begin_time;
-    double end_time;
-} play_args;
+#define FNC_LIB_MEDIAPARSER(x) const MediaParser fnc_mediaparser_##x =\
+{\
+	&info, \
+	x##_init, \
+        x##_parse, \
+	x##_uninit \
+}
 
-void schedule_init(feng *srv);
+#endif // FN_MEDIAPARSER_MODULE_H
 
-int schedule_add(RTP_session * rtp_session);
-int schedule_start(RTP_session * rtp_session, play_args * args);
-int schedule_remove(RTP_session * rtp_session, void *unused);
-int schedule_resume(RTP_session * rtp_session, play_args * args);
-RTP_session *schedule_find_multicast(feng *srv, const char *mrl);
-
-#endif // FN_SCHEDULE_H
