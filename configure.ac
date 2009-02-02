@@ -89,7 +89,7 @@ AC_SUBST(LIBNETEMBRYO_REQUIRES)
 CPPFLAGS="$CPPFLAGS $LIBNETEMBRYO_CFLAGS"
 LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 
-if test "x$enable_metadata" != "xno"; then
+if test "x$enable_metadata" = "xyes"; then
 dnl MYSQL
 AX_LIB_MYSQL([5.0])
 LIBS="$LIBS $MYSQL_LDFLAGS"
@@ -97,7 +97,7 @@ CFLAGS="$CFLAGS $MYSQL_CFLAGS"
 AC_DEFINE(HAVE_METADATA, [1], [Define this if metadata support must be included])
 fi
 
-AM_CONDITIONAL(FENG_CPD, test x$enable_metadata != "xno")
+AM_CONDITIONAL(FENG_CPD, test "x$enable_metadata" = "xyes")
 
 PKG_CHECK_MODULES(LIBBUFFERPOOL,[libbufferpool >= 0.0.3])
 CFLAGS="$CFLAGS $LIBBUFFERPOOL_CFLAGS"
@@ -251,6 +251,8 @@ sctp support enabled ......... : $enable_sctp
 avformat support enabled ..... : $avformat_msg
 avutil support enabled ....... : $avutil_msg
  duma enabled ................ : $enable_duma
+
+metadata support enabled...... : $enable_metadata
 
  'make' will now compile Feng and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.
