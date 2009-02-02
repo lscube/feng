@@ -100,14 +100,17 @@ static int config_insert(server *srv) {
         { "sctp.max_streams",            NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
 
 	// Metadata begin
-        { "cpd.port",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
-        { "cpd.db.host",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
-        { "cpd.db.user",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
-        { "cpd.db.password",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
-        { "cpd.db.name",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
+#ifdef HAVE_METADATA
+        { "cpd.port",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 19 */
+        { "cpd.db.host",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 20 */
+        { "cpd.db.user",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 21 */
+        { "cpd.db.password",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 22 */
+        { "cpd.db.name",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 23 */
+#endif
+	// Metadata end
+
         { "server.first_udp_port",  &srv->srvconf.first_udp_port, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
-	// Metadata end
         { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
     };
 
@@ -131,11 +134,13 @@ static int config_insert(server *srv) {
         s->sctp_max_streams = 16;
 
 	// Metadata begin
+#ifdef HAVE_METADATA
         s->cpd_port = buffer_init();
         s->cpd_db_host = buffer_init();
         s->cpd_db_user = buffer_init();
         s->cpd_db_password = buffer_init();
         s->cpd_db_name = buffer_init();
+#endif
 	// Metadata end
 
 #ifdef HAVE_LSTAT
@@ -166,11 +171,13 @@ static int config_insert(server *srv) {
         cv[18].destination = &s->sctp_max_streams;
 
 	// Metadata begin
+#ifdef HAVE_METADATA
         cv[19].destination = s->cpd_port;
         cv[20].destination = s->cpd_db_host;
         cv[21].destination = s->cpd_db_user;
         cv[22].destination = s->cpd_db_password;
         cv[23].destination = s->cpd_db_name;
+#endif
 	// Metadata end
 
         srv->config_storage[i] = s;

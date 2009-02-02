@@ -605,12 +605,16 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         rtp_s->is_multicast++;
         rtsp_s->rtp_sessions = g_slist_prepend(NULL, rtp_s);
     }
-
+    
+    // Metadata Begin
+#ifdef HAVE_METADATA
     // Setup Metadata Session
     if (rtsp_s->resource->metadata!=NULL)
 	rtp_s->Metadata = rtsp_s->resource->metadata;
     else
 	rtp_s->Metadata = NULL;
+#endif
+    // Metadata End
 
     // Setup the RTSP session
     rtsp_s->session_id = session_id;

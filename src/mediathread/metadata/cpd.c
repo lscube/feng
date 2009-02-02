@@ -1,24 +1,19 @@
-/* * 
-*  This file is part of Feng
- * 
- * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
- * See AUTHORS for more details 
- *  
- * Feng is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- * 
- * Feng is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
- * General Public License for more details. 
- * 
- * You should have received a copy of the GNU General Public License
- * along with Feng; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-*  
-* */
+/** ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla  Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and  limitations under the
+ * License.
+ *
+ * The Initial Developer: Nicola Christian Barbieri 
+ * Contributor(s): 
+ */
 
 #ifdef HAVE_CONFIG
 #include <config.h>
@@ -27,7 +22,8 @@
 #include <sys/select.h>
 #include <fenice/fnc_log.h>
 #include <metadata/cpd.h>
-// dev'essere l'ultimo include
+
+// it must be the last header to be included
 #include <mysql/mysql.h>
 
 const char *default_db_host     = "localhost";
@@ -435,3 +431,4 @@ void cpd_close(RTP_session *session) {
     g_hash_table_remove (clients, &Sock_fd(md->Socket));
     G_UNLOCK (g_hash_global);
 }
+

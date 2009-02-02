@@ -18,8 +18,11 @@ libmediath_a_SOURCES =	cache.c \
 			parser/mpegaudio.c \
 			parser/mpeg2t.c \
 			demuxer/demuxer_sd.c \
-			demuxer/demuxer_ds.c \
-			metadata/cpd.c
+			demuxer/demuxer_ds.c
+
+if FENG_CPD
+libmediath_a_SOURCES += metadata/cpd.c
+endif
 
 if FENICE_FFMPEG
 libmediath_a_SOURCES += parser/h264.c \

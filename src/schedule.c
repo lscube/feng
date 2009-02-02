@@ -31,7 +31,9 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#ifdef HAVE_METADATA
 #include <metadata/cpd.h>
+#endif
 
 
 typedef struct schedule_list {
@@ -153,10 +155,12 @@ static void *schedule_do(void *arg)
 	  if (!session->pause || tr->properties->media_source == MS_live) {
 	    now = gettimeinseconds(NULL);
 
-	    // TODO: METADATA begin
+	    // METADATA begin
+#ifdef HAVE_METADATA
 	    if (session->Metadata)
 		    cpd_send(session, now);
-	    // TODO: METADATI end
+	    // METADATI end
+#endif
 
 	    res = ERR_NOERROR;
 	    while (res == ERR_NOERROR && now >= session->start_time &&

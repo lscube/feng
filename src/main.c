@@ -47,7 +47,10 @@
 #include "mediathread/mediathread.h"
 #include <glib.h>
 #include <getopt.h>
+
+#ifdef HAVE_METADATA
 #include <metadata/cpd.h>
+#endif
 
 static int stopped = 0;
 
@@ -327,7 +330,12 @@ int main(int argc, char **argv)
     schedule_init(srv);
 
     g_thread_create(mediathread, NULL, FALSE, NULL);
+    
+    // METADATA Begin
+#ifdef HAVE_METADATA
     g_thread_create(cpd_server, (void *) srv, FALSE, NULL);
+#endif
+    // METADATA End
 
     /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
      * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */

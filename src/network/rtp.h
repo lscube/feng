@@ -104,8 +104,11 @@ typedef struct RTP_session {
     //mediathread - TODO: find better placement
     Selector *track_selector;
 
-    //Metadata
+    // Metadata Begin
+#ifdef HAVE_METADATA
     void *Metadata;
+#endif
+    // Metadata End
 
     //multicast management
     uint8_t is_multicast; //!< 0, treat as usual, >0 do nothing

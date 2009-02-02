@@ -28,7 +28,10 @@
 #include <fenice/fnc_log.h>
 #include <fenice/utils.h>
 #include <time.h>
+
+#ifdef HAVE_METADATA
 #include <metadata/cpd.h>
+#endif
 
 static GAsyncQueue *el_head;
 static GStaticMutex el_mutex = G_STATIC_MUTEX_INIT;
@@ -139,9 +142,11 @@ Resource *mt_resource_open(feng *srv, char *path, char *filename) {
     // open AV resource
     res = r_open(srv, path, filename);
 
-    // METADATI begin
+    // METADATA begin
+#ifdef HAVE_METADATA
     cpd_find_request(srv, res, filename);
-    // METADATI end
+#endif
+    // METADATA end
 
 
     return res;
