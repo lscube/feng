@@ -610,9 +610,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
 #ifdef HAVE_METADATA
     // Setup Metadata Session
     if (rtsp_s->resource->metadata!=NULL)
-	rtp_s->Metadata = rtsp_s->resource->metadata;
+	rtp_s->metadata = rtsp_s->resource->metadata;
     else
-	rtp_s->Metadata = NULL;
+	rtp_s->metadata = NULL;
 #endif
     // Metadata End
 

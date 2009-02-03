@@ -1,18 +1,23 @@
-/** ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1
- *
- * The contents of this file are subject to the Mozilla  Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and  limitations under the
- * License.
- *
- * The Initial Developer: Nicola Christian Barbieri 
- * Contributor(s): 
+/* * 
+ *  This file is part of Feng
+ * 
+ * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
+ * See AUTHORS for more details 
+ *  
+ * Feng is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ * 
+ * Feng is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
+ * General Public License for more details. 
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with Feng; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  
  */
 
 #ifdef HAVE_CONFIG
@@ -95,7 +100,7 @@ void cpd_find_request(feng *srv, Resource *res, char *filename) {
 
     g_hash_table_iter_init (&iter, clients);
     while (g_hash_table_iter_next (&iter, &key, &value)) {
-	Metadata *md = value;
+	CPDMetadata *md = value;
 	if (!strncmp(filename, md->Filename, min(sizeof(filename), sizeof(md->Filename)))) {
 	    fnc_log(FNC_LOG_INFO, "[CPD] Metadata request found");
 	    res->metadata = md;
@@ -109,7 +114,7 @@ void cpd_find_request(feng *srv, Resource *res, char *filename) {
 
 }
 
-int cpd_open(Metadata *md) {
+int cpd_open(CPDMetadata *md) {
 
     G_LOCK(g_db_global); // useless
 
@@ -185,7 +190,7 @@ int cpd_open(Metadata *md) {
 	unsigned long* lengths = mysql_fetch_lengths(res);
 
 	// creating packet
-	MDPacket *myPacket = g_new0(MDPacket, 1);
+	CPDPacket *myPacket = g_new0(CPDPacket, 1);
 	
 	// setting timestamp
 	myPacket->Timestamp = strtol(row[1], NULL, 10);
@@ -220,7 +225,7 @@ int cpd_open(Metadata *md) {
 }
 
 void cpd_free_element(void *arg, void *fake) {
-    MDPacket *packet = arg;
+    CPDPacket *packet = arg;
     if(packet) {
 	g_free (packet->Content);
 	g_free (packet);
@@ -228,7 +233,7 @@ void cpd_free_element(void *arg, void *fake) {
 }
 
 void cpd_free_client(void *arg) {
-    Metadata *md = arg;
+    CPDMetadata *md = arg;
 
     // closing socket
     Sock_close(md->Socket);
@@ -258,19 +263,19 @@ void cpd_send(RTP_session *session, double now) {
 
     //fnc_log(FNC_LOG_INFO,"[CPD] Streaming Metadata: playing time %f", now - session->start_time + session->seek_time);
     double timestamp = now - session->start_time + session->seek_time;
-    Metadata *md = session->Metadata;
+    CPDMetadata *md = session->metadata;
     GList *i;
 
     if (cpd_connection_alive(session, md->Socket)==ERROR) {
 	fnc_log(FNC_LOG_INFO, "[CPD] Metadata Connection closed by client");
-	session->Metadata = NULL;
+	session->metadata = NULL;
 	return;
     }
 
     if (md->Packets)
     for (i = g_list_first (md->Packets); i ; i = g_list_next (i)) {
 	// i->data
-	MDPacket *packet = (MDPacket *) i->data;
+	CPDPacket *packet = (CPDPacket *) i->data;
 	if (packet)
 	{
 	    G_LOCK (g_sending_packet);
@@ -356,7 +361,7 @@ void *cpd_server(void *args) {
 	select(max_fd+1, &read_fds, NULL, NULL, NULL);
 	if (FD_ISSET(Sock_fd(cpd_srv), &read_fds)) {
 		Sock* new_sd = Sock_accept(cpd_srv, NULL);
-		Metadata* md = g_new0(Metadata, 1); 
+		CPDMetadata* md = g_new0(CPDMetadata, 1); 
 		md->Socket = new_sd;
 		//md->ResourceId = strdup(resourceId);
 		G_LOCK (g_hash_global);
@@ -372,7 +377,7 @@ void *cpd_server(void *args) {
         while (g_hash_table_iter_next (&iter, &key, &value)) 
         {
 	    int fd = *((int *)key);
-	    Metadata *md = value;
+	    CPDMetadata *md = value;
 	    if (FD_ISSET(fd, &read_fds)) {
 		// verifying
 		int result = Sock_read(md->Socket, buffer, sizeof(buffer), NULL, 0);
@@ -426,7 +431,7 @@ void *cpd_server(void *args) {
 void cpd_close(RTP_session *session) {
     G_LOCK (g_hash_global);
     GHashTable *clients = (GHashTable *) session->srv->metadata_clients;
-    Metadata *md = (Metadata *) session->Metadata;
+    CPDMetadata *md = (CPDMetadata *) session->metadata;
     fnc_log(FNC_LOG_INFO, "[CPD] Closing connection on socket : %d\n", Sock_fd(md->Socket));
     g_hash_table_remove (clients, &Sock_fd(md->Socket));
     G_UNLOCK (g_hash_global);

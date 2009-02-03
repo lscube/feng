@@ -84,8 +84,12 @@ typedef struct Resource {
     InputStream *i_stream;
     struct Demuxer *demuxer;
     ResourceInfo *info;
-    /* Metadata */
+    // Metadata begin
+#ifdef HAVE_METADATA
     void *metadata;
+#endif
+    // Metadata end
+
     /* Timescale fixer callback function for meta-demuxers */
     double (*timescaler)(struct Resource *, double);
     /* EDL specific data */

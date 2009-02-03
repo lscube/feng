@@ -106,7 +106,7 @@ typedef struct RTP_session {
 
     // Metadata Begin
 #ifdef HAVE_METADATA
-    void *Metadata;
+    void *metadata;
 #endif
     // Metadata End
 

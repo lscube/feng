@@ -157,7 +157,7 @@ static void *schedule_do(void *arg)
 
 	    // METADATA begin
 #ifdef HAVE_METADATA
-	    if (session->Metadata)
+	    if (session->metadata)
 		    cpd_send(session, now);
 	    // METADATI end
 #endif
