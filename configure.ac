@@ -235,7 +235,6 @@ Feng Configuration path ...... : $fenice_conf_dir
 Feng Log File ................ : $fenice_log_file
 Feng Multimedia Files root ... : $fenice_avroot_dir
 Feng RTSP listening port ..... : $fenice_rtsp_port
-Byte order ................... : this is a $BIGENDIAN machine
 
 sctp support enabled ......... : $enable_sctp
 avformat support enabled ..... : $avformat_msg
