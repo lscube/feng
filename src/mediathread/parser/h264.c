@@ -4,18 +4,18 @@
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
  * 
- * bufferpool is free software; you can redistribute it and/or
+ * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * bufferpool is distributed in the hope that it will be useful,
+ * feng is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with bufferpool; if not, write to the Free Software
+ * License along with feng; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
  *
  * */
@@ -80,7 +80,7 @@ static int frag_fu_a(uint8_t *nal, int fragsize, int mtu,
         fragsize -= fraglen;
         nal      += fraglen;
         if (bp_write(buffer, 0, timestamp, 0, 0, buf, fraglen + 2)) {
-            fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
+            fnc_log(FNC_LOG_ERR, "Cannot write feng");
             return ERR_ALLOC;
         }
     }
@@ -289,7 +289,7 @@ static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             if (mtu >= nalsize) {
                 if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       data + index, nalsize)) {
-                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
+                        fnc_log(FNC_LOG_ERR, "Cannot write feng");
                         return ERR_ALLOC;
                 }
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
@@ -324,7 +324,7 @@ static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                 fnc_log(FNC_LOG_VERBOSE, "[h264] Sending NAL %d",p[0]&0x1f);
                 if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       p, q - p)) {
-                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
+                        fnc_log(FNC_LOG_ERR, "Cannot write feng");
                         return ERR_ALLOC;
                 }
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
@@ -345,7 +345,7 @@ static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             fnc_log(FNC_LOG_VERBOSE, "[h264] no frags");
             if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       p, len - (p - data))) {
-                        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
+                        fnc_log(FNC_LOG_ERR, "Cannot write feng");
                         return ERR_ALLOC;
             }
         } else {

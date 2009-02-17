@@ -4,18 +4,18 @@
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
  * 
- * bufferpool is free software; you can redistribute it and/or
+ * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * bufferpool is distributed in the hope that it will be useful,
+ * feng is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with bufferpool; if not, write to the Free Software
+ * License along with feng; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
  *
  * */
@@ -24,7 +24,7 @@
 
 #include <glib.h>
 
-#include <bufferpool/bufferpool.h>
+#include <feng/bufferpool.h>
 #include "mediautils.h"
 #include <fenice/sdp_grammar.h>
 
@@ -45,7 +45,7 @@ MObject_def(MediaProperties_s)
     MediaSource media_source;
     int codec_id; /*!< Codec ID as defined by ffmpeg */
     int codec_sub_id; /*!< Subcodec ID as defined by ffmpeg */
-    double mtime;    //FIXME Move to bufferpool   //time is in seconds
+    double mtime;    //FIXME Move to feng   //time is in seconds
     double frame_duration; //time is in seconds
     float sample_rate;/*!< SamplingFrequency*/
     float OutputSamplingFrequency;
@@ -83,7 +83,7 @@ typedef struct {
 
 /*! parse: take a single elementary unit of the codec stream and prepare the rtp payload out of it.
  *
- *  @param track: track whose bufferpool should be filled,
+ *  @param track: track whose feng should be filled,
  *  @param data: packet from the demuxer layer,
  *  @param len: packet length,
  *  @param extradata: codec configuration data,

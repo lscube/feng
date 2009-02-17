@@ -4,18 +4,18 @@
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
  * 
- * bufferpool is free software; you can redistribute it and/or
+ * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * bufferpool is distributed in the hope that it will be useful,
+ * feng is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with bufferpool; if not, write to the Free Software
+ * License along with feng; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
  *
  * */
@@ -99,7 +99,7 @@ int schedule_start(RTP_session *session, play_args *args)
     session->rtcp_stats[i_client].RR_received = 0;
     session->rtcp_stats[i_client].SR_received = 0;
 
-    //Preload some frames in bufferpool
+    //Preload some frames in feng
     for (i=0; i < srv->srvconf.buffered_frames; i++) {
         event_buffer_low(session, r_selected_track(session->track_selector));
     }
@@ -126,7 +126,7 @@ int schedule_resume(RTP_session *session, play_args *args)
     session->send_time = 0.0;
     session->pause=0;
 
-    //Preload some frames in bufferpool
+    //Preload some frames in feng
     for (i=0; i < srv->srvconf.buffered_frames; i++) {
         event_buffer_low(session, r_selected_track(session->track_selector));
     }

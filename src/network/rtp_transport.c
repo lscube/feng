@@ -4,18 +4,18 @@
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
  * 
- * bufferpool is free software; you can redistribute it and/or
+ * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * bufferpool is distributed in the hope that it will be useful,
+ * feng is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with bufferpool; if not, write to the Free Software
+ * License along with feng; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
  *
  * */
@@ -24,7 +24,7 @@
 #include <config.h>
 
 #include "rtp.h"
-#include <bufferpool/bufferpool.h>
+#include <feng/bufferpool.h>
 #include "mediathread/mediathread.h"
 #include "mediathread/demuxer.h"
 #include <fenice/fnc_log.h>
@@ -135,7 +135,7 @@ int RTP_send_packet(RTP_session * session)
             }
             g_free(packet);
         } else {
-#warning Remove as soon as bufferpool is fixed
+#warning Remove as soon as feng is fixed
             usleep(1000);
         }
         bp_gotreader(session->cons);
@@ -148,7 +148,7 @@ int RTP_send_packet(RTP_session * session)
             break;
         case ERR_EOF:
             if (slot) {
-                //Wait to empty bufferpool before sending BYE packets.
+                //Wait to empty feng before sending BYE packets.
                 res = ERR_NOERROR;
             }
         break;
