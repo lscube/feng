@@ -4,18 +4,18 @@
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
  * 
- * bufferpool is free software; you can redistribute it and/or
+ * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * bufferpool is distributed in the hope that it will be useful,
+ * feng is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with bufferpool; if not, write to the Free Software
+ * License along with feng; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
  *
  * */
@@ -168,7 +168,7 @@ static int amr_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             memcpy(packet + header_len, data + off, payload);
             if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                                       packet, header_len + payload)) {
-                fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
+                fnc_log(FNC_LOG_ERR, "Cannot write feng");
                 goto err_alloc;
             }
 
@@ -193,7 +193,7 @@ static int amr_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     memcpy(packet + header_len, data + off, len);
     if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
                       packet, len + body_num)) {
-        fnc_log(FNC_LOG_ERR, "Cannot write bufferpool");
+        fnc_log(FNC_LOG_ERR, "Cannot write feng");
         goto err_alloc;
     }
     return ERR_NOERROR;
