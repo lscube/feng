@@ -57,6 +57,10 @@ AC_ARG_ENABLE(duma,
     AS_HELP_STRING([--enable-duma], [link against DUMA library to debug memory usage (implies --enable-debug) (default=no)]),,
     enable_duma="no")
 
+AC_ARG_ENABLE(metadata,
+    AS_HELP_STRING([--enable-metadata], [enable metadata support [[default=no]]]),,
+    enable_metadata="no")
+
 dnl Checks used by feng itself
 AC_FUNC_MMAP dnl also by conf/*
 AC_CHECK_HEADERS([syslog.h])
@@ -85,9 +89,18 @@ AS_IF([test "x$have_sctp" = "xyes"],
 
 PKG_CHECK_MODULES(LIBNETEMBRYO,[$LIBNETEMBRYO_REQUIRES])
 AC_SUBST(LIBNETEMBRYO_REQUIRES)
-
 CPPFLAGS="$CPPFLAGS $LIBNETEMBRYO_CFLAGS"
 LIBS="$LIBS $LIBNETEMBRYO_LIBS"
+
+if test "x$enable_metadata" = "xyes"; then
+dnl MYSQL
+AX_LIB_MYSQL([5.0])
+LIBS="$LIBS $MYSQL_LDFLAGS"
+CFLAGS="$CFLAGS $MYSQL_CFLAGS"
+AC_DEFINE(HAVE_METADATA, [1], [Define this if metadata support must be included])
+fi
+
+AM_CONDITIONAL(FENG_CPD, test "x$enable_metadata" = "xyes")
 
 PKG_CHECK_MODULES(LIBBUFFERPOOL,[libbufferpool >= 0.0.3])
 CFLAGS="$CFLAGS $LIBBUFFERPOOL_CFLAGS"
@@ -240,6 +253,8 @@ sctp support enabled ......... : $enable_sctp
 avformat support enabled ..... : $avformat_msg
 avutil support enabled ....... : $avutil_msg
  duma enabled ................ : $enable_duma
+
+metadata support enabled...... : $enable_metadata
 
  'make' will now compile Feng and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.

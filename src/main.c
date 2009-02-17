@@ -1,22 +1,22 @@
-/* *
- *  This file is part of Feng
+/* * 
+ * This file is part of Feng
  *
- * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
+ * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
+ * 
+ * bufferpool is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * Feng is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * Feng is distributed in the hope that it will be useful,
+ * bufferpool is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Feng; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with bufferpool; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
  *
  * */
 
@@ -48,9 +48,13 @@
 #include <glib.h>
 #include <getopt.h>
 
+#ifdef HAVE_METADATA
+#include <metadata/cpd.h>
+#endif
+
 static void sigint_cb (struct ev_loop *loop, ev_signal *w, int revents)
 {
-    fnc_log(FNC_LOG_INFO, "SIGINT received, exiting.");
+
     mt_shutdown();
     ev_unloop (loop, EVUNLOOP_ALL);
 }
@@ -164,6 +168,7 @@ static void feng_handle_signals(feng *srv)
     sigaddset(&block_set, SIGPIPE);
     sigprocmask(SIG_BLOCK, &block_set, NULL);
 }
+
 
 static void feng_free(feng* srv)
 {
@@ -319,6 +324,10 @@ int main(int argc, char **argv)
     schedule_init(srv);
 
     g_thread_create(mediathread, NULL, FALSE, NULL);
+    
+#ifdef HAVE_METADATA
+    g_thread_create(cpd_server, (void *) srv, FALSE, NULL);
+#endif
 
     /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
      * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */

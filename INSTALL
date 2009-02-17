@@ -37,10 +37,10 @@ softwares:
 - git >= 1.5 [5]
 - autotools (automake >= 1.9, autoconf >= 2.61) [6]
 
-The sources reside at git://live.polito.it/var/git/feng.git you can fetch them
+The sources reside at git://lscube.org/feng.git you can fetch them
 by issuing 
 
-$ git clone git://live.polito.it/var/git/feng.git
+$ git clone git://lscube.org/feng.git
 
 Please refer to the git website[6] and our site[0] for further documentation.
 
@@ -54,7 +54,7 @@ The standard build instruction applies form this step.
 
 + Links
 
-[0] http://live.polito.it                       -- LScube main website
+[0] http://lscube.org                           -- LScube main website
 
 [1] http://www.gnu.org/software/gcc/            -- GNU Compiler collection
     http://www.gnu.org/software/libtool/        -- GNU Libtool
@@ -64,7 +64,7 @@ The standard build instruction applies form this step.
 
 [3] http://ffmpeg.org                           -- FFmpeg
 
-[4] http://live.polito.it/gitweb                -- LScube git repository
+[4] http://cgit.lscube.org                      -- LScube git repository
 
 [5] http://git.or.cz                            -- Git Version Control System
 

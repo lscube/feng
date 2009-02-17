@@ -133,6 +133,13 @@ typedef struct {
 
         int is_sctp;
         unsigned short sctp_max_streams;
+
+        buffer *cpd_port;
+        buffer *cpd_db_host;
+        buffer *cpd_db_user;
+        buffer *cpd_db_password;
+        buffer *cpd_db_name;
+
 //	int allow_http11;
 /*	unsigned short etag_use_inode;
 	unsigned short etag_use_mtime;

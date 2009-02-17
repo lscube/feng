@@ -1,24 +1,24 @@
 /* * 
-*  This file is part of Feng
+ * This file is part of Feng
+ *
+ * Copyright (C) 2009 by LScube team <team@lscube.org>
+ * See AUTHORS for more details
  * 
- * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
- * See AUTHORS for more details 
- *  
- * Feng is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- * 
- * Feng is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
- * General Public License for more details. 
- * 
- * You should have received a copy of the GNU General Public License
- * along with Feng; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-*  
-* */
+ * bufferpool is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * bufferpool is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with bufferpool; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ *
+ * */
 
 #ifdef HAVE_CONFIG
 #include <config.h>
@@ -28,6 +28,10 @@
 #include <fenice/fnc_log.h>
 #include <fenice/utils.h>
 #include <time.h>
+
+#ifdef HAVE_METADATA
+#include <metadata/cpd.h>
+#endif
 
 static GAsyncQueue *el_head;
 static GStaticMutex el_mutex = G_STATIC_MUTEX_INIT;
@@ -130,9 +134,22 @@ gpointer *mediathread(gpointer *arg) {
     return NULL;
 }
 
-Resource *mt_resource_open(feng *srv, char * path, char *filename) {
+Resource *mt_resource_open(feng *srv, char *path, char *filename) {
     // TODO: add to a list in order to close resources on shutdown!
-    return r_open(srv, path, filename);
+
+    Resource *res;
+
+    // open AV resource
+    res = r_open(srv, path, filename);
+
+    // METADATA begin
+#ifdef HAVE_METADATA
+    cpd_find_request(srv, res, filename);
+#endif
+    // METADATA end
+
+
+    return res;
 }
 
 void mt_resource_close(Resource *resource) {
@@ -146,7 +163,6 @@ void mt_resource_close(Resource *resource) {
 
 int mt_resource_seek(Resource *resource, double time) {
     int res;
-
     g_static_mutex_lock(&mt_mutex);
     res = resource->demuxer->seek(resource, time);
     g_static_mutex_unlock(&mt_mutex);

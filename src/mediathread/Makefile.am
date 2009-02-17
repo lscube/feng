@@ -20,6 +20,10 @@ libmediath_a_SOURCES =	cache.c \
 			demuxer/demuxer_sd.c \
 			demuxer/demuxer_ds.c
 
+if FENG_CPD
+libmediath_a_SOURCES += metadata/cpd.c
+endif
+
 if FENICE_FFMPEG
 libmediath_a_SOURCES += parser/h264.c \
 			parser/vorbis.c \
@@ -31,6 +35,5 @@ libmediath_a_SOURCES += parser/h264.c \
 			parser/amr.c \
 			demuxer/demuxer_avf.c
 endif
-
 
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)/src
