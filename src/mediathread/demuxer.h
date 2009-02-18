@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -29,7 +29,7 @@
 #include "mediautils.h"
 #include "InputStream.h"
 #include "mediaparser.h"
-#include <feng/bufferpool.h>
+#include <bufferpool/bufferpool.h>
 #include <fenice/sdp_grammar.h>
 #include <fenice/server.h>
 
@@ -41,7 +41,7 @@
 #define RESOURCE_NOT_PARSEABLE -5
 #define RESOURCE_EOF -6
 
-#define MAX_TRACKS 20	
+#define MAX_TRACKS 20
 #define MAX_SEL_TRACKS 5
 
 //! Macros that take the data part of a GList element and cast to correct type
@@ -133,7 +133,7 @@ typedef struct {
 } Track;
 
 typedef struct {
-    // Track *tracks[MAX_SEL_TRACKS];	
+    // Track *tracks[MAX_SEL_TRACKS];
     TrackList tracks;
     Track cur;
     uint32_t default_index;

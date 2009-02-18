@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -28,7 +28,7 @@
 #include <inttypes.h>
 #include <strings.h>
 
-#include <feng/bufferpool.h>
+#include <bufferpool/bufferpool.h>
 #include "rtsp.h"
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
@@ -323,7 +323,7 @@ static int send_play_reply(RTSP_buffer * rtsp, Url *url,
     g_slist_foreach(rtsp_session->rtp_sessions, rtp_session_send_play_reply, &pair);
 
     g_string_truncate(reply, reply->len-1);
-    
+
     g_string_append(reply, RTSP_EL);
 
     // end of message
