@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -29,7 +29,7 @@
 #include <sys/socket.h>
 #include <netembryo/wsocket.h>
 #include "mediathread/mediathread.h"
-#include <feng/bufferpool.h>
+#include <bufferpool/bufferpool.h>
 #include <fenice/prefs.h>
 
 #define RTP_DEFAULT_PORT 5004
@@ -157,7 +157,7 @@ typedef int (*RTP_play_action) (RTP_session * sess);
  * @{
  */
 
-/** 
+/**
  * RTP ports management functions
  * @defgroup rtp_port RTP ports management functions
  * @{
@@ -171,7 +171,7 @@ int RTP_release_port_pair(feng *srv, port_pair * pair);
  * @}
  */
 
-/** 
+/**
  * RTP session management functions
  * @defgroup rtp_session RTP session management functions
  * @{

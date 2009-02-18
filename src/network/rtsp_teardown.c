@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -31,7 +31,7 @@
 #include "rtsp.h"
 #include <fenice/prefs.h>
 #include <fenice/schedule.h>
-#include <feng/bufferpool.h>
+#include <bufferpool/bufferpool.h>
 #include <fenice/fnc_log.h>
 #include <glib.h>
 
@@ -65,7 +65,7 @@ static void rtp_session_release(gpointer element, gpointer user_data)
 
   if (!strcmp(
 	      r_selected_track(rtp_curr->track_selector)->info->name,
-	      pair->filename) || 
+	      pair->filename) ||
       !strcmp(
 	      r_selected_track(rtp_curr->track_selector)->parent->info->name,
 	      pair->filename)
@@ -100,7 +100,7 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 
     RTSP_Error error;
 
-    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
+    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq
         goto error_management;
     // Extract and validate the URL
     if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
@@ -123,7 +123,7 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     fnc_log(FNC_LOG_INFO, "TEARDOWN %s://%s/%s RTSP/1.0 ",
 	    url.protocol, url.hostname, url.path);
     send_teardown_reply(rtsp, session_id);
-    log_user_agent(rtsp); // See User-Agent 
+    log_user_agent(rtsp); // See User-Agent
 
     if (strchr(url.path, '='))    /*Compatibility with RealOne and RealPlayer */
         filename = strchr(url.path, '=') + 1;

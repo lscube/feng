@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 #include <string.h>
@@ -276,19 +276,18 @@ static int sd_init(Resource * r)
             if (!g_ascii_strcasecmp(keyword, SD_FILENAME)) {
                 // SD_FILENAME
                 sscanf(line, "%*s%255s", track_file);
-                // if ( *track_file == '/')
-                if ((*track_file == G_DIR_SEPARATOR)
-                    || (separator = strstr(track_file, FNC_PROTO_SEPARATOR)))
-                    // is filename absolute path or complete mrl?
+
+                separator = strstr(track_file, FNC_PROTO_SEPARATOR);
+                if (separator == NULL) {
+                    fnc_log(FNC_LOG_ERR, "[sd] missing valid protocol in %s entry\n", SD_FILENAME);
+                    trackinfo.mrl = NULL;
+                    break;
+                }
+                else {
                     trackinfo.mrl = g_strdup(track_file);
-                else
-                    trackinfo.mrl = g_strdup_printf("%s%s", content_base, track_file);
-
-                if ((separator = strrchr(track_file, G_DIR_SEPARATOR)))
+                    separator = strrchr(track_file, G_DIR_SEPARATOR);
                     g_strlcpy(trackinfo.name, separator + 1, sizeof(trackinfo.name));
-                else
-                    g_strlcpy(trackinfo.name, track_file, sizeof(trackinfo.name));
-
+                }
             } else if (!g_ascii_strcasecmp(keyword, SD_ENCODING_NAME)) {
                 // SD_ENCODING_NAME
                 sscanf(line, "%*s%10s", props_hints.encoding_name);
@@ -380,46 +379,42 @@ static int sd_init(Resource * r)
             }  else if (*r->info->multicast &&
                         (!g_ascii_strcasecmp(keyword, SD_PORT)))
                 sscanf(line, "%*s%d", &trackinfo.rtp_port);
-/* XXX later
-            if (!g_ascii_strcasecmp(keyword, SD_TTL)) {
-                sscanf(line, "%*s%3s", r->info->ttl);
-            }
-*/
-            /********END CC*********/
         }        /*end while !STREAM_END or eof */
+
+        if (!trackinfo.mrl)
+            continue;
 
         if (!(track = add_track(r, &trackinfo, &props_hints)))
             return ERR_ALLOC;
+
         if (sdp_private)
             track->properties->sdp_private =
                 g_list_prepend(track->properties->sdp_private, sdp_private);
-        //XXX could be moved in sdp2
+
         if (props_hints.payload_type >= 96)
         {
             sdp_private = g_new(sdp_field, 1);
             sdp_private->type = rtpmap;
             switch (props_hints.media_type) {
-            case MP_audio:
-                sdp_private->field =
-                    g_strdup_printf ("%s/%d/%d",
-                                    props_hints.encoding_name,
-                                    props_hints.clock_rate,
-                                    props_hints.audio_channels);
-            break;
-            case MP_video:
-                sdp_private->field =
-                    g_strdup_printf ("%s/%d",
-                                    props_hints.encoding_name,
-                                    props_hints.clock_rate);
-            break;
-            default:
-            break;
+                case MP_audio:
+                    sdp_private->field = g_strdup_printf ("%s/%d/%d",
+                                        props_hints.encoding_name,
+                                        props_hints.clock_rate,
+                                        props_hints.audio_channels);
+                    break;
+                case MP_video:
+                    sdp_private->field = g_strdup_printf ("%s/%d",
+                                        props_hints.encoding_name,
+                                        props_hints.clock_rate);
+                    break;
+                default:
+                    break;
             }
             track->properties->sdp_private =
                 g_list_prepend(track->properties->sdp_private, sdp_private);
         }
-        sdp_private = NULL;
 
+        sdp_private = NULL;
         r->info->media_source = props_hints.media_source;
 
     } while (!feof(fd));
