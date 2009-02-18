@@ -24,3 +24,7 @@ stamp-h1
 etc/*.conf
 Doxygen
 src/feng
+*.a
+Doxyfile
+.project
+.cproject
