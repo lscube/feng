@@ -10,7 +10,7 @@ var.statedir = "@feng_statedir@"
 #)
 
 # bind to port (defaults to @fenice_rtsp_port@)
-server.port         = 8554
+# server.port         = 8554
 
 # bind to name (defaults to all interfaces)
 # server.bind         = "live.host.tld"
