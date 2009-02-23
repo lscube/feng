@@ -355,7 +355,6 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
 
 static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
-    //fnc_log(FNC_LOG_INFO, "Oh de! ce sta RTCP da leggere!\n");
     RTP_recv(w->data);
 }
 
@@ -392,8 +391,6 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
     rtp_s->transport.rtcp_watcher->data = rtp_s;
     ev_io_init(rtp_s->transport.rtcp_watcher, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
     ev_io_start(srv->loop, rtp_s->transport.rtcp_watcher);
-
-    //Should also add here RTP Receive event
 
     return rtp_s;
 }
