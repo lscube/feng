@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -42,7 +42,7 @@ void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd);
  * Splits the path of a requested media finding the trackname and the removing it from the object
  * @param url the Url for which to split the object
  * @param trackname where to save the trackname removed from the object
- * @param trackname_max_len maximum length of the trackname buffer 
+ * @param trackname_max_len maximum length of the trackname buffer
  * @return RTSP_Ok or RTSP_InternalServerError if there was no trackname
  */
 static RTSP_Error split_resource_path(Url * url, char * trackname, size_t trackname_max_len)
@@ -353,6 +353,12 @@ static RTSP_session * append_session(RTSP_buffer * rtsp)
     return rtsp_s;
 }
 
+static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+    //fnc_log(FNC_LOG_INFO, "Oh de! ce sta RTCP da leggere!\n");
+    RTP_recv(w->data);
+}
+
 /**
  * sets up the RTP session
  * @param url the Url for which to generate the session
@@ -381,6 +387,13 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
     rtp_s->srv = srv;
     rtp_s->sched_id = schedule_add(rtp_s);
     rtp_s->ssrc = g_random_int();
+
+    rtp_s->transport.rtcp_watcher = g_new(ev_io, 1);
+    rtp_s->transport.rtcp_watcher->data = rtp_s;
+    ev_io_init(rtp_s->transport.rtcp_watcher, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
+    ev_io_start(srv->loop, rtp_s->transport.rtcp_watcher);
+
+    //Should also add here RTP Receive event
 
     return rtp_s;
 }
@@ -554,7 +567,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session)
         rtp_s->is_multicast++;
         rtsp_s->rtp_sessions = g_slist_prepend(NULL, rtp_s);
     }
-    
+
     // Metadata Begin
 #ifdef HAVE_METADATA
     // Setup Metadata Session

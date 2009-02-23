@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -148,100 +148,6 @@ void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd)
     }
 }
 
-#if 0
-static void rtp_session_read(gpointer element, gpointer user_data)
-{
-    RTP_session *p = (RTP_session*)element;
-  
-    if ( (p->transport.rtcp_sock) &&
-        FD_ISSET(Sock_fd(p->transport.rtcp_sock), &rset)) {
-    // There are RTCP packets to read in
-        if (RTP_recv(p, rtcp_proto) < 0)
-            fnc_log(FNC_LOG_VERBOSE, "Input RTCP packet Lost\n");
-        else
-            RTCP_recv_packet(p);
-        fnc_log(FNC_LOG_VERBOSE, "IN RTCP\n");
-    }
-}
-
-static void rtp_session_set_fd(gpointer element, gpointer user_data)
-{
-    RTP_session *p = (RTP_session*)element;
-    RTSP_session *q = (RTSP_session*)user_data;
-
-    if (!p->started) {
-    // play finished, go to ready state
-        q->cur_state = READY_STATE;
-    /* TODO: RTP struct to be freed */
-    } else if (p->transport.rtcp_sock) {
-        FD_SET(Sock_fd(p->transport.rtcp_sock), &rset);
-        max_fd = MAX(max_fd, Sock_fd(p->transport.rtcp_sock));
-    }
-}
-
-/**
- * Add to the read set the current rtsp session fd.
- * The rtsp/tcp interleaving requires additional care.
- */
-static void established_each_fd(gpointer data, gpointer user_data)
-{
-    RTSP_buffer *rtsp = (RTSP_buffer*)data;
-
-    // FD used for RTSP connection
-    FD_SET(Sock_fd(rtsp->sock), &rset);
-    max_fd = MAX(max_fd, Sock_fd(rtsp->sock));
-    if (g_async_queue_length(rtsp->out_queue) > 0) {
-        FD_SET(Sock_fd(rtsp->sock), &wset);
-    }
-    // Local FDS for interleaved trasmission
-    g_slist_foreach(rtsp->interleaved, interleaved_set_fds, NULL);
-
-    // RTCP input
-    if ( rtsp->session )
-        g_slist_foreach(rtsp->session->rtp_sessions, rtp_session_set_fd,
-                        rtsp->session);
-}
-
-/**
- * Handle established connection and clean up in case of unexpected
- * disconnection
- */
-
-static void established_each_connection(gpointer data, gpointer user_data)
-{
-    RTSP_buffer *p = (RTSP_buffer*)data;
-    feng *srv = p->srv;
-
-    int res;
-
-    if ((res = rtsp_server(p)) == ERR_NOERROR)
-        return;
-    if (res != ERR_CONNECTION_CLOSE && res != ERR_GENERIC)
-        return;
-
-  // The connection is closed
-    if (res == ERR_CONNECTION_CLOSE)
-        fnc_log(FNC_LOG_INFO, "RTSP connection closed by client.");
-    else
-        fnc_log(FNC_LOG_INFO, "RTSP connection closed by server.");
-
-    rtsp_client_destroy(p);
-
-  // wait for 
-    Sock_close(p->sock);
-    --srv->conn_count;
-    srv->num_conn--;
-  // Release the RTSP_buffer
-    clients = g_slist_remove(clients, p);
-    g_free(p);
-  // Release the scheduler if necessary
-    if (p == NULL && srv->conn_count < 0) {
-        fnc_log(FNC_LOG_DEBUG, "Thread stopped\n");
-        srv->stop_schedule = 1;
-    }
-}
-
-#endif
 static void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     RTSP_buffer *rtsp = w->data;
@@ -291,7 +197,7 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 
     if (n < 0) {
         fnc_log(FNC_LOG_INFO, "RTSP connection closed by server.");
-        send_reply(500, NULL, rtsp); 
+        send_reply(500, NULL, rtsp);
     }
 
 //  unregister the client
@@ -346,7 +252,7 @@ connections_compare_socket(gconstpointer value, gconstpointer compare)
  * Accepts the new connection if possible.
  */
 
-static void 
+static void
 incoming_connection_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     Sock *sock = w->data;

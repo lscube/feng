@@ -56,6 +56,7 @@ typedef struct RTP_transport {
     Sock *rtcp_sock;
     struct sockaddr_storage last_stg;
     int rtp_ch, rtcp_ch;
+    ev_io * rtcp_watcher;
 } RTP_transport;
 
 typedef struct RTCP_stats {
@@ -182,7 +183,7 @@ void RTP_session_destroy(RTP_session *);
 
 //! RTP_transport functions
 //! low-level sent/receive packet functions depending on transport settings.
-ssize_t RTP_recv(RTP_session *, rtp_protos);
+ssize_t RTP_recv(RTP_session *);
 
 /**
  * @}

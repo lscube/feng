@@ -161,16 +161,14 @@ int RTP_send_packet(RTP_session * session)
 /**
  * Receives data from the socket linked to the session and puts it inside the session buffer
  * @param session the RTP session for which to receive the packets
- * @param proto the protocol to use (actually only rtcp is a valid option)
  * @return size of te received data or -1 on error or invalid protocol request
  */
-ssize_t RTP_recv(RTP_session * session, rtp_protos proto)
+ssize_t RTP_recv(RTP_session * session)
 {
     Sock *s = session->transport.rtcp_sock;
     struct sockaddr *sa_p = (struct sockaddr *)&(session->transport.last_stg);
 
-    if (proto == rtcp_proto) {
-        switch (s->socktype) {
+    switch (s->socktype) {
         case UDP:
             session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
                      sizeof(session->rtcp_inbuffer),
@@ -184,10 +182,7 @@ ssize_t RTP_recv(RTP_session * session, rtp_protos proto)
         default:
             session->rtcp_insize = -1;
             break;
-        }
     }
-    else
-        return -1;
 
     return session->rtcp_insize;
 }
