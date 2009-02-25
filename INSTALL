@@ -10,7 +10,7 @@ In order to build feng you need:
 - ffmpeg svn HEAD or any recent snapshot [3].
 - netembryo >= 0.0.6 [4]
 - bufferpool >= 0.0.3 [4]
-
+- libev >= 3.48 [5]
 
 + Build instructions
 
@@ -34,8 +34,8 @@ sources.
 In order to use the live sources for our scm you need the following additional
 softwares:
 
-- git >= 1.5 [5]
-- autotools (automake >= 1.9, autoconf >= 2.61) [6]
+- git >= 1.5 [6]
+- autotools (automake >= 1.9, autoconf >= 2.61) [7]
 
 The sources reside at git://lscube.org/feng.git you can fetch them
 by issuing 
@@ -66,7 +66,9 @@ The standard build instruction applies form this step.
 
 [4] http://cgit.lscube.org                      -- LScube git repository
 
-[5] http://git.or.cz                            -- Git Version Control System
+[5] http://software.schmorp.de/pkg/libev.html   -- Libev
 
-[6] http://www.gnu.org/software/automake/       -- GNU automake
+[6] http://git.or.cz                            -- Git Version Control System
+
+[7] http://www.gnu.org/software/automake/       -- GNU automake
     http://www.gnu.org/software/autoconf/       -- GNU autoconf
