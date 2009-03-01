@@ -85,6 +85,47 @@ static void rtsp_free_request(RTSP_Request *req)
 }
 
 /**
+ * @brief Checks if the client required any option
+ *
+ * @param rtsp The client connection the request comes from
+ * @param req The request from the client
+ *
+ * @retval true No requirement
+ * @retval false Client required options we don't support
+ *
+ * Right now feng does not support any option at all, so if we see the
+ * Require (RFC2326 Sec. 12.32) or Proxy-Require (Sec. 12.27) we respond to
+ * the proper 551 code (Option not supported; Sec. 11.3.14).
+ *
+ * A 551 response contain an Unsupported header that lists the unsupported
+ * options (which in our case are _all_ of them).
+ */
+gboolean check_required_options(RTSP_buffer *rtsp, RTSP_Request *req) {
+    const char *require_hdr =
+        g_hash_table_lookup(req->headers, "Require");
+    const char *proxy_require_hdr =
+        g_hash_table_lookup(req->headers, "Proxy-Require");
+    GString *response = NULL;
+
+    if ( !require_hdr && !proxy_require_hdr )
+        return true;
+
+    response = rtsp_generate_response(RTSP_OptionNotSupported,
+                                      req->cseq);
+            
+    g_string_append(response, "Unsupported:");
+    if ( require_hdr )
+        g_string_append_printf(response, " %s", require_hdr);
+    if (proxy_require_hdr )
+        g_string_append_printf(response, " %s", proxy_require_hdr);
+            
+    g_string_append(response, RTSP_EL RTSP_EL);
+
+    rtsp_bwrite(rtsp, response);
+    return false;
+}
+
+/**
  * @brief Parse a request using Ragel functions
  *
  * @param rtsp The client connection the request come
@@ -125,6 +166,9 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
         rtsp_send_reply(rtsp, RTSP_SessionNotFound);
         goto error;
     }
+
+    if ( !check_required_options(rtsp, req) )
+        goto error;
 
     fnc_log(FNC_LOG_CLIENT, "%s %s RTSP/1.0\nUser-Agent: %s",
             req->method, req->object,

@@ -117,16 +117,9 @@ int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
     if ( !rtsp_request_get_url(rtsp, req, &url) )
         return ERR_GENERIC;
 
-    /* Don't support the Require header */
-    /** @todo verify on RFC if it's the right answer */
-
-    if ( g_hash_table_lookup(req->headers, "Require") != NULL ) {
-        error = RTSP_OptionNotSupported;
-        goto error_management;
-    }
-
     // Get the description format. SDP is the only supported
     if ( (descr_format = get_description_format(req)) == df_Unsupported ) {
+        /** @todo This is *not* the correct response per rfc */
       error = RTSP_OptionNotSupported;
       goto error_management;
     }
