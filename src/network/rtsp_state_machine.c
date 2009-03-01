@@ -132,7 +132,6 @@ gboolean check_required_options(RTSP_buffer *rtsp, RTSP_Request *req) {
 static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
 {
     RTSP_Request *req = g_new0(RTSP_Request, 1);
-    RTSP_ResponseCode status;
     char *headers;
     int pcnt;
     
@@ -141,12 +140,7 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     req->headers = g_hash_table_new_full(g_str_hash, g_str_equal,
                                          g_free, g_free);
 
-    status = ragel_parse_request(req, rtsp->in_buffer);
-
-    if ( status != RTSP_Ok ) {
-        rtsp_quick_response(req, status);
-        goto error;
-    }
+    ragel_parse_request(req, rtsp->in_buffer);
 
     /* Check if the method is a know and supported one */
     if ( req->method_id == RTSP_ID_ERROR ) {

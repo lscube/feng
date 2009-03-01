@@ -2,7 +2,7 @@
 
 %% machine rtsp_request;
 
-static int ragel_parse_request(RTSP_Request *req, char *msg) {
+static void ragel_parse_request(RTSP_Request *req, char *msg) {
     int cs;
     char *p = msg, *pe = p + strlen(msg), *eof, *s;
 
@@ -98,5 +98,5 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
         write exec;
     }%%
 
-    return RTSP_Ok;
+    /** @todo this should return a boolean false when parsing fails */
 }
