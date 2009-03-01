@@ -151,6 +151,41 @@ static void rtsp_response_append_headers(gconstpointer hdr_name_p,
 }
 
 /**
+ * @brief Log an RTSP access to the proper log
+ *
+ * @param response Response to log to the access log
+ *
+ * Like Apache and most of the web servers, we log the access through CLF
+ * (Common Log Format).
+ *
+ * @todo Create a true access.log file
+ *
+ * Right now the access is just logged to stderr for debug purposes.  It
+ * should also be possible to let the user configure the log format.
+ * 
+ * @todo Some of the elements are not properly outputted
+ *
+ * In particular right now the IP is outputted as 999.999.999.99 and if
+ * there is no content on the request, 0 is used rather than -.
+ *
+ */
+static void rtsp_log_access(RTSP_Response *response)
+{
+    const char *referer =
+        g_hash_table_lookup(response->request->headers, "Referer");
+    const char *useragent =
+        g_hash_table_lookup(response->request->headers, "User-Agent");
+
+    fprintf(stderr, "999.999.999.999 - - [%s], \"%s %s %s\" %d %u %s %s\n",
+            g_hash_table_lookup(response->headers, "Date"),
+            response->request->method, response->request->object,
+            response->request->version,
+            response->status, response->body ? response->body->len : 0,
+            referer ? referer : "-",
+            useragent ? useragent : "-");
+}
+
+/**
  * @brief Finalise, send and free an response object
  *
  * @param response The response to send
@@ -190,27 +225,8 @@ void rtsp_response_send(RTSP_Response *response)
     /* Now the whole response is complete, we can queue it to be sent away. */
     rtsp_bwrite(response->client, str);
 
-    /* Like Apache and most of the web servers, we log the access through CLF
-     * (Common Log Format). */
-    /**
-     * @todo Create a true access.log file
-     *
-     * Right now the access is just logged to stderr for debug purposes.  It
-     * should also be possible to let the user configure the log format.
-     * 
-     * @todo Some of the elements are not properly outputted
-     *
-     * In particular right now the IP is outputted as 999.999.999.99 and if
-     * there is no content on the request, 0 is used rather than -.
-     *
-     **/
-    fprintf(stderr, "999.999.999.999 - - [%s], \"%s %s %s\" %d %u %s %s\n",
-            g_hash_table_lookup(response->headers, "Date"),
-            response->request->method, response->request->object,
-            response->request->version,
-            response->status, response->body ? response->body->len : 0,
-            g_hash_table_lookup(response->request->headers, "Referer"),
-            g_hash_table_lookup(response->request->headers, "User-Agent"));
+    /* Log the access */
+    rtsp_log_access(response);
 
     /* After we did output to access.log, we can free the response since it's no
      * longer necessary. */
