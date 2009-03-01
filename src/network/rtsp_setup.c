@@ -248,32 +248,29 @@ gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
  * @param req The client request for the method
  * @param transport where to save the data of the header
  *
- * @retval RTSP_Ok No error
-
- * @retval RTSP_UnsupportedTransport Error parsing the Transport: header or no
- *         suitable transport found.
- *
- * @todo This should return boolean
+ * @retval true No error
+ * @retval false No transport header, transport header could not be parsed, or
+ *               no valid transport found.
  *
  * The actual parsing is done by the state machine generated starting from
  * ragel_transport.rl, which then calls back the various methods as needed.
  *
  * The full documentation of the Transport header syntax is available in
  * RFC2326, Section 12.39.
+ *
+ * On a false return, this should respond with a status 461 "Unsupported
+ * Transport"
  */
-static RTSP_ResponseCode parse_transport_header(RTSP_buffer * rtsp,
-                                                RTSP_Request *req,
-                                                RTP_transport * transport)
+static gboolean parse_transport_header(RTSP_buffer * rtsp,
+                                       RTSP_Request *req,
+                                       RTP_transport * transport)
 {
-    char *transport_str;
+    char *transport_str = g_hash_table_lookup(req->headers, "Transport");
 
-    // Start parsing the Transport header
-    /** @todo Make sure this is the right response for RFC */
-    if ( (transport_str = g_hash_table_lookup(req->headers, "Transport")) == NULL )
-        return RTSP_NotAcceptable;
+    if ( !transport_str )
+        return false;
 
-    return ragel_parse_transport_header(rtsp, transport, transport_str) ?
-        RTSP_Ok : RTSP_UnsupportedTransport;
+    return ragel_parse_transport_header(rtsp, transport, transport_str);
 }
 
 /**
@@ -488,8 +485,10 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
         goto error_management;
 
     // Parse the RTP/AVP/something string
-    if ( (error = parse_transport_header(rtsp, req, &transport)) != RTSP_Ok )
+    if ( !parse_transport_header(rtsp, req, &transport) ) {
+        error = RTSP_UnsupportedTransport;
         goto error_management;
+    }
 
     // Setup the RTP session
     rtp_s = setup_rtp_session(&url, rtsp, rtsp_s, &transport, track_sel);
