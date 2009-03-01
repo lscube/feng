@@ -242,38 +242,6 @@ gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
 #include "ragel_transport.c"
 
 /**
- * @brief Parses the Transport: header from the RTSP buffer
- *
- * @param rtsp the buffer for which to parse the header
- * @param req The client request for the method
- * @param transport where to save the data of the header
- *
- * @retval true No error
- * @retval false No transport header, transport header could not be parsed, or
- *               no valid transport found.
- *
- * The actual parsing is done by the state machine generated starting from
- * ragel_transport.rl, which then calls back the various methods as needed.
- *
- * The full documentation of the Transport header syntax is available in
- * RFC2326, Section 12.39.
- *
- * On a false return, this should respond with a status 461 "Unsupported
- * Transport"
- */
-static gboolean parse_transport_header(RTSP_buffer * rtsp,
-                                       RTSP_Request *req,
-                                       RTP_transport * transport)
-{
-    char *transport_str = g_hash_table_lookup(req->headers, "Transport");
-
-    if ( !transport_str )
-        return false;
-
-    return ragel_parse_transport_header(rtsp, transport, transport_str);
-}
-
-/**
  * Generates a random session id
  * @return the random session id (actually a number)
  */
@@ -462,6 +430,8 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
 
     RTSP_ResponseCode error;
 
+    char *transport_header = NULL;
+
     // init
     memset(&transport, 0, sizeof(transport));
 
@@ -480,8 +450,18 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     if ( (error = select_requested_track(&url, rtsp_s, trackname, &track_sel, &req_track)) != RTSP_Ok )
         goto error_management;
 
-    // Parse the RTP/AVP/something string
-    if ( !parse_transport_header(rtsp, req, &transport) ) {
+    /* Parse the transport header through Ragel-generated state machine.
+     *
+     * The full documentation of the Transport header syntax is available in
+     * RFC2326, Section 12.39.
+     *
+     * If the parsing returns false, we should respond to the client with a
+     * status 461 "Unsupported Transport"
+     */
+    transport_header = g_hash_table_lookup(req->headers, "Transport");
+    if ( transport_header == NULL ||
+         !ragel_parse_transport_header(rtsp, &transport, transport_header) ) {
+
         error = RTSP_UnsupportedTransport;
         goto error_management;
     }
