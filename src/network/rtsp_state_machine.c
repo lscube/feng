@@ -139,7 +139,8 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     RTSP_ResponseCode status;
     char *headers;
     int pcnt;
-
+    
+    req->client = rtsp;
     req->method_id = RTSP_ID_ERROR;
     req->cseq = -1;
     req->headers = g_hash_table_new_full(g_str_hash, g_str_equal,
@@ -148,21 +149,21 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     status = ragel_parse_request(req, rtsp->in_buffer);
 
     if ( status != RTSP_Ok ) {
-        rtsp_send_reply(rtsp, status);
+        rtsp_send_response(req, status);
         goto error;
     }
 
     /* No CSeq found! */
     if ( req->cseq == -1 ) {
         /** @todo This should be corrected for RFC! */
-        rtsp_send_reply(rtsp, RTSP_BadRequest);
+        rtsp_send_response(req, RTSP_BadRequest);
         goto error;
     }
 
     /* Check if the session header match with the expected one */
     if ( req->session_id != 0 && /* We might not have a session id at all */
          rtsp->session->session_id != req->session_id ) {
-        rtsp_send_reply(rtsp, RTSP_SessionNotFound);
+        rtsp_send_response(req, RTSP_SessionNotFound);
         goto error;
     }
 
@@ -364,7 +365,7 @@ static void rtsp_handle_request(RTSP_buffer * rtsp, RTSP_Request *req)
         RTSP_set_parameter(rtsp, req);
         break;
     default:
-        rtsp_send_reply(rtsp, RTSP_NotImplemented);
+        rtsp_send_response(req, RTSP_NotImplemented);
         break;
     }
 }

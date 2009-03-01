@@ -214,12 +214,12 @@ static gboolean validate_url(char *urlstr, Url * url)
  */
 gboolean rtsp_request_get_url(RTSP_buffer *rtsp, RTSP_Request *req, Url *url) {
   if ( !validate_url(req->object, url) ) {
-      rtsp_send_reply(rtsp, RTSP_BadRequest);
+      rtsp_send_response(req, RTSP_BadRequest);
       return false;
   }
 
   if ( !check_forbidden_path(url) ) {
-      rtsp_send_reply(rtsp, RTSP_Forbidden);
+      rtsp_send_response(req, RTSP_Forbidden);
       return false;
   }
 
@@ -238,14 +238,14 @@ gboolean rtsp_request_get_url(RTSP_buffer *rtsp, RTSP_Request *req, Url *url) {
 /**
  * @brief Sends a reply message to the client
  *
- * @param rtsp The buffer where to write the output message.
+ * @param req The request to send a response for
  * @param code Code of the response to send
  */
-void rtsp_send_reply(const RTSP_buffer *rtsp, RTSP_ResponseCode code)
+void rtsp_send_response(const RTSP_Request *req, RTSP_ResponseCode code)
 {
-    GString *response = protocol_response_new(RTSP_1_0, code);
+    GString *response = rtsp_respond(req, code);
 
-    rtsp_bwrite(rtsp, response);
+    rtsp_bwrite(req->client, response);
     
     fnc_log(FNC_LOG_ERR, "%d - - ", code);
 }

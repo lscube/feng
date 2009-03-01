@@ -127,7 +127,7 @@ int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
     if (srv->num_conn > srv->srvconf.max_conns) {
         /* @todo should redirect, but we haven't the code to do that just
          * yet. */
-        rtsp_send_reply(rtsp, RTSP_InternalServerError);
+        rtsp_send_response(req, RTSP_InternalServerError);
         return ERR_GENERIC;
     }
 
@@ -148,6 +148,6 @@ int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
     return ERR_NOERROR;
 
 error_management:
-    rtsp_send_reply(rtsp, error);
+    rtsp_send_response(req, error);
     return ERR_GENERIC;
 }

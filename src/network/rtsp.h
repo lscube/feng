@@ -128,6 +128,8 @@ enum RTSP_method_token {
  * @brief Structure representing a request coming from the client.
  */
 typedef struct {
+    RTSP_buffer *client; //!< The client the request comes from
+
     char *method; //!< String of the method (used for logging, mostly)
     enum RTSP_method_token method_id; //!< ID of the method (for the state machine)
 
@@ -154,8 +156,6 @@ int RTSP_handler(RTSP_buffer * rtsp);
  * @{
  */
 
-void rtsp_send_reply(const RTSP_buffer *rtsp, RTSP_ResponseCode code);
-
 ssize_t rtsp_send(RTSP_buffer * rtsp);
 
 gboolean rtsp_request_get_url(RTSP_buffer *rtsp, RTSP_Request *req, Url *url);
@@ -163,6 +163,7 @@ gboolean rtsp_request_get_url(RTSP_buffer *rtsp, RTSP_Request *req, Url *url);
 void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer);
 
 GString *rtsp_respond(RTSP_Request *req, RTSP_ResponseCode code);
+void rtsp_send_response(const RTSP_Request *req, RTSP_ResponseCode code);
 
 /**
  * @brief Generates a positive RTSP response string

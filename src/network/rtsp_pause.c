@@ -72,6 +72,7 @@ int RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
 
     /* Make sure that the method is valid in this state, if it's not, reply.
      * @todo we should report the valid methods through Allow: header.
+     * @todo stop using goto!
      */
     if ( rtsp_sess->cur_state != PLAY_STATE ) {
         error = RTSP_InvalidMethodInState;
@@ -89,6 +90,6 @@ int RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
     return ERR_NOERROR;
 
 error_management:
-    rtsp_send_reply(rtsp, error);
+    rtsp_send_response(req, error);
     return ERR_GENERIC;
 }
