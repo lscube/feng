@@ -199,7 +199,6 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 //  unregister the client
     ev_io_stop(srv->loop, w);
     g_free(w);
-    rtsp_client_destroy(rtsp);
 
 // wait for
     Sock_close(rtsp->sock);
@@ -208,7 +207,7 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 
 // Release the RTSP_buffer
     clients = g_slist_remove(clients, rtsp);
-    g_free(rtsp);
+    rtsp_client_destroy(rtsp);
 }
 
 static void add_client(feng *srv, Sock *client_sock)
