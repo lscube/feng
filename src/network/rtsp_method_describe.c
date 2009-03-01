@@ -75,7 +75,7 @@ void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
     Url url;
     GString *descr;
 
-    if ( !rtsp_request_get_url(rtsp, req, &url) )
+    if ( !rtsp_request_get_url(req, &url) )
         return ERR_GENERIC;
 
     if (srv->num_conn > srv->srvconf.max_conns) {

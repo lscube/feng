@@ -201,18 +201,17 @@ static gboolean validate_url(char *urlstr, Url * url)
  * @brief Takes care of extracting and validating an URL from the a request
  *        structure.
  *
- * @param rtsp Client to send the reply to
  * @param req The request structure from where to extract the URL
  * @param[out] url The netembryo Url structure where to save the buffer
  *
- * This function already takes care of sending a "Bad Request" reply for xinvalid
- * URLs or a "Forbidden" reply for paths that try to exit the accessible
- * sandbox.
+ * This function already takes care of sending a 400 "Bad Request" response for
+ * invalid URLs or a 403 "Forbidden" reply for paths that try to exit the
+ * accessible sandbox.
  *
  * @retval true The URL was properly found and extracted
  * @retval false An error was found, and a reply was already sent.
  */
-gboolean rtsp_request_get_url(RTSP_buffer *rtsp, RTSP_Request *req, Url *url) {
+gboolean rtsp_request_get_url(RTSP_Request *req, Url *url) {
   if ( !validate_url(req->object, url) ) {
       rtsp_quick_response(req, RTSP_BadRequest);
       return false;

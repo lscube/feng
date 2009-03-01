@@ -79,7 +79,7 @@ void RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req)
     char *filename;
     rtp_session_release_pair pair;
 
-    if ( !rtsp_request_get_url(rtsp, req, &url) )
+    if ( !rtsp_request_get_url(req, &url) )
         return;
 
     s = rtsp->session;

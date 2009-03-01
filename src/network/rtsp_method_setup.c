@@ -434,7 +434,7 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     // init
     memset(&transport, 0, sizeof(transport));
 
-    if ( !rtsp_request_get_url(rtsp, req, &url) )
+    if ( !rtsp_request_get_url(req, &url) )
         return;
 
     // Split resource!trackname

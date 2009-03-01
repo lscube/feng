@@ -344,7 +344,7 @@ void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
         goto error_management;
     }
 
-    if ( !rtsp_request_get_url(rtsp, req, &url) )
+    if ( !rtsp_request_get_url(req, &url) )
         return;
 
     if ( (error = do_play(&url, rtsp_sess, &args)) != RTSP_Ok ) {

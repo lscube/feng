@@ -53,7 +53,7 @@ void RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
          !rtsp_check_invalid_state(req, RTSP_SERVER_READY) )
         return;
 
-    if ( !rtsp_request_get_url(rtsp, req, &url) )
+    if ( !rtsp_request_get_url(req, &url) )
         return;
 
     g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_pause, NULL);
