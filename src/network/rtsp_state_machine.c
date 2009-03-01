@@ -80,7 +80,7 @@ static void rtsp_free_request(RTSP_Request *req)
     g_free(req->version);
     g_free(req->method);
     g_free(req->object);
-    g_free(req);
+    g_slice_free(RTSP_Request, req);
 }
 
 /**
@@ -170,7 +170,7 @@ static gboolean check_session(RTSP_Request *req)
  */
 static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
 {
-    RTSP_Request *req = g_new0(RTSP_Request, 1);
+    RTSP_Request *req = g_slice_new0(RTSP_Request);
     
     req->client = rtsp;
     req->method_id = RTSP_ID_ERROR;

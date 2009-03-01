@@ -85,7 +85,7 @@ static char *rtsp_timestamp() {
 RTSP_Response *rtsp_response_new(const RTSP_Request *req, RTSP_ResponseCode code)
 {
     static const char server_header[] = PACKAGE "/" VERSION;
-    RTSP_Response *response = g_new0(RTSP_Response, 1);
+    RTSP_Response *response = g_slice_new0(RTSP_Response);
     char *hdr;
 
     response->client = req->client;
@@ -125,7 +125,7 @@ void rtsp_response_free(RTSP_Response *response)
     g_hash_table_destroy(response->headers);
     if ( response->body )
         g_string_free(response->body, true);
-    g_free(response);
+    g_slice_free(RTSP_Response, response);
 }
 
 /**

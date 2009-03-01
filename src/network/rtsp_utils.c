@@ -58,7 +58,7 @@
  */
 RTSP_session *rtsp_session_new(RTSP_buffer *rtsp)
 {
-    RTSP_session *new = rtsp->session = g_new0(RTSP_session, 1);
+    RTSP_session *new = rtsp->session = g_slice_new0(RTSP_session);
     
     new->srv = rtsp->srv;
     new->session_id = g_strdup_printf("%08x%08x",
@@ -84,7 +84,7 @@ void rtsp_session_free(RTSP_session *session)
     mt_resource_close(session->resource);
 
     g_free(session->session_id);
-    g_free(session);
+    g_slice_free(RTSP_session, session);
 }
 
 /**
@@ -99,7 +99,7 @@ void rtsp_session_free(RTSP_session *session)
  */
 RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
 {
-    RTSP_buffer *new = g_new0(RTSP_buffer, 1);
+    RTSP_buffer *new = g_slice_new0(RTSP_buffer);
 
     new->srv = srv;
     new->sock = client_sock;
@@ -164,6 +164,8 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
     g_string_free(outbuf, TRUE);
   g_async_queue_unlock(rtsp->out_queue);
   g_async_queue_unref(rtsp->out_queue);
+
+  g_slice_free(RTSP_buffer, rtsp);
 }
 
 /**
