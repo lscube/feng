@@ -379,7 +379,7 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
     enum RTSP_method_token method = RTSP_validate_method(rtsp);
     
     if ( method == RTSP_ID_ERROR ) {
-        send_protocol_reply(RTSP_BadRequest, rtsp);
+        rtsp_send_reply(rtsp, RTSP_BadRequest);
         return;
     }
 
@@ -387,12 +387,12 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
      * means that the header was not found 
      */
     if ( rtsp->rtsp_cseq == -1 ) {
-        send_protocol_reply(RTSP_BadRequest, rtsp);
+        rtsp_send_reply(rtsp, RTSP_BadRequest);
         return;
     }
 
     if ( p == NULL ) {
-        send_protocol_reply(RTSP_SessionNotFound, rtsp);
+        rtsp_send_reply(rtsp, RTSP_SessionNotFound);
         return;
     }
 
@@ -422,13 +422,13 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
                 break;
             case RTSP_ID_PLAY:    /* method not valid this state. */
             case RTSP_ID_PAUSE:
-                send_protocol_reply(InvalidMethods, rtsp);
+                rtsp_send_reply(rtsp, InvalidMethods);
                 break;
             case RTSP_ID_SET_PARAMETER:
                 RTSP_set_parameter(rtsp);
                 break;
             default:
-                send_protocol_reply(NotImplemented, rtsp);
+                rtsp_send_reply(rtsp, NotImplemented);
                 break;
             }
             break;
@@ -457,13 +457,13 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
                 RTSP_set_parameter(rtsp);
                 break;
             case RTSP_ID_PAUSE:    /* method not valid this state. */
-                send_protocol_reply(InvalidMethods, rtsp);
+                rtsp_send_reply(rtsp, InvalidMethods);
                 break;
             case RTSP_ID_DESCRIBE:
                 RTSP_describe(rtsp);
                 break;
             default:
-                send_protocol_reply(NotImplemented, rtsp);
+                rtsp_send_reply(rtsp, NotImplemented);
                 break;
             }
             break;

@@ -552,6 +552,6 @@ int RTSP_setup(RTSP_buffer * rtsp)
     return ERR_NOERROR;
 
 error_management:
-    send_protocol_reply(error, rtsp);
+    rtsp_send_reply(rtsp, error);
     return ERR_GENERIC;
 }

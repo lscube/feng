@@ -252,15 +252,15 @@ void log_user_agent(RTSP_buffer * rtsp)
 /**
  * @brief Sends a reply message to the client using ProtocolReply
  *
- * @param reply The ProtocolReply object to get the data from
  * @param rtsp The buffer where to write the output message.
+ * @param reply The ProtocolReply object to get the data from
  *
  * @retval ERR_NOERROR No error.
  * @retval ERR_ALLOC Not enough space to complete the request
  *
  * @note The return value is the one from @ref bwrite function.
  */
-int send_protocol_reply(ProtocolReply reply, RTSP_buffer *rtsp)
+int rtsp_send_reply(RTSP_buffer *rtsp, ProtocolReply reply)
 {
     GString *response = protocol_response_new(RTSP_1_0, reply);
 

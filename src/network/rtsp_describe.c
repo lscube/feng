@@ -49,7 +49,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, Url *url, GString *descr,
     if (!reply) {
         fnc_log(FNC_LOG_ERR,
             "send_describe_reply(): unable to allocate memory\n");
-        send_protocol_reply(RTSP_InternalServerError, rtsp);
+        rtsp_send_reply(rtsp, RTSP_InternalServerError);
         return ERR_ALLOC;
     }
 
@@ -151,7 +151,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
     if (srv->num_conn > srv->srvconf.max_conns) {
         /* @todo should redirect, but we haven't the code to do that just
          * yet. */
-        send_protocol_reply(RTSP_InternalServerError, rtsp);
+        rtsp_send_reply(rtsp, RTSP_InternalServerError);
         return ERR_GENERIC;
     }
 
@@ -174,6 +174,6 @@ int RTSP_describe(RTSP_buffer * rtsp)
     return ERR_NOERROR;
 
 error_management:
-    send_protocol_reply(error, rtsp);
+    rtsp_send_reply(rtsp, error);
     return ERR_GENERIC;
 }

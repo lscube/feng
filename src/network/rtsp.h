@@ -120,7 +120,7 @@ int RTSP_handler(RTSP_buffer * rtsp);
  * @{
  */
 
-int send_protocol_reply(ProtocolReply reply, RTSP_buffer *rtsp);
+int rtsp_send_reply(RTSP_buffer *rtsp, ProtocolReply reply);
 
 ssize_t rtsp_send(RTSP_buffer * rtsp);
 
