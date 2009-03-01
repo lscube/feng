@@ -4,10 +4,10 @@
 
 static gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
                                              RTP_transport *rtp_t,
-                                             char *header) {
+                                             const char *header) {
     struct ParsedTransport transport;
     int cs;
-    char *p = header, *pe = p + strlen(p) +1, *eof;
+    const char *p = header, *pe = p + strlen(p) +1, *eof;
     uint32_t portval; uint16_t chanval;
 
     %%{

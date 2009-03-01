@@ -2,12 +2,12 @@
 
 %% machine rtsp_request;
 
-static void ragel_parse_request(RTSP_Request *req, char *msg) {
+static void ragel_parse_request(RTSP_Request *req, const char *msg) {
     int cs;
-    char *p = msg, *pe = p + strlen(msg), *eof, *s;
+    const char *p = msg, *pe = p + strlen(msg), *eof, *s;
 
     /* Variables used for adding headers to the hash table */
-    char *hdr, *hdr_val;
+    const char *hdr, *hdr_val;
     size_t hdr_size, hdr_val_size;
 
     /* We want to express clearly which versions we support, so that we
