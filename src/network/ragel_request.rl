@@ -93,7 +93,7 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
             {
                 /* Discard two bytes for \r\n */
                 char *tmp = g_strndup(s, p-s-2);
-                req->session_id = g_strtoull(s, NULL, 0);
+                req->session_id = g_ascii_strtoull(s, NULL, 0);
                 g_free(tmp);
             }
         }
@@ -111,7 +111,7 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
             }
         }
 
-        main := Request_Line . ( Cseq_Header | Other_Headers % save_header )+;
+        main := Request_Line . ( Known_Headers | Other_Headers @ save_header )+;
 
         write data;
         write init;
