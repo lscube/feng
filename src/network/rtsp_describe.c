@@ -138,7 +138,7 @@ int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
     }
 
     // Get the description format. SDP is the only supported
-    if ( (descr_format = get_description_format(rtsp)) == df_Unsupported ) {
+    if ( (descr_format = get_description_format(req)) == df_Unsupported ) {
       error = RTSP_OptionNotSupported;
       goto error_management;
     }
