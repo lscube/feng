@@ -44,7 +44,7 @@ static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
     /* No body */
     g_string_append(reply, RTSP_EL);
 
-    bwrite(reply, rtsp);
+    rtsp_bwrite(rtsp, reply);
 
     fnc_log(FNC_LOG_CLIENT, "200 - - ");
 

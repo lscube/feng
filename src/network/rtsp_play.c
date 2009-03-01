@@ -307,7 +307,7 @@ static int send_play_reply(RTSP_buffer * rtsp, Url *url,
     // end of message
     g_string_append(reply, RTSP_EL);
 
-    bwrite(reply, rtsp);
+    rtsp_bwrite(rtsp, reply);
 
     fnc_log(FNC_LOG_CLIENT, "200 - %s ", url->path);
 

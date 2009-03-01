@@ -254,35 +254,27 @@ void log_user_agent(RTSP_buffer * rtsp)
  *
  * @param rtsp The buffer where to write the output message.
  * @param reply The ProtocolReply object to get the data from
- *
- * @retval ERR_NOERROR No error.
- * @retval ERR_ALLOC Not enough space to complete the request
- *
- * @note The return value is the one from @ref bwrite function.
  */
-int rtsp_send_reply(RTSP_buffer *rtsp, ProtocolReply reply)
+void rtsp_send_reply(RTSP_buffer *rtsp, ProtocolReply reply)
 {
     GString *response = protocol_response_new(RTSP_1_0, reply);
 
-    int res = bwrite(response, rtsp);
+    rtsp_bwrite(rtsp, response);
     
     fnc_log(FNC_LOG_ERR, "%s %d - - ", reply.message, reply.code);
     log_user_agent(rtsp);
-
-    return res;
 }
 
 /**
  * @brief Writes a GString to the output buffer of an RTSP connection
  *
- * @param buffer GString instance from which to get the data to send
  * @param rtsp where the output buffer is saved
+ * @param buffer GString instance from which to get the data to send
  *
- * @retval ERR_NOERROR No error.
- *
- * @note This function destroys the buffer after completion.
+ * @note The buffer has to be considered destroyed after calling this function
+ *       (the writing thread will take care of the actual destruction).
  */
-int bwrite(GString *buffer, RTSP_buffer * rtsp)
+void rtsp_bwrite(RTSP_buffer *rtsp, GString *buffer)
 {
     g_async_queue_push(rtsp->out_queue, buffer);
     ev_io_start(rtsp->srv->loop, rtsp->ev_io_write);

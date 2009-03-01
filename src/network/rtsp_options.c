@@ -41,7 +41,7 @@ static int send_options_reply(RTSP_buffer * rtsp)
 		    "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN,SET_PARAMETER" RTSP_EL);
     g_string_append(reply, RTSP_EL);
 
-    bwrite(reply, rtsp);
+    rtsp_bwrite(rtsp, reply);
 
     fnc_log(FNC_LOG_CLIENT, "200 - - ");
 

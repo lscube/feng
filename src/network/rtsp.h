@@ -120,13 +120,13 @@ int RTSP_handler(RTSP_buffer * rtsp);
  * @{
  */
 
-int rtsp_send_reply(RTSP_buffer *rtsp, ProtocolReply reply);
+void rtsp_send_reply(RTSP_buffer *rtsp, ProtocolReply reply);
 
 ssize_t rtsp_send(RTSP_buffer * rtsp);
 
 ProtocolReply rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url);;
 
-int bwrite(GString *buffer, RTSP_buffer * rtsp);
+void rtsp_bwrite(RTSP_buffer *rtsp, GString *buffer);
 GString *rtsp_generate_response(ProtocolReply reply, guint cseq);
 GString *rtsp_generate_ok_response(guint cseq, guint64 session);
 

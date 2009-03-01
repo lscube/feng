@@ -41,7 +41,7 @@ static int send_set_parameter_reply(RTSP_buffer * rtsp)
     /* No body */
     g_string_append(reply, RTSP_EL);
 
-    bwrite(reply, rtsp);
+    rtsp_bwrite(rtsp, reply);
 
     fnc_log(FNC_LOG_CLIENT, "451 - - ");
 
