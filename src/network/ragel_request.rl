@@ -78,17 +78,6 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
         Header = (alpha|'-')+ > hdr_start % hdr_end 
             . ':' . SP . print+ > hdr_val_start % hdr_val_end . CRLF;
 
-        action cseq_header {
-            {
-                /* Discard two bytes for \r\n */
-                char *tmp = g_strndup(s, p-s-2);
-                req->cseq = strtol(s, NULL, 0);
-                g_free(tmp);
-            }
-        }
-        
-        Cseq_Header = "CSeq: " . (digit+ >set_s) . CRLF %cseq_header;
-
         action session_header {
             {
                 /* Discard two bytes for \r\n */
@@ -100,7 +89,7 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
 
         Session_Header = "Session: " . (digit+ >set_s) . CRLF %session_header;
         
-        Headers = Cseq_Header | Session_Header | Header;
+        Headers = Session_Header | Header;
 
         action save_header {
             {

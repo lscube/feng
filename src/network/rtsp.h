@@ -134,7 +134,6 @@ typedef struct {
     enum RTSP_method_token method_id; //!< ID of the method (for the state machine)
 
     char *object; //!< Object of the request (URL or *)
-    int cseq; //!< Sequence number
     guint64 session_id;
 
     /** All the headers we don't parse specifically */

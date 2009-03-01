@@ -140,7 +140,6 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     
     req->client = rtsp;
     req->method_id = RTSP_ID_ERROR;
-    req->cseq = -1;
     req->headers = g_hash_table_new_full(g_str_hash, g_str_equal,
                                          g_free, g_free);
 
@@ -151,8 +150,8 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
         goto error;
     }
 
-    /* No CSeq found! */
-    if ( req->cseq == -1 ) {
+    /* No CSeq found */
+    if ( g_hash_table_lookup(req->headers, "CSeq") == NULL ) {
         /** @todo This should be corrected for RFC! */
         rtsp_quick_response(req, RTSP_BadRequest);
         goto error;
