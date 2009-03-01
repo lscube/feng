@@ -180,8 +180,8 @@ struct ParsedTransport {
  * @param rtsp Client from which the request arrived
  * @param transport Structure containing the transport's parameters
  */
-gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
-                                struct ParsedTransport *transport)
+static gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
+                                       struct ParsedTransport *transport)
 {
     switch ( transport->protocol ) {
     case TransportUDP:
