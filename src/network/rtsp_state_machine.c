@@ -110,8 +110,7 @@ gboolean check_required_options(RTSP_buffer *rtsp, RTSP_Request *req) {
     if ( !require_hdr && !proxy_require_hdr )
         return true;
 
-    response = rtsp_generate_response(RTSP_OptionNotSupported,
-                                      req->cseq);
+    response = rtsp_respond(req, RTSP_OptionNotSupported);
             
     g_string_append(response, "Unsupported:");
     if ( require_hdr )

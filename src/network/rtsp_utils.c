@@ -290,44 +290,54 @@ static void append_time_stamp(GString *str) {
 
 /**
  * @brief Generates the basic RTSP response string
- *
- * @param code The response code
- * @param cseq The CSeq value for the response.
- *
- * @return A new GString instance with the response heading.
- */
-GString *rtsp_generate_response(RTSP_ResponseCode code, guint cseq)
-{
-    GString *response = protocol_response_new(RTSP_1_0, code);
-  
-    protocol_append_header_uint(response, "CSeq", cseq);
-
-    return response;
-}
-
-/**
- * @brief Generates a positive RTSP response string
- *
+ * 
  * @param req The request to respond to
+ * @param code The response code to use for generation
  *
  * @return A new GString instance with the response heading.
  *
- * @todo If present, the Timestamp header should be copied over.
+ * This method creates the basis for an RTSP response, by generating the Status
+ * Line (RFC2326, Sec. 7.1), and adding the generic headers that should be sent,
+ * including:
+ *
+ * @li Server (Sec. 12.36)
+ * @li Date (Sec. 12.18)
+ * @li CSeq (Sec. 12.17)
+ * @li Session (if applicable) (Sec. 12.37)
+ * @li Timestamp (if present) (Sec. 12.38)
  */
-GString *rtsp_generate_ok_response(RTSP_Request *req) {
-    GString *response = rtsp_generate_response(RTSP_Ok, req->cseq);
+GString *rtsp_respond(RTSP_Request *req, RTSP_ResponseCode code)
+{
+    static gchar *server_header = NULL;
+    GString *response = protocol_response_new(RTSP_1_0, code);
+    const char *timestamp_hdr = NULL;
 
-    g_string_append_printf(response,
-                           "Server: %s/%s" RTSP_EL,
-                           PACKAGE, VERSION);
-    
+    /* First execution, generate the Server: header */
+    if ( server_header == NULL )
+        server_header = g_strdup_printf("Server: %s/%s",
+                                        PACKAGE, VERSION);
+
+    /* Append Server header */
+    protocol_append_header(response, server_header);
+
+    /* Append the correct CSeq */
+    protocol_append_header_uint(response, "CSeq", req->cseq);
+
+    /* Append Date */
     append_time_stamp(response);
-    
+
+    /* Append Session if present */
     if ( req->session_id != 0 )
         g_string_append_printf(response,
                                "Session: %" PRIu64 RTSP_EL,
                                req->session_id);
-    
+
+    /* If the Timestamp header is present, just copy it over */
+    if ( (timestamp_hdr = g_hash_table_lookup(req->headers, "Timestamp")) )
+        g_string_append_printf(response,
+                               "Timestamp: %s" RTSP_EL,
+                               timestamp_hdr);
+
     return response;
 }
 

@@ -161,8 +161,19 @@ ssize_t rtsp_send(RTSP_buffer * rtsp);
 gboolean rtsp_request_get_url(RTSP_buffer *rtsp, RTSP_Request *req, Url *url);
 
 void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer);
-GString *rtsp_generate_response(RTSP_ResponseCode code, guint cseq);
-GString *rtsp_generate_ok_response(RTSP_Request *req);
+
+GString *rtsp_respond(RTSP_Request *req, RTSP_ResponseCode code);
+
+/**
+ * @brief Generates a positive RTSP response string
+ *
+ * @param req The request to respond to
+ *
+ * @return A new GString instance with the response heading.
+ */
+static inline GString *rtsp_generate_ok_response(RTSP_Request *req) {
+    return rtsp_respond(req, RTSP_Ok);
+}
 
 RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock);
 void rtsp_client_destroy(RTSP_buffer *rtsp);
