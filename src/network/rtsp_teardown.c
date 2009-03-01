@@ -37,6 +37,7 @@
 /**
  * Sends the reply for the teardown method
  * @param rtsp the buffer where to write the reply
+ * @param req The client request for the method
  */
 static void send_teardown_reply(RTSP_buffer * rtsp, RTSP_Request *req)
 {
@@ -83,6 +84,7 @@ static void rtp_session_release(gpointer element, gpointer user_data)
 /**
  * RTSP TEARDOWN method handler
  * @param rtsp the buffer for which to handle the method
+ * @param req The client request for the method
  * @return ERR_NOERROR
  */
 int RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req)

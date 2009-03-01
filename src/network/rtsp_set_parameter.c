@@ -31,6 +31,7 @@
 /**
  * Sends the reply for the set_parameter method
  * @param rtsp the buffer where to write the reply
+ * @param req The client request for the method
  * @return ERR_NOERROR
  */
 static int send_set_parameter_reply(RTSP_buffer * rtsp, RTSP_Request *req)
@@ -51,6 +52,7 @@ static int send_set_parameter_reply(RTSP_buffer * rtsp, RTSP_Request *req)
 /**
  * RTSP OPTIONS method handler
  * @param rtsp the buffer for which to handle the method
+ * @param req The client request for the method
  * @return ERR_NOERROR
  */
 int RTSP_set_parameter(RTSP_buffer * rtsp, RTSP_Request *req)

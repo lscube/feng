@@ -179,6 +179,7 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
 /**
  * Parses the TRANSPORT header from the RTSP buffer
  * @param rtsp the buffer for which to parse the header
+ * @param req The client request for the method
  * @param transport where to save the data of the header
  *
  * @retval RTSP_Ok No error
@@ -419,6 +420,7 @@ static RTSP_ResponseCode select_requested_track(Url *url, RTSP_session * rtsp_s,
 /**
  * Sends the reply for the setup method
  * @param rtsp the buffer where to write the reply
+ * @param req The client request for the method
  * @param session the new RTSP session allocated for the client
  * @param rtp_s the new RTP session allocated for the client
  * @return ERR_NOERROR
@@ -483,6 +485,7 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session 
 /**
  * RTSP SETUP method handler
  * @param rtsp the buffer for which to handle the method
+ * @param req The client request for the method
  * @return ERR_NOERROR
  */
 int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)

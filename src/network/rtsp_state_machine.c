@@ -379,7 +379,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
  * All state transitions are made here except when the last stream packet
  * is sent during a PLAY.  That transition is located in stream_event().
  * @param rtsp the buffer containing the message to dispatch
- * @param method the id of the method to execute
+ * @param req The request to take care of
  */
 static void RTSP_state_machine(RTSP_buffer * rtsp, RTSP_Request *req)
 {

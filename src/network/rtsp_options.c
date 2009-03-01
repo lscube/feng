@@ -31,6 +31,7 @@
 /**
  * Sends the reply for the options method
  * @param rtsp the buffer where to write the reply
+ * @param req The client request for the method
  * @return ERR_NOERROR
  */
 static int send_options_reply(RTSP_buffer * rtsp, RTSP_Request *req)
@@ -51,6 +52,7 @@ static int send_options_reply(RTSP_buffer * rtsp, RTSP_Request *req)
 /**
  * RTSP OPTIONS method handler
  * @param rtsp the buffer for which to handle the method
+ * @param req The client request for the method
  * @return ERR_NOERROR
  */
 int RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req)

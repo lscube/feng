@@ -35,6 +35,7 @@
 /**
  * Sends the reply for the describe method
  * @param rtsp the buffer where to write the reply
+ * @param req The client request for the method
  * @param url the URL for the resource to describe
  * @param descr the description string to send
  * @param descr_format the description format to use
@@ -113,6 +114,7 @@ static RTSP_description_format get_description_format(RTSP_Request *req)
 /**
  * RTSP DESCRIBE method handler
  * @param rtsp the buffer for which to handle the method
+ * @param req The client request for the method
  * @return ERR_NOERROR
  */
 int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)

@@ -50,6 +50,7 @@ static int get_utc(struct tm *t, char *b)
 /**
  * Parses the RANGE HEADER to get the required play range
  * @param rtsp the buffer from which to get the data
+ * @param req The client request for the method
  * @param args where to save the play range informations
  * @return RTSP_Ok or RTSP_BadRequest on missing RANGE HEADER
  */
@@ -319,6 +320,7 @@ static int send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
 /**
  * RTSP PLAY method handler
  * @param rtsp the buffer for which to handle the method
+ * @param req The client request for the method
  * @return ERR_NOERROR
  */
 int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
