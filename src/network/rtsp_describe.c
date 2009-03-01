@@ -88,17 +88,22 @@ static int send_describe_reply(RTSP_buffer * rtsp, RTSP_Request *req,
 
 /**
  * Gets the required media description format from the RTSP request
- * @param rtsp the buffer of the request
+ * @param req The request
  * @return The enumeration for the format
+ *
+ * @todo When Accept is missing what should we do as per RFC?
+ * @todo The strstr() call is probably a bad idea...
  */
-static RTSP_description_format get_description_format(RTSP_buffer *rtsp)
+static RTSP_description_format get_description_format(RTSP_Request *req)
 {
-    if (strstr(rtsp->in_buffer, HDR_ACCEPT) != NULL) {
-        if (strstr(rtsp->in_buffer, "application/sdp") != NULL)
-	  return df_SDP_format;
-	else
-	  return df_Unsupported; // Add here new description formats
-    }
+    const char *accept_hdr = g_hash_table_lookup(req->headers, "Accept");
+    if ( accept_hdr == NULL )
+        return df_SDP_format; // For now default to SDP if unknown
+
+    if (strstr(accept_hdr, "application/sdp") != NULL)
+        return df_SDP_format;
+    else
+        return df_Unsupported; // Add here new description formats
     
     return df_SDP_format;
     // For now default to SDP if unknown
