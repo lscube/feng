@@ -26,6 +26,7 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <stdbool.h>
 #include <glib.h>
 
 #include "rtsp.h"
@@ -69,7 +70,7 @@ static gboolean split_resource_path(Url * url, char * trackname, size_t tracknam
 /**
  * bind&connect the socket
  */
-static ProtocolReply unicast_transport(RTSP_buffer *rtsp, RTP_transport *transport,
+static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp, RTP_transport *transport,
                                     port_pair cli_ports)
 {
     char port_buffer[8];
@@ -103,7 +104,7 @@ static ProtocolReply unicast_transport(RTSP_buffer *rtsp, RTP_transport *transpo
  * set the sockets for the first multicast request, otherwise provide the
  * already instantiated rtp session
  */
-static ProtocolReply multicast_transport(feng *srv, RTP_transport *transport,
+static RTSP_ResponseCode multicast_transport(feng *srv, RTP_transport *transport,
                                          ResourceInfo *info,
                                          Track *tr,
                                          RTP_session **rtp_s)
@@ -182,14 +183,16 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
  *
  * @retval RTSP_Ok No error
  * @retval RTSP_BadRequest Malformed header
- * @retval ProtocolReply(406) Transport header missing
- * @retval ProtocolReply(461) Transport not supported
- * @retval ProtocolReply(500) Impossible to allocate a socket for the client
+ * @retval RTSP_NotAcceptable Transport header missing
+ * @retval RTSP_UnsupportedTransport Transport not supported
+ * @retval RTSP_InternalServerError
+ *
+ * @todo Check for RTSP_NotAcceptable usage
  */
-static ProtocolReply parse_transport_header(RTSP_buffer * rtsp,
-                                            RTP_transport * transport,
-                                            RTP_session **rtp_s,
-                                            Track *tr)
+static RTSP_ResponseCode parse_transport_header(RTSP_buffer * rtsp,
+                                                RTP_transport * transport,
+                                                RTP_session **rtp_s,
+                                                Track *tr)
 {
     port_pair cli_ports;
 
@@ -200,12 +203,9 @@ static ProtocolReply parse_transport_header(RTSP_buffer * rtsp,
     int max_interlvd;
     int rtp_ch = 0, rtcp_ch = 0;
 
-    static const ProtocolReply MissingTransportHeader =
-        { 406, true, "Require: Transport settings" };
-
     // Start parsing the Transport header
     if ((p = strstr(rtsp->in_buffer, HDR_TRANSPORT)) == NULL) {
-        return MissingTransportHeader;
+        return RTSP_NotAcceptable;
     }
     if (sscanf(p, "%*10s%1023s", transport_str) != 1) {
         fnc_log(FNC_LOG_ERR,
@@ -385,7 +385,7 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
  * @retval RTSP_InternalServerError Impossible to retrieve the data of the opened
  *                                  track
  */
-static ProtocolReply select_requested_track(Url *url, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
+static RTSP_ResponseCode select_requested_track(Url *url, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
 {
     feng *srv = rtsp_s->srv;
 
@@ -491,7 +491,7 @@ int RTSP_setup(RTSP_buffer * rtsp)
     RTP_session *rtp_s = NULL;
     RTSP_session *rtsp_s = rtsp->session;
 
-    ProtocolReply error;
+    RTSP_ResponseCode error;
 
     // init
     memset(&transport, 0, sizeof(transport));
@@ -510,11 +510,11 @@ int RTSP_setup(RTSP_buffer * rtsp)
     /* Here we'd be adding a new session if we supported more than one */
 
     // Get the selected track
-    if ( (error = select_requested_track(&url, rtsp_s, trackname, &track_sel, &req_track)).error )
+    if ( (error = select_requested_track(&url, rtsp_s, trackname, &track_sel, &req_track)) != RTSP_Ok )
         goto error_management;
 
     // Parse the RTP/AVP/something string
-    if ( (error = parse_transport_header(rtsp, &transport, &rtp_s, req_track)).error )
+    if ( (error = parse_transport_header(rtsp, &transport, &rtp_s, req_track)) != RTSP_Ok )
         goto error_management;
 
     // Setup the RTP session

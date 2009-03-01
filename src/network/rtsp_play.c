@@ -33,6 +33,7 @@
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <math.h>
+#include <stdbool.h>
 #include <netembryo/url.h>
 #include <glib.h>
 
@@ -165,7 +166,7 @@ static void rtp_session_seek(gpointer value, gpointer user_data)
  * @param args the range to play
  * @return RTSP_Ok or RTSP_InvalidRange
  */
-static ProtocolReply do_seek(RTSP_session * rtsp_sess, play_args * args)
+static RTSP_ResponseCode do_seek(RTSP_session * rtsp_sess, play_args * args)
 {
     Resource *r = rtsp_sess->resource;
 
@@ -208,17 +209,16 @@ static void rtp_session_play(gpointer value, gpointer user_data)
  * @param args the range to play
  * @return RTSP_Ok or RTSP_InternalServerError
  */
-static ProtocolReply
-do_play(Url *url, RTSP_session * rtsp_sess, play_args * args)
+static RTSP_ResponseCode do_play(Url *url, RTSP_session * rtsp_sess, play_args * args)
 {
-    ProtocolReply error = RTSP_Ok;
+    RTSP_ResponseCode error = RTSP_Ok;
     char *q = NULL;
 
     if (!(q = strchr(url->path, '='))) {
         //if '=' is not present then a file has not been specified
         // aggregate content requested
         // Perform seek if needed
-        if ((error = do_seek(rtsp_sess, args)).error) {
+        if ((error = do_seek(rtsp_sess, args)) != RTSP_Ok) {
             return error;
         }
 	if ( rtsp_sess->rtp_sessions &&
@@ -326,7 +326,7 @@ int RTSP_play(RTSP_buffer * rtsp)
     RTSP_session *rtsp_sess;
     play_args args;
 
-    ProtocolReply error;
+    RTSP_ResponseCode error;
 
     // Parse the input message
 
@@ -347,7 +347,7 @@ int RTSP_play(RTSP_buffer * rtsp)
     if ( !rtsp_get_url(rtsp, &url) )
         return ERR_GENERIC;
 
-    if ( (error = do_play(&url, rtsp_sess, &args)).error ) {
+    if ( (error = do_play(&url, rtsp_sess, &args)) != RTSP_Ok ) {
         goto error_management;
     }
 

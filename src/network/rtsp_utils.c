@@ -28,6 +28,7 @@
  * internal functions
  */
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h> /* For SCNu64 */
@@ -260,18 +261,18 @@ void log_user_agent(RTSP_buffer * rtsp)
  */
 
 /**
- * @brief Sends a reply message to the client using ProtocolReply
+ * @brief Sends a reply message to the client
  *
  * @param rtsp The buffer where to write the output message.
- * @param reply The ProtocolReply object to get the data from
+ * @param code Code of the response to send
  */
-void rtsp_send_reply(const RTSP_buffer *rtsp, const ProtocolReply reply)
+void rtsp_send_reply(const RTSP_buffer *rtsp, RTSP_ResponseCode code)
 {
-    GString *response = protocol_response_new(RTSP_1_0, reply);
+    GString *response = protocol_response_new(RTSP_1_0, code);
 
     rtsp_bwrite(rtsp, response);
     
-    fnc_log(FNC_LOG_ERR, "%s %d - - ", reply.message, reply.code);
+    fnc_log(FNC_LOG_ERR, "%d - - ", code);
     log_user_agent(rtsp);
 }
 
@@ -316,14 +317,14 @@ static void append_time_stamp(GString *str) {
 /**
  * @brief Generates the basic RTSP response string
  *
- * @param reply The reply object to use for code and message.
+ * @param code The response code
  * @param cseq The CSeq value for the response.
  *
  * @return A new GString instance with the response heading.
  */
-GString *rtsp_generate_response(ProtocolReply reply, guint cseq)
+GString *rtsp_generate_response(RTSP_ResponseCode code, guint cseq)
 {
-    GString *response = protocol_response_new(RTSP_1_0, reply);
+    GString *response = protocol_response_new(RTSP_1_0, code);
   
     protocol_append_header_uint(response, "CSeq", cseq);
 

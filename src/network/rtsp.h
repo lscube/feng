@@ -40,7 +40,7 @@
 
 #include <fenice/utils.h>
 #include <netembryo/wsocket.h>
-#include <netembryo/protocol_replies.h>
+#include <netembryo/protocol_responses.h>
 #include <netembryo/url.h>
 #include "rtp.h"
 #include "rtcp.h"
@@ -120,14 +120,14 @@ int RTSP_handler(RTSP_buffer * rtsp);
  * @{
  */
 
-void rtsp_send_reply(const RTSP_buffer *rtsp, const ProtocolReply reply);
+void rtsp_send_reply(const RTSP_buffer *rtsp, RTSP_ResponseCode code);
 
 ssize_t rtsp_send(RTSP_buffer * rtsp);
 
 gboolean rtsp_get_url(RTSP_buffer *rtsp, Url *url);
 
 void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer);
-GString *rtsp_generate_response(ProtocolReply reply, guint cseq);
+GString *rtsp_generate_response(RTSP_ResponseCode code, guint cseq);
 GString *rtsp_generate_ok_response(guint cseq, guint64 session);
 
 void log_user_agent(RTSP_buffer * rtsp);

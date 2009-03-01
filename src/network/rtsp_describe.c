@@ -24,12 +24,13 @@
  * @brief Contains DESCRIBE method and reply handlers
  */
 
+#include <stdbool.h>
+
 #include "rtsp.h"
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include "sdp2.h"
 #include <fenice/fnc_log.h>
-
 
 /**
  * Sends the reply for the describe method
@@ -126,7 +127,7 @@ static gboolean check_require_header(RTSP_buffer * rtsp)
  */
 int RTSP_describe(RTSP_buffer * rtsp)
 {
-    ProtocolReply error;
+    RTSP_ResponseCode error;
     feng *srv = rtsp->srv;
 
     Url url;
