@@ -162,12 +162,9 @@ static void rtsp_response_append_headers(gconstpointer hdr_name_p,
  *
  * Right now the access is just logged to stderr for debug purposes.  It
  * should also be possible to let the user configure the log format.
- * 
- * @todo Some of the elements are not properly outputted
  *
- * In particular right now if there is no content on the request, 0 is used
- * rather than -.
- *
+ * @todo This should use an Apache-compatible user setting to decide the output
+ *       format, and parse that line.
  */
 static void rtsp_log_access(RTSP_Response *response)
 {
@@ -175,15 +172,19 @@ static void rtsp_log_access(RTSP_Response *response)
         g_hash_table_lookup(response->request->headers, "Referer");
     const char *useragent =
         g_hash_table_lookup(response->request->headers, "User-Agent");
+    char *response_length = response->body ?
+        g_strdup_printf("%d", response->body->len) : NULL;
 
-    fprintf(stderr, "%s - - [%s], \"%s %s %s\" %d %u %s %s\n",
+    fprintf(stderr, "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",
             response->client->sock->remote_host,
             g_hash_table_lookup(response->headers, "Date"),
             response->request->method, response->request->object,
             response->request->version,
-            response->status, response->body ? response->body->len : 0,
+            response->status, response_length ? response_length : "-",
             referer ? referer : "-",
             useragent ? useragent : "-");
+
+    g_free(response_length);
 }
 
 /**
