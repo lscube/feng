@@ -155,17 +155,11 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
   RTP_session *p = (RTP_session *)element;
   Track *t = r_selected_track(p->track_selector);
 
-  char *temp;
-
-  temp = g_uri_escape_string(p->sd_filename, NULL, false);
   g_string_append_printf(pair->str,
-			 "url=%s%s/"SDP2_TRACK_ID"=", pair->baseurl, temp);
-  g_free(temp);
+			 "url=%s%s/"SDP2_TRACK_ID"=", pair->baseurl, p->sd_filename);
 
-  temp = g_uri_escape_string(t->info->name, NULL, false);
   g_string_append_printf(pair->str,
-			 "%s;seq=%u", temp, p->start_seq);
-  g_free(temp);
+			 "%s;seq=%u", t->info->name, p->start_seq);
 
   if (t->properties->media_source != MS_live)
     g_string_append_printf(pair->str,
