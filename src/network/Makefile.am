@@ -32,3 +32,8 @@ rtsp_method_play.o: ragel_range.c
 
 %.c: %.rl
 	$(RAGEL) $< -o $@
+
+CLEANFILES = \
+	ragel_request.c \
+	ragel_transport.c \
+	ragel_range.c
