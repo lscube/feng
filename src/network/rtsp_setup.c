@@ -376,9 +376,8 @@ static RTSP_ResponseCode select_requested_track(Url *url, RTSP_session * rtsp_s,
  * @param req The client request for the method
  * @param session the new RTSP session allocated for the client
  * @param rtp_s the new RTP session allocated for the client
- * @return ERR_NOERROR
  */
-static int send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session * session, RTP_session * rtp_s)
+static void send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session * session, RTP_session * rtp_s)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
     GString *transport = g_string_new("");
@@ -440,9 +439,6 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session 
                         g_strdup_printf("%"PRIu64, session->session_id));
 
     rtsp_response_send(response);
-
-    /** @todo return void */
-    return ERR_NOERROR;
 }
 
 /**
@@ -507,11 +503,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     if ( rtsp_s->session_id == 0 )
         rtsp_s->session_id = generate_session_id();
 
-    if(send_setup_reply(rtsp, req, rtsp_s, rtp_s)) {
-        fnc_log(FNC_LOG_INFO, "Can't write answer");
-        error = RTSP_InternalServerError;
-        goto error_management;
-    }
+    send_setup_reply(rtsp, req, rtsp_s, rtp_s);
 
     if ( rtsp_s->cur_state == INIT_STATE )
         rtsp_s->cur_state = READY_STATE;
