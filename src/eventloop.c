@@ -151,7 +151,7 @@ void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd)
 static void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     RTSP_buffer *rtsp = w->data;
-    RTSP_send(rtsp);
+    rtsp_send(rtsp);
 }
 
 static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)

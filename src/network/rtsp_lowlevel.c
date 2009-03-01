@@ -36,7 +36,7 @@
  * @param rtsp the rtsp connection to flush through the socket
  * @return the size of data sent
  */
-ssize_t RTSP_send(RTSP_buffer * rtsp)
+ssize_t rtsp_send(RTSP_buffer * rtsp)
 {
     int n = 0;
 
@@ -102,7 +102,7 @@ ssize_t RTSP_send(RTSP_buffer * rtsp)
             default:
                 break;
         }
-        fnc_log(FNC_LOG_ERR, "Sock_write() error in RTSP_send()");
+        fnc_log(FNC_LOG_ERR, "Sock_write() error in rtsp_send()");
     }
 
     g_string_free(outpkt, TRUE);
