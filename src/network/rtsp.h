@@ -145,10 +145,6 @@ typedef struct {
 
 int RTSP_handler(RTSP_buffer * rtsp);
 
-#define RTSP_not_full 0
-#define RTSP_method_rcvd 1
-#define RTSP_interlvd_rcvd 2
-
 /**
  * @brief Structure respresenting a response sent to the client
  */

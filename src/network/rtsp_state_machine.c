@@ -191,6 +191,12 @@ static void RTSP_discard_msg(RTSP_buffer * rtsp, int len)
     }
 }
 
+typedef enum {
+    RTSP_not_full,
+    RTSP_method_rcvd,
+    RTSP_interlvd_rcvd
+} rtsp_rcvd_status;
+
 /**
  * Recieves an RTSP message and puts it into the buffer
  *
@@ -206,7 +212,8 @@ static void RTSP_discard_msg(RTSP_buffer * rtsp, int len)
  * @retval RTSP_interlvd_rcvd A complete RTP/RTCP interleaved packet
  *         is present.
  */
-static int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
+static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_buffer * rtsp,
+                                           int *hdr_len, int *body_len)
 {
     int eomh;          /*! end of message header found */
     int mb;            /*! message body exists */
@@ -331,10 +338,20 @@ static int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
  * @brief Handle a request coming from the client
  *
  * @param rtsp The client the request comes from
- * @param req The request to handle
+ *
+ * This function takes care of parsing and getting a request from the client,
+ * and freeing it afterward.
  */
-static void rtsp_handle_request(RTSP_buffer * rtsp, RTSP_Request *req)
+static void rtsp_handle_request(RTSP_buffer *rtsp)
 {
+    RTSP_Request *req = rtsp_parse_request(rtsp);
+
+    if ( !req ) return;
+
+    /* Only switch over the methods we implement, the rtsp_parse_request
+     * function will take care of responding with an error if the method is
+     * unknown.
+     */
     switch(req->method_id) {
     case RTSP_ID_DESCRIBE:
         RTSP_describe(rtsp, req);
@@ -354,10 +371,9 @@ static void rtsp_handle_request(RTSP_buffer * rtsp, RTSP_Request *req)
     case RTSP_ID_PAUSE:
         RTSP_pause(rtsp, req);
         break;
-    default:
-        rtsp_quick_response(req, RTSP_NotImplemented);
-        break;
     }
+
+    rtsp_free_request(req);
 }
 
 static gboolean 
@@ -369,6 +385,31 @@ find_tcp_interleaved(gconstpointer value, gconstpointer target)
   return (i[1].channel == m);
 }
 
+static void rtsp_handle_interleaved(RTSP_buffer *rtsp, int blen, int hlen)
+{
+    RTSP_interleaved *channel;
+
+    int m = rtsp->in_buffer[1];
+    GSList *channel_it = g_slist_find_custom(rtsp->interleaved,
+                                             GINT_TO_POINTER(m),
+                                             find_tcp_interleaved);
+
+    if (!channel_it) {    // session not found
+        fnc_log(FNC_LOG_DEBUG,
+                "Interleaved RTP or RTCP packet arrived for unknown channel (%d)... discarding.\n",
+                m);
+        return;
+    }
+    
+    channel = channel_it->data;
+
+    fnc_log(FNC_LOG_DEBUG,
+            "Interleaved RTCP packet arrived for channel %d (len: %d).\n",
+            m, blen);
+    Sock_write(channel->local, &rtsp->in_buffer[hlen],
+               blen, NULL, 0);
+}
+
 /**
  * Handles incoming RTSP message, validates them and then dispatches them 
  * with RTSP_state_machine
@@ -377,47 +418,23 @@ find_tcp_interleaved(gconstpointer value, gconstpointer target)
  */
 int RTSP_handler(RTSP_buffer * rtsp)
 {
-    int m;
-    int full_msg;
-    RTSP_interleaved *intlvd;
-    GSList *list;
-    int hlen, blen;
-
     while (rtsp->in_size) {
-        switch ((full_msg = RTSP_full_msg_rcvd(rtsp, &hlen, &blen))) {
-        case RTSP_method_rcvd: {
-                RTSP_Request *req = rtsp_parse_request(rtsp);
-                if ( req )
-                    rtsp_handle_request(rtsp, req);
-                rtsp_free_request(req);
-            }
-            RTSP_discard_msg(rtsp, hlen + blen);
+        int hlen, blen;
+        rtsp_rcvd_status full_msg = RTSP_full_msg_rcvd(rtsp, &hlen, &blen);
+
+        if ( full_msg == RTSP_not_full )
+            return ERR_GENERIC;
+
+        switch (full_msg) {
+        case RTSP_method_rcvd:
+            rtsp_handle_request(rtsp);
             break;
-        case RTSP_interlvd_rcvd:
-            m = rtsp->in_buffer[1];
-	    list = g_slist_find_custom(rtsp->interleaved,
-                                       GINT_TO_POINTER(m),
-                                       find_tcp_interleaved);
-            if (!list) {    // session not found
-                fnc_log(FNC_LOG_DEBUG,
-                        "Interleaved RTP or RTCP packet arrived"
-                        "for unknown channel (%d)... discarding.",
-                        m);
-                RTSP_discard_msg(rtsp, hlen + blen);
-                break;
-            }
-            intlvd = list->data;
-            fnc_log(FNC_LOG_DEBUG,
-                    "Interleaved RTCP packet arrived for"
-                    "channel %d (len: %d).",
-                    m, blen);
-            Sock_write(intlvd->local, &rtsp->in_buffer[hlen], blen, NULL, 0);
-            RTSP_discard_msg(rtsp, hlen + blen);
-            break;
-        default:
-            return full_msg;
+        case RTSP_interlvd_rcvd: 
+            rtsp_handle_interleaved(rtsp, blen, hlen);
             break;
         }
+
+        RTSP_discard_msg(rtsp, hlen + blen);
     }
     return ERR_NOERROR;
 }
