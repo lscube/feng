@@ -80,13 +80,6 @@ void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
     if ( !rtsp_request_get_url(req, &url) )
         return ERR_GENERIC;
 
-    if (srv->num_conn > srv->srvconf.max_conns) {
-        /* @todo should redirect, but we haven't the code to do that just
-         * yet. */
-        rtsp_quick_response(req, RTSP_InternalServerError);
-        return;
-    }
-
     // Get Session Description
     descr = sdp_session_descr(srv, url.hostname, url.path);
 
