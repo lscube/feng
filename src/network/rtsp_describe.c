@@ -43,7 +43,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, Url *url, GString *descr,
 			       RTSP_description_format descr_format)
 {
     GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, 0);
-    char encoded_object[256];
+    char *encoded_object;
 
     /* allocate buffer */
     if (!reply) {
@@ -60,10 +60,11 @@ static int send_describe_reply(RTSP_buffer * rtsp, Url *url, GString *descr,
             break;
         }
     }
-    Url_encode (encoded_object, url->path, sizeof(encoded_object));
+    encoded_object = g_uri_escape_string(url->path, NULL, false);
     g_string_append_printf(reply,
 			   "Content-Base: rtsp://%s/%s/" RTSP_EL,
 			   url->hostname, encoded_object);
+    g_free(encoded_object);
              
     g_string_append_printf(reply,
 			   "Content-Length: %zd" RTSP_EL,

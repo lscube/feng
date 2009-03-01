@@ -180,10 +180,9 @@ static gboolean check_forbidden_path(Url *url)
  */
 static gboolean validate_url(char *urlstr, Url * url)
 {
-    char *decoded_url = g_malloc(strlen(urlstr)+1);
-    
-    if ( Url_decode( decoded_url, urlstr, strlen(urlstr) ) < 0 )
-      return false;
+    char *decoded_url = g_uri_unescape_string(decoded_url, NULL);
+    if ( decoded_url == NULL )
+        return false;
 
     Url_init(url, decoded_url);
 
