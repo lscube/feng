@@ -49,12 +49,11 @@ static int get_utc(struct tm *t, char *b)
 
 /**
  * Parses the RANGE HEADER to get the required play range
- * @param rtsp the buffer from which to get the data
  * @param req The client request for the method
  * @param args where to save the play range informations
  * @return RTSP_Ok or RTSP_BadRequest on missing RANGE HEADER
  */
-static gboolean parse_play_time_range(RTSP_buffer * rtsp, RTSP_Request *req,
+static gboolean parse_play_time_range(RTSP_Request *req,
                                       play_args * args)
 {
     int time_taken = 0;
@@ -334,7 +333,7 @@ void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
         return;
 
     // Get the range
-    if ( !parse_play_time_range(rtsp, req, &args) ) {
+    if ( !parse_play_time_range(req, &args) ) {
         error = RTSP_BadRequest;
         goto error_management;
     }

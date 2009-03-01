@@ -34,12 +34,11 @@
 
 /**
  * Sends the reply for the describe method
- * @param rtsp the buffer where to write the reply
  * @param req The client request for the method
  * @param url the URL for the resource to describe
  * @param descr the description string to send
  */
-static void send_describe_reply(RTSP_buffer * rtsp, RTSP_Request *req,
+static void send_describe_reply(RTSP_Request *req,
                                 Url *url, GString *descr)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
@@ -95,5 +94,5 @@ void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
         return;
     }
 
-    send_describe_reply(rtsp, req, &url, descr);
+    send_describe_reply(req, &url, descr);
 }
