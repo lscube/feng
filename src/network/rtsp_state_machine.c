@@ -87,7 +87,7 @@ int RTSP_handler(RTSP_buffer * rtsp);
  * @}
  */
 
-#include "requestline.c"
+#include "ragel_request.c"
 
 /**
  * @brief Parse a request using Ragel functions
@@ -108,7 +108,7 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     req->method_id = RTSP_ID_ERROR;
     req->cseq = -1;
 
-    status = ragel_parse_requestline(req, rtsp->in_buffer);
+    status = ragel_parse_request(req, rtsp->in_buffer);
 
     if ( status != RTSP_Ok ) {
         rtsp_send_reply(rtsp, status);

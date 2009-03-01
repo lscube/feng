@@ -1,8 +1,8 @@
 /* -*- c -*- */
 
-%% machine requestline;
+%% machine rtsp_request;
 
-static int ragel_parse_requestline(RTSP_Request *req, char *msg) {
+static int ragel_parse_request(RTSP_Request *req, char *msg) {
     int cs;
     char *p = msg, *pe = p + strlen(msg), *eof, *s;
 
