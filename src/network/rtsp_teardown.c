@@ -92,11 +92,8 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     char *filename;
     rtp_session_release_pair pair;
 
-    ProtocolReply error;
-
-    // Extract and validate the URL
-    if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
-	goto error_management;
+    if ( !rtsp_get_url(rtsp, &url) )
+        return ERR_GENERIC;
 
     s = rtsp->session;
 
@@ -127,8 +124,4 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     g_free(filename);
 
     return ERR_NOERROR;
-
-error_management:
-    rtsp_send_reply(rtsp, error);
-    return ERR_GENERIC;
 }

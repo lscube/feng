@@ -68,11 +68,8 @@ int RTSP_pause(RTSP_buffer * rtsp)
     Url url;
     RTSP_session *s;
 
-    ProtocolReply error;
-
-    // Extract and validate the URL
-    if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
-        goto error_management;
+    if ( !rtsp_get_url(rtsp, &url) )
+        return ERR_GENERIC;
 
     s = rtsp->session;
     
@@ -84,8 +81,4 @@ int RTSP_pause(RTSP_buffer * rtsp)
     log_user_agent(rtsp); // See User-Agent 
 
     return ERR_NOERROR;
-
-error_management:
-    rtsp_send_reply(rtsp, error);
-    return ERR_GENERIC;
 }

@@ -498,9 +498,8 @@ int RTSP_setup(RTSP_buffer * rtsp)
 
     // Parse the input message
 
-    // Extract and validate the URL
-    if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
-	goto error_management;
+    if ( !rtsp_get_url(rtsp, &url) )
+        return ERR_GENERIC;
 
     // Split resource!trackname
     if ( !split_resource_path(&url, trackname, sizeof(trackname)) ) {

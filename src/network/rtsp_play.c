@@ -344,8 +344,8 @@ int RTSP_play(RTSP_buffer * rtsp)
     }
 
     // Extract and validate the URL
-    if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
-        goto error_management;
+    if ( !rtsp_get_url(rtsp, &url) )
+        return ERR_GENERIC;
 
     if ( (error = do_play(&url, rtsp_sess, &args)).error ) {
         goto error_management;

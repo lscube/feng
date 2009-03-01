@@ -133,10 +133,9 @@ int RTSP_describe(RTSP_buffer * rtsp)
     GString *descr;
     RTSP_description_format descr_format;
 
-    // Extract the URL
-    // Extract and validate the URL
-    if ( (error = rtsp_extract_validate_url(rtsp, &url)).error )
-	goto error_management;
+    if ( !rtsp_get_url(rtsp, &url) )
+        return ERR_GENERIC;
+
     // Disallow Header REQUIRE
     if ( !check_require_header(rtsp) ) {
         error = RTSP_OptionNotSupported;

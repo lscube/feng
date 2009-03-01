@@ -180,7 +180,7 @@ static gboolean check_forbidden_path(Url *url)
  */
 static gboolean validate_url(char *urlstr, Url * url)
 {
-    char *decoded_url = g_uri_unescape_string(decoded_url, NULL);
+    char *decoded_url = g_uri_unescape_string(urlstr, NULL);
     if ( decoded_url == NULL )
         return false;
 
@@ -202,21 +202,32 @@ static gboolean validate_url(char *urlstr, Url * url)
  * @param rtsp The buffer from where to extract the URL
  * @param[out] url The netembryo Url structure where to save the buffer
  *
- * @retval RTSP_Ok The URL was found, validated and is allowed.
- * @retval RTSP_BadRequest URL not found or malformed.
- * @retval RTSP_Forbidden The URL contains forbidden character sequences.
+ * This function already takes care of sending a "Bad Request" reply for missing
+ * or invalid URLs or a "Forbidden" reply for paths that try to exit the
+ * accessible sandbox.
+ *
+ * @retval true The URL was properly found and extracted
+ * @retval false An error was found, and a reply was already sent.
  */
-ProtocolReply rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url) {
+gboolean rtsp_get_url(RTSP_buffer *rtsp, Url *url) {
   char urlstr[256];
 
-  if ( !sscanf(rtsp->in_buffer, " %*s %254s ", urlstr) )
-      return RTSP_BadRequest;
-  if ( !validate_url(urlstr, url) )
-      return RTSP_BadRequest;
-  if ( !check_forbidden_path(url) )
-      return RTSP_Forbidden;
+  if ( !sscanf(rtsp->in_buffer, " %*s %254s ", urlstr) ) {
+      rtsp_send_reply(rtsp, RTSP_BadRequest);
+      return false;
+  }
 
-  return RTSP_Ok;
+  if ( !validate_url(urlstr, url) ) {
+      rtsp_send_reply(rtsp, RTSP_BadRequest);
+      return false;
+  }
+
+  if ( !check_forbidden_path(url) ) {
+      rtsp_send_reply(rtsp, RTSP_Forbidden);
+      return false;
+  }
+
+  return true;
 }
 /**
  * @}
