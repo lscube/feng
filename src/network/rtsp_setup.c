@@ -132,7 +132,7 @@ static ProtocolReply multicast_transport(feng *srv, RTP_transport *transport,
  * interleaved transport
  */
 
-static ProtocolReply
+static gboolean
 interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
                       int rtp_ch, int rtcp_ch)
 {
@@ -143,7 +143,7 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     if ( Sock_socketpair(sock_pair) < 0) {
         fnc_log(FNC_LOG_ERR,
                 "Cannot create AF_LOCAL socketpair for rtp\n");
-        return RTSP_InternalServerError;
+        return false;
     }
 
     intlvd = g_new0(RTSP_interleaved, 2);
@@ -158,7 +158,7 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
         Sock_close(transport->rtp_sock);
         Sock_close(intlvd[0].local);
         g_free(intlvd);
-        return RTSP_InternalServerError;
+        return false;
     }
 
     transport->rtcp_sock = sock_pair[0];
@@ -172,7 +172,7 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
 
     eventloop_local_callbacks(rtsp, intlvd);
 
-    return RTSP_Ok;
+    return true;
 }
 
 /**
@@ -279,7 +279,7 @@ static ProtocolReply parse_transport_header(RTSP_buffer * rtsp,
                     return RTSP_InternalServerError;
                 }
 
-                return interleaved_transport(rtsp, transport, rtp_ch, rtcp_ch);
+                return interleaved_transport(rtsp, transport, rtp_ch, rtcp_ch) ? RTSP_Ok : RTSP_InternalServerError;
 #ifdef HAVE_LIBSCTP
             } else if (Sock_type(rtsp->sock) == SCTP &&
                        !strncmp(p, "/SCTP", 5)) {
@@ -299,7 +299,7 @@ static ProtocolReply parse_transport_header(RTSP_buffer * rtsp,
                     rtp_ch = max_interlvd + 1;
                     rtcp_ch = max_interlvd + 2;
                 }
-                return interleaved_transport(rtsp, transport, rtp_ch, rtcp_ch);
+                return interleaved_transport(rtsp, transport, rtp_ch, rtcp_ch) ? RTSP_Ok : RTSP_InternalServerError;;
 #endif
             }
         }
