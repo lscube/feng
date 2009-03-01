@@ -14,34 +14,6 @@ static int ragel_parse_requestline(RTSP_Request *req, char *msg) {
         SP = ' ';
         CRLF = "\r\n";
 
-        action set_describe {
-            req->method_id = RTSP_ID_DESCRIBE;
-        }
-
-        action set_options {
-            req->method_id = RTSP_ID_OPTIONS;
-        }
-
-        action set_pause {
-            req->method_id = RTSP_ID_PAUSE;
-        }
-
-        action set_play {
-            req->method_id = RTSP_ID_PLAY;
-        }
-
-        action set_setup {
-            req->method_id = RTSP_ID_SETUP;
-        }
-
-        action set_set_parameter {
-            req->method_id = RTSP_ID_SET_PARAMETER;
-        }
-
-        action set_teardown {
-            req->method_id = RTSP_ID_TEARDOWN;
-        }
-        
         action start_method {
             s = p;
         }
@@ -51,13 +23,13 @@ static int ragel_parse_requestline(RTSP_Request *req, char *msg) {
         }
 
         Supported_Method =
-            "DESCRIBE" @ set_describe |
-            "OPTIONS" @ set_options |
-            "PAUSE" @ set_pause |
-            "PLAY" @ set_play |
-            "SETUP" @ set_setup |
-            "SET_PARAMETER" @ set_setup |
-            "TEARDOWN" @ set_teardown;
+            "DESCRIBE" @ { req->method_id = RTSP_ID_DESCRIBE; } |
+            "OPTIONS" @ { req->method_id = RTSP_ID_OPTIONS; } |
+            "PAUSE" @ { req->method_id = RTSP_ID_PAUSE; } |
+            "PLAY" @ { req->method_id = RTSP_ID_PLAY; } |
+            "SETUP" @ { req->method_id = RTSP_ID_SETUP; } |
+            "SET_PARAMETER" @ { req->method_id = RTSP_ID_SET_PARAMETER; } |
+            "TEARDOWN" @ { req->method_id = RTSP_ID_TEARDOWN; };
 
         action method_not_implemented {
             return RTSP_NotImplemented;
