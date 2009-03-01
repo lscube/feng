@@ -105,6 +105,9 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     char *headers;
     int pcnt;
 
+    req->method_id = RTSP_ID_ERROR;
+    req->cseq = -1;
+
     status = ragel_parse_requestline(req, rtsp->in_buffer);
 
     if ( status != RTSP_Ok ) {
@@ -112,11 +115,11 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
         goto error;
     }
 
-    headers = strstr(rtsp->in_buffer, "\r\n") + 2;
-    if ( (pcnt = sscanf(headers, HDR_CSEQ": %u\r\n", &req->cseq)) != 1 ) {
+    /* No CSeq found! */
+    if ( req->cseq == -1 ) {
         /** @todo This should be corrected for RFC! */
         rtsp_send_reply(rtsp, RTSP_BadRequest);
-        return NULL;
+        goto error;
     }
 
     return req;

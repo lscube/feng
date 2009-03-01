@@ -14,7 +14,7 @@ static int ragel_parse_requestline(RTSP_Request *req, char *msg) {
         SP = ' ';
         CRLF = "\r\n";
 
-        action start_method {
+        action set_s {
             s = p;
         }
 
@@ -37,7 +37,7 @@ static int ragel_parse_requestline(RTSP_Request *req, char *msg) {
 
         Other_Method = (alpha+ - Supported_Method) %method_not_implemented;
         Method = (Supported_Method | Other_Method )
-            > start_method % end_method;
+            > set_s % end_method;
 
         action version_not_supported {
             return RTSP_VersionNotSupported;
@@ -47,19 +47,31 @@ static int ragel_parse_requestline(RTSP_Request *req, char *msg) {
         RTSP_Version = (alpha . '/' . [0-9] '.' [0-9]) - 
             Supported_RTSP_Version % version_not_supported;
 
-        action start_object {
-            s = p;
-        }
-
         action end_object {
             req->object = g_strndup(s, p-s);
         }
         
         Request_Line = (Supported_Method | Method) . SP 
-            (print*) > start_object % end_object . SP
+            (print*) > set_s % end_object . SP
             (Supported_RTSP_Version | RTSP_Version) . CRLF;
 
-        main := Request_Line;
+        Header = (alpha|'-')+  . ':' . SP . print+ . CRLF;
+
+        action cseq_header {
+            {
+                /* Discard two bytes for \r\n */
+                char *tmp = g_strndup(s, p-s-2);
+                req->cseq = strtol(s, NULL, 0);
+                g_free(tmp);
+            }
+        }
+        
+        Cseq_Header = "CSeq: " . (digit+ >set_s) . CRLF %cseq_header;
+
+        Known_Headers = Cseq_Header;
+        Other_Headers = Header - Known_Headers;
+
+        main := Request_Line . ( Cseq_Header | Other_Headers )+;
 
         write data;
         write init;
