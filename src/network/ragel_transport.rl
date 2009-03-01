@@ -11,10 +11,6 @@ static gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
     uint32_t portval; uint16_t chanval;
 
     %%{
-        action debug {
-            fprintf(stderr, "Diego debugs: %s\n", p);
-        }
-
         action start_port {
             portval = 0;
         }
