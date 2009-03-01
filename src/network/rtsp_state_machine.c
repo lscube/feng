@@ -66,27 +66,6 @@ int RTSP_handler(RTSP_buffer * rtsp);
  * @}
  */
 
-/**
- * @defgroup rtsp_method_strings RTSP Method strings
- * @ingroup RTSP
- * @{
- */
-#define RTSP_METHOD_MAXLEN 15
-#define RTSP_METHOD_DESCRIBE        "DESCRIBE"
-#define RTSP_METHOD_ANNOUNCE        "ANNOUNCE"
-#define RTSP_METHOD_GET_PARAMETERS  "GET_PARAMETERS"
-#define RTSP_METHOD_OPTIONS         "OPTIONS"
-#define RTSP_METHOD_PAUSE           "PAUSE"
-#define RTSP_METHOD_PLAY            "PLAY"
-#define RTSP_METHOD_RECORD          "RECORD"
-#define RTSP_METHOD_REDIRECT        "REDIRECT"
-#define RTSP_METHOD_SETUP           "SETUP"
-#define RTSP_METHOD_SET_PARAMETER   "SET_PARAMETER"
-#define RTSP_METHOD_TEARDOWN        "TEARDOWN"
-/**
- * @}
- */
-
 #include "ragel_request.c"
 
 /**
