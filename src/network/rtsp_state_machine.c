@@ -34,8 +34,8 @@
 
 
 /** 
- * RTSP high level functions, they maps to the rtsp methods
- * @defgroup rtsp_high RTSP high level functions
+ * RTSP high level functions, mapping to the actual RTSP methods
+ * @defgroup rtsp_methods RTSP Method functions
  * @ingroup RTSP
  *
  * The declaration of these functions are in rtsp_state_machine.c
@@ -57,8 +57,6 @@ void RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req);
 void RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req);
 
 void RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req);
-
-int RTSP_handler(RTSP_buffer * rtsp);
 
 /**
  * @}
