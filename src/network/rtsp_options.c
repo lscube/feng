@@ -40,7 +40,7 @@ int RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req)
     /** @todo Remove SET_PARAMETER since we don't support it ... */
     g_hash_table_insert(response->headers,
                         g_strdup("Public"),
-                        g_strdup("OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN,SET_PARAMETER"));
+                        g_strdup("OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN"));
 
     rtsp_response_send(response);
 }
