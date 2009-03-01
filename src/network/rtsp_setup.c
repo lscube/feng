@@ -69,8 +69,9 @@ static gboolean split_resource_path(Url * url, char * trackname, size_t tracknam
 /**
  * bind&connect the socket
  */
-static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp, RTP_transport *transport,
-                                    port_pair cli_ports)
+static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp,
+                                           RTP_transport *transport,
+                                           uint16_t rtp_port, uint16_t rtcp_port)
 {
     char port_buffer[8];
     port_pair ser_ports;
@@ -85,11 +86,11 @@ static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp, RTP_transport *tra
     snprintf(port_buffer, 8, "%d", ser_ports.RTCP);
     transport->rtcp_sock = Sock_bind(NULL, port_buffer, NULL, UDP, NULL);
     //UDP connection for outgoing RTP packets
-    snprintf(port_buffer, 8, "%d", cli_ports.RTP);
+    snprintf(port_buffer, 8, "%d", rtp_port);
     Sock_connect (get_remote_host(rtsp->sock), port_buffer,
                   transport->rtp_sock, UDP, NULL);
     //UDP connection for outgoing RTCP packets
-    snprintf(port_buffer, 8, "%d", cli_ports.RTCP);
+    snprintf(port_buffer, 8, "%d", rtcp_port);
     Sock_connect (get_remote_host(rtsp->sock), port_buffer,
                   transport->rtcp_sock, UDP, NULL);
 
@@ -147,140 +148,132 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
 }
 
 /**
- * Parses the TRANSPORT header from the RTSP buffer
+ * @brief Structure filled by the ragel parser of the transport header.
+ */
+struct ParsedTransport {
+    enum { TransportUDP, TransportTCP, TransportSCTP } protocol;
+    //! Mode for UDP transmission, here is easier to access
+    enum { TransportUnicast, TransportMulticast } mode;
+    union {
+        union {
+            struct {
+                uint16_t port_rtp;
+                uint16_t port_rtcp;
+            } Unicast;
+            struct {
+            } Multicast;
+        } UDP;
+        struct {
+            uint16_t ich_rtp;  //!< Interleaved channel for RTP
+            uint16_t ich_rtcp; //!< Interleaved channel for RTCP
+        } TCP;
+        struct {
+            uint16_t ch_rtp;  //!< SCTP channel for RTP
+            uint16_t ch_rtcp; //!< SCTP channel for RTCP
+        } SCTP;
+    } parameters;
+};
+
+/**
+ * @brief Check the value parsed ou of a transport specification.
+ *
+ * @param rtsp Client from which the request arrived
+ * @param transport Structure containing the transport's parameters
+ */
+gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
+                                struct ParsedTransport *transport)
+{
+    switch ( transport->protocol ) {
+    case TransportUDP:
+        if ( transport->mode == TransportUnicast ) {
+            return ( unicast_transport(rtsp, rtp_t, 
+                                       transport->parameters.UDP.Unicast.port_rtp,
+                                       transport->parameters.UDP.Unicast.port_rtcp)
+                     == RTSP_Ok );
+        } else { /* Multicast */
+            return false;
+        }
+    case TransportTCP:
+        if ( transport->parameters.TCP.ich_rtp &&
+             !transport->parameters.TCP.ich_rtcp )
+            transport->parameters.TCP.ich_rtcp = transport->parameters.TCP.ich_rtp + 1;
+
+        if ( !transport->parameters.TCP.ich_rtp ) {
+            /** @todo This part was surely broken before, so needs to be
+             * written from scratch */
+        }
+
+        if ( transport->parameters.TCP.ich_rtp > 255 &&
+             transport->parameters.TCP.ich_rtcp > 255 ) {
+            fnc_log(FNC_LOG_ERR,
+                    "Interleaved channel number already reached max\n");
+            return false;
+        }
+
+        return interleaved_transport(rtsp, rtp_t,
+                                     transport->parameters.TCP.ich_rtp,
+                                     transport->parameters.TCP.ich_rtcp);
+    case TransportSCTP:
+        if ( transport->parameters.SCTP.ch_rtp &&
+             !transport->parameters.SCTP.ch_rtcp )
+            transport->parameters.SCTP.ch_rtcp = transport->parameters.SCTP.ch_rtp + 1;
+
+        if ( !transport->parameters.SCTP.ch_rtp ) {
+            /** @todo This part was surely broken before, so needs to be
+             * written from scratch */
+        }
+
+        if ( transport->parameters.SCTP.ch_rtp > 255 &&
+             transport->parameters.SCTP.ch_rtcp > 255 ) {
+            fnc_log(FNC_LOG_ERR,
+                    "Interleaved channel number already reached max\n");
+            return false;
+        }
+
+        return interleaved_transport(rtsp, rtp_t,
+                                     transport->parameters.SCTP.ch_rtp,
+                                     transport->parameters.SCTP.ch_rtcp);
+
+    default:
+        return false;
+    }
+}
+
+#include "ragel_transport.c"
+
+/**
+ * @briefParses the Transport: header from the RTSP buffer
+ *
  * @param rtsp the buffer for which to parse the header
  * @param req The client request for the method
  * @param transport where to save the data of the header
  *
  * @retval RTSP_Ok No error
- * @retval RTSP_BadRequest Malformed header
- * @retval RTSP_NotAcceptable Transport header missing
- * @retval RTSP_UnsupportedTransport Transport not supported
- * @retval RTSP_InternalServerError
+
+ * @retval RTSP_UnsupportedTransport Error parsing the Transport: header or no
+ *         suitable transport found.
  *
- * @todo Check for RTSP_NotAcceptable usage
+ * @todo This should return boolean
+ *
+ * The actual parsing is done by the state machine generated starting from
+ * ragel_transport.rl, which then calls back the various methods as needed.
+ *
+ * The full documentation of the Transport header syntax is available in
+ * RFC2326, Section 12.39.
  */
 static RTSP_ResponseCode parse_transport_header(RTSP_buffer * rtsp,
                                                 RTSP_Request *req,
                                                 RTP_transport * transport)
 {
-    port_pair cli_ports;
-
-    char *p  /* = NULL */ ;
     char *transport_str;
-
-    char *saved_ptr, *transport_tkn;
-    int max_interlvd;
-    int rtp_ch = 0, rtcp_ch = 0;
 
     // Start parsing the Transport header
     /** @todo Make sure this is the right response for RFC */
     if ( (transport_str = g_hash_table_lookup(req->headers, "Transport")) == NULL )
         return RTSP_NotAcceptable;
 
-    /* It's going to be modified */
-    transport_str = g_strdup(transport_str);
-
-    // tokenize the comma separated list of transport settings:
-    if (!(transport_tkn = strtok_r(transport_str, ",", &saved_ptr))) {
-        fnc_log(FNC_LOG_ERR,
-            "Malformed Transport string from client");
-        g_free(transport_str);
-        return RTSP_BadRequest;
-    }
-
-/*    if (getpeername(rtsp->fd, (struct sockaddr *) &rtsp_peer, &namelen) !=
-        0) {
-        send_reply(415, NULL, rtsp);    // Internal server error
-        return ERR_GENERIC;
-    }*/
-
-    // search a good transport string
-    do {
-        if ((p = strstr(transport_tkn, RTSP_RTP_AVP))) {
-            p += strlen(RTSP_RTP_AVP);
-            if (!*p || (*p == ';') || (*p == ' ') || (!strncmp(p, "/UDP", 4))) {
-    // Transport: RTP/AVP;unicast
-    // Transport: RTP/AVP/UDP;unicast
-                if (strstr(transport_tkn, "unicast")) {
-                    if ((p = strstr(transport_tkn, "client_port"))) {
-                        if (!(p = strstr(p, "=")) ||
-                            !sscanf(p + 1, "%d", &(cli_ports.RTP)))
-                        goto malformed;
-                        if (!(p = strstr(p, "-")) ||
-                            !sscanf(p + 1, "%d", &(cli_ports.RTCP)))
-                        goto malformed;
-                    } else continue;
-                    g_free(transport_str);
-                    return unicast_transport(rtsp, transport, cli_ports);
-                }
-    // Transport: RTP/AVP
-    // Transport: RTP/AVP;multicast
-    // Transport: RTP/AVP/UDP
-    // Transport: RTP/AVP/UDP;multicast
-                else
-                    continue;
-
-    // Transport: RTP/AVP/TCP;interleaved=x-y
-            } else if (Sock_type(rtsp->sock) == TCP && !strncmp(p, "/TCP", 4)) {
-                if ((p = strstr(transport_tkn, "interleaved"))) {
-                    if (!(p = strstr(p, "=")) ||
-                        !sscanf(p + 1, "%d", &rtp_ch))
-                    goto malformed;
-                    if ((p = strstr(p, "-"))) {
-                        if (!sscanf(p + 1, "%d", &rtcp_ch))
-                            goto malformed;
-                    } else
-                        rtcp_ch = rtp_ch + 1;
-                } else {    // search for max used interleved channel.
-                    max_interlvd = -1;
-		    max_interlvd = MAX(max_interlvd, rtcp_ch);
-                    rtp_ch = max_interlvd + 1;
-                    rtcp_ch = max_interlvd + 2;
-                }
-
-                if ((rtp_ch > 255) || (rtcp_ch > 255)) {
-                    fnc_log(FNC_LOG_ERR,
-                        "Interleaved channel number already reached max\n");
-                    g_free(transport_str);
-                    return RTSP_InternalServerError;
-                }
-
-                g_free(transport_str);
-                return interleaved_transport(rtsp, transport, rtp_ch, rtcp_ch) ? RTSP_Ok : RTSP_InternalServerError;
-#ifdef HAVE_LIBSCTP
-            } else if (Sock_type(rtsp->sock) == SCTP &&
-                       !strncmp(p, "/SCTP", 5)) {
-    // Transport: RTP/AVP/SCTP;streams=x-y
-                if ((p = strstr(transport_tkn, "streams"))) {
-                    if (!(p = strstr(p, "=")) ||
-                        !sscanf(p + 1, "%d", &rtp_ch))
-                    goto malformed;
-                    if ((p = strstr(p, "-"))) {
-                        if (!sscanf(p + 1, "%d", &rtcp_ch))
-                            goto malformed;
-                    } else
-                        rtcp_ch = rtp_ch + 1;
-                } else {    // search for max used stream.
-                    max_interlvd = -1;
-		    max_interlvd = MAX(max_interlvd, rtcp_ch);
-                    rtp_ch = max_interlvd + 1;
-                    rtcp_ch = max_interlvd + 2;
-                }
-                g_free(transport_str);
-                return interleaved_transport(rtsp, transport, rtp_ch, rtcp_ch) ? RTSP_Ok : RTSP_InternalServerError;;
-#endif
-            }
-        }
-    } while ((transport_tkn = strtok_r(NULL, ",", &saved_ptr)));
-
-    // No supported transport found.
-    g_free(transport_str);
-    return RTSP_UnsupportedTransport;
-    malformed:
-    fnc_log(FNC_LOG_ERR, "Malformed Transport string from client");
-    g_free(transport_str);
-    return RTSP_BadRequest;
+    return ragel_parse_transport_header(rtsp, transport, transport_str) ?
+        RTSP_Ok : RTSP_UnsupportedTransport;
 }
 
 /**
