@@ -321,9 +321,8 @@ static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
  * RTSP PLAY method handler
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
- * @return ERR_NOERROR
  */
-int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
     RTSP_session *rtsp_sess = rtsp->session;
@@ -331,15 +330,8 @@ int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
 
     RTSP_ResponseCode error;
 
-    /* Make sure that the method is valid in this state, if it's not, reply.
-     * @todo we should report the valid methods through Allow: header.
-     */
-    if ( rtsp_sess->cur_state == INIT_STATE ) {
-        error = RTSP_InvalidMethodInState;
-        goto error_management;
-    }
-
-    // Parse the input message
+    if ( !rtsp_check_invalid_state(req, INIT_STATE) )
+        return;
 
     // Get the range
     if ( !parse_play_time_range(rtsp, req, &args) ) {
@@ -353,7 +345,7 @@ int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
     }
 
     if ( !rtsp_request_get_url(rtsp, req, &url) )
-        return ERR_GENERIC;
+        return;
 
     if ( (error = do_play(&url, rtsp_sess, &args)) != RTSP_Ok ) {
         goto error_management;
@@ -363,9 +355,9 @@ int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
 
     rtsp_sess->cur_state = PLAY_STATE;
 
-    return ERR_NOERROR;
+    return;
 
 error_management:
     rtsp_quick_response(req, error);
-    return ERR_GENERIC;
+    return;
 }

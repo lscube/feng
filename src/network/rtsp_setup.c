@@ -413,9 +413,8 @@ static void send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session
  * RTSP SETUP method handler
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
- * @return ERR_NOERROR
  */
-int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
     char trackname[255];
@@ -436,7 +435,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     memset(&transport, 0, sizeof(transport));
 
     if ( !rtsp_request_get_url(rtsp, req, &url) )
-        return ERR_GENERIC;
+        return;
 
     // Split resource!trackname
     if ( !split_resource_path(&url, trackname, sizeof(trackname)) ) {
@@ -488,9 +487,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     if ( rtsp_s->cur_state == INIT_STATE )
         rtsp_s->cur_state = READY_STATE;
 
-    return ERR_NOERROR;
+    return;
 
 error_management:
     rtsp_quick_response(req, error);
-    return ERR_GENERIC;
+    return;
 }

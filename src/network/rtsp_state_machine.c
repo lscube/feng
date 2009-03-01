@@ -46,17 +46,17 @@
  * @{
  */
 
-int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req);
+void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req);
+void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req);
+void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req);
+void RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req);
+void RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req);
+void RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req);
 
 int RTSP_handler(RTSP_buffer * rtsp);
 

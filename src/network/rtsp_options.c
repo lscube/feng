@@ -33,7 +33,7 @@
  * @param req The client request for the method
  * @return ERR_NOERROR
  */
-int RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
 

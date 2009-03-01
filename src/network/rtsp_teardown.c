@@ -72,7 +72,7 @@ static void rtp_session_release(gpointer element, gpointer user_data)
  * @param req The client request for the method
  * @return ERR_NOERROR
  */
-int RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
     RTSP_session *s;
@@ -80,7 +80,7 @@ int RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req)
     rtp_session_release_pair pair;
 
     if ( !rtsp_request_get_url(rtsp, req, &url) )
-        return ERR_GENERIC;
+        return;
 
     s = rtsp->session;
 
@@ -106,6 +106,4 @@ int RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req)
     }
 
     g_free(filename);
-
-    return ERR_NOERROR;
 }

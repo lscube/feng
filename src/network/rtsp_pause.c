@@ -44,7 +44,7 @@ static void rtp_session_pause(gpointer element, gpointer user_data)
  * @param req The client request for the method
  * @return ERR_NOERROR
  */
-int RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
     RTSP_session *rtsp_sess = rtsp->session;
@@ -53,15 +53,13 @@ int RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
     /* This is only valid in Playing state */
     if ( !rtsp_check_invalid_state(req, INIT_STATE) ||
          !rtsp_check_invalid_state(req, READY_STATE) )
-        return ERR_GENERIC;
+        return;
 
     if ( !rtsp_request_get_url(rtsp, req, &url) )
-        return ERR_GENERIC;
+        return;
 
     g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_pause, NULL);
 
     rtsp_quick_response(req, RTSP_Ok);
     rtsp_sess->cur_state = READY_STATE;
-
-    return ERR_NOERROR;
 }

@@ -67,11 +67,9 @@ static void send_describe_reply(RTSP_buffer * rtsp, RTSP_Request *req,
  * RTSP DESCRIBE method handler
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
- * @return ERR_NOERROR
  */
-int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    RTSP_ResponseCode error;
     feng *srv = rtsp->srv;
 
     Url url;
@@ -84,7 +82,7 @@ int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
         /* @todo should redirect, but we haven't the code to do that just
          * yet. */
         rtsp_quick_response(req, RTSP_InternalServerError);
-        return ERR_GENERIC;
+        return;
     }
 
     // Get Session Description
@@ -93,15 +91,9 @@ int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
     /* The only error we may have here is when the file does not exist
        or if a demuxer is not available for the given file */
     if ( descr == NULL ) {
-      error = RTSP_NotFound;
-      goto error_management;
+        rtsp_quick_response(req, RTSP_NotFound);
+        return;
     }
 
     send_describe_reply(rtsp, req, &url, descr);
-
-    return ERR_NOERROR;
-
-error_management:
-    rtsp_quick_response(req, error);
-    return ERR_GENERIC;
 }
