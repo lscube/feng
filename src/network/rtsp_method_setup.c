@@ -408,7 +408,7 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
 
     //mediathread pointers
     RTP_session *rtp_s = NULL;
-    RTSP_session *rtsp_s = rtsp->session;
+    RTSP_session *rtsp_s;
 
     RTSP_ResponseCode error;
 
@@ -436,7 +436,7 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     }
 
     /* Here we'd be adding a new session if we supported more than one */
-    if ( rtsp->session == NULL )
+    if ( (rtps_s = rtsp->session) == NULL )
         rtsp_s = rtsp_session_new(rtsp);
 
     // Get the selected track
