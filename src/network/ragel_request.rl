@@ -32,7 +32,6 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
             "PAUSE" @ { req->method_id = RTSP_ID_PAUSE; } |
             "PLAY" @ { req->method_id = RTSP_ID_PLAY; } |
             "SETUP" @ { req->method_id = RTSP_ID_SETUP; } |
-            "SET_PARAMETER" @ { req->method_id = RTSP_ID_SET_PARAMETER; } |
             "TEARDOWN" @ { req->method_id = RTSP_ID_TEARDOWN; };
 
         action method_not_implemented {

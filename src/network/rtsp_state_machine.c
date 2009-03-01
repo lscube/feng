@@ -58,8 +58,6 @@ int RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req);
 
 int RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_set_parameter(RTSP_buffer * rtsp, RTSP_Request *req);
-
 int RTSP_handler(RTSP_buffer * rtsp);
 
 /**
@@ -353,9 +351,6 @@ static void rtsp_handle_request(RTSP_buffer * rtsp, RTSP_Request *req)
         break;
     case RTSP_ID_PAUSE:
         RTSP_pause(rtsp, req);
-        break;
-    case RTSP_ID_SET_PARAMETER:
-        RTSP_set_parameter(rtsp, req);
         break;
     default:
         rtsp_quick_response(req, RTSP_NotImplemented);
