@@ -27,7 +27,7 @@ libnetwork_a_SOURCES = \
 		sdp_session_descr.c
 
 rtsp_state_machine.o: ragel_request.c
-rtsp_setup.o: ragel_transport.c
+rtsp_method_setup.o: ragel_transport.c
 
 %.c: %.rl
 	$(RAGEL) $< -o $@
