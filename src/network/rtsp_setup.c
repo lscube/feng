@@ -554,6 +554,9 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
         goto error_management;
     }
 
+    if ( rtsp_s->cur_state == INIT_STATE )
+        rtsp_s->cur_state = READY_STATE;
+
     return ERR_NOERROR;
 
 error_management:

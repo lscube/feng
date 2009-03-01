@@ -309,7 +309,43 @@ static int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
     return RTSP_method_rcvd;
 }
 
-static void RTSP_state_machine(RTSP_buffer * rtsp, RTSP_Request *req);
+/**
+ * @brief Handle a request coming from the client
+ *
+ * @param rtsp The client the request comes from
+ * @param req The request to handle
+ */
+static void rtsp_handle_request(RTSP_buffer * rtsp, RTSP_Request *req)
+{
+    RTSP_session *p = rtsp->session;
+    
+    switch(req->method_id) {
+    case RTSP_ID_DESCRIBE:
+        RTSP_describe(rtsp, req);
+        break;
+    case RTSP_ID_SETUP:
+        RTSP_setup(rtsp, req);
+        break;
+    case RTSP_ID_TEARDOWN:
+        RTSP_teardown(rtsp, req);
+        break;
+    case RTSP_ID_OPTIONS:
+        RTSP_options(rtsp, req);
+        break;
+    case RTSP_ID_PLAY:
+        RTSP_play(rtsp, req);
+        break;
+    case RTSP_ID_PAUSE:
+        RTSP_pause(rtsp, req);
+        break;
+    case RTSP_ID_SET_PARAMETER:
+        RTSP_set_parameter(rtsp, req);
+        break;
+    default:
+        rtsp_send_reply(rtsp, RTSP_NotImplemented);
+        break;
+    }
+}
 
 static gboolean 
 find_tcp_interleaved(gconstpointer value, gconstpointer target)
@@ -341,7 +377,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
         case RTSP_method_rcvd: {
                 RTSP_Request *req = rtsp_parse_request(rtsp);
                 if ( req )
-                    RTSP_state_machine(rtsp, req);
+                    rtsp_handle_request(rtsp, req);
                 rtsp_free_request(req);
             }
             RTSP_discard_msg(rtsp, hlen + blen);
@@ -373,127 +409,4 @@ int RTSP_handler(RTSP_buffer * rtsp)
         }
     }
     return ERR_NOERROR;
-}
-
-/**
- * All state transitions are made here except when the last stream packet
- * is sent during a PLAY.  That transition is located in stream_event().
- * @param rtsp the buffer containing the message to dispatch
- * @param req The request to take care of
- */
-static void RTSP_state_machine(RTSP_buffer * rtsp, RTSP_Request *req)
-{
-    RTSP_session *p = rtsp->session;
-    
-    switch (p->cur_state) {
-    case INIT_STATE:{
-        /*
-        static const ProtocolReply InvalidMethods =
-            { 455, true, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n" };
-        static const ProtocolReply NotImplemented =
-            { 501, true, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n" };
-        */
-
-            switch (req->method_id) {
-            case RTSP_ID_DESCRIBE:
-                RTSP_describe(rtsp, req);
-                break;
-            case RTSP_ID_SETUP:
-                if (RTSP_setup(rtsp, req) == ERR_NOERROR) {
-                    p->cur_state = READY_STATE;
-                }
-                break;
-            case RTSP_ID_TEARDOWN:
-                RTSP_teardown(rtsp, req);
-                break;
-            case RTSP_ID_OPTIONS:
-                if (RTSP_options(rtsp, req) == ERR_NOERROR) {
-                    p->cur_state = INIT_STATE;
-                }
-                break;
-            case RTSP_ID_PLAY:    /* method not valid this state. */
-            case RTSP_ID_PAUSE:
-                rtsp_send_reply(rtsp, RTSP_InvalidMethodInState);
-                break;
-            case RTSP_ID_SET_PARAMETER:
-                RTSP_set_parameter(rtsp, req);
-                break;
-            default:
-                rtsp_send_reply(rtsp, RTSP_NotImplemented);
-                break;
-            }
-            break;
-        }        /* INIT state */
-    case READY_STATE:{
-        /*
-        static const ProtocolReply InvalidMethods =
-            { 455, true, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n" };
-        static const ProtocolReply NotImplemented =
-            { 501, true, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n" };
-        */
-
-            switch (req->method_id) {
-            case RTSP_ID_PLAY:
-                if (RTSP_play(rtsp, req) == ERR_NOERROR) {
-                    p->cur_state = PLAY_STATE;
-                }
-                break;
-            case RTSP_ID_SETUP:
-                RTSP_setup(rtsp, req);
-                break;
-            case RTSP_ID_TEARDOWN:
-                RTSP_teardown(rtsp, req);
-                break;
-            case RTSP_ID_OPTIONS:
-                break;
-            case RTSP_ID_SET_PARAMETER:
-                RTSP_set_parameter(rtsp, req);
-                break;
-            case RTSP_ID_PAUSE:    /* method not valid this state. */
-                rtsp_send_reply(rtsp, RTSP_InvalidMethodInState);
-                break;
-            case RTSP_ID_DESCRIBE:
-                RTSP_describe(rtsp, req);
-                break;
-            default:
-                rtsp_send_reply(rtsp, RTSP_NotImplemented);
-                break;
-            }
-            break;
-        }        /* READY state */
-    case PLAY_STATE:{
-            switch (req->method_id) {
-            case RTSP_ID_PLAY:
-                // This is a seek
-                fnc_log(FNC_LOG_INFO, "EXPERIMENTAL: Seek.");
-                RTSP_play(rtsp, req);
-                break;
-            case RTSP_ID_PAUSE:
-                if (RTSP_pause(rtsp, req) == ERR_NOERROR) {
-                    p->cur_state = READY_STATE;
-                }
-                break;
-            case RTSP_ID_TEARDOWN:
-                RTSP_teardown(rtsp, req);
-                break;
-            case RTSP_ID_OPTIONS:
-                break;
-            case RTSP_ID_DESCRIBE:
-                RTSP_describe(rtsp, req);
-                break;
-            case RTSP_ID_SETUP:
-                break;
-            case RTSP_ID_SET_PARAMETER:
-                RTSP_set_parameter(rtsp, req);
-                break;
-            }
-            break;
-        }        /* PLAY state */
-    default:{        /* invalid/unexpected current state. */
-            fnc_log(FNC_LOG_ERR,
-                "State error: unknown state=%d, method code=%d\n",
-                p->cur_state, req->method_id);
-        }
-        break;
-    }            /* end of current state switch */
 }

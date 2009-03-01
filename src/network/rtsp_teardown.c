@@ -120,6 +120,8 @@ int RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req)
         rtsp->session = NULL;
     }
 
+    rtsp->session->cur_state = INIT_STATE;
+
     g_free(filename);
 
     return ERR_NOERROR;

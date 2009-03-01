@@ -326,10 +326,18 @@ static int send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
 int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
-    RTSP_session *rtsp_sess;
+    RTSP_session *rtsp_sess = rtsp->session;
     play_args args;
 
     RTSP_ResponseCode error;
+
+    /* Make sure that the method is valid in this state, if it's not, reply.
+     * @todo we should report the valid methods through Allow: header.
+     */
+    if ( rtsp_sess->cur_state == INIT_STATE ) {
+        error = RTSP_InvalidMethodInState;
+        goto error_management;
+    }
 
     // Parse the input message
 
@@ -338,8 +346,6 @@ int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
         error = RTSP_BadRequest;
         goto error_management;
     }
-    
-    rtsp_sess = rtsp->session;
     
     if ( rtsp_sess->session_id == 0 ) {
         error = RTSP_BadRequest;
@@ -354,6 +360,9 @@ int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
     }
 
     send_play_reply(rtsp, req, &url, rtsp_sess, &args);
+
+    rtsp_sess->cur_state = PLAY_STATE;
+
     return ERR_NOERROR;
 
 error_management:

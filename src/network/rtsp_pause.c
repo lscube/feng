@@ -67,13 +67,28 @@ static void rtp_session_pause(gpointer element, gpointer user_data)
 int RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
+    RTSP_session *rtsp_sess = rtsp->session;
+    RTSP_ResponseCode error;
+
+    /* Make sure that the method is valid in this state, if it's not, reply.
+     * @todo we should report the valid methods through Allow: header.
+     */
+    if ( rtsp_sess->cur_state != PLAY_STATE ) {
+        error = RTSP_InvalidMethodInState;
+        goto error_management;
+    }
 
     if ( !rtsp_request_get_url(rtsp, req, &url) )
         return ERR_GENERIC;
 
-    g_slist_foreach(rtsp->session->rtp_sessions, rtp_session_pause, NULL);
+    g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_pause, NULL);
 
     send_pause_reply(rtsp, req);
+    rtsp_sess->cur_state = READY_STATE;
 
     return ERR_NOERROR;
+
+error_management:
+    rtsp_send_reply(rtsp, error);
+    return ERR_GENERIC;
 }
