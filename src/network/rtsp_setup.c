@@ -242,7 +242,7 @@ gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
 #include "ragel_transport.c"
 
 /**
- * @briefParses the Transport: header from the RTSP buffer
+ * @brief Parses the Transport: header from the RTSP buffer
  *
  * @param rtsp the buffer for which to parse the header
  * @param req The client request for the method

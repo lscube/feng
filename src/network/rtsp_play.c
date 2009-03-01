@@ -279,6 +279,7 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
 /**
  * Sends the reply for the play method
  * @param rtsp the buffer where to write the reply
+ * @param req The Request to respond to.
  * @param url the Url related to the object that we wanted to play
  * @param rtsp_session the session for which to generate the reply
  * @return ERR_NOERROR
