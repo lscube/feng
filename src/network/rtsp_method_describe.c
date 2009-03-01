@@ -41,7 +41,6 @@
 static void send_describe_reply(RTSP_Request *req, GString *descr)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
-    char *encoded_object;
 
     /* bluntly put it there */
     response->body = descr;
@@ -78,7 +77,7 @@ void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
     GString *descr;
 
     if ( !rtsp_request_get_url(req, &url) )
-        return ERR_GENERIC;
+        return;
 
     // Get Session Description
     descr = sdp_session_descr(srv, url.hostname, url.path);

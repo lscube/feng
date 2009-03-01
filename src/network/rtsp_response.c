@@ -82,7 +82,7 @@ static char *rtsp_timestamp() {
  * taken through its headers hash table. Session is copied over if present, but
  * it might be added by the SETUP method function too.
  */
-RTSP_Response *rtsp_response_new(RTSP_Request *req, RTSP_ResponseCode code)
+RTSP_Response *rtsp_response_new(const RTSP_Request *req, RTSP_ResponseCode code)
 {
     static const char server_header[] = PACKAGE "/" VERSION;
     RTSP_Response *response = g_new0(RTSP_Response, 1);
@@ -138,8 +138,8 @@ void rtsp_response_free(RTSP_Response *response)
  * This function is used by g_hash_table_foreach to append the various headers
  * to the final response string.
  */
-static void rtsp_response_append_headers(gconstpointer hdr_name_p,
-                                         gconstpointer hdr_value_p,
+static void rtsp_response_append_headers(gpointer hdr_name_p,
+                                         gpointer hdr_value_p,
                                          gpointer response_str_p)
 {
     const char *const hdr_name = hdr_name_p;
@@ -173,11 +173,11 @@ static void rtsp_log_access(RTSP_Response *response)
     const char *useragent =
         g_hash_table_lookup(response->request->headers, "User-Agent");
     char *response_length = response->body ?
-        g_strdup_printf("%d", response->body->len) : NULL;
+        g_strdup_printf("%zd", response->body->len) : NULL;
 
     fprintf(stderr, "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",
             response->client->sock->remote_host,
-            g_hash_table_lookup(response->headers, "Date"),
+            (const char*)g_hash_table_lookup(response->headers, "Date"),
             response->request->method, response->request->object,
             response->request->version,
             response->status, response_length ? response_length : "-",

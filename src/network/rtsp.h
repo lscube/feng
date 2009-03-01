@@ -188,7 +188,7 @@ typedef struct {
     GString *body;
 } RTSP_Response;
 
-RTSP_Response *rtsp_response_new(RTSP_Request *req, RTSP_ResponseCode code);
+RTSP_Response *rtsp_response_new(const RTSP_Request *req, RTSP_ResponseCode code);
 void rtsp_response_send(RTSP_Response *response);
 void rtsp_response_free(RTSP_Response *response);
 

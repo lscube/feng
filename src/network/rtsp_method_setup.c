@@ -334,7 +334,7 @@ static void send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session
     GString *transport = g_string_new("");
 
     if (!rtp_s || !rtp_s->transport.rtp_sock)
-        return ERR_GENERIC;
+        return;
     switch (Sock_type(rtp_s->transport.rtp_sock)) {
     case UDP:
         /*
