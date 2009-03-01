@@ -436,7 +436,7 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     }
 
     /* Here we'd be adding a new session if we supported more than one */
-    if ( (rtps_s = rtsp->session) == NULL )
+    if ( (rtsp_s = rtsp->session) == NULL )
         rtsp_s = rtsp_session_new(rtsp);
 
     // Get the selected track
