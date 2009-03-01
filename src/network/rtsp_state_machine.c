@@ -77,6 +77,7 @@ static void rtsp_free_request(RTSP_Request *req)
         return;
     
     g_hash_table_destroy(req->headers);
+    g_free(req->version);
     g_free(req->method);
     g_free(req->object);
     g_free(req);
