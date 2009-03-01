@@ -97,12 +97,6 @@ typedef struct RTSP_buffer {
     feng *srv;
 } RTSP_buffer;
 
-typedef enum {
-  df_Unsupported = -2,
-  df_Unknown = -1,
-  df_SDP_format = 0
-} RTSP_description_format;
-
 /**
  * @brief RTSP method tokens
  *

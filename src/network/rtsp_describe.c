@@ -38,11 +38,9 @@
  * @param req The client request for the method
  * @param url the URL for the resource to describe
  * @param descr the description string to send
- * @param descr_format the description format to use
  */
 static void send_describe_reply(RTSP_buffer * rtsp, RTSP_Request *req,
-                               Url *url, GString *descr,
-                               RTSP_description_format descr_format)
+                                Url *url, GString *descr)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
     char *encoded_object;
@@ -50,14 +48,10 @@ static void send_describe_reply(RTSP_buffer * rtsp, RTSP_Request *req,
     /* bluntly put it there */
     response->body = descr;
 
-    /** @todo This should become a lookup table */
-    switch (descr_format) { // Add new formats here
-    case df_SDP_format:
-        g_hash_table_insert(response->headers,
-                            g_strdup("Content-Type"),
-                            g_strdup("application/sdp"));
-        break;
-    }
+    /* When we're going to have more than one option, add alternatives here */
+    g_hash_table_insert(response->headers,
+                        g_strdup("Content-Type"),
+                        g_strdup("application/sdp"));
 
     encoded_object = g_uri_escape_string(url->path, NULL, false);
     g_hash_table_insert(response->headers,
@@ -67,30 +61,6 @@ static void send_describe_reply(RTSP_buffer * rtsp, RTSP_Request *req,
     g_free(encoded_object);
 
     rtsp_response_send(response);
-}
-
-/**
- * Gets the required media description format from the RTSP request
- * @param req The request
- * @return The enumeration for the format
- *
- * @todo When Accept is missing what should we do as per RFC?
- * @todo The strstr() call is probably a bad idea...
- */
-static RTSP_description_format get_description_format(RTSP_Request *req)
-{
-    const char *accept_hdr = g_hash_table_lookup(req->headers, "Accept");
-    if ( accept_hdr == NULL )
-        return df_SDP_format; // For now default to SDP if unknown
-
-    if (strstr(accept_hdr, "application/sdp") != NULL)
-        return df_SDP_format;
-    else
-        return df_Unsupported; // Add here new description formats
-    
-    return df_SDP_format;
-    // For now default to SDP if unknown
-    // return df_Unknown;
 }
 
 /**
@@ -106,18 +76,10 @@ int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
 
     Url url;
     GString *descr;
-    RTSP_description_format descr_format;
 
     if ( !rtsp_request_get_url(rtsp, req, &url) )
         return ERR_GENERIC;
 
-    // Get the description format. SDP is the only supported
-    if ( (descr_format = get_description_format(req)) == df_Unsupported ) {
-        /** @todo This is *not* the correct response per rfc */
-      error = RTSP_OptionNotSupported;
-      goto error_management;
-    }
-    
     if (srv->num_conn > srv->srvconf.max_conns) {
         /* @todo should redirect, but we haven't the code to do that just
          * yet. */
@@ -135,7 +97,7 @@ int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
       goto error_management;
     }
 
-    send_describe_reply(rtsp, req, &url, descr, descr_format);
+    send_describe_reply(rtsp, req, &url, descr);
 
     return ERR_NOERROR;
 
