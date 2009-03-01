@@ -37,108 +37,7 @@
 #include <netembryo/url.h>
 #include <glib.h>
 
-static int get_utc(struct tm *t, char *b)
-{
-    if ((sscanf(b,"%4d%2d%2dT%2d%2d%2d",
-            &t->tm_year,&t->tm_mon,&t->tm_mday,
-            &t->tm_hour,&t->tm_min,&t->tm_sec) == 6))
-        return ERR_NOERROR;
-    else
-        return ERR_GENERIC;
-}
-
-/**
- * Parses the RANGE HEADER to get the required play range
- * @param req The client request for the method
- * @param args where to save the play range informations
- * @return RTSP_Ok or RTSP_BadRequest on missing RANGE HEADER
- */
-static gboolean parse_play_time_range(RTSP_Request *req,
-                                      play_args * args)
-{
-    int time_taken = 0;
-    char *p = NULL, *q = NULL;
-    char tmp[5];
-
-    /* Default values */
-    args->playback_time_valid = 0;
-    args->seek_time_valid = 0;
-    args->start_time = gettimeinseconds(NULL);
-    args->begin_time = 0.0;
-    args->end_time = HUGE_VAL;
-
-    if ( (p = g_hash_table_lookup(req->headers, "Range")) != NULL ) {
-        if ((q = strstr(p, "npt")) != NULL) {      // FORMAT: npt
-            if ((q = strchr(q, '=')) == NULL)
-                return false;    /* Bad Request */
-
-            if (sscanf(q + 1, "%lf", &(args->begin_time)) != 1) {
-                if (sscanf(q + 1, "%4s", tmp) != 1 && !g_ascii_strcasecmp(tmp,"now-")) {
-                    return false;
-                }
-            } else {
-                args->seek_time_valid = 1;
-            }
-
-            if ((q = strchr(q, '-')) == NULL)
-                return false;
-
-            if (sscanf(q + 1, "%lf", &(args->end_time)) != 1)
-                args->end_time = HUGE_VAL;
-        } else if ((q = strstr(p, "smpte")) != NULL) { // FORMAT: smpte
-            // Currently unsupported. Using default.
-        } else if ((q = strstr(p, "clock"))!= NULL) { // FORMAT: clock
-            // Currently unsupported. Using default.
-        }
-#if 0
-        else if ((q = strstr(p, "time")) == NULL) { // No specific format. Assuming NeMeSI format.
-            double t;
-            if ((q = strstr(p, ":"))) {
-                // Hours
-                sscanf(q + 1, "%lf", &t);
-                args->start_time = t * 60 * 60;
-            }
-            if ((q = strstr(q + 1, ":"))) {
-                // Minutes
-                sscanf(q + 1, "%lf", &t);
-                args->start_time += (t * 60);
-            }
-            if ((q = strstr(q + 1, ":"))) {
-                // Seconds
-                sscanf(q + 1, "%lf", &t);
-                args->start_time += t;
-            }
-            args->start_time_valid = 1;
-        }
-#endif
-        else {
-            // no range defined but start time expressed?
-            time_taken = 1;
-        }
-
-        if ((q = strstr(p, "time")) == NULL) {
-            // Start playing immediately
-            memset(&(args->playback_time), 0, sizeof(args->playback_time));
-        } else {
-            // Start playing at desired time
-            if (!time_taken) {
-                if ((q = strchr(q, '=')) &&
-                    get_utc(&(args->playback_time), q + 1) == ERR_NOERROR) {
-                    args->playback_time_valid = 1;
-                } else {
-                    memset(&(args->playback_time), 0,
-                           sizeof(args->playback_time));
-                }
-            }
-        }
-    } else {
-        args->begin_time = 0.0;
-        args->end_time = HUGE_VAL;
-        memset(&(args->playback_time), 0, sizeof(args->playback_time));
-    }
-
-    return true;
-}
+#include "ragel_range.c"
 
 static void rtp_session_seek(gpointer value, gpointer user_data)
 {
@@ -335,17 +234,35 @@ void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
     RTSP_session *rtsp_sess = rtsp->session;
-    play_args args;
+    play_args args = {
+        .playback_time = { 0, },
+        .playback_time_valid = false,
+        .seek_time_valid = false,
+        .start_time = gettimeinseconds(NULL),
+        .begin_time = 0.0,
+        .end_time = HUGE_VAL
+    };
+    const char *range_hdr;
 
     RTSP_ResponseCode error;
 
     if ( !rtsp_check_invalid_state(req, RTSP_SERVER_INIT) )
         return;
 
-    // Get the range
-    if ( !parse_play_time_range(req, &args) ) {
-        error = RTSP_BadRequest;
-        goto error_management;
+    /* Parse the Range header.
+     *
+     * If the parse fails, it's because the Range header specifies something we
+     * don't know how to deal with (like clock or smtpe ranges) and thus we
+     * respond to the client with a 501 "Not Implemented" error, as specified by
+     * RFC2326 Section 12.29.
+     *
+     * RFC2326 only mandates server to know NPT time, clock and smtpe times are
+     * optional, and we currently support neither of them.
+     */
+    range_hdr = g_hash_table_lookup(req->headers, "Range");
+    if ( range_hdr && !ragel_parse_range_header(range_hdr, &args) ) {
+        rtsp_quick_response(req, RTSP_NotImplemented);
+        return;
     }
     
     if ( rtsp_sess->session_id == 0 ) {

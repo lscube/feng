@@ -28,6 +28,7 @@ libnetwork_a_SOURCES = \
 
 rtsp_state_machine.o: ragel_request.c
 rtsp_method_setup.o: ragel_transport.c
+rtsp_method_play.o: ragel_range.c
 
 %.c: %.rl
 	$(RAGEL) $< -o $@
