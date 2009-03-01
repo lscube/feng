@@ -431,8 +431,8 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
 
     // Split resource!trackname
     if ( !split_resource_path(&url, trackname, sizeof(trackname)) ) {
-        error = RTSP_InternalServerError;
-        goto error_management;
+        rtsp_quick_response(req, RTSP_InternalServerError);
+        return;
     }
 
     /* Here we'd be adding a new session if we supported more than one */
@@ -440,8 +440,10 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
         rtsp_s = rtsp_session_new(rtsp);
 
     // Get the selected track
-    if ( (error = select_requested_track(&url, rtsp_s, trackname, &track_sel, &req_track)) != RTSP_Ok )
-        goto error_management;
+    if ( (error = select_requested_track(&url, rtsp_s, trackname, &track_sel, &req_track)) != RTSP_Ok ) {
+        rtsp_quick_response(req, error);
+        return;
+    }
 
     /* Parse the transport header through Ragel-generated state machine.
      *
@@ -455,8 +457,8 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     if ( transport_header == NULL ||
          !ragel_parse_transport_header(rtsp, &transport, transport_header) ) {
 
-        error = RTSP_UnsupportedTransport;
-        goto error_management;
+        rtsp_quick_response(req, RTSP_UnsupportedTransport);
+        return;
     }
 
     // Setup the RTP session
@@ -476,10 +478,4 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
 
     if ( rtsp_s->cur_state == RTSP_SERVER_INIT )
         rtsp_s->cur_state = RTSP_SERVER_READY;
-
-    return;
-
-error_management:
-    rtsp_quick_response(req, error);
-    return;
 }
