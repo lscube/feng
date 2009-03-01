@@ -77,6 +77,9 @@ dnl Checks used by conf/*
 dnl AC_CHECK_HEADERS([pcre.h fam.h])
 dnl AC_CHECK_FUNCS([lstat])
 
+AC_CHECK_PROG([RAGEL], [ragel], [ragel])
+AC_SUBST(RAGEL)
+
 fenice_state_dir=$(eval echo ${localstatedir}/feng)
 AC_SUBST(fenice_state_dir)
 

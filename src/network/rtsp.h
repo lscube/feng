@@ -104,6 +104,37 @@ typedef enum {
   df_SDP_format = 0
 } RTSP_description_format;
 
+/**
+ * @brief RTSP method tokens
+ *
+ * They are used to identify in which state of the state machines we
+ * are.
+ */
+enum RTSP_method_token {
+  RTSP_ID_ERROR = ERR_GENERIC,
+  RTSP_ID_DESCRIBE,
+  RTSP_ID_ANNOUNCE,
+  RTSP_ID_GET_PARAMETERS,
+  RTSP_ID_OPTIONS,
+  RTSP_ID_PAUSE,
+  RTSP_ID_PLAY,
+  RTSP_ID_RECORD,
+  RTSP_ID_REDIRECT,
+  RTSP_ID_SETUP,
+  RTSP_ID_SET_PARAMETER,
+  RTSP_ID_TEARDOWN
+};
+
+/**
+ * @brief Structure representing a request coming from the client.
+ */
+typedef struct {
+    char *method; //!< String of the method (used for logging, mostly)
+    enum RTSP_method_token method_id; //!< ID of the method (for the state machine)
+
+    char *object; //!< Object of the request (URL or *)
+    int cseq; //!< Sequence number
+} RTSP_Request;
 
 int RTSP_handler(RTSP_buffer * rtsp);
 

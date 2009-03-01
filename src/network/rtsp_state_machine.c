@@ -24,6 +24,7 @@
  * @brief Contains RTSP message dispatchment functions
  */
 
+#include <stdbool.h>
 #include <strings.h>
 #include <inttypes.h> /* For SCNu64 */
 
@@ -86,26 +87,46 @@ int RTSP_handler(RTSP_buffer * rtsp);
  * @}
  */
 
+#include "requestline.c"
+
 /**
- * @brief RTSP method tokens
+ * @brief Parse a request using Ragel functions
  *
- * They are used to identify in which state of the state machines we
- * are.
+ * @param rtsp The client connection the request come
+ *
+ * @return A new request structure or NULL in case of error
+ *
+ * @note In case of error, the response is sent to the client before returning.
  */
-enum RTSP_method_token {
-  RTSP_ID_ERROR = ERR_GENERIC,
-  RTSP_ID_DESCRIBE,
-  RTSP_ID_ANNOUNCE,
-  RTSP_ID_GET_PARAMETERS,
-  RTSP_ID_OPTIONS,
-  RTSP_ID_PAUSE,
-  RTSP_ID_PLAY,
-  RTSP_ID_RECORD,
-  RTSP_ID_REDIRECT,
-  RTSP_ID_SETUP,
-  RTSP_ID_SET_PARAMETER,
-  RTSP_ID_TEARDOWN
-};
+static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
+{
+    RTSP_Request *req = g_new0(RTSP_Request, 1);
+    RTSP_ResponseCode status;
+    char *headers;
+    int pcnt;
+
+    status = ragel_parse_requestline(req, rtsp->in_buffer);
+
+    if ( status != RTSP_Ok ) {
+        rtsp_send_reply(rtsp, status);
+        goto error;
+    }
+
+    headers = strstr(rtsp->in_buffer, "\r\n") + 2;
+    if ( (pcnt = sscanf(headers, HDR_CSEQ": %u\r\n", &req->cseq)) != 1 ) {
+        /** @todo This should be corrected for RFC! */
+        rtsp_send_reply(rtsp, RTSP_BadRequest);
+        return NULL;
+    }
+
+    return req;
+
+ error:
+    g_free(req->method);
+    g_free(req->object);
+    g_free(req);
+    return NULL;
+}
 
 /**
  * Removes the last message from the rtsp buffer
@@ -258,7 +279,7 @@ static int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
     return RTSP_method_rcvd;
 }
 
-static void RTSP_state_machine(RTSP_buffer * rtsp);
+static void RTSP_state_machine(RTSP_buffer * rtsp, RTSP_Request *req);
 static int RTSP_valid_response_msg(unsigned short *status, char *msg,
 				   RTSP_buffer * rtsp);
 static enum RTSP_method_token RTSP_validate_method(RTSP_buffer * rtsp);
@@ -290,16 +311,10 @@ int RTSP_handler(RTSP_buffer * rtsp)
 
     while (rtsp->in_size) {
         switch ((full_msg = RTSP_full_msg_rcvd(rtsp, &hlen, &blen))) {
-        case RTSP_method_rcvd:
-            op = RTSP_valid_response_msg(&status, msg, rtsp);
-            if (op == 0) {
-                // There is NOT an input RTSP message, therefore it's a request
-                RTSP_state_machine(rtsp);
-            } else {
-                // There's a RTSP answer in input.
-                if (op == ERR_GENERIC) {
-                    // Invalid answer
-                }
+        case RTSP_method_rcvd: {
+                RTSP_Request *req = rtsp_parse_request(rtsp);
+                if ( req )
+                    RTSP_state_machine(rtsp, req);
             }
             RTSP_discard_msg(rtsp, hlen + blen);
             break;
@@ -374,28 +389,16 @@ static RTSP_session *get_session(RTSP_buffer *rtsp)
  * @param rtsp the buffer containing the message to dispatch
  * @param method the id of the method to execute
  */
-static void RTSP_state_machine(RTSP_buffer * rtsp)
+static void RTSP_state_machine(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     RTSP_session *p = get_session(rtsp);
-    enum RTSP_method_token method = RTSP_validate_method(rtsp);
     
-    if ( method == RTSP_ID_ERROR ) {
-        rtsp_send_reply(rtsp, RTSP_BadRequest);
-        return;
-    }
-
-    /* The CSeq header is parsed by RTSP_validate_method, if it's set to -1 it
-     * means that the header was not found 
-     */
-    if ( rtsp->rtsp_cseq == -1 ) {
-        rtsp_send_reply(rtsp, RTSP_BadRequest);
-        return;
-    }
-
     if ( p == NULL ) {
         rtsp_send_reply(rtsp, RTSP_SessionNotFound);
         return;
     }
+
+    rtsp->rtsp_cseq = req->cseq;
 
     switch (p->cur_state) {
     case INIT_STATE:{
@@ -406,7 +409,7 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
             { 501, true, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n" };
         */
 
-            switch (method) {
+            switch (req->method_id) {
             case RTSP_ID_DESCRIBE:
                 RTSP_describe(rtsp);
                 break;
@@ -444,7 +447,7 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
             { 501, true, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n" };
         */
 
-            switch (method) {
+            switch (req->method_id) {
             case RTSP_ID_PLAY:
                 if (RTSP_play(rtsp) == ERR_NOERROR) {
                     p->cur_state = PLAY_STATE;
@@ -474,7 +477,7 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
             break;
         }        /* READY state */
     case PLAY_STATE:{
-            switch (method) {
+            switch (req->method_id) {
             case RTSP_ID_PLAY:
                 // This is a seek
                 fnc_log(FNC_LOG_INFO, "EXPERIMENTAL: Seek.");
@@ -504,7 +507,7 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
     default:{        /* invalid/unexpected current state. */
             fnc_log(FNC_LOG_ERR,
                 "State error: unknown state=%d, method code=%d\n",
-                p->cur_state, method);
+                p->cur_state, req->method_id);
         }
         break;
     }            /* end of current state switch */

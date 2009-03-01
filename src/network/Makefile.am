@@ -24,3 +24,8 @@ libnetwork_a_SOURCES = \
 		rtsp_utils.c \
 		sdp2.h \
 		sdp_session_descr.c
+
+rtsp_state_machine.o: requestline.c
+
+%.c: %.rl
+	$(RAGEL) $< -o $@
