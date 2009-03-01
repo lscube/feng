@@ -33,7 +33,7 @@
 #include <string.h>
 #include <inttypes.h> /* For SCNu64 */
 
-#include <netembryo/protocol_responses.h>
+#include <netembryo/rtsp.h>
 #include <glib.h>
 
 #include <fenice/utils.h>
@@ -274,18 +274,16 @@ void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer)
  *
  * Concatenates a GString instance with a time stamp in the format of
  * "Date: 23 Jan 1997 15:35:06 GMT"
- *
- * @todo This should be moved to netembryo too.
  */
 static void append_time_stamp(GString *str) {
-  char buffer[37] = { 0, };
+  char buffer[39] = { 0, };
 
   time_t now = time(NULL);
   struct tm *t = gmtime(&now);
 
-  strftime(buffer, 36, "Date: %a, %d %b %Y %H:%M:%S GMT", t);
+  strftime(buffer, 38, "Date: %a, %d %b %Y %H:%M:%S GMT" RTSP_EL, t);
 
-  protocol_append_header(str, buffer);
+  g_string_append(str, buffer);
 }
 
 /**
@@ -309,19 +307,27 @@ static void append_time_stamp(GString *str) {
 GString *rtsp_respond(RTSP_Request *req, RTSP_ResponseCode code)
 {
     static gchar *server_header = NULL;
-    GString *response = protocol_response_new(RTSP_1_0, code);
+    GString *response = g_string_new("");
     const char *timestamp_hdr = NULL;
 
     /* First execution, generate the Server: header */
     if ( server_header == NULL )
-        server_header = g_strdup_printf("Server: %s/%s",
+        server_header = g_strdup_printf("Server: %s/%s" RTSP_EL,
                                         PACKAGE, VERSION);
 
+    /* Generate the status line */
+    g_string_printf(response, "%s %d %s" RTSP_EL,
+                    "RTSP/1.0",
+                    code,
+                    rtsp_reason_phrase(code));
+
     /* Append Server header */
-    protocol_append_header(response, server_header);
+    g_string_append(response, server_header);
 
     /* Append the correct CSeq */
-    protocol_append_header_uint(response, "CSeq", req->cseq);
+    /** @todo This should just copy the header */
+    g_string_append_printf(response, "CSeq: %u" RTSP_EL,
+                           req->cseq);
 
     /* Append Date */
     append_time_stamp(response);

@@ -40,7 +40,7 @@
 
 #include <fenice/utils.h>
 #include <netembryo/wsocket.h>
-#include <netembryo/protocol_responses.h>
+#include <netembryo/rtsp.h>
 #include <netembryo/url.h>
 #include "rtp.h"
 #include "rtcp.h"
