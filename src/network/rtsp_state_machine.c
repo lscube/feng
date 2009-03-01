@@ -141,15 +141,24 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
 
     ragel_parse_request(req, rtsp->in_buffer);
 
-    /* Check if the method is a know and supported one */
-    if ( req->method_id == RTSP_ID_ERROR ) {
-        rtsp_quick_response(req, RTSP_NotImplemented);
+    /* Check for supported RTSP version.
+     *
+     * It is important to check for this for the first thing, this because this
+     * is the failsafe mechanism that allows for somewhat-incompatible changes
+     * to be made to the protocol.
+     *
+     * While we could check for this after accepting the method, if a client
+     * uses a method of a RTSP version we don't support, we want to make it
+     * clear to the client it should not be using that version at all.
+     */
+    if ( strcmp(req->version, "RTSP/1.0") != 0 ) {
+        rtsp_quick_response(req, RTSP_VersionNotSupported);
         goto error;
     }
 
-    /* Check for supported RTSP version */
-    if ( strcmp(req->version, "RTSP/1.0") != 0 ) {
-        rtsp_quick_response(req, RTSP_VersionNotSupported);
+    /* Check if the method is a know and supported one */
+    if ( req->method_id == RTSP_ID_ERROR ) {
+        rtsp_quick_response(req, RTSP_NotImplemented);
         goto error;
     }
 
