@@ -32,6 +32,8 @@ AC_DEFUN([LSC_DEBUG], [
   dnl The new style is likely going to be the only supported one in the future
   CC_CHECK_CFLAGS_APPEND([-Werror=implicit -Werror-implicit-declaration],
                          [break;])
+  dnl Make sure that there are no random return values
+  CC_CHECK_CFLAGS_APPEND([-Werror=return-type -Wreturn-type], [break;])
 
   AS_IF([test "$enable_debug" = "yes"], [
     CC_CHECK_CFLAGS_APPEND([-ggdb -g], [break;])
