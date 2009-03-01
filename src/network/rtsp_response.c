@@ -200,15 +200,14 @@ void rtsp_response_send(RTSP_Response *response)
      * 
      * @todo Some of the elements are not properly outputted
      *
-     * In particular right now the IP is outputted as 999.999.999.99, the
-     * protocol version is fixed for RTSP/1.0 even when the client used a
-     * different one (and it still would have to be logged with an error status
-     * code, and if there is no content on the request, 0 is used rather than -.
+     * In particular right now the IP is outputted as 999.999.999.99 and if
+     * there is no content on the request, 0 is used rather than -.
      *
      **/
-    fprintf(stderr, "999.999.999.999 - - [%s], \"%s %s RTSP/1.0\" %d %u %s %s\n",
+    fprintf(stderr, "999.999.999.999 - - [%s], \"%s %s %s\" %d %u %s %s\n",
             g_hash_table_lookup(response->headers, "Date"),
             response->request->method, response->request->object,
+            response->request->version,
             response->status, response->body ? response->body->len : 0,
             g_hash_table_lookup(response->request->headers, "Referer"),
             g_hash_table_lookup(response->request->headers, "User-Agent"));
