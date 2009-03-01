@@ -86,8 +86,7 @@ static void rtsp_free_request(RTSP_Request *req)
 /**
  * @brief Checks if the client required any option
  *
- * @param rtsp The client connection the request comes from
- * @param req The request from the client
+ * @param req The request to validate
  *
  * @retval true No requirement
  * @retval false Client required options we don't support
@@ -99,7 +98,7 @@ static void rtsp_free_request(RTSP_Request *req)
  * A 551 response contain an Unsupported header that lists the unsupported
  * options (which in our case are _all_ of them).
  */
-gboolean check_required_options(RTSP_buffer *rtsp, RTSP_Request *req) {
+static gboolean check_required_options(RTSP_Request *req) {
     const char *require_hdr =
         g_hash_table_lookup(req->headers, "Require");
     const char *proxy_require_hdr =
@@ -176,7 +175,7 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
         goto error;
     }
 
-    if ( !check_required_options(rtsp, req) )
+    if ( !check_required_options(req) )
         goto error;
 
     return req;
