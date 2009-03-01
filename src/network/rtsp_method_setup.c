@@ -241,23 +241,6 @@ gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
 
 #include "ragel_transport.c"
 
-/**
- * Generates a random session id
- * @return the random session id (actually a number)
- */
-static guint64 generate_session_id()
-{
-    guint64 session_id = 0;
-
-    while (session_id == 0) {
-      session_id   = g_random_int();
-      session_id <<= 32;
-      session_id  |= g_random_int();
-    }
-
-    return session_id;
-}
-
 static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     RTP_recv(w->data);
@@ -444,6 +427,8 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     }
 
     /* Here we'd be adding a new session if we supported more than one */
+    if ( rtsp->session == NULL )
+        rtsp_s = rtsp_session_new(rtsp);
 
     // Get the selected track
     if ( (error = select_requested_track(&url, rtsp_s, trackname, &track_sel, &req_track)) != RTSP_Ok )
@@ -477,10 +462,6 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
 	rtp_s->metadata = NULL;
 #endif
     // Metadata End
-
-    // Setup the RTSP session
-    if ( rtsp_s->session_id == 0 )
-        rtsp_s->session_id = generate_session_id();
 
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
 

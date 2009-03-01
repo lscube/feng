@@ -229,6 +229,9 @@ void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer);
 RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock);
 void rtsp_client_destroy(RTSP_buffer *rtsp);
 
+RTSP_session *rtsp_session_new(RTSP_buffer *rtsp);
+void rtsp_session_free(RTSP_session *session);
+
 /**
  * @}
  */

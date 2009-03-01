@@ -48,6 +48,58 @@
  */
 
 /**
+ * Generates a random session id
+ * @return the random session id (actually a number)
+ */
+static guint64 generate_session_id()
+{
+    guint64 session_id = 0;
+
+    while (session_id == 0) {
+      session_id   = g_random_int();
+      session_id <<= 32;
+      session_id  |= g_random_int();
+    }
+
+    return session_id;
+}
+
+/**
+ * @brief Allocate and initialise a new RTSP session object
+ *
+ * @param rtsp The RTSP client for which to allocate the session
+ *
+ * @return A pointer to a newly allocated RTSP session object
+ *
+ * @see rtsp_session_free();
+ */
+RTSP_session *rtsp_session_new(RTSP_buffer *rtsp)
+{
+    RTSP_session *new = rtsp->session = g_new0(RTSP_session, 1);
+    
+    new->srv = rtsp->srv;
+    new->session_id = generate_session_id();
+}
+
+/**
+ * @brief Free resources for a RTSP session object
+ *
+ * @param session Session to free resource for
+ *
+ * @see rtsp_session_new()
+ */
+void rtsp_session_free(RTSP_session *session)
+{
+    if ( !session )
+        return;
+
+    /* Release mediathread resource */
+    mt_resource_close(session->resource);
+
+    g_free(session);
+}
+
+/**
  * Allocate and initialise a new RTSP client structure
  *
  * @param srv The feng server that accepted the connection.
@@ -64,9 +116,6 @@ RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
     new->srv = srv;
     new->sock = client_sock;
     new->out_queue = g_async_queue_new();
-
-    new->session = g_new0(RTSP_session, 1);
-    new->session->srv = srv;
 
     return new;
 }
@@ -100,14 +149,6 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
   GString *outbuf = NULL;
 
   if (rtsp->session != NULL) {
-#if 0 // Do not use it, is just for testing...
-    if (rtsp->session->resource->info->multicast[0]) {
-      fnc_log(FNC_LOG_INFO,
-	      "RTSP connection closed by client during"
-	      " a multicast session, ignoring...");
-      continue;
-    }
-#endif
 
     // Release all RTP sessions
     g_slist_foreach(rtsp->session->rtp_sessions, schedule_remove, NULL);
@@ -115,10 +156,8 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
 
     // Close connection                     
     //close(rtsp->session->fd);
-    // Release the mediathread resource
-    mt_resource_close(rtsp->session->resource);
-    // Release the RTSP session
-    g_free(rtsp->session);
+
+    rtsp_session_free(rtsp->session);
     rtsp->session = NULL;
     fnc_log(FNC_LOG_WARN,
 	    "WARNING! RTSP connection truncated before ending operations.\n");

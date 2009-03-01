@@ -98,10 +98,7 @@ void RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req)
     g_slist_foreach(s->rtp_sessions, rtp_session_release, &pair);
 
     if (s->rtp_sessions == NULL) {
-      // Release mediathread resource
-        mt_resource_close(rtsp->session->resource);
-        // Release the RTSP session
-        g_free(rtsp->session);
+        rtsp_session_free(rtsp->session);
         rtsp->session = NULL;
     }
 
