@@ -323,7 +323,7 @@ int main(int argc, char **argv)
 
     schedule_init(srv);
 
-    g_thread_create(mediathread, NULL, FALSE, NULL);
+    g_thread_create((GThreadFunc)mediathread, NULL, FALSE, NULL);
     
 #ifdef HAVE_METADATA
     g_thread_create(cpd_server, (void *) srv, FALSE, NULL);
