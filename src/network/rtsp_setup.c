@@ -198,8 +198,6 @@ static ProtocolReply parse_transport_header(RTSP_buffer * rtsp,
 
     static const ProtocolReply MissingTransportHeader =
         { 406, true, "Require: Transport settings" };
-    static const ProtocolReply InterleavedChannelMax =
-        { 500, true, "Interleaved channel number already reached max" };
 
     // Start parsing the Transport header
     if ((p = strstr(rtsp->in_buffer, HDR_TRANSPORT)) == NULL) {
@@ -274,7 +272,7 @@ static ProtocolReply parse_transport_header(RTSP_buffer * rtsp,
                 if ((rtp_ch > 255) || (rtcp_ch > 255)) {
                     fnc_log(FNC_LOG_ERR,
                         "Interleaved channel number already reached max\n");
-                    return InterleavedChannelMax;
+                    return RTSP_InternalServerError;
                 }
 
                 return interleaved_transport(rtsp, transport, rtp_ch, rtcp_ch);
@@ -542,9 +540,8 @@ int RTSP_setup(RTSP_buffer * rtsp)
     fnc_log(FNC_LOG_INFO, "SETUP %s://%s/%s RTSP/1.0 ",
 	    url.protocol, url.hostname, url.path);
     if(send_setup_reply(rtsp, rtsp_s, rtp_s)) {
-        static const ProtocolReply WriteError =
-            { 500, true, "Can't write answer" };
-        error = WriteError;
+        fnc_log(FNC_LOG_INFO, "Can't write answer");
+        error = RTSP_InternalServerError;
         goto error_management;
     }
     log_user_agent(rtsp); // See User-Agent
