@@ -286,7 +286,7 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
 /**
  * Gets the track requested for the object
  *
- * @param url the object for which to get the requested track
+ * @param path Path of the track to select
  * @param rtsp_s the session where to save the addressed resource
  * @param trackname the name of the track to open
  * @param track_sel where to save the selector for the opened track
@@ -297,21 +297,21 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
  * @retval RTSP_InternalServerError Impossible to retrieve the data of the opened
  *                                  track
  */
-static RTSP_ResponseCode select_requested_track(Url *url, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
+static RTSP_ResponseCode select_requested_track(const char *path, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
 {
     feng *srv = rtsp_s->srv;
 
     // it should parse the request giving us object!trackname
     if (!rtsp_s->resource) {
-        if (!(rtsp_s->resource = mt_resource_open(srv, prefs_get_serv_root(), url->path))) {
-            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", url->path);
+        if (!(rtsp_s->resource = mt_resource_open(srv, prefs_get_serv_root(), path))) {
+            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", path);
             return RTSP_NotFound;
         }
     }
 
     if (!(*track_sel = r_open_tracks(rtsp_s->resource, trackname))) {
         fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
-                trackname, url->path);
+                trackname, path);
         return RTSP_NotFound;
     }
 
@@ -440,7 +440,7 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
         rtsp_s = rtsp_session_new(rtsp);
 
     // Get the selected track
-    if ( (error = select_requested_track(&url, rtsp_s, trackname, &track_sel, &req_track)) != RTSP_Ok ) {
+    if ( (error = select_requested_track(url.path, rtsp_s, trackname, &track_sel, &req_track)) != RTSP_Ok ) {
         rtsp_quick_response(req, error);
         return;
     }
