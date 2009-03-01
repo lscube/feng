@@ -63,12 +63,12 @@ static void rtp_session_pause(gpointer element, gpointer user_data)
  * @param rtsp the buffer for which to handle the method
  * @return ERR_NOERROR
  */
-int RTSP_pause(RTSP_buffer * rtsp)
+int RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
     RTSP_session *s;
 
-    if ( !rtsp_get_url(rtsp, &url) )
+    if ( !rtsp_request_get_url(rtsp, req, &url) )
         return ERR_GENERIC;
 
     s = rtsp->session;

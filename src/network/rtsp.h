@@ -159,7 +159,7 @@ void rtsp_send_reply(const RTSP_buffer *rtsp, RTSP_ResponseCode code);
 
 ssize_t rtsp_send(RTSP_buffer * rtsp);
 
-gboolean rtsp_get_url(RTSP_buffer *rtsp, Url *url);
+gboolean rtsp_request_get_url(RTSP_buffer *rtsp, RTSP_Request *req, Url *url);
 
 void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer);
 GString *rtsp_generate_response(RTSP_ResponseCode code, guint cseq);

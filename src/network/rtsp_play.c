@@ -320,7 +320,7 @@ static int send_play_reply(RTSP_buffer * rtsp, Url *url,
  * @param rtsp the buffer for which to handle the method
  * @return ERR_NOERROR
  */
-int RTSP_play(RTSP_buffer * rtsp)
+int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
     RTSP_session *rtsp_sess;
@@ -343,8 +343,7 @@ int RTSP_play(RTSP_buffer * rtsp)
         goto error_management;
     }
 
-    // Extract and validate the URL
-    if ( !rtsp_get_url(rtsp, &url) )
+    if ( !rtsp_request_get_url(rtsp, req, &url) )
         return ERR_GENERIC;
 
     if ( (error = do_play(&url, rtsp_sess, &args)) != RTSP_Ok ) {

@@ -190,6 +190,7 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
  * @todo Check for RTSP_NotAcceptable usage
  */
 static RTSP_ResponseCode parse_transport_header(RTSP_buffer * rtsp,
+                                                RTSP_Request *req,
                                                 RTP_transport * transport,
                                                 RTP_session **rtp_s,
                                                 Track *tr)
@@ -197,26 +198,25 @@ static RTSP_ResponseCode parse_transport_header(RTSP_buffer * rtsp,
     port_pair cli_ports;
 
     char *p  /* = NULL */ ;
-    char transport_str[1024];
+    char *transport_str;
 
     char *saved_ptr, *transport_tkn;
     int max_interlvd;
     int rtp_ch = 0, rtcp_ch = 0;
 
     // Start parsing the Transport header
-    if ((p = strstr(rtsp->in_buffer, HDR_TRANSPORT)) == NULL) {
+    /** @todo Make sure this is the right response for RFC */
+    if ( (transport_str = g_hash_table_lookup(req->headers, "Transport")) == NULL )
         return RTSP_NotAcceptable;
-    }
-    if (sscanf(p, "%*10s%1023s", transport_str) != 1) {
-        fnc_log(FNC_LOG_ERR,
-            "SETUP request malformed: Transport string is empty");
-        return RTSP_BadRequest;
-    }
+
+    /* It's going to be modified */
+    transport_str = g_strdup(transport_str);
 
     // tokenize the comma separated list of transport settings:
     if (!(transport_tkn = strtok_r(transport_str, ",", &saved_ptr))) {
         fnc_log(FNC_LOG_ERR,
             "Malformed Transport string from client");
+        g_free(transport_str);
         return RTSP_BadRequest;
     }
 
@@ -242,6 +242,7 @@ static RTSP_ResponseCode parse_transport_header(RTSP_buffer * rtsp,
                             !sscanf(p + 1, "%d", &(cli_ports.RTCP)))
                         goto malformed;
                     } else continue;
+                    g_free(transport_str);
                     return unicast_transport(rtsp, transport, cli_ports);
                 }
     // Transport: RTP/AVP
@@ -249,6 +250,7 @@ static RTSP_ResponseCode parse_transport_header(RTSP_buffer * rtsp,
     // Transport: RTP/AVP/UDP
     // Transport: RTP/AVP/UDP;multicast
                 else if (*rtsp->session->resource->info->multicast) {
+                    g_free(transport_str);
                     return multicast_transport(rtsp->srv, transport,
                                         rtsp->session->resource->info,
                                         tr, rtp_s);
@@ -276,9 +278,11 @@ static RTSP_ResponseCode parse_transport_header(RTSP_buffer * rtsp,
                 if ((rtp_ch > 255) || (rtcp_ch > 255)) {
                     fnc_log(FNC_LOG_ERR,
                         "Interleaved channel number already reached max\n");
+                    g_free(transport_str);
                     return RTSP_InternalServerError;
                 }
 
+                g_free(transport_str);
                 return interleaved_transport(rtsp, transport, rtp_ch, rtcp_ch) ? RTSP_Ok : RTSP_InternalServerError;
 #ifdef HAVE_LIBSCTP
             } else if (Sock_type(rtsp->sock) == SCTP &&
@@ -299,6 +303,7 @@ static RTSP_ResponseCode parse_transport_header(RTSP_buffer * rtsp,
                     rtp_ch = max_interlvd + 1;
                     rtcp_ch = max_interlvd + 2;
                 }
+                g_free(transport_str);
                 return interleaved_transport(rtsp, transport, rtp_ch, rtcp_ch) ? RTSP_Ok : RTSP_InternalServerError;;
 #endif
             }
@@ -306,9 +311,11 @@ static RTSP_ResponseCode parse_transport_header(RTSP_buffer * rtsp,
     } while ((transport_tkn = strtok_r(NULL, ",", &saved_ptr)));
 
     // No supported transport found.
+    g_free(transport_str);
     return RTSP_UnsupportedTransport;
     malformed:
     fnc_log(FNC_LOG_ERR, "Malformed Transport string from client");
+    g_free(transport_str);
     return RTSP_BadRequest;
 }
 
@@ -478,7 +485,7 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_sess
  * @param rtsp the buffer for which to handle the method
  * @return ERR_NOERROR
  */
-int RTSP_setup(RTSP_buffer * rtsp)
+int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
     char trackname[255];
@@ -496,9 +503,7 @@ int RTSP_setup(RTSP_buffer * rtsp)
     // init
     memset(&transport, 0, sizeof(transport));
 
-    // Parse the input message
-
-    if ( !rtsp_get_url(rtsp, &url) )
+    if ( !rtsp_request_get_url(rtsp, req, &url) )
         return ERR_GENERIC;
 
     // Split resource!trackname
@@ -514,7 +519,7 @@ int RTSP_setup(RTSP_buffer * rtsp)
         goto error_management;
 
     // Parse the RTP/AVP/something string
-    if ( (error = parse_transport_header(rtsp, &transport, &rtp_s, req_track)) != RTSP_Ok )
+    if ( (error = parse_transport_header(rtsp, req, &transport, &rtp_s, req_track)) != RTSP_Ok )
         goto error_management;
 
     // Setup the RTP session

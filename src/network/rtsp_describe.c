@@ -104,28 +104,11 @@ static RTSP_description_format get_description_format(RTSP_buffer *rtsp)
 }
 
 /**
- * @brief Checks if the RTSP message is a request with supported
- *        options
- *
- * The HDR_REQUIRE header is not supported by feng so it will always
- * be not supported if present.
- * 
- * @param rtsp the buffer of the request to check
- *
- * @retval true No Require header present.
- * @retval false Require header present, not supported.
- */
-static gboolean check_require_header(RTSP_buffer * rtsp)
-{
-    return strstr(rtsp->in_buffer, HDR_REQUIRE) == NULL;
-}
-
-/**
  * RTSP DESCRIBE method handler
  * @param rtsp the buffer for which to handle the method
  * @return ERR_NOERROR
  */
-int RTSP_describe(RTSP_buffer * rtsp)
+int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     RTSP_ResponseCode error;
     feng *srv = rtsp->srv;
@@ -134,11 +117,13 @@ int RTSP_describe(RTSP_buffer * rtsp)
     GString *descr;
     RTSP_description_format descr_format;
 
-    if ( !rtsp_get_url(rtsp, &url) )
+    if ( !rtsp_request_get_url(rtsp, req, &url) )
         return ERR_GENERIC;
 
-    // Disallow Header REQUIRE
-    if ( !check_require_header(rtsp) ) {
+    /* Don't support the Require header */
+    /** @todo verify on RFC if it's the right answer */
+
+    if ( g_hash_table_lookup(req->headers, "Require") != NULL ) {
         error = RTSP_OptionNotSupported;
         goto error_management;
     }

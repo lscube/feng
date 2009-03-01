@@ -46,19 +46,19 @@
  * @{
  */
 
-int RTSP_describe(RTSP_buffer * rtsp);
+int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_setup(RTSP_buffer * rtsp);
+int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_play(RTSP_buffer * rtsp);
+int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_pause(RTSP_buffer * rtsp);
+int RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_teardown(RTSP_buffer * rtsp);
+int RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_options(RTSP_buffer * rtsp);
+int RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_set_parameter(RTSP_buffer * rtsp);
+int RTSP_set_parameter(RTSP_buffer * rtsp, RTSP_Request *req);
 
 int RTSP_handler(RTSP_buffer * rtsp);
 
@@ -398,18 +398,18 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, RTSP_Request *req)
 
             switch (req->method_id) {
             case RTSP_ID_DESCRIBE:
-                RTSP_describe(rtsp);
+                RTSP_describe(rtsp, req);
                 break;
             case RTSP_ID_SETUP:
-                if (RTSP_setup(rtsp) == ERR_NOERROR) {
+                if (RTSP_setup(rtsp, req) == ERR_NOERROR) {
                     p->cur_state = READY_STATE;
                 }
                 break;
             case RTSP_ID_TEARDOWN:
-                RTSP_teardown(rtsp);
+                RTSP_teardown(rtsp, req);
                 break;
             case RTSP_ID_OPTIONS:
-                if (RTSP_options(rtsp) == ERR_NOERROR) {
+                if (RTSP_options(rtsp, req) == ERR_NOERROR) {
                     p->cur_state = INIT_STATE;
                 }
                 break;
@@ -418,7 +418,7 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, RTSP_Request *req)
                 rtsp_send_reply(rtsp, RTSP_InvalidMethodInState);
                 break;
             case RTSP_ID_SET_PARAMETER:
-                RTSP_set_parameter(rtsp);
+                RTSP_set_parameter(rtsp, req);
                 break;
             default:
                 rtsp_send_reply(rtsp, RTSP_NotImplemented);
@@ -436,26 +436,26 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, RTSP_Request *req)
 
             switch (req->method_id) {
             case RTSP_ID_PLAY:
-                if (RTSP_play(rtsp) == ERR_NOERROR) {
+                if (RTSP_play(rtsp, req) == ERR_NOERROR) {
                     p->cur_state = PLAY_STATE;
                 }
                 break;
             case RTSP_ID_SETUP:
-                RTSP_setup(rtsp);
+                RTSP_setup(rtsp, req);
                 break;
             case RTSP_ID_TEARDOWN:
-                RTSP_teardown(rtsp);
+                RTSP_teardown(rtsp, req);
                 break;
             case RTSP_ID_OPTIONS:
                 break;
             case RTSP_ID_SET_PARAMETER:
-                RTSP_set_parameter(rtsp);
+                RTSP_set_parameter(rtsp, req);
                 break;
             case RTSP_ID_PAUSE:    /* method not valid this state. */
                 rtsp_send_reply(rtsp, RTSP_InvalidMethodInState);
                 break;
             case RTSP_ID_DESCRIBE:
-                RTSP_describe(rtsp);
+                RTSP_describe(rtsp, req);
                 break;
             default:
                 rtsp_send_reply(rtsp, RTSP_NotImplemented);
@@ -468,25 +468,25 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, RTSP_Request *req)
             case RTSP_ID_PLAY:
                 // This is a seek
                 fnc_log(FNC_LOG_INFO, "EXPERIMENTAL: Seek.");
-                RTSP_play(rtsp);
+                RTSP_play(rtsp, req);
                 break;
             case RTSP_ID_PAUSE:
-                if (RTSP_pause(rtsp) == ERR_NOERROR) {
+                if (RTSP_pause(rtsp, req) == ERR_NOERROR) {
                     p->cur_state = READY_STATE;
                 }
                 break;
             case RTSP_ID_TEARDOWN:
-                RTSP_teardown(rtsp);
+                RTSP_teardown(rtsp, req);
                 break;
             case RTSP_ID_OPTIONS:
                 break;
             case RTSP_ID_DESCRIBE:
-                RTSP_describe(rtsp);
+                RTSP_describe(rtsp, req);
                 break;
             case RTSP_ID_SETUP:
                 break;
             case RTSP_ID_SET_PARAMETER:
-                RTSP_set_parameter(rtsp);
+                RTSP_set_parameter(rtsp, req);
                 break;
             }
             break;

@@ -53,14 +53,8 @@ static int send_set_parameter_reply(RTSP_buffer * rtsp)
  * @param rtsp the buffer for which to handle the method
  * @return ERR_NOERROR
  */
-int RTSP_set_parameter(RTSP_buffer * rtsp)
+int RTSP_set_parameter(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    char url[255];
-    char method[255];
-    char ver[255];
-
-    sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, url, ver);
-
     send_set_parameter_reply(rtsp);
 
     return ERR_NOERROR;
