@@ -245,8 +245,8 @@ static RTSP_ResponseCode do_play(Url *url, RTSP_session * rtsp_sess, play_args *
 }
 
 typedef struct {
-  GString *str;
-  char *server;
+    GString *str;
+    char *baseurl;
 } rtp_session_send_play_reply_pair;
 
 static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
@@ -260,7 +260,7 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
 
   temp = g_uri_escape_string(p->sd_filename, NULL, false);
   g_string_append_printf(pair->str,
-			 "url=rtsp://%s/%s/"SDP2_TRACK_ID"=", pair->server, temp);
+			 "url=%s%s/"SDP2_TRACK_ID"=", pair->baseurl, temp);
   g_free(temp);
 
   temp = g_uri_escape_string(t->info->name, NULL, false);
@@ -289,7 +289,16 @@ static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
     rtp_session_send_play_reply_pair pair = {
         .str = g_string_new(""),
-        .server = url->hostname
+
+        /* We create here a base URL parameter with the hostname and port.  If
+         * we only use protocol and server name it won't be correct when the
+         * object has a port value too.
+         */
+        .baseurl = g_strdup_printf("%s://%s%s%s/",
+                                   url->protocol,
+                                   url->hostname,
+                                   url->port ? ":" : "",
+                                   url->port ? url->port : "")
     };
 
     /* temporary string used for creating headers */
@@ -306,6 +315,7 @@ static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
 
     /* Create RTP-Info header */
     g_slist_foreach(rtsp_session->rtp_sessions, rtp_session_send_play_reply, &pair);
+    g_free(pair.baseurl);
 
     g_string_truncate(pair.str, pair.str->len-1);
 

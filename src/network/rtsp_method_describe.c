@@ -38,8 +38,7 @@
  * @param url the URL for the resource to describe
  * @param descr the description string to send
  */
-static void send_describe_reply(RTSP_Request *req,
-                                Url *url, GString *descr)
+static void send_describe_reply(RTSP_Request *req, GString *descr)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
     char *encoded_object;
@@ -52,12 +51,16 @@ static void send_describe_reply(RTSP_Request *req,
                         g_strdup("Content-Type"),
                         g_strdup("application/sdp"));
 
-    encoded_object = g_uri_escape_string(url->path, NULL, false);
+    /* We can trust the req->object value since we already have checked it
+     * beforehand. Since the object was already escaped by the client, we just
+     * repeat it as it was, saving a further escaping.
+     *
+     * Note: this _might_ not be what we want if we decide to redirect the
+     * stream to different servers, but since we don't do that now...
+     */
     g_hash_table_insert(response->headers,
                         g_strdup("Content-Base"),
-                        g_strdup_printf("rtsp://%s/%s/",
-                                        url->hostname, encoded_object));
-    g_free(encoded_object);
+                        g_strdup_printf("%s/", req->object));
 
     rtsp_response_send(response);
 }
@@ -94,5 +97,5 @@ void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
         return;
     }
 
-    send_describe_reply(req, &url, descr);
+    send_describe_reply(req, descr);
 }
