@@ -128,6 +128,15 @@ typedef struct {
     enum RTSP_method_token method_id; //!< ID of the method (for the state machine)
 
     char *object; //!< Object of the request (URL or *)
+
+    /**
+     * @brief Protocol version used
+     *
+     * This can only be RTSP/1.0 right now. We log it here for access.log and to
+     * remove more logic from the parser itself.
+     */
+    char *version;
+
     guint64 session_id;
 
     /** All the headers we don't parse specifically */

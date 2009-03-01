@@ -25,7 +25,7 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
         action end_method {
             req->method = g_strndup(s, p-s);
         }
-
+        
         Supported_Method =
             "DESCRIBE" @ { req->method_id = RTSP_ID_DESCRIBE; } |
             "OPTIONS" @ { req->method_id = RTSP_ID_OPTIONS; } |
@@ -42,13 +42,11 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
         Method = (Supported_Method | Other_Method )
             > set_s % end_method;
 
-        action version_not_supported {
-            return RTSP_VersionNotSupported;
+        action end_version {
+            req->version = g_strndup(s, p-s);
         }
-        
-        Supported_RTSP_Version = "RTSP/1.0";
-        RTSP_Version = (alpha . '/' . [0-9] '.' [0-9]) - 
-            Supported_RTSP_Version % version_not_supported;
+
+        Version = (alpha+ . '/' . [0-9] '.' [0-9]);
 
         action end_object {
             req->object = g_strndup(s, p-s);
@@ -56,7 +54,7 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
         
         Request_Line = (Supported_Method | Method) . SP 
             (print*) > set_s % end_object . SP
-            (Supported_RTSP_Version | RTSP_Version) . CRLF;
+            Version > set_s % end_version . CRLF;
 
         action hdr_start {
             hdr = p;

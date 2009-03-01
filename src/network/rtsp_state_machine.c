@@ -148,6 +148,12 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
         goto error;
     }
 
+    /* Check for supported RTSP version */
+    if ( strcmp(req->version, "RTSP/1.0") != 0 ) {
+        rtsp_quick_response(req, RTSP_VersionNotSupported);
+        goto error;
+    }
+
     /* No CSeq found */
     if ( g_hash_table_lookup(req->headers, "CSeq") == NULL ) {
         /** @todo This should be corrected for RFC! */
