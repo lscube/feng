@@ -58,7 +58,7 @@ int event_buffer_low(void *sender, Track *src);
 
 struct feng;
 
-Resource *mt_resource_open(struct feng *srv, char * path, char *filename);
+Resource *mt_resource_open(struct feng *srv, const char * path, const char *filename);
 void mt_resource_close(Resource *);
 int mt_resource_seek(Resource *, double);
 

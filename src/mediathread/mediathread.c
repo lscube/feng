@@ -134,7 +134,7 @@ gpointer *mediathread(gpointer *arg) {
     return NULL;
 }
 
-Resource *mt_resource_open(feng *srv, char *path, char *filename) {
+Resource *mt_resource_open(feng *srv, const char *path, const char *filename) {
     // TODO: add to a list in order to close resources on shutdown!
 
     Resource *res;

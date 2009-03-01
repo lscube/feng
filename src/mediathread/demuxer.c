@@ -246,7 +246,7 @@ static void properties_free(void *properties)
     g_free(props);
 }
 
-Resource *r_open(struct feng *srv, char *root, char *n)
+Resource *r_open(struct feng *srv, const char *root, const char *n)
 {
     Resource *r;
     int dmx_idx;
@@ -327,7 +327,7 @@ void r_close(Resource *r)
     }
 }
 
-Selector *r_open_tracks(Resource *r, char *track_name) // RTSP_setup.c uses it !!
+Selector *r_open_tracks(Resource *r, const char *track_name) // RTSP_setup.c uses it !!
 {
     Selector *s;
     //Track *tracks[MAX_SEL_TRACKS];
