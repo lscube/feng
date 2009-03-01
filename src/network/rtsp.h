@@ -134,6 +134,7 @@ typedef struct {
 
     char *object; //!< Object of the request (URL or *)
     int cseq; //!< Sequence number
+    guint64 session_id;
 } RTSP_Request;
 
 int RTSP_handler(RTSP_buffer * rtsp);

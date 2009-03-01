@@ -68,7 +68,18 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
         
         Cseq_Header = "CSeq: " . (digit+ >set_s) . CRLF %cseq_header;
 
-        Known_Headers = Cseq_Header;
+        action session_header {
+            {
+                /* Discard two bytes for \r\n */
+                char *tmp = g_strndup(s, p-s-2);
+                req->session_id = g_strtoull(s, NULL, 0);
+                g_free(tmp);
+            }
+        }
+
+        Session_Header = "Session: " . (digit+ >set_s) . CRLF %session_header;
+        
+        Known_Headers = Cseq_Header | Session_Header;
         Other_Headers = Header - Known_Headers;
 
         main := Request_Line . ( Cseq_Header | Other_Headers )+;
