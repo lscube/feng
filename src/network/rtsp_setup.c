@@ -31,7 +31,6 @@
 
 #include "rtsp.h"
 #include <fenice/prefs.h>
-#include <fenice/multicast.h>
 #include <fenice/fnc_log.h>
 #include <fenice/schedule.h>
 
@@ -101,35 +100,6 @@ static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp, RTP_transport *tra
 }
 
 /**
- * set the sockets for the first multicast request, otherwise provide the
- * already instantiated rtp session
- */
-static RTSP_ResponseCode multicast_transport(feng *srv, RTP_transport *transport,
-                                         ResourceInfo *info,
-                                         Track *tr,
-                                         RTP_session **rtp_s)
-{
-    char port_buffer[8];
-
-    *rtp_s = schedule_find_multicast(srv, tr->info->mrl);
-
-    if (!*rtp_s) {
-        snprintf(port_buffer, 8, "%d", tr->info->rtp_port);
-        transport->rtp_sock = Sock_connect(info->multicast, port_buffer,
-                                                transport->rtp_sock, UDP, 0);
-        snprintf(port_buffer, 8, "%d", tr->info->rtp_port + 1);
-        transport->rtcp_sock = Sock_connect(info->multicast, port_buffer,
-                                                transport->rtcp_sock, UDP, 0);
-
-        if (!transport->rtp_sock)
-            return RTSP_UnsupportedTransport;
-    }
-
-    fnc_log(FNC_LOG_DEBUG,"Multicast socket set");
-    return RTSP_Ok;
-}
-
-/**
  * interleaved transport
  */
 
@@ -192,9 +162,7 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
  */
 static RTSP_ResponseCode parse_transport_header(RTSP_buffer * rtsp,
                                                 RTSP_Request *req,
-                                                RTP_transport * transport,
-                                                RTP_session **rtp_s,
-                                                Track *tr)
+                                                RTP_transport * transport)
 {
     port_pair cli_ports;
 
@@ -250,14 +218,9 @@ static RTSP_ResponseCode parse_transport_header(RTSP_buffer * rtsp,
     // Transport: RTP/AVP;multicast
     // Transport: RTP/AVP/UDP
     // Transport: RTP/AVP/UDP;multicast
-                else if (*rtsp->session->resource->info->multicast) {
-                    g_free(transport_str);
-                    return multicast_transport(rtsp->srv, transport,
-                                        rtsp->session->resource->info,
-                                        tr, rtp_s);
-                } else
+                else
                     continue;
-                break;  // found a valid transport
+
     // Transport: RTP/AVP/TCP;interleaved=x-y
             } else if (Sock_type(rtsp->sock) == TCP && !strncmp(p, "/TCP", 4)) {
                 if ((p = strstr(transport_tkn, "interleaved"))) {
@@ -435,14 +398,16 @@ static int send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session 
         return ERR_GENERIC;
     switch (Sock_type(rtp_s->transport.rtp_sock)) {
     case UDP:
-        if (Sock_flags(rtp_s->transport.rtp_sock)== IS_MULTICAST) {
+        /*
+          if (Sock_flags(rtp_s->transport.rtp_sock)== IS_MULTICAST) {
 	  g_string_append_printf(reply,
 				 "RTP/AVP;multicast;ttl=%d;destination=%s;port=",
 				 // session->resource->info->ttl,
 				 DEFAULT_TTL,
 				 session->resource->info->multicast);
-        } else { // XXX handle TLS here
-	  g_string_append_printf(reply,
+                 } else */
+        { // XXX handle TLS here
+            g_string_append_printf(reply,
                     "RTP/AVP;unicast;source=%s;"
                     "client_port=%d-%d;server_port=",
                     get_local_host(rtsp->sock),
@@ -522,17 +487,11 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
         goto error_management;
 
     // Parse the RTP/AVP/something string
-    if ( (error = parse_transport_header(rtsp, req, &transport, &rtp_s, req_track)) != RTSP_Ok )
+    if ( (error = parse_transport_header(rtsp, req, &transport)) != RTSP_Ok )
         goto error_management;
 
     // Setup the RTP session
-    // XXX refactor
-    if (!rtp_s)
-        rtp_s = setup_rtp_session(&url, rtsp, rtsp_s, &transport, track_sel);
-    else { // multicast
-        rtp_s->is_multicast++;
-        rtsp_s->rtp_sessions = g_slist_prepend(NULL, rtp_s);
-    }
+    rtp_s = setup_rtp_session(&url, rtsp, rtsp_s, &transport, track_sel);
 
     // Metadata Begin
 #ifdef HAVE_METADATA
