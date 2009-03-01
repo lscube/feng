@@ -64,6 +64,8 @@ RTSP_session *rtsp_session_new(RTSP_buffer *rtsp)
     new->session_id = g_strdup_printf("%08x%08x",
                                       g_random_int(),
                                       g_random_int());
+
+    return new;
 }
 
 /**
