@@ -39,23 +39,13 @@
  * @param url the URL for the resource to describe
  * @param descr the description string to send
  * @param descr_format the description format to use
- * @return ERR_NOERROR or ERR_ALLOC on buffer allocation errors
- * @todo remove ERR_ALLOC case and simplify
  */
-static int send_describe_reply(RTSP_buffer * rtsp, RTSP_Request *req,
+static void send_describe_reply(RTSP_buffer * rtsp, RTSP_Request *req,
                                Url *url, GString *descr,
                                RTSP_description_format descr_format)
 {
     GString *reply = rtsp_generate_ok_response(req);
     char *encoded_object;
-
-    /* allocate buffer */
-    if (!reply) {
-        fnc_log(FNC_LOG_ERR,
-            "send_describe_reply(): unable to allocate memory\n");
-        rtsp_send_reply(rtsp, RTSP_InternalServerError);
-        return ERR_ALLOC;
-    }
 
     switch (descr_format) {
         // Add new formats here
@@ -83,8 +73,6 @@ static int send_describe_reply(RTSP_buffer * rtsp, RTSP_Request *req,
     rtsp_bwrite(rtsp, reply);
 
     fnc_log(FNC_LOG_CLIENT, "200 %d %s ", descr->len, url->path);
-
-    return ERR_NOERROR;
 }
 
 /**
