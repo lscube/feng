@@ -100,8 +100,7 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
 
         Session_Header = "Session: " . (digit+ >set_s) . CRLF %session_header;
         
-        Known_Headers = Cseq_Header | Session_Header;
-        Other_Headers = Header - Known_Headers;
+        Headers = Cseq_Header | Session_Header | Header;
 
         action save_header {
             {
@@ -111,7 +110,7 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
             }
         }
 
-        main := Request_Line . ( Known_Headers | Other_Headers @ save_header )+;
+        main := Request_Line . ( Headers @ save_header )+;
 
         write data;
         write init;
