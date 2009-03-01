@@ -27,27 +27,6 @@
 #include "rtsp.h"
 #include <fenice/fnc_log.h>
 
-
-/**
- * Sends the reply for the set_parameter method
- * @param rtsp the buffer where to write the reply
- * @param req The client request for the method
- * @return ERR_NOERROR
- */
-static int send_set_parameter_reply(RTSP_buffer * rtsp, RTSP_Request *req)
-{
-    GString *reply = rtsp_respond(req, RTSP_ParameterNotUnderstood);
-
-    /* No body */
-    g_string_append(reply, RTSP_EL);
-
-    rtsp_bwrite(rtsp, reply);
-
-    fnc_log(FNC_LOG_CLIENT, "451 - - ");
-
-    return ERR_NOERROR;
-}
-
 /**
  * RTSP OPTIONS method handler
  * @param rtsp the buffer for which to handle the method
@@ -56,7 +35,7 @@ static int send_set_parameter_reply(RTSP_buffer * rtsp, RTSP_Request *req)
  */
 int RTSP_set_parameter(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    send_set_parameter_reply(rtsp, req);
+    rtsp_quick_response(req, RTSP_ParameterNotUnderstood);
 
     return ERR_NOERROR;
 }

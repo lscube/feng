@@ -27,28 +27,6 @@
 #include "rtsp.h"
 #include <fenice/fnc_log.h>
 
-
-/**
- * Sends the reply for the options method
- * @param rtsp the buffer where to write the reply
- * @param req The client request for the method
- * @return ERR_NOERROR
- */
-static int send_options_reply(RTSP_buffer * rtsp, RTSP_Request *req)
-{
-    GString *reply = rtsp_generate_ok_response(req);
-
-    g_string_append(reply,
-		    "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN,SET_PARAMETER" RTSP_EL);
-    g_string_append(reply, RTSP_EL);
-
-    rtsp_bwrite(rtsp, reply);
-
-    fnc_log(FNC_LOG_CLIENT, "200 - - ");
-
-    return ERR_NOERROR;
-}
-
 /**
  * RTSP OPTIONS method handler
  * @param rtsp the buffer for which to handle the method
@@ -57,7 +35,12 @@ static int send_options_reply(RTSP_buffer * rtsp, RTSP_Request *req)
  */
 int RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    send_options_reply(rtsp, req);
+    RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
 
-    return ERR_NOERROR;
+    /** @todo Remove SET_PARAMETER since we don't support it ... */
+    g_hash_table_insert(response->headers,
+                        g_strdup("Public"),
+                        g_strdup("OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN,SET_PARAMETER"));
+
+    rtsp_response_send(response);
 }

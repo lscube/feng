@@ -44,35 +44,29 @@ static void send_describe_reply(RTSP_buffer * rtsp, RTSP_Request *req,
                                Url *url, GString *descr,
                                RTSP_description_format descr_format)
 {
-    GString *reply = rtsp_generate_ok_response(req);
+    RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
     char *encoded_object;
 
-    switch (descr_format) {
-        // Add new formats here
-    case df_SDP_format:{
-	    g_string_append(reply, "Content-Type: application/sdp" RTSP_EL);
-            break;
-        }
+    /* bluntly put it there */
+    response->body = descr;
+
+    /** @todo This should become a lookup table */
+    switch (descr_format) { // Add new formats here
+    case df_SDP_format:
+        g_hash_table_insert(response->headers,
+                            g_strdup("Content-Type"),
+                            g_strdup("application/sdp"));
+        break;
     }
+
     encoded_object = g_uri_escape_string(url->path, NULL, false);
-    g_string_append_printf(reply,
-			   "Content-Base: rtsp://%s/%s/" RTSP_EL,
-			   url->hostname, encoded_object);
+    g_hash_table_insert(response->headers,
+                        g_strdup("Content-Base"),
+                        g_strdup_printf("rtsp://%s/%s/",
+                                        url->hostname, encoded_object));
     g_free(encoded_object);
-             
-    g_string_append_printf(reply,
-			   "Content-Length: %zd" RTSP_EL,
-			   descr->len);
-             
-    // end of message
-    g_string_append(reply, RTSP_EL);
 
-    // concatenate description
-    g_string_append(reply, descr->str);
-
-    rtsp_bwrite(rtsp, reply);
-
-    fnc_log(FNC_LOG_CLIENT, "200 %d %s ", descr->len, url->path);
+    rtsp_response_send(response);
 }
 
 /**
@@ -127,7 +121,7 @@ int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
     if (srv->num_conn > srv->srvconf.max_conns) {
         /* @todo should redirect, but we haven't the code to do that just
          * yet. */
-        rtsp_send_response(req, RTSP_InternalServerError);
+        rtsp_quick_response(req, RTSP_InternalServerError);
         return ERR_GENERIC;
     }
 
@@ -143,11 +137,9 @@ int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
 
     send_describe_reply(rtsp, req, &url, descr, descr_format);
 
-    g_string_free(descr, TRUE);
-
     return ERR_NOERROR;
 
 error_management:
-    rtsp_send_response(req, error);
+    rtsp_quick_response(req, error);
     return ERR_GENERIC;
 }

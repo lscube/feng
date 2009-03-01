@@ -105,22 +105,20 @@ gboolean check_required_options(RTSP_buffer *rtsp, RTSP_Request *req) {
         g_hash_table_lookup(req->headers, "Require");
     const char *proxy_require_hdr =
         g_hash_table_lookup(req->headers, "Proxy-Require");
-    GString *response = NULL;
+    RTSP_Response *response;
 
     if ( !require_hdr && !proxy_require_hdr )
         return true;
 
-    response = rtsp_respond(req, RTSP_OptionNotSupported);
-            
-    g_string_append(response, "Unsupported:");
-    if ( require_hdr )
-        g_string_append_printf(response, " %s", require_hdr);
-    if (proxy_require_hdr )
-        g_string_append_printf(response, " %s", proxy_require_hdr);
-            
-    g_string_append(response, RTSP_EL RTSP_EL);
+    response = rtsp_response_new(req, RTSP_OptionNotSupported);
+    g_hash_table_insert(response->headers,
+                        g_strdup("Unsupported"),
+                        g_strdup_printf("%s %s",
+                                        require_hdr ? require_hdr : "",
+                                        proxy_require_hdr ? proxy_require_hdr : "")
+                        );
 
-    rtsp_bwrite(rtsp, response);
+    rtsp_response_send(response);
     return false;
 }
 
@@ -149,30 +147,26 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     status = ragel_parse_request(req, rtsp->in_buffer);
 
     if ( status != RTSP_Ok ) {
-        rtsp_send_response(req, status);
+        rtsp_quick_response(req, status);
         goto error;
     }
 
     /* No CSeq found! */
     if ( req->cseq == -1 ) {
         /** @todo This should be corrected for RFC! */
-        rtsp_send_response(req, RTSP_BadRequest);
+        rtsp_quick_response(req, RTSP_BadRequest);
         goto error;
     }
 
     /* Check if the session header match with the expected one */
     if ( req->session_id != 0 && /* We might not have a session id at all */
          rtsp->session->session_id != req->session_id ) {
-        rtsp_send_response(req, RTSP_SessionNotFound);
+        rtsp_quick_response(req, RTSP_SessionNotFound);
         goto error;
     }
 
     if ( !check_required_options(rtsp, req) )
         goto error;
-
-    fnc_log(FNC_LOG_CLIENT, "%s %s RTSP/1.0\nUser-Agent: %s",
-            req->method, req->object,
-            g_hash_table_lookup(req->headers, "User-Agent"));
 
     return req;
 
@@ -365,7 +359,7 @@ static void rtsp_handle_request(RTSP_buffer * rtsp, RTSP_Request *req)
         RTSP_set_parameter(rtsp, req);
         break;
     default:
-        rtsp_send_response(req, RTSP_NotImplemented);
+        rtsp_quick_response(req, RTSP_NotImplemented);
         break;
     }
 }

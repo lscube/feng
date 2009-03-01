@@ -147,6 +147,60 @@ int RTSP_handler(RTSP_buffer * rtsp);
 #define RTSP_method_rcvd 1
 #define RTSP_interlvd_rcvd 2
 
+/**
+ * @brief Structure respresenting a response sent to the client
+ */
+typedef struct {
+    /**
+     * @brief Backreference to the client.
+     *
+     * Used to be able to send the response faster
+     */
+    RTSP_buffer *client;
+
+    /**
+     * @brief Reference to the original request
+     *
+     * Used to log the request/response in access.log
+     */
+    RTSP_Request *request;
+
+    /**
+     * @brief The status code of the response.
+     *
+     * The list of valid status codes is present in RFC 2326 Section 7.1.1 and
+     * they are described through Section 11.
+     */
+    RTSP_ResponseCode status;
+    
+    /**
+     * @brief An hash table of headers to add to the response.
+     */
+    GHashTable *headers;
+
+    /**
+     * @brief An eventual body for the response, used by the DESCRIBE method.
+     */
+    GString *body;
+} RTSP_Response;
+
+RTSP_Response *rtsp_response_new(RTSP_Request *req, RTSP_ResponseCode code);
+void rtsp_response_send(RTSP_Response *response);
+void rtsp_response_free(RTSP_Response *response);
+
+/**
+ * @brief Create and send a response in a single function call
+ *
+ * @param req Request object to respond to
+ * @param code Status code for the response
+ *
+ * This function is used to avoid creating and sending a new response when just
+ * sending out an error response.
+ */
+static inline void rtsp_quick_response(RTSP_Request *req, RTSP_ResponseCode code)
+{
+    rtsp_response_send(rtsp_response_new(req, code));
+}
 
 /** 
  * RTSP low level functions, they handle message specific parsing and
@@ -161,20 +215,6 @@ ssize_t rtsp_send(RTSP_buffer * rtsp);
 gboolean rtsp_request_get_url(RTSP_buffer *rtsp, RTSP_Request *req, Url *url);
 
 void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer);
-
-GString *rtsp_respond(RTSP_Request *req, RTSP_ResponseCode code);
-void rtsp_send_response(const RTSP_Request *req, RTSP_ResponseCode code);
-
-/**
- * @brief Generates a positive RTSP response string
- *
- * @param req The request to respond to
- *
- * @return A new GString instance with the response heading.
- */
-static inline GString *rtsp_generate_ok_response(RTSP_Request *req) {
-    return rtsp_respond(req, RTSP_Ok);
-}
 
 RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock);
 void rtsp_client_destroy(RTSP_buffer *rtsp);

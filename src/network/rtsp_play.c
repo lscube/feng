@@ -246,7 +246,7 @@ static RTSP_ResponseCode do_play(Url *url, RTSP_session * rtsp_sess, play_args *
 }
 
 typedef struct {
-  GString *reply;
+  GString *str;
   char *server;
 } rtp_session_send_play_reply_pair;
 
@@ -260,20 +260,20 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
   char *temp;
 
   temp = g_uri_escape_string(p->sd_filename, NULL, false);
-  g_string_append_printf(pair->reply,
+  g_string_append_printf(pair->str,
 			 "url=rtsp://%s/%s/"SDP2_TRACK_ID"=", pair->server, temp);
   g_free(temp);
 
   temp = g_uri_escape_string(t->info->name, NULL, false);
-  g_string_append_printf(pair->reply,
+  g_string_append_printf(pair->str,
 			 "%s;seq=%u", temp, p->start_seq);
   g_free(temp);
 
   if (t->properties->media_source != MS_live)
-    g_string_append_printf(pair->reply,
+    g_string_append_printf(pair->str,
 			   ";rtptime=%u", p->start_rtptime);
 
-  g_string_append(pair->reply, ",");
+  g_string_append(pair->str, ",");
 }
 
 /**
@@ -286,34 +286,36 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
 static int send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
                            RTSP_session * rtsp_session, play_args * args)
 {
-    GString *reply = rtsp_generate_ok_response(req);
+    RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
     rtp_session_send_play_reply_pair pair = {
-      .reply = reply,
-      .server = url->hostname
+        .str = g_string_new(""),
+        .server = url->hostname
     };
 
-    g_string_append_printf(reply, "Range: npt=%f-", args->begin_time);
+    /* temporary string used for creating headers */
+    GString *str = g_string_new("");
 
+    /* Create Range header */
+    g_string_printf(str, "npt=%f-", args->begin_time);
     if (args->end_time != HUGE_VAL)
-      g_string_append_printf(reply, "%f", args->end_time);
+      g_string_append_printf(str, "%f", args->end_time);
 
-    g_string_append(reply, RTSP_EL);
+    g_hash_table_insert(response->headers,
+                        g_strdup("Range"),
+                        g_string_free(str, false));
 
-    g_string_append(reply, "RTP-info: ");
-
+    /* Create RTP-Info header */
     g_slist_foreach(rtsp_session->rtp_sessions, rtp_session_send_play_reply, &pair);
 
-    g_string_truncate(reply, reply->len-1);
+    g_string_truncate(pair.str, pair.str->len-1);
 
-    g_string_append(reply, RTSP_EL);
+    g_hash_table_insert(response->headers,
+                        g_strdup("RTP-Info"),
+                        g_string_free(pair.str, false));
 
-    // end of message
-    g_string_append(reply, RTSP_EL);
+    rtsp_response_send(response);
 
-    rtsp_bwrite(rtsp, reply);
-
-    fnc_log(FNC_LOG_CLIENT, "200 - %s ", url->path);
-
+    /** @todo return void */
     return ERR_NOERROR;
 }
 
@@ -366,6 +368,6 @@ int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
     return ERR_NOERROR;
 
 error_management:
-    rtsp_send_response(req, error);
+    rtsp_quick_response(req, error);
     return ERR_GENERIC;
 }

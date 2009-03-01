@@ -214,12 +214,12 @@ static gboolean validate_url(char *urlstr, Url * url)
  */
 gboolean rtsp_request_get_url(RTSP_buffer *rtsp, RTSP_Request *req, Url *url) {
   if ( !validate_url(req->object, url) ) {
-      rtsp_send_response(req, RTSP_BadRequest);
+      rtsp_quick_response(req, RTSP_BadRequest);
       return false;
   }
 
   if ( !check_forbidden_path(url) ) {
-      rtsp_send_response(req, RTSP_Forbidden);
+      rtsp_quick_response(req, RTSP_Forbidden);
       return false;
   }
 
@@ -228,27 +228,6 @@ gboolean rtsp_request_get_url(RTSP_buffer *rtsp, RTSP_Request *req, Url *url) {
 /**
  * @}
  */
-
-/**
- * RTSP Message generation and logging functions
- * @defgroup rtsp_msg_gen RTSP Message Generation
- * @{
- */
-
-/**
- * @brief Sends a reply message to the client
- *
- * @param req The request to send a response for
- * @param code Code of the response to send
- */
-void rtsp_send_response(const RTSP_Request *req, RTSP_ResponseCode code)
-{
-    GString *response = rtsp_respond(req, code);
-
-    rtsp_bwrite(req->client, response);
-    
-    fnc_log(FNC_LOG_ERR, "%d - - ", code);
-}
 
 /**
  * @brief Writes a GString to the output buffer of an RTSP connection
@@ -266,90 +245,6 @@ void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer)
 
     return ERR_NOERROR;
 }
-
-/**
- * @brief Add a timestamp to a GString
- * 
- * @param str GString instance to append the timestamp to
- *
- * Concatenates a GString instance with a time stamp in the format of
- * "Date: 23 Jan 1997 15:35:06 GMT"
- */
-static void append_time_stamp(GString *str) {
-  char buffer[39] = { 0, };
-
-  time_t now = time(NULL);
-  struct tm *t = gmtime(&now);
-
-  strftime(buffer, 38, "Date: %a, %d %b %Y %H:%M:%S GMT" RTSP_EL, t);
-
-  g_string_append(str, buffer);
-}
-
-/**
- * @brief Generates the basic RTSP response string
- * 
- * @param req The request to respond to
- * @param code The response code to use for generation
- *
- * @return A new GString instance with the response heading.
- *
- * This method creates the basis for an RTSP response, by generating the Status
- * Line (RFC2326, Sec. 7.1), and adding the generic headers that should be sent,
- * including:
- *
- * @li Server (Sec. 12.36)
- * @li Date (Sec. 12.18)
- * @li CSeq (Sec. 12.17)
- * @li Session (if applicable) (Sec. 12.37)
- * @li Timestamp (if present) (Sec. 12.38)
- */
-GString *rtsp_respond(RTSP_Request *req, RTSP_ResponseCode code)
-{
-    static gchar *server_header = NULL;
-    GString *response = g_string_new("");
-    const char *timestamp_hdr = NULL;
-
-    /* First execution, generate the Server: header */
-    if ( server_header == NULL )
-        server_header = g_strdup_printf("Server: %s/%s" RTSP_EL,
-                                        PACKAGE, VERSION);
-
-    /* Generate the status line */
-    g_string_printf(response, "%s %d %s" RTSP_EL,
-                    "RTSP/1.0",
-                    code,
-                    rtsp_reason_phrase(code));
-
-    /* Append Server header */
-    g_string_append(response, server_header);
-
-    /* Append the correct CSeq */
-    /** @todo This should just copy the header */
-    g_string_append_printf(response, "CSeq: %u" RTSP_EL,
-                           req->cseq);
-
-    /* Append Date */
-    append_time_stamp(response);
-
-    /* Append Session if present */
-    if ( req->session_id != 0 )
-        g_string_append_printf(response,
-                               "Session: %" PRIu64 RTSP_EL,
-                               req->session_id);
-
-    /* If the Timestamp header is present, just copy it over */
-    if ( (timestamp_hdr = g_hash_table_lookup(req->headers, "Timestamp")) )
-        g_string_append_printf(response,
-                               "Timestamp: %s" RTSP_EL,
-                               timestamp_hdr);
-
-    return response;
-}
-
-/**
- * @}
- */
 
 /**
  * @}

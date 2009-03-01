@@ -31,26 +31,6 @@
 #include <fenice/fnc_log.h>
 
 
-/**
- * Sends the reply for the pause method
- * @param rtsp the buffer where to write the reply
- * @param req The request to reply to
- * @return ERR_NOERROR
- */
-static int send_pause_reply(RTSP_buffer * rtsp, RTSP_Request *req)
-{
-    GString *reply = rtsp_generate_ok_response(req);
-
-    /* No body */
-    g_string_append(reply, RTSP_EL);
-
-    rtsp_bwrite(rtsp, reply);
-
-    fnc_log(FNC_LOG_CLIENT, "200 - - ");
-
-    return ERR_NOERROR;
-}
-
 static void rtp_session_pause(gpointer element, gpointer user_data)
 {
   RTP_session *r = (RTP_session *)element;
@@ -84,12 +64,12 @@ int RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
 
     g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_pause, NULL);
 
-    send_pause_reply(rtsp, req);
+    rtsp_quick_response(req, RTSP_Ok);
     rtsp_sess->cur_state = READY_STATE;
 
     return ERR_NOERROR;
 
 error_management:
-    rtsp_send_response(req, error);
+    rtsp_quick_response(req, error);
     return ERR_GENERIC;
 }

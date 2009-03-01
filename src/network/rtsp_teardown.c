@@ -34,21 +34,6 @@
 #include <fenice/fnc_log.h>
 #include <glib.h>
 
-/**
- * Sends the reply for the teardown method
- * @param rtsp the buffer where to write the reply
- * @param req The client request for the method
- */
-static void send_teardown_reply(RTSP_buffer * rtsp, RTSP_Request *req)
-{
-    GString *reply = rtsp_generate_ok_response(req);
-    g_string_append(reply, RTSP_EL);
-
-    rtsp_bwrite(rtsp, reply);
-
-    fnc_log(FNC_LOG_CLIENT, "200 - - ");
-}
-
 typedef struct {
   RTSP_session *s;
   gchar *filename;
@@ -99,7 +84,7 @@ int RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req)
 
     s = rtsp->session;
 
-    send_teardown_reply(rtsp, req);
+    rtsp_quick_response(req, RTSP_Ok);
 
     if (strchr(url.path, '='))    /*Compatibility with RealOne and RealPlayer */
         filename = strchr(url.path, '=') + 1;

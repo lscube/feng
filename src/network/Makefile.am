@@ -17,6 +17,7 @@ libnetwork_a_SOURCES = \
 		rtsp_options.c \
 		rtsp_pause.c \
 		rtsp_play.c \
+		rtsp_response.c \
 		rtsp_set_parameter.c \
 		rtsp_setup.c \
 		rtsp_state_machine.c \
