@@ -53,7 +53,8 @@ static int get_utc(struct tm *t, char *b)
  * @param args where to save the play range informations
  * @return RTSP_Ok or RTSP_BadRequest on missing RANGE HEADER
  */
-static gboolean parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
+static gboolean parse_play_time_range(RTSP_buffer * rtsp, RTSP_Request *req,
+                                      play_args * args)
 {
     int time_taken = 0;
     char *p = NULL, *q = NULL;
@@ -66,7 +67,7 @@ static gboolean parse_play_time_range(RTSP_buffer * rtsp, play_args * args)
     args->begin_time = 0.0;
     args->end_time = HUGE_VAL;
 
-    if ((p = strstr(rtsp->in_buffer, HDR_RANGE)) != NULL) {
+    if ( (p = g_hash_table_lookup(req->headers, "Range")) != NULL ) {
         if ((q = strstr(p, "npt")) != NULL) {      // FORMAT: npt
             if ((q = strchr(q, '=')) == NULL)
                 return false;    /* Bad Request */
@@ -331,7 +332,7 @@ int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
     // Parse the input message
 
     // Get the range
-    if ( !parse_play_time_range(rtsp, &args) ) {
+    if ( !parse_play_time_range(rtsp, req, &args) ) {
         error = RTSP_BadRequest;
         goto error_management;
     }
