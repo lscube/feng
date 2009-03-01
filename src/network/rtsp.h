@@ -195,6 +195,9 @@ static inline void rtsp_quick_response(RTSP_Request *req, RTSP_ResponseCode code
     rtsp_response_send(rtsp_response_new(req, code));
 }
 
+gboolean rtsp_check_invalid_state(const RTSP_Request *req,
+                                  enum RTSP_machine_state invalid_state);
+
 /** 
  * RTSP low level functions, they handle message specific parsing and
  * communication.

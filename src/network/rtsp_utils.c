@@ -247,5 +247,38 @@ void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer)
 }
 
 /**
+ * @brief Check if a method has been called in an invalid state.
+ *
+ * @param req Request for the method
+ * @param invalid_state State where the method is not valid
+ *
+ * If the method was called in the given invalid state, this function responds
+ * to the client with a 455 "Method not allowed in this state" response, which
+ * contain the Allow header as specified by RFC2326 Sections 11.3.6 and 12.4.
+ */
+gboolean rtsp_check_invalid_state(const RTSP_Request *req,
+                                  enum RTSP_machine_state invalid_state) {
+    static const char *const valid_states[] = {
+        [INIT_STATE] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN",
+        [READY_STATE] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY",
+        [PLAY_STATE] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE"
+    };
+    RTSP_Response *response;
+
+    if ( req->client->session->cur_state != invalid_state )
+        return true;
+
+    response = rtsp_response_new(req, RTSP_InvalidMethodInState);
+    
+    g_hash_table_insert(response->headers,
+                        g_strdup("Allow"),
+                        g_strdup(valid_states[invalid_state]));
+
+    rtsp_response_send(response);
+
+    return false;
+}
+
+/**
  * @}
  */
