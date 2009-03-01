@@ -165,8 +165,8 @@ static void rtsp_response_append_headers(gconstpointer hdr_name_p,
  * 
  * @todo Some of the elements are not properly outputted
  *
- * In particular right now the IP is outputted as 999.999.999.99 and if
- * there is no content on the request, 0 is used rather than -.
+ * In particular right now if there is no content on the request, 0 is used
+ * rather than -.
  *
  */
 static void rtsp_log_access(RTSP_Response *response)
@@ -176,7 +176,8 @@ static void rtsp_log_access(RTSP_Response *response)
     const char *useragent =
         g_hash_table_lookup(response->request->headers, "User-Agent");
 
-    fprintf(stderr, "999.999.999.999 - - [%s], \"%s %s %s\" %d %u %s %s\n",
+    fprintf(stderr, "%s - - [%s], \"%s %s %s\" %d %u %s %s\n",
+            response->client->sock->remote_host,
             g_hash_table_lookup(response->headers, "Date"),
             response->request->method, response->request->object,
             response->request->version,
