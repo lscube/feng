@@ -30,9 +30,25 @@
  */
 
 /**
- * @brief Return a timestamp in HTTP Time
+ * @defgroup rtsp_response RTSP Response functions
+ * @ingroup RTSP
+ *
+ * This module contains the functions that are used to produce RTSP response
+ * that the server sends to the client.
+ *
+ * RTSP responses are comprised of status line, headers and an eventual body
+ * (entity), and are described by RFC2326, Section 7.
  * 
- * Create a timestamp in the format of "23 Jan 1997 15:35:06 GMT"
+ * @{
+ */
+
+/**
+ * @brief Return a timestamp using HTTP Time specification
+ * 
+ * Create a timestamp in the format of "23 Jan 1997 15:35:06 GMT".
+ *
+ * The timestamp format is described in RFC2616, Section 14.18, and is actually
+ * used for more than just the Date: header.
  */
 static char *rtsp_timestamp() {
   char buffer[31] = { 0, };
@@ -201,3 +217,7 @@ void rtsp_response_send(RTSP_Response *response)
      * longer necessary. */
     rtsp_response_free(response);
 }
+
+/**
+ * @}
+ */

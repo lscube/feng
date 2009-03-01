@@ -147,6 +147,7 @@ int RTSP_handler(RTSP_buffer * rtsp);
 
 /**
  * @brief Structure respresenting a response sent to the client
+ * @ingroup rtsp_response
  */
 typedef struct {
     /**
@@ -188,6 +189,7 @@ void rtsp_response_free(RTSP_Response *response);
 
 /**
  * @brief Create and send a response in a single function call
+ * @ingroup rtsp_response
  *
  * @param req Request object to respond to
  * @param code Status code for the response
