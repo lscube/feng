@@ -330,7 +330,7 @@ void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
 
     RTSP_ResponseCode error;
 
-    if ( !rtsp_check_invalid_state(req, INIT_STATE) )
+    if ( !rtsp_check_invalid_state(req, RTSP_SERVER_INIT) )
         return;
 
     // Get the range
@@ -353,7 +353,7 @@ void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
 
     send_play_reply(rtsp, req, &url, rtsp_sess, &args);
 
-    rtsp_sess->cur_state = PLAY_STATE;
+    rtsp_sess->cur_state = RTSP_SERVER_PLAYING;
 
     return;
 

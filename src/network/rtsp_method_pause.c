@@ -49,8 +49,8 @@ void RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
     RTSP_session *rtsp_sess = rtsp->session;
 
     /* This is only valid in Playing state */
-    if ( !rtsp_check_invalid_state(req, INIT_STATE) ||
-         !rtsp_check_invalid_state(req, READY_STATE) )
+    if ( !rtsp_check_invalid_state(req, RTSP_SERVER_INIT) ||
+         !rtsp_check_invalid_state(req, RTSP_SERVER_READY) )
         return;
 
     if ( !rtsp_request_get_url(rtsp, req, &url) )
@@ -59,5 +59,5 @@ void RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
     g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_pause, NULL);
 
     rtsp_quick_response(req, RTSP_Ok);
-    rtsp_sess->cur_state = READY_STATE;
+    rtsp_sess->cur_state = RTSP_SERVER_READY;
 }

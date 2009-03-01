@@ -484,8 +484,8 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
 
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
 
-    if ( rtsp_s->cur_state == INIT_STATE )
-        rtsp_s->cur_state = READY_STATE;
+    if ( rtsp_s->cur_state == RTSP_SERVER_INIT )
+        rtsp_s->cur_state = RTSP_SERVER_READY;
 
     return;
 

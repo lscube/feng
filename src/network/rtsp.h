@@ -56,13 +56,20 @@
 #define RTSP_BUFFERSIZE (65536 + RTSP_RESERVED)
 
 /**
- * @brief state of the state machine
+ * @brief RTSP server states
+ *
+ * These are the constants used to define the states that an RTSP session can
+ * have.
+ *
+ * The server state machine for RTSP is defined in RFC2326 Appendix A,
+ * Subsection 2.
  */
-enum RTSP_machine_state {
-  INIT_STATE,
-  READY_STATE,
-  PLAY_STATE
-};
+typedef enum {
+    RTSP_SERVER_INIT,
+    RTSP_SERVER_READY,
+    RTSP_SERVER_PLAYING,
+    RTSP_SERVER_RECORDING
+} RTSP_Server_State;
 
 #define RTSP_EL "\r\n"
 #define RTSP_RTP_AVP "RTP/AVP"
@@ -73,7 +80,7 @@ typedef struct RTSP_interleaved {
 } RTSP_interleaved;
 
 typedef struct RTSP_session {
-    enum RTSP_machine_state cur_state;
+    RTSP_Server_State cur_state;
     guint64 session_id;
     int started;
     GSList *rtp_sessions; // Of type RTP_session
@@ -203,7 +210,7 @@ static inline void rtsp_quick_response(RTSP_Request *req, RTSP_ResponseCode code
 }
 
 gboolean rtsp_check_invalid_state(const RTSP_Request *req,
-                                  enum RTSP_machine_state invalid_state);
+                                  RTSP_Server_State invalid_state);
 
 /** 
  * RTSP low level functions, they handle message specific parsing and

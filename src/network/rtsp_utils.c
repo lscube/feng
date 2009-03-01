@@ -257,11 +257,12 @@ void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer)
  * contain the Allow header as specified by RFC2326 Sections 11.3.6 and 12.4.
  */
 gboolean rtsp_check_invalid_state(const RTSP_Request *req,
-                                  enum RTSP_machine_state invalid_state) {
+                                  RTSP_Server_State invalid_state) {
     static const char *const valid_states[] = {
-        [INIT_STATE] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN",
-        [READY_STATE] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY",
-        [PLAY_STATE] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE"
+        [RTSP_SERVER_INIT] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN",
+        [RTSP_SERVER_READY] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY",
+        [RTSP_SERVER_PLAYING] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE"
+        /* We ignore RECORDING state since we don't support it */
     };
     RTSP_Response *response;
 
