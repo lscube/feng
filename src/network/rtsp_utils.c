@@ -254,7 +254,7 @@ void log_user_agent(RTSP_buffer * rtsp)
  * @param rtsp The buffer where to write the output message.
  * @param reply The ProtocolReply object to get the data from
  */
-void rtsp_send_reply(RTSP_buffer *rtsp, ProtocolReply reply)
+void rtsp_send_reply(const RTSP_buffer *rtsp, const ProtocolReply reply)
 {
     GString *response = protocol_response_new(RTSP_1_0, reply);
 
@@ -273,7 +273,7 @@ void rtsp_send_reply(RTSP_buffer *rtsp, ProtocolReply reply)
  * @note The buffer has to be considered destroyed after calling this function
  *       (the writing thread will take care of the actual destruction).
  */
-void rtsp_bwrite(RTSP_buffer *rtsp, GString *buffer)
+void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer)
 {
     g_async_queue_push(rtsp->out_queue, buffer);
     ev_io_start(rtsp->srv->loop, rtsp->ev_io_write);
