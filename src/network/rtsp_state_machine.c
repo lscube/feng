@@ -46,6 +46,8 @@
  * @{
  */
 
+typedef void (*rtsp_method_function)(RTSP_buffer * rtsp, RTSP_Request *req);
+
 void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req);
 
 void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req);
@@ -342,34 +344,24 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_buffer * rtsp,
  */
 static void rtsp_handle_request(RTSP_buffer *rtsp)
 {
+    static const rtsp_method_function methods[] = {
+        [RTSP_ID_DESCRIBE] = RTSP_describe,
+        [RTSP_ID_SETUP]    = RTSP_setup,
+        [RTSP_ID_TEARDOWN] = RTSP_teardown,
+        [RTSP_ID_OPTIONS]  = RTSP_options,
+        [RTSP_ID_PLAY]     = RTSP_play,
+        [RTSP_ID_PAUSE]    = RTSP_pause
+    };
+
     RTSP_Request *req = rtsp_parse_request(rtsp);
 
     if ( !req ) return;
 
-    /* Only switch over the methods we implement, the rtsp_parse_request
-     * function will take care of responding with an error if the method is
-     * unknown.
+    /* We're safe to use the array of functions since rtsp_parse_request() takes
+     * care of responding with an error if the method is not implemented.
      */
-    switch(req->method_id) {
-    case RTSP_ID_DESCRIBE:
-        RTSP_describe(rtsp, req);
-        break;
-    case RTSP_ID_SETUP:
-        RTSP_setup(rtsp, req);
-        break;
-    case RTSP_ID_TEARDOWN:
-        RTSP_teardown(rtsp, req);
-        break;
-    case RTSP_ID_OPTIONS:
-        RTSP_options(rtsp, req);
-        break;
-    case RTSP_ID_PLAY:
-        RTSP_play(rtsp, req);
-        break;
-    case RTSP_ID_PAUSE:
-        RTSP_pause(rtsp, req);
-        break;
-    }
+
+    methods[req->method_id](rtsp, req);
 
     rtsp_free_request(req);
 }
