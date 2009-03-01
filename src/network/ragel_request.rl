@@ -27,12 +27,12 @@ static void ragel_parse_request(RTSP_Request *req, const char *msg) {
         }
         
         Supported_Method =
-            "DESCRIBE" @ { req->method_id = RTSP_ID_DESCRIBE; } |
-            "OPTIONS" @ { req->method_id = RTSP_ID_OPTIONS; } |
-            "PAUSE" @ { req->method_id = RTSP_ID_PAUSE; } |
-            "PLAY" @ { req->method_id = RTSP_ID_PLAY; } |
-            "SETUP" @ { req->method_id = RTSP_ID_SETUP; } |
-            "TEARDOWN" @ { req->method_id = RTSP_ID_TEARDOWN; };
+            "DESCRIBE" % { req->method_id = RTSP_ID_DESCRIBE; } |
+            "OPTIONS" % { req->method_id = RTSP_ID_OPTIONS; } |
+            "PAUSE" % { req->method_id = RTSP_ID_PAUSE; } |
+            "PLAY" % { req->method_id = RTSP_ID_PLAY; } |
+            "SETUP" % { req->method_id = RTSP_ID_SETUP; } |
+            "TEARDOWN" % { req->method_id = RTSP_ID_TEARDOWN; };
 
         Method = (Supported_Method | alpha+ )
             > set_s % end_method;
