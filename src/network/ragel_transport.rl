@@ -7,7 +7,7 @@ static gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
                                              const char *header) {
     struct ParsedTransport transport;
     int cs;
-    const char *p = header, *pe = p + strlen(p) +1, *eof;
+    const char *p = header, *pe = p + strlen(p) +1;
     uint32_t portval; uint16_t chanval;
 
     %%{

@@ -4,7 +4,7 @@
 
 static void ragel_parse_request(RTSP_Request *req, const char *msg) {
     int cs;
-    const char *p = msg, *pe = p + strlen(msg), *eof, *s;
+    const char *p = msg, *pe = p + strlen(msg), *s;
 
     /* Variables used for adding headers to the hash table */
     const char *hdr, *hdr_val;
