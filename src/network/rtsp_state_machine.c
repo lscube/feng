@@ -148,6 +148,12 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
         goto error;
     }
 
+    /* Check if the method is a know and supported one */
+    if ( req->method_id == RTSP_ID_ERROR ) {
+        rtsp_quick_response(req, RTSP_NotImplemented);
+        goto error;
+    }
+
     /* Check for supported RTSP version */
     if ( strcmp(req->version, "RTSP/1.0") != 0 ) {
         rtsp_quick_response(req, RTSP_VersionNotSupported);

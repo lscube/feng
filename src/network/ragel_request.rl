@@ -34,12 +34,7 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
             "SETUP" @ { req->method_id = RTSP_ID_SETUP; } |
             "TEARDOWN" @ { req->method_id = RTSP_ID_TEARDOWN; };
 
-        action method_not_implemented {
-            return RTSP_NotImplemented;
-        }
-
-        Other_Method = (alpha+ - Supported_Method) %method_not_implemented;
-        Method = (Supported_Method | Other_Method )
+        Method = (Supported_Method | alpha+ )
             > set_s % end_method;
 
         action end_version {
