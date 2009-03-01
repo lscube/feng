@@ -31,6 +31,7 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
+
 /** 
  * RTSP high level functions, they maps to the rtsp methods
  * @defgroup rtsp_high RTSP high level functions
@@ -398,10 +399,12 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
 
     switch (p->cur_state) {
     case INIT_STATE:{
+        /*
         static const ProtocolReply InvalidMethods =
             { 455, true, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n" };
         static const ProtocolReply NotImplemented =
             { 501, true, "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n" };
+        */
 
             switch (method) {
             case RTSP_ID_DESCRIBE:
@@ -422,22 +425,24 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
                 break;
             case RTSP_ID_PLAY:    /* method not valid this state. */
             case RTSP_ID_PAUSE:
-                rtsp_send_reply(rtsp, InvalidMethods);
+                rtsp_send_reply(rtsp, RTSP_InvalidMethodInState);
                 break;
             case RTSP_ID_SET_PARAMETER:
                 RTSP_set_parameter(rtsp);
                 break;
             default:
-                rtsp_send_reply(rtsp, NotImplemented);
+                rtsp_send_reply(rtsp, RTSP_NotImplemented);
                 break;
             }
             break;
         }        /* INIT state */
     case READY_STATE:{
+        /*
         static const ProtocolReply InvalidMethods =
             { 455, true, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n" };
         static const ProtocolReply NotImplemented =
             { 501, true, "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n" };
+        */
 
             switch (method) {
             case RTSP_ID_PLAY:
@@ -457,13 +462,13 @@ static void RTSP_state_machine(RTSP_buffer * rtsp)
                 RTSP_set_parameter(rtsp);
                 break;
             case RTSP_ID_PAUSE:    /* method not valid this state. */
-                rtsp_send_reply(rtsp, InvalidMethods);
+                rtsp_send_reply(rtsp, RTSP_InvalidMethodInState);
                 break;
             case RTSP_ID_DESCRIBE:
                 RTSP_describe(rtsp);
                 break;
             default:
-                rtsp_send_reply(rtsp, NotImplemented);
+                rtsp_send_reply(rtsp, RTSP_NotImplemented);
                 break;
             }
             break;
