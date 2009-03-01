@@ -6,6 +6,10 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
     int cs;
     char *p = msg, *pe = p + strlen(msg), *eof, *s;
 
+    /* Variables used for adding headers to the hash table */
+    char *hdr, *hdr_val;
+    size_t hdr_size, hdr_val_size;
+
     /* We want to express clearly which versions we support, so that we
      * can return right away if an unsupported one is found.
      */
@@ -55,7 +59,24 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
             (print*) > set_s % end_object . SP
             (Supported_RTSP_Version | RTSP_Version) . CRLF;
 
-        Header = (alpha|'-')+  . ':' . SP . print+ . CRLF;
+        action hdr_start {
+            hdr = p;
+        }
+
+        action hdr_end {
+            hdr_size = p-hdr;
+        }
+
+        action hdr_val_start {
+            hdr_val = p;
+        }
+
+        action hdr_val_end {
+            hdr_val_size = p-hdr_val;
+        }
+
+        Header = (alpha|'-')+ > hdr_start % hdr_end 
+            . ':' . SP . print+ > hdr_val_start % hdr_val_end . CRLF;
 
         action cseq_header {
             {
@@ -82,7 +103,15 @@ static int ragel_parse_request(RTSP_Request *req, char *msg) {
         Known_Headers = Cseq_Header | Session_Header;
         Other_Headers = Header - Known_Headers;
 
-        main := Request_Line . ( Cseq_Header | Other_Headers )+;
+        action save_header {
+            {
+                g_hash_table_insert(req->headers,
+                                    g_strndup(hdr, hdr_size),
+                                    g_strndup(hdr_val, hdr_val_size));
+            }
+        }
+
+        main := Request_Line . ( Cseq_Header | Other_Headers % save_header )+;
 
         write data;
         write init;

@@ -98,7 +98,8 @@ static void rtsp_free_request(RTSP_Request *req)
 {
     if ( req == NULL )
         return;
-
+    
+    g_hash_table_destroy(req->headers);
     g_free(req->method);
     g_free(req->object);
     g_free(req);
@@ -122,6 +123,8 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
 
     req->method_id = RTSP_ID_ERROR;
     req->cseq = -1;
+    req->headers = g_hash_table_new_full(g_str_hash, g_str_equal,
+                                         g_free, g_free);
 
     status = ragel_parse_request(req, rtsp->in_buffer);
 
