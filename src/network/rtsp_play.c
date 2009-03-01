@@ -284,8 +284,8 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
  * @param rtsp_session the session for which to generate the reply
  * @return ERR_NOERROR
  */
-static int send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
-                           RTSP_session * rtsp_session, play_args * args)
+static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
+                            RTSP_session * rtsp_session, play_args * args)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
     rtp_session_send_play_reply_pair pair = {
@@ -315,9 +315,6 @@ static int send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
                         g_string_free(pair.str, false));
 
     rtsp_response_send(response);
-
-    /** @todo return void */
-    return ERR_NOERROR;
 }
 
 /**
