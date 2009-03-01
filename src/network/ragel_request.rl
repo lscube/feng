@@ -70,19 +70,6 @@ static void ragel_parse_request(RTSP_Request *req, char *msg) {
         Header = (alpha|'-')+ > hdr_start % hdr_end 
             . ':' . SP . print+ > hdr_val_start % hdr_val_end . CRLF;
 
-        action session_header {
-            {
-                /* Discard two bytes for \r\n */
-                char *tmp = g_strndup(s, p-s-2);
-                req->session_id = g_ascii_strtoull(s, NULL, 0);
-                g_free(tmp);
-            }
-        }
-
-        Session_Header = "Session: " . (digit+ >set_s) . CRLF %session_header;
-        
-        Headers = Session_Header | Header;
-
         action save_header {
             {
                 g_hash_table_insert(req->headers,
@@ -91,7 +78,7 @@ static void ragel_parse_request(RTSP_Request *req, char *msg) {
             }
         }
 
-        main := Request_Line . ( Headers @ save_header )+;
+        main := Request_Line . ( Header @ save_header )+;
 
         write data;
         write init;

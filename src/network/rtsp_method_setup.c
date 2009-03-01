@@ -383,11 +383,11 @@ static void send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session
                         g_string_free(transport, false));
 
     /* We add the Session here since it was not added by rtsp_response_new (the
-     * request coming had no session.
+     * incoming request had no session).
      */
     g_hash_table_insert(response->headers,
                         g_strdup("Session"),
-                        g_strdup_printf("%"PRIu64, session->session_id));
+                        g_strdup(session->session_id));
 
     rtsp_response_send(response);
 }

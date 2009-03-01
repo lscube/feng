@@ -81,7 +81,7 @@ typedef struct RTSP_interleaved {
 
 typedef struct RTSP_session {
     RTSP_Server_State cur_state;
-    guint64 session_id;
+    char *session_id;
     int started;
     GSList *rtp_sessions; // Of type RTP_session
     // mediathread resource
@@ -143,8 +143,6 @@ typedef struct {
      * remove more logic from the parser itself.
      */
     char *version;
-
-    guint64 session_id;
 
     /** All the headers we don't parse specifically */
     GHashTable *headers;

@@ -121,6 +121,45 @@ static gboolean check_required_options(RTSP_Request *req) {
 }
 
 /**
+ * @brief Check the session reported by the client if any.
+ *
+ * @param req The request to validate
+ *
+ * @retval true No error (session found, or none given and none expected)
+ *
+ * This function checks that the server's expectations of a session are
+ * satisfied. In particular, it ensures that if the client sends a Session
+ * header, we are expecting that same session. If we're not expecting any
+ * session or if the session differs from the expected one, we respond with a
+ * 454 "Session Not Found" status.
+ */
+static gboolean check_session(RTSP_Request *req)
+{
+    const char *session_hdr =
+        g_hash_table_lookup(req->headers, "Session");
+
+    RTSP_session *session = req->client->session;
+
+    if (/* We always accept requests without a Session header, since even when a
+         * session _is_ present, the client might make a request that is not
+         * tied to one.*
+         */
+        !session_hdr ||
+        /* Otherwise, check if the session is present and corresponds. */
+        (session && strcmp(session_hdr, session->session_id) == 0)
+        )
+        return true;
+    
+    /* At this point we either got a session when we don't expect one, or one
+     * with a different id from expected, respond with a 454 "Session Not
+     * Found".
+     */
+    rtsp_quick_response(req, RTSP_SessionNotFound);
+
+    return false;
+}
+
+/**
  * @brief Parse a request using Ragel functions
  *
  * @param rtsp The client connection the request come
@@ -168,12 +207,8 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
         goto error;
     }
 
-    /* Check if the session header match with the expected one */
-    if ( req->session_id != 0 && /* We might not have a session id at all */
-         rtsp->session->session_id != req->session_id ) {
-        rtsp_quick_response(req, RTSP_SessionNotFound);
+    if ( !check_session(req) )
         goto error;
-    }
 
     if ( !check_required_options(req) )
         goto error;

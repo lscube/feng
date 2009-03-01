@@ -48,23 +48,6 @@
  */
 
 /**
- * Generates a random session id
- * @return the random session id (actually a number)
- */
-static guint64 generate_session_id()
-{
-    guint64 session_id = 0;
-
-    while (session_id == 0) {
-      session_id   = g_random_int();
-      session_id <<= 32;
-      session_id  |= g_random_int();
-    }
-
-    return session_id;
-}
-
-/**
  * @brief Allocate and initialise a new RTSP session object
  *
  * @param rtsp The RTSP client for which to allocate the session
@@ -78,7 +61,9 @@ RTSP_session *rtsp_session_new(RTSP_buffer *rtsp)
     RTSP_session *new = rtsp->session = g_new0(RTSP_session, 1);
     
     new->srv = rtsp->srv;
-    new->session_id = generate_session_id();
+    new->session_id = g_strdup_printf("%08x%08x",
+                                      g_random_int(),
+                                      g_random_int());
 }
 
 /**
@@ -96,6 +81,7 @@ void rtsp_session_free(RTSP_session *session)
     /* Release mediathread resource */
     mt_resource_close(session->resource);
 
+    g_free(session->session_id);
     g_free(session);
 }
 
