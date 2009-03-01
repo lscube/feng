@@ -90,6 +90,21 @@ int RTSP_handler(RTSP_buffer * rtsp);
 #include "ragel_request.c"
 
 /**
+ * @brief Free a request structure as parsed by rtsp_parse_request().
+ *
+ * @param req Request to free
+ */
+static void rtsp_free_request(RTSP_Request *req)
+{
+    if ( req == NULL )
+        return;
+
+    g_free(req->method);
+    g_free(req->object);
+    g_free(req);
+}
+
+/**
  * @brief Parse a request using Ragel functions
  *
  * @param rtsp The client connection the request come
@@ -132,9 +147,7 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     return req;
 
  error:
-    g_free(req->method);
-    g_free(req->object);
-    g_free(req);
+    rtsp_free_request(req);
     return NULL;
 }
 
@@ -322,6 +335,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
                 RTSP_Request *req = rtsp_parse_request(rtsp);
                 if ( req )
                     RTSP_state_machine(rtsp, req);
+                rtsp_free_request(req);
             }
             RTSP_discard_msg(rtsp, hlen + blen);
             break;
