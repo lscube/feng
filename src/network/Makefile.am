@@ -11,16 +11,17 @@ libnetwork_a_SOURCES = \
 		rtp.h \
 		rtp_port.c \
 		rtp_transport.c \
+		rtpptdefs.h \
 		rtsp.h \
-		rtsp_describe.c \
 		rtsp_lowlevel.c \
-		rtsp_options.c \
-		rtsp_pause.c \
-		rtsp_play.c \
+		rtsp_method_describe.c \
+		rtsp_method_options.c \
+		rtsp_method_pause.c \
+		rtsp_method_play.c \
+		rtsp_method_setup.c \
+		rtsp_method_teardown.c \
 		rtsp_response.c \
-		rtsp_setup.c \
 		rtsp_state_machine.c \
-		rtsp_teardown.c \
 		rtsp_utils.c \
 		sdp2.h \
 		sdp_session_descr.c
