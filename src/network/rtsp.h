@@ -162,7 +162,7 @@ gboolean rtsp_request_get_url(RTSP_buffer *rtsp, RTSP_Request *req, Url *url);
 
 void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer);
 GString *rtsp_generate_response(RTSP_ResponseCode code, guint cseq);
-GString *rtsp_generate_ok_response(guint cseq, guint64 session);
+GString *rtsp_generate_ok_response(RTSP_Request *req);
 
 RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock);
 void rtsp_client_destroy(RTSP_buffer *rtsp);

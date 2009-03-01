@@ -39,7 +39,7 @@
  */
 static int send_pause_reply(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    GString *reply = rtsp_generate_ok_response(req->cseq, req->session_id);
+    GString *reply = rtsp_generate_ok_response(req);
 
     /* No body */
     g_string_append(reply, RTSP_EL);

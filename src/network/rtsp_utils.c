@@ -308,14 +308,14 @@ GString *rtsp_generate_response(RTSP_ResponseCode code, guint cseq)
 /**
  * @brief Generates a positive RTSP response string
  *
- * @param cseq The CSeq value for the response.
- * @param session Session-ID to provide with the response
- *                (will be omitted if zero)
+ * @param req The request to respond to
  *
  * @return A new GString instance with the response heading.
+ *
+ * @todo If present, the Timestamp header should be copied over.
  */
-GString *rtsp_generate_ok_response(guint cseq, guint64 session) {
-    GString *response = rtsp_generate_response(RTSP_Ok, cseq);
+GString *rtsp_generate_ok_response(RTSP_Request *req) {
+    GString *response = rtsp_generate_response(RTSP_Ok, req->cseq);
 
     g_string_append_printf(response,
                            "Server: %s/%s" RTSP_EL,
@@ -323,10 +323,10 @@ GString *rtsp_generate_ok_response(guint cseq, guint64 session) {
     
     append_time_stamp(response);
     
-    if ( session != 0 )
+    if ( req->session_id != 0 )
         g_string_append_printf(response,
                                "Session: %" PRIu64 RTSP_EL,
-                               session);
+                               req->session_id);
     
     return response;
 }

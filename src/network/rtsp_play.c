@@ -284,7 +284,7 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
 static int send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
                            RTSP_session * rtsp_session, play_args * args)
 {
-    GString *reply = rtsp_generate_ok_response(req->cseq, req->session_id);
+    GString *reply = rtsp_generate_ok_response(req);
     rtp_session_send_play_reply_pair pair = {
       .reply = reply,
       .server = url->hostname

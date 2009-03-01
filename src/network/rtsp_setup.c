@@ -425,7 +425,7 @@ static RTSP_ResponseCode select_requested_track(Url *url, RTSP_session * rtsp_s,
  */
 static int send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session * session, RTP_session * rtp_s)
 {
-    GString *reply = rtsp_generate_ok_response(req->cseq, req->session_id);
+    GString *reply = rtsp_generate_ok_response(req);
 
     g_string_append(reply, "Transport: ");
 

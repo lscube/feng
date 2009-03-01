@@ -45,7 +45,7 @@ static int send_describe_reply(RTSP_buffer * rtsp, RTSP_Request *req,
                                Url *url, GString *descr,
                                RTSP_description_format descr_format)
 {
-    GString *reply = rtsp_generate_ok_response(req->cseq, 0);
+    GString *reply = rtsp_generate_ok_response(req);
     char *encoded_object;
 
     /* allocate buffer */

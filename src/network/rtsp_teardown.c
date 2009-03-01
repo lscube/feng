@@ -40,7 +40,7 @@
  */
 static void send_teardown_reply(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    GString *reply = rtsp_generate_ok_response(req->cseq, req->session_id);
+    GString *reply = rtsp_generate_ok_response(req);
     g_string_append(reply, RTSP_EL);
 
     rtsp_bwrite(rtsp, reply);
