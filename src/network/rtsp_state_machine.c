@@ -132,8 +132,6 @@ gboolean check_required_options(RTSP_buffer *rtsp, RTSP_Request *req) {
 static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
 {
     RTSP_Request *req = g_new0(RTSP_Request, 1);
-    char *headers;
-    int pcnt;
     
     req->client = rtsp;
     req->method_id = RTSP_ID_ERROR;
@@ -337,8 +335,6 @@ static int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
  */
 static void rtsp_handle_request(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    RTSP_session *p = rtsp->session;
-    
     switch(req->method_id) {
     case RTSP_ID_DESCRIBE:
         RTSP_describe(rtsp, req);
@@ -381,9 +377,7 @@ find_tcp_interleaved(gconstpointer value, gconstpointer target)
  */
 int RTSP_handler(RTSP_buffer * rtsp)
 {
-    unsigned short status;
-    char msg[256];
-    int m, op;
+    int m;
     int full_msg;
     RTSP_interleaved *intlvd;
     GSList *list;

@@ -42,13 +42,11 @@ static void rtp_session_pause(gpointer element, gpointer user_data)
  * RTSP PAUSE method handler
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
- * @return ERR_NOERROR
  */
 void RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
     RTSP_session *rtsp_sess = rtsp->session;
-    RTSP_ResponseCode error;
 
     /* This is only valid in Playing state */
     if ( !rtsp_check_invalid_state(req, INIT_STATE) ||
