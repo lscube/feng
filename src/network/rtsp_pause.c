@@ -75,10 +75,7 @@ int RTSP_pause(RTSP_buffer * rtsp)
     
     g_slist_foreach(s->rtp_sessions, rtp_session_pause, NULL);
 
-    fnc_log(FNC_LOG_INFO, "PAUSE %s://%s/%s RTSP/1.0 ",
-	    url.protocol, url.hostname, url.path);
     send_pause_reply(rtsp, s);
-    log_user_agent(rtsp); // See User-Agent 
 
     return ERR_NOERROR;
 }

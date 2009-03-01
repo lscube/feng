@@ -147,6 +147,10 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
         goto error;
     }
 
+    fnc_log(FNC_LOG_CLIENT, "%s %s RTSP/1.0\nUser-Agent: %s",
+            req->method, req->object,
+            g_hash_table_lookup(req->headers, "User-Agent"));
+
     return req;
 
  error:

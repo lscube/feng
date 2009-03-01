@@ -61,9 +61,7 @@ int RTSP_set_parameter(RTSP_buffer * rtsp)
 
     sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, url, ver);
 
-    fnc_log(FNC_LOG_INFO, "%s %s %s ", method, url, ver);
     send_set_parameter_reply(rtsp);
-    log_user_agent(rtsp); // See User-Agent 
 
     return ERR_NOERROR;
 }

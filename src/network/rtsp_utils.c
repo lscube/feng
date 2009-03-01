@@ -235,26 +235,6 @@ gboolean rtsp_get_url(RTSP_buffer *rtsp, Url *url) {
  */
 
 /**
- * @brief Print to log various informations about the user agent.
- *
- * @param rtsp the buffer containing the USER_AGENT header
- */
-void log_user_agent(RTSP_buffer * rtsp)
-{
-    char * p, cut[256];
-
-    if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
-        strncpy(cut, p, 255);
-        cut[255] = '\0';
-        if ((p = strstr(cut, RTSP_EL)) != NULL) {
-            *p = '\0';
-        }
-        fnc_log(FNC_LOG_CLIENT, "%s", cut);
-    } else
-        fnc_log(FNC_LOG_CLIENT, "-");
-}
-
-/**
  * RTSP Message generation and logging functions
  * @defgroup rtsp_msg_gen RTSP Message Generation
  * @{
@@ -273,7 +253,6 @@ void rtsp_send_reply(const RTSP_buffer *rtsp, RTSP_ResponseCode code)
     rtsp_bwrite(rtsp, response);
     
     fnc_log(FNC_LOG_ERR, "%d - - ", code);
-    log_user_agent(rtsp);
 }
 
 /**

@@ -166,9 +166,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
       goto error_management;
     }
 
-    fnc_log(FNC_LOG_INFO, "DESCRIBE %s RTSP/1.0 ", url);
     send_describe_reply(rtsp, &url, descr, descr_format);
-    log_user_agent(rtsp); // See User-Agent 
 
     g_string_free(descr, TRUE);
 

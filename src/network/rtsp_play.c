@@ -351,10 +351,7 @@ int RTSP_play(RTSP_buffer * rtsp)
         goto error_management;
     }
 
-    fnc_log(FNC_LOG_INFO, "PLAY %s://%s/%s RTSP/1.0 ",
-	    url.protocol, url.hostname, url.path);
     send_play_reply(rtsp, &url, rtsp_sess, &args);
-    log_user_agent(rtsp); // See User-Agent
     return ERR_NOERROR;
 
 error_management:

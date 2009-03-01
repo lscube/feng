@@ -97,10 +97,7 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 
     s = rtsp->session;
 
-    fnc_log(FNC_LOG_INFO, "TEARDOWN %s://%s/%s RTSP/1.0 ",
-	    url.protocol, url.hostname, url.path);
     send_teardown_reply(rtsp);
-    log_user_agent(rtsp); // See User-Agent 
 
     if (strchr(url.path, '='))    /*Compatibility with RealOne and RealPlayer */
         filename = strchr(url.path, '=') + 1;

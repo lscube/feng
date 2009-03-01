@@ -540,14 +540,11 @@ int RTSP_setup(RTSP_buffer * rtsp)
     if ( rtsp_s->session_id == 0 )
         rtsp_s->session_id = generate_session_id();
 
-    fnc_log(FNC_LOG_INFO, "SETUP %s://%s/%s RTSP/1.0 ",
-	    url.protocol, url.hostname, url.path);
     if(send_setup_reply(rtsp, rtsp_s, rtp_s)) {
         fnc_log(FNC_LOG_INFO, "Can't write answer");
         error = RTSP_InternalServerError;
         goto error_management;
     }
-    log_user_agent(rtsp); // See User-Agent
 
     return ERR_NOERROR;
 
