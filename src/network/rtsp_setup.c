@@ -38,11 +38,15 @@
 void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd);
 
 /**
- * Splits the path of a requested media finding the trackname and the removing it from the object
+ * Splits the path of a requested media finding the trackname and the removing
+ * it from the object
+ *
  * @param url the Url for which to split the object
  * @param trackname where to save the trackname removed from the object
- * @param trackname_max_len maximum length of the trackname buffer
- * @return RTSP_Ok or RTSP_InternalServerError if there was no trackname
+ * @param trackname_max_len maximum length of the trackname buffer 
+ *
+ * @retval true No error
+ * @retval false No trackname provided
  */
 static gboolean split_resource_path(Url * url, char * trackname, size_t trackname_max_len)
 {
