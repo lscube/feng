@@ -34,12 +34,12 @@
 /**
  * Sends the reply for the pause method
  * @param rtsp the buffer where to write the reply
- * @param rtsp_session the session for which to generate the reply
+ * @param req The request to reply to
  * @return ERR_NOERROR
  */
-static int send_pause_reply(RTSP_buffer * rtsp, RTSP_session * rtsp_session)
+static int send_pause_reply(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, rtsp_session->session_id);
+    GString *reply = rtsp_generate_ok_response(req->cseq, req->session_id);
 
     /* No body */
     g_string_append(reply, RTSP_EL);
@@ -66,16 +66,13 @@ static void rtp_session_pause(gpointer element, gpointer user_data)
 int RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
-    RTSP_session *s;
 
     if ( !rtsp_request_get_url(rtsp, req, &url) )
         return ERR_GENERIC;
 
-    s = rtsp->session;
-    
-    g_slist_foreach(s->rtp_sessions, rtp_session_pause, NULL);
+    g_slist_foreach(rtsp->session->rtp_sessions, rtp_session_pause, NULL);
 
-    send_pause_reply(rtsp, s);
+    send_pause_reply(rtsp, req);
 
     return ERR_NOERROR;
 }

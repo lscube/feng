@@ -385,8 +385,6 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     RTSP_session *p = rtsp->session;
     
-    rtsp->rtsp_cseq = req->cseq;
-
     switch (p->cur_state) {
     case INIT_STATE:{
         /*

@@ -33,10 +33,10 @@
  * @param rtsp the buffer where to write the reply
  * @return ERR_NOERROR
  */
-static int send_set_parameter_reply(RTSP_buffer * rtsp)
+static int send_set_parameter_reply(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     GString *reply = rtsp_generate_response(RTSP_ParameterNotUnderstood,
-                                            rtsp->rtsp_cseq);
+                                            req->cseq);
 
     /* No body */
     g_string_append(reply, RTSP_EL);
@@ -55,7 +55,7 @@ static int send_set_parameter_reply(RTSP_buffer * rtsp)
  */
 int RTSP_set_parameter(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    send_set_parameter_reply(rtsp);
+    send_set_parameter_reply(rtsp, req);
 
     return ERR_NOERROR;
 }

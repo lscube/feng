@@ -38,9 +38,9 @@
  * Sends the reply for the teardown method
  * @param rtsp the buffer where to write the reply
  */
-static void send_teardown_reply(RTSP_buffer * rtsp)
+static void send_teardown_reply(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, rtsp->session->session_id);
+    GString *reply = rtsp_generate_ok_response(req->cseq, req->session_id);
     g_string_append(reply, RTSP_EL);
 
     rtsp_bwrite(rtsp, reply);
@@ -97,7 +97,7 @@ int RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req)
 
     s = rtsp->session;
 
-    send_teardown_reply(rtsp);
+    send_teardown_reply(rtsp, req);
 
     if (strchr(url.path, '='))    /*Compatibility with RealOne and RealPlayer */
         filename = strchr(url.path, '=') + 1;

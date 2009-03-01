@@ -281,10 +281,10 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
  * @param rtsp_session the session for which to generate the reply
  * @return ERR_NOERROR
  */
-static int send_play_reply(RTSP_buffer * rtsp, Url *url,
+static int send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
                            RTSP_session * rtsp_session, play_args * args)
 {
-    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, rtsp_session->session_id);
+    GString *reply = rtsp_generate_ok_response(req->cseq, req->session_id);
     rtp_session_send_play_reply_pair pair = {
       .reply = reply,
       .server = url->hostname
@@ -350,7 +350,7 @@ int RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
         goto error_management;
     }
 
-    send_play_reply(rtsp, &url, rtsp_sess, &args);
+    send_play_reply(rtsp, req, &url, rtsp_sess, &args);
     return ERR_NOERROR;
 
 error_management:

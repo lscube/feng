@@ -33,9 +33,9 @@
  * @param rtsp the buffer where to write the reply
  * @return ERR_NOERROR
  */
-static int send_options_reply(RTSP_buffer * rtsp)
+static int send_options_reply(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, 0);
+    GString *reply = rtsp_generate_ok_response(req->cseq, 0);
 
     g_string_append(reply,
 		    "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN,SET_PARAMETER" RTSP_EL);
@@ -55,7 +55,7 @@ static int send_options_reply(RTSP_buffer * rtsp)
  */
 int RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    send_options_reply(rtsp);
+    send_options_reply(rtsp, req);
 
     return ERR_NOERROR;
 }

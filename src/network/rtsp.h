@@ -93,7 +93,6 @@ typedef struct RTSP_buffer {
     GSList *ev_io;
     ev_io *ev_io_write;
     // Run-Time
-    int rtsp_cseq;
     RTSP_session *session;
     feng *srv;
 } RTSP_buffer;

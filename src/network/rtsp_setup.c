@@ -423,9 +423,9 @@ static RTSP_ResponseCode select_requested_track(Url *url, RTSP_session * rtsp_s,
  * @param rtp_s the new RTP session allocated for the client
  * @return ERR_NOERROR
  */
-static int send_setup_reply(RTSP_buffer * rtsp, RTSP_session * session, RTP_session * rtp_s)
+static int send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session * session, RTP_session * rtp_s)
 {
-    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, session->session_id);
+    GString *reply = rtsp_generate_ok_response(req->cseq, req->session_id);
 
     g_string_append(reply, "Transport: ");
 
@@ -545,7 +545,7 @@ int RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     if ( rtsp_s->session_id == 0 )
         rtsp_s->session_id = generate_session_id();
 
-    if(send_setup_reply(rtsp, rtsp_s, rtp_s)) {
+    if(send_setup_reply(rtsp, req, rtsp_s, rtp_s)) {
         fnc_log(FNC_LOG_INFO, "Can't write answer");
         error = RTSP_InternalServerError;
         goto error_management;

@@ -39,11 +39,13 @@
  * @param descr the description string to send
  * @param descr_format the description format to use
  * @return ERR_NOERROR or ERR_ALLOC on buffer allocation errors
+ * @todo remove ERR_ALLOC case and simplify
  */
-static int send_describe_reply(RTSP_buffer * rtsp, Url *url, GString *descr,
-			       RTSP_description_format descr_format)
+static int send_describe_reply(RTSP_buffer * rtsp, RTSP_Request *req,
+                               Url *url, GString *descr,
+                               RTSP_description_format descr_format)
 {
-    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, 0);
+    GString *reply = rtsp_generate_ok_response(req->cseq, 0);
     char *encoded_object;
 
     /* allocate buffer */
@@ -151,7 +153,7 @@ int RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
       goto error_management;
     }
 
-    send_describe_reply(rtsp, &url, descr, descr_format);
+    send_describe_reply(rtsp, req, &url, descr, descr_format);
 
     g_string_free(descr, TRUE);
 
