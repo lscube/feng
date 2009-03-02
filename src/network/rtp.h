@@ -118,6 +118,7 @@ typedef struct RTP_session {
     BPConsumer *cons;
     RTCP_stats rtcp_stats[2];    //client and server
     struct feng *srv;
+    uint32_t last_live_packet_send_time;
 } RTP_session;
 
 typedef struct RTP_header {
