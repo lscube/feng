@@ -172,6 +172,9 @@ ssize_t RTP_recv(RTP_session * session)
     Sock *s = session->transport.rtcp_sock;
     struct sockaddr *sa_p = (struct sockaddr *)&(session->transport.last_stg);
 
+    if (!s)
+        return -1;
+
     switch (s->socktype) {
         case UDP:
             session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
@@ -200,6 +203,10 @@ static int RTP_transport_close(RTP_session * session) {
     port_pair pair;
     pair.RTP = get_local_port(session->transport.rtp_sock);
     pair.RTCP = get_local_port(session->transport.rtcp_sock);
+
+    ev_io_stop(session->srv->loop, session->transport.rtcp_watcher);
+    g_free(session->transport.rtcp_watcher);
+
     switch (session->transport.rtp_sock->socktype) {
         case UDP:
             RTP_release_port_pair(session->srv, &pair);
