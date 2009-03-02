@@ -197,7 +197,8 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 
     if (n < 0) {
         fnc_log(FNC_LOG_INFO, "RTSP connection closed by server.");
-        send_reply(500, NULL, rtsp);
+        //send_reply(500, NULL, rtsp); //This should be already performed by the error method inside RTSP_hand
+        RTSP_send(rtsp); //Force sending the message before closing connection
     }
 
 //  unregister the client

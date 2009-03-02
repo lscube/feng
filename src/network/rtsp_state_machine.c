@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -31,7 +31,7 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-/** 
+/**
  * RTSP high level functions, they maps to the rtsp methods
  * @defgroup rtsp_high RTSP high level functions
  * @ingroup RTSP
@@ -199,7 +199,7 @@ static int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
          * Otherwise, CRLF is the legal end-of-line marker for all HTTP/1.1
          * protocol compatible message elements.
          */
-        if ((tc > 2) || ((tc == 2) && 
+        if ((tc > 2) || ((tc == 2) &&
                          (rtsp->in_buffer[ml] == rtsp->in_buffer[ml + 1])))
             eomh = 1;    /* must be the end of the message header */
         ml += tc + ws;
@@ -257,12 +257,12 @@ static int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
     return RTSP_method_rcvd;
 }
 
-static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method_code);
+static int RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method_code);
 static int RTSP_valid_response_msg(unsigned short *status, char *msg,
 				   RTSP_buffer * rtsp);
 static enum RTSP_method_token RTSP_validate_method(RTSP_buffer * rtsp);
 
-static gboolean 
+static gboolean
 find_tcp_interleaved(gconstpointer value, gconstpointer target)
 {
   RTSP_interleaved *i = (RTSP_interleaved *)value;
@@ -272,7 +272,7 @@ find_tcp_interleaved(gconstpointer value, gconstpointer target)
 }
 
 /**
- * Handles incoming RTSP message, validates them and then dispatches them 
+ * Handles incoming RTSP message, validates them and then dispatches them
  * with RTSP_state_machine
  * @param rtsp the buffer from where to read the message
  * @return ERR_NOERROR (can also mean RTSP_not_full if the message was not full)
@@ -300,7 +300,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
                     fnc_log(FNC_LOG_INFO, "Bad Request ");
                     send_reply(400, NULL, rtsp);
                 } else
-                    RTSP_state_machine(rtsp, method);
+                    op = RTSP_state_machine(rtsp, method);
             } else {
                 // There's a RTSP answer in input.
                 if (op == ERR_GENERIC) {
@@ -308,10 +308,12 @@ int RTSP_handler(RTSP_buffer * rtsp)
                 }
             }
             RTSP_discard_msg(rtsp, hlen + blen);
+            if (op < ERR_NOERROR)
+                return ERR_GENERIC;
             break;
         case RTSP_interlvd_rcvd:
             m = rtsp->in_buffer[1];
-	    list = g_slist_find_custom(rtsp->interleaved,
+            list = g_slist_find_custom(rtsp->interleaved,
                                        GINT_TO_POINTER(m),
                                        find_tcp_interleaved);
             if (!list) {    // session not found
@@ -344,7 +346,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
  * @param rtsp the buffer containing the message to dispatch
  * @param method the id of the method to execute
  */
-static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method)
+static int RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method)
 {
     char *s;
     RTSP_session *p;
@@ -355,23 +357,24 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
             fnc_log(FNC_LOG_INFO,
                 "Invalid Session number in Session header\n");
             send_reply(454, NULL, rtsp);    /* Session Not Found */
-            return;
+            return ERR_GENERIC;
         }
     }
     p = rtsp->session;
     if (p == NULL) {
-        return;
+        return ERR_GENERIC;
     }
     switch (p->cur_state) {
     case INIT_STATE:{
             switch (method) {
             case RTSP_ID_DESCRIBE:
-                RTSP_describe(rtsp);
-                break;
+                return RTSP_describe(rtsp);
             case RTSP_ID_SETUP:
                 if (RTSP_setup(rtsp, &p) == ERR_NOERROR) {
                     p->cur_state = READY_STATE;
                 }
+                else
+                    return ERR_GENERIC;
                 break;
             case RTSP_ID_TEARDOWN:
                 RTSP_teardown(rtsp);
@@ -409,6 +412,8 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
                 if (RTSP_setup(rtsp, &p) == ERR_NOERROR) {
                     p->cur_state = READY_STATE;
                 }
+                else
+                    return ERR_GENERIC;
                 break;
             case RTSP_ID_TEARDOWN:
                 RTSP_teardown(rtsp);
@@ -424,8 +429,7 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
                        rtsp);
                 break;
             case RTSP_ID_DESCRIBE:
-                RTSP_describe(rtsp);
-                break;
+                return RTSP_describe(rtsp);
             default:
                 send_reply(501,
                        "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n",
@@ -452,8 +456,7 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
             case RTSP_ID_OPTIONS:
                 break;
             case RTSP_ID_DESCRIBE:
-                RTSP_describe(rtsp);
-                break;
+                return RTSP_describe(rtsp);
             case RTSP_ID_SETUP:
                 break;
             case RTSP_ID_SET_PARAMETER:
@@ -469,11 +472,13 @@ static void RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method
         }
         break;
     }            /* end of current state switch */
+
+    return ERR_NOERROR;
 }
 
 /** validates an rtsp message and returns its id
  * @param rtsp the buffer containing the message
- * @return the message id or -1 if something doesn't work in the request 
+ * @return the message id or -1 if something doesn't work in the request
  */
 static enum RTSP_method_token RTSP_validate_method(RTSP_buffer * rtsp)
 {
@@ -554,7 +559,7 @@ static enum RTSP_method_token RTSP_validate_method(RTSP_buffer * rtsp)
  * @retval 1 No error
  * @retval 0 The parsed message wasn't a response message
  * @retval ERR_GENERIC Error
- */ 
+ */
 static int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rtsp)
 // This routine is from BP.
 {
