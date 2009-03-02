@@ -28,6 +28,7 @@
 #include <inttypes.h>
 #include <strings.h>
 
+#include <sys/time.h>
 #include <bufferpool/bufferpool.h>
 #include "rtsp.h"
 #include <fenice/prefs.h>
@@ -214,6 +215,7 @@ static void rtp_session_play(gpointer value, gpointer user_data)
   // Start playing all the presentation
   if (!rtp_sess->started) {
     // Start new -- assume no allocation error
+    rtp_sess->last_live_packet_send_time = time(NULL);
     schedule_start (rtp_sess, args);
   } else {
     // Resume existing
