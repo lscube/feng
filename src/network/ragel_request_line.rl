@@ -23,7 +23,7 @@
 
 %% machine rtsp_request_line;
 
-static size_t ragel_parse_request_line(RTSP_Request *req, const char *msg, const size_t length) {
+static size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Request *req) {
     int cs;
     const char *p = msg, *pe = p + length + 1, *s, *eof;
 

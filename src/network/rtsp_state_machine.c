@@ -181,7 +181,7 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     req->client = rtsp;
     req->method_id = RTSP_ID_ERROR;
 
-    request_line_length = ragel_parse_request_line(req, rtsp->in_buffer, message_length);
+    request_line_length = ragel_parse_request_line(rtsp->in_buffer, message_length, req);
 
     /* If the parser returns zero, it means that the request line
      * couldn't be parsed. Since a request line that cannot be parsed
