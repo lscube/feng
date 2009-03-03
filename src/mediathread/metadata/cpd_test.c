@@ -12,7 +12,7 @@ void fnc_log(int level, const char *fmt, ...) {
 }
 
 int main (void) {
-    pthread_t server; 
+    pthread_t server;
     pthread_create(&server, NULL, cpd_server, NULL);
 
     while(1) {

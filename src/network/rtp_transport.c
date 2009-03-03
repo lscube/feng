@@ -27,6 +27,7 @@
 #include "mediathread/mediathread.h"
 #include "mediathread/demuxer.h"
 #include <fenice/fnc_log.h>
+#include <sys/time.h>
 
 #if ENABLE_DUMP
 #include <fenice/debug.h>
@@ -73,6 +74,7 @@ int RTP_send_packet(RTP_session * session)
     ssize_t psize_sent = 0;
     feng *srv = session->srv;
     Track *t = r_selected_track(session->track_selector);
+    uint32_t now=time(NULL);
 
     if ((slot = bp_getreader(session->cons))) {
         if (!(session->pause && t->properties->media_source == MS_live)) {
@@ -131,6 +133,8 @@ int RTP_send_packet(RTP_session * session)
                 session->send_time += calc_send_time(session, slot);
                 session->rtcp_stats[i_server].pkt_count += slot->seq_delta;
                 session->rtcp_stats[i_server].octet_count += slot->data_size;
+
+                session->last_live_packet_send_time = now;
             }
             g_free(packet);
         } else {
@@ -168,6 +172,9 @@ ssize_t RTP_recv(RTP_session * session)
     Sock *s = session->transport.rtcp_sock;
     struct sockaddr *sa_p = (struct sockaddr *)&(session->transport.last_stg);
 
+    if (!s)
+        return -1;
+
     switch (s->socktype) {
         case UDP:
             session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
@@ -196,6 +203,10 @@ static int RTP_transport_close(RTP_session * session) {
     port_pair pair;
     pair.RTP = get_local_port(session->transport.rtp_sock);
     pair.RTCP = get_local_port(session->transport.rtcp_sock);
+
+    ev_io_stop(session->srv->loop, session->transport.rtcp_watcher);
+    g_free(session->transport.rtcp_watcher);
+
     switch (session->transport.rtp_sock->socktype) {
         case UDP:
             RTP_release_port_pair(session->srv, &pair);

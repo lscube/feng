@@ -1,23 +1,23 @@
-/* * 
+/* *
  *  This file is part of Feng
- * 
+ *
  * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
- * See AUTHORS for more details 
- *  
- * Feng is free software; you can redistribute it and/or 
+ * See AUTHORS for more details
+ *
+ * Feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
- * Feng is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
- * Lesser General Public License for more details. 
- * 
+ *
+ * Feng is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with Feng; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *  
+ *
  * */
 
 #ifdef HAVE_CONFIG
@@ -124,7 +124,7 @@ int cpd_open(CPDMetadata *md) {
     char sql_query[MAX_CHARS];
     char realpath[MAX_CHARS];
 
-    fnc_log(FNC_LOG_INFO, "[CPD] Initializing resource: '%s'", md->Filename); 
+    fnc_log(FNC_LOG_INFO, "[CPD] Initializing resource: '%s'", md->Filename);
 
     mysql_init(&mysql);
 
@@ -142,7 +142,7 @@ int cpd_open(CPDMetadata *md) {
     char buf[MAX_CHARS];
     strcpy(buf, FENICE_AVROOT_DIR_DEFAULT_STR);
     strncat(buf, "/", sizeof(buf)-strlen(buf));
-    strncat(buf, md->Filename, sizeof(buf)-strlen(buf)); 
+    strncat(buf, md->Filename, sizeof(buf)-strlen(buf));
     int nchars = readlink(buf, realpath, MAX_CHARS);
     if (nchars < 0 || nchars == MAX_CHARS) {
 	fnc_log(FNC_LOG_FATAL, "[CPD] Failed to follow symbolic link.");
@@ -150,7 +150,7 @@ int cpd_open(CPDMetadata *md) {
     }
     realpath[nchars] = '\0';
 
-    fnc_log(FNC_LOG_VERBOSE, "[CPD] Found actual resource: '%s'", realpath); 
+    fnc_log(FNC_LOG_VERBOSE, "[CPD] Found actual resource: '%s'", realpath);
 
 
     strcpy(sql_query, "SELECT * FROM tmetadatapacket JOIN tresourceinfo ON tmetadatapacket.ResourceId = tresourceinfo.Id WHERE tresourceinfo.ResourcePath = '");
@@ -181,7 +181,7 @@ int cpd_open(CPDMetadata *md) {
 
     // creating packet list
     md->Packets = g_list_alloc();
-    
+
 
     // fetching rows
     while  ( (row = mysql_fetch_row (res)) != NULL) {
@@ -191,7 +191,7 @@ int cpd_open(CPDMetadata *md) {
 
 	// creating packet
 	CPDPacket *myPacket = g_new0(CPDPacket, 1);
-	
+
 	// setting timestamp
 	myPacket->Timestamp = strtol(row[1], NULL, 10);
 	myPacket->Timestamp /= 1000;  // Milliseconds to Seconds Conversion
@@ -346,14 +346,14 @@ void *cpd_server(void *args) {
 
 	g_hash_table_iter_init (&iter, clients);
 
-        while (g_hash_table_iter_next (&iter, &key, NULL)) 
+        while (g_hash_table_iter_next (&iter, &key, NULL))
         {
 	    int fd = *(int *)key;
 	    FD_SET(fd, &read_fds);
 	    if (fd>max_fd)
 		max_fd = fd;
         }
-	
+
 	G_UNLOCK (g_hash_global);
 
 
@@ -361,20 +361,20 @@ void *cpd_server(void *args) {
 	select(max_fd+1, &read_fds, NULL, NULL, NULL);
 	if (FD_ISSET(Sock_fd(cpd_srv), &read_fds)) {
 		Sock* new_sd = Sock_accept(cpd_srv, NULL);
-		CPDMetadata* md = g_new0(CPDMetadata, 1); 
+		CPDMetadata* md = g_new0(CPDMetadata, 1);
 		md->Socket = new_sd;
 		//md->ResourceId = strdup(resourceId);
 		G_LOCK (g_hash_global);
 		g_hash_table_insert(clients, &Sock_fd(new_sd), md);
 		fnc_log(FNC_LOG_INFO, "[CPD] Incoming connection on socket : %d\n", Sock_fd(md->Socket));
 		G_UNLOCK (g_hash_global);
-		
+
 	}
 
 	G_LOCK (g_hash_global);
 
 	g_hash_table_iter_init (&iter, clients);
-        while (g_hash_table_iter_next (&iter, &key, &value)) 
+        while (g_hash_table_iter_next (&iter, &key, &value))
         {
 	    int fd = *((int *)key);
 	    CPDMetadata *md = value;
@@ -385,11 +385,11 @@ void *cpd_server(void *args) {
 		    // client left
 		    fnc_log(FNC_LOG_INFO, "[CPD] Closing connection on socket : %d\n", Sock_fd(md->Socket));
 		    g_hash_table_remove (clients, key);
-		    // g_free 
+		    // g_free
 		} else {
 
 		    // receiving data
-		    fnc_log(FNC_LOG_INFO, "[CPD] Metadata Request received"); 
+		    fnc_log(FNC_LOG_INFO, "[CPD] Metadata Request received");
 
 		    if (strncmp(buffer, "REQUEST ", min(sizeof(buffer), 8))) {
 			// Command not recognized
@@ -417,7 +417,7 @@ void *cpd_server(void *args) {
 			        g_hash_table_remove (clients, key);
 				break;
 			}
-			
+
 		    }
 		}
 	    }

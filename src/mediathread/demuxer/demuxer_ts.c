@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -100,7 +100,7 @@ static int mpegts_init(Resource * r)
 
     //open the file
 
-//    r->info->duration = 
+//    r->info->duration =
     r->timescaler = timescaler;
     r->private_data = priv;
     return RESOURCE_OK;
@@ -165,13 +165,13 @@ static void update_ts_pkt_duration(mp2t_priv* priv, uint8_t* pkt, double now)
         //we haven't seen this pid before
         pid_status = g_new0(mp2t_pid_status, 1);
         mp2t_pid_status_init(pid_status, clock, now);
-        
+
         g_hash_table_insert(priv->pid_status_table, (gpointer)pid, pid_status);
     } else {
         //we've seen this pid's pcr before
         //so update our estimate
 
-        double duration_per_pkt = (clock - pid_status->last_seen_clock) / 
+        double duration_per_pkt = (clock - pid_status->last_seen_clock) /
                 (priv->ts_pkt_count - pid_status->last_pkt_num);
 
         if(priv->pkt_duration_estimate == 0.0) {
@@ -180,7 +180,7 @@ static void update_ts_pkt_duration(mp2t_priv* priv, uint8_t* pkt, double now)
         } else if(discontinuity_indicator == 0 && duration_per_pkt >= 0.0) {
             double transmit_duration, playout_duration;
 
-            priv->pkt_duration_estimate = 
+            priv->pkt_duration_estimate =
                         duration_per_pkt * NEW_DURATION_WEIGHT +
                             priv->pkt_duration_estimate*(1-NEW_DURATION_WEIGHT);
 
@@ -190,9 +190,9 @@ static void update_ts_pkt_duration(mp2t_priv* priv, uint8_t* pkt, double now)
             playout_duration = clock - pid_status->first_clock;
             if(transmit_duration > playout_duration) {
                 //reduce estimate
-                priv->pkt_duration_estimate *= TIME_ADJUSTMENT_FACTOR; 
-            } else if(transmit_duration + MAX_PLAYOUT_BUFFER_DURATION 
-                    < playout_duration) { 
+                priv->pkt_duration_estimate *= TIME_ADJUSTMENT_FACTOR;
+            } else if(transmit_duration + MAX_PLAYOUT_BUFFER_DURATION
+                    < playout_duration) {
                 //increase estimate
                 priv->pkt_duration_estimate /= TIME_ADJUSTMENT_FACTOR;
             }

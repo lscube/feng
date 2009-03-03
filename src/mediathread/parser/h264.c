@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -34,7 +34,7 @@ typedef struct {
     int is_avc;
     uint8_t *packet; //holds the incomplete packet
     unsigned int len; // incomplete packet length
-    unsigned int nal_length_size; // used in avc 
+    unsigned int nal_length_size; // used in avc
 } h264_priv;
 
 /* Generic Nal header
@@ -256,7 +256,7 @@ static int h264_init(MediaProperties *properties, void **private_data)
 }
 
 // h264 has provisions for
-//  - collating NALS 
+//  - collating NALS
 //  - fragmenting
 //  - feed a single NAL as is.
 

@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -35,6 +35,7 @@
 #include <metadata/cpd.h>
 #endif
 
+#define LIVE_STREAM_TIMEOUT 7
 
 typedef struct schedule_list {
     GMutex *mux;
@@ -144,74 +145,82 @@ static void *schedule_do(void *arg)
     feng *srv = arg;
 
     do {
-      // Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
-      usleep(utime);
-      utime = SCHEDULER_TIMING;
-      for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
-        g_mutex_lock(sched[i].mux);
-        if (sched[i].valid && sched[i].rtp_session->started) {
-	  RTP_session * session = sched[i].rtp_session;
-	  Track *tr = r_selected_track(session->track_selector);
-	  if (!session->pause || tr->properties->media_source == MS_live) {
-	    now = gettimeinseconds(NULL);
+        // Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
+        usleep(utime);
+        utime = SCHEDULER_TIMING;
+        for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i) {
+            g_mutex_lock(sched[i].mux);
+            if (sched[i].valid && sched[i].rtp_session->started) {
+                RTP_session * session = sched[i].rtp_session;
+                Track *tr = r_selected_track(session->track_selector);
+                if (!session->pause || tr->properties->media_source == MS_live) {
+                    now = gettimeinseconds(NULL);
 
-	    // METADATA begin
+                    // METADATA begin
 #ifdef HAVE_METADATA
-	    if (session->metadata)
-		    cpd_send(session, now);
-	    // METADATI end
+                    if (session->metadata)
+                    cpd_send(session, now);
+                    // METADATI end
 #endif
 
-	    res = ERR_NOERROR;
-	    while (res == ERR_NOERROR && now >= session->start_time &&
-		   now >= session->start_time + session->send_time) {
+                    res = ERR_NOERROR;
+                    while (res == ERR_NOERROR && now >= session->start_time && now >= session->start_time
+                        + session->send_time) {
 #if 1
-	      //TODO DSC will be implemented WAY later.
+                        //TODO DSC will be implemented WAY later.
 #else
-	      stream_change(session,
-			    change_check(session));
+                        stream_change(session,
+                        change_check(session));
 #endif
-	      // Send an RTP packet
-	      res = sched[i].play_action(session);
-	      switch (res) {
-	      case ERR_NOERROR: // All fine
-		break;
-	      case ERR_EOF:
-		if(tr->properties->media_source != MS_live) {
-		  fnc_log(FNC_LOG_INFO,"[SCH] Stream Finished");
-		  RTCP_send_packet(session, SR);
-		  RTCP_send_packet(session, BYE);
-		  RTCP_flush(session);
-		}
-		break;
-	      case ERR_ALLOC:
-		fnc_log(FNC_LOG_WARN,"[SCH] Cannot allocate memory");
-		schedule_stop(session);
-		break;
-	      default:
-		fnc_log(FNC_LOG_WARN,"[SCH] Packet Lost");
-		break;
-	      }
-	      RTCP_handler(session);
-	      /*if RTCP_handler return ERR_GENERIC what do i have to do?*/
-	    }
-	    if (res == ERR_NOERROR) {
-	      int next_send_time = fabs((session->start_time +
-					 session->send_time) - now) * 1000000;
-	      utime = min(utime, next_send_time);
-	    }
-	  }
+                        // Send an RTP packet
+                        res = sched[i].play_action(session);
+                        switch (res) {
+                            case ERR_NOERROR: // All fine
+                                break;
+                            case ERR_EOF:
+                                if (tr->properties->media_source != MS_live) {
+                                    fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
+                                    RTCP_send_packet(session, SR);
+                                    RTCP_send_packet(session, BYE);
+                                    RTCP_flush(session);
+                                }
+                                else {
+                                    if ((now - session->last_live_packet_send_time) >= LIVE_STREAM_TIMEOUT) {
+                                        fnc_log(FNC_LOG_INFO, "[SCH] Live Stream Timeout");
+                                        RTCP_send_packet(session, SR);
+                                        RTCP_send_packet(session, BYE);
+                                        RTCP_flush(session);
+                                    }
+                                }
+                                break;
+                            case ERR_ALLOC:
+                                fnc_log(FNC_LOG_WARN, "[SCH] Cannot allocate memory");
+                                schedule_stop(session);
+                                break;
+                            default:
+                                fnc_log(FNC_LOG_WARN, "[SCH] Packet Lost");
+                                break;
+                        }
+                        RTCP_handler(session);
+                        /*if RTCP_handler return ERR_GENERIC what do i have to do?*/
+                    }
+                    if (res == ERR_NOERROR) {
+                        int next_send_time = fabs((session->start_time + session->send_time) - now) * 1000000;
+                        utime = min(utime, next_send_time);
+                    }
+                }
+            }
+            g_mutex_unlock(sched[i].mux);
         }
-        g_mutex_unlock(sched[i].mux);
-      }
-    } while (!srv->stop_schedule);
+    }
+    while (!srv->stop_schedule);
 
     srv->stop_schedule = 0;
     return ERR_NOERROR;
 }
 
 void schedule_init(feng *srv)
-{    
+{
     int i;
     sched = g_new(schedule_list, ONE_FORK_MAX_CONNECTION);
 

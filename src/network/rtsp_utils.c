@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,13 +16,13 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
 /** @file
  * @brief Contains declarations of various RTSP utility structures and functions
- * 
+ *
  * Contains declaration of RTSP structures and constants for error management,
  * declaration of various RTSP requests validation functions and various
  * internal functions
@@ -60,7 +60,7 @@
 RTSP_session *rtsp_session_new(RTSP_buffer *rtsp)
 {
     RTSP_session *new = rtsp->session = g_slice_new0(RTSP_session);
-    
+
     new->srv = rtsp->srv;
     new->session_id = g_strdup_printf("%08x%08x",
                                       g_random_int(),
@@ -112,7 +112,7 @@ RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
 static void interleaved_close_fds(gpointer element, gpointer user_data)
 {
     RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
-    
+
     Sock_close(intlvd[0].local);
     Sock_close(intlvd[1].local);
     g_free(intlvd);
@@ -143,7 +143,7 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
     g_slist_foreach(rtsp->session->rtp_sessions, schedule_remove, NULL);
     g_slist_free(rtsp->session->rtp_sessions);
 
-    // Close connection                     
+    // Close connection
     //close(rtsp->session->fd);
 
     rtsp_session_free(rtsp->session);
@@ -299,7 +299,7 @@ gboolean rtsp_check_invalid_state(const RTSP_Request *req,
         return true;
 
     response = rtsp_response_new(req, RTSP_InvalidMethodInState);
-    
+
     g_hash_table_insert(response->headers,
                         g_strdup(eris_hdr_allow),
                         g_strdup(valid_states[invalid_state]));

@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -70,7 +70,7 @@ static bool is_valid_ipv4_address (const char *str, const char *end)
     }
     if (octets < 4)
         return false;
-  
+
     return true;
 }
 
@@ -94,7 +94,7 @@ static bool is_valid_ipv6_address (const char *str, const char *end)
 
     if (str == end)
         return false;
-  
+
     /* Leading :: requires some special handling. */
     if (*str == ':') {
         ++str;
@@ -144,17 +144,17 @@ static bool is_valid_ipv6_address (const char *str, const char *end)
             saw_xdigit = false;
             break;
         }
-    
+
         return false;
     }
     if (saw_xdigit) {
-        if (tp > ns_in6addrsz - ns_int16sz) 
+        if (tp > ns_in6addrsz - ns_int16sz)
             return false;
         tp += ns_int16sz;
     }
 
     if (colonp != NULL) {
-        if (tp == ns_in6addrsz) 
+        if (tp == ns_in6addrsz)
             return false;
         tp = ns_in6addrsz;
     }
@@ -178,9 +178,9 @@ int is_valid_multicast_address(char *ip)
         family = AF_INET;
     else if(is_valid_ipv6_address (ip, &ip[strlen(ip)-1]))
         family = AF_INET6;
-    else    
+    else
         return ERR_PARSE;
-    
+
     switch (family) {
         case AF_INET: {
             struct in_addr haddr;
@@ -202,7 +202,7 @@ int is_valid_multicast_address(char *ip)
             return ERR_GENERIC;
 #endif
 #ifdef  HAVE_SOCKADDR_DL_STRUCT
-        case AF_LINK: 
+        case AF_LINK:
             return ERR_GENERIC;
 #endif
         default:

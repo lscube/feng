@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -34,8 +34,7 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-
-/** 
+/**
  * RTSP high level functions, mapping to the actual RTSP methods
  * @defgroup rtsp_methods RTSP Method functions
  * @ingroup RTSP
@@ -153,7 +152,7 @@ static gboolean check_session(RTSP_Request *req)
         (session && strcmp(session_hdr, session->session_id) == 0)
         )
         return true;
-    
+
     /* At this point we either got a session when we don't expect one, or one
      * with a different id from expected, respond with a 454 "Session Not
      * Found".
@@ -351,7 +350,7 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_buffer * rtsp,
          * Otherwise, CRLF is the legal end-of-line marker for all HTTP/1.1
          * protocol compatible message elements.
          */
-        if ((tc > 2) || ((tc == 2) && 
+        if ((tc > 2) || ((tc == 2) &&
                          (rtsp->in_buffer[ml] == rtsp->in_buffer[ml + 1])))
             eomh = 1;    /* must be the end of the message header */
         ml += tc + ws;
@@ -441,7 +440,7 @@ static void rtsp_handle_request(RTSP_buffer *rtsp)
     rtsp_free_request(req);
 }
 
-static gboolean 
+static gboolean
 find_tcp_interleaved(gconstpointer value, gconstpointer target)
 {
   RTSP_interleaved *i = (RTSP_interleaved *)value;
@@ -465,7 +464,7 @@ static void rtsp_handle_interleaved(RTSP_buffer *rtsp, int blen, int hlen)
                 m);
         return;
     }
-    
+
     channel = channel_it->data;
 
     fnc_log(FNC_LOG_DEBUG,
@@ -476,7 +475,7 @@ static void rtsp_handle_interleaved(RTSP_buffer *rtsp, int blen, int hlen)
 }
 
 /**
- * Handles incoming RTSP message, validates them and then dispatches them 
+ * Handles incoming RTSP message, validates them and then dispatches them
  * with RTSP_state_machine
  * @param rtsp the buffer from where to read the message
  * @return ERR_NOERROR (can also mean RTSP_not_full if the message was not full)
@@ -494,7 +493,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
         case RTSP_method_rcvd:
             rtsp_handle_request(rtsp);
             break;
-        case RTSP_interlvd_rcvd: 
+        case RTSP_interlvd_rcvd:
             rtsp_handle_interleaved(rtsp, blen, hlen);
             break;
         }
