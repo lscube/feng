@@ -329,7 +329,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
                     "Interleaved RTCP packet arrived for"
                     "channel %d (len: %d).",
                     m, blen);
-            Sock_write(intlvd->local, &rtsp->in_buffer[hlen], blen, NULL, 0);
+            Sock_write(intlvd->local, &rtsp->in_buffer[hlen], blen, NULL, MSG_DONTWAIT | MSG_EOR);
             RTSP_discard_msg(rtsp, hlen + blen);
             break;
         default:
