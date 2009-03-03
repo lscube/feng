@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -160,7 +160,7 @@ static int sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
 
     g_string_append_printf(descr, "a=control:"SDP2_TRACK_ID"=%s"SDP2_EL,
 			   encoded_media_name);
-			   
+
     if (m_descr_frame_rate(m_descr) && m_descr_type(m_descr) == MP_video)
       g_string_append_printf(descr, "a=framerate:%f"SDP2_EL,
 			     m_descr_frame_rate(m_descr));
@@ -304,7 +304,7 @@ GString *sdp_session_descr(feng *srv, char *server, char *name)
     // tool attribute. Feng promo
     /// @TODO choose a better session description
     g_string_append_printf(descr, "a=tool:%s %s Streaming Server"SDP2_EL,
-		    PACKAGE, VERSION);		    
+		    PACKAGE, VERSION);
     // control attribute. We should look if aggregate metod is supported?
     g_string_append(descr, "a=control:*"SDP2_EL);
 

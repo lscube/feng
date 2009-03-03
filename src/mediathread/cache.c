@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -41,7 +41,7 @@ static Cache *create_cache(stream_type type)
 {
     uint32_t size;
     Cache *c = g_new0(Cache, 1);
-    
+
     switch(type) {
         case st_file:
             size=CACHE_FILE_SIZE;
@@ -88,7 +88,7 @@ static uint32_t read_internal_c(uint32_t nbytes, uint8_t *buf, Cache *c, int fd)
 
     if(!nbytes)
         return 0;
-        
+
     if(!c->bytes_left) {
         c->bytes_left=c->cache_size=c->read_data(fd,c->cache,c->max_cache_size);/*can be: read, read_from_net, read_from_device*/
         if(!c->cache_size) /*EOF*/
@@ -98,7 +98,7 @@ static uint32_t read_internal_c(uint32_t nbytes, uint8_t *buf, Cache *c, int fd)
     if (buf)
         memcpy(buf, &c->cache[c->cache_size - c->bytes_left], bytes);
     c->bytes_left-=bytes;
-    
+
     return bytes + read_internal_c(nbytes-bytes, buf+bytes, c, fd);
 }
 

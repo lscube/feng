@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -61,14 +61,14 @@ int RTSP_set_parameter(RTSP_buffer * rtsp)
 
     RTSP_Error error;
 
-    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
+    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq
         goto error_management;
 
     sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, url, ver);
 
     fnc_log(FNC_LOG_INFO, "%s %s %s ", method, url, ver);
     send_set_parameter_reply(rtsp);
-    log_user_agent(rtsp); // See User-Agent 
+    log_user_agent(rtsp); // See User-Agent
 
     return ERR_NOERROR;
 

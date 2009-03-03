@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -65,11 +65,11 @@ static int send_describe_reply(RTSP_buffer * rtsp, Url *url, GString *descr,
     g_string_append_printf(reply,
 			   "Content-Base: rtsp://%s/%s/" RTSP_EL,
 			   url->hostname, encoded_object);
-             
+
     g_string_append_printf(reply,
 			   "Content-Length: %zd" RTSP_EL,
 			   descr->len);
-             
+
     // end of message
     g_string_append(reply, RTSP_EL);
 
@@ -96,7 +96,7 @@ static RTSP_description_format get_description_format(RTSP_buffer *rtsp)
 	else
 	  return df_Unsupported; // Add here new description formats
     }
-    
+
     return df_SDP_format;
     // For now default to SDP if unknown
     // return df_Unknown;
@@ -132,7 +132,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
       error = RTSP_OptionNotSupported;
       goto error_management;
     }
-    
+
     if (srv->num_conn > srv->srvconf.max_conns) {
         /*redirect */
         return send_redirect_3xx(rtsp, url.path);
@@ -150,7 +150,7 @@ int RTSP_describe(RTSP_buffer * rtsp)
 
     fnc_log(FNC_LOG_INFO, "DESCRIBE %s RTSP/1.0 ", url);
     send_describe_reply(rtsp, &url, descr, descr_format);
-    log_user_agent(rtsp); // See User-Agent 
+    log_user_agent(rtsp); // See User-Agent
 
     g_string_free(descr, TRUE);
 

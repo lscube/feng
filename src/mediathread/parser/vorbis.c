@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -63,7 +63,7 @@ static int encode_header(uint8_t *data, int len, vorbis_priv *priv)
         10, 0, 0, 0,
         'v', 'o', 'r', 'b', 'i', 's', '-', 'r', 't', 'p',
         0, 0, 0, 0,
-        1 
+        1
     };
 
 // old way.
@@ -162,11 +162,11 @@ static int vorbis_init(MediaProperties *properties, void **private_data)
 
     buf = g_base64_encode(priv->conf, priv->conf_len);
     if (!buf) goto err_alloc;
-    
+
     sdp_private = g_new(sdp_field, 1);
     sdp_private->type = fmtp;
-    sdp_private->field = 
-        g_strdup_printf("delivery-method=in_band; configuration=%s;", buf); 
+    sdp_private->field =
+        g_strdup_printf("delivery-method=in_band; configuration=%s;", buf);
     properties->sdp_private =
         g_list_prepend(properties->sdp_private, sdp_private);
 
@@ -234,7 +234,7 @@ static int vorbis_parse(void *track, uint8_t *data, long len, uint8_t *extradata
 //        frag = 0; // no frag
         packet[3] |= 1; //frames in packet
     }
-    
+
     packet[4] = (len>>8)&0xff;
     packet[5] = len&0xff;
     memcpy(packet + XIPH_HEADER_SIZE, data + off, len);

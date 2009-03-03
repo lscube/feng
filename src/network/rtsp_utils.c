@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,13 +16,13 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
 /** @file
  * @brief Contains declarations of various RTSP utility structures and functions
- * 
+ *
  * Contains declaration of RTSP structures and constants for error management,
  * declaration of various RTSP requests validation functions and various
  * internal functions
@@ -142,7 +142,7 @@ RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
 static void interleaved_close_fds(gpointer element, gpointer user_data)
 {
     RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
-    
+
     Sock_close(intlvd[0].local);
     Sock_close(intlvd[1].local);
     g_free(intlvd);
@@ -181,7 +181,7 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
     g_slist_foreach(rtsp->session->rtp_sessions, schedule_remove, NULL);
     g_slist_free(rtsp->session->rtp_sessions);
 
-    // Close connection                     
+    // Close connection
     //close(rtsp->session->fd);
     // Release the mediathread resource
     mt_resource_close(rtsp->session->resource);
@@ -246,7 +246,7 @@ static RTSP_Error check_forbidden_path(Url *url)
 static RTSP_Error validate_url(char *urlstr, Url * url)
 {
     char *decoded_url = g_malloc(strlen(urlstr)+1);
-    
+
     if ( Url_decode( decoded_url, urlstr, strlen(urlstr) ) < 0 )
       return RTSP_BadRequest;
 
@@ -270,7 +270,7 @@ static RTSP_Error validate_url(char *urlstr, Url * url)
  *
  * @param[out] url_buffer the buffer where to write the url (must be
  *                        big enough).
- * 
+ *
  * @retval RTSP_Ok URL identified and copied in the buffer.
  * @retval RTSP_BadRequest URL not found in the buffer.
  */
@@ -296,7 +296,7 @@ static RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer)
 RTSP_Error rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url) {
   char urlstr[256];
   RTSP_Error error = RTSP_Ok;
-  
+
   if ( (error = extract_url(rtsp, urlstr)).got_error )
     goto end;
   if ( (error = validate_url(urlstr, url)).got_error )
@@ -314,7 +314,7 @@ RTSP_Error rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url) {
  *
  * The HDR_REQUIRE header is not supported by feng so it will always
  * be not supported if present.
- * 
+ *
  * @param rtsp the buffer of the request to check
  *
  * @retval RTS_Ok No Require header present.
@@ -331,7 +331,7 @@ RTSP_Error check_require_header(RTSP_buffer * rtsp)
 
 /**
  * @brief Gets the CSeq from the buffer
- * 
+ *
  * Search for the CSEQ header and fills rtsp->rtsp_cseq with its
  * value.
  *
@@ -530,7 +530,7 @@ int bwrite(GString *buffer, RTSP_buffer * rtsp)
 
 /**
  * @brief Add a timestamp to a GString
- * 
+ *
  * @param str GString instance to append the timestamp to
  *
  * Concatenates a GString instance with a time stamp in the format of
@@ -544,7 +544,7 @@ static void append_time_stamp(GString *str) {
 
   strftime(buffer, 38, "Date: %a, %d %b %Y %H:%M:%S GMT" RTSP_EL,
 	   t);
-  
+
   g_string_append(str, buffer);
 }
 
@@ -558,7 +558,7 @@ static void append_time_stamp(GString *str) {
  */
 GString *rtsp_generate_response(guint code, guint cseq) {
   GString *response = g_string_new("");
-  
+
   g_string_printf(response,
 		  "%s %d %s" RTSP_EL
 		  "CSeq: %u" RTSP_EL,
@@ -587,7 +587,7 @@ GString *rtsp_generate_ok_response(guint cseq, guint64 session) {
 			 PACKAGE, VERSION);
 
   append_time_stamp(response);
-  
+
   if ( session != 0 )
     g_string_append_printf(response,
 			    "Session: %" PRIu64 RTSP_EL,

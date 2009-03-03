@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -72,7 +72,7 @@ int RTSP_pause(RTSP_buffer * rtsp)
 
     RTSP_Error error;
 
-    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq 
+    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq
         goto error_management;
     // Extract and validate the URL
     if ( (error = rtsp_extract_validate_url(rtsp, &url)).got_error )
@@ -89,13 +89,13 @@ int RTSP_pause(RTSP_buffer * rtsp)
         send_reply(454, NULL, rtsp);    /* Session Not Found */
         return ERR_NOERROR;
     }
-    
+
     g_slist_foreach(s->rtp_sessions, rtp_session_pause, NULL);
 
     fnc_log(FNC_LOG_INFO, "PAUSE %s://%s/%s RTSP/1.0 ",
 	    url.protocol, url.hostname, url.path);
     send_pause_reply(rtsp, s);
-    log_user_agent(rtsp); // See User-Agent 
+    log_user_agent(rtsp); // See User-Agent
 
     return ERR_NOERROR;
 

@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -63,7 +63,7 @@ typedef enum { st_unknown=-1, st_file=0, st_net, st_pipe, st_device} stream_type
 
 /*Interface to Cache*/
 int read_c(uint32_t nbytes, uint8_t *buf, Cache **c, int fd, stream_type);
-void free_cache(Cache *c); 
+void free_cache(Cache *c);
 
 typedef enum { // XXX: all initialized to a power of 2 number.
     IS_FLAGS_INIT = 0,
@@ -78,7 +78,7 @@ typedef struct {
     stream_type type;
     Cache *cache;
     int fd;
-    //... properties for file, net or device 
+    //... properties for file, net or device
     int mmap_on;
     void *mmap_base;
     void *mmap_curr;
@@ -91,7 +91,7 @@ typedef struct {
 InputStream *istream_open(char *mrl);
 void istream_close(InputStream *);
 
-int istream_read(InputStream *is, uint8_t *buf, uint32_t nbytes); 
+int istream_read(InputStream *is, uint8_t *buf, uint32_t nbytes);
 int istream_reset(InputStream *is);
 time_t mrl_mtime(char *mrl);
 int mrl_changed(char *mrl, time_t *last_change);

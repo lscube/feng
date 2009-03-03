@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,11 +16,11 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
-/* 
+/*
  * mmap wrappers mostly ripped from xine's patches
  * from Diego Pettenò <flameeyes@gentoo.org>
  */
@@ -70,10 +70,10 @@ InputStream *istream_open(char *mrl)
 		return NULL;
 	}
 
-	return is;	
+	return is;
 }
 
-void istream_close(InputStream *is) 
+void istream_close(InputStream *is)
 {
 	if(is!=NULL) {
 		close_fd(is);
@@ -91,7 +91,7 @@ static int read_mmap(uint32_t nbytes, uint8_t *buf, InputStream *is)
 
     if (!nbytes) //FIXME: move higher...
         return 0;
- 
+
     if ( (is->mmap_curr + len) > (is->mmap_base + is->mmap_len) )
         len = (is->mmap_base + is->mmap_len) - is->mmap_curr;
     /* FIXME: don't memcpy! */
@@ -153,12 +153,12 @@ static stream_type parse_mrl(char *mrl, char **resource_name)
 	*resource_name = colon + strlen(FNC_PROTO_SEPARATOR);
 
 	if(!strcmp(mrl, FNC_UDP))
-		res = st_net;	
+		res = st_net;
 	/*TODO: tcp*/
 	else if(!strcmp(mrl, FNC_FILE))
 		res = st_file;
 	else if(!strcmp(mrl, FNC_DEV))
-		res = st_device;	
+		res = st_device;
 	else
 		res = st_unknown;
 
@@ -181,7 +181,7 @@ time_t mrl_mtime(char *mrl)
 
 	if (!mrl)
 		return 0;
-	
+
 	switch (parse_mrl(mrl, &resource_name)) {
 		case st_file:
 			if (stat(resource_name, &filestat) == -1 ) {
@@ -217,7 +217,7 @@ int mrl_changed(char *mrl, time_t *last_change)
 {
 	char *resource_name;
 	struct stat filestat;
-	
+
 	switch (parse_mrl(mrl, &resource_name)) {
 		case st_file:
 			if (stat(resource_name, &filestat) == -1 ) {
@@ -249,7 +249,7 @@ int mrl_changed(char *mrl, time_t *last_change)
 			return ERR_INPUT_PARAM;
 			break;
 	}
-	
+
 	return 0;
 }
 
@@ -258,7 +258,7 @@ int mrl_changed(char *mrl, time_t *last_change)
 static int open_mrl(char *mrl, InputStream *is)
 {
 	char *token;
-	
+
 	is->type=parse_mrl(mrl, &token);
 	strcpy(is->name, token); // we store name w/o type
 	switch ( is->type ) {

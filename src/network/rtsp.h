@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -85,7 +85,7 @@ typedef struct RTSP_session {
 typedef struct RTSP_buffer {
     Sock *sock;
     //unsigned int port;
-    // Buffers      
+    // Buffers
     char in_buffer[RTSP_BUFFERSIZE];
     size_t in_size;
     GAsyncQueue *out_queue;
@@ -112,7 +112,7 @@ int RTSP_handler(RTSP_buffer * rtsp);
 #define RTSP_interlvd_rcvd 2
 
 
-/** 
+/**
  * RTSP low level functions, they handle message specific parsing and
  * communication.
  * @defgroup rtsp_low RTSP low level functions
