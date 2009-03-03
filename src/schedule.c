@@ -192,7 +192,7 @@ static void *schedule_do(void *arg)
                                         RTCP_send_packet(session, BYE);
                                         RTCP_flush(session);
 
-                                        if ((now - session->last_live_packet_send_time) >= (LIVE_STREAM_TIMEOUT+1)) {
+                                        if ((now - session->last_live_packet_send_time) >= (LIVE_STREAM_TIMEOUT*2)) {
                                             fnc_log(FNC_LOG_INFO, "[SCH] Live Stream Timeout, client kicked off!");
                                             rtsp_client_destroy(session->rtsp_buffer);
                                         }
