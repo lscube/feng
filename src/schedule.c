@@ -25,6 +25,7 @@
 #include <fenice/schedule.h>
 #include "network/rtp.h"
 #include "network/rtcp.h"
+#include "network/rtsp.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
@@ -190,6 +191,11 @@ static void *schedule_do(void *arg)
                                         RTCP_send_packet(session, SR);
                                         RTCP_send_packet(session, BYE);
                                         RTCP_flush(session);
+
+                                        if ((now - session->last_live_packet_send_time) >= (LIVE_STREAM_TIMEOUT+1)) {
+                                            fnc_log(FNC_LOG_INFO, "[SCH] Live Stream Timeout, client kicked off!");
+                                            rtsp_client_destroy(session->rtsp_buffer);
+                                        }
                                     }
                                 }
                                 break;

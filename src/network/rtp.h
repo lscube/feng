@@ -27,10 +27,12 @@
 #include <sys/timeb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+
 #include <netembryo/wsocket.h>
-#include "mediathread/mediathread.h"
 #include <bufferpool/bufferpool.h>
+
 #include <fenice/prefs.h>
+#include "mediathread/mediathread.h"
 
 #define RTP_DEFAULT_PORT 5004
 #define RTCP_BUFFERSIZE    1024
@@ -118,6 +120,7 @@ typedef struct RTP_session {
     BPConsumer *cons;
     RTCP_stats rtcp_stats[2];    //client and server
     struct feng *srv;
+    struct RTSP_buffer *rtsp_buffer;
     uint32_t last_live_packet_send_time;
 } RTP_session;
 

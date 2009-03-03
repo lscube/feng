@@ -386,6 +386,7 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
     rtp_s->srv = srv;
     rtp_s->sched_id = schedule_add(rtp_s);
     rtp_s->ssrc = g_random_int();
+    rtp_s->rtsp_buffer = rtsp;
 
     rtp_s->transport.rtcp_watcher = g_new(ev_io, 1);
     rtp_s->transport.rtcp_watcher->data = rtp_s;
