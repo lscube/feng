@@ -66,7 +66,7 @@ void RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req);
  * @}
  */
 
-#include "ragel_request.c"
+#include "ragel_request_line.c"
 
 /**
  * @brief Free a request structure as parsed by rtsp_parse_request().
@@ -175,11 +175,20 @@ static gboolean check_session(RTSP_Request *req)
 static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
 {
     RTSP_Request *req = g_slice_new0(RTSP_Request);
-    
+    size_t message_length = strlen(rtsp->in_buffer),
+        request_line_length, headers_length;
+
     req->client = rtsp;
     req->method_id = RTSP_ID_ERROR;
 
-    ragel_parse_request(req, rtsp->in_buffer);
+    request_line_length = ragel_parse_request_line(req, rtsp->in_buffer, message_length);
+
+    /* If the parser returns zero, it means that the request line
+     * couldn't be parsed. Since a request line that cannot be parsed
+     * might mean that the client is speaking the wrong protocol, we
+     * just ignore the whole thing. */
+    if ( request_line_length == 0 )
+        goto error;
 
     /* Check for supported RTSP version.
      *
@@ -190,21 +199,35 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
      * While we could check for this after accepting the method, if a client
      * uses a method of a RTSP version we don't support, we want to make it
      * clear to the client it should not be using that version at all.
+     *
+     * @todo This needs to be changed to something different, since
+     *       for supporting the QuickTime tunneling of RTP/RTSP over
+     *       HTTP proxy we have to accept (limited) HTTP requests too.
      */
     if ( strcmp(req->version, "RTSP/1.0") != 0 ) {
         rtsp_quick_response(req, RTSP_VersionNotSupported);
         goto error;
     }
 
-    /* Check if the method is a know and supported one */
-    if ( req->method_id == RTSP_ID_ERROR ) {
-        rtsp_quick_response(req, RTSP_NotImplemented);
+    /* Now we actually go around parsing headers. The reason why we
+     * want this done here is that once we know the protocol is the
+     * one we support, all the requests need to be responded with the
+     * right rules, which include repeating of some headers. */
+    headers_length = eris_parse_headers(rtsp->in_buffer + request_line_length,
+                                        message_length - request_line_length,
+                                        &req->headers);
+
+
+    /* Error during headers parsing */
+    if ( headers_length == 0 ) {
+        req->headers = NULL;
+        rtsp_quick_response(req, RTSP_BadRequest);
         goto error;
     }
 
-    /* No headers parsed */
-    if ( req->headers == NULL ) {
-        rtsp_quick_response(req, RTSP_BadRequest);
+    /* Check if the method is a know and supported one */
+    if ( req->method_id == RTSP_ID_ERROR ) {
+        rtsp_quick_response(req, RTSP_NotImplemented);
         goto error;
     }
 

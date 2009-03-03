@@ -26,7 +26,7 @@ libnetwork_a_SOURCES = \
 		sdp2.h \
 		sdp_session_descr.c
 
-rtsp_state_machine.o: ragel_request.c
+rtsp_state_machine.o: ragel_request_line.c
 rtsp_method_setup.o: ragel_transport.c
 rtsp_method_play.o: ragel_range.c
 
@@ -34,6 +34,6 @@ rtsp_method_play.o: ragel_range.c
 	$(RAGEL) $< -o $@
 
 CLEANFILES = \
-	ragel_request.c \
+	ragel_request_line.c \
 	ragel_transport.c \
 	ragel_range.c

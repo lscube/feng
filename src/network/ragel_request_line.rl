@@ -1,10 +1,31 @@
 /* -*- c -*- */
+/* * 
+ * This file is part of Feng
+ *
+ * Copyright (C) 2009 by LScube team <team@lscube.org>
+ * See AUTHORS for more details
+ * 
+ * feng is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * feng is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with feng; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ *
+ * */
 
-%% machine rtsp_request;
+%% machine rtsp_request_line;
 
-static void ragel_parse_request(RTSP_Request *req, const char *msg) {
+static size_t ragel_parse_request_line(RTSP_Request *req, const char *msg, const size_t length) {
     int cs;
-    const char *p = msg, *pe = p + strlen(msg) + 1, *s, *eof;
+    const char *p = msg, *pe = p + length + 1, *s, *eof;
 
     /* We want to express clearly which versions we support, so that we
      * can return right away if an unsupported one is found.
@@ -49,17 +70,19 @@ static void ragel_parse_request(RTSP_Request *req, const char *msg) {
 
         Header = (alpha|'-')+  . ':' . SP . print+ . CRLF;
 
-        action parse_headers {
-            fprintf(stderr, "parse_headers\n");
-            req->headers = eris_parse_headers(s, fpc-s);
+        action stop_parser {
+            return p-msg;
         }
 
-        main := Request_Line . (( Header )+ . CRLF) > set_s % parse_headers . 0;
+        main := Request_Line % stop_parser . /.*/;
 
         write data;
         write init;
         write exec;
     }%%
 
-    /** @todo this should return a boolean false when parsing fails */
+    if ( cs < rtsp_request_line_first_final )
+        return 0;
+
+    return p-msg;
 }
