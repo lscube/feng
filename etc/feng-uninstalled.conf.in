@@ -24,6 +24,7 @@ var.statedir = "@abs_top_builddir@"
 server.username      = "feng"
 server.groupname     = "feng"
 server.max-connections = @fenice_max_session@
+server.loglevel      = 1
 server.document-root = "@abs_top_srcdir@/avroot"
 server.errorlog      = var.logdir  + "/error.log"
 accesslog.filename   = var.logdir + "/access.log"

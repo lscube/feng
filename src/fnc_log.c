@@ -37,51 +37,47 @@
 #define ERR_FORMAT "%a %b %d %H:%M:%S %Y"
 #define MAX_LEN_DATE 30
 
-//static char* fnc_name;
 static FILE *fd = NULL;
 
-/*Prints on standard error or file*/
+static int log_level = FNC_LOG_WARN;
+
+/**
+ * Log to file descriptor
+ * @brief print on standard error or file
+ */
 static void fnc_errlog(int level, const char *fmt, va_list args)
 {
     time_t now;
     char date[MAX_LEN_DATE];
     const struct tm *tm;
 
+    if (level > log_level) return;
+
     time(&now);
     tm = localtime(&now);
+    strftime(date, MAX_LEN_DATE, ERR_FORMAT, tm);
 
     switch (level) {
         case FNC_LOG_FATAL:
-            strftime(date, MAX_LEN_DATE, ERR_FORMAT, tm);
             fprintf(fd, "[%s] [fatal error] ", date);
             break;
         case FNC_LOG_ERR:
-            strftime(date, MAX_LEN_DATE, ERR_FORMAT, tm);
             fprintf(fd, "[%s] [error] ", date);
             break;
         case FNC_LOG_WARN:
-            strftime(date, MAX_LEN_DATE, ERR_FORMAT, tm);
             fprintf(fd, "[%s] [warning] ", date);
             break;
         case FNC_LOG_DEBUG:
-#if DEBUG
-            fprintf(fd, "[debug] ");
-#else
-            return;
-#endif
+            fprintf(fd, "[%s] [debug] ", date);
             break;
         case FNC_LOG_VERBOSE:
-#ifdef VERBOSE
-            fprintf(fd, "[verbose debug] ");
-#else
-            return;
-#endif
+            fprintf(fd, "[%s] [verbose debug] ", date);
             break;
         case FNC_LOG_CLIENT:
+            fprintf(fd, "[%s] [client] ", date);
             break;
         default:
-            /*FNC_LOG_INFO*/
-            strftime(date, MAX_LEN_DATE, LOG_FORMAT ,tm);
+        case FNC_LOG_INFO:
             fprintf(fd, "[%s] ", date);
             break;
     }
@@ -96,6 +92,8 @@ static void fnc_syslog(int level, const char *fmt, va_list args)
 {
     int l = LOG_ERR;
 
+    if (level > log_level) return;
+
     switch (level) {
         case FNC_LOG_FATAL:
             l = LOG_CRIT;
@@ -107,22 +105,13 @@ static void fnc_syslog(int level, const char *fmt, va_list args)
             l = LOG_WARNING;
             break;
         case FNC_LOG_DEBUG:
-#if DEBUG
             l = LOG_DEBUG;
-#else
-            return;
-#endif
             break;
         case FNC_LOG_VERBOSE:
-#ifdef VERBOSE
             l = LOG_DEBUG;
-#else
-            return;
-#endif
             break;
         case FNC_LOG_CLIENT:
             l = LOG_INFO;
-            return;
             break;
         default:
             l = LOG_INFO;
@@ -142,9 +131,10 @@ static void (*fnc_vlog)(int, const char*, va_list) = fnc_errlog;
  * @param name specifies the application name
  * @return the logger currently in use
  * */
-fnc_log_t fnc_log_init(char *file, int out, char *name)
+fnc_log_t fnc_log_init(char *file, int out, int level, char *name)
 {
     fd = stderr;
+    log_level = level;
     switch (out) {
         case FNC_LOG_SYS:
 #if HAVE_SYSLOG_H

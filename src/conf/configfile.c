@@ -111,6 +111,7 @@ static int config_insert(server *srv) {
 
         { "server.first_udp_port",  &srv->srvconf.first_udp_port, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
+        { "server.loglevel", &srv->srvconf.loglevel, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
     };
 
@@ -213,7 +214,7 @@ int config_setup_connection(server *srv, connection *con) {
     PATCH(ssl_pemfile);
     PATCH(ssl_ca_file);
     PATCH(ssl_cipher_list);
- 
+
     return 0;
 }
 
@@ -780,7 +781,7 @@ static int tokenizer_init(tokenizer_t *t, const buffer *source, const char *inpu
 }
 
 /**
- * Parse a configuration file 
+ * Parse a configuration file
  * @param srv instance variable
  * @param context configuration context
  * @param fn file name, to be searched in context->basedir if set
@@ -810,7 +811,7 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
             log_error_write(srv, __FILE__, __LINE__, "sbss",
                     "opening configfile ", filename, "failed:", strerror(errno));
             ret = -1;
-        } 
+        }
     } else {
         tokenizer_init(&t, filename, s.start, s.size);
         ret = config_parse(srv, context, &t);

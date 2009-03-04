@@ -60,6 +60,7 @@ typedef struct {
     /* FIXME feng specific stuff */
         short first_udp_port;
         short buffered_frames;
+        short loglevel;
 
 //	unsigned short dont_daemonize;
 //	buffer *changeroot;
@@ -100,7 +101,7 @@ typedef struct {
 	/* virtual-servers */
 	buffer *document_root;
 	buffer *server_name;
-/*        
+/*
 	buffer *error_handler;
 	buffer *server_tag;
 	buffer *dirlist_encoding;

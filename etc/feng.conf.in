@@ -23,6 +23,9 @@ var.statedir = "@feng_statedir@"
 
 server.username      = "feng"
 server.groupname     = "feng"
+# Set log verbosity (defaults to Warnings):
+# 0 Warnings 1 Info 2 Client side 3 Debug 4 Verbose
+server.loglevel      = 1
 server.max-connections = @fenice_max_session@
 server.document-root = var.basedir + "/avroot"
 server.errorlog      = var.logdir  + "/error.log"

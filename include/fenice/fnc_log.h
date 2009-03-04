@@ -32,13 +32,15 @@ enum {  FNC_LOG_OUT,
         FNC_LOG_FILE };
 
 	//level
-#define FNC_LOG_FATAL 0
-#define FNC_LOG_ERR 1
-#define FNC_LOG_WARN 2
-#define FNC_LOG_INFO 3
-#define FNC_LOG_DEBUG 4
-#define FNC_LOG_VERBOSE 5
-#define FNC_LOG_CLIENT 6
+enum {
+    FNC_LOG_FATAL = -2, //!< Fatal error
+    FNC_LOG_ERR,        //!< Recoverable error
+    FNC_LOG_WARN,       //!< Warning
+    FNC_LOG_INFO,       //!< Informative message
+    FNC_LOG_CLIENT,     //!< Client response
+    FNC_LOG_DEBUG,      //!< Debug
+    FNC_LOG_VERBOSE,    //!< Overly verbose debug
+};
 
 typedef void (*fnc_log_t)(int, const char*, va_list);
 
@@ -49,6 +51,6 @@ void fnc_log(int level, const char *fmt, ...);
     fnc_log(level, "[%s - %d]" fmt, __FILE__, __LINE__ , ## string)
 #endif
 
-fnc_log_t fnc_log_init(char *file, int out, char *name);
+fnc_log_t fnc_log_init(char *file, int out, int level, char *name);
 
 #endif // FN_FNC_LOG_H

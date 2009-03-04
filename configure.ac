@@ -103,7 +103,7 @@ fi
 
 AM_CONDITIONAL(FENG_CPD, test "x$enable_metadata" = "xyes")
 
-PKG_CHECK_MODULES(LIBBUFFERPOOL,[libbufferpool >= 0.0.3])
+PKG_CHECK_MODULES(LIBBUFFERPOOL,[libbufferpool >= 0.0.4])
 CFLAGS="$CFLAGS $LIBBUFFERPOOL_CFLAGS"
 LIBS="$LIBS $LIBBUFFERPOOL_LIBS"
 
@@ -242,7 +242,7 @@ AC_OUTPUT
 
 LSC_DEBUG_STATUS
 AC_MSG_NOTICE([config files successfully generated!
- 
+
 Feng Install prefix .......... : $prefix
 Feng Binary path ............. : $(eval echo $exec_prefix/bin/feng)
 Feng Configuration path ...... : $fenice_conf_dir

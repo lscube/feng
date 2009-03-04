@@ -257,7 +257,10 @@ static int command_environment(feng *srv, int argc, char **argv)
         else
             view_log = FNC_LOG_FILE;
 
-        fn = fnc_log_init(srv->srvconf.errorlog_file->ptr, view_log, progname);
+        fn = fnc_log_init(srv->srvconf.errorlog_file->ptr,
+                          view_log,
+                          srv->srvconf.loglevel,
+                          progname);
 
         Sock_init(fn);
         bp_log_init(fn);
