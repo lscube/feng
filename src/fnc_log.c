@@ -29,7 +29,6 @@
 #include <stdarg.h>
 
 #include <fenice/fnc_log.h>
-#include <fenice/debug.h>
 
 #undef fnc_log
 

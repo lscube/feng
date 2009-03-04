@@ -7,7 +7,6 @@ noinst_HEADERS = \
 	include/fenice/prefs.h \
 	include/fenice/schedule.h \
 	include/fenice/server.h \
-	include/fenice/debug.h \
 	include/fenice/sdp_grammar.h
 
 EXTRA_DIST = RELEASE
@@ -22,7 +21,7 @@ avrootdir = $(fenice_avroot_dir)
 dist_avroot_DATA = \
 	avroot/h264.ds \
 	avroot/h264_scramble.ds \
-	avroot/test.mov 
+	avroot/test.mov
 
 feng_confdir = $(fenice_conf_dir)
 dist_feng_conf_DATA = etc/feng.conf

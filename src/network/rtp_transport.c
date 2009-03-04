@@ -29,10 +29,6 @@
 #include <fenice/fnc_log.h>
 #include <sys/time.h>
 
-#if ENABLE_DUMP
-#include <fenice/debug.h>
-#endif
-
 /**
  * @file
  * RTP packets sending and receiving with session handling
@@ -103,28 +99,6 @@ int RTP_send_packet(RTP_session * session)
                  | MSG_EOR)) < 0) {
                 fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
             } else {
-#if ENABLE_DUMP
-	        GString *fname = g_string_new("dump_fenice.");
-
-		g_string_append(fname,
-				session->current_media->description.
-				encoding_name);
-		g_string_append_printf(fname,
-				       ".%d",
-				       session->transport.rtp_fd);
-                if (strcmp
-                    (session->current_media->description.encoding_name,
-                    "MPV") == 0
-                    || strcmp(session->current_media->description.
-                      encoding_name, "MPA") == 0)
-                dump_payload(packet + 16, psize_sent - 16,
-                         fname.str);
-                else
-                    dump_payload(packet + 12, psize_sent - 12,
-                         fname.str);
-
-		g_string_free(fname, TRUE);
-#endif
                 if (!session->send_time) {
                     session->send_time = slot->timestamp - session->seek_time;
                 }

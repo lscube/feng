@@ -27,7 +27,6 @@
 #include "mediaparser_module.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
-#include <fenice/debug.h>
 
 static const MediaParserInfo info = {
     "speex",

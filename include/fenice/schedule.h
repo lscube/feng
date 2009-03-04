@@ -29,7 +29,6 @@
 #include <glib.h>
 #include "network/rtp.h"
 #include <fenice/prefs.h>
-#include <fenice/debug.h>
 
 typedef struct play_args {
     struct tm playback_time;
