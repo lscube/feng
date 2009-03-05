@@ -71,6 +71,7 @@ typedef struct feng {
     int num_conn;               //!< number of active connections
     int conn_count;             //!< number of active connections (FIXME)
     int stop_schedule;          //!< to be refactored away
+    GSList *clients;            //!< currently connected clients
 //@}
 } feng;
 

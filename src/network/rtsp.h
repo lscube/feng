@@ -101,6 +101,7 @@ typedef struct RTSP_buffer {
 
     //Events
     ev_async *ev_sig_disconnect;
+    ev_timer *ev_timeout;
 } RTSP_buffer;
 
 typedef enum {

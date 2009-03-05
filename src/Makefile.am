@@ -7,7 +7,8 @@ bin_PROGRAMS = feng
 feng_SOURCES = main.c fnc_log.c \
 		eventloop.c eventloop.h \
 		schedule.c \
-		is_valid_multicast_address.c
+		is_valid_multicast_address.c \
+		client_events.h client_events.c
 
 feng_LDADD =	network/libnetwork.a \
 		mediathread/libmediath.a \

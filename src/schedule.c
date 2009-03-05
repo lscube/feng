@@ -29,15 +29,11 @@
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
-#include <sys/time.h>
 #include <unistd.h>
 
 #ifdef HAVE_METADATA
 #include <metadata/cpd.h>
 #endif
-
-#define LIVE_STREAM_BYE_TIMEOUT 5
-#define STREAM_TIMEOUT 12 /* This one must be big enough to permit to VLC to switch to another transmission */
 
 typedef struct schedule_list {
     GMutex *mux;
@@ -180,8 +176,7 @@ static void *schedule_do(void *arg)
                             case ERR_NOERROR: // All fine
                                 break;
                             case ERR_EOF:
-                                if ((tr->properties->media_source != MS_live) ||
-                                    ((now - session->last_packet_send_time) >= LIVE_STREAM_BYE_TIMEOUT)) {
+                                if (tr->properties->media_source != MS_live) {
                                     fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
                                     RTCP_send_packet(session, SR);
                                     RTCP_send_packet(session, BYE);
@@ -197,16 +192,7 @@ static void *schedule_do(void *arg)
                                 break;
                         }
 
-                        /* If we were not able to serve any packet and the client ignored our BYE
-                         * kick it by closing everything
-                         */
-                        if ((now - session->last_packet_send_time) >= STREAM_TIMEOUT) {
-                            res = ERR_EOF;
-                            fnc_log(FNC_LOG_INFO, "[SCH] Stream Timeout, client kicked off!");
-                            ev_async_send(srv->loop, session->rtsp_buffer->ev_sig_disconnect);
-                        }
-                        else
-                            RTCP_handler(session);
+                        RTCP_handler(session);
                     }
                     if (res == ERR_NOERROR) {
                         int next_send_time = fabs((session->start_time + session->send_time) - now) * 1000000;

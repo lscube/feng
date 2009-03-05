@@ -38,7 +38,6 @@
 #include <fenice/schedule.h>
 
 static GPtrArray *io_watchers; //!< keep track of ev_io allocated
-static GSList *clients; //!< of type RTSP_buffer
 
 static inline
 int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
@@ -204,39 +203,12 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
     ev_async_send(loop, rtsp->ev_sig_disconnect);
 }
 
-static void rtsp_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int revents)
-{
-    RTSP_buffer *rtsp = w->data;
-    ev_io *read_ev = rtsp->ev_io_read;
-    feng *srv = rtsp->srv;
-
-    //Prevent from requesting disconnection again
-    ev_async_stop(srv->loop, w);
-
-    //Unregister the RTSP incoming data event and remove client
-    ev_io_stop(srv->loop, read_ev);
-    g_free(w);
-    rtsp_client_destroy(rtsp);
-
-    //Close connection
-    Sock_close(rtsp->sock);
-    --srv->conn_count;
-    srv->num_conn--;
-
-    // Release the RTSP_buffer
-    clients = g_slist_remove(clients, rtsp);
-    g_free(rtsp);
-
-    fnc_log(FNC_LOG_INFO, "[client] Client removed");
-}
-
 static void add_client(feng *srv, Sock *client_sock)
 {
     ev_io *ev_io_client = g_new(ev_io, 1);
-    ev_async *ev_as_client = g_new(ev_async, 1);
     RTSP_buffer *rtsp = rtsp_client_new(srv, client_sock);
 
-    clients = g_slist_prepend(clients, rtsp);
+    srv->clients = g_slist_prepend(srv->clients, rtsp);
     client_sock->data = srv;
 
     ev_io_client->data = rtsp;
@@ -253,10 +225,7 @@ static void add_client(feng *srv, Sock *client_sock)
     fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
             Sock_fd(client_sock));
 
-    ev_as_client->data = rtsp;
-    ev_async_init(ev_as_client, rtsp_ev_disconnect_handler);
-    rtsp->ev_sig_disconnect = ev_as_client;
-    ev_async_start(srv->loop, ev_as_client);
+    client_events_register(rtsp);
 }
 
 /**
@@ -289,7 +258,7 @@ incoming_connection_cb(struct ev_loop *loop, ev_io *w, int revents)
     if (!client_sock)
         return;
 
-    p = g_slist_find_custom(clients, client_sock,
+    p = g_slist_find_custom(srv->clients, client_sock,
                             connections_compare_socket);
 
     if ( p == NULL ) {
@@ -358,6 +327,7 @@ void eventloop_init(feng *srv)
 {
     io_watchers = g_ptr_array_new();
     srv->loop = ev_default_loop(0);
+    srv->clients = NULL;
 }
 
 /**
