@@ -32,7 +32,7 @@
 #include <ev.h>
 
 #include "eventloop.h"
-#include "network/rtsp_utils.h"
+#include "network/rtsp.h"
 #include <fenice/utils.h>
 
 #include <fenice/schedule.h>
@@ -150,7 +150,7 @@ void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd)
 static void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     RTSP_buffer *rtsp = w->data;
-    RTSP_send(rtsp);
+    rtsp_send(rtsp);
 }
 
 static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
@@ -168,7 +168,6 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
             if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
                 fnc_log(FNC_LOG_DEBUG,
                     "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
-                send_reply(500, NULL, rtsp);
                 n = -1;
             }
             memcpy(&(rtsp->in_buffer[rtsp->in_size]), buffer, n);
@@ -190,15 +189,13 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 #endif    // HAVE_LIBSCTP
         }
     }
-    if (n > 0) return;
-    if (n == 0)
+    
+    if (n > 0) 
+        return;
+    else if (n == 0)
         fnc_log(FNC_LOG_INFO, "RTSP connection closed by client.");
-
-    if (n < 0) {
+    else if (n < 0)
         fnc_log(FNC_LOG_INFO, "RTSP connection closed by server.");
-        //send_reply(500, NULL, rtsp); //This should be already performed by the error method inside RTSP_hand
-        RTSP_send(rtsp); //Force sending the message before closing connection
-    }
 
     ev_async_send(loop, rtsp->ev_sig_disconnect);
 }

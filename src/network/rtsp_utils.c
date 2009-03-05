@@ -28,90 +28,64 @@
  * internal functions
  */
 
-#include "rtsp_utils.h"
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h> /* For SCNu64 */
 
+#include <liberis/headers.h>
+#include <netembryo/rtsp.h>
 #include <glib.h>
 
 #include <fenice/utils.h>
 #include <fenice/prefs.h>
 #include "sdp2.h"
+#include "rtsp.h"
 #include <fenice/fnc_log.h>
-
-#undef send_reply
 
 /**
  * @addtogroup RTSP
  * @{
  */
 
-RTSP_Error const RTSP_Fatal_ErrAlloc = { {0, ""}, ERR_ALLOC };
+/**
+ * @brief Allocate and initialise a new RTSP session object
+ *
+ * @param rtsp The RTSP client for which to allocate the session
+ *
+ * @return A pointer to a newly allocated RTSP session object
+ *
+ * @see rtsp_session_free();
+ */
+RTSP_session *rtsp_session_new(RTSP_buffer *rtsp)
+{
+    RTSP_session *new = rtsp->session = g_slice_new0(RTSP_session);
+
+    new->srv = rtsp->srv;
+    new->session_id = g_strdup_printf("%08x%08x",
+                                      g_random_int(),
+                                      g_random_int());
+
+    return new;
+}
 
 /**
- * gets the reply message from a standard RTSP error code
- * @param err the code of the error
- * @return the string format of the error corresponding to the given code
+ * @brief Free resources for a RTSP session object
+ *
+ * @param session Session to free resource for
+ *
+ * @see rtsp_session_new()
  */
-static const char const *get_stat(int err)
+void rtsp_session_free(RTSP_session *session)
 {
-    static const struct {
-        char token[36];
-        int code;
-    } status[] = {
-        {
-        "Continue", 100}, {
-        "Created", 201}, {
-        "Accepted", 202}, {
-        "Non-Authoritative Information", 203}, {
-        "No Content", 204}, {
-        "Reset Content", 205}, {
-        "Partial Content", 206}, {
-        "Multiple Choices", 300}, {
-        "Moved Permanently", 301}, {
-        "Moved Temporarily", 302}, {
-        "Unauthorized", 401}, {
-        "Payment Required", 402}, {
-        "Method Not Allowed", 405}, {
-        "Not Acceptable", 406}, {
-        "Proxy Authentication Required", 407}, {
-        "Request Time-out", 408}, {
-        "Conflict", 409}, {
-        "Gone", 410}, {
-        "Length Required", 411}, {
-        "Precondition Failed", 412}, {
-        "Request Entity Too Large", 413}, {
-        "Request-URI Too Large", 414}, {
-        "Unsupported Media Type", 415}, {
-        "Bad Extension", 420}, {
-        "Invalid Parameter", 450}, {
-        "Parameter Not Understood", 451}, {
-        "Conference Not Found", 452}, {
-        "Not Enough Bandwidth", 453}, {
-        "Method Not Valid In This State", 455}, {
-        "Header Field Not Valid for Resource", 456}, {
-        "Invalid Range", 457}, {
-        "Parameter Is Read-Only", 458}, {
-        "Unsupported transport", 461}, {
-        "Not Implemented", 501}, {
-        "Bad Gateway", 502}, {
-        "Service Unavailable", 503}, {
-        "Gateway Time-out", 504}, {
-        "RTSP Version Not Supported", 505}, {
-        "Extended Error:", 911}, {
-        "", -1}
-    };
-    int i;
-    const RTSP_Error * err_data = get_RTSP_Error(err);
+    if ( !session )
+        return;
 
-    if (err_data == NULL) {
-        for (i = 0; status[i].code != err && status[i].code != -1; ++i);
-        return status[i].token;
-    }
-    else
-        return err_data->message.reply_str;
+    /* Release mediathread resource */
+    mt_resource_close(session->resource);
+
+    g_free(session->session_id);
+    g_slice_free(RTSP_session, session);
 }
 
 /**
@@ -126,15 +100,11 @@ static const char const *get_stat(int err)
  */
 RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
 {
-    RTSP_buffer *new = g_new0(RTSP_buffer, 1);
+    RTSP_buffer *new = g_slice_new0(RTSP_buffer);
 
     new->srv = srv;
     new->sock = client_sock;
     new->out_queue = g_async_queue_new();
-
-    new->session = g_new0(RTSP_session, 1);
-    new->session->session_id = -1;
-    new->session->srv = srv;
 
     return new;
 }
@@ -168,14 +138,6 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
   GString *outbuf = NULL;
 
   if (rtsp->session != NULL) {
-#if 0 // Do not use it, is just for testing...
-    if (rtsp->session->resource->info->multicast[0]) {
-      fnc_log(FNC_LOG_INFO,
-	      "RTSP connection closed by client during"
-	      " a multicast session, ignoring...");
-      continue;
-    }
-#endif
 
     // Release all RTP sessions
     g_slist_foreach(rtsp->session->rtp_sessions, schedule_remove, NULL);
@@ -183,10 +145,8 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
 
     // Close connection
     //close(rtsp->session->fd);
-    // Release the mediathread resource
-    mt_resource_close(rtsp->session->resource);
-    // Release the RTSP session
-    g_free(rtsp->session);
+
+    rtsp_session_free(rtsp->session);
     rtsp->session = NULL;
   }
 
@@ -203,6 +163,8 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
     g_string_free(outbuf, TRUE);
   g_async_queue_unlock(rtsp->out_queue);
   g_async_queue_unref(rtsp->out_queue);
+
+  g_slice_free(RTSP_buffer, rtsp);
 }
 
 /**
@@ -212,21 +174,23 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
  */
 
 /**
- * @brief Checks if the path required by the connection is inside the
- *        avroot.
+ * @brief Checks if the path required by the connection is inside the avroot.
  *
  * @param url The netembryo Url structure to validate.
  *
- * @retval RTSP_Ok The URL does not contian any forbidden sequence.
- * @retval RTSP_Forbidden The URL contains forbidden sequences that
- *         might have malicious intent.
+ * @retval true The URL does not contian any forbidden sequence.
+ * @retval false The URL contains forbidden sequences that might have malicious
+ *         intent.
+ *
+ * @todo This function should be moved to netembryo.
+ * @todo This function does not check properly for paths.
  */
-static RTSP_Error check_forbidden_path(Url *url)
+static gboolean check_forbidden_path(Url *url)
 {
     if ( strstr(url->path, "../") || strstr(url->path, "./") )
-        return RTSP_Forbidden;
+        return false;
 
-    return RTSP_Ok;
+    return true;
 }
 
 /**
@@ -238,15 +202,16 @@ static RTSP_Error check_forbidden_path(Url *url)
  * @param[out] url The netembryo Url structure to fill with the
  *                 validate Url.
  *
- * @retval RTSP_Ok The URL has been filled in url.
- * @retval RTSP_BadRequest The URL is malformed.
+ * @retval true The URL has been filled in url.
+ * @retval false The URL is malformed.
+ *
+ * @todo This function should be moved to netembryo.
  */
-static RTSP_Error validate_url(char *urlstr, Url * url)
+static gboolean validate_url(char *urlstr, Url * url)
 {
-    char *decoded_url = g_malloc(strlen(urlstr)+1);
-
-    if ( Url_decode( decoded_url, urlstr, strlen(urlstr) ) < 0 )
-      return RTSP_BadRequest;
+    char *decoded_url = g_uri_unescape_string(urlstr, NULL);
+    if ( decoded_url == NULL )
+        return false;
 
     Url_init(url, decoded_url);
 
@@ -254,271 +219,53 @@ static RTSP_Error validate_url(char *urlstr, Url * url)
 
     if ( url->path == NULL ) {
       Url_destroy(url);
-      return RTSP_BadRequest;
+      return false;
     }
 
-    return RTSP_Ok;
+    return true;
 }
 
 /**
- * Extracts the required url from the buffer
+ * @brief Takes care of extracting and validating an URL from the a request
+ *        structure.
  *
- * @param rtsp the buffer of the request from which to extract the
- *             url.
- *
- * @param[out] url_buffer the buffer where to write the url (must be
- *                        big enough).
- *
- * @retval RTSP_Ok URL identified and copied in the buffer.
- * @retval RTSP_BadRequest URL not found in the buffer.
- */
-static RTSP_Error extract_url(RTSP_buffer * rtsp, char * url_buffer)
-{
-    if (!sscanf(rtsp->in_buffer, " %*s %254s ", url_buffer)) {
-        return RTSP_BadRequest;
-    }
-
-    return RTSP_Ok;
-}
-
-/**
- * @brief Takes care of extracting and validating an URL from the buffer
- *
- * @param rtsp The buffer from where to extract the URL
+ * @param req The request structure from where to extract the URL
  * @param[out] url The netembryo Url structure where to save the buffer
  *
- * @retval RTSP_Ok The URL was found, validated and is allowed.
- * @retval RTSP_BadRequest URL not found or malformed.
- * @retval RTSP_Forbidden The URL contains forbidden character sequences.
+ * This function already takes care of sending a 400 "Bad Request" response for
+ * invalid URLs or a 403 "Forbidden" reply for paths that try to exit the
+ * accessible sandbox.
+ *
+ * @retval true The URL was properly found and extracted
+ * @retval false An error was found, and a reply was already sent.
  */
-RTSP_Error rtsp_extract_validate_url(RTSP_buffer *rtsp, Url *url) {
-  char urlstr[256];
-  RTSP_Error error = RTSP_Ok;
+gboolean rtsp_request_get_url(RTSP_Request *req, Url *url) {
+  if ( !validate_url(req->object, url) ) {
+      rtsp_quick_response(req, RTSP_BadRequest);
+      return false;
+  }
 
-  if ( (error = extract_url(rtsp, urlstr)).got_error )
-    goto end;
-  if ( (error = validate_url(urlstr, url)).got_error )
-    goto end;
-  if ( (error = check_forbidden_path(url)).got_error )
-    goto end;
+  if ( !check_forbidden_path(url) ) {
+      rtsp_quick_response(req, RTSP_Forbidden);
+      return false;
+  }
 
- end:
-  return error;
-}
-
-/**
- * @brief Checks if the RTSP message is a request with supported
- *        options
- *
- * The HDR_REQUIRE header is not supported by feng so it will always
- * be not supported if present.
- *
- * @param rtsp the buffer of the request to check
- *
- * @retval RTS_Ok No Require header present.
- * @retval RTSP_OptionNotSupported Require header present, not
- *         supported.
- */
-RTSP_Error check_require_header(RTSP_buffer * rtsp)
-{
-    if (strstr(rtsp->in_buffer, HDR_REQUIRE))
-        return RTSP_OptionNotSupported;
-
-    return RTSP_Ok;
-}
-
-/**
- * @brief Gets the CSeq from the buffer
- *
- * Search for the CSEQ header and fills rtsp->rtsp_cseq with its
- * value.
- *
- * @param rtsp the buffer of the request
- *
- * @retval RTSP_Ok No error.
- * @retval RTSP_BadRequest CSEQ header not found or not valid.
- */
-RTSP_Error get_cseq(RTSP_buffer * rtsp)
-{
-    char * p;
-
-    if ( (p = strstr(rtsp->in_buffer, HDR_CSEQ)) == NULL )
-        return RTSP_BadRequest;
-    else if ( sscanf(p, "%*s %d", &(rtsp->rtsp_cseq)) != 1 )
-        return RTSP_BadRequest;
-
-    return RTSP_Ok;
-}
-
-/**
- * @brief Gets the ID of the requested session
- *
- * Looks for the Session ID in the RTSP buffer, and saves it in the
- * variable pointed at by @p session_id; the variable is set to zero
- * if no Session ID is found.
- *
- * @param rtsp the buffer from which to parse the Session ID
- * @param[out] session_id where to save the retrieved Session ID
- *
- * @retval RTSP_Ok No error.
- * @retval RTSP_SessionNotFound Session ID not valid.
- */
-RTSP_Error get_session_id(RTSP_buffer * rtsp, guint64 * session_id)
-{
-    char * p;
-
-    // Session
-    if ((p = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(p, "%*s %"SCNu64, session_id) != 1)
-            return RTSP_SessionNotFound;
-    } else {
-        *session_id = 0;
-    }
-
-    return RTSP_Ok;
+  return true;
 }
 /**
  * @}
  */
 
 /**
- * @brief Print to log various informations about the user agent.
- *
- * @param rtsp the buffer containing the USER_AGENT header
- */
-void log_user_agent(RTSP_buffer * rtsp)
-{
-    char * p, cut[256];
-
-    if ((p = strstr(rtsp->in_buffer, HDR_USER_AGENT)) != NULL) {
-        strncpy(cut, p, 255);
-        cut[255] = '\0';
-        if ((p = strstr(cut, RTSP_EL)) != NULL) {
-            *p = '\0';
-        }
-        fnc_log(FNC_LOG_CLIENT, "%s", cut);
-    } else
-        fnc_log(FNC_LOG_CLIENT, "-");
-}
-
-/**
- * RTSP Message generation and logging functions
- * @defgroup rtsp_msg_gen RTSP Message Generation
- * @{
- */
-
-/**
- * @brief Sends a reply message to the client
- *
- * @param err the message code
- * @param addon the text to append to the message
- * @param rtsp the buffer where to write the output message
- *
- * @retval ERR_NOERROR No error.
- * @retval ERR_ALLOC Not enough space to complete the request
- *
- * @note The return value is the one from @ref bwrite function.
- */
-int send_reply(int err, const char *addon, RTSP_buffer * rtsp)
-{
-    GString *reply = rtsp_generate_response(err, rtsp->rtsp_cseq);
-    int res;
-
-    if (addon)
-      g_string_append(reply, addon);
-
-    res = bwrite(reply, rtsp);
-
-    fnc_log(FNC_LOG_ERR, "%s %d - - ", get_stat(err), err);
-    log_user_agent(rtsp);
-
-    return res;
-}
-
-/**
- * @brief Redirects the client to another server
- *
- * @param rtsp the buffer of the rtsp connection
- * @param object the requested object for which the client is
- *               redirected
- *
- * @retval ERR_NOERROR No Error.
- * @retval ERR_ALLOC Not enough space to complete the request.
- *
- * @TODO This is not currently implemented for mediathread, so it
- *       results in an internal server error right now.
- * @TODO The non-mediathread code needs to be audited and cleaned up.
- */
-int send_redirect_3xx(RTSP_buffer * rtsp, const char *object)
-{
-#if ENABLE_MEDIATHREAD
-#warning Write mt equivalent
-        send_reply(500, 0, rtsp);       /* Internal server error */
-        return ERR_NOERROR;
-#else
-    char *r;        /* get reply message buffer pointer */
-    uint8 *mb;        /* message body buffer pointer */
-    uint32 mb_len;
-    SD_descr *matching_descr;
-
-    if (enum_media(object, &matching_descr) != ERR_NOERROR) {
-        fnc_log(FNC_LOG_ERR,
-            "SETUP request specified an object file which can be damaged.\n");
-        send_reply(500, 0, rtsp);    /* Internal server error */
-        return ERR_NOERROR;
-    }
-    //if(!g_ascii_strcasecmp(matching_descr->twin,"NONE") || !g_ascii_strcasecmp(matching_descr->twin,"")){
-    if (!(matching_descr->flags & SD_FL_TWIN)) {
-        send_reply(453, 0, rtsp);
-        return ERR_NOERROR;
-    }
-    /* allocate buffer */
-    mb_len = 2048;
-    mb = g_malloc(mb_len);
-    r = g_malloc(mb_len + 1512);
-    if (!r || !mb) {
-        fnc_log(FNC_LOG_ERR,
-            "send_redirect(): unable to allocate memory\n");
-        send_reply(500, 0, rtsp);    /* internal server error */
-        if (r) {
-            g_free(r);
-        }
-        if (mb) {
-            g_free(mb);
-        }
-        return ERR_ALLOC;
-    }
-    /* build a reply message */
-    sprintf(r,
-        "%s %d %s" RTSP_EL "CSeq: %d" RTSP_EL "Server: %s/%s" RTSP_EL,
-        RTSP_VER, 302, get_stat(302), rtsp->rtsp_cseq, PACKAGE,
-        VERSION);
-    sprintf(r + strlen(r), "Location: %s" RTSP_EL, matching_descr->twin);    /*twin of the first media of the aggregate movie */
-
-    strcat(r, RTSP_EL);
-
-    /** @TODO port to new interface! */
-    bwrite(r, strlen(r), rtsp);
-
-    g_free(mb);
-    g_free(r);
-
-    fnc_log(FNC_LOG_VERBOSE, "REDIRECT response sent.\n");
-    return ERR_NOERROR;
-#endif
-}
-
-/**
  * @brief Writes a GString to the output buffer of an RTSP connection
  *
- * @param buffer GString instance from which to get the data to send
  * @param rtsp where the output buffer is saved
+ * @param buffer GString instance from which to get the data to send
  *
- * @retval ERR_NOERROR No error.
- *
- * @note This function destroys the buffer after completion.
+ * @note The buffer has to be considered destroyed after calling this function
+ *       (the writing thread will take care of the actual destruction).
  */
-int bwrite(GString *buffer, RTSP_buffer * rtsp)
+void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer)
 {
     g_async_queue_push(rtsp->out_queue, buffer);
     ev_io_start(rtsp->srv->loop, rtsp->ev_io_write);
@@ -527,71 +274,37 @@ int bwrite(GString *buffer, RTSP_buffer * rtsp)
 }
 
 /**
- * @brief Add a timestamp to a GString
+ * @brief Check if a method has been called in an invalid state.
  *
- * @param str GString instance to append the timestamp to
+ * @param req Request for the method
+ * @param invalid_state State where the method is not valid
  *
- * Concatenates a GString instance with a time stamp in the format of
- * "Date: 23 Jan 1997 15:35:06 GMT"
+ * If the method was called in the given invalid state, this function responds
+ * to the client with a 455 "Method not allowed in this state" response, which
+ * contain the Allow header as specified by RFC2326 Sections 11.3.6 and 12.4.
  */
-static void append_time_stamp(GString *str) {
-  char buffer[39] = { 0, };
+gboolean rtsp_check_invalid_state(const RTSP_Request *req,
+                                  RTSP_Server_State invalid_state) {
+    static const char *const valid_states[] = {
+        [RTSP_SERVER_INIT] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN",
+        [RTSP_SERVER_READY] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY",
+        [RTSP_SERVER_PLAYING] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE"
+        /* We ignore RECORDING state since we don't support it */
+    };
+    RTSP_Response *response;
 
-  time_t now = time(NULL);
-  struct tm *t = gmtime(&now);
+    if ( req->client->session->cur_state != invalid_state )
+        return true;
 
-  strftime(buffer, 38, "Date: %a, %d %b %Y %H:%M:%S GMT" RTSP_EL,
-	   t);
+    response = rtsp_response_new(req, RTSP_InvalidMethodInState);
 
-  g_string_append(str, buffer);
-}
+    g_hash_table_insert(response->headers,
+                        g_strdup(eris_hdr_allow),
+                        g_strdup(valid_states[invalid_state]));
 
-/**
- * @brief Generates the basic RTSP response string
- *
- * @param code The response code to use for generation.
- * @param cseq The CSeq value for the response.
- *
- * @return A new GString instance with the response heading.
- */
-GString *rtsp_generate_response(guint code, guint cseq) {
-  GString *response = g_string_new("");
+    rtsp_response_send(response);
 
-  g_string_printf(response,
-		  "%s %d %s" RTSP_EL
-		  "CSeq: %u" RTSP_EL,
-		  RTSP_VER, code, get_stat(code), cseq);
-
-  return response;
-}
-/**
- * @}
- */
-
-/**
- * @brief Generates a positive RTSP response string
- *
- * @param cseq The CSeq value for the response.
- * @param session Session-ID to provide with the response
- *                (will be omitted if zero)
- *
- * @return A new GString instance with the response heading.
- */
-GString *rtsp_generate_ok_response(guint cseq, guint64 session) {
-  GString *response = rtsp_generate_response(200, cseq);
-
-  g_string_append_printf(response,
-			 "Server: %s/%s" RTSP_EL,
-			 PACKAGE, VERSION);
-
-  append_time_stamp(response);
-
-  if ( session != 0 )
-    g_string_append_printf(response,
-			    "Session: %" PRIu64 RTSP_EL,
-			    session);
-
-  return response;
+    return false;
 }
 
 /**

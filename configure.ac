@@ -77,6 +77,9 @@ dnl Checks used by conf/*
 dnl AC_CHECK_HEADERS([pcre.h fam.h])
 dnl AC_CHECK_FUNCS([lstat])
 
+AC_CHECK_PROG([RAGEL], [ragel], [ragel])
+AC_SUBST(RAGEL)
+
 fenice_state_dir=$(eval echo ${localstatedir}/feng)
 AC_SUBST(fenice_state_dir)
 
@@ -85,8 +88,8 @@ LSC_CHECK_SCTP
 LIBS="$LIBS $SCTP_LIBS"
 
 AS_IF([test "x$have_sctp" = "xyes"],
-  [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.0.9"],
-  [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.0.9"])
+  [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.1.0"],
+  [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.1.0"])
 
 PKG_CHECK_MODULES(LIBNETEMBRYO,[$LIBNETEMBRYO_REQUIRES])
 AC_SUBST(LIBNETEMBRYO_REQUIRES)
@@ -106,6 +109,10 @@ AM_CONDITIONAL(FENG_CPD, test "x$enable_metadata" = "xyes")
 PKG_CHECK_MODULES(LIBBUFFERPOOL,[libbufferpool >= 0.0.4])
 CFLAGS="$CFLAGS $LIBBUFFERPOOL_CFLAGS"
 LIBS="$LIBS $LIBBUFFERPOOL_LIBS"
+
+PKG_CHECK_MODULES(LIBERIS,[liberis])
+CFLAGS="$CFLAGS $LIBERIS_CFLAGS"
+LIBS="$LIBS $LIBERIS_LIBS"
 
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16 gthread-2.0])
 CFLAGS="$CFLAGS $GLIB_CFLAGS"

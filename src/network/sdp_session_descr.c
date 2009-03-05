@@ -29,6 +29,7 @@
  */
 
 #include <string.h>
+#include <stdbool.h>
 
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
@@ -99,43 +100,35 @@ static MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
  * @param m_descr_list List of MediaDescr instances to fetch the data
  *                     from.
  * @param descr GString instance to append the description to
- *
- * @retval ERR_NOERROR No error.
- * @retval ERR_INPUT_PARAM NULL media description or invalid type.
- *
- * @TODO The return value is ignored, should return void and
- *       eventually log a warning.
  */
-static int sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
+static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
 {
     MediaDescr *m_descr = m_descr_list ? MEDIA_DESCR(m_descr_list) : NULL;
     MediaDescrList tmp_mdl;
     sdp_field_list sdp_private;
-    char encoded_media_name[256];
+    char *encoded_media_name;
 
     if (!m_descr)
-        return ERR_INPUT_PARAM;
+        return;
+
     // m=
     /// @TODO Convert this to a string table
     switch (m_descr_type(m_descr)) {
-        case MP_audio:
-	  g_string_append(descr, "m=audio ");
-	  break;
-        case MP_video:
-	  g_string_append(descr, "m=video ");
-	  break;
-        case MP_application:
-	  g_string_append(descr, "m=application ");
-	  break;
-        case MP_data:
-	  g_string_append(descr, "m=data ");
-	  break;
-        case MP_control:
-	  g_string_append(descr, "m=control ");
-	  break;
-        default:
-	  return ERR_INPUT_PARAM;
-	  break;
+    case MP_audio:
+        g_string_append(descr, "m=audio ");
+        break;
+    case MP_video:
+        g_string_append(descr, "m=video ");
+        break;
+    case MP_application:
+        g_string_append(descr, "m=application ");
+        break;
+    case MP_data:
+        g_string_append(descr, "m=data ");
+        break;
+    case MP_control:
+        g_string_append(descr, "m=control ");
+        break;
     }
 
     /// @TODO shawill: probably the transport should not be hard coded,
@@ -155,11 +148,11 @@ static int sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
     // b=*
     // k=*
     // a=*
-    Url_encode (encoded_media_name, m_descr_name(m_descr),
-                sizeof(encoded_media_name));
+    encoded_media_name = g_uri_escape_string(m_descr_name(m_descr), NULL, false);
 
     g_string_append_printf(descr, "a=control:"SDP2_TRACK_ID"=%s"SDP2_EL,
 			   encoded_media_name);
+    free(encoded_media_name);
 
     if (m_descr_frame_rate(m_descr) && m_descr_type(m_descr) == MP_video)
       g_string_append_printf(descr, "a=framerate:%f"SDP2_EL,
@@ -204,8 +197,6 @@ static int sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
     if (m_descr_author(m_descr))
       g_string_append_printf(descr, "a=author:%s"SDP2_EL,
 			     m_descr_author(m_descr));
-
-    return ERR_NOERROR;
 }
 
 /**

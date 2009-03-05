@@ -11,17 +11,29 @@ libnetwork_a_SOURCES = \
 		rtp.h \
 		rtp_port.c \
 		rtp_transport.c \
+		rtpptdefs.h \
 		rtsp.h \
-		rtsp_describe.c \
 		rtsp_lowlevel.c \
-		rtsp_options.c \
-		rtsp_pause.c \
-		rtsp_play.c \
-		rtsp_set_parameter.c \
-		rtsp_setup.c \
+		rtsp_method_describe.c \
+		rtsp_method_options.c \
+		rtsp_method_pause.c \
+		rtsp_method_play.c \
+		rtsp_method_setup.c \
+		rtsp_method_teardown.c \
+		rtsp_response.c \
 		rtsp_state_machine.c \
-		rtsp_teardown.c \
 		rtsp_utils.c \
-		rtsp_utils.h \
 		sdp2.h \
 		sdp_session_descr.c
+
+rtsp_state_machine.o: ragel_request_line.c
+rtsp_method_setup.o: ragel_transport.c
+rtsp_method_play.o: ragel_range.c
+
+%.c: %.rl
+	$(RAGEL) $< -o $@
+
+CLEANFILES = \
+	ragel_request_line.c \
+	ragel_transport.c \
+	ragel_range.c

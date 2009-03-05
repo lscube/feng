@@ -24,16 +24,19 @@
  * @brief Contains RTSP message dispatchment functions
  */
 
+#include <stdbool.h>
 #include <strings.h>
 #include <inttypes.h> /* For SCNu64 */
+
+#include <liberis/headers.h>
 
 #include "rtsp.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
 /**
- * RTSP high level functions, they maps to the rtsp methods
- * @defgroup rtsp_high RTSP high level functions
+ * RTSP high level functions, mapping to the actual RTSP methods
+ * @defgroup rtsp_methods RTSP Method functions
  * @ingroup RTSP
  *
  * The declaration of these functions are in rtsp_state_machine.c
@@ -44,67 +47,208 @@
  * @{
  */
 
-int RTSP_describe(RTSP_buffer * rtsp);
+typedef void (*rtsp_method_function)(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_setup(RTSP_buffer * rtsp, RTSP_session ** new_session);
+void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_play(RTSP_buffer * rtsp);
+void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_pause(RTSP_buffer * rtsp);
+void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_teardown(RTSP_buffer * rtsp);
+void RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_options(RTSP_buffer * rtsp);
+void RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req);
 
-int RTSP_set_parameter(RTSP_buffer * rtsp);
-
-int RTSP_handler(RTSP_buffer * rtsp);
+void RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req);
 
 /**
  * @}
  */
 
-/**
- * @defgroup rtsp_method_strings RTSP Method strings
- * @ingroup RTSP
- * @{
- */
-#define RTSP_METHOD_MAXLEN 15
-#define RTSP_METHOD_DESCRIBE        "DESCRIBE"
-#define RTSP_METHOD_ANNOUNCE        "ANNOUNCE"
-#define RTSP_METHOD_GET_PARAMETERS  "GET_PARAMETERS"
-#define RTSP_METHOD_OPTIONS         "OPTIONS"
-#define RTSP_METHOD_PAUSE           "PAUSE"
-#define RTSP_METHOD_PLAY            "PLAY"
-#define RTSP_METHOD_RECORD          "RECORD"
-#define RTSP_METHOD_REDIRECT        "REDIRECT"
-#define RTSP_METHOD_SETUP           "SETUP"
-#define RTSP_METHOD_SET_PARAMETER   "SET_PARAMETER"
-#define RTSP_METHOD_TEARDOWN        "TEARDOWN"
-/**
- * @}
- */
+#include "ragel_request_line.c"
 
 /**
- * @brief RTSP method tokens
+ * @brief Free a request structure as parsed by rtsp_parse_request().
  *
- * They are used to identify in which state of the state machines we
- * are.
+ * @param req Request to free
  */
-enum RTSP_method_token {
-  RTSP_ID_ERROR = ERR_GENERIC,
-  RTSP_ID_DESCRIBE,
-  RTSP_ID_ANNOUNCE,
-  RTSP_ID_GET_PARAMETERS,
-  RTSP_ID_OPTIONS,
-  RTSP_ID_PAUSE,
-  RTSP_ID_PLAY,
-  RTSP_ID_RECORD,
-  RTSP_ID_REDIRECT,
-  RTSP_ID_SETUP,
-  RTSP_ID_SET_PARAMETER,
-  RTSP_ID_TEARDOWN
-};
+static void rtsp_free_request(RTSP_Request *req)
+{
+    if ( req == NULL )
+        return;
+
+    if ( req->headers )
+        g_hash_table_destroy(req->headers);
+
+    g_free(req->version);
+    g_free(req->method);
+    g_free(req->object);
+    g_slice_free(RTSP_Request, req);
+}
+
+/**
+ * @brief Checks if the client required any option
+ *
+ * @param req The request to validate
+ *
+ * @retval true No requirement
+ * @retval false Client required options we don't support
+ *
+ * Right now feng does not support any option at all, so if we see the
+ * Require (RFC2326 Sec. 12.32) or Proxy-Require (Sec. 12.27) we respond to
+ * the proper 551 code (Option not supported; Sec. 11.3.14).
+ *
+ * A 551 response contain an Unsupported header that lists the unsupported
+ * options (which in our case are _all_ of them).
+ */
+static gboolean check_required_options(RTSP_Request *req) {
+    const char *require_hdr =
+        g_hash_table_lookup(req->headers, eris_hdr_require);
+    const char *proxy_require_hdr =
+        g_hash_table_lookup(req->headers, eris_hdr_proxy_require);
+    RTSP_Response *response;
+
+    if ( !require_hdr && !proxy_require_hdr )
+        return true;
+
+    response = rtsp_response_new(req, RTSP_OptionNotSupported);
+    g_hash_table_insert(response->headers,
+                        g_strdup(eris_hdr_unsupported),
+                        g_strdup_printf("%s %s",
+                                        require_hdr ? require_hdr : "",
+                                        proxy_require_hdr ? proxy_require_hdr : "")
+                        );
+
+    rtsp_response_send(response);
+    return false;
+}
+
+/**
+ * @brief Check the session reported by the client if any.
+ *
+ * @param req The request to validate
+ *
+ * @retval true No error (session found, or none given and none expected)
+ *
+ * This function checks that the server's expectations of a session are
+ * satisfied. In particular, it ensures that if the client sends a Session
+ * header, we are expecting that same session. If we're not expecting any
+ * session or if the session differs from the expected one, we respond with a
+ * 454 "Session Not Found" status.
+ */
+static gboolean check_session(RTSP_Request *req)
+{
+    const char *session_hdr =
+        g_hash_table_lookup(req->headers, eris_hdr_session);
+
+    RTSP_session *session = req->client->session;
+
+    if (/* We always accept requests without a Session header, since even when a
+         * session _is_ present, the client might make a request that is not
+         * tied to one.*
+         */
+        !session_hdr ||
+        /* Otherwise, check if the session is present and corresponds. */
+        (session && strcmp(session_hdr, session->session_id) == 0)
+        )
+        return true;
+
+    /* At this point we either got a session when we don't expect one, or one
+     * with a different id from expected, respond with a 454 "Session Not
+     * Found".
+     */
+    rtsp_quick_response(req, RTSP_SessionNotFound);
+
+    return false;
+}
+
+/**
+ * @brief Parse a request using Ragel functions
+ *
+ * @param rtsp The client connection the request come
+ *
+ * @return A new request structure or NULL in case of error
+ *
+ * @note In case of error, the response is sent to the client before returning.
+ */
+static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
+{
+    RTSP_Request *req = g_slice_new0(RTSP_Request);
+    size_t message_length = strlen(rtsp->in_buffer),
+        request_line_length, headers_length;
+
+    req->client = rtsp;
+    req->method_id = RTSP_ID_ERROR;
+
+    request_line_length = ragel_parse_request_line(rtsp->in_buffer, message_length, req);
+
+    /* If the parser returns zero, it means that the request line
+     * couldn't be parsed. Since a request line that cannot be parsed
+     * might mean that the client is speaking the wrong protocol, we
+     * just ignore the whole thing. */
+    if ( request_line_length == 0 )
+        goto error;
+
+    /* Check for supported RTSP version.
+     *
+     * It is important to check for this for the first thing, this because this
+     * is the failsafe mechanism that allows for somewhat-incompatible changes
+     * to be made to the protocol.
+     *
+     * While we could check for this after accepting the method, if a client
+     * uses a method of a RTSP version we don't support, we want to make it
+     * clear to the client it should not be using that version at all.
+     *
+     * @todo This needs to be changed to something different, since
+     *       for supporting the QuickTime tunneling of RTP/RTSP over
+     *       HTTP proxy we have to accept (limited) HTTP requests too.
+     */
+    if ( strcmp(req->version, "RTSP/1.0") != 0 ) {
+        rtsp_quick_response(req, RTSP_VersionNotSupported);
+        goto error;
+    }
+
+    /* Now we actually go around parsing headers. The reason why we
+     * want this done here is that once we know the protocol is the
+     * one we support, all the requests need to be responded with the
+     * right rules, which include repeating of some headers. */
+    headers_length = eris_parse_headers(rtsp->in_buffer + request_line_length,
+                                        message_length - request_line_length,
+                                        &req->headers);
+
+
+    /* Error during headers parsing */
+    if ( headers_length == 0 ) {
+        req->headers = NULL;
+        rtsp_quick_response(req, RTSP_BadRequest);
+        goto error;
+    }
+
+    /* Check if the method is a know and supported one */
+    if ( req->method_id == RTSP_ID_ERROR ) {
+        rtsp_quick_response(req, RTSP_NotImplemented);
+        goto error;
+    }
+
+    /* No CSeq found */
+    if ( g_hash_table_lookup(req->headers, eris_hdr_cseq) == NULL ) {
+        /** @todo This should be corrected for RFC! */
+        rtsp_quick_response(req, RTSP_BadRequest);
+        goto error;
+    }
+
+    if ( !check_session(req) )
+        goto error;
+
+    if ( !check_required_options(req) )
+        goto error;
+
+    return req;
+
+ error:
+    rtsp_free_request(req);
+    return NULL;
+}
 
 /**
  * Removes the last message from the rtsp buffer
@@ -121,6 +265,12 @@ static void RTSP_discard_msg(RTSP_buffer * rtsp, int len)
     }
 }
 
+typedef enum {
+    RTSP_not_full,
+    RTSP_method_rcvd,
+    RTSP_interlvd_rcvd
+} rtsp_rcvd_status;
+
 /**
  * Recieves an RTSP message and puts it into the buffer
  *
@@ -136,7 +286,8 @@ static void RTSP_discard_msg(RTSP_buffer * rtsp, int len)
  * @retval RTSP_interlvd_rcvd A complete RTP/RTCP interleaved packet
  *         is present.
  */
-static int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
+static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_buffer * rtsp,
+                                           int *hdr_len, int *body_len)
 {
     int eomh;          /*! end of message header found */
     int mb;            /*! message body exists */
@@ -257,10 +408,37 @@ static int RTSP_full_msg_rcvd(RTSP_buffer * rtsp, int *hdr_len, int *body_len)
     return RTSP_method_rcvd;
 }
 
-static int RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method_code);
-static int RTSP_valid_response_msg(unsigned short *status, char *msg,
-				   RTSP_buffer * rtsp);
-static enum RTSP_method_token RTSP_validate_method(RTSP_buffer * rtsp);
+/**
+ * @brief Handle a request coming from the client
+ *
+ * @param rtsp The client the request comes from
+ *
+ * This function takes care of parsing and getting a request from the client,
+ * and freeing it afterward.
+ */
+static void rtsp_handle_request(RTSP_buffer *rtsp)
+{
+    static const rtsp_method_function methods[] = {
+        [RTSP_ID_DESCRIBE] = RTSP_describe,
+        [RTSP_ID_SETUP]    = RTSP_setup,
+        [RTSP_ID_TEARDOWN] = RTSP_teardown,
+        [RTSP_ID_OPTIONS]  = RTSP_options,
+        [RTSP_ID_PLAY]     = RTSP_play,
+        [RTSP_ID_PAUSE]    = RTSP_pause
+    };
+
+    RTSP_Request *req = rtsp_parse_request(rtsp);
+
+    if ( !req ) return;
+
+    /* We're safe to use the array of functions since rtsp_parse_request() takes
+     * care of responding with an error if the method is not implemented.
+     */
+
+    methods[req->method_id](rtsp, req);
+
+    rtsp_free_request(req);
+}
 
 static gboolean
 find_tcp_interleaved(gconstpointer value, gconstpointer target)
@@ -271,6 +449,31 @@ find_tcp_interleaved(gconstpointer value, gconstpointer target)
   return (i[1].channel == m);
 }
 
+static void rtsp_handle_interleaved(RTSP_buffer *rtsp, int blen, int hlen)
+{
+    RTSP_interleaved *channel;
+
+    int m = rtsp->in_buffer[1];
+    GSList *channel_it = g_slist_find_custom(rtsp->interleaved,
+                                             GINT_TO_POINTER(m),
+                                             find_tcp_interleaved);
+
+    if (!channel_it) {    // session not found
+        fnc_log(FNC_LOG_DEBUG,
+                "Interleaved RTP or RTCP packet arrived for unknown channel (%d)... discarding.\n",
+                m);
+        return;
+    }
+
+    channel = channel_it->data;
+
+    fnc_log(FNC_LOG_DEBUG,
+            "Interleaved RTCP packet arrived for channel %d (len: %d).\n",
+            m, blen);
+    Sock_write(channel->local, &rtsp->in_buffer[hlen],
+               blen, NULL, MSG_DONTWAIT | MSG_EOR);
+}
+
 /**
  * Handles incoming RTSP message, validates them and then dispatches them
  * with RTSP_state_machine
@@ -279,323 +482,23 @@ find_tcp_interleaved(gconstpointer value, gconstpointer target)
  */
 int RTSP_handler(RTSP_buffer * rtsp)
 {
-    unsigned short status;
-    char msg[256];
-    int m, op;
-    int full_msg;
-    RTSP_interleaved *intlvd;
-    GSList *list;
-    int hlen, blen;
-    enum RTSP_method_token method;
-
     while (rtsp->in_size) {
-        switch ((full_msg = RTSP_full_msg_rcvd(rtsp, &hlen, &blen))) {
+        int hlen, blen;
+        rtsp_rcvd_status full_msg = RTSP_full_msg_rcvd(rtsp, &hlen, &blen);
+
+        if ( full_msg == RTSP_not_full )
+            return ERR_GENERIC;
+
+        switch (full_msg) {
         case RTSP_method_rcvd:
-            op = RTSP_valid_response_msg(&status, msg, rtsp);
-            if (op == 0) {
-                // There is NOT an input RTSP message, therefore it's a request
-                method = RTSP_validate_method(rtsp);
-                if (method == RTSP_ID_ERROR) {
-                    // Bad request: non-existing method
-                    fnc_log(FNC_LOG_INFO, "Bad Request ");
-                    send_reply(400, NULL, rtsp);
-                } else
-                    op = RTSP_state_machine(rtsp, method);
-            } else {
-                // There's a RTSP answer in input.
-                if (op == ERR_GENERIC) {
-                    // Invalid answer
-                }
-            }
-            RTSP_discard_msg(rtsp, hlen + blen);
-            if (op < ERR_NOERROR)
-                return ERR_GENERIC;
+            rtsp_handle_request(rtsp);
             break;
         case RTSP_interlvd_rcvd:
-            m = rtsp->in_buffer[1];
-            list = g_slist_find_custom(rtsp->interleaved,
-                                       GINT_TO_POINTER(m),
-                                       find_tcp_interleaved);
-            if (!list) {    // session not found
-                fnc_log(FNC_LOG_DEBUG,
-                        "Interleaved RTP or RTCP packet arrived"
-                        "for unknown channel (%d)... discarding.",
-                        m);
-                RTSP_discard_msg(rtsp, hlen + blen);
-                break;
-            }
-            intlvd = list->data;
-            fnc_log(FNC_LOG_DEBUG,
-                    "Interleaved RTCP packet arrived for"
-                    "channel %d (len: %d).",
-                    m, blen);
-            Sock_write(intlvd->local, &rtsp->in_buffer[hlen], blen, NULL, MSG_DONTWAIT | MSG_EOR);
-            RTSP_discard_msg(rtsp, hlen + blen);
-            break;
-        default:
-            return full_msg;
+            rtsp_handle_interleaved(rtsp, blen, hlen);
             break;
         }
+
+        RTSP_discard_msg(rtsp, hlen + blen);
     }
     return ERR_NOERROR;
-}
-
-/**
- * All state transitions are made here except when the last stream packet
- * is sent during a PLAY.  That transition is located in stream_event().
- * @param rtsp the buffer containing the message to dispatch
- * @param method the id of the method to execute
- */
-static int RTSP_state_machine(RTSP_buffer * rtsp, enum RTSP_method_token method)
-{
-    char *s;
-    RTSP_session *p;
-    guint64 session_id;
-
-    if ((s = strstr(rtsp->in_buffer, HDR_SESSION)) != NULL) {
-        if (sscanf(s, "%*s %"SCNu64, &session_id) != 1) {
-            fnc_log(FNC_LOG_INFO,
-                "Invalid Session number in Session header\n");
-            send_reply(454, NULL, rtsp);    /* Session Not Found */
-            return ERR_GENERIC;
-        }
-    }
-    p = rtsp->session;
-    if (p == NULL) {
-        return ERR_GENERIC;
-    }
-    switch (p->cur_state) {
-    case INIT_STATE:{
-            switch (method) {
-            case RTSP_ID_DESCRIBE:
-                return RTSP_describe(rtsp);
-            case RTSP_ID_SETUP:
-                if (RTSP_setup(rtsp, &p) == ERR_NOERROR) {
-                    p->cur_state = READY_STATE;
-                }
-                else
-                    return ERR_GENERIC;
-                break;
-            case RTSP_ID_TEARDOWN:
-                RTSP_teardown(rtsp);
-                break;
-            case RTSP_ID_OPTIONS:
-                if (RTSP_options(rtsp) == ERR_NOERROR) {
-                    p->cur_state = INIT_STATE;
-                }
-                break;
-            case RTSP_ID_PLAY:    /* method not valid this state. */
-            case RTSP_ID_PAUSE:
-                send_reply(455,
-                       "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n",
-                       rtsp);
-                break;
-            case RTSP_ID_SET_PARAMETER:
-                RTSP_set_parameter(rtsp);
-                break;
-            default:
-                send_reply(501,
-                       "Accept: OPTIONS, DESCRIBE, SETUP, TEARDOWN\n",
-                       rtsp);
-                break;
-            }
-            break;
-        }        /* INIT state */
-    case READY_STATE:{
-            switch (method) {
-            case RTSP_ID_PLAY:
-                if (RTSP_play(rtsp) == ERR_NOERROR) {
-                    p->cur_state = PLAY_STATE;
-                }
-                break;
-            case RTSP_ID_SETUP:
-                if (RTSP_setup(rtsp, &p) == ERR_NOERROR) {
-                    p->cur_state = READY_STATE;
-                }
-                else
-                    return ERR_GENERIC;
-                break;
-            case RTSP_ID_TEARDOWN:
-                RTSP_teardown(rtsp);
-                break;
-            case RTSP_ID_OPTIONS:
-                break;
-            case RTSP_ID_SET_PARAMETER:
-                RTSP_set_parameter(rtsp);
-                break;
-            case RTSP_ID_PAUSE:    /* method not valid this state. */
-                send_reply(455,
-                       "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n",
-                       rtsp);
-                break;
-            case RTSP_ID_DESCRIBE:
-                return RTSP_describe(rtsp);
-            default:
-                send_reply(501,
-                       "Accept: OPTIONS, SETUP, PLAY, TEARDOWN\n",
-                       rtsp);
-                break;
-            }
-            break;
-        }        /* READY state */
-    case PLAY_STATE:{
-            switch (method) {
-            case RTSP_ID_PLAY:
-                // This is a seek
-                fnc_log(FNC_LOG_INFO, "EXPERIMENTAL: Seek.");
-                RTSP_play(rtsp);
-                break;
-            case RTSP_ID_PAUSE:
-                if (RTSP_pause(rtsp) == ERR_NOERROR) {
-                    p->cur_state = READY_STATE;
-                }
-                break;
-            case RTSP_ID_TEARDOWN:
-                RTSP_teardown(rtsp);
-                break;
-            case RTSP_ID_OPTIONS:
-                break;
-            case RTSP_ID_DESCRIBE:
-                return RTSP_describe(rtsp);
-            case RTSP_ID_SETUP:
-                break;
-            case RTSP_ID_SET_PARAMETER:
-                RTSP_set_parameter(rtsp);
-                break;
-            }
-            break;
-        }        /* PLAY state */
-    default:{        /* invalid/unexpected current state. */
-            fnc_log(FNC_LOG_ERR,
-                "State error: unknown state=%d, method code=%d\n",
-                p->cur_state, method);
-        }
-        break;
-    }            /* end of current state switch */
-
-    return ERR_NOERROR;
-}
-
-/** validates an rtsp message and returns its id
- * @param rtsp the buffer containing the message
- * @return the message id or -1 if something doesn't work in the request
- */
-static enum RTSP_method_token RTSP_validate_method(RTSP_buffer * rtsp)
-{
-    char method[32], hdr[16];
-    char object[256];
-    char ver[32];
-    unsigned int seq;
-    int pcnt;        /* parameter count */
-    char *p;
-    enum RTSP_method_token mid = RTSP_ID_ERROR;
-
-    *method = *object = '\0';
-    seq = 0;
-
-    /* parse first line of message header as if it were a request message */
-
-    if ((pcnt =
-         sscanf(rtsp->in_buffer, " %31s %255s %31s ", method,
-            object, ver)) != 3)
-        return RTSP_ID_ERROR;
-
-    p = rtsp->in_buffer;
-
-    while ((p = strstr(p,"\n"))) {
-        if ((pcnt = sscanf(p, " %15s %u ", hdr, &seq)) == 2)
-            if (strstr(hdr, HDR_CSEQ)) break;
-        p++;
-    }
-
-    if (p == NULL)
-        return RTSP_ID_ERROR;
-
-    if (strcmp(method, RTSP_METHOD_DESCRIBE) == 0) {
-        mid = RTSP_ID_DESCRIBE;
-    }
-    if (strcmp(method, RTSP_METHOD_ANNOUNCE) == 0) {
-        mid = RTSP_ID_ANNOUNCE;
-    }
-    if (strcmp(method, RTSP_METHOD_GET_PARAMETERS) == 0) {
-        mid = RTSP_ID_GET_PARAMETERS;
-    }
-    if (strcmp(method, RTSP_METHOD_OPTIONS) == 0) {
-        mid = RTSP_ID_OPTIONS;
-    }
-    if (strcmp(method, RTSP_METHOD_PAUSE) == 0) {
-        mid = RTSP_ID_PAUSE;
-    }
-    if (strcmp(method, RTSP_METHOD_PLAY) == 0) {
-        mid = RTSP_ID_PLAY;
-    }
-    if (strcmp(method, RTSP_METHOD_RECORD) == 0) {
-        mid = RTSP_ID_RECORD;
-    }
-    if (strcmp(method, RTSP_METHOD_REDIRECT) == 0) {
-        mid = RTSP_ID_REDIRECT;
-    }
-    if (strcmp(method, RTSP_METHOD_SETUP) == 0) {
-        mid = RTSP_ID_SETUP;
-    }
-    if (strcmp(method, RTSP_METHOD_SET_PARAMETER) == 0) {
-        mid = RTSP_ID_SET_PARAMETER;
-    }
-    if (strcmp(method, RTSP_METHOD_TEARDOWN) == 0) {
-        mid = RTSP_ID_TEARDOWN;
-    }
-
-    rtsp->rtsp_cseq = seq;    /* set the current method request seq. number. */
-    return mid;
-}
-
-/**
- * @brief Validates an incoming response message
- *
- * @param status where to save the state specified in the message
- * @param msg where to save the message itself
- * @param rtsp the buffer containing the message
- *
- * @retval 1 No error
- * @retval 0 The parsed message wasn't a response message
- * @retval ERR_GENERIC Error
- */
-static int RTSP_valid_response_msg(unsigned short *status, char *msg, RTSP_buffer * rtsp)
-// This routine is from BP.
-{
-    char ver[32];
-    unsigned int stat;
-    unsigned int seq;
-    int pcnt;        /* parameter count */
-
-    *ver = *msg = '\0';
-    /* assuming "stat" may not be zero (probably faulty) */
-    stat = 0;
-
-    pcnt =
-        sscanf(rtsp->in_buffer, " %31s %u %*s %*s %u\n%255s ",
-                ver, &stat, &seq, msg);
-
-    /* check for a valid response token. */
-    if (g_ascii_strncasecmp(ver, "RTSP/", 5))
-        return 0;    /* not a response message */
-
-    /* confirm that at least the version, status code and sequence are there. */
-    if (pcnt < 3 || stat == 0)
-        return 0;    /* not a response message */
-
-    /*
-     * here is where code can be added to reject the message if the RTSP
-     * version is not compatible.
-     */
-
-    /* check if the sequence number is valid in this response message. */
-    if (rtsp->rtsp_cseq != seq + 1) {
-        fnc_log(FNC_LOG_ERR,
-            "Invalid sequence number returned in response.\n");
-        return ERR_GENERIC;
-    }
-
-    *status = stat;
-    return 1;
 }

@@ -40,6 +40,8 @@
 
 #include <fenice/utils.h>
 #include <netembryo/wsocket.h>
+#include <netembryo/rtsp.h>
+#include <netembryo/url.h>
 #include "rtp.h"
 #include "rtcp.h"
 #include "sdp2.h"
@@ -54,15 +56,20 @@
 #define RTSP_BUFFERSIZE (65536 + RTSP_RESERVED)
 
 /**
- * @brief state of the state machine
+ * @brief RTSP server states
+ *
+ * These are the constants used to define the states that an RTSP session can
+ * have.
+ *
+ * The server state machine for RTSP is defined in RFC2326 Appendix A,
+ * Subsection 2.
  */
-enum RTSP_machine_state {
-  INIT_STATE,
-  READY_STATE,
-  PLAY_STATE
-};
-
-#define RTSP_VER "RTSP/1.0"
+typedef enum {
+    RTSP_SERVER_INIT,
+    RTSP_SERVER_READY,
+    RTSP_SERVER_PLAYING,
+    RTSP_SERVER_RECORDING
+} RTSP_Server_State;
 
 #define RTSP_EL "\r\n"
 #define RTSP_RTP_AVP "RTP/AVP"
@@ -73,8 +80,8 @@ typedef struct RTSP_interleaved {
 } RTSP_interleaved;
 
 typedef struct RTSP_session {
-    enum RTSP_machine_state cur_state;
-    guint64 session_id;
+    RTSP_Server_State cur_state;
+    char *session_id;
     int started;
     GSList *rtp_sessions; // Of type RTP_session
     // mediathread resource
@@ -95,7 +102,6 @@ typedef struct RTSP_buffer {
     ev_io *ev_io_read;
     ev_io *ev_io_write;
     // Run-Time
-    unsigned int rtsp_cseq;
     RTSP_session *session;
     feng *srv;
 
@@ -104,37 +110,131 @@ typedef struct RTSP_buffer {
     ev_timer *ev_timeout;
 } RTSP_buffer;
 
-typedef enum {
-  df_Unsupported = -2,
-  df_Unknown = -1,
-  df_SDP_format = 0
-} RTSP_description_format;
+/**
+ * @brief RTSP method tokens
+ *
+ * They are used to identify in which state of the state machines we
+ * are.
+ */
+enum RTSP_method_token {
+  RTSP_ID_ERROR = ERR_GENERIC,
+  RTSP_ID_DESCRIBE,
+  RTSP_ID_ANNOUNCE,
+  RTSP_ID_GET_PARAMETERS,
+  RTSP_ID_OPTIONS,
+  RTSP_ID_PAUSE,
+  RTSP_ID_PLAY,
+  RTSP_ID_RECORD,
+  RTSP_ID_REDIRECT,
+  RTSP_ID_SETUP,
+  RTSP_ID_SET_PARAMETER,
+  RTSP_ID_TEARDOWN
+};
 
+/**
+ * @brief Structure representing a request coming from the client.
+ */
+typedef struct {
+    RTSP_buffer *client; //!< The client the request comes from
+
+    char *method; //!< String of the method (used for logging, mostly)
+    enum RTSP_method_token method_id; //!< ID of the method (for the state machine)
+
+    char *object; //!< Object of the request (URL or *)
+
+    /**
+     * @brief Protocol version used
+     *
+     * This can only be RTSP/1.0 right now. We log it here for access.log and to
+     * remove more logic from the parser itself.
+     */
+    char *version;
+
+    /** All the headers we don't parse specifically */
+    GHashTable *headers;
+} RTSP_Request;
 
 int RTSP_handler(RTSP_buffer * rtsp);
 
-#define RTSP_not_full 0
-#define RTSP_method_rcvd 1
-#define RTSP_interlvd_rcvd 2
+/**
+ * @brief Structure respresenting a response sent to the client
+ * @ingroup rtsp_response
+ */
+typedef struct {
+    /**
+     * @brief Backreference to the client.
+     *
+     * Used to be able to send the response faster
+     */
+    RTSP_buffer *client;
 
+    /**
+     * @brief Reference to the original request
+     *
+     * Used to log the request/response in access.log
+     */
+    RTSP_Request *request;
+
+    /**
+     * @brief The status code of the response.
+     *
+     * The list of valid status codes is present in RFC 2326 Section 7.1.1 and
+     * they are described through Section 11.
+     */
+    RTSP_ResponseCode status;
+    
+    /**
+     * @brief An hash table of headers to add to the response.
+     */
+    GHashTable *headers;
+
+    /**
+     * @brief An eventual body for the response, used by the DESCRIBE method.
+     */
+    GString *body;
+} RTSP_Response;
+
+RTSP_Response *rtsp_response_new(const RTSP_Request *req, RTSP_ResponseCode code);
+void rtsp_response_send(RTSP_Response *response);
+void rtsp_response_free(RTSP_Response *response);
+
+/**
+ * @brief Create and send a response in a single function call
+ * @ingroup rtsp_response
+ *
+ * @param req Request object to respond to
+ * @param code Status code for the response
+ *
+ * This function is used to avoid creating and sending a new response when just
+ * sending out an error response.
+ */
+static inline void rtsp_quick_response(RTSP_Request *req, RTSP_ResponseCode code)
+{
+    rtsp_response_send(rtsp_response_new(req, code));
+}
+
+gboolean rtsp_check_invalid_state(const RTSP_Request *req,
+                                  RTSP_Server_State invalid_state);
 
 /**
  * RTSP low level functions, they handle message specific parsing and
  * communication.
+ *
  * @defgroup rtsp_low RTSP low level functions
  * @{
  */
 
+ssize_t rtsp_send(RTSP_buffer * rtsp);
 
-int send_reply(int err, const char *addon, RTSP_buffer * rtsp);
+gboolean rtsp_request_get_url(RTSP_Request *req, Url *url);
 
-#ifdef TRACE
-#define send_reply(a, b, c) \
-    fnc_log(FNC_LOG_INFO,"%s", __PRETTY_FUNCTION__);\
-    send_reply(a,b,c);
-#endif
+void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer);
 
-ssize_t RTSP_send(RTSP_buffer * rtsp);
+RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock);
+void rtsp_client_destroy(RTSP_buffer *rtsp);
+
+RTSP_session *rtsp_session_new(RTSP_buffer *rtsp);
+void rtsp_session_free(RTSP_session *session);
 
 /**
  * @}

@@ -24,56 +24,25 @@
  * @brief Contains OPTIONS method and reply handlers
  */
 
+#include <liberis/headers.h>
+
 #include "rtsp.h"
 #include <fenice/fnc_log.h>
-
-#include "rtsp_utils.h"
-
-/**
- * Sends the reply for the options method
- * @param rtsp the buffer where to write the reply
- * @return ERR_NOERROR
- */
-static int send_options_reply(RTSP_buffer * rtsp)
-{
-    GString *reply = rtsp_generate_ok_response(rtsp->rtsp_cseq, 0);
-
-    g_string_append(reply,
-		    "Public: OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN,SET_PARAMETER" RTSP_EL);
-    g_string_append(reply, RTSP_EL);
-
-    bwrite(reply, rtsp);
-
-    fnc_log(FNC_LOG_CLIENT, "200 - - ");
-
-    return ERR_NOERROR;
-}
 
 /**
  * RTSP OPTIONS method handler
  * @param rtsp the buffer for which to handle the method
+ * @param req The client request for the method
  * @return ERR_NOERROR
  */
-int RTSP_options(RTSP_buffer * rtsp)
+void RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    char url[255];
-    char method[255];
-    char ver[255];
+    RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
 
-    RTSP_Error error;
+    /** @todo Remove SET_PARAMETER since we don't support it ... */
+    g_hash_table_insert(response->headers,
+                        g_strdup(eris_hdr_public),
+                        g_strdup("OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN"));
 
-    if ( (error = get_cseq(rtsp)).got_error ) // Get the CSeq
-        goto error_management;
-
-    sscanf(rtsp->in_buffer, " %31s %255s %31s ", method, url, ver);
-
-    fnc_log(FNC_LOG_INFO, "%s %s %s ", method, url, ver);
-    send_options_reply(rtsp);
-    log_user_agent(rtsp); // See User-Agent
-
-    return ERR_NOERROR;
-
-error_management:
-    send_reply(error.message.reply_code, error.message.reply_str, rtsp);
-    return ERR_GENERIC;
+    rtsp_response_send(response);
 }
