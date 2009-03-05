@@ -47,9 +47,6 @@ static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int 
     //Prevent from requesting disconnection again
     client_events_deregister(rtsp);
 
-    //Unregister the RTSP incoming data event and remove client
-    rtsp_client_destroy(rtsp);
-
     //Close connection
     Sock_close(rtsp->sock);
     --srv->conn_count;
@@ -57,8 +54,7 @@ static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int 
 
     // Release the RTSP_buffer
     srv->clients = g_slist_remove(srv->clients, rtsp);
-    g_free(rtsp);
-
+    rtsp_client_destroy(rtsp);
     fnc_log(FNC_LOG_INFO, "[client] Client removed");
 }
 
