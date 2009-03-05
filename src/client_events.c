@@ -21,7 +21,6 @@
  * */
 
 #include "network/rtsp.h"
-#include "network/rtsp_utils.h"
 #include "client_events.h"
 
 #include <sys/time.h>
@@ -43,7 +42,6 @@ static void client_events_deregister(RTSP_buffer *rtsp)
 static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int revents)
 {
     RTSP_buffer *rtsp = w->data;
-    ev_io *read_ev = rtsp->ev_io_read;
     feng *srv = rtsp->srv;
 
     //Prevent from requesting disconnection again
