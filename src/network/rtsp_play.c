@@ -215,11 +215,12 @@ static void rtp_session_play(gpointer value, gpointer user_data)
   // Start playing all the presentation
   if (!rtp_sess->started) {
     // Start new -- assume no allocation error
-    rtp_sess->last_live_packet_send_time = time(NULL);
+    rtp_sess->last_packet_send_time = time(NULL);
     schedule_start (rtp_sess, args);
   } else {
     // Resume existing
     if (rtp_sess->pause) {
+      rtp_sess->last_packet_send_time = time(NULL);
       schedule_resume (rtp_sess, args);
     }
   }

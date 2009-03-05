@@ -36,7 +36,8 @@
 #include <metadata/cpd.h>
 #endif
 
-#define LIVE_STREAM_TIMEOUT 7
+#define LIVE_STREAM_BYE_TIMEOUT 5
+#define STREAM_TIMEOUT 12 /* This one must be big enough to permit to VLC to switch to another transmission */
 
 typedef struct schedule_list {
     GMutex *mux;
@@ -179,26 +180,12 @@ static void *schedule_do(void *arg)
                             case ERR_NOERROR: // All fine
                                 break;
                             case ERR_EOF:
-                                if (tr->properties->media_source != MS_live) {
+                                if ((tr->properties->media_source != MS_live) ||
+                                    ((now - session->last_packet_send_time) >= LIVE_STREAM_BYE_TIMEOUT)) {
                                     fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
                                     RTCP_send_packet(session, SR);
                                     RTCP_send_packet(session, BYE);
                                     RTCP_flush(session);
-                                }
-                                else {
-                                    if ((now - session->last_live_packet_send_time) >= LIVE_STREAM_TIMEOUT) {
-                                        fnc_log(FNC_LOG_INFO, "[SCH] Live Stream Timeout");
-                                        RTCP_send_packet(session, SR);
-                                        RTCP_send_packet(session, BYE);
-                                        RTCP_flush(session);
-
-                                        /* This one must be high enough to do not prevent VLC from switching to RTSP
-                                        /  interleaved after 10 seconds */
-                                        if ((now - session->last_live_packet_send_time) >= (LIVE_STREAM_TIMEOUT*2)) {
-                                            fnc_log(FNC_LOG_INFO, "[SCH] Live Stream Timeout, client kicked off!");
-                                            schedule_remove(session, NULL);
-                                        }
-                                    }
                                 }
                                 break;
                             case ERR_ALLOC:
@@ -209,8 +196,17 @@ static void *schedule_do(void *arg)
                                 fnc_log(FNC_LOG_WARN, "[SCH] Packet Lost");
                                 break;
                         }
-                        RTCP_handler(session);
-                        /*if RTCP_handler return ERR_GENERIC what do i have to do?*/
+
+                        /* If we were not able to serve any packet and the client ignored our BYE
+                         * kick it by closing everything
+                         */
+                        if ((now - session->last_packet_send_time) >= STREAM_TIMEOUT) {
+                            res = ERR_EOF;
+                            fnc_log(FNC_LOG_INFO, "[SCH] Stream Timeout, client kicked off!");
+                            ev_async_send(srv->loop, session->rtsp_buffer->ev_sig_disconnect);
+                        }
+                        else
+                            RTCP_handler(session);
                     }
                     if (res == ERR_NOERROR) {
                         int next_send_time = fabs((session->start_time + session->send_time) - now) * 1000000;

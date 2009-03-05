@@ -91,11 +91,16 @@ typedef struct RTSP_buffer {
     GAsyncQueue *out_queue;
     GSList *interleaved;
     GSList *ev_io;
+
+    ev_io *ev_io_read;
     ev_io *ev_io_write;
     // Run-Time
     unsigned int rtsp_cseq;
     RTSP_session *session;
     feng *srv;
+
+    //Events
+    ev_async *ev_sig_disconnect;
 } RTSP_buffer;
 
 typedef enum {

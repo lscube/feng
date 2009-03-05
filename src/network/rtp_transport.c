@@ -108,7 +108,7 @@ int RTP_send_packet(RTP_session * session)
                 session->rtcp_stats[i_server].pkt_count += slot->seq_delta;
                 session->rtcp_stats[i_server].octet_count += slot->data_size;
 
-                session->last_live_packet_send_time = now;
+                session->last_packet_send_time = now;
             }
             g_free(packet);
         } else {

@@ -160,10 +160,10 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
     int n;
     gint m = 0;
     RTSP_buffer *rtsp = w->data;
-    feng *srv = rtsp->srv;
 
     memset(buffer, 0, sizeof(buffer));
     n = rtsp_sock_read(rtsp->sock, &m, buffer, sizeof(buffer) - 1);
+
     if (n > 0) {
         if (m == 0) {
             if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
@@ -201,33 +201,50 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
         RTSP_send(rtsp); //Force sending the message before closing connection
     }
 
-//  unregister the client
-    ev_io_stop(srv->loop, w);
+    ev_async_send(loop, rtsp->ev_sig_disconnect);
+}
+
+static void rtsp_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int revents)
+{
+    RTSP_buffer *rtsp = w->data;
+    ev_io *read_ev = rtsp->ev_io_read;
+    feng *srv = rtsp->srv;
+
+    //Prevent from requesting disconnection again
+    ev_async_stop(srv->loop, w);
+
+    //Unregister the RTSP incoming data event and remove client
+    ev_io_stop(srv->loop, read_ev);
     g_free(w);
     rtsp_client_destroy(rtsp);
 
-// wait for
+    //Close connection
     Sock_close(rtsp->sock);
     --srv->conn_count;
     srv->num_conn--;
 
-// Release the RTSP_buffer
+    // Release the RTSP_buffer
     clients = g_slist_remove(clients, rtsp);
     g_free(rtsp);
+
+    fnc_log(FNC_LOG_INFO, "[client] Client removed");
 }
 
 static void add_client(feng *srv, Sock *client_sock)
 {
     ev_io *ev_io_client = g_new(ev_io, 1);
+    ev_async *ev_as_client = g_new(ev_async, 1);
     RTSP_buffer *rtsp = rtsp_client_new(srv, client_sock);
 
     clients = g_slist_prepend(clients, rtsp);
-
     client_sock->data = srv;
+
     ev_io_client->data = rtsp;
     g_ptr_array_add(io_watchers, ev_io_client);
     ev_io_init(ev_io_client, rtsp_read_cb, Sock_fd(client_sock), EV_READ);
     ev_io_start(srv->loop, ev_io_client);
+    rtsp->ev_io_read = ev_io_client;
+
     ev_io_client = g_new(ev_io, 1);
     ev_io_client->data = rtsp;
     ev_io_init(ev_io_client, rtsp_write_cb, Sock_fd(client_sock), EV_WRITE);
@@ -235,6 +252,11 @@ static void add_client(feng *srv, Sock *client_sock)
     rtsp->ev_io_write = ev_io_client; // to be started/stopped when necessary
     fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
             Sock_fd(client_sock));
+
+    ev_as_client->data = rtsp;
+    ev_async_init(ev_as_client, rtsp_ev_disconnect_handler);
+    rtsp->ev_sig_disconnect = ev_as_client;
+    ev_async_start(srv->loop, ev_as_client);
 }
 
 /**

@@ -121,7 +121,7 @@ typedef struct RTP_session {
     RTCP_stats rtcp_stats[2];    //client and server
     struct feng *srv;
     struct RTSP_buffer *rtsp_buffer;
-    uint32_t last_live_packet_send_time;
+    uint32_t last_packet_send_time;
 } RTP_session;
 
 typedef struct RTP_header {

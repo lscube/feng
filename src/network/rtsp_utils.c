@@ -188,8 +188,6 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
     // Release the RTSP session
     g_free(rtsp->session);
     rtsp->session = NULL;
-    fnc_log(FNC_LOG_WARN,
-	    "WARNING! RTSP connection truncated before ending operations.\n");
   }
 
   // close local fds
