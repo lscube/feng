@@ -29,7 +29,7 @@
 #include <fenice/server.h>
 
 #define LIVE_STREAM_BYE_TIMEOUT 6
-#define STREAM_TIMEOUT 2 /* This one must be big enough to permit to VLC to switch to another
+#define STREAM_TIMEOUT 12 /* This one must be big enough to permit to VLC to switch to another
                              transmission protocol and must be a multiple of LIVE_STREAM_BYE_TIMEOUT */
 
 void client_events_register(RTSP_buffer *rtsp);
