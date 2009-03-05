@@ -53,37 +53,6 @@ static int send_teardown_reply(RTSP_buffer * rtsp, guint64 session_id)
     return ERR_NOERROR;
 }
 
-typedef struct {
-  RTSP_session *s;
-  gchar *filename;
-} rtp_session_release_pair;
-
-static void rtp_session_release(gpointer element, gpointer user_data)
-{
-  RTP_session *rtp_curr = (RTP_session *)element;
-  rtp_session_release_pair *pair = (rtp_session_release_pair *)user_data;
-
-  if (!strcmp(
-	      r_selected_track(rtp_curr->track_selector)->info->name,
-	      pair->filename) ||
-      !strcmp(
-	      r_selected_track(rtp_curr->track_selector)->parent->info->name,
-	      pair->filename)
-      // if multicast don't touch the rtp shared session
-      ) {
-    pair->s->rtp_sessions = g_slist_remove(pair->s->rtp_sessions, rtp_curr);
-
-    if (!rtp_curr->is_multicast--) {
-      // Release the scheduler entry
-      schedule_remove(rtp_curr, NULL);
-      fnc_log(FNC_LOG_DEBUG, "[TEARDOWN] Removed %s", pair->filename);
-    } else {
-      fnc_log(FNC_LOG_DEBUG, "[TEARDOWN] %s multicast session,"
-	      " %d clients listening",
-	      pair->filename, rtp_curr->is_multicast);
-    }
-  }
-}
 
 /**
  * RTSP TEARDOWN method handler
@@ -96,7 +65,6 @@ int RTSP_teardown(RTSP_buffer * rtsp)
     guint64 session_id;
     RTSP_session *s;
     char *filename;
-    rtp_session_release_pair pair;
 
     RTSP_Error error;
 
@@ -124,27 +92,6 @@ int RTSP_teardown(RTSP_buffer * rtsp)
 	    url.protocol, url.hostname, url.path);
     send_teardown_reply(rtsp, session_id);
     log_user_agent(rtsp); // See User-Agent
-
-    if (strchr(url.path, '='))    /*Compatibility with RealOne and RealPlayer */
-        filename = strchr(url.path, '=') + 1;
-    else
-        filename = url.path;
-
-    filename = g_path_get_basename(filename);
-
-    // Release all URI RTP session
-    pair.filename = filename; pair.s = s;
-    g_slist_foreach(s->rtp_sessions, rtp_session_release, &pair);
-
-    if (s->rtp_sessions == NULL) {
-      // Release mediathread resource
-        mt_resource_close(rtsp->session->resource);
-        // Release the RTSP session
-        g_free(rtsp->session);
-        rtsp->session = NULL;
-    }
-
-    g_free(filename);
 
     return ERR_NOERROR;
 
