@@ -1,9 +1,12 @@
 /* -*- c -*- */
 
+#include <stdbool.h>
+#include <fenice/schedule.h>
+
 %% machine ragel_range_header;
 
-static gboolean ragel_parse_range_header(const char *header,
-                                         play_args *args) {
+gboolean ragel_parse_range_header(const char *header,
+                                  play_args *args) {
 
     int cs;
     const char *p = header, *pe = p + strlen(p) +1;
@@ -83,7 +86,7 @@ static gboolean ragel_parse_range_header(const char *header,
             args->end_time = seconds;
             seconds = 0;
         }
-        
+
         NTPRange = ( NTPTime%set_begin . "-" . (NTPTime%set_end)? )
             | ( "-" . (NTPTime%set_end) );
 
@@ -114,22 +117,22 @@ static gboolean ragel_parse_range_header(const char *header,
             (digit{4}) @count_utcts_year .
             (("0" [0-9])  | ("1" [1-2])) @count_utcts_month .
             (([0-2] [0-9]) | ("3" [0-1])) @count_utcts_day;
-        
+
         action count_utcts_hour {
             utctime.tm_hour *= 10;
             utctime.tm_hour += fc - '0';
         }
-             
+
         action count_utcts_minute {
             utctime.tm_min *= 10;
             utctime.tm_min += fc - '0';
         }
-             
+
         action count_utcts_second {
             utctime.tm_sec *= 10;
             utctime.tm_sec += fc - '0';
         }
-             
+
         UTCTime =
              (([0-1] [0-9]) | ("2" [0-3])) @count_utcts_hour .
              ([0-5] [0-9]) @count_utcts_minute .
@@ -145,7 +148,7 @@ static gboolean ragel_parse_range_header(const char *header,
 
         RangeHeader = (NTPRangeHeader | RangeSpecifier) .
             ( ";time=" . UTCTimeSpec % set_playback_time )?;
-            
+
         main := RangeHeader + 0;
 
 

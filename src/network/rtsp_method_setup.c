@@ -32,6 +32,7 @@
 #include <liberis/headers.h>
 
 #include "rtsp.h"
+#include "network/rtsp_method_setup.h"
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <fenice/schedule.h>
@@ -150,40 +151,13 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
 }
 
 /**
- * @brief Structure filled by the ragel parser of the transport header.
- */
-struct ParsedTransport {
-    enum { TransportUDP, TransportTCP, TransportSCTP } protocol;
-    //! Mode for UDP transmission, here is easier to access
-    enum { TransportUnicast, TransportMulticast } mode;
-    union {
-        union {
-            struct {
-                uint16_t port_rtp;
-                uint16_t port_rtcp;
-            } Unicast;
-            struct {
-            } Multicast;
-        } UDP;
-        struct {
-            uint16_t ich_rtp;  //!< Interleaved channel for RTP
-            uint16_t ich_rtcp; //!< Interleaved channel for RTCP
-        } TCP;
-        struct {
-            uint16_t ch_rtp;  //!< SCTP channel for RTP
-            uint16_t ch_rtcp; //!< SCTP channel for RTCP
-        } SCTP;
-    } parameters;
-};
-
-/**
- * @brief Check the value parsed ou of a transport specification.
+ * @brief Check the value parsed out of a transport specification.
  *
  * @param rtsp Client from which the request arrived
  * @param transport Structure containing the transport's parameters
  */
-static gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
-                                       struct ParsedTransport *transport)
+gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
+                                struct ParsedTransport *transport)
 {
     switch ( transport->protocol ) {
     case TransportUDP:
@@ -241,7 +215,9 @@ static gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
     }
 }
 
-#include "ragel_transport.c"
+extern gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
+                                             RTP_transport *rtp_t,
+                                             const char *header);
 
 static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 {

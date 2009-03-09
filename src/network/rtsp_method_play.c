@@ -39,7 +39,8 @@
 #include <netembryo/url.h>
 #include <glib.h>
 
-#include "ragel_range.c"
+extern gboolean ragel_parse_range_header(const char *header,
+                                         play_args *args);
 
 static void rtp_session_seek(gpointer value, gpointer user_data)
 {

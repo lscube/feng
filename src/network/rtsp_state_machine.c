@@ -65,7 +65,7 @@ void RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req);
  * @}
  */
 
-#include "ragel_request_line.c"
+extern size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Request *req);
 
 /**
  * @brief Free a request structure as parsed by rtsp_parse_request().

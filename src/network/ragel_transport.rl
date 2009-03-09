@@ -1,10 +1,16 @@
 /* -*- c -*- */
 
+#include <stdbool.h>
+
+#include "network/rtsp.h"
+#include "network/rtp.h"
+#include "network/rtsp_method_setup.h"
+
 %% machine ragel_transport_header;
 
-static gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
-                                             RTP_transport *rtp_t,
-                                             const char *header) {
+gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
+                                      RTP_transport *rtp_t,
+                                      const char *header) {
     struct ParsedTransport transport;
     int cs;
     const char *p = header, *pe = p + strlen(p) +1;

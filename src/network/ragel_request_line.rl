@@ -1,10 +1,10 @@
 /* -*- c -*- */
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,13 +17,15 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
+#include "network/rtsp.h"
+
 %% machine rtsp_request_line;
 
-static size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Request *req) {
+size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Request *req) {
     int cs;
     const char *p = msg, *pe = p + length + 1, *s, *eof;
 
@@ -42,7 +44,7 @@ static size_t ragel_parse_request_line(const char *msg, const size_t length, RTS
         action end_method {
             req->method = g_strndup(s, p-s);
         }
-        
+
         Supported_Method =
             "DESCRIBE" % { req->method_id = RTSP_ID_DESCRIBE; } |
             "OPTIONS" % { req->method_id = RTSP_ID_OPTIONS; } |
@@ -63,8 +65,8 @@ static size_t ragel_parse_request_line(const char *msg, const size_t length, RTS
         action end_object {
             req->object = g_strndup(s, p-s);
         }
-        
-        Request_Line = (Supported_Method | Method) . SP 
+
+        Request_Line = (Supported_Method | Method) . SP
             (print*) > set_s % end_object . SP
             Version > set_s % end_version . CRLF;
 
