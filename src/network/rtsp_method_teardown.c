@@ -30,7 +30,6 @@
 #include "rtsp.h"
 #include <fenice/prefs.h>
 #include <fenice/schedule.h>
-#include <bufferpool/bufferpool.h>
 #include <fenice/fnc_log.h>
 #include <glib.h>
 
