@@ -23,8 +23,8 @@
 #define FN_MEDIAPARSER_H
 
 #include <glib.h>
+#include <stdint.h>
 
-#include <bufferpool/bufferpool.h>
 #include "mediautils.h"
 #include <fenice/sdp_grammar.h>
 
