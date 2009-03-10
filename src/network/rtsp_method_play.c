@@ -207,6 +207,8 @@ static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
     g_string_printf(str, "npt=%f-", args->begin_time);
     if (args->end_time != HUGE_VAL)
       g_string_append_printf(str, "%f", args->end_time);
+    else
+      g_string_append_printf(str, "%f", rtsp_session->resource->info->duration);
 
     g_hash_table_insert(response->headers,
                         g_strdup(eris_hdr_range),
