@@ -240,6 +240,8 @@ static int sd_init(Resource * r)
     MObject_init(MOBJECT(&props_hints));
     MObject_init(MOBJECT(&trackinfo));
 
+    r->info->duration = HUGE_VAL;
+
     do {
         int payload_type_forced = 0;
         int clock_rate_forced = 0;
