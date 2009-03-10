@@ -9,7 +9,7 @@ BUILT_SOURCES = \
 	network/ragel_transport.c \
 	network/ragel_range.c
 
-feng_SOURCES = \
+dist_feng_SOURCES = \
 	network/rtcp.h \
 	network/rtcp_handler.c \
 	network/rtcp_recv_packet.c \
