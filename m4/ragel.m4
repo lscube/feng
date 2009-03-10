@@ -11,17 +11,19 @@ dnl the configure to abort.
 
 AC_DEFUN([CHECK_RAGEL], [
   AC_CHECK_PROG([RAGEL], [ragel], [ragel], [no])
+  AM_CONDITIONAL([HAVE_RAGEL], [test x"$RAGEL" != x"no"])
+  AC_SUBST([RAGEL])
 
-  AC_MSG_CHECKING([whether we need ragel to regenerate sources])
-  AS_IF([test -a ${srcdir}/$1], [ragel_needed=no], [ragel_needed=yes])
-  AC_MSG_RESULT([$ragel_needed])
+  dnl Only test the need if not found
+  AS_IF([test x"$RAGEL" = x"no"], [
+    AC_MSG_CHECKING([whether we need ragel to regenerate sources])
+    AS_IF([test -a ${srcdir}/$1], [ragel_needed=no], [ragel_needed=yes])
+    AC_MSG_RESULT([$ragel_needed])
 
-  AS_IF([test x"$ragel_needed" = x"yes" -a x"$RAGEL" = x"no"],
-    [AC_MSG_ERROR([dnl
+    AS_IF([test x"$ragel_needed" = x"yes"],
+      [AC_MSG_ERROR([dnl
 You need Ragel to build from GIT checkouts.
 You can find Ragel at http://www.complang.org/ragel/dnl
-    ])])
-
-  AC_SUBST([RAGEL])
-  AM_CONDITIONAL([HAVE_RAGEL], [test x"$RAGEL" != x"no"])
+      ])])
+  ])
 ])
