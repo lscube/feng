@@ -47,7 +47,10 @@ feng_LDADD = \
 INCLUDES = -I$(feniceincludedir) -I..
 
 if HAVE_RAGEL
-$(BUILT_SOURCES): %.c: %.rl
+
+SUFFIXES = .rl
+
+.rl.c:
 	$(RAGEL) $< -o $@
 
 CLEANFILES = $(BUILT_SOURCES)
