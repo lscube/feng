@@ -48,10 +48,7 @@ INCLUDES = -I$(feniceincludedir) -I..
 
 if HAVE_RAGEL
 
-SUFFIXES = .rl
-
-.rl.c:
-	$(RAGEL) $< -o $@
+include $(top_srcdir)/ragel.make
 
 CLEANFILES = $(BUILT_SOURCES)
 endif
