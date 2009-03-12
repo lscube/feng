@@ -63,7 +63,6 @@ static inline double calc_send_time(RTP_session *session, BPSlot *slot) {
 int RTP_send_packet(RTP_session * session)
 {
     unsigned char *packet = NULL;
-    unsigned int hdr_size = 0;
     RTP_header r;        // 12 bytes
     int res = ERR_NOERROR, bp_frames = 0;
     BPSlot *slot = NULL;
@@ -74,7 +73,7 @@ int RTP_send_packet(RTP_session * session)
 
     if ((slot = bp_getreader(session->cons))) {
         if (!(session->pause && t->properties->media_source == MS_live)) {
-            hdr_size = sizeof(r);
+            static const size_t hdr_size = sizeof(r);
             r.version = 2;
             r.padding = 0;
             r.extension = 0;
