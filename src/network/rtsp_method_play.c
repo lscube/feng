@@ -240,7 +240,7 @@ void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
         .seek_time_valid = false,
         .start_time = gettimeinseconds(NULL),
         .begin_time = 0.0,
-        .end_time = rtsp_session->resource->info->duration
+        .end_time = rtsp_sess->resource->info->duration
     };
 
     const char *range_hdr;
