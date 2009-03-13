@@ -54,10 +54,6 @@ AC_ARG_ENABLE(trace,
     AS_HELP_STRING([--enable-trace], [enable additional informations in log [[default=no]]]),,
     enable_trace="no")
 
-AC_ARG_ENABLE(duma,
-    AS_HELP_STRING([--enable-duma], [link against DUMA library to debug memory usage (implies --enable-debug) (default=no)]),,
-    enable_duma="no")
-
 AC_ARG_ENABLE(metadata,
     AS_HELP_STRING([--enable-metadata], [enable metadata support [[default=no]]]),,
     enable_metadata="no")
