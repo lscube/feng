@@ -134,20 +134,17 @@ gpointer *mediathread(gpointer *arg) {
     return NULL;
 }
 
-Resource *mt_resource_open(feng *srv, const char *path, const char *filename) {
+Resource *mt_resource_open(feng *srv, const char *filename) {
     // TODO: add to a list in order to close resources on shutdown!
 
     Resource *res;
 
     // open AV resource
-    res = r_open(srv, path, filename);
+    res = r_open(srv, filename);
 
-    // METADATA begin
 #ifdef HAVE_METADATA
     cpd_find_request(srv, res, filename);
 #endif
-    // METADATA end
-
 
     return res;
 }

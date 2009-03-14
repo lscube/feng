@@ -180,7 +180,7 @@ typedef struct {
 
 // Resources
 
-Resource *r_open(feng *srv, const char *root, const char *name);
+Resource *r_open(feng *srv, const char *inner_path);
 
 void r_close(Resource *);
 
@@ -196,6 +196,6 @@ Track *r_selected_track(Selector *);
 Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 
 // Resources and Media descriptions
-ResourceDescr *r_descr_get(feng *srv, char *root, char *name);
+ResourceDescr *r_descr_get(feng *srv, char *inner_path);
 
 #endif // FN_DEMUXER_H

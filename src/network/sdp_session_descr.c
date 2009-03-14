@@ -227,7 +227,7 @@ GString *sdp_session_descr(feng *srv, char *server, char *name)
     float currtime_float, restime_float;
 
     fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s", name);
-    if ( !(r_descr=r_descr_get(srv, prefs_get_serv_root(), name)) ) {
+    if ( !(r_descr=r_descr_get(srv, name)) ) {
         fnc_log(FNC_LOG_ERR, "[SDP2] %s not found", name);
         return NULL;
     }

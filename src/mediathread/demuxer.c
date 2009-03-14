@@ -246,15 +246,15 @@ static void properties_free(void *properties)
     g_free(props);
 }
 
-Resource *r_open(struct feng *srv, const char *root, const char *n)
+Resource *r_open(struct feng *srv, const char *inner_path)
 {
     Resource *r;
     int dmx_idx;
     InputStream *i_stream;
-    char mrl[255];
-
-    snprintf(mrl, sizeof(mrl) - 1, "%s%s%s", root,
-         (root[strlen(root) - 1] == '/') ? "" : "/", n);
+    gchar *mrl = g_strjoin ("/",
+                            srv->config_storage[0]->document_root->ptr,
+                            inner_path,
+                            NULL);
 
     if( !(i_stream = istream_open(mrl)) )
         return NULL;
@@ -277,8 +277,8 @@ Resource *r_open(struct feng *srv, const char *root, const char *n)
     r->info = MObject_new0(ResourceInfo, 1);
     MObject_destructor(r->info, resinfo_free);
 
-    r->info->mrl = g_strdup(mrl);
-    r->info->name = g_path_get_basename(n);
+    r->info->mrl = mrl;
+    r->info->name = g_path_get_basename(inner_path);
     r->i_stream = i_stream;
     r->demuxer = demuxers[dmx_idx];
     r->srv = srv;
@@ -457,25 +457,23 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 }
 #undef ADD_TRACK_ERROR
 
-
-ResourceDescr *r_descr_get(struct feng *srv, char *root, char *n)
+ResourceDescr *r_descr_get(struct feng *srv, char *inner_path)
 {
     GList *cache_el;
-    char mrl[255];
-
-    snprintf(mrl, sizeof(mrl) - 1, "%s%s%s", root,
-         (root[strlen(root) - 1] == '/') ? "" : "/", n);
-
+    gchar *mrl = g_strjoin ("/",
+                            srv->config_storage[0]->document_root->ptr,
+                            inner_path,
+                            NULL);
 
     if ( !(cache_el=r_descr_find(mrl)) ) {
         Resource *r;
-        if ( !(r = r_open(srv, root, n)) ) // shawill TODO: implement pre_open cache
+        if ( !(r = r_open(srv, inner_path)) )
             return NULL;
         cache_el = r_descr_find(mrl);
         r_close(r);
     }
 
+    g_free(mrl);
+
     return RESOURCE_DESCR(cache_el);
 }
-
-

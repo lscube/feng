@@ -29,7 +29,4 @@
 #define MAX_CONNECTION    srv->srvconf.max_conns   /*! rtsp connection */
 #define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS)) /*! rtsp connection for one fork */
 
-#define prefs_get_serv_root() srv->config_storage[0]->document_root->ptr
-#define prefs_get_hostname() srv->srvconf.bindhost->ptr
-
 #endif // FN_SERV_PREFS_H

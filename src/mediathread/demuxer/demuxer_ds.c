@@ -141,7 +141,7 @@ static int ds_init(Resource * r)
         /* Init Resources required by the EDitList
          * (modifying default behaviour to manipulate timescale)
          * */
-        if (!(resource = r_open(srv, prefs_get_serv_root(), mrl))) {
+        if (!(resource = r_open(srv, mrl))) {
             goto err_alloc;
         }
 	item = g_new0(edl_item_elem, 1);
