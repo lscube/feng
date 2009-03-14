@@ -486,9 +486,6 @@ int RTSP_handler(RTSP_buffer * rtsp)
         int hlen, blen;
         rtsp_rcvd_status full_msg = RTSP_full_msg_rcvd(rtsp, &hlen, &blen);
 
-        if ( full_msg == RTSP_not_full )
-            return ERR_GENERIC;
-
         switch (full_msg) {
         case RTSP_method_rcvd:
             rtsp_handle_request(rtsp);
@@ -496,6 +493,8 @@ int RTSP_handler(RTSP_buffer * rtsp)
         case RTSP_interlvd_rcvd:
             rtsp_handle_interleaved(rtsp, blen, hlen);
             break;
+        default:
+            return full_msg;
         }
 
         RTSP_discard_msg(rtsp, hlen + blen);
