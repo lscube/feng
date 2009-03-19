@@ -52,6 +52,37 @@ static inline double calc_send_time(RTP_session *session, BPSlot *slot) {
     return (last_timestamp - session->send_time)/slot->pkt_num;
 }
 
+typedef struct RTP_header {
+    /* byte 0 */
+#if (G_BYTE_ORDER == G_LITTLE_ENDIAN)
+    uint8_t csrc_len:4;   /* expect 0 */
+    uint8_t extension:1;  /* expect 1, see RTP_OP below */
+    uint8_t padding:1;    /* expect 0 */
+    uint8_t version:2;    /* expect 2 */
+#elif (G_BYTE_ORDER == G_BIG_ENDIAN)
+    uint8_t version:2;
+    uint8_t padding:1;
+    uint8_t extension:1;
+    uint8_t csrc_len:4;
+#else
+#error Neither big nor little
+#endif
+    /* byte 1 */
+#if (G_BYTE_ORDER == G_LITTLE_ENDIAN)
+    uint8_t payload:7;    /* RTP_PAYLOAD_RTSP */
+    uint8_t marker:1;     /* expect 1 */
+#elif (G_BYTE_ORDER == G_BIG_ENDIAN)
+    uint8_t marker:1;
+    uint8_t payload:7;
+#endif
+    /* bytes 2, 3 */
+    uint16_t seq_no;
+    /* bytes 4-7 */
+    uint32_t timestamp;
+    /* bytes 8-11 */
+    uint32_t ssrc;    /* stream number is used here. */
+} RTP_header;
+
 /**
  * Sends pending RTP packets for the given session
  * @param session the RTP session for which to send the packets
