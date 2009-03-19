@@ -93,8 +93,6 @@ typedef struct RTP_header {
  */
 int RTP_send_packet(RTP_session * session)
 {
-    unsigned char *packet = NULL;
-    RTP_header r;        // 12 bytes
     int res = ERR_NOERROR, bp_frames = 0;
     BPSlot *slot = NULL;
     ssize_t psize_sent = 0;
@@ -104,28 +102,34 @@ int RTP_send_packet(RTP_session * session)
 
     if ((slot = bp_getreader(session->cons))) {
         if (!(session->pause && t->properties->media_source == MS_live)) {
-            static const size_t hdr_size = sizeof(r);
-            r.version = 2;
-            r.padding = 0;
-            r.extension = 0;
-            r.csrc_len = 0;
-            r.marker = slot->marker & 0x1;
-            r.payload = t->properties->payload_type & 0x7f;
-            r.seq_no = htons(session->seq_no += slot->seq_delta);
-            r.timestamp = htonl(RTP_calc_rtptime(session,
-                                t->properties->clock_rate, slot));
-            fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(r.timestamp));
-            r.ssrc = htonl(session->ssrc);
-            packet = g_malloc0(slot->data_size + hdr_size);
+            const uint32_t timestamp = RTP_calc_rtptime(session,
+                                                        t->properties->clock_rate,
+                                                        slot);
+            const size_t packet_size = sizeof(RTP_header) + slot->data_size;
+            uint8_t *packet = g_malloc0(packet_size);
+            RTP_header *rtp_header = (RTP_header*)packet;
+
             if (packet == NULL) {
                 return ERR_ALLOC;
             }
-            memcpy(packet, &r, hdr_size);
-            memcpy(packet + hdr_size, slot->data, slot->data_size);
+
+            rtp_header->version = 2;
+            rtp_header->padding = 0;
+            rtp_header->extension = 0;
+            rtp_header->csrc_len = 0;
+            rtp_header->marker = slot->marker & 0x1;
+            rtp_header->payload = t->properties->payload_type & 0x7f;
+            rtp_header->seq_no = htons(session->seq_no += slot->seq_delta);
+            rtp_header->timestamp = htonl(timestamp);
+            rtp_header->ssrc = htonl(session->ssrc);
+
+            fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(timestamp));
+
+            memcpy(packet + sizeof(RTP_header), slot->data, slot->data_size);
 
             if ((psize_sent =
                  Sock_write(session->transport.rtp_sock, packet,
-                 slot->data_size + hdr_size, NULL, MSG_DONTWAIT
+                 packet_size, NULL, MSG_DONTWAIT
                  | MSG_EOR)) < 0) {
                 fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
             } else {
