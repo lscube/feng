@@ -439,11 +439,15 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
                             t->properties->encoding_name);
         break;
+
+/*
     case MS_live:
 	shm_name = strstr(t->info->mrl, FNC_PROTO_SEPARATOR) + strlen(FNC_PROTO_SEPARATOR);
         if( !(t->buffer = bp_shm_map(shm_name)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Shared memory problems\n");
         break;
+*/
+
     default:
         ADD_TRACK_ERROR(FNC_LOG_FATAL, "Media source not supported!");
         break;
