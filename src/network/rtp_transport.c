@@ -52,7 +52,7 @@ static inline double calc_send_time(RTP_session *session, BPSlot *slot) {
     return (last_timestamp - session->send_time)/slot->pkt_num;
 }
 
-typedef struct RTP_header {
+typedef struct {
     /* byte 0 */
 #if (G_BYTE_ORDER == G_LITTLE_ENDIAN)
     uint8_t csrc_len:4;   /* expect 0 */
@@ -81,7 +81,9 @@ typedef struct RTP_header {
     uint32_t timestamp;
     /* bytes 8-11 */
     uint32_t ssrc;    /* stream number is used here. */
-} RTP_header;
+
+    uint8_t data[]; /**< Variable-sized data payload */
+} RTP_packet;
 
 /**
  * Sends pending RTP packets for the given session
@@ -105,27 +107,26 @@ int RTP_send_packet(RTP_session * session)
             const uint32_t timestamp = RTP_calc_rtptime(session,
                                                         t->properties->clock_rate,
                                                         slot);
-            const size_t packet_size = sizeof(RTP_header) + slot->data_size;
-            uint8_t *packet = g_malloc0(packet_size);
-            RTP_header *rtp_header = (RTP_header*)packet;
+            const size_t packet_size = sizeof(RTP_packet) + slot->data_size;
+            RTP_packet *packet = g_malloc0(packet_size);
 
             if (packet == NULL) {
                 return ERR_ALLOC;
             }
 
-            rtp_header->version = 2;
-            rtp_header->padding = 0;
-            rtp_header->extension = 0;
-            rtp_header->csrc_len = 0;
-            rtp_header->marker = slot->marker & 0x1;
-            rtp_header->payload = t->properties->payload_type & 0x7f;
-            rtp_header->seq_no = htons(session->seq_no += slot->seq_delta);
-            rtp_header->timestamp = htonl(timestamp);
-            rtp_header->ssrc = htonl(session->ssrc);
+            packet->version = 2;
+            packet->padding = 0;
+            packet->extension = 0;
+            packet->csrc_len = 0;
+            packet->marker = slot->marker & 0x1;
+            packet->payload = t->properties->payload_type & 0x7f;
+            packet->seq_no = htons(session->seq_no += slot->seq_delta);
+            packet->timestamp = htonl(timestamp);
+            packet->ssrc = htonl(session->ssrc);
 
             fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(timestamp));
 
-            memcpy(packet + sizeof(RTP_header), slot->data, slot->data_size);
+            memcpy(packet->data, slot->data, slot->data_size);
 
             if ((psize_sent =
                  Sock_write(session->transport.rtp_sock, packet,
