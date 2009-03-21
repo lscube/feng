@@ -23,6 +23,8 @@
 #include <string.h>
 
 #include "mediaparser.h"
+#include "demuxer.h"
+#include "bufferqueue.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
@@ -78,18 +80,18 @@ void mparser_unreg(MediaParser *p, void *private_data)
     if (p) p->uninit(private_data);
 }
 
-void mparser_buffer_write(BufferQueue_Producer *producer, uint16_t seq_delta,
-                          double timestamp, uint32_t rtp_time, uint8_t marker,
+void mparser_buffer_write(struct Track *tr, uint16_t seq_delta,
+                          uint32_t rtp_time, uint8_t marker,
                           uint8_t *data, size_t data_size) {
     MParserBuffer *buffer = g_malloc(sizeof(MParserBuffer) + data_size);
 
     buffer->seq_delta = seq_delta;
-    buffer->timestamp = timestamp;
+    buffer->timestamp = tr->properties->mtime;
     buffer->rtp_time = rtp_time;
     buffer->marker = marker;
     buffer->data_size = data_size;
 
     memcpy(buffer->data, data, data_size);
 
-    bq_producer_put(producer, buffer);
+    bq_producer_put(tr->producer, buffer);
 }

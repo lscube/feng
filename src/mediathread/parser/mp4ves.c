@@ -90,13 +90,13 @@ static int mp4ves_parse(void *track, uint8_t *data, long len, uint8_t *extradata
 #endif
 
     if (mtu >= len) {
-        mparser_buffer_write(tr->producer, 1, tr->properties->mtime, 0, 1,
+        mparser_buffer_write(tr, 1, 0, 1,
                         data, len);
         fnc_log(FNC_LOG_VERBOSE, "[mp4v] no frags");
     } else {
         do {
             offset = len - rem;
-            mparser_buffer_write(tr->producer, 1, tr->properties->mtime, 0, (rem <= mtu),
+            mparser_buffer_write(tr, 1, 0, (rem <= mtu),
                             data + offset, min(rem, mtu));
             rem -= mtu;
             fnc_log(FNC_LOG_VERBOSE, "[mp4v] frags");

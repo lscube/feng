@@ -117,7 +117,7 @@ MObject_def(Trackinfo_s)
     //end CC
 } TrackInfo;
 
-typedef struct {
+typedef struct Track {
     InputStream *i_stream;
     TrackInfo *info;
     long int timestamp;

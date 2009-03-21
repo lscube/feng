@@ -26,8 +26,9 @@
 #include <stdint.h>
 
 #include "mediautils.h"
-#include "bufferqueue.h"
 #include <fenice/sdp_grammar.h>
+
+struct Track;
 
 // return errors
 #define MP_PKT_TOO_SMALL -101
@@ -126,8 +127,8 @@ typedef struct {
     uint8_t data[];
 } MParserBuffer;
 
-void mparser_buffer_write(BufferQueue_Producer *producer, uint16_t seq_delta,
-                          double timestamp, uint32_t rtp_time, uint8_t marker,
+void mparser_buffer_write(struct Track *tr, uint16_t seq_delta,
+                          uint32_t rtp_time, uint8_t marker,
                           uint8_t *data, size_t data_size);
 
 
