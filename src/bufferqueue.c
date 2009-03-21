@@ -46,6 +46,40 @@
  */
 
 /**
+ * @brief Element structure
+ *
+ * This is the structure that is put in the list for each buffer
+ * produced by the producer.
+ */
+typedef struct {
+    /**
+     * @brief Element data
+     *
+     * Pointer to the actual data represented by the element. This is
+     * what the reading function returns to the caller.
+     *
+     * When the element is deleted, this is passed as parameter to the
+     * @ref BufferQueue_Producer::free_function function.
+     */
+    gpointer payload;
+
+    /**
+     * @brief Seen count
+     *
+     * Reverse reference counter, that tells how many consumers have
+     * seen the buffer already. Once the buffer has been seen by all
+     * the consumers of its producer, the buffer is deleted and the
+     * queue is shifted further on.
+     *
+     * @note Since once the counter reaches the number of consumers
+     *       the element is deleted and freed, before increasing the
+     *       counter it is necessary to hold the @ref
+     *       BufferQueue_Producer lock.
+     */
+    gulong seen;
+} BufferQueue_Element;
+
+/**
  * @brief Producer structure
  *
  * This is the structure that keeps all the information related to the
@@ -148,48 +182,35 @@ struct BufferQueue_Consumer {
     BufferQueue_Producer *producer;
 
     /**
+     * @brief Last used producer queue
+     *
+     * Each producer can drop its queue and create a new one, for
+     * instance if there is a discontinuity of any kind in the
+     * produced stream. For this reason, the consumer needs to track
+     * whether its references are still valid or not, by checking the
+     * last used queue and the current one.
+     */
+    GQueue *last_queue;
+
+    /**
      * @brief Pointer to the current element in the list
      *
      * This pointer is used to access the "next to serve" buffer; and
      * is originally set to the head of @ref BufferQueue_Producer
      * queue.
      */
-    GList *current_element;
+    GList *current_element_pointer;
+
+    /**
+     * @brief Pointer to the last seen element
+     *
+     * Since a producer can change queue, the @ref
+     * BufferQueue_Consumer::current_element pointer might not be
+     * valid any longer; to make sure that the element is not deleted
+     * before time, a copy of it is kept here.
+     */
+    BufferQueue_Element *current_element_object;
 };
-
-/**
- * @brief Element structure
- *
- * This is the structure that is put in the list for each buffer
- * produced by the producer.
- */
-typedef struct {
-    /**
-     * @brief Element data
-     *
-     * Pointer to the actual data represented by the element. This is
-     * what the reading function returns to the caller.
-     *
-     * When the element is deleted, this is passed as parameter to the
-     * @ref BufferQueue_Producer::free_function function.
-     */
-    gpointer payload;
-
-    /**
-     * @brief Seen count
-     *
-     * Reverse reference counter, that tells how many consumers have
-     * seen the buffer already. Once the buffer has been seen by all
-     * the consumers of its producer, the buffer is deleted and the
-     * queue is shifted further on.
-     *
-     * @note Since once the counter reaches the number of consumers
-     *       the element is deleted and freed, before increasing the
-     *       counter it is necessary to hold the @ref
-     *       BufferQueue_Producer lock.
-     */
-    gulong seen;
-} BufferQueue_Element;
 
 /**
  * @brief Create a new producer for the bufferqueue
@@ -354,17 +375,56 @@ BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
     producer->consumers++;
 
     ret->producer = producer;
-
-    /* Set the current element; if the queue is empty this is going to
-     * be NULL, but it's okay, we'll deal with that when getting and
-     * moving.
-     */
-    ret->current_element = producer->queue->head;
+    ret->last_queue = NULL;
+    ret->current_element_pointer = NULL;
+    ret->current_element_object = NULL;
 
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
 
     return ret;
+}
+
+/**
+ * @brief Remove reference from the current element
+ *
+ * @param consumer The consumer that has seen the element
+ *
+ *
+ * @note This function will require exclusive access to the producer,
+ *       and will thus lock its mutex.
+ */
+static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
+    BufferQueue_Producer *producer = consumer->producer;
+    BufferQueue_Element *elem = consumer->current_element_object;
+
+    /* If we had no element selected, just get out of here */
+    if ( elem == NULL )
+        return;
+
+    /* If we're the last one to see the element, we need to take care
+     * of removing and freeing it. */
+    if ( ++elem->seen < producer->consumers )
+        return;
+
+    bq_element_free_internal(elem, producer->free_function);
+
+    /* Make sure to lose reference to it */
+    consumer->current_element_object = NULL;
+
+    /* Only remove the element from the queue if it's still the
+     * one used by the producer.
+     */
+    if ( producer->queue != consumer->last_queue )
+        return;
+
+    /* We can only remove the head of the queue, if we're doing
+     * anything else, something is funky.
+     */
+    g_assert(consumer->current_element_pointer == producer->queue->head);
+
+    /* Remove the element from the queue */
+    g_queue_pop_head(producer->queue);
 }
 
 /**
@@ -393,6 +453,8 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
      */
     g_assert_cmpuint(producer->consumers, >,  0);
 
+    bq_consumer_elem_unref(consumer);
+
     if ( --producer->consumers == 0 ) {
         if ( producer->stopped ) {
             g_cond_signal(producer->last_consumer);
@@ -405,14 +467,13 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
                             producer->free_function);
             g_queue_clear(producer->queue);
         }
-    } else if ( consumer->current_element != NULL &&
-                consumer->current_element != producer->queue->head ) {
-        /* If we are in the middle of the queue for now, make sure that we
-         * reduce the seen count of all the elements that have been
-         * visited, otherwise they'll be removed before time.
+    } else if ( consumer->current_element_object != NULL ) {
+        /* If we haven't removed the current selected element, it
+         * means that we have to decrease the seen count for all the
+         * elements before it.
          */
 
-        GList *it = consumer->current_element;
+        GList *it = consumer->current_element_pointer;
         do {
             BufferQueue_Element *elem = (BufferQueue_Element*)(it->data);
 
@@ -435,104 +496,72 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
 }
 
 /**
- * @brief Get the current element from the consumer list
+ * @brief Get the next element from the consumer list
  *
  * @param consumer The consumer object to get the data from
  *
- * @return A pointer to the payload of the current element
+ * @return A pointer to the payload of the newly selected element
  *
  * @note This function will require exclusive access to the producer,
  *       and will thus lock its mutex.
  *
- * This function does not remove or mark as seen the pointer; this is
- * especially important because deleting the object needs to be done
- * as the very last step and once the buffer is no longer referenced.
+ * This function marks as seen the previously-selected element, if
+ * any; the new selection is not freed until the cursor is moved or
+ * the consumer is deleted.
  */
 gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     gpointer ret = NULL;
+    GList *expected_next = NULL;
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
-    if ( consumer->current_element == NULL ) {
+    while ( expected_next == NULL ) {
         if ( producer->stopped )
             goto end;
 
-        if ( producer->queue->head == NULL )
-            g_cond_wait(producer->new_data, producer->lock);
+        if ( consumer->last_queue != producer->queue ) {
+            /* If the last used queue does not correspond to the current
+             * producer's queue, we have to take the head of the new
+             * queue.
+             *
+             * This also hits at the first request, since the last_queue
+             * will be NULL.
+             */
+            consumer->last_queue = producer->queue;
+            expected_next = producer->queue->head;
+        } else {
+            expected_next = consumer->current_element_pointer->next;
+        }
 
-        consumer->current_element = producer->queue->head;
+        /* If at this point we don't have an element to read, it means
+         * that the producer is either stopped or it hasn't data to
+         * work with, so let's wait.
+         */
+        if ( expected_next == NULL )
+            g_cond_wait(producer->new_data, producer->lock);
     }
 
+    /* If there is any element at all saved, we take care of marking
+     * it as seen. We don't have to check if it's non-NULL since the
+     * function takes care of that. We _have_ to do this after we
+     * found the new "next" pointer.
+     */
+    bq_consumer_elem_unref(consumer);
+
+    /* Now we have a new "next" element and we can set it properly */
+    consumer->current_element_pointer = expected_next;
+    consumer->current_element_object = (BufferQueue_Element *)consumer->current_element_pointer->data;
+
     /* Get the payload of the element */
-    ret = ((BufferQueue_Element *)consumer->current_element->data)->payload;
+    ret = consumer->current_element_object->payload;
 
  end:
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
 
     return ret;
-}
-
-/**
- * @brief Move the consumer to the next element in the queue
- *
- * @param consumer The consumer object to move
- *
- * @note This function will require exclusive access to the producer,
- *       and will thus lock its mutex.
- *
- * This function will move the pointer in the consumer object to point
- * to the following element in the queue, and eventually deletes the
- * previous element if we were the last consumer to have seen it.
- */
-void bq_consumer_next(BufferQueue_Consumer *consumer) {
-    BufferQueue_Producer *producer = consumer->producer;
-    GList *current = NULL;
-    BufferQueue_Element *elem = NULL;
-
-    /* Ensure we have the exclusive access */
-    g_mutex_lock(producer->lock);
-
-    current = consumer->current_element;
-
-    /* We cannot skip to the next if we don't have a current
-     * element. Please note that since the @ref bq_consumer_get method
-     * has to be called before this, it'll also take care that
-     * current_element is not NULL.
-     */
-    g_assert(current != NULL);
-
-    elem = (BufferQueue_Element *)current->data;
-    g_assert(elem != NULL);
-
-    while ( current->next == NULL ) {
-        if ( producer->stopped )
-            goto end;
-
-        g_cond_wait(producer->new_data, producer->lock);
-    }
-
-    consumer->current_element = current->next;
-
-    /* If we're the last one to see the element, we need to take care
-     * of removing and freeing it. */
-    if ( ++elem->seen == producer->consumers ) {
-        /* We can only remove the head of the queue, if we're doing
-         * anything else, something is funky.
-         */
-        g_assert(current == producer->queue->head);
-
-        /* Remove the element from the queue */
-        g_queue_pop_head(producer->queue);
-
-        bq_element_free_internal(elem, producer->free_function);
-    }
-
- end:
-    /* Leave the exclusive access */
-    g_mutex_unlock(producer->lock);
 }
 
 /**@}*/

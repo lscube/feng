@@ -53,14 +53,6 @@ static void rtp_session_seek(gpointer value, gpointer user_data)
   rtp_sess->start_seq = 1 + rtp_sess->seq_no;
   rtp_sess->start_rtptime = g_random_int();
   rtp_sess->seek_time = args->begin_time;
-
-  /* @todo Implement a method to do this better in BufferQueue */
-  if (rtp_sess->consumer) {
-    while (bq_consumer_get(rtp_sess->consumer)) {
-      /* Drop spurious packets after seek */
-      bq_consumer_next(rtp_sess->consumer);
-    }
-  }
 }
 
 /**

@@ -34,7 +34,6 @@ void bq_producer_stop(BufferQueue_Producer *producer);
 
 BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer);
 gpointer bq_consumer_get(BufferQueue_Consumer *consumer);
-void bq_consumer_next(BufferQueue_Consumer *consumer);
 void bq_consumer_free(BufferQueue_Consumer *consumer);
 
 #endif

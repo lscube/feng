@@ -151,7 +151,6 @@ int RTP_send_packet(RTP_session * session)
 #warning Remove as soon as feng is fixed
             usleep(1000);
         }
-        bq_consumer_next(session->consumer);
     }
     if (!buffer || bp_frames <= srv->srvconf.buffered_frames) {
         res = event_buffer_low(session, t);
