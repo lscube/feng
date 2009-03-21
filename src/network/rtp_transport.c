@@ -39,17 +39,17 @@
  * depending on what is available
  * @param session RTP session of the packet
  * @param clock_rate RTP clock rate (depends on media)
- * @param slot Slot of which calculate timestamp
+ * @param buffer Buffer of which calculate timestamp
  * @return RTP Timestamp (in local endianess)
  */
-static inline uint32_t RTP_calc_rtptime(RTP_session *session, int clock_rate, BPSlot *slot) {
-    uint32_t calc_rtptime = (uint32_t)((slot->timestamp - session->seek_time) * clock_rate);
-    return (session->start_rtptime + (slot->rtp_time ? slot->rtp_time : calc_rtptime));
+static inline uint32_t RTP_calc_rtptime(RTP_session *session, int clock_rate, MParserBuffer *buffer) {
+    uint32_t calc_rtptime = (uint32_t)((buffer->timestamp - session->seek_time) * clock_rate);
+    return (session->start_rtptime + (buffer->rtp_time ? buffer->rtp_time : calc_rtptime));
 }
 
-static inline double calc_send_time(RTP_session *session, BPSlot *slot) {
-    double last_timestamp = (slot->last_timestamp - session->seek_time);
-    return (last_timestamp - session->send_time)/slot->pkt_num;
+static inline double calc_send_time(RTP_session *session, MParserBuffer *buffer) {
+    double last_timestamp = (buffer->last_timestamp - session->seek_time);
+    return (last_timestamp - session->send_time)/buffer->pkt_num;
 }
 
 typedef struct {
@@ -96,18 +96,18 @@ typedef struct {
 int RTP_send_packet(RTP_session * session)
 {
     int res = ERR_NOERROR, bp_frames = 0;
-    BPSlot *slot = NULL;
+    MParserBuffer *buffer = NULL;
     ssize_t psize_sent = 0;
     feng *srv = session->srv;
     Track *t = r_selected_track(session->track_selector);
     uint32_t now=time(NULL);
 
-    if ((slot = bp_getreader(session->cons))) {
+    if ((buffer = bq_consumer_get(session->consumer))) {
         if (!(session->pause && t->properties->media_source == MS_live)) {
             const uint32_t timestamp = RTP_calc_rtptime(session,
                                                         t->properties->clock_rate,
-                                                        slot);
-            const size_t packet_size = sizeof(RTP_packet) + slot->data_size;
+                                                        buffer);
+            const size_t packet_size = sizeof(RTP_packet) + buffer->data_size;
             RTP_packet *packet = g_malloc0(packet_size);
 
             if (packet == NULL) {
@@ -118,15 +118,15 @@ int RTP_send_packet(RTP_session * session)
             packet->padding = 0;
             packet->extension = 0;
             packet->csrc_len = 0;
-            packet->marker = slot->marker & 0x1;
+            packet->marker = buffer->marker & 0x1;
             packet->payload = t->properties->payload_type & 0x7f;
-            packet->seq_no = htons(session->seq_no += slot->seq_delta);
+            packet->seq_no = htons(session->seq_no += buffer->seq_delta);
             packet->timestamp = htonl(timestamp);
             packet->ssrc = htonl(session->ssrc);
 
             fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(timestamp));
 
-            memcpy(packet->data, slot->data, slot->data_size);
+            memcpy(packet->data, buffer->data, buffer->data_size);
 
             if ((psize_sent =
                  Sock_write(session->transport.rtp_sock, packet,
@@ -135,13 +135,13 @@ int RTP_send_packet(RTP_session * session)
                 fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
             } else {
                 if (!session->send_time) {
-                    session->send_time = slot->timestamp - session->seek_time;
+                    session->send_time = buffer->timestamp - session->seek_time;
                 }
-                bp_frames = (fabs(slot->last_timestamp - slot->timestamp) /
+                bp_frames = (fabs(buffer->last_timestamp - buffer->timestamp) /
                     t->properties->frame_duration) + 1;
-                session->send_time += calc_send_time(session, slot);
-                session->rtcp_stats[i_server].pkt_count += slot->seq_delta;
-                session->rtcp_stats[i_server].octet_count += slot->data_size;
+                session->send_time += calc_send_time(session, buffer);
+                session->rtcp_stats[i_server].pkt_count += buffer->seq_delta;
+                session->rtcp_stats[i_server].octet_count += buffer->data_size;
 
                 session->last_packet_send_time = now;
             }
@@ -150,16 +150,16 @@ int RTP_send_packet(RTP_session * session)
 #warning Remove as soon as feng is fixed
             usleep(1000);
         }
-        bp_gotreader(session->cons);
+        bq_consumer_next(session->consumer);
     }
-    if (!slot || bp_frames <= srv->srvconf.buffered_frames) {
+    if (!buffer || bp_frames <= srv->srvconf.buffered_frames) {
         res = event_buffer_low(session, t);
     }
     switch (res) {
         case ERR_NOERROR:
             break;
         case ERR_EOF:
-            if (slot) {
+            if (buffer) {
                 //Wait to empty feng before sending BYE packets.
                 res = ERR_NOERROR;
             }
@@ -239,8 +239,8 @@ void RTP_session_destroy(RTP_session * session)
     // Close track selector
     r_close_tracks(session->track_selector);
 
-    // destroy consumer
-    bp_unref(session->cons);
+    /* Remove the consumer */
+    bq_consumer_free(session->consumer);
 
     // Deallocate memory
     g_free(session->sd_filename);

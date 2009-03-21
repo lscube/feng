@@ -28,7 +28,6 @@
 #include <inttypes.h>
 #include <strings.h>
 
-#include <bufferpool/bufferpool.h>
 #include <liberis/headers.h>
 
 #include "rtsp.h"
@@ -55,10 +54,11 @@ static void rtp_session_seek(gpointer value, gpointer user_data)
   rtp_sess->start_rtptime = g_random_int();
   rtp_sess->seek_time = args->begin_time;
 
-  if (rtp_sess->cons) {
-    while (bp_getreader(rtp_sess->cons)) {
+  /* @todo Implement a method to do this better in BufferQueue */
+  if (rtp_sess->consumer) {
+    while (bq_consumer_get(rtp_sess->consumer)) {
       /* Drop spurious packets after seek */
-      bp_gotreader(rtp_sess->cons);
+      bq_consumer_next(rtp_sess->consumer);
     }
   }
 }

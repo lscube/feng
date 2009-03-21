@@ -84,9 +84,7 @@ int schedule_start(RTP_session *session, play_args *args)
     Track *tr = r_selected_track(session->track_selector);
     int i;
 
-    session->cons = bp_ref(tr->buffer);
-    if (session->cons == NULL)
-        return ERR_ALLOC;
+    session->consumer = bq_consumer_new(tr->producer);
 
     session->start_time = args->start_time;
     session->send_time = 0.0;

@@ -29,10 +29,11 @@
 #include <sys/socket.h>
 
 #include <netembryo/wsocket.h>
-#include <bufferpool/bufferpool.h>
 
 #include <fenice/prefs.h>
 #include "mediathread/mediathread.h"
+
+#include "bufferqueue.h"
 
 #define RTP_DEFAULT_PORT 5004
 #define RTCP_BUFFERSIZE    1024
@@ -116,8 +117,14 @@ typedef struct RTP_session {
     //multicast management
     uint8_t is_multicast; //!< 0, treat as usual, >0 do nothing
 
-    //Consumer has transferred itself here
-    BPConsumer *cons;
+    /**
+     * @brief Consumer for the track buffer queue
+     *
+     * This provides the interface between the RTP session and the
+     * source of the data to send over the network.
+     */
+    BufferQueue_Consumer *consumer;
+
     RTCP_stats rtcp_stats[2];    //client and server
     struct feng *srv;
     struct RTSP_buffer *rtsp_buffer;
