@@ -30,6 +30,7 @@ dist_feng_SOURCES = \
 	network/sdp2.h \
 	network/sdp_session_descr.c \
 	\
+	bufferqueue.c bufferqueue.h \
 	client_events.h client_events.c \
 	eventloop.c eventloop.h \
 	fnc_log.c \
