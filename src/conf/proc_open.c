@@ -184,7 +184,7 @@ static int proc_open(proc_handler_t *proc, const char *command) {
 /* }}} */
 
 /* {{{ proc_read_fd_to_buffer */
-static void proc_read_fd_to_buffer(int fd, buffer *b) {
+static void proc_read_fd_to_buffer(int fd, conf_buffer *b) {
 	ssize_t s;
 
 	for (;;) {
@@ -198,7 +198,7 @@ static void proc_read_fd_to_buffer(int fd, buffer *b) {
 }
 /* }}} */
 /* {{{ proc_open_buffer */
-int proc_open_buffer(proc_handler_t *proc, const char *command, buffer *in, buffer *out, buffer *err) {
+int proc_open_buffer(proc_handler_t *proc, const char *command, conf_buffer *in, conf_buffer *out, conf_buffer *err) {
 
 	UNUSED(err);
 
@@ -232,7 +232,7 @@ int proc_open_buffer(proc_handler_t *proc, const char *command, buffer *in, buff
 #ifdef DEBUG_PROC_OPEN
 int main() {
 	proc_handler_t proc;
-	buffer *in = buffer_init(), *out = buffer_init(), *err = buffer_init();
+	conf_buffer *in = buffer_init(), *out = buffer_init(), *err = buffer_init();
 	int wstatus;
 
 #define FREE() do { \

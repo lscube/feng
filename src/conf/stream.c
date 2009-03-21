@@ -48,7 +48,7 @@
 # define O_BINARY 0
 #endif
 
-int stream_open(stream *f, buffer *fn) {
+int stream_open(stream *f, conf_buffer *fn) {
     struct stat st;
 #ifdef HAVE_MMAP
     int fd;

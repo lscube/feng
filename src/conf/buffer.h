@@ -42,14 +42,14 @@ typedef struct {
 
     size_t used;
     size_t size;
-} buffer;
+} conf_buffer;
 
 typedef struct {
-    buffer **ptr;
+    conf_buffer **ptr;
 
     size_t used;
     size_t size;
-} buffer_array;
+} conf_buffer_array;
 
 typedef struct {
     char *ptr;
@@ -58,32 +58,32 @@ typedef struct {
 
     size_t used;   /* output-pointer */
     size_t size;
-} read_buffer;
+} conf_read_buffer;
 
-buffer* buffer_init(void);
-buffer* buffer_init_buffer(buffer *b);
-buffer* buffer_init_string(const char *str);
-void buffer_free(buffer *b);
-void buffer_reset(buffer *b);
+conf_buffer* buffer_init(void);
+conf_buffer* buffer_init_buffer(conf_buffer *b);
+conf_buffer* buffer_init_string(const char *str);
+void buffer_free(conf_buffer *b);
+void buffer_reset(conf_buffer *b);
 
-int buffer_prepare_copy(buffer *b, size_t size);
-int buffer_prepare_append(buffer *b, size_t size);
+int buffer_prepare_copy(conf_buffer *b, size_t size);
+int buffer_prepare_append(conf_buffer *b, size_t size);
 
-int buffer_copy_string(buffer *b, const char *s);
-int buffer_copy_string_len(buffer *b, const char *s, size_t s_len);
-int buffer_copy_string_buffer(buffer *b, const buffer *src);
+int buffer_copy_string(conf_buffer *b, const char *s);
+int buffer_copy_string_len(conf_buffer *b, const char *s, size_t s_len);
+int buffer_copy_string_buffer(conf_buffer *b, const conf_buffer *src);
 
-int buffer_copy_long(buffer *b, long val);
+int buffer_copy_long(conf_buffer *b, long val);
 
-int buffer_append_string(buffer *b, const char *s);
-int buffer_append_string_len(buffer *b, const char *s, size_t s_len);
-int buffer_append_string_buffer(buffer *b, const buffer *src);
-int buffer_append_string_lfill(buffer *b, const char *s, size_t maxlen);
+int buffer_append_string(conf_buffer *b, const char *s);
+int buffer_append_string_len(conf_buffer *b, const char *s, size_t s_len);
+int buffer_append_string_buffer(conf_buffer *b, const conf_buffer *src);
+int buffer_append_string_lfill(conf_buffer *b, const char *s, size_t maxlen);
 
-int buffer_append_long(buffer *b, long val);
+int buffer_append_long(conf_buffer *b, long val);
 
-int buffer_is_empty(buffer *b);
-int buffer_is_equal_string(buffer *a, const char *s, size_t b_len);
+int buffer_is_empty(conf_buffer *b);
+int buffer_is_equal_string(conf_buffer *a, const char *s, size_t b_len);
 int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b_len);
 
 typedef enum {

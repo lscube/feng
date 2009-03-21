@@ -32,7 +32,7 @@ static data_config *configparser_pop(config_t *ctx) {
 }
 
 /* return a copied variable */
-static data_unset *configparser_get_variable(config_t *ctx, const buffer *key) {
+static data_unset *configparser_get_variable(config_t *ctx, const conf_buffer *key) {
   data_unset *du;
   data_config *dc;
 
@@ -125,8 +125,8 @@ metaline ::= EOL.
 %type       condlines              {data_config *}
 %type       aelements              {array *}
 %type       array                  {array *}
-%type       key                    {buffer *}
-%type       stringop               {buffer *}
+%type       key                    {conf_buffer *}
+%type       stringop               {conf_buffer *}
 
 %type       cond                   {config_cond_t }
 
@@ -138,7 +138,7 @@ metaline ::= EOL.
 %destructor key                    { buffer_free($$); }
 %destructor stringop               { buffer_free($$); }
 
-%token_type                        {buffer *}
+%token_type                        {conf_buffer *}
 %token_destructor                  { buffer_free($$); }
 
 varline ::= key(A) ASSIGN expression(B). {
@@ -372,7 +372,7 @@ condline(A) ::= context LCURLY metalines RCURLY. {
 
 context ::= DOLLAR SRVVARNAME(B) LBRACKET stringop(C) RBRACKET cond(E) expression(D). {
   data_config *dc;
-  buffer *b, *rvalue, *op;
+  conf_buffer *b, *rvalue, *op;
 
   if (ctx->ok && D->type != TYPE_STRING) {
     fprintf(stderr, "rvalue must be string");

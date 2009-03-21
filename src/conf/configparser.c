@@ -35,7 +35,7 @@ static data_config *configparser_pop(config_t *ctx) {
 }
 
 /* return a copied variable */
-static data_unset *configparser_get_variable(config_t *ctx, const buffer *key) {
+static data_unset *configparser_get_variable(config_t *ctx, const conf_buffer *key) {
   data_unset *du;
   data_config *dc;
 
@@ -159,13 +159,13 @@ data_unset *configparser_merge_data(data_unset *op1, const data_unset *op2) {
 #define YYCODETYPE unsigned char
 #define YYNOCODE 48
 #define YYACTIONTYPE unsigned char
-#define configparserTOKENTYPE buffer *
+#define configparserTOKENTYPE conf_buffer *
 typedef union {
   configparserTOKENTYPE yy0;
   config_cond_t yy27;
   array * yy40;
   data_unset * yy41;
-  buffer * yy43;
+  conf_buffer * yy43;
   data_config * yy78;
   int yy95;
 } YYMINORTYPE;
@@ -1155,7 +1155,7 @@ static void yy_reduce(
 #line 373 "./configparser.y"
 {
   data_config *dc;
-  buffer *b, *rvalue, *op;
+  conf_buffer *b, *rvalue, *op;
 
   if (ctx->ok && yymsp[0].minor.yy41->type != TYPE_STRING) {
     fprintf(stderr, "rvalue must be string");

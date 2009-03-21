@@ -43,6 +43,6 @@ typedef struct {
     proc_pid_t child;
 } proc_handler_t;
 
-int proc_open_buffer(proc_handler_t *ht, const char *command, buffer *in, buffer *out, buffer *err);
+int proc_open_buffer(proc_handler_t *ht, const char *command, conf_buffer *in, conf_buffer *out, conf_buffer *err);
 
 #endif

@@ -40,8 +40,8 @@
  *
  */
 
-buffer* buffer_init(void) {
-    buffer *b;
+conf_buffer* buffer_init(void) {
+    conf_buffer *b;
 
     b = malloc(sizeof(*b));
     assert(b);
@@ -53,8 +53,8 @@ buffer* buffer_init(void) {
     return b;
 }
 
-buffer *buffer_init_buffer(buffer *src) {
-    buffer *b = buffer_init();
+conf_buffer *buffer_init_buffer(conf_buffer *src) {
+    conf_buffer *b = buffer_init();
     buffer_copy_string_buffer(b, src);
     return b;
 }
@@ -64,14 +64,14 @@ buffer *buffer_init_buffer(buffer *src) {
  *
  */
 
-void buffer_free(buffer *b) {
+void buffer_free(conf_buffer *b) {
     if (!b) return;
 
     free(b->ptr);
     free(b);
 }
 
-void buffer_reset(buffer *b) {
+void buffer_reset(conf_buffer *b) {
     if (!b) return;
 
     /* limit don't reuse buffer larger than ... bytes */
@@ -94,7 +94,7 @@ void buffer_reset(buffer *b) {
 
 #define BUFFER_PIECE_SIZE 64
 
-int buffer_prepare_copy(buffer *b, size_t size) {
+int buffer_prepare_copy(conf_buffer *b, size_t size) {
     if (!b) return -1;
 
     if ((0 == b->size) ||
@@ -120,7 +120,7 @@ int buffer_prepare_copy(buffer *b, size_t size) {
  *
  */
 
-int buffer_prepare_append(buffer *b, size_t size) {
+int buffer_prepare_append(conf_buffer *b, size_t size) {
     if (!b) return -1;
 
     if (0 == b->size) {
@@ -144,7 +144,7 @@ int buffer_prepare_append(buffer *b, size_t size) {
     return 0;
 }
 
-int buffer_copy_string(buffer *b, const char *s) {
+int buffer_copy_string(conf_buffer *b, const char *s) {
     size_t s_len;
 
     if (!s || !b) return -1;
@@ -158,7 +158,7 @@ int buffer_copy_string(buffer *b, const char *s) {
     return 0;
 }
 
-int buffer_copy_string_len(buffer *b, const char *s, size_t s_len) {
+int buffer_copy_string_len(conf_buffer *b, const char *s, size_t s_len) {
     if (!s || !b) return -1;
 #if 0
     /* removed optimization as we have to keep the empty string
@@ -177,7 +177,7 @@ int buffer_copy_string_len(buffer *b, const char *s, size_t s_len) {
     return 0;
 }
 
-int buffer_copy_string_buffer(buffer *b, const buffer *src) {
+int buffer_copy_string_buffer(conf_buffer *b, const conf_buffer *src) {
     if (!src) return -1;
 
     if (src->used == 0) {
@@ -187,7 +187,7 @@ int buffer_copy_string_buffer(buffer *b, const buffer *src) {
     return buffer_copy_string_len(b, src->ptr, src->used - 1);
 }
 
-int buffer_append_string(buffer *b, const char *s) {
+int buffer_append_string(conf_buffer *b, const char *s) {
     size_t s_len;
 
     if (!s || !b) return -1;
@@ -214,7 +214,7 @@ int buffer_append_string(buffer *b, const char *s) {
  * @param s_len size of the string (without the terminating '\0')
  */
 
-int buffer_append_string_len(buffer *b, const char *s, size_t s_len) {
+int buffer_append_string_len(conf_buffer *b, const char *s, size_t s_len) {
     if (!s || !b) return -1;
     if (s_len == 0) return 0;
 
@@ -229,7 +229,7 @@ int buffer_append_string_len(buffer *b, const char *s, size_t s_len) {
     return 0;
 }
 
-int buffer_append_string_buffer(buffer *b, const buffer *src) {
+int buffer_append_string_buffer(conf_buffer *b, const conf_buffer *src) {
     if (!src) return -1;
     if (src->used == 0) return 0;
 
@@ -268,7 +268,7 @@ static int LI_ltostr(char *buf, long val) {
     return len;
 }
 
-int buffer_append_long(buffer *b, long val) {
+int buffer_append_long(conf_buffer *b, long val) {
     if (!b) return -1;
 
     buffer_prepare_append(b, 32);
@@ -279,22 +279,22 @@ int buffer_append_long(buffer *b, long val) {
     return 0;
 }
 
-int buffer_copy_long(buffer *b, long val) {
+int buffer_copy_long(conf_buffer *b, long val) {
     if (!b) return -1;
 
     b->used = 0;
     return buffer_append_long(b, val);
 }
 
-buffer *buffer_init_string(const char *str) {
-    buffer *b = buffer_init();
+conf_buffer *buffer_init_string(const char *str) {
+    conf_buffer *b = buffer_init();
 
     buffer_copy_string(b, str);
 
     return b;
 }
 
-int buffer_is_empty(buffer *b) {
+int buffer_is_empty(conf_buffer *b) {
     if (!b) return 1;
     return (b->used == 0);
 }
@@ -306,15 +306,15 @@ int buffer_is_empty(buffer *b) {
  * alignment properly.
  */
 
-static int buffer_is_equal(buffer *a, buffer *b) {
+static int buffer_is_equal(conf_buffer *a, conf_buffer *b) {
     if (a->used != b->used) return 0;
     if (a->used == 0) return 1;
 
     return (0 == strcmp(a->ptr, b->ptr));
 }
 
-int buffer_is_equal_string(buffer *a, const char *s, size_t b_len) {
-    buffer b;
+int buffer_is_equal_string(conf_buffer *a, const char *s, size_t b_len) {
+    conf_buffer b;
 
     b.ptr = (char *)s;
     b.used = b_len + 1;

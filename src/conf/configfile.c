@@ -273,7 +273,7 @@ typedef struct {
     int foo;
     int bar;
 
-    const buffer *source;
+    const conf_buffer *source;
     const char *input;
     size_t offset;
     size_t size;
@@ -287,7 +287,7 @@ typedef struct {
 } tokenizer_t;
 
 #if 0
-static int tokenizer_open(server *srv, tokenizer_t *t, buffer *basedir, const char *fn) {
+static int tokenizer_open(server *srv, tokenizer_t *t, conf_buffer *basedir, const char *fn) {
     if (buffer_is_empty(basedir) &&
             (fn[0] == '/' || fn[0] == '\\') &&
             (fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\'))) {
@@ -358,7 +358,7 @@ static int config_skip_comment(tokenizer_t *t) {
  * Break the configuration in tokens
  */
 
-static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *token) {
+static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buffer *token) {
     int tid = 0;
     size_t i;
 
@@ -723,7 +723,7 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
 static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
     void *pParser;
     int token_id;
-    buffer *token, *lasttoken;
+    conf_buffer *token, *lasttoken;
     int ret;
 
     pParser = configparserAlloc( malloc );
@@ -765,7 +765,7 @@ static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
  * tokenizer initial state
  */
 
-static int tokenizer_init(tokenizer_t *t, const buffer *source, const char *input, size_t size) {
+static int tokenizer_init(tokenizer_t *t, const conf_buffer *source, const char *input, size_t size) {
 
     t->source = source;
     t->input = input;
@@ -792,7 +792,7 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
     tokenizer_t t;
     stream s;
     int ret;
-    buffer *filename;
+    conf_buffer *filename;
 
     if (buffer_is_empty(context->basedir) &&
             (fn[0] == '/' || fn[0] == '\\') &&
@@ -831,8 +831,8 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
     proc_handler_t proc;
     tokenizer_t t;
     int ret;
-    buffer *source;
-    buffer *out;
+    conf_buffer *source;
+    conf_buffer *out;
     char oldpwd[PATH_MAX];
 
     if (NULL == getcwd(oldpwd, sizeof(oldpwd))) {

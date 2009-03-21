@@ -52,9 +52,9 @@ typedef struct {
 
 typedef struct {
 	short port;
-	buffer *bindhost;
+	conf_buffer *bindhost;
 
-	buffer *errorlog_file;
+	conf_buffer *errorlog_file;
 	int errorlog_use_syslog;
 
     /* FIXME feng specific stuff */
@@ -63,16 +63,16 @@ typedef struct {
         short loglevel;
 
 //	unsigned short dont_daemonize;
-//	buffer *changeroot;
-	buffer *username;
-	buffer *groupname;
+//	conf_buffer *changeroot;
+	conf_buffer *username;
+	conf_buffer *groupname;
 
-//	buffer *pid_file;
+//	conf_buffer *pid_file;
 
-//	buffer *event_handler;
+//	conf_buffer *event_handler;
 
-	buffer *modules_dir;
-//	buffer *network_backend;
+	conf_buffer *modules_dir;
+//	conf_buffer *network_backend;
 	array *modules;
 	array *upload_tempdirs;
 
@@ -99,13 +99,13 @@ typedef struct {
 	array *mimetypes;
 
 	/* virtual-servers */
-	buffer *document_root;
-	buffer *server_name;
+	conf_buffer *document_root;
+	conf_buffer *server_name;
 /*
-	buffer *error_handler;
-	buffer *server_tag;
-	buffer *dirlist_encoding;
-	buffer *errorfile_prefix;
+	conf_buffer *error_handler;
+	conf_buffer *server_tag;
+	conf_buffer *dirlist_encoding;
+	conf_buffer *errorfile_prefix;
 
 	unsigned short max_keep_alive_requests;
 	unsigned short max_keep_alive_idle;
@@ -124,9 +124,9 @@ typedef struct {
 */
 
 	/* server wide */
-	buffer *ssl_pemfile;
-	buffer *ssl_ca_file;
-	buffer *ssl_cipher_list;
+	conf_buffer *ssl_pemfile;
+	conf_buffer *ssl_ca_file;
+	conf_buffer *ssl_cipher_list;
 	int ssl_use_sslv2;
 	int is_ssl;
 
@@ -135,11 +135,11 @@ typedef struct {
         int is_sctp;
         unsigned short sctp_max_streams;
 
-        buffer *cpd_port;
-        buffer *cpd_db_host;
-        buffer *cpd_db_user;
-        buffer *cpd_db_password;
-        buffer *cpd_db_name;
+        conf_buffer *cpd_port;
+        conf_buffer *cpd_db_host;
+        conf_buffer *cpd_db_user;
+        conf_buffer *cpd_db_password;
+        conf_buffer *cpd_db_name;
 
 //	int allow_http11;
 /*	unsigned short etag_use_inode;

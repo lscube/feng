@@ -212,7 +212,7 @@ unsigned short sock_addr_get_port(sock_addr *addr) {
 static cond_result_t config_check_cond_cached(server *srv, connection *con, data_config *dc);
 
 static cond_result_t config_check_cond_nocache(server *srv, connection *con, data_config *dc) {
-    buffer *l;
+    conf_buffer *l;
     server_socket *srv_sock = con->srv_socket;
 
     /* check parent first */
@@ -549,7 +549,7 @@ int config_check_cond(server *srv, connection *con, data_config *dc) {
     return (config_check_cond_cached(srv, con, dc) == COND_RESULT_TRUE);
 }
 
-int config_append_cond_match_buffer(connection *con, data_config *dc, buffer *buf, int n)
+int config_append_cond_match_buffer(connection *con, data_config *dc, conf_buffer *buf, int n)
 {
     cond_cache_t *cache = &con->cond_cache[dc->context_ndx];
     if (n > cache->patterncount) {
