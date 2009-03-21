@@ -127,8 +127,7 @@ typedef struct {
     uint8_t data[];
 } MParserBuffer;
 
-void mparser_buffer_write(struct Track *tr, uint16_t seq_delta,
-                          uint32_t rtp_time, uint8_t marker,
+void mparser_buffer_write(struct Track *tr, uint8_t marker,
                           uint8_t *data, size_t data_size);
 
 

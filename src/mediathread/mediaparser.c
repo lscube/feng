@@ -80,14 +80,13 @@ void mparser_unreg(MediaParser *p, void *private_data)
     if (p) p->uninit(private_data);
 }
 
-void mparser_buffer_write(struct Track *tr, uint16_t seq_delta,
-                          uint32_t rtp_time, uint8_t marker,
+void mparser_buffer_write(struct Track *tr, uint8_t marker,
                           uint8_t *data, size_t data_size) {
     MParserBuffer *buffer = g_malloc(sizeof(MParserBuffer) + data_size);
 
-    buffer->seq_delta = seq_delta;
+    buffer->seq_delta = 1;
     buffer->timestamp = tr->properties->mtime;
-    buffer->rtp_time = rtp_time;
+    buffer->rtp_time = 0;
     buffer->marker = marker;
     buffer->data_size = data_size;
 

@@ -49,7 +49,7 @@ static int speex_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     if (len > mtu)
         return ERR_ALLOC;
 
-    mparser_buffer_write(tr, 1, 0, 0, data, len);
+    mparser_buffer_write(tr, 0, data, len);
 
     return ERR_NOERROR;
 }

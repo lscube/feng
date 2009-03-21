@@ -79,7 +79,7 @@ static void frag_fu_a(uint8_t *nal, int fragsize, int mtu,
         fnc_log(FNC_LOG_VERBOSE, "[h264] Frag %d %d",buf[0], buf[1]);
         fragsize -= fraglen;
         nal      += fraglen;
-        mparser_buffer_write(tr, 1, 0, 0, buf, fraglen + 2);
+        mparser_buffer_write(tr, 0, buf, fraglen + 2);
     }
 }
 
@@ -283,7 +283,7 @@ static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                 }
             }
             if (mtu >= nalsize) {
-                mparser_buffer_write(tr, 1, 0, 0,
+                mparser_buffer_write(tr, 0,
                                 data + index, nalsize);
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
@@ -313,7 +313,7 @@ static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 
             if (mtu >= q - p) {
                 fnc_log(FNC_LOG_VERBOSE, "[h264] Sending NAL %d",p[0]&0x1f);
-                mparser_buffer_write(tr, 1, 0, 0,
+                mparser_buffer_write(tr, 0,
                                 p, q - p);
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
@@ -329,7 +329,7 @@ static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         fnc_log(FNC_LOG_VERBOSE, "[h264] last NAL %d",p[0]&0x1f);
         if (mtu >= len - (p - data)) {
             fnc_log(FNC_LOG_VERBOSE, "[h264] no frags");
-            mparser_buffer_write(tr, 1, 0, 0,
+            mparser_buffer_write(tr, 0,
                             p, len - (p - data));
         } else {
             //FU-A
