@@ -297,7 +297,7 @@ static int tokenizer_open(server *srv, tokenizer_t *t, conf_buffer *basedir, con
         buffer_append_string(t->file, fn);
     }
 
-    if (0 != stream_open(&(t->s), t->file)) {
+    if (0 != stream_open(&(t->s), t->file->ptr)) {
         log_error_write(srv, __FILE__, __LINE__, "sbss",
                 "opening configfile ", t->file, "failed:", strerror(errno));
         buffer_free(t->file);
@@ -803,7 +803,7 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
         buffer_append_string(filename, fn);
     }
 
-    if (0 != stream_open(&s, filename)) {
+    if (0 != stream_open(&s, filename->ptr)) {
         if (s.size == 0) {
             /* the file was empty, nothing to parse */
             ret = 0;

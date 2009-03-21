@@ -48,7 +48,7 @@
 # define O_BINARY 0
 #endif
 
-int stream_open(stream *f, conf_buffer *fn) {
+int stream_open(stream *f, const char *fn) {
     struct stat st;
 #ifdef HAVE_MMAP
     int fd;
@@ -56,14 +56,14 @@ int stream_open(stream *f, conf_buffer *fn) {
 
     f->start = NULL;
 
-    if (-1 == stat(fn->ptr, &st)) {
+    if (-1 == stat(fn, &st)) {
         return -1;
     }
 
     f->size = st.st_size;
 
 #ifdef HAVE_MMAP
-    if (-1 == (fd = open(fn->ptr, O_RDONLY | O_BINARY))) {
+    if (-1 == (fd = open(fn, O_RDONLY | O_BINARY))) {
         return -1;
     }
 
