@@ -88,6 +88,7 @@ int schedule_start(RTP_session *session, play_args *args)
 
     session->start_time = args->start_time;
     session->send_time = 0.0;
+    session->last_timestamp = 0;
     session->pause = 0;
     session->started = 1;
     session->MinimumReached = 0;

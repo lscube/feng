@@ -87,6 +87,7 @@ typedef struct RTP_session {
     double start_time;
     double seek_time;
     double send_time;
+    double last_timestamp;
     //Dynamic Stream Change
     unsigned int PreviousCount;
     short MinimumReached;
