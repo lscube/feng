@@ -53,7 +53,7 @@ typedef struct mt_excl_ins {
 
 gpointer *mediathread(gpointer *arg);
 
-int mt_shutdown();
+void mt_shutdown();
 int event_buffer_low(void *sender, Track *src);
 
 struct feng;

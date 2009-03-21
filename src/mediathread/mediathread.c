@@ -96,7 +96,7 @@ static inline void mt_dispose_event(mt_event_item *ev) {
     g_free(ev);
 }
 
-static int mt_add_event(mt_event_id id, void **args) {
+static void mt_add_event(mt_event_id id, void **args) {
     mt_event_item *item = g_new0(mt_event_item, 1);
 
     fnc_log(FNC_LOG_VERBOSE, "[MT] Created event: %#x", item);
@@ -107,8 +107,6 @@ static int mt_add_event(mt_event_id id, void **args) {
     g_static_mutex_lock(&el_mutex);
     g_async_queue_push(el_head, item);
     g_static_mutex_unlock(&el_mutex);
-
-    return ERR_NOERROR;
 }
 
 gpointer *mediathread(gpointer *arg) {
@@ -173,10 +171,11 @@ int event_buffer_low(void *sender, Track *src) {
     args = g_new(void *, 2);
     args[0] = sender;
     args[1] = src;
-    return mt_add_event(MT_EV_BUFFER_LOW, args);
+    mt_add_event(MT_EV_BUFFER_LOW, args);
+    return ERR_NOERROR;
 }
 
-int mt_shutdown() {
-    return mt_add_event(MT_EV_SHUTDOWN, NULL);
+void mt_shutdown() {
+    mt_add_event(MT_EV_SHUTDOWN, NULL);
 }
 
