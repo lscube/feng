@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 #include "mediautils.h"
+#include "bufferqueue.h"
 #include <fenice/sdp_grammar.h>
 
 // return errors
@@ -110,6 +111,27 @@ void mparser_unreg(MediaParser *, void *);
 /**
  * @}
  */
+
+/**
+ * @brief Buffer passed between parsers and RTP sessions
+ *
+ * This is what is being encapsulated by @ref BufferQueue_Element.
+ */
+typedef struct {
+    int16_t seq_delta;  /*!< delta to latest sequence number */
+    double timestamp;   /*!< presentation time of packet */
+    double last_timestamp; /*!< presentation time of last packet in buffer */
+    uint32_t rtp_time;  //!< if != 0 it contains the calculated rtp timestamp
+    uint32_t pkt_num; /*!< number of packet in buffer */
+    uint8_t marker;
+    size_t data_size;
+    uint8_t data[];
+} MParserBuffer;
+
+void mparser_buffer_write(BufferQueue_Producer *producer, uint16_t seq_delta,
+                          double timestamp, uint32_t rtp_time, uint8_t marker,
+                          uint8_t *data, size_t data_size);
+
 
 #define DEFAULT_MTU 1440
 
