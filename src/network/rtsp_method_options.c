@@ -39,7 +39,6 @@ void RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
 
-    /** @todo Remove SET_PARAMETER since we don't support it ... */
     g_hash_table_insert(response->headers,
                         g_strdup(eris_hdr_public),
                         g_strdup("OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN"));
