@@ -44,7 +44,7 @@
  */
 static inline uint32_t RTP_calc_rtptime(RTP_session *session, int clock_rate, MParserBuffer *buffer) {
     uint32_t calc_rtptime = (uint32_t)((buffer->timestamp - session->seek_time) * clock_rate);
-    return (session->start_rtptime + (buffer->rtp_time ? buffer->rtp_time : calc_rtptime));
+    return (session->start_rtptime + calc_rtptime);
 }
 
 static inline double calc_send_time(RTP_session *session, MParserBuffer *buffer) {
@@ -120,7 +120,7 @@ int RTP_send_packet(RTP_session * session)
             packet->csrc_len = 0;
             packet->marker = buffer->marker & 0x1;
             packet->payload = t->properties->payload_type & 0x7f;
-            packet->seq_no = htons(session->seq_no += buffer->seq_delta);
+            packet->seq_no = htons(++session->seq_no);
             packet->timestamp = htonl(timestamp);
             packet->ssrc = htonl(session->ssrc);
 
@@ -141,7 +141,7 @@ int RTP_send_packet(RTP_session * session)
                     t->properties->frame_duration) + 1;
                 session->send_time += calc_send_time(session, buffer);
                 session->last_timestamp = buffer->timestamp;
-                session->rtcp_stats[i_server].pkt_count += buffer->seq_delta;
+                session->rtcp_stats[i_server].pkt_count++;
                 session->rtcp_stats[i_server].octet_count += buffer->data_size;
 
                 session->last_packet_send_time = now;

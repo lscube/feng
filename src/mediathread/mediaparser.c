@@ -84,9 +84,7 @@ void mparser_buffer_write(struct Track *tr, uint8_t marker,
                           uint8_t *data, size_t data_size) {
     MParserBuffer *buffer = g_malloc(sizeof(MParserBuffer) + data_size);
 
-    buffer->seq_delta = 1;
     buffer->timestamp = tr->properties->mtime;
-    buffer->rtp_time = 0;
     buffer->marker = marker;
     buffer->data_size = data_size;
 

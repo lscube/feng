@@ -119,9 +119,7 @@ void mparser_unreg(MediaParser *, void *);
  * This is what is being encapsulated by @ref BufferQueue_Element.
  */
 typedef struct {
-    int16_t seq_delta;  /*!< delta to latest sequence number */
     double timestamp;   /*!< presentation time of packet */
-    uint32_t rtp_time;  //!< if != 0 it contains the calculated rtp timestamp
     uint8_t marker;
     size_t data_size;
     uint8_t data[];
