@@ -96,8 +96,8 @@ typedef struct Resource {
     struct Resource *edl;
     /* Multiformat related things */
     SelList sel;
-    int num_sel;
     TrackList tracks;
+    int num_sel;
     int num_tracks;
     void *private_data; /* Demuxer private data */
     int eos; //!< signals the end of stream
