@@ -54,8 +54,8 @@ typedef struct {
  *  +---------------+
  */
 
-static int frag_fu_a(uint8_t *nal, int fragsize, int mtu,
-                     BPBuffer * buffer, double timestamp)
+static void frag_fu_a(uint8_t *nal, int fragsize, int mtu,
+                     BufferQueue_Producer *producer, double timestamp)
 {
     int start = 1, fraglen;
     uint8_t fu_header, buf[mtu];
@@ -79,12 +79,8 @@ static int frag_fu_a(uint8_t *nal, int fragsize, int mtu,
         fnc_log(FNC_LOG_VERBOSE, "[h264] Frag %d %d",buf[0], buf[1]);
         fragsize -= fraglen;
         nal      += fraglen;
-        if (bp_write(buffer, 0, timestamp, 0, 0, buf, fraglen + 2)) {
-            fnc_log(FNC_LOG_ERR, "Cannot write feng");
-            return ERR_ALLOC;
-        }
+        mparser_buffer_write(producer, 1, timestamp, 0, 0, buf, fraglen + 2);
     }
-    return ERR_NOERROR;
 }
 
 #define RB16(x) ((((uint8_t*)(x))[0] << 8) | ((uint8_t*)(x))[1])
@@ -287,17 +283,13 @@ static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                 }
             }
             if (mtu >= nalsize) {
-                if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                                      data + index, nalsize)) {
-                        fnc_log(FNC_LOG_ERR, "Cannot write feng");
-                        return ERR_ALLOC;
-                }
+                mparser_buffer_write(tr->producer, 1, tr->properties->mtime, 0, 0,
+                                data + index, nalsize);
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
             // single NAL, to be fragmented, FU-A;
-                ret = frag_fu_a(data + index, nalsize, mtu, tr->buffer,
-                                tr->properties->mtime);
-                if (ret) return ret;
+                frag_fu_a(data + index, nalsize, mtu, tr->producer,
+                          tr->properties->mtime);
             }
             index += nalsize;
         }
@@ -322,18 +314,14 @@ static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 
             if (mtu >= q - p) {
                 fnc_log(FNC_LOG_VERBOSE, "[h264] Sending NAL %d",p[0]&0x1f);
-                if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                                      p, q - p)) {
-                        fnc_log(FNC_LOG_ERR, "Cannot write feng");
-                        return ERR_ALLOC;
-                }
+                mparser_buffer_write(tr->producer, 1, tr->properties->mtime, 0, 0,
+                                p, q - p);
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
                 //FU-A
                 fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
-                ret = frag_fu_a(p, q - p, mtu, tr->buffer,
-                                tr->properties->mtime);
-                if (ret) return ret;
+                frag_fu_a(p, q - p, mtu, tr->producer,
+                          tr->properties->mtime);
             }
 
             p = q;
@@ -343,17 +331,13 @@ static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         fnc_log(FNC_LOG_VERBOSE, "[h264] last NAL %d",p[0]&0x1f);
         if (mtu >= len - (p - data)) {
             fnc_log(FNC_LOG_VERBOSE, "[h264] no frags");
-            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                                      p, len - (p - data))) {
-                        fnc_log(FNC_LOG_ERR, "Cannot write feng");
-                        return ERR_ALLOC;
-            }
+            mparser_buffer_write(tr->producer, 1, tr->properties->mtime, 0, 0,
+                            p, len - (p - data));
         } else {
             //FU-A
             fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
-            ret = frag_fu_a(p, len - (p - data), mtu, tr->buffer,
-                            tr->properties->mtime);
-            if (ret) return ret;
+            frag_fu_a(p, len - (p - data), mtu, tr->producer,
+                      tr->properties->mtime);
         }
     }
 
