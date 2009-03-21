@@ -80,8 +80,8 @@ typedef struct RTSP_interleaved {
 } RTSP_interleaved;
 
 typedef struct RTSP_session {
-    RTSP_Server_State cur_state;
     char *session_id;
+    RTSP_Server_State cur_state;
     int started;
     GSList *rtp_sessions; // Of type RTP_session
     // mediathread resource
@@ -182,7 +182,7 @@ typedef struct {
      * they are described through Section 11.
      */
     RTSP_ResponseCode status;
-    
+
     /**
      * @brief An hash table of headers to add to the response.
      */
