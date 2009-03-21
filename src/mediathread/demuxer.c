@@ -302,8 +302,7 @@ static void free_track(Track *t, Resource *r)
     MObject_unref(MOBJECT(t->properties));
     mparser_unreg(t->parser, t->private_data);
 
-    if (t->buffer)
-        bp_free(t->buffer);
+    bq_producer_stop(t->producer);
 
     istream_close(t->i_stream);
 
@@ -429,7 +428,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 
     switch (t->properties->media_source) {
     case MS_stored:
-        if( !(t->buffer = bp_new(BPBUFFER_DEFAULT_DIM)) )
+        if( !(t->producer = bq_producer_new(g_free)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
         if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
             ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);

@@ -29,7 +29,7 @@
 #include "mediautils.h"
 #include "InputStream.h"
 #include "mediaparser.h"
-#include <bufferpool/bufferpool.h>
+#include "bufferqueue.h"
 #include <fenice/sdp_grammar.h>
 #include <fenice/server.h>
 
@@ -123,7 +123,7 @@ typedef struct {
     long int timestamp;
     MediaParser *parser;
     /*feng*/
-    BPBuffer *buffer;
+    BufferQueue_Producer *producer;
     MediaProperties *properties; /* track properties */
     Resource *parent;
     /* private data is managed by specific media parser: from allocation to deallocation

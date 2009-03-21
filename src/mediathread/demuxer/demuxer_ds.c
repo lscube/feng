@@ -196,7 +196,6 @@ static int read_header(Resource * r)
 static void edl_buffer_switcher(edl_priv_data *data) {
     edl_item_elem *old_item, *new_item;
     GList *p, *q;
-    void *tmp;
     if (!data || data->active == data->old)
         return;
     old_item = (edl_item_elem *) g_list_nth_data(data->head, data->old);
@@ -205,9 +204,9 @@ static void edl_buffer_switcher(edl_priv_data *data) {
     p = old_item->r->tracks;
     q = new_item->r->tracks;
     while (p && q) {
-        tmp = TRACK(q)->buffer;
-        TRACK(q)->buffer = TRACK(p)->buffer;
-        TRACK(p)->buffer = tmp;
+        BufferQueue_Producer *tmp = TRACK(q)->producer;
+        TRACK(q)->producer = TRACK(p)->producer;
+        TRACK(p)->producer = tmp;
         p = g_list_next(p);
         q = g_list_next(q);
     }
