@@ -232,11 +232,16 @@ static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
  * @param transport the transport to use
  * @param track_sel the track for which to generate the session
  * @return The newly generated RTP session
+ *
+ * @todo This should probably be partially moved inside
+ *       rtp_transport.c as an allocation function for RTP_session.
  */
 static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, Selector * track_sel)
 {
     feng *srv = rtsp->srv;
     RTP_session *rtp_s = g_new0(RTP_session, 1);
+
+    rtp_s->lock = g_mutex_new();
 
     // Setup the RTP session
     rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);

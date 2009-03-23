@@ -94,8 +94,12 @@ int schedule_remove(RTP_session *session, void *unused)
 int schedule_start(RTP_session *session, play_args *args)
 {
     feng *srv = session->srv;
-    Track *tr = r_selected_track(session->track_selector);
+    Track *tr;
     int i;
+
+    g_mutex_lock(session->lock);
+
+    tr = r_selected_track(session->track_selector);
 
     session->cons = bp_ref(tr->buffer);
     if (session->cons == NULL)
@@ -116,23 +120,29 @@ int schedule_start(RTP_session *session, play_args *args)
         event_buffer_low(session, r_selected_track(session->track_selector));
     }
 
+    g_mutex_unlock(session->lock);
+
     return ERR_NOERROR;
 }
 
 static void schedule_stop(RTP_session *session)
 {
+    g_mutex_lock(session->lock);
     RTCP_send_packet(session,SR);
     RTCP_send_packet(session,BYE);
     RTCP_flush(session);
 
     session->pause=1;
     session->started=0;
+    g_mutex_unlock(session->lock);
 }
 
 int schedule_resume(RTP_session *session, play_args *args)
 {
     feng *srv = session->srv;
     int i;
+
+    g_mutex_lock(session->lock);
 
     session->start_time = args->start_time;
     session->send_time = 0.0;
@@ -142,6 +152,8 @@ int schedule_resume(RTP_session *session, play_args *args)
     for (i=0; i < srv->srvconf.buffered_frames; i++) {
         event_buffer_low(session, r_selected_track(session->track_selector));
     }
+
+    g_mutex_unlock(session->lock);
 
     return ERR_NOERROR;
 }
@@ -160,22 +172,28 @@ static void *schedule_do(void *arg)
             RTP_session *session = sessions[i];
             Track *tr = NULL;
 
-            /* Go away right away if the session is NULL (not active)
-             * or if it's not started. Use atomic operations to avoid
-             * synchronisation issues.
+            /* If the session does not exist, or if it's locked
+             * already by another thread working on it, skip it and
+             * try it again at the next iteration.
+             *
+             * Otherwise get the lock and proceed to the next set of
+             * checks.
              */
             if ( session == NULL ||
-                 !g_atomic_int_get(&session->started) )
+                 !g_mutex_trylock(session->lock) )
                 continue;
 
             tr = r_selected_track(session->track_selector);
 
-            /* Now check if the session is paused (if it's not a live
-             * session.
+            /* If the session is not started yet, or if it's paused
+             * (and it's not a live session ), unlock the mutex and
+             * proceed to the next session in the list.
              */
-            if ( g_atomic_int_get(&session->pause) &&
-                 tr->properties->media_source != MS_live )
-                continue;
+            if ( !session->started ||
+                 ( session->pause &&
+                   tr->properties->media_source != MS_live )
+                 )
+                goto next_session;
 
             now = gettimeinseconds(NULL);
 
@@ -212,6 +230,8 @@ static void *schedule_do(void *arg)
 
                 RTCP_handler(session);
             }
+        next_session:
+            g_mutex_unlock(session->lock);
         }
 
         schedule_reader_unlock();
