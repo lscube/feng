@@ -149,8 +149,7 @@ if test "$enable_trace" = "yes"; then
     AC_DEFINE(TRACE, 1,[Trace enabled])
 fi
 
-fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot|sed -e "s:/\+:/:g")
-fenice_avroot_dir=${fenice_avroot_dir//NONE}
+fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot|sed -e "s:/\+:/:g; s:NONE::g")
 
 AC_SUBST(fenice_avroot_dir)
 
@@ -164,8 +163,7 @@ fenice_conf_file=$(eval echo $with_config_file|sed -e "s:/\+:/:g")
 AC_SUBST(fenice_conf_file)
 
 
-feng_basedir=$(eval echo $localstatedir|sed -e "s:/\+:/:g")
-feng_basedir=${feng_basedir//NONE}
+feng_basedir=$(eval echo $localstatedir|sed -e "s:/\+:/:g; s:NONE::g")
 
 feng_logdir="${feng_basedir}/log/$PACKAGE_NAME"
 AC_SUBST(feng_logdir)
@@ -179,8 +177,7 @@ AC_SUBST(feng_statedir)
 feng_basedir="${feng_basedir}/$PACKAGE_NAME"
 AC_SUBST(feng_basedir)
 
-fenice_conf_dir=$(eval echo $sysconfdir|sed -e "s:/\+:/:g")
-fenice_conf_dir=${fenice_conf_dir//NONE}
+fenice_conf_dir=$(eval echo $sysconfdir|sed -e "s:/\+:/:g; s:NONE::g")
 AC_SUBST(fenice_conf_dir)
 
 fenice_docs_dir=$(eval echo $datadir/doc/$PACKAGE_NAME|sed -e "s:/\+:/:g")
