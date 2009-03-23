@@ -34,7 +34,6 @@
 #endif
 
 static GAsyncQueue *el_head;
-static GStaticMutex el_mutex = G_STATIC_MUTEX_INIT;
 static GStaticMutex mt_mutex = G_STATIC_MUTEX_INIT;
 static int stopped = 0;
 
@@ -104,24 +103,28 @@ static void mt_add_event(mt_event_id id, void **args) {
     item->id = id;
     item->args = args;
 
-    g_static_mutex_lock(&el_mutex);
+    g_async_queue_ref(el_head);
     g_async_queue_push(el_head, item);
-    g_static_mutex_unlock(&el_mutex);
+    g_async_queue_unref(el_head);
 }
 
-gpointer *mediathread(gpointer *arg) {
-    mt_event_item *el_cur;
-
-    if (!g_thread_supported ()) g_thread_init (NULL);
-
-    el_head = g_async_queue_new();
-
+/**
+ * @brief MediaThread runner function
+ *
+ * This is the function that does most of the work for MediaThread, as
+ * it waits for events and takes care of processing them properly.
+ *
+ * @see mt_init
+ */
+static gpointer *mediathread(gpointer *arg) {
     fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started");
+
+    g_async_queue_ref(el_head);
 
     while(!stopped) {
         //this replaces the previous nanosleep loop,
         //as this will block until data is available
-        el_cur = g_async_queue_pop (el_head);
+        mt_event_item *el_cur = g_async_queue_pop (el_head);
         if (el_cur) {
             g_static_mutex_lock(&mt_mutex);
             mt_process_event(el_cur);
@@ -129,7 +132,28 @@ gpointer *mediathread(gpointer *arg) {
             g_static_mutex_unlock(&mt_mutex);
         }
     }
+
     return NULL;
+}
+
+/**
+ * @brief Initialisation for the mediathread thread handling
+ *
+ * This function takes care of initialising MediaThread in its
+ * entirety. It creates the @ref el_head queue and also creates the
+ * actual mediathread.
+ *
+ * @note This function has to be called before any other mt_*
+ *       function, but after threads have been initialised.
+ *
+ * @see mediathread
+ */
+void mt_init() {
+    g_assert(g_thread_supported());
+
+    el_head = g_async_queue_new();
+
+    g_thread_create(mediathread, NULL, FALSE, NULL);
 }
 
 Resource *mt_resource_open(feng *srv, const char *filename) {
@@ -178,4 +202,3 @@ int event_buffer_low(void *sender, Track *src) {
 void mt_shutdown() {
     mt_add_event(MT_EV_SHUTDOWN, NULL);
 }
-
