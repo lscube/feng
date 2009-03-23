@@ -154,62 +154,69 @@ static void *schedule_do(void *arg)
 
     do {
         g_thread_yield();
+
         schedule_reader_lock();
         for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i) {
-            if (sessions[i] != NULL && sessions[i]->started) {
-                RTP_session *session = sessions[i];
-                Track *tr = r_selected_track(session->track_selector);
-                if (!session->pause || tr->properties->media_source == MS_live) {
-                    now = gettimeinseconds(NULL);
+            RTP_session *session = sessions[i];
+            Track *tr = NULL;
 
-                    // METADATA begin
+            /* Go away right away if the session is NULL (not active)
+             * or if it's not started. Use atomic operations to avoid
+             * synchronisation issues.
+             */
+            if ( session == NULL ||
+                 !g_atomic_int_get(&session->started) )
+                continue;
+
+            tr = r_selected_track(session->track_selector);
+
+            /* Now check if the session is paused (if it's not a live
+             * session.
+             */
+            if ( g_atomic_int_get(&session->pause) &&
+                 tr->properties->media_source != MS_live )
+                continue;
+
+            now = gettimeinseconds(NULL);
+
 #ifdef HAVE_METADATA
-                    if (session->metadata)
-                    cpd_send(session, now);
-                    // METADATI end
+            if (session->metadata)
+                cpd_send(session, now);
 #endif
 
-                    res = ERR_NOERROR;
-                    while (res == ERR_NOERROR && now >= session->start_time && now >= session->start_time
-                        + session->send_time) {
-#if 1
-                        //TODO DSC will be implemented WAY later.
-#else
-                        stream_change(session,
-                        change_check(session));
-#endif
-                        // Send an RTP packet
-                        res = RTP_send_packet(session);
-                        switch (res) {
-                            case ERR_NOERROR: // All fine
-                                break;
-                            case ERR_EOF:
-                                if (tr->properties->media_source != MS_live) {
-                                    fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
-                                    RTCP_send_packet(session, SR);
-                                    RTCP_send_packet(session, BYE);
-                                    RTCP_flush(session);
-                                }
-                                break;
-                            case ERR_ALLOC:
-                                fnc_log(FNC_LOG_WARN, "[SCH] Cannot allocate memory");
-                                schedule_stop(session);
-                                break;
-                            default:
-                                fnc_log(FNC_LOG_WARN, "[SCH] Packet Lost");
-                                break;
-                        }
+            res = ERR_NOERROR;
+            while (res == ERR_NOERROR && now >= session->start_time && now >= session->start_time
+                   + session->send_time) {
+                /** @todo DSC will be implemented WAY later. */
 
-                        RTCP_handler(session);
+                /* Send the RTP packet and check its returned status */
+                switch ((res = RTP_send_packet(session))) {
+                case ERR_NOERROR: // All fine
+                    break;
+                case ERR_EOF:
+                    if (tr->properties->media_source != MS_live) {
+                        fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
+                        RTCP_send_packet(session, SR);
+                        RTCP_send_packet(session, BYE);
+                        RTCP_flush(session);
                     }
+                    break;
+                case ERR_ALLOC:
+                    fnc_log(FNC_LOG_WARN, "[SCH] Cannot allocate memory");
+                    schedule_stop(session);
+                    break;
+                default:
+                    fnc_log(FNC_LOG_WARN, "[SCH] Packet Lost");
+                    break;
                 }
+
+                RTCP_handler(session);
             }
         }
-        schedule_reader_unlock();
-    }
-    while (!srv->stop_schedule);
 
-    srv->stop_schedule = 0;
+        schedule_reader_unlock();
+    } while (!g_atomic_int_get(&srv->stop_schedule));
+
     return ERR_NOERROR;
 }
 
