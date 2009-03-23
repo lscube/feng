@@ -50,6 +50,11 @@ if HAVE_RAGEL
 
 include $(top_srcdir)/ragel.make
 
+$(BUILT_SOURCES): network
+
+network:
+	$(mkdir_p) $(builddir)/network
+
 CLEANFILES = $(BUILT_SOURCES)
 endif
 
