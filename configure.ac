@@ -18,11 +18,13 @@ AC_USE_SYSTEM_EXTENSIONS
 dnl Force usage of POSIX.1-2001 (clock_gettime)
 CPPFLAGS="${CPPFLAGS} -D_POSIX_C_SOURCE=200112L"
 
-dnl Enable Darwin extensions (AC_USE_SYSTEM_EXTENSIONS does not enable
-dnl them in 2.63)
+dnl Enable some further OS-specific extensions that AC_USE_SYSTEM_EXTENSIONS
+dnl does not enable at least up to autoconf 2.63.
+dnl These extensions are needed to have struct ip_mreq for multicast support.
 AC_CANONICAL_HOST
 AS_CASE([$host_os],
-	[darwin*], [CPPFLAGS="${CPPFLAGS} -D_DARWIN_C_SOURCE"])
+	[darwin*], [CPPFLAGS="${CPPFLAGS} -D_DARWIN_C_SOURCE"],
+	[freebsd7*], [CPPFLAGS="${CPPFLAGS} -D__BSD_VISIBLE=1"])
 
 AC_CONFIG_HEADER([config.h])
 
