@@ -12,7 +12,6 @@ BUILT_SOURCES = \
 dist_feng_SOURCES = \
 	network/rtcp.h \
 	network/rtcp_handler.c \
-	network/rtcp_recv_packet.c \
 	network/rtcp_send_packet.c \
 	network/rtp.h \
 	network/rtp_port.c \
