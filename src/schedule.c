@@ -35,46 +35,59 @@
 #include <metadata/cpd.h>
 #endif
 
-typedef struct schedule_list {
-    GMutex *mux;
-    int valid;
-    RTP_session *rtp_session;
-    RTP_play_action play_action;
-} schedule_list;
+static struct RTP_session **sessions;
+static GStaticRWLock sessions_lock = G_STATIC_RW_LOCK_INIT;
 
-static struct schedule_list *sched;
+/** @brief Locks the @ref sessions_lock R/W lock in write mode */
+static void schedule_writer_lock() {
+    g_static_rw_lock_writer_lock(&sessions_lock);
+}
+
+/** @brief Release the @ref sessions_lock R/W lock in write mode */
+static void schedule_writer_unlock() {
+    g_static_rw_lock_writer_unlock(&sessions_lock);
+}
+
+/** @brief Locks the @ref sessions_lock R/W lock in read mode */
+static void schedule_reader_lock() {
+    g_static_rw_lock_reader_lock(&sessions_lock);
+}
+
+/** @brief Release the @ref sessions_lock R/W lock in read mode */
+static void schedule_reader_unlock() {
+    g_static_rw_lock_reader_unlock(&sessions_lock);
+}
 
 int schedule_add(RTP_session *rtp_session)
 {
-    int i;
+    int i, ret = ERR_GENERIC;
     feng *srv = rtp_session->srv;
+
+    schedule_writer_lock();
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
-    g_mutex_lock(sched[i].mux);
-        if (!sched[i].valid) {
-            sched[i].valid = 1;
-            sched[i].rtp_session = rtp_session;
-            sched[i].play_action = RTP_send_packet;
-            g_mutex_unlock(sched[i].mux);
-            return i;
+        if ( sessions[i] == NULL ) {
+            sessions[i] = rtp_session;
+            ret = i;
+            break;
         }
-    g_mutex_unlock(sched[i].mux);
     }
-    // if (i >= MAX_SESSION) {
-    return ERR_GENERIC;
-    // }
+    schedule_writer_unlock();
+
+    return ret;
 }
 
 int schedule_remove(RTP_session *session, void *unused)
 {
     int id = session->sched_id;
-    g_mutex_lock(sched[id].mux);
-    sched[id].valid = 0;
-    if (sched[id].rtp_session) {
-        RTP_session_destroy(sched[id].rtp_session);
-        sched[id].rtp_session = NULL;
-        fnc_log(FNC_LOG_INFO, "rtp session closed\n");
-    }
-    g_mutex_unlock(sched[id].mux);
+
+    schedule_writer_lock();
+
+    RTP_session_destroy(session);
+    fnc_log(FNC_LOG_INFO, "rtp session closed\n");
+    sessions[id] = NULL;
+
+    schedule_writer_unlock();
+
     return ERR_NOERROR;
 }
 
@@ -133,23 +146,18 @@ int schedule_resume(RTP_session *session, play_args *args)
     return ERR_NOERROR;
 }
 
-#define SCHEDULER_TIMING 16000 //16ms. Sleep time suggested by Intel
-
 static void *schedule_do(void *arg)
 {
     int i = 0, res;
-    unsigned utime = SCHEDULER_TIMING;
     double now;
     feng *srv = arg;
 
     do {
-        // Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
-        usleep(utime);
-        utime = SCHEDULER_TIMING;
+        g_thread_yield();
+        schedule_reader_lock();
         for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i) {
-            g_mutex_lock(sched[i].mux);
-            if (sched[i].valid && sched[i].rtp_session->started) {
-                RTP_session * session = sched[i].rtp_session;
+            if (sessions[i] != NULL && sessions[i]->started) {
+                RTP_session *session = sessions[i];
                 Track *tr = r_selected_track(session->track_selector);
                 if (!session->pause || tr->properties->media_source == MS_live) {
                     now = gettimeinseconds(NULL);
@@ -171,7 +179,7 @@ static void *schedule_do(void *arg)
                         change_check(session));
 #endif
                         // Send an RTP packet
-                        res = sched[i].play_action(session);
+                        res = RTP_send_packet(session);
                         switch (res) {
                             case ERR_NOERROR: // All fine
                                 break;
@@ -194,14 +202,10 @@ static void *schedule_do(void *arg)
 
                         RTCP_handler(session);
                     }
-                    if (res == ERR_NOERROR) {
-                        int next_send_time = fabs((session->start_time + session->send_time) - now) * 1000000;
-                        utime = min(utime, next_send_time);
-                    }
                 }
             }
-            g_mutex_unlock(sched[i].mux);
         }
+        schedule_reader_unlock();
     }
     while (!srv->stop_schedule);
 
@@ -211,15 +215,7 @@ static void *schedule_do(void *arg)
 
 void schedule_init(feng *srv)
 {
-    int i;
-    sched = g_new(schedule_list, ONE_FORK_MAX_CONNECTION);
-
-    for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
-        sched[i].rtp_session = NULL;
-        sched[i].play_action = NULL;
-        sched[i].valid = 0;
-	sched[i].mux = g_mutex_new();
-    }
+    sessions = g_new0(RTP_session *, ONE_FORK_MAX_CONNECTION);
 
     g_thread_create(schedule_do, srv, FALSE, NULL);
 }
@@ -235,22 +231,23 @@ void schedule_init(feng *srv)
  */
 RTP_session *schedule_find_multicast(feng *srv, const char *mrl)
 {
-  int i;
-  RTP_session *rtp_s = NULL;
+    int i;
+    RTP_session *rtp_s = NULL;
 
-  for (i = 0; !rtp_s && i<ONE_FORK_MAX_CONNECTION; ++i) {
-    g_mutex_lock(sched[i].mux);
-    if (sched[i].valid) {
-      Track *tr2 = r_selected_track(
-				    sched[i].rtp_session->track_selector);
-      if (!strncmp(tr2->info->mrl, mrl, 255)) {
-	rtp_s = sched[i].rtp_session;
-	fnc_log(FNC_LOG_DEBUG,
-		"Found multicast instance.");
-      }
+    schedule_reader_lock();
+    for (i = 0; !rtp_s && i<ONE_FORK_MAX_CONNECTION; ++i) {
+        if (sessions[i] == NULL)
+            continue;
+
+        Track *tr2 = r_selected_track(sessions[i]->track_selector);
+        if (!strncmp(tr2->info->mrl, mrl, 255)) {
+            rtp_s = sessions[i];
+            fnc_log(FNC_LOG_DEBUG,
+                    "Found multicast instance.");
+            break;
+        }
     }
-    g_mutex_unlock(sched[i].mux);
-  }
+    schedule_reader_unlock();
 
-  return rtp_s;
+    return rtp_s;
 }
