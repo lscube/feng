@@ -263,7 +263,7 @@ static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     h264_priv *priv = tr->parser_private;
     uint32_t mtu = DEFAULT_MTU; //FIXME get it from SETUP
 //    double nal_time; // see page 9 and 7.4.1.2
-    int i, nalsize = 0, index = 0, ret;
+    int i, nalsize = 0, index = 0;
     uint8_t *p, *q;
 
     if (priv->is_avc) {

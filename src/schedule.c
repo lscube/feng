@@ -92,8 +92,7 @@ int schedule_remove(RTP_session *session, void *unused)
 
 static void *schedule_do(void *arg)
 {
-    int i = 0, res;
-    double now;
+    int i = 0;
     feng *srv = arg;
 
     do {

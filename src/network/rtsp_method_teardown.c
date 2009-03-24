@@ -43,7 +43,6 @@ void RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
     RTSP_session *s;
-    char *filename;
 
     if ( !rtsp_request_get_url(req, &url) )
         return;
