@@ -187,6 +187,7 @@ typedef struct play_args {
 
 
 void rtp_session_gslist_resume(GSList *, double);
+void rtp_session_gslist_seek(GSList *, double);
 
 void rtp_session_handle_sending(RTP_session *session);
 

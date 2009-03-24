@@ -41,20 +41,6 @@
 extern gboolean ragel_parse_range_header(const char *header,
                                          rtp_play_args *args);
 
-static void rtp_session_seek(gpointer value, gpointer user_data)
-{
-  RTP_session *rtp_sess = (RTP_session *)value;
-  rtp_play_args *args = (rtp_play_args *)user_data;
-
-  g_mutex_lock(rtp_sess->lock);
-
-  rtp_sess->start_seq = 1 + rtp_sess->seq_no;
-  rtp_sess->start_rtptime = g_random_int();
-  rtp_sess->seek_time = args->begin_time;
-
-  g_mutex_unlock(rtp_sess->lock);
-}
-
 /**
  * Actually seek through the media using mediathread
  * @param rtsp_sess the session for which to start playing
@@ -67,11 +53,11 @@ static RTSP_ResponseCode do_seek(RTSP_session * rtsp_sess, rtp_play_args * args)
 
     if (args->seek_time_valid &&
         ((rtsp_sess->started && args->begin_time == 0.0)
-            || args->begin_time > 0.0)) {
+         || args->begin_time > 0.0)) {
         if(mt_resource_seek(r, args->begin_time)) {
             return RTSP_HeaderFieldNotValidforResource;
         }
-	g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_seek, args);
+        rtp_session_gslist_seek(rtsp_sess->rtp_sessions, args->begin_time);
     } else if (args->begin_time < 0.0) {
         fnc_log(FNC_LOG_DEBUG,"[RTSP] Negative seek to %f", args->begin_time);
         return RTSP_InvalidRange;
