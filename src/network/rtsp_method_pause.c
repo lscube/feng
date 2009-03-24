@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -45,7 +45,6 @@ static void rtp_session_pause(gpointer element, gpointer user_data)
  */
 void RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    Url url;
     RTSP_session *rtsp_sess = rtsp->session;
 
     /* This is only valid in Playing state */
@@ -53,7 +52,7 @@ void RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
          !rtsp_check_invalid_state(req, RTSP_SERVER_READY) )
         return;
 
-    if ( !rtsp_request_get_url(req, &url) )
+    if ( !rtsp_request_check_url(req) )
         return;
 
     g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_pause, NULL);

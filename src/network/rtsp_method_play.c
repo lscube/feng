@@ -260,6 +260,8 @@ void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
 
     send_play_reply(rtsp, req, &url, rtsp_sess, &args);
 
+    Url_destroy(&url);
+
     rtsp_sess->cur_state = RTSP_SERVER_PLAYING;
 
     return;
