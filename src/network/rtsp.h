@@ -92,10 +92,9 @@ typedef struct RTSP_session {
 
 typedef struct RTSP_buffer {
     Sock *sock;
-    //unsigned int port;
-    // Buffers
-    char in_buffer[RTSP_BUFFERSIZE];
+    /** Used amount of in_buffer array */
     size_t in_size;
+
     GAsyncQueue *out_queue;
     RTSP_interleaved interleaved[2];
 
@@ -109,6 +108,13 @@ typedef struct RTSP_buffer {
     //Events
     ev_async *ev_sig_disconnect;
     ev_timer *ev_timeout;
+
+    /**
+     * @brief Buffer for the RTSP data in input
+     *
+     * @todo This should _really_ be removed.
+     */
+    char in_buffer[RTSP_BUFFERSIZE];
 } RTSP_buffer;
 
 /**
