@@ -364,7 +364,7 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
         rtsp_s = rtsp_session_new(rtsp);
 
     // Get the selected track
-    if ( (req_track = select_requested_track(url.path, rtp_s, trackname)) == NULL ) {
+    if ( (req_track = select_requested_track(url.path, rtsp_s, trackname)) == NULL ) {
         rtsp_quick_response(req, RTSP_NotFound);
         return;
     }
