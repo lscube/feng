@@ -59,7 +59,7 @@ void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd);
  */
 static char *split_resource_path(const char *path)
 {
-    char *p, *ret;
+    char *p, *ret = NULL;
 
     //if '=' is not present then a file has not been specified
     if ((p = strchr(path, '='))) {
