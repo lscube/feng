@@ -37,7 +37,6 @@
 #include "eventloop.h"
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
-#include <fenice/schedule.h>
 
 /**
  * Splits the path of a requested media finding the trackname and the removing
