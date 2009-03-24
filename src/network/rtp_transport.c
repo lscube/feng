@@ -29,7 +29,6 @@
 #include "mediathread/demuxer.h"
 #include <fenice/fnc_log.h>
 #include <sys/time.h>
-#include <stdbool.h>
 
 /**
  * @file
@@ -96,7 +95,7 @@ typedef struct {
  * @return The number of frames sent to the client.
  * @retval -1 Error during writing.
  */
-static int rtp_send_packet(RTP_session *session, MParserBuffer *buffer) {
+int rtp_packet_send(RTP_session *session, MParserBuffer *buffer) {
     const size_t packet_size = sizeof(RTP_packet) + buffer->data_size;
     RTP_packet *packet = g_malloc0(packet_size);
     Track *tr = r_selected_track(session->track_selector);
@@ -141,114 +140,7 @@ static int rtp_send_packet(RTP_session *session, MParserBuffer *buffer) {
     return frames;
 }
 
-/**
- * @brief Check pre-requisite for sending data for a session
- *
- * @param session The RTP session to check for pre-requisites
- *
- * @retval true The session is ready to send, and the @ref
- *              RTP_session::lock mutex has been locked.
- * @retval false The session is not ready to send, for whatever
- *               reason, and should just be ignored.
- *
- * This function is used to make sure that we're ready to deal with a
- * particular session. In particular this checks if the session is not
- * locked (we can just wait the next iteration if that's the case), is
- * not paused (or it's live), or has to be skipped for any reason at
- * all.
- *
- * @important If this function returned true, you need to unlock the
- *            mutex one way or another!
- */
-static gboolean rtp_session_prereq(RTP_session *session) {
-    Track *tr;
 
-    /* We have this if here because we need to unlock the mutex if
-     * we're not ready after locking it!
-     */
-    if (session == NULL ||
-        !g_mutex_trylock(session->lock))
-        return false;
-
-    tr = r_selected_track(session->track_selector);
-
-    if ( !session->started ||
-         ( session->pause &&
-           tr->properties->media_source != MS_live )
-         ) {
-        g_mutex_unlock(session->lock);
-        return false;
-    }
-
-    return true;
-}
-
-/**
- * Handle sending pending RTP packets to a session.
- *
- * @param session the RTP session for which to send the packets
- *
- * @note This function will require exclusive access to the session,
- *       so it'll lock the @ref RTP_session::lock mutex.
- */
-void rtp_handle_sending(RTP_session *session)
-{
-    MParserBuffer *buffer = NULL;
-    double now;
-
-    if ( !rtp_session_prereq(session) )
-        return;
-
-    now = gettimeinseconds(NULL);
-
-#ifdef HAVE_METADATA
-    if (session->metadata)
-        cpd_send(session, now);
-#endif
-
-    while ( now >= session->start_time &&
-            now >= (session->start_time + session->send_time) ) {
-
-        /* Get the current buffer, if there is enough data */
-        if ( !(buffer = bq_consumer_get(session->consumer)) ) {
-            /* If there is no buffer, it means that either the producer
-             * has been stopped (as we reached the end of stream) or that
-             * there is no data for the consumer to read. If that's the
-             * case we just give control back to the main loop for now.
-             */
-
-            if ( bq_consumer_stopped(session->consumer) ) {
-                /* If the producer has been stopped, we send the
-                 * finishing packets and go away.
-                 */
-                fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
-                RTCP_send_packet(session, SR);
-                RTCP_send_packet(session, BYE);
-                RTCP_flush(session);
-                break;
-            }
-
-            break;
-        }
-
-        if (rtp_send_packet(session, buffer) <= session->srv->srvconf.buffered_frames) {
-            switch( event_buffer_low(session,
-                                     r_selected_track(session->track_selector)) ) {
-            case ERR_EOF:
-            case ERR_NOERROR:
-                break;
-            default:
-                fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low");
-                break;
-            }
-        }
-
-        RTCP_handler(session);
-    }
-
- end:
-    g_mutex_unlock(session->lock);
-}
 
 /**
  * Receives data from the socket linked to the session and puts it inside the session buffer

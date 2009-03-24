@@ -162,16 +162,24 @@ int RTP_release_port_pair(feng *srv, port_pair * pair);
  */
 
 /**
- * RTP session management functions
  * @defgroup rtp_session RTP session management functions
  * @{
  */
 
-void rtp_handle_sending(RTP_session *session);
+void rtp_session_handle_sending(RTP_session *session);
+
 void RTP_session_destroy(RTP_session *);
 
-//! RTP_transport functions
-//! low-level sent/receive packet functions depending on transport settings.
+/**
+ * @}
+ */
+
+/**
+ * @defgroup rtp_transport Low-level functions for RTP transport
+ * @{
+ */
+
+int rtp_packet_send(RTP_session *, MParserBuffer *);
 ssize_t RTP_recv(RTP_session *);
 
 /**

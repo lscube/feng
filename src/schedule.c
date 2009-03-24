@@ -167,7 +167,7 @@ static void *schedule_do(void *arg)
 
         schedule_reader_lock();
         for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i)
-            rtp_handle_sending(sessions[i]);
+            rtp_session_handle_sending(sessions[i]);
         schedule_reader_unlock();
     } while (!g_atomic_int_get(&srv->stop_schedule));
 
