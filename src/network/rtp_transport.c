@@ -24,10 +24,12 @@
 #include <config.h>
 
 #include "rtp.h"
+#include "rtcp.h"
 #include "mediathread/mediathread.h"
 #include "mediathread/demuxer.h"
 #include <fenice/fnc_log.h>
 #include <sys/time.h>
+#include <stdbool.h>
 
 /**
  * @file
@@ -86,96 +88,166 @@ typedef struct {
 } RTP_packet;
 
 /**
- * Sends pending RTP packets for the given session
- * @param session the RTP session for which to send the packets
- * @retval ERR_NOERROR
- * @retval ERR_ALLOC Buffer allocation errors
- * @retval ERR_EOF End of stream
- * @return Same error values as event_buffer_low on event emission problems
+ * @brief Send the actual buffer as an RTP packet to the client
  *
- * @note The caller function has to hold the @ref RTP_session::lock
- *       mutex before calling this.
+ * @param session The RTP session to send the packet for
+ * @param buffer The data for the packet to be sent
  *
- * @todo Some of the checks done here are also done in @ref
- *       schedule_do in the inner loop, they should be moved here
- *       entirely.
+ * @return The number of frames sent to the client.
+ * @retval -1 Error during writing.
  */
-int RTP_send_packet(RTP_session * session)
+static int rtp_send_packet(RTP_session *session, MParserBuffer *buffer) {
+    const size_t packet_size = sizeof(RTP_packet) + buffer->data_size;
+    RTP_packet *packet = g_malloc0(packet_size);
+    Track *tr = r_selected_track(session->track_selector);
+    const uint32_t timestamp = RTP_calc_rtptime(session,
+                                                tr->properties->clock_rate,
+                                                buffer);
+    int frames = -1;
+
+    packet->version = 2;
+    packet->padding = 0;
+    packet->extension = 0;
+    packet->csrc_len = 0;
+    packet->marker = buffer->marker & 0x1;
+    packet->payload = tr->properties->payload_type & 0x7f;
+    packet->seq_no = htons(++session->seq_no);
+    packet->timestamp = htonl(timestamp);
+    packet->ssrc = htonl(session->ssrc);
+
+    fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(timestamp));
+
+    memcpy(packet->data, buffer->data, buffer->data_size);
+
+    if (Sock_write(session->transport.rtp_sock, packet,
+                   packet_size, NULL, MSG_DONTWAIT
+                   | MSG_EOR) < 0) {
+        fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
+    } else {
+        if (!session->send_time)
+            session->send_time = buffer->timestamp - session->seek_time;
+
+        frames = (fabs(session->last_timestamp - buffer->timestamp) /
+                  tr->properties->frame_duration) + 1;
+        session->send_time += calc_send_time(session, buffer);
+        session->last_timestamp = buffer->timestamp;
+        session->rtcp_stats[i_server].pkt_count++;
+        session->rtcp_stats[i_server].octet_count += buffer->data_size;
+
+        session->last_packet_send_time = time(NULL);
+    }
+    g_free(packet);
+
+    return frames;
+}
+
+/**
+ * @brief Check pre-requisite for sending data for a session
+ *
+ * @param session The RTP session to check for pre-requisites
+ *
+ * @retval true The session is ready to send, and the @ref
+ *              RTP_session::lock mutex has been locked.
+ * @retval false The session is not ready to send, for whatever
+ *               reason, and should just be ignored.
+ *
+ * This function is used to make sure that we're ready to deal with a
+ * particular session. In particular this checks if the session is not
+ * locked (we can just wait the next iteration if that's the case), is
+ * not paused (or it's live), or has to be skipped for any reason at
+ * all.
+ *
+ * @important If this function returned true, you need to unlock the
+ *            mutex one way or another!
+ */
+static gboolean rtp_session_prereq(RTP_session *session) {
+    Track *tr;
+
+    /* We have this if here because we need to unlock the mutex if
+     * we're not ready after locking it!
+     */
+    if (session == NULL ||
+        !g_mutex_trylock(session->lock))
+        return false;
+
+    tr = r_selected_track(session->track_selector);
+
+    if ( !session->started ||
+         ( session->pause &&
+           tr->properties->media_source != MS_live )
+         ) {
+        g_mutex_unlock(session->lock);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Handle sending pending RTP packets to a session.
+ *
+ * @param session the RTP session for which to send the packets
+ *
+ * @note This function will require exclusive access to the session,
+ *       so it'll lock the @ref RTP_session::lock mutex.
+ */
+void rtp_handle_sending(RTP_session *session)
 {
-    int res = ERR_NOERROR, bp_frames = 0;
     MParserBuffer *buffer = NULL;
-    ssize_t psize_sent = 0;
-    feng *srv = session->srv;
-    Track *t = r_selected_track(session->track_selector);
-    uint32_t now=time(NULL);
+    double now;
 
-    if ((buffer = bq_consumer_get(session->consumer))) {
-        if (!(session->pause && t->properties->media_source == MS_live)) {
-            const uint32_t timestamp = RTP_calc_rtptime(session,
-                                                        t->properties->clock_rate,
-                                                        buffer);
-            const size_t packet_size = sizeof(RTP_packet) + buffer->data_size;
-            RTP_packet *packet = g_malloc0(packet_size);
+    if ( !rtp_session_prereq(session) )
+        return;
 
-            if (packet == NULL) {
-                return ERR_ALLOC;
+    now = gettimeinseconds(NULL);
+
+#ifdef HAVE_METADATA
+    if (session->metadata)
+        cpd_send(session, now);
+#endif
+
+    while ( now >= session->start_time &&
+            now >= (session->start_time + session->send_time) ) {
+
+        /* Get the current buffer, if there is enough data */
+        if ( !(buffer = bq_consumer_get(session->consumer)) ) {
+            /* If there is no buffer, it means that either the producer
+             * has been stopped (as we reached the end of stream) or that
+             * there is no data for the consumer to read. If that's the
+             * case we just give control back to the main loop for now.
+             */
+
+            if ( bq_consumer_stopped(session->consumer) ) {
+                /* If the producer has been stopped, we send the
+                 * finishing packets and go away.
+                 */
+                fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
+                RTCP_send_packet(session, SR);
+                RTCP_send_packet(session, BYE);
+                RTCP_flush(session);
+                break;
             }
 
-            packet->version = 2;
-            packet->padding = 0;
-            packet->extension = 0;
-            packet->csrc_len = 0;
-            packet->marker = buffer->marker & 0x1;
-            packet->payload = t->properties->payload_type & 0x7f;
-            packet->seq_no = htons(++session->seq_no);
-            packet->timestamp = htonl(timestamp);
-            packet->ssrc = htonl(session->ssrc);
-
-            fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(timestamp));
-
-            memcpy(packet->data, buffer->data, buffer->data_size);
-
-            if ((psize_sent =
-                 Sock_write(session->transport.rtp_sock, packet,
-                 packet_size, NULL, MSG_DONTWAIT
-                 | MSG_EOR)) < 0) {
-                fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
-            } else {
-                if (!session->send_time) {
-                    session->send_time = buffer->timestamp - session->seek_time;
-                }
-                bp_frames = (fabs(session->last_timestamp - buffer->timestamp) /
-                    t->properties->frame_duration) + 1;
-                session->send_time += calc_send_time(session, buffer);
-                session->last_timestamp = buffer->timestamp;
-                session->rtcp_stats[i_server].pkt_count++;
-                session->rtcp_stats[i_server].octet_count += buffer->data_size;
-
-                session->last_packet_send_time = now;
-            }
-            g_free(packet);
-        } else {
-#warning Remove as soon as feng is fixed
-            usleep(1000);
+            break;
         }
-    }
-    if (!buffer || bp_frames <= srv->srvconf.buffered_frames) {
-        res = event_buffer_low(session, t);
-    }
-    switch (res) {
-        case ERR_NOERROR:
-            break;
-        case ERR_EOF:
-            if (buffer) {
-                //Wait to empty feng before sending BYE packets.
-                res = ERR_NOERROR;
+
+        if (rtp_send_packet(session, buffer) <= session->srv->srvconf.buffered_frames) {
+            switch( event_buffer_low(session,
+                                     r_selected_track(session->track_selector)) ) {
+            case ERR_EOF:
+            case ERR_NOERROR:
+                break;
+            default:
+                fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low");
+                break;
             }
-        break;
-        default:
-            fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low");
-            break;
+        }
+
+        RTCP_handler(session);
     }
-    return res;
+
+ end:
+    g_mutex_unlock(session->lock);
 }
 
 /**

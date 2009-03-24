@@ -24,7 +24,6 @@
 
 #include <fenice/schedule.h>
 #include "network/rtp.h"
-#include "network/rtcp.h"
 #include "network/rtsp.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
@@ -167,72 +166,8 @@ static void *schedule_do(void *arg)
         g_thread_yield();
 
         schedule_reader_lock();
-        for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i) {
-            RTP_session *session = sessions[i];
-            Track *tr = NULL;
-
-            /* If the session does not exist, or if it's locked
-             * already by another thread working on it, skip it and
-             * try it again at the next iteration.
-             *
-             * Otherwise get the lock and proceed to the next set of
-             * checks.
-             */
-            if ( session == NULL ||
-                 !g_mutex_trylock(session->lock) )
-                continue;
-
-            tr = r_selected_track(session->track_selector);
-
-            /* If the session is not started yet, or if it's paused
-             * (and it's not a live session ), unlock the mutex and
-             * proceed to the next session in the list.
-             */
-            if ( !session->started ||
-                 ( session->pause &&
-                   tr->properties->media_source != MS_live )
-                 )
-                goto next_session;
-
-            now = gettimeinseconds(NULL);
-
-#ifdef HAVE_METADATA
-            if (session->metadata)
-                cpd_send(session, now);
-#endif
-
-            res = ERR_NOERROR;
-            while (res == ERR_NOERROR && now >= session->start_time && now >= session->start_time
-                   + session->send_time) {
-                /** @todo DSC will be implemented WAY later. */
-
-                /* Send the RTP packet and check its returned status */
-                switch ((res = RTP_send_packet(session))) {
-                case ERR_NOERROR: // All fine
-                    break;
-                case ERR_EOF:
-                    if (tr->properties->media_source != MS_live) {
-                        fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
-                        RTCP_send_packet(session, SR);
-                        RTCP_send_packet(session, BYE);
-                        RTCP_flush(session);
-                    }
-                    break;
-                case ERR_ALLOC:
-                    fnc_log(FNC_LOG_WARN, "[SCH] Cannot allocate memory");
-                    schedule_stop(session);
-                    break;
-                default:
-                    fnc_log(FNC_LOG_WARN, "[SCH] Packet Lost");
-                    break;
-                }
-
-                RTCP_handler(session);
-            }
-        next_session:
-            g_mutex_unlock(session->lock);
-        }
-
+        for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i)
+            rtp_handle_sending(sessions[i]);
         schedule_reader_unlock();
     } while (!g_atomic_int_get(&srv->stop_schedule));
 
