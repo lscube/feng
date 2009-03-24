@@ -30,13 +30,12 @@ static void client_events_deregister(RTSP_buffer *rtsp)
 {
     feng *srv = rtsp->srv;
 
-    ev_io_stop(srv->loop, rtsp->ev_io_read);
+    ev_io_stop(srv->loop, &rtsp->ev_io_read);
     ev_async_stop(srv->loop, rtsp->ev_sig_disconnect);
     ev_timer_stop(srv->loop, rtsp->ev_timeout);
 
     g_free(rtsp->ev_sig_disconnect);
     g_free(rtsp->ev_timeout);
-    g_free(rtsp->ev_io_read);
 }
 
 static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int revents)

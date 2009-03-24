@@ -111,10 +111,9 @@ RTP_session *rtp_session_new(RTSP_buffer * rtsp, RTSP_session *rtsp_s,
 	rtp_s->metadata = rtsp_s->resource->metadata;
 #endif
 
-    rtp_s->transport.rtcp_watcher = g_new(ev_io, 1);
-    rtp_s->transport.rtcp_watcher->data = rtp_s;
-    ev_io_init(rtp_s->transport.rtcp_watcher, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
-    ev_io_start(srv->loop, rtp_s->transport.rtcp_watcher);
+    rtp_s->transport.rtcp_watcher.data = rtp_s;
+    ev_io_init(&rtp_s->transport.rtcp_watcher, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
+    ev_io_start(srv->loop, &rtp_s->transport.rtcp_watcher);
 
     // Setup the RTP session
     rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);

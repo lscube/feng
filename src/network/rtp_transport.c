@@ -150,8 +150,7 @@ int RTP_transport_close(RTP_session * session) {
     pair.RTP = get_local_port(session->transport.rtp_sock);
     pair.RTCP = get_local_port(session->transport.rtcp_sock);
 
-    ev_io_stop(session->srv->loop, session->transport.rtcp_watcher);
-    g_free(session->transport.rtcp_watcher);
+    ev_io_stop(session->srv->loop, &session->transport.rtcp_watcher);
 
     switch (session->transport.rtp_sock->socktype) {
         case UDP:

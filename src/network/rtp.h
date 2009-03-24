@@ -65,7 +65,7 @@ typedef struct RTP_transport {
     Sock *rtcp_sock;
     struct sockaddr_storage last_stg;
     int rtp_ch, rtcp_ch;
-    ev_io * rtcp_watcher;
+    ev_io rtcp_watcher;
 } RTP_transport;
 
 typedef struct RTCP_stats {
@@ -178,8 +178,8 @@ void rtp_session_free(RTP_session *);
 
 typedef struct play_args {
     struct tm playback_time;
-    short playback_time_valid;
-    short seek_time_valid;
+    gboolean playback_time_valid;
+    gboolean seek_time_valid;
     double start_time;   //! time in seconds
     double begin_time;
     double end_time;
