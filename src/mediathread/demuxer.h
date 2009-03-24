@@ -187,6 +187,8 @@ void r_close(Resource *);
 Selector *r_open_tracks(Resource *, const char *track_name);/*open the right tracks*/
 void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
 
+int r_seek(Resource *resource, double time);
+
 //Selector handling functions
 Track *r_selected_track(Selector *);
 

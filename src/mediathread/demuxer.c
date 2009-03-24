@@ -386,6 +386,20 @@ static int r_changed(ResourceDescr *descr)
     return 0;
 }
 
+static void r_producer_reset_queue(gpointer track_gen, gpointer unused) {
+    Track *t = (Track*)track_gen;
+
+    bq_producer_reset_queue(t->producer);
+}
+
+int r_seek(Resource *resource, double time) {
+    int res = resource->demuxer->seek(resource, time);
+
+    g_list_foreach(resource->tracks, r_producer_reset_queue, NULL);
+
+    return res;
+}
+
 #define ADD_TRACK_ERROR(level, ...) \
     { \
         fnc_log(level, __VA_ARGS__); \

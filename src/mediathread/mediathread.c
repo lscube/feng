@@ -159,7 +159,7 @@ void mt_resource_close(Resource *resource) {
 int mt_resource_seek(Resource *resource, double time) {
     int res;
     g_static_mutex_lock(&mt_mutex);
-    res = resource->demuxer->seek(resource, time);
+    res = r_seek(resource, time);
     g_static_mutex_unlock(&mt_mutex);
 
     return res;
