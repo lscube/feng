@@ -227,6 +227,7 @@ gboolean rtsp_check_invalid_state(const RTSP_Request *req,
 ssize_t rtsp_send(RTSP_buffer * rtsp);
 
 gboolean rtsp_request_get_url(RTSP_Request *req, Url *url);
+char *rtsp_request_get_path(RTSP_Request *req);
 
 void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer);
 

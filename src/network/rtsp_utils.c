@@ -252,6 +252,25 @@ gboolean rtsp_request_get_url(RTSP_Request *req, Url *url) {
 
   return true;
 }
+
+/**
+ * @brief Extract only the path from a request structure
+ *
+ * @param req The request structure from where to extract the URL
+ *
+ * @return A newly allocated string to be freed with g_free
+ *
+ * @retval NULL The URL was not valid and a reply was already sent.
+ */
+char *rtsp_request_get_path(RTSP_Request *req) {
+    Url url;
+
+    if ( !rtsp_request_get_url(req, &url) )
+        return NULL;
+
+    return g_strdup(url.path);
+}
+
 /**
  * @}
  */
