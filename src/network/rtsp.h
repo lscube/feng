@@ -132,25 +132,58 @@ enum RTSP_method_token {
 };
 
 /**
- * @brief Structure representing a request coming from the client.
+ * @brief Structure representing an incoming request
+ *
+ * This structure is used to access all the data related to a request
+ * message. Since it also embeds the client, it's everything the
+ * server needs to send a response for the request.
  */
 typedef struct {
-    RTSP_buffer *client; //!< The client the request comes from
+    /** The client the request comes from */
+    RTSP_buffer *client;
 
-    char *method; //!< String of the method (used for logging, mostly)
-    enum RTSP_method_token method_id; //!< ID of the method (for the state machine)
+    /**
+     * @brief String representing the method used
+     *
+     * Mostly used for logging purposes.
+     */
+    char *method;
+    /**
+     * @brief Machine-readable ID of the method
+     *
+     * Used by the state machine to choose the callback method.
+     */
+    enum RTSP_method_token method_id;
 
-    char *object; //!< Object of the request (URL or *)
+    /**
+     * @brief Object of the request
+     *
+     * Represents the object to work on, usually the URL for the
+     * request (either a resource URL or a track URL). It can be "*"
+     * for methods like OPTIONS.
+     */
+    char *object;
 
     /**
      * @brief Protocol version used
      *
      * This can only be RTSP/1.0 right now. We log it here for access.log and to
      * remove more logic from the parser itself.
+     *
+     * @todo This could be HTTP/1.0 or 1.1 when requests come from
+     *       QuickTime's proxy-passthrough. Currently that is not the
+     *       case though.
      */
     char *version;
 
-    /** All the headers we don't parse specifically */
+    /**
+     * @brief All the headers of the request, unparsed.
+     *
+     * This hash table contains all the headers of the request, in
+     * unparsed string form; they can used for debugging purposes or
+     * simply to access the original value of an header for
+     * pass-through copy.
+     */
     GHashTable *headers;
 } RTSP_Request;
 
