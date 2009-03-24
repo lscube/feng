@@ -61,14 +61,13 @@ static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int 
 static void check_if_any_rtp_session_timedout(gpointer element, gpointer user_data)
 {
     RTP_session *session = (RTP_session *)element;
-    Track *tr = r_selected_track(session->track_selector);
     time_t now = time(NULL);
 
     /* Check if we didn't send any data for more then STREAM_BYE_TIMEOUT seconds
      * this will happen if we are not receiving any more from live producer or
      * if the stored stream ended.
      */
-    if ((tr->properties->media_source == MS_live) &&
+    if ((session->track->properties->media_source == MS_live) &&
         (now - session->last_packet_send_time) >= LIVE_STREAM_BYE_TIMEOUT) {
         fnc_log(FNC_LOG_INFO, "[client] Soft stream timeout");
         RTCP_send_packet(session, SR);

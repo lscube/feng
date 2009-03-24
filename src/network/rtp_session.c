@@ -53,10 +53,9 @@ static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
  */
 RTP_session *rtp_session_new(RTSP_buffer * rtsp, RTSP_session *rtsp_s,
                              RTP_transport * transport, const char *path,
-                             Selector * track_sel) {
+                             Track *tr) {
     feng *srv = rtsp->srv;
     RTP_session *rtp_s = g_slice_new0(RTP_session);
-    Track *tr = NULL;
 
     rtp_s->lock = g_mutex_new();
     g_mutex_lock(rtp_s->lock);
@@ -73,8 +72,7 @@ RTP_session *rtp_session_new(RTSP_buffer * rtsp, RTSP_session *rtsp_s,
     rtp_s->seq_no = rtp_s->start_seq - 1;
 
     /* Set up the track selector and get a consumer for the track */
-    rtp_s->track_selector = track_sel;
-    tr = r_selected_track(rtp_s->track_selector);
+    rtp_s->track = tr;
     rtp_s->consumer = bq_consumer_new(tr->producer);
 
     rtp_s->srv = srv;
@@ -109,9 +107,6 @@ void rtp_session_free(RTP_session * session)
     RTP_transport_close(session);
 
     g_mutex_free(session->lock);
-
-    // Close track selector
-    r_close_tracks(session->track_selector);
 
     /* Remove the consumer */
     bq_consumer_free(session->consumer);
@@ -152,7 +147,7 @@ void rtp_session_resume(RTP_session *session, double start_time) {
 
     /* Prefetch frames */
     for (i=0; i < srv->srvconf.buffered_frames; i++)
-        event_buffer_low(session, r_selected_track(session->track_selector));
+        event_buffer_low(session, session->track);
 
     g_mutex_unlock(session->lock);
 }
@@ -177,8 +172,6 @@ void rtp_session_resume(RTP_session *session, double start_time) {
  *            mutex one way or another!
  */
 static gboolean rtp_session_send_prereq(RTP_session *session) {
-    Track *tr;
-
     /* We have this if here because we need to unlock the mutex if
      * we're not ready after locking it!
      */
@@ -186,10 +179,8 @@ static gboolean rtp_session_send_prereq(RTP_session *session) {
         !g_mutex_trylock(session->lock))
         return false;
 
-    tr = r_selected_track(session->track_selector);
-
     if ( session->pause &&
-         tr->properties->media_source != MS_live
+         session->track->properties->media_source != MS_live
          ) {
         g_mutex_unlock(session->lock);
         return false;
@@ -247,8 +238,7 @@ void rtp_session_handle_sending(RTP_session *session)
         }
 
         if (rtp_packet_send(session, buffer) <= session->srv->srvconf.buffered_frames) {
-            switch( event_buffer_low(session,
-                                     r_selected_track(session->track_selector)) ) {
+            switch( event_buffer_low(session, session->track) ) {
             case ERR_EOF:
             case ERR_NOERROR:
                 break;

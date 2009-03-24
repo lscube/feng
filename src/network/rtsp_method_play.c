@@ -139,7 +139,7 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
   rtp_session_send_play_reply_pair *pair = (rtp_session_send_play_reply_pair *)user_data;
 
   RTP_session *p = (RTP_session *)element;
-  Track *t = r_selected_track(p->track_selector);
+  Track *t = p->track;
 
   g_string_append_printf(pair->str,
 			 "url=%s%s/"SDP2_TRACK_ID"=", pair->baseurl, p->sd_filename);

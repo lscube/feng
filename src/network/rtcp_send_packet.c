@@ -36,7 +36,7 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
     unsigned char *payload = NULL;
     RTCP_header hdr;
     size_t pkt_size = 0, hdr_s = 0, payload_s = 0;
-    Track *t = r_selected_track(session->track_selector);
+    Track *t = session->track;
 
     hdr.version = 2;
     hdr.padding = 0;

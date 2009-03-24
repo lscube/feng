@@ -134,8 +134,7 @@ RTP_session *schedule_find_multicast(feng *srv, const char *mrl)
         if (sessions[i] == NULL)
             continue;
 
-        Track *tr2 = r_selected_track(sessions[i]->track_selector);
-        if (!strncmp(tr2->info->mrl, mrl, 255)) {
+        if (!strncmp(sessions[i]->track->info->mrl, mrl, 255)) {
             rtp_s = sessions[i];
             fnc_log(FNC_LOG_DEBUG,
                     "Found multicast instance.");

@@ -113,8 +113,8 @@ typedef struct RTP_session {
 
     gchar *sd_filename; //!< resource name, including path from avroot
 
-    //mediathread - TODO: find better placement
-    Selector *track_selector;
+    /** Pointer to the currently-selected track */
+    Track *track;
 
     // Metadata Begin
 #ifdef HAVE_METADATA

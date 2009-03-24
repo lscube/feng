@@ -225,7 +225,6 @@ extern gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
  * @param path Path of the track to select
  * @param rtsp_s the session where to save the addressed resource
  * @param trackname the name of the track to open
- * @param track_sel where to save the selector for the opened track
  * @param req_track where to save the data of the opened track
  *
  * @retval RTSP_Ok No error
@@ -233,8 +232,9 @@ extern gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
  * @retval RTSP_InternalServerError Impossible to retrieve the data of the opened
  *                                  track
  */
-static RTSP_ResponseCode select_requested_track(const char *path, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
+static RTSP_ResponseCode select_requested_track(const char *path, RTSP_session * rtsp_s, char * trackname, Track ** req_track)
 {
+    Selector *track_sel = NULL;
     feng *srv = rtsp_s->srv;
 
     // it should parse the request giving us object!trackname
@@ -245,14 +245,16 @@ static RTSP_ResponseCode select_requested_track(const char *path, RTSP_session *
         }
     }
 
-    if (!(*track_sel = r_open_tracks(rtsp_s->resource, trackname))) {
+    if (!(track_sel = r_open_tracks(rtsp_s->resource, trackname))) {
         fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
                 trackname, path);
         return RTSP_NotFound;
     }
 
-    if (!(*req_track = r_selected_track(*track_sel)))
+    if (!(*req_track = r_selected_track(track_sel)))
         return RTSP_InternalServerError;    // Internal server error
+
+    r_close_tracks(track_sel);
 
     return RTSP_Ok;
 }
@@ -339,7 +341,6 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     char trackname[255];
     RTP_transport transport;
 
-    Selector *track_sel = NULL;
     Track *req_track = NULL;
 
     //mediathread pointers
@@ -376,7 +377,7 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
         rtsp_s = rtsp_session_new(rtsp);
 
     // Get the selected track
-    if ( (error = select_requested_track(url.path, rtsp_s, trackname, &track_sel, &req_track)) != RTSP_Ok ) {
+    if ( (error = select_requested_track(url.path, rtsp_s, trackname, &req_track)) != RTSP_Ok ) {
         rtsp_quick_response(req, error);
         return;
     }
@@ -397,7 +398,7 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
         return;
     }
 
-    rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, url.path, track_sel);
+    rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, url.path, req_track);
 
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
     g_mutex_unlock(rtp_s->lock);

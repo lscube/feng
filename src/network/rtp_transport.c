@@ -98,7 +98,7 @@ typedef struct {
 int rtp_packet_send(RTP_session *session, MParserBuffer *buffer) {
     const size_t packet_size = sizeof(RTP_packet) + buffer->data_size;
     RTP_packet *packet = g_malloc0(packet_size);
-    Track *tr = r_selected_track(session->track_selector);
+    Track *tr = session->track;
     const uint32_t timestamp = RTP_calc_rtptime(session,
                                                 tr->properties->clock_rate,
                                                 buffer);
