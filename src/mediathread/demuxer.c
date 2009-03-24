@@ -326,45 +326,33 @@ void r_close(Resource *r)
     }
 }
 
-Selector *r_open_tracks(Resource *r, const char *track_name) // RTSP_setup.c uses it !!
-{
-    Selector *s;
-    //Track *tracks[MAX_SEL_TRACKS];
-    GList *track, *sel_tracks=NULL;
+/**
+ * @brief Find the given track name in the resource
+ *
+ * @param resource The Resource object to look into
+ * @param track_name The name of the track to look for
+ *
+ * @return A pointer to the Track object for the requested track.
+ *
+ * @retval NULL No track in the resource corresponded to the given
+ *              parameters.
+ *
+ * @todo This only returns the first resource corresponding to the
+ *       parameters.
+ * @todo Capabilities aren't used yet.
+ */
+Track *r_find_track(Resource *resource, const char *track_name) {
+    GList *track;
 
-    /*Capabilities aren't used yet. TODO*/
-
-    for (track=g_list_first(r->tracks); track; track=g_list_next(track))
-        if( !strcmp(TRACK(track)->info->name, track_name) ){
-            sel_tracks = g_list_prepend(sel_tracks, TRACK(track));
+    for (track=g_list_first(resource->tracks); track; track=g_list_next(track))
+        if( !strcmp(TRACK(track)->info->name, track_name) ) {
+            return TRACK(track);
         }
-    if (!sel_tracks)
-        return NULL;
 
-    if((s=g_new(Selector, 1))==NULL) {
-        fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-        return NULL;
-    }
+    fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
+            track_name, resource->info->mrl);
 
-    s->tracks = sel_tracks;
-    s->total = g_list_length(sel_tracks);
-    s->default_index = 0;/*TODO*/
-    s->selected_index = 0;/*TODO*/
-    //...
-    return s;
-}
-
-inline Track *r_selected_track(Selector *selector) // UNUSED
-{
-    if (!selector)
-        return NULL;
-
-    return g_list_nth_data(selector->tracks, selector->selected_index);
-}
-
-void r_close_tracks(Selector *s) // UNUSED
-{
-    g_free(s);
+    return NULL;
 }
 
 static int r_changed(ResourceDescr *descr)

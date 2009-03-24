@@ -225,16 +225,14 @@ extern gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
  * @param path Path of the track to select
  * @param rtsp_s the session where to save the addressed resource
  * @param trackname the name of the track to open
- * @param req_track where to save the data of the opened track
  *
- * @retval RTSP_Ok No error
- * @retval RTSP_NotFound Object or track not found
- * @retval RTSP_InternalServerError Impossible to retrieve the data of the opened
- *                                  track
+ * @return The pointer to the requested track
+ *
+ * @retval NULL Unable to find the requested resource or track; the
+ *              client should receive a “Not found” (404) response.
  */
-static RTSP_ResponseCode select_requested_track(const char *path, RTSP_session * rtsp_s, char * trackname, Track ** req_track)
+static Track *select_requested_track(const char *path, RTSP_session * rtsp_s, char * trackname)
 {
-    Selector *track_sel = NULL;
     feng *srv = rtsp_s->srv;
 
     // it should parse the request giving us object!trackname
@@ -245,18 +243,7 @@ static RTSP_ResponseCode select_requested_track(const char *path, RTSP_session *
         }
     }
 
-    if (!(track_sel = r_open_tracks(rtsp_s->resource, trackname))) {
-        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
-                trackname, path);
-        return RTSP_NotFound;
-    }
-
-    if (!(*req_track = r_selected_track(track_sel)))
-        return RTSP_InternalServerError;    // Internal server error
-
-    r_close_tracks(track_sel);
-
-    return RTSP_Ok;
+    return r_find_track(rtsp_s->resource, trackname);
 }
 
 /**
@@ -377,8 +364,8 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
         rtsp_s = rtsp_session_new(rtsp);
 
     // Get the selected track
-    if ( (error = select_requested_track(url.path, rtsp_s, trackname, &req_track)) != RTSP_Ok ) {
-        rtsp_quick_response(req, error);
+    if ( (req_track = select_requested_track(url.path, rtp_s, trackname)) == NULL ) {
+        rtsp_quick_response(req, RTSP_NotFound);
         return;
     }
 

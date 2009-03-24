@@ -133,15 +133,6 @@ typedef struct Track {
 } Track;
 
 typedef struct {
-    // Track *tracks[MAX_SEL_TRACKS];
-    TrackList tracks;
-    Track cur;
-    uint32_t default_index;
-    uint32_t selected_index;/**/
-    uint32_t total; /*total tracks in selector*/
-} Selector;
-
-typedef struct {
     /*name of demuxer module*/
     const char *name;
     /* short name (for config strings) (e.g.:"sd") */
@@ -184,15 +175,9 @@ Resource *r_open(feng *srv, const char *inner_path);
 
 void r_close(Resource *);
 
-Selector *r_open_tracks(Resource *, const char *track_name);/*open the right tracks*/
-void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
-
 int r_seek(Resource *resource, double time);
 
-//Selector handling functions
-Track *r_selected_track(Selector *);
-
-// TrackList handling functions
+Track *r_find_track(Resource *, const char *);
 
 // Tracks
 Track *add_track(Resource *, TrackInfo *, MediaProperties *);
