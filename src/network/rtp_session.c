@@ -134,6 +134,7 @@ static void rtp_session_resume_internal(RTP_session *session,
     session->send_time = 0.0;
     session->pause = 0;
     session->started = 1;
+    session->last_packet_send_time = time(NULL);
 
     /* Prefetch frames */
     for (i=0; i < srv->srvconf.buffered_frames; i++)
