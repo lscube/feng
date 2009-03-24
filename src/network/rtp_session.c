@@ -119,9 +119,9 @@ void rtp_session_free(RTP_session * session)
 /**
  * @brief Resume (or start) an RTP session
  *
- * @param session The session to resume or start
- * @param start_time The time (in seconds) inside the stream to start
- *                   from.
+ * @param session_gen The session to resume or start
+ * @param start_time_gen Pointer to the time (in seconds) inside the
+ *                       stream to start from.
  *
  * @todo This function should probably take care of starting eventual
  *       libev events when the scheduler is replaced.
@@ -129,8 +129,16 @@ void rtp_session_free(RTP_session * session)
  * This function is used by the PLAY method of RTSP to start or resume
  * a session; since a newly-created session starts as paused, this is
  * the only method available.
+ *
+ * The use of a pointer to double rather than a double itself is to
+ * make it possible to pass this function straight to foreach
+ * functions from glib.
+ *
+ * @internal This function should only be called from g_slist_foreach.
  */
-void rtp_session_resume(RTP_session *session, double start_time) {
+static void rtp_session_resume(gpointer *session_gen, gpointer *start_time_gen) {
+    RTP_session *session = (RTP_session*)session_gen;
+    double *start_time = (double*)start_time_gen;
     feng *srv = session->srv;
     int i;
 
@@ -140,7 +148,7 @@ void rtp_session_resume(RTP_session *session, double start_time) {
      * otherwise something is funky */
     g_assert(session->pause);
 
-    session->start_time = start_time;
+    session->start_time = *start_time;
     session->send_time = 0.0;
     session->pause = 0;
     session->last_packet_send_time = time(NULL);
@@ -150,6 +158,19 @@ void rtp_session_resume(RTP_session *session, double start_time) {
         event_buffer_low(session, session->track);
 
     g_mutex_unlock(session->lock);
+}
+
+/**
+ * @brief Resume a GSList of RTP_sessions
+ *
+ * @param sessions_list GSList of sessions to resume
+ * @param start_time Time to start the sessions at
+ *
+ * This is a convenience function that wraps around rtp_session_resume
+ * and calls it with a foreach loop on the list
+ */
+void rtp_session_gslist_resume(GSList *sessions_list, double start_time) {
+    g_slist_foreach(sessions_list, rtp_session_resume, &start_time);
 }
 
 /**

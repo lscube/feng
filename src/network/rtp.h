@@ -23,6 +23,8 @@
 #ifndef FN_RTP_H
 #define FN_RTP_H
 
+#include <glib.h>
+
 #include <time.h>
 #include <sys/timeb.h>
 #include <sys/types.h>
@@ -183,7 +185,8 @@ typedef struct play_args {
     double end_time;
 } rtp_play_args;
 
-void rtp_session_resume(RTP_session *, double);
+
+void rtp_session_gslist_resume(GSList *, double);
 
 void rtp_session_handle_sending(RTP_session *session);
 

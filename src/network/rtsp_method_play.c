@@ -80,14 +80,6 @@ static RTSP_ResponseCode do_seek(RTSP_session * rtsp_sess, rtp_play_args * args)
     return RTSP_Ok;
 }
 
-static void rtp_session_play(gpointer value, gpointer user_data)
-{
-    RTP_session *rtp_sess = (RTP_session *) value;
-    rtp_play_args *args = (rtp_play_args *) user_data;
-
-    rtp_session_resume(rtp_sess, args->start_time);
-}
-
 /**
  * Actually starts playing the media using mediathread
  * @param url the Url for which to start playing
@@ -107,13 +99,13 @@ static RTSP_ResponseCode do_play(Url *url, RTSP_session * rtsp_sess, rtp_play_ar
         if ((error = do_seek(rtsp_sess, args)) != RTSP_Ok) {
             return error;
         }
-	if ( rtsp_sess->rtp_sessions &&
-	     ((RTP_session*)(rtsp_sess->rtp_sessions->data))->is_multicast )
-	  return RTSP_Ok;
+        if ( rtsp_sess->rtp_sessions &&
+             ((RTP_session*)(rtsp_sess->rtp_sessions->data))->is_multicast )
+            return RTSP_Ok;
 
-	rtsp_sess->started = 1;
+        rtsp_sess->started = 1;
 
-	g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_play, args);
+        rtp_session_gslist_resume(rtsp_sess->rtp_sessions, args->start_time);
     } else {
         // FIXME complete with the other stuff
         return RTSP_InternalServerError; /* Internal server error */
