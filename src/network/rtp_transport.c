@@ -179,7 +179,7 @@ ssize_t RTP_recv(RTP_session * session)
  * @param session the RTP session for which to close the transport
  * @return always 0
  */
-static int RTP_transport_close(RTP_session * session) {
+int RTP_transport_close(RTP_session * session) {
     port_pair pair;
     pair.RTP = get_local_port(session->transport.rtp_sock);
     pair.RTCP = get_local_port(session->transport.rtcp_sock);
@@ -196,26 +196,4 @@ static int RTP_transport_close(RTP_session * session) {
     Sock_close(session->transport.rtp_sock);
     Sock_close(session->transport.rtcp_sock);
     return 0;
-}
-
-/**
- * Deallocates an RTP session, closing its tracks and transports
- * @param session the RTP session to remove
- * @return the subsequent session
- */
-void RTP_session_destroy(RTP_session * session)
-{
-    RTP_transport_close(session);
-
-    g_mutex_free(session->lock);
-
-    // Close track selector
-    r_close_tracks(session->track_selector);
-
-    /* Remove the consumer */
-    bq_consumer_free(session->consumer);
-
-    // Deallocate memory
-    g_free(session->sd_filename);
-    g_free(session);
 }

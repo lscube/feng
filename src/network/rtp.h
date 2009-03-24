@@ -166,9 +166,8 @@ int RTP_release_port_pair(feng *srv, port_pair * pair);
  * @{
  */
 
+void rtp_session_free(RTP_session *);
 void rtp_session_handle_sending(RTP_session *session);
-
-void RTP_session_destroy(RTP_session *);
 
 /**
  * @}
@@ -179,6 +178,7 @@ void RTP_session_destroy(RTP_session *);
  * @{
  */
 
+int RTP_transport_close(RTP_session *);
 int rtp_packet_send(RTP_session *, MParserBuffer *);
 ssize_t RTP_recv(RTP_session *);
 

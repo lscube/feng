@@ -81,7 +81,7 @@ int schedule_remove(RTP_session *session, void *unused)
 
     schedule_writer_lock();
 
-    RTP_session_destroy(session);
+    rtp_session_free(session);
     fnc_log(FNC_LOG_INFO, "rtp session closed\n");
     sessions[id] = NULL;
 

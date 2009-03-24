@@ -219,59 +219,6 @@ extern gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
                                              RTP_transport *rtp_t,
                                              const char *header);
 
-static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
-{
-    RTP_recv(w->data);
-}
-
-/**
- * sets up the RTP session
- * @param url the Url for which to generate the session
- * @param rtsp the buffer for which to generate the session
- * @param rtsp_s the RTSP session to use
- * @param transport the transport to use
- * @param track_sel the track for which to generate the session
- * @return The newly generated RTP session
- *
- * @todo This should probably be partially moved inside
- *       rtp_transport.c as an allocation function for RTP_session.
- */
-static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, Selector * track_sel)
-{
-    feng *srv = rtsp->srv;
-    RTP_session *rtp_s = g_new0(RTP_session, 1);
-
-    rtp_s->lock = g_mutex_new();
-    g_mutex_lock(rtp_s->lock);
-
-    rtp_s->pause = 1;
-    rtp_s->sd_filename = g_strdup(url->path);
-
-    memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
-    rtp_s->start_rtptime = g_random_int();
-    rtp_s->start_seq = g_random_int_range(0, G_MAXUINT16);
-    rtp_s->seq_no = rtp_s->start_seq - 1;
-    rtp_s->track_selector = track_sel;
-    rtp_s->srv = srv;
-    rtp_s->sched_id = schedule_add(rtp_s);
-    rtp_s->ssrc = g_random_int();
-    rtp_s->rtsp_buffer = rtsp;
-
-#ifdef HAVE_METADATA
-	rtp_s->metadata = rtsp_s->resource->metadata;
-#endif
-
-    rtp_s->transport.rtcp_watcher = g_new(ev_io, 1);
-    rtp_s->transport.rtcp_watcher->data = rtp_s;
-    ev_io_init(rtp_s->transport.rtcp_watcher, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
-    ev_io_start(srv->loop, rtp_s->transport.rtcp_watcher);
-
-    // Setup the RTP session
-    rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
-
-    return rtp_s;
-}
-
 /**
  * Gets the track requested for the object
  *
@@ -450,8 +397,7 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
         return;
     }
 
-    // Setup the RTP session
-    rtp_s = setup_rtp_session(&url, rtsp, rtsp_s, &transport, track_sel);
+    rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, url.path, track_sel);
 
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
     g_mutex_unlock(rtp_s->lock);
