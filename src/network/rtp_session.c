@@ -113,22 +113,46 @@ void rtp_session_free(RTP_session * session)
 }
 
 /**
- * @brief Internal version to resume an RTP session
+ * @brief Resume (or start) an RTP session
  *
- * @param session Session to resume
+ * @param session The session to resume or start
  * @param start_time The time (in seconds) inside the stream to start
  *                   from.
  *
- * @internal This function does not lock @ref RTP_session::lock, so
- * should only be used by functions that already take care of that.
+ * @todo This function should probably take care of starting eventual
+ *       libev events when the scheduler is replaced.
  *
- * @see rtp_session_start
- * @ses rtp_session_resume
+ * This function is used by the PLAY method of RTSP to start or resume
+ * a session. For RTSP, there is no big difference between a paused or
+ * non-started session, so we just need one function.
  */
-static void rtp_session_resume_internal(RTP_session *session,
-                                        double start_time) {
+void rtp_session_resume(RTP_session *session, double start_time) {
     feng *srv = session->srv;
     int i;
+
+    g_mutex_lock(session->lock);
+
+    /* We want to make sure that the session is at least in pause,
+     * otherwise something is funky */
+    g_assert(session->pause || !session->started);
+
+    /* If we haven't started the session yet we have some setup to
+     * do. */
+    /** @todo This should probably be moved mostly in @ref
+     * rtp_session_new */
+    if ( ! session->started ) {
+        Track *tr =r_selected_track(session->track_selector);
+
+        session->consumer = bq_consumer_new(tr->producer);
+
+        session->start_time = start_time;
+        session->last_timestamp = 0;
+        session->MinimumReached = 0;
+        session->MaximumReached = 0;
+        session->PreviousCount = 0;
+        session->rtcp_stats[i_client].RR_received = 0;
+        session->rtcp_stats[i_client].SR_received = 0;
+    }
 
     session->start_time = start_time;
     session->send_time = 0.0;
@@ -139,60 +163,6 @@ static void rtp_session_resume_internal(RTP_session *session,
     /* Prefetch frames */
     for (i=0; i < srv->srvconf.buffered_frames; i++)
         event_buffer_low(session, r_selected_track(session->track_selector));
-}
-
-/**
- * @brief Set up and mark a session as started
- *
- * @param session The session to start
- * @param start_time The time (in seconds) inside the stream to start
- *                   from.
- *
- * @todo This function should probably take care of starting eventual
- *       libev events when the scheduler is replaced.
- * @todo @ref rtp_session_start and @ref rtp_session_resume should be
- *       factored in together. Also check @ref rtp_session_play in
- *       rtsp_method_play.c .
- */
-void rtp_session_start(RTP_session *session, double start_time) {
-    Track *tr;
-
-    g_mutex_lock(session->lock);
-
-    tr = r_selected_track(session->track_selector);
-
-    session->consumer = bq_consumer_new(tr->producer);
-
-    session->start_time = start_time;
-    session->last_timestamp = 0;
-    session->MinimumReached = 0;
-    session->MaximumReached = 0;
-    session->PreviousCount = 0;
-    session->rtcp_stats[i_client].RR_received = 0;
-    session->rtcp_stats[i_client].SR_received = 0;
-
-    rtp_session_resume_internal(session, start_time);
-
-    g_mutex_unlock(session->lock);
-}
-
-/**
- * @brief Resume a paused session
- *
- * @param session The session to start
- * @param start_time The time (in seconds) inside the stream to start
- *                   from.
- *
- * @todo This function should probably take care of starting eventual
- *       libev events when the scheduler is replaced.
- * @todo @ref rtp_session_start and @ref rtp_session_resume should be
- *       factored in together. Also check @ref rtp_session_play in
- *       rtsp_method_play.c .
- */
-void rtp_session_resume(RTP_session *session, double start_time) {
-    g_mutex_lock(session->lock);
-
-    rtp_session_resume_internal(session, start_time);
 
     g_mutex_unlock(session->lock);
 }

@@ -85,13 +85,7 @@ static void rtp_session_play(gpointer value, gpointer user_data)
     RTP_session *rtp_sess = (RTP_session *) value;
     rtp_play_args *args = (rtp_play_args *) user_data;
 
-    // Start playing all the presentation
-    if (!rtp_sess->started) {
-        rtp_session_start(rtp_sess, args->start_time);
-    }
-    else if ( rtp_sess->pause ) {
-        rtp_session_resume(rtp_sess, args->start_time);
-    }
+    rtp_session_resume(rtp_sess, args->start_time);
 }
 
 /**
