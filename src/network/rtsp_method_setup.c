@@ -44,25 +44,25 @@ void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd);
  * Splits the path of a requested media finding the trackname and the removing
  * it from the object
  *
- * @param url the Url for which to split the object
+ * @param path The Url's path from which to split the object
  * @param trackname where to save the trackname removed from the object
  * @param trackname_max_len maximum length of the trackname buffer
  *
  * @retval true No error
  * @retval false No trackname provided
  */
-static gboolean split_resource_path(Url * url, char * trackname, size_t trackname_max_len)
+static gboolean split_resource_path(const char *path, char * trackname, size_t trackname_max_len)
 {
     char * p;
 
     //if '=' is not present then a file has not been specified
-    if (!(p = strchr(url->path, '=')))
+    if (!(p = strchr(path, '=')))
         return false;
     else {
         // SETUP resource!trackname
         g_strlcpy(trackname, p + 1, trackname_max_len);
         // XXX Not really nice...
-        while (url->path != p) if (*--p == '/') break;
+        while (path != p) if (*--p == '/') break;
         *p = '\0';
     }
 
@@ -370,7 +370,7 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     }
 
     // Split resource!trackname
-    if ( !split_resource_path(&url, trackname, sizeof(trackname)) ) {
+    if ( !split_resource_path(url.path, trackname, sizeof(trackname)) ) {
         rtsp_quick_response(req, RTSP_InternalServerError);
         return;
     }
