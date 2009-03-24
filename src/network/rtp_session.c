@@ -55,7 +55,7 @@ RTP_session *rtp_session_new(RTSP_buffer * rtsp, RTSP_session *rtsp_s,
                              RTP_transport * transport, const char *path,
                              Selector * track_sel) {
     feng *srv = rtsp->srv;
-    RTP_session *rtp_s = g_new0(RTP_session);
+    RTP_session *rtp_s = g_slice_new0(RTP_session);
 
     rtp_s->lock = g_mutex_new();
     g_mutex_lock(rtp_s->lock);
@@ -109,7 +109,7 @@ void rtp_session_free(RTP_session * session)
 
     // Deallocate memory
     g_free(session->sd_filename);
-    g_free(session);
+    g_slice_free(RTP_session, session);
 }
 
 /**
