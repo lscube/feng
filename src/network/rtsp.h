@@ -97,10 +97,15 @@ typedef struct RTSP_buffer {
     size_t in_size;
     GAsyncQueue *out_queue;
     GSList *interleaved;
-    GSList *ev_io;
 
     ev_io ev_io_read;
     ev_io ev_io_write;
+
+    /**
+     * Pair of listener instances used for interleaved and SCTP.
+     */
+    ev_io ev_io_listen[2];
+
     // Run-Time
     RTSP_session *session;
     feng *srv;

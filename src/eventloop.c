@@ -136,14 +136,13 @@ void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd)
 #endif
     }
 
+    /* Let's hope this is unrolled by GCC, shall we? */
     for (i = 0; i < 2; i++) {
-        ev_io *ev_io_listen = g_new(ev_io, 1);
         Sock *sock = intlvd[i].local;
         sock->data = rtsp;
-        ev_io_listen->data = intlvd + i;
-        rtsp->ev_io = g_slist_prepend(rtsp->ev_io, ev_io_listen);
-        ev_io_init(ev_io_listen, cb, Sock_fd(sock), EV_READ);
-        ev_io_start(rtsp->srv->loop, ev_io_listen);
+        rtsp->ev_io_listen[i].data = intlvd + i;
+        ev_io_init(&rtsp->ev_io_listen[i], cb, Sock_fd(sock), EV_READ);
+        ev_io_start(rtsp->srv->loop, &rtsp->ev_io_listen[i]);
     }
 }
 
@@ -215,7 +214,6 @@ static void add_client(feng *srv, Sock *client_sock)
     /* to be started/stopped when necessary */
     rtsp->ev_io_write.data = rtsp;
     ev_io_init(&rtsp->ev_io_write, rtsp_write_cb, Sock_fd(client_sock), EV_WRITE);
-    rtsp->ev_io = g_slist_prepend(rtsp->ev_io, &rtsp->ev_io_write);
     fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
             Sock_fd(client_sock));
 
