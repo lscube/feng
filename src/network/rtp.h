@@ -167,6 +167,19 @@ int RTP_release_port_pair(feng *srv, port_pair * pair);
  */
 
 void rtp_session_free(RTP_session *);
+
+typedef struct play_args {
+    struct tm playback_time;
+    short playback_time_valid;
+    short seek_time_valid;
+    double start_time;   //! time in seconds
+    double begin_time;
+    double end_time;
+} rtp_play_args;
+
+void rtp_session_start(RTP_session *, rtp_play_args *);
+void rtp_session_resume(RTP_session *, rtp_play_args *);
+
 void rtp_session_handle_sending(RTP_session *session);
 
 /**

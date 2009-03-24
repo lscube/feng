@@ -6,7 +6,7 @@
 %% machine ragel_range_header;
 
 gboolean ragel_parse_range_header(const char *header,
-                                  play_args *args) {
+                                  rtp_play_args *args) {
 
     int cs;
     const char *p = header, *pe = p + strlen(p) +1;

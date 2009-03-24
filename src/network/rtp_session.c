@@ -113,6 +113,82 @@ void rtp_session_free(RTP_session * session)
 }
 
 /**
+ * @brief Set up and mark a session as started
+ *
+ * @param session The session to start
+ * @param play_args The argument used to set the session start up.
+ *
+ * @todo The args argument should probably be replaced by a single
+ *       start_time argument.
+ * @todo This function should probably take care of starting eventual
+ *       libev events when the scheduler is replaced.
+ * @todo @ref rtp_session_start and @ref rtp_session_resume should be
+ *       factored in together. Also check @ref rtp_session_play in
+ *       rtsp_method_play.c .
+ */
+void rtp_session_start(RTP_session *session, rtp_play_args *args) {
+    feng *srv = session->srv;
+    Track *tr;
+    int i;
+
+    g_mutex_lock(session->lock);
+
+    tr = r_selected_track(session->track_selector);
+
+    session->consumer = bq_consumer_new(tr->producer);
+
+    session->start_time = args->start_time;
+    session->send_time = 0.0;
+    session->last_timestamp = 0;
+    session->pause = 0;
+    session->started = 1;
+    session->MinimumReached = 0;
+    session->MaximumReached = 0;
+    session->PreviousCount = 0;
+    session->rtcp_stats[i_client].RR_received = 0;
+    session->rtcp_stats[i_client].SR_received = 0;
+
+    //Preload some frames in feng
+    for (i=0; i < srv->srvconf.buffered_frames; i++) {
+        event_buffer_low(session, r_selected_track(session->track_selector));
+    }
+
+    g_mutex_unlock(session->lock);
+}
+
+/**
+ * @brief Resume a paused session
+ *
+ * @param session The session to start
+ * @param play_args The argument used to set the session start up.
+ *
+ * @todo The args argument should probably be replaced by a single
+ *       start_time argument.
+ * @todo This function should probably take care of starting eventual
+ *       libev events when the scheduler is replaced.
+ * @todo @ref rtp_session_start and @ref rtp_session_resume should be
+ *       factored in together. Also check @ref rtp_session_play in
+ *       rtsp_method_play.c .
+ */
+void rtp_session_resume(RTP_session *session, rtp_play_args *args) {
+    feng *srv = session->srv;
+    int i;
+
+    g_mutex_lock(session->lock);
+
+    session->start_time = args->start_time;
+    session->send_time = 0.0;
+    session->pause=0;
+
+    //Preload some frames in feng
+    for (i=0; i < srv->srvconf.buffered_frames; i++) {
+        event_buffer_low(session, r_selected_track(session->track_selector));
+    }
+
+    g_mutex_unlock(session->lock);
+}
+
+/**
  * @brief Check pre-requisite for sending data for a session
  *
  * @param session The RTP session to check for pre-requisites

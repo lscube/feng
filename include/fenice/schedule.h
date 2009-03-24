@@ -30,21 +30,10 @@
 #include "network/rtp.h"
 #include <fenice/prefs.h>
 
-typedef struct play_args {
-    struct tm playback_time;
-    short playback_time_valid;
-    short seek_time_valid;
-    double start_time;   //! time in seconds
-    double begin_time;
-    double end_time;
-} play_args;
-
 void schedule_init(feng *srv);
 
 int schedule_add(RTP_session * rtp_session);
-int schedule_start(RTP_session * rtp_session, play_args * args);
 int schedule_remove(RTP_session * rtp_session, void *unused);
-int schedule_resume(RTP_session * rtp_session, play_args * args);
 RTP_session *schedule_find_multicast(feng *srv, const char *mrl);
 
 #endif // FN_SCHEDULE_H

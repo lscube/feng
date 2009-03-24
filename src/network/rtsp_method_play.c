@@ -39,12 +39,12 @@
 #include <glib.h>
 
 extern gboolean ragel_parse_range_header(const char *header,
-                                         play_args *args);
+                                         rtp_play_args *args);
 
 static void rtp_session_seek(gpointer value, gpointer user_data)
 {
   RTP_session *rtp_sess = (RTP_session *)value;
-  play_args *args = (play_args *)user_data;
+  rtp_play_args *args = (rtp_play_args *)user_data;
 
   if (rtp_sess->started && !rtp_sess->pause) {
     /* Pause scheduler while reiniting RTP session */
@@ -61,7 +61,7 @@ static void rtp_session_seek(gpointer value, gpointer user_data)
  * @param args the range to play
  * @return RTSP_Ok or RTSP_InvalidRange
  */
-static RTSP_ResponseCode do_seek(RTSP_session * rtsp_sess, play_args * args)
+static RTSP_ResponseCode do_seek(RTSP_session * rtsp_sess, rtp_play_args * args)
 {
     Resource *r = rtsp_sess->resource;
 
@@ -83,20 +83,16 @@ static RTSP_ResponseCode do_seek(RTSP_session * rtsp_sess, play_args * args)
 static void rtp_session_play(gpointer value, gpointer user_data)
 {
     RTP_session *rtp_sess = (RTP_session *) value;
-    play_args *args = (play_args *) user_data;
+    rtp_play_args *args = (rtp_play_args *) user_data;
 
     // Start playing all the presentation
     if (!rtp_sess->started) {
-        // Start new -- assume no allocation error
         rtp_sess->last_packet_send_time = time(NULL);
-        schedule_start(rtp_sess, args);
+        rtp_session_start(rtp_sess, args);
     }
-    else {
-        // Resume existing
-        if (rtp_sess->pause) {
-            rtp_sess->last_packet_send_time = time(NULL);
-            schedule_resume(rtp_sess, args);
-        }
+    else if ( rtp_sess->pause ) {
+        rtp_sess->last_packet_send_time = time(NULL);
+        rtp_session_resume(rtp_sess, args);
     }
 }
 
@@ -107,7 +103,7 @@ static void rtp_session_play(gpointer value, gpointer user_data)
  * @param args the range to play
  * @return RTSP_Ok or RTSP_InternalServerError
  */
-static RTSP_ResponseCode do_play(Url *url, RTSP_session * rtsp_sess, play_args * args)
+static RTSP_ResponseCode do_play(Url *url, RTSP_session * rtsp_sess, rtp_play_args * args)
 {
     RTSP_ResponseCode error = RTSP_Ok;
     char *q = NULL;
@@ -175,7 +171,7 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
  * @return ERR_NOERROR
  */
 static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
-                            RTSP_session * rtsp_session, play_args * args)
+                            RTSP_session * rtsp_session, rtp_play_args * args)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
     rtp_session_send_play_reply_pair pair = {
@@ -226,7 +222,7 @@ void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
 {
     Url url;
     RTSP_session *rtsp_sess = rtsp->session;
-    play_args args = {
+    rtp_play_args args = {
         .playback_time = { 0, },
         .playback_time_valid = false,
         .seek_time_valid = false,
