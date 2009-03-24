@@ -57,7 +57,7 @@ void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd);
  * @todo And even if we don't rewrite it entirely it should at least
  *       use strrchr, most likely.
  */
-static char *split_resource_path(const char *path)
+static char *split_resource_path(char *path)
 {
     char *p, *ret = NULL;
 
@@ -235,7 +235,7 @@ extern gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
  * @retval NULL Unable to find the requested resource or track; the
  *              client should receive a “Not found” (404) response.
  */
-static Track *select_requested_track(const char *path, RTSP_session * rtsp_s, char * trackname)
+static Track *select_requested_track(const char *path, RTSP_session * rtsp_s, const char *trackname)
 {
     feng *srv = rtsp_s->srv;
 
