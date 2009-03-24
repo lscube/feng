@@ -84,7 +84,7 @@ interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
     g_string_append_len(str, (const gchar *)buffer, n);
 
     g_async_queue_push(rtsp->out_queue, str);
-    ev_io_start(rtsp->srv->loop, rtsp->ev_io_write);
+    ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
 }
 
 #ifdef HAVE_LIBSCTP
@@ -189,8 +189,8 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 #endif    // HAVE_LIBSCTP
         }
     }
-    
-    if (n > 0) 
+
+    if (n > 0)
         return;
     else if (n == 0)
         fnc_log(FNC_LOG_INFO, "RTSP connection closed by client.");
@@ -202,23 +202,20 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 
 static void add_client(feng *srv, Sock *client_sock)
 {
-    ev_io *ev_io_client = g_new(ev_io, 1);
     RTSP_buffer *rtsp = rtsp_client_new(srv, client_sock);
 
     srv->clients = g_slist_prepend(srv->clients, rtsp);
     client_sock->data = srv;
 
-    ev_io_client->data = rtsp;
-    g_ptr_array_add(io_watchers, ev_io_client);
-    ev_io_init(ev_io_client, rtsp_read_cb, Sock_fd(client_sock), EV_READ);
-    ev_io_start(srv->loop, ev_io_client);
-    rtsp->ev_io_read = ev_io_client;
+    rtsp->ev_io_read.data = rtsp;
+    g_ptr_array_add(io_watchers, &rtsp->ev_io_read);
+    ev_io_init(&rtsp->ev_io_read, rtsp_read_cb, Sock_fd(client_sock), EV_READ);
+    ev_io_start(srv->loop, &rtsp->ev_io_read);
 
-    ev_io_client = g_new(ev_io, 1);
-    ev_io_client->data = rtsp;
-    ev_io_init(ev_io_client, rtsp_write_cb, Sock_fd(client_sock), EV_WRITE);
-    rtsp->ev_io = g_slist_prepend(rtsp->ev_io, ev_io_client);
-    rtsp->ev_io_write = ev_io_client; // to be started/stopped when necessary
+    /* to be started/stopped when necessary */
+    rtsp->ev_io_write.data = rtsp;
+    ev_io_init(&rtsp->ev_io_write, rtsp_write_cb, Sock_fd(client_sock), EV_WRITE);
+    rtsp->ev_io = g_slist_prepend(rtsp->ev_io, &rtsp->ev_io_write);
     fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
             Sock_fd(client_sock));
 

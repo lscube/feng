@@ -65,7 +65,7 @@ typedef struct RTP_transport {
     Sock *rtcp_sock;
     struct sockaddr_storage last_stg;
     int rtp_ch, rtcp_ch;
-    ev_io * rtcp_watcher;
+    ev_io rtcp_watcher;
 } RTP_transport;
 
 typedef struct RTCP_stats {
