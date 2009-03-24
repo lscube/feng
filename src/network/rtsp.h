@@ -77,6 +77,7 @@ typedef enum {
 typedef struct RTSP_interleaved {
     Sock *local;
     int channel;
+    ev_io ev_io_listen;
 } RTSP_interleaved;
 
 typedef struct RTSP_session {
@@ -96,15 +97,10 @@ typedef struct RTSP_buffer {
     char in_buffer[RTSP_BUFFERSIZE];
     size_t in_size;
     GAsyncQueue *out_queue;
-    GSList *interleaved;
+    RTSP_interleaved interleaved[2];
 
     ev_io ev_io_read;
     ev_io ev_io_write;
-
-    /**
-     * Pair of listener instances used for interleaved and SCTP.
-     */
-    ev_io ev_io_listen[2];
 
     // Run-Time
     RTSP_session *session;

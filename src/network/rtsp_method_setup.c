@@ -39,7 +39,7 @@
 #include <fenice/schedule.h>
 
 // XXX move in an header
-void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd);
+void eventloop_local_callbacks(RTSP_buffer *rtsp);
 
 /**
  * Splits the path of a requested media finding the trackname and the removing
@@ -115,7 +115,6 @@ static gboolean
 interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
                       int rtp_ch, int rtcp_ch)
 {
-    RTSP_interleaved *intlvd;
     Sock *sock_pair[2];
 
     // RTP local sockpair
@@ -125,31 +124,26 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
         return false;
     }
 
-    intlvd = g_new0(RTSP_interleaved, 2);
-
     transport->rtp_sock = sock_pair[0];
-    intlvd[0].local = sock_pair[1];
+    rtsp->interleaved[0].local = sock_pair[1];
 
     // RTCP local sockpair
     if ( Sock_socketpair(sock_pair) < 0) {
         fnc_log(FNC_LOG_ERR,
                 "Cannot create AF_LOCAL socketpair for rtcp\n");
         Sock_close(transport->rtp_sock);
-        Sock_close(intlvd[0].local);
-        g_free(intlvd);
+        Sock_close(rtsp->interleaved[0].local);
         return false;
     }
 
     transport->rtcp_sock = sock_pair[0];
-    intlvd[1].local = sock_pair[1];
+    rtsp->interleaved[1].local = sock_pair[1];
 
     // copy stream number in rtp_transport struct
-    transport->rtp_ch = intlvd[0].channel = rtp_ch;
-    transport->rtcp_ch = intlvd[1].channel = rtcp_ch;
+    transport->rtp_ch = rtsp->interleaved[0].channel = rtp_ch;
+    transport->rtcp_ch = rtsp->interleaved[1].channel = rtcp_ch;
 
-    rtsp->interleaved = g_slist_prepend(rtsp->interleaved, intlvd);
-
-    eventloop_local_callbacks(rtsp, intlvd);
+    eventloop_local_callbacks(rtsp);
 
     return true;
 }

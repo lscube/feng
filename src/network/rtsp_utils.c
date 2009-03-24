@@ -109,15 +109,6 @@ RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
     return new;
 }
 
-static void interleaved_close_fds(gpointer element, gpointer user_data)
-{
-    RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
-
-    Sock_close(intlvd[0].local);
-    Sock_close(intlvd[1].local);
-    g_free(intlvd);
-}
-
 /**
  * Destroy and free resources for an RTSP client structure
  *
@@ -128,6 +119,7 @@ static void interleaved_close_fds(gpointer element, gpointer user_data)
 void rtsp_client_destroy(RTSP_buffer *rtsp)
 {
   GString *outbuf = NULL;
+  int i;
 
   if (rtsp->session != NULL) {
 
@@ -142,13 +134,10 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
     rtsp->session = NULL;
   }
 
-  // close local fds
-  g_slist_foreach(rtsp->interleaved, interleaved_close_fds, NULL);
-
-  g_slist_free(rtsp->interleaved);
-
-  ev_io_stop(rtsp->srv->loop, &rtsp->ev_io_listen[0]);
-  ev_io_stop(rtsp->srv->loop, &rtsp->ev_io_listen[1]);
+  for(i = 0; i < 2; i++) {
+      Sock_close(rtsp->interleaved[i].local);
+      ev_io_stop(rtsp->srv->loop, &rtsp->interleaved[i].ev_io_listen);
+  }
 
   // Remove the output queue
   g_async_queue_lock(rtsp->out_queue);

@@ -117,7 +117,7 @@ find_sctp_interleaved(gconstpointer value, gconstpointer target)
 
 #endif
 
-void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd)
+void eventloop_local_callbacks(RTSP_buffer *rtsp)
 {
     void (*cb)(EV_P_ struct ev_io *w, int revents);
     int i;
@@ -138,11 +138,11 @@ void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd)
 
     /* Let's hope this is unrolled by GCC, shall we? */
     for (i = 0; i < 2; i++) {
-        Sock *sock = intlvd[i].local;
+        Sock *sock = rtsp->interleaved[i].local;
         sock->data = rtsp;
-        rtsp->ev_io_listen[i].data = intlvd + i;
-        ev_io_init(&rtsp->ev_io_listen[i], cb, Sock_fd(sock), EV_READ);
-        ev_io_start(rtsp->srv->loop, &rtsp->ev_io_listen[i]);
+        rtsp->interleaved[i].ev_io_listen.data = &rtsp->interleaved[i];
+        ev_io_init(&rtsp->interleaved[i].ev_io_listen, cb, Sock_fd(sock), EV_READ);
+        ev_io_start(rtsp->srv->loop, &rtsp->interleaved[i].ev_io_listen);
     }
 }
 
