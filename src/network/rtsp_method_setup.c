@@ -31,8 +31,9 @@
 
 #include <liberis/headers.h>
 
+#include "rtp.h"
 #include "rtsp.h"
-#include "network/rtsp_method_setup.h"
+#include "rtsp_method_setup.h"
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <fenice/schedule.h>
@@ -44,29 +45,32 @@ void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd);
  * Splits the path of a requested media finding the trackname and the removing
  * it from the object
  *
- * @param path The Url's path from which to split the object
- * @param trackname where to save the trackname removed from the object
- * @param trackname_max_len maximum length of the trackname buffer
+ * @param path The string to use as path to spli
  *
- * @retval true No error
- * @retval false No trackname provided
+ * @return A pointer to the start of the trackname part of the path.
+ *
+ * @note This function changes the content of the string, by replacing
+ *       the last '/' character with a '\0' (NULL) character.
+ *
+ * @todo This works by pure chance basically since having a '=' in a
+ *       resource name would make this fail _badly_.
+ * @todo And even if we don't rewrite it entirely it should at least
+ *       use strrchr, most likely.
  */
-static gboolean split_resource_path(const char *path, char * trackname, size_t trackname_max_len)
+static char *split_resource_path(const char *path)
 {
-    char * p;
+    char *p, *ret;
 
     //if '=' is not present then a file has not been specified
-    if (!(p = strchr(path, '=')))
-        return false;
-    else {
+    if ((p = strchr(path, '='))) {
         // SETUP resource!trackname
-        g_strlcpy(trackname, p + 1, trackname_max_len);
+        ret = p+1;
         // XXX Not really nice...
         while (path != p) if (*--p == '/') break;
         *p = '\0';
     }
 
-    return true;
+    return ret;
 }
 
 /**
@@ -239,7 +243,7 @@ static Track *select_requested_track(const char *path, RTSP_session * rtsp_s, ch
     if (!rtsp_s->resource) {
         if (!(rtsp_s->resource = mt_resource_open(srv, path))) {
             fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", path);
-            return RTSP_NotFound;
+            return NULL;
         }
     }
 
@@ -324,8 +328,9 @@ static void send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session
  */
 void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
 {
-    Url url;
-    char trackname[255];
+    char *path = NULL;
+    const char *trackname = NULL;
+    const char *transport_header = NULL;
     RTP_transport transport;
 
     Track *req_track = NULL;
@@ -334,14 +339,10 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     RTP_session *rtp_s = NULL;
     RTSP_session *rtsp_s;
 
-    RTSP_ResponseCode error;
-
-    char *transport_header = NULL;
-
     // init
     memset(&transport, 0, sizeof(transport));
 
-    if ( !rtsp_request_get_url(req, &url) )
+    if ( !(path = rtsp_request_get_path(req)) )
         return;
 
     /* Parse the transport header through Ragel-generated state machine.
@@ -357,7 +358,7 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
          !ragel_parse_transport_header(rtsp, &transport, transport_header) ) {
 
         rtsp_quick_response(req, RTSP_UnsupportedTransport);
-        return;
+        goto end;
     }
 
     /* Check if we still have space for new connections, if not, respond with a
@@ -366,13 +367,13 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
         /* @todo should redirect, but we haven't the code to do that just
          * yet. */
         rtsp_quick_response(req, RTSP_NotEnoughBandwidth);
-        return;
+        goto end;
     }
 
     // Split resource!trackname
-    if ( !split_resource_path(url.path, trackname, sizeof(trackname)) ) {
+    if ( (trackname = split_resource_path(path)) == NULL ) {
         rtsp_quick_response(req, RTSP_InternalServerError);
-        return;
+        goto end;
     }
 
     /* Here we'd be adding a new session if we supported more than one */
@@ -380,16 +381,20 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
         rtsp_s = rtsp_session_new(rtsp);
 
     // Get the selected track
-    if ( (req_track = select_requested_track(url.path, rtsp_s, trackname)) == NULL ) {
+    if ( (req_track = select_requested_track(path, rtsp_s, trackname)) == NULL ) {
         rtsp_quick_response(req, RTSP_NotFound);
-        return;
+        goto end;
     }
 
-    rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, url.path, req_track);
+    rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, path, req_track);
 
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
     g_mutex_unlock(rtp_s->lock);
 
     if ( rtsp_s->cur_state == RTSP_SERVER_INIT )
         rtsp_s->cur_state = RTSP_SERVER_READY;
+
+ end:
+    free(path);
+    return;
 }
