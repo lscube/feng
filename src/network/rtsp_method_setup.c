@@ -242,9 +242,7 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
     RTP_session *rtp_s = g_new0(RTP_session, 1);
 
     rtp_s->lock = g_mutex_new();
-
-    // Setup the RTP session
-    rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
+    g_mutex_lock(rtp_s->lock);
 
     rtp_s->pause = 1;
     rtp_s->sd_filename = g_strdup(url->path);
@@ -267,6 +265,9 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
     rtp_s->transport.rtcp_watcher->data = rtp_s;
     ev_io_init(rtp_s->transport.rtcp_watcher, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
     ev_io_start(srv->loop, rtp_s->transport.rtcp_watcher);
+
+    // Setup the RTP session
+    rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
 
     return rtp_s;
 }
@@ -453,6 +454,7 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     rtp_s = setup_rtp_session(&url, rtsp, rtsp_s, &transport, track_sel);
 
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
+    g_mutex_unlock(rtp_s->lock);
 
     if ( rtsp_s->cur_state == RTSP_SERVER_INIT )
         rtsp_s->cur_state = RTSP_SERVER_READY;
