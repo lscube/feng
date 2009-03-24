@@ -133,13 +133,12 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 
     if (n > 0) {
         if (m == 0) {
-            if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
+            if (rtsp->input->len + n > RTSP_BUFFERSIZE) {
                 fnc_log(FNC_LOG_DEBUG,
                     "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
                 n = -1;
             }
-            memcpy(&(rtsp->in_buffer[rtsp->in_size]), buffer, n);
-            rtsp->in_size += n;
+            g_byte_array_append(rtsp->input, buffer, n);
             if (RTSP_handler(rtsp) == ERR_GENERIC) {
                 fnc_log(FNC_LOG_ERR, "Invalid input message.\n");
                 n = -1;

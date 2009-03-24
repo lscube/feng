@@ -102,9 +102,10 @@ RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
 {
     RTSP_buffer *new = g_slice_new0(RTSP_buffer);
 
-    new->srv = srv;
     new->sock = client_sock;
+    new->input = g_byte_array_new();
     new->out_queue = g_async_queue_new();
+    new->srv = srv;
 
     return new;
 }
@@ -145,6 +146,8 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
     g_string_free(outbuf, TRUE);
   g_async_queue_unlock(rtsp->out_queue);
   g_async_queue_unref(rtsp->out_queue);
+
+  g_byte_array_free(rtsp->input, true);
 
   g_slice_free(RTSP_buffer, rtsp);
 }

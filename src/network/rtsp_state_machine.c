@@ -174,13 +174,13 @@ static gboolean check_session(RTSP_Request *req)
 static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
 {
     RTSP_Request *req = g_slice_new0(RTSP_Request);
-    size_t message_length = strlen(rtsp->in_buffer),
+    size_t message_length = strlen(rtsp->input->data),
         request_line_length, headers_length;
 
     req->client = rtsp;
     req->method_id = RTSP_ID_ERROR;
 
-    request_line_length = ragel_parse_request_line(rtsp->in_buffer, message_length, req);
+    request_line_length = ragel_parse_request_line(rtsp->input->data, message_length, req);
 
     /* If the parser returns zero, it means that the request line
      * couldn't be parsed. Since a request line that cannot be parsed
@@ -212,7 +212,7 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
      * want this done here is that once we know the protocol is the
      * one we support, all the requests need to be responded with the
      * right rules, which include repeating of some headers. */
-    headers_length = eris_parse_headers(rtsp->in_buffer + request_line_length,
+    headers_length = eris_parse_headers(rtsp->input->data + request_line_length,
                                         message_length - request_line_length,
                                         &req->headers);
 
@@ -250,21 +250,6 @@ static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
     return NULL;
 }
 
-/**
- * Removes the last message from the rtsp buffer
- * @param rtsp the buffer from which to discard the message
- * @param len Length of data to remove.
- */
-static void RTSP_discard_msg(RTSP_buffer * rtsp, int len)
-{
-    if (len > 0 && rtsp->in_size >= len) {    /* discard the message from the in_buffer. */
-        memmove(rtsp->in_buffer, rtsp->in_buffer + len,
-            rtsp->in_size - len);
-        rtsp->in_size -= len;
-        memset(rtsp->in_buffer + rtsp->in_size, 0, len);
-    }
-}
-
 typedef enum {
     RTSP_not_full,
     RTSP_method_rcvd,
@@ -280,9 +265,9 @@ typedef enum {
  *
  * @retval -1 Error happened.
  * @retval RTSP_not_full A full RTSP message is *not* present in
- *         rtsp->in_buffer yet.
+ *         RTSP_buffer::input yet.
  * @retval RTSP_method_rcvd A full RTSP message is present in
- *         rtsp->in_buffer and is ready to be handled.
+ *         RTSP_buffer::input and is ready to be handled.
  * @retval RTSP_interlvd_rcvd A complete RTP/RTCP interleaved packet
  *         is present.
  */
@@ -300,10 +285,10 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_buffer * rtsp,
     char *p;
 
     // is there an interleaved RTP/RTCP packet?
-    if (rtsp->in_buffer[0] == '$') {
-        uint16_t *intlvd_len = (uint16_t *) & rtsp->in_buffer[2];
+    if (rtsp->input->data[0] == '$') {
+        uint16_t *intlvd_len = (uint16_t *) &rtsp->input->data[2];
 
-        if ((bl = ntohs(*intlvd_len)) + 4 <= rtsp->in_size) {
+        if ((bl = ntohs(*intlvd_len)) + 4 <= rtsp->input->len) {
             if (hdr_len)
                 *hdr_len = 4;
             if (body_len)
@@ -317,24 +302,24 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_buffer * rtsp,
 
     }
     eomh = mb = ml = bl = 0;
-    while (ml <= rtsp->in_size) {
+    while (ml <= rtsp->input->len) {
         /* look for eol. */
-        control = strcspn(rtsp->in_buffer + ml, RTSP_EL);
+        control = strcspn(rtsp->input->data + ml, RTSP_EL);
         if (control > 0) {
             ml += control;
         } else {
             return ERR_GENERIC;
         }
 
-        if (ml > rtsp->in_size)
+        if (ml > rtsp->input->len)
             return RTSP_not_full;    /* haven't received the entire message yet. */
         /*
          * work through terminaters and then check if it is the
          * end of the message header.
          */
         tc = ws = 0;
-        while (!eomh && ((ml + tc + ws) < rtsp->in_size)) {
-            c = rtsp->in_buffer[ml + tc + ws];
+        while (!eomh && ((ml + tc + ws) < rtsp->input->len)) {
+            c = rtsp->input->data[ml + tc + ws];
             if (c == '\r' || c == '\n')
                 tc++;
             else if ((tc < 3) && ((c == ' ') || (c == '\t')))
@@ -351,17 +336,17 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_buffer * rtsp,
          * protocol compatible message elements.
          */
         if ((tc > 2) || ((tc == 2) &&
-                         (rtsp->in_buffer[ml] == rtsp->in_buffer[ml + 1])))
+                         (rtsp->input->data[ml] == rtsp->input->data[ml + 1])))
             eomh = 1;    /* must be the end of the message header */
         ml += tc + ws;
 
         if (eomh) {
             ml += bl;    /* add in the message body length, if collected earlier */
-            if (ml <= rtsp->in_size)
+            if (ml <= rtsp->input->len)
                 break;    /* all done finding the end of the message. */
         }
 
-        if (ml >= rtsp->in_size)
+        if (ml >= rtsp->input->len)
             return RTSP_not_full;    /* haven't received the entire message yet. */
 
         /*
@@ -369,19 +354,19 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_buffer * rtsp,
          * a message body.
          */
         if (!mb) {    /* content length token not yet encountered. */
-            if (!g_ascii_strncasecmp (rtsp->in_buffer + ml, HDR_CONTENTLENGTH,
+            if (!g_ascii_strncasecmp (rtsp->input->data + ml, HDR_CONTENTLENGTH,
                  RTSP_BUFFERSIZE - ml)) {
                 mb = 1;    /* there is a message body. */
                 ml += strlen(HDR_CONTENTLENGTH);
-                while (ml < rtsp->in_size) {
-                    c = rtsp->in_buffer[ml];
+                while (ml < rtsp->input->len) {
+                    c = rtsp->input->data[ml];
                     if ((c == ':') || (c == ' '))
                         ml++;
                     else
                         break;
                 }
 
-                if (sscanf(rtsp->in_buffer + ml, "%d", &bl) != 1) {
+                if (sscanf(rtsp->input->data + ml, "%d", &bl) != 1) {
                     fnc_log(FNC_LOG_ERR,
                         "RTSP_full_msg_rcvd(): Invalid ContentLength.");
                     return ERR_GENERIC;
@@ -400,7 +385,7 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_buffer * rtsp,
          * legal when the null byte is not included in the Content-Length count.
          * However, it is tolerated here.
          */
-        for (tc = rtsp->in_size - ml, p = &(rtsp->in_buffer[ml]);
+        for (tc = rtsp->input->len - ml, p = &(rtsp->input->data[ml]);
              tc && (*p == '\0'); p++, bl++, tc--);
         *body_len = bl;
     }
@@ -453,7 +438,7 @@ static void rtsp_handle_interleaved(RTSP_buffer *rtsp, int blen, int hlen)
 {
     RTSP_interleaved *channel;
 
-    int m = rtsp->in_buffer[1];
+    int m = rtsp->input->data[1];
     GSList *channel_it = g_slist_find_custom(rtsp->interleaved,
                                              GINT_TO_POINTER(m),
                                              find_tcp_interleaved);
@@ -470,7 +455,7 @@ static void rtsp_handle_interleaved(RTSP_buffer *rtsp, int blen, int hlen)
     fnc_log(FNC_LOG_DEBUG,
             "Interleaved RTCP packet arrived for channel %d (len: %d).\n",
             m, blen);
-    Sock_write(channel->local, &rtsp->in_buffer[hlen],
+    Sock_write(channel->local, &rtsp->input->data[hlen],
                blen, NULL, MSG_DONTWAIT | MSG_EOR);
 }
 
@@ -482,7 +467,7 @@ static void rtsp_handle_interleaved(RTSP_buffer *rtsp, int blen, int hlen)
  */
 int RTSP_handler(RTSP_buffer * rtsp)
 {
-    while (rtsp->in_size) {
+    while (rtsp->input->len) {
         int hlen, blen;
         rtsp_rcvd_status full_msg = RTSP_full_msg_rcvd(rtsp, &hlen, &blen);
 
@@ -497,7 +482,7 @@ int RTSP_handler(RTSP_buffer * rtsp)
             return full_msg;
         }
 
-        RTSP_discard_msg(rtsp, hlen + blen);
+        g_byte_array_remove_range(rtsp->input, 0, hlen+blen);
     }
     return ERR_NOERROR;
 }

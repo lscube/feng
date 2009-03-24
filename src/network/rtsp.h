@@ -93,6 +93,14 @@ typedef struct RTSP_session {
 typedef struct RTSP_buffer {
     Sock *sock;
 
+    /**
+     * @brief Input buffer
+     *
+     * This is the input buffer as read straight from the sock socket;
+     * GByteArray allows for automatic sizing of the array.
+     */
+    GByteArray *input;
+
     GAsyncQueue *out_queue;
 
     // Run-Time
@@ -102,9 +110,6 @@ typedef struct RTSP_buffer {
     //Events
     ev_async *ev_sig_disconnect;
     ev_timer *ev_timeout;
-
-    /** Used amount of in_buffer array */
-    size_t in_size;
 
     ev_io ev_io_read;
     ev_io ev_io_write;
@@ -116,13 +121,6 @@ typedef struct RTSP_buffer {
      * ports emulator for interleaved connections.
      */
     RTSP_interleaved interleaved[2];
-
-    /**
-     * @brief Buffer for the RTSP data in input
-     *
-     * @todo This should _really_ be removed.
-     */
-    char in_buffer[RTSP_BUFFERSIZE];
 } RTSP_buffer;
 
 /**
