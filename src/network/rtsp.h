@@ -92,14 +92,8 @@ typedef struct RTSP_session {
 
 typedef struct RTSP_buffer {
     Sock *sock;
-    /** Used amount of in_buffer array */
-    size_t in_size;
 
     GAsyncQueue *out_queue;
-    RTSP_interleaved interleaved[2];
-
-    ev_io ev_io_read;
-    ev_io ev_io_write;
 
     // Run-Time
     RTSP_session *session;
@@ -108,6 +102,20 @@ typedef struct RTSP_buffer {
     //Events
     ev_async *ev_sig_disconnect;
     ev_timer *ev_timeout;
+
+    /** Used amount of in_buffer array */
+    size_t in_size;
+
+    ev_io ev_io_read;
+    ev_io ev_io_write;
+
+    /**
+     * @brief Pair of interleaved data
+     *
+     * This array contains the pair of, respectively, rtp and rtcp
+     * ports emulator for interleaved connections.
+     */
+    RTSP_interleaved interleaved[2];
 
     /**
      * @brief Buffer for the RTSP data in input
