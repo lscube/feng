@@ -164,6 +164,17 @@ struct BufferQueue_Producer {
      * @note gint is used to be able to use g_atomic_int_get function.
      */
     gint stopped;
+
+    /**
+     * @brief Reset Queue flag
+     *
+     * When this value is set to 1, the producer will change the queue
+     * at the first time a new buffer is supposed to be added. This
+     * allows for an atomic switch of the queue.
+     *
+     * @note gint is used to be able to use g_atomic_int_get function.
+     */
+    gint reset_queue;
 };
 
 /**
@@ -225,12 +236,13 @@ BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function) {
     BufferQueue_Producer *ret = g_slice_new(BufferQueue_Producer);
 
     ret->lock = g_mutex_new();
-    ret->queue = g_queue_new();
+    ret->queue = NULL;
     ret->free_function = free_function;
     ret->consumers = 0;
     ret->new_data = g_cond_new();
     ret->last_consumer = g_cond_new();
     ret->stopped = 0;
+    ret->reset_queue = 1;
 
     return ret;
 }
@@ -270,11 +282,13 @@ static void bq_producer_free_internal(BufferQueue_Producer *producer) {
     g_mutex_unlock(producer->lock);
     g_mutex_free(producer->lock);
 
-    /* Destroy elements and the queue */
-    g_queue_foreach(producer->queue,
-                    bq_element_free_internal,
-                    producer->free_function);
-    g_queue_free(producer->queue);
+    if ( producer->queue ) {
+        /* Destroy elements and the queue */
+        g_queue_foreach(producer->queue,
+                        bq_element_free_internal,
+                        producer->free_function);
+        g_queue_free(producer->queue);
+    }
 
     g_slice_free(BufferQueue_Producer, producer);
 }
@@ -307,6 +321,23 @@ void bq_producer_stop(BufferQueue_Producer *producer) {
 }
 
 /**
+ * @brief Resets a producer's queue
+ *
+ * @param producer Producer to reset the queue of
+ *
+ * @note This function will require exclusive access to the producer,
+ *       and will thus lock its mutex.
+ *
+ * This function will change the currently-used queue for the
+ * producer, so that a discontinuity will allow the consumers not to
+ * worry about getting old buffers.
+ */
+void bq_producer_reset_queue(BufferQueue_Producer *producer) {
+    g_assert(!producer->stopped);
+    g_atomic_int_set(&producer->reset_queue, 1);
+}
+
+/**
  * @brief Adds a new buffer to the producer
  *
  * @param producer The producer to add the element to
@@ -334,12 +365,21 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
-    g_queue_push_tail(producer->queue, elem);
+    /* Check whether we have to reset the queue */
+    if ( producer->reset_queue ) {
+        /** @todo we should make sure that the old queue is reaped
+         * before continuing, but we can do that later */
 
-    g_cond_broadcast(producer->new_data);
+        producer->queue = g_queue_new();
+        producer->reset_queue = 0;
+    }
+
+    g_queue_push_tail(producer->queue, elem);
 
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
+
+    g_cond_broadcast(producer->new_data);
 }
 
 /**
@@ -458,7 +498,7 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
     if ( --producer->consumers == 0 ) {
         if ( producer->stopped ) {
             g_cond_signal(producer->last_consumer);
-        } else {
+        } else if ( producer->queue ) {
             /* Decrement consumers and check, if we're the latest consumer, we
              * want to clean the queue up entirely!
              */
@@ -514,12 +554,15 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     gpointer ret = NULL;
     GList *expected_next = NULL;
 
-    /* Ensure we have the exclusive access */
-    g_mutex_lock(producer->lock);
-
     while ( expected_next == NULL ) {
-        if ( producer->stopped )
-            goto end;
+        if ( g_atomic_int_get(&producer->stopped) )
+            return NULL;
+
+        /* Ensure we have the exclusive access */
+        g_mutex_lock(producer->lock);
+
+        while ( g_atomic_int_get(&producer->reset_queue) )
+            g_cond_wait(producer->new_data, producer->lock);
 
         if ( consumer->last_queue != producer->queue ) {
             /* If the last used queue does not correspond to the current
@@ -529,18 +572,10 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
              * This also hits at the first request, since the last_queue
              * will be NULL.
              */
-            consumer->last_queue = producer->queue;
             expected_next = producer->queue->head;
-        } else {
+        } else if ( consumer->current_element_pointer ) {
             expected_next = consumer->current_element_pointer->next;
         }
-
-        /* If at this point we don't have an element to read, it means
-         * that the producer is either stopped or it hasn't data to
-         * work with, so let's wait.
-         */
-        if ( expected_next == NULL )
-            g_cond_wait(producer->new_data, producer->lock);
     }
 
     /* If there is any element at all saved, we take care of marking
@@ -551,13 +586,13 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     bq_consumer_elem_unref(consumer);
 
     /* Now we have a new "next" element and we can set it properly */
+    consumer->last_queue = producer->queue;
     consumer->current_element_pointer = expected_next;
     consumer->current_element_object = (BufferQueue_Element *)consumer->current_element_pointer->data;
 
     /* Get the payload of the element */
     ret = consumer->current_element_object->payload;
 
- end:
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
 
