@@ -344,6 +344,22 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     if ( !rtsp_request_get_url(req, &url) )
         return;
 
+    /* Parse the transport header through Ragel-generated state machine.
+     *
+     * The full documentation of the Transport header syntax is available in
+     * RFC2326, Section 12.39.
+     *
+     * If the parsing returns false, we should respond to the client with a
+     * status 461 "Unsupported Transport"
+     */
+    transport_header = g_hash_table_lookup(req->headers, "Transport");
+    if ( transport_header == NULL ||
+         !ragel_parse_transport_header(rtsp, &transport, transport_header) ) {
+
+        rtsp_quick_response(req, RTSP_UnsupportedTransport);
+        return;
+    }
+
     /* Check if we still have space for new connections, if not, respond with a
      * 453 status (Not Enough Bandwidth), so that client knows what happened. */
     if (rtsp->srv->num_conn > rtsp->srv->srvconf.max_conns) {
@@ -366,22 +382,6 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     // Get the selected track
     if ( (req_track = select_requested_track(url.path, rtsp_s, trackname)) == NULL ) {
         rtsp_quick_response(req, RTSP_NotFound);
-        return;
-    }
-
-    /* Parse the transport header through Ragel-generated state machine.
-     *
-     * The full documentation of the Transport header syntax is available in
-     * RFC2326, Section 12.39.
-     *
-     * If the parsing returns false, we should respond to the client with a
-     * status 461 "Unsupported Transport"
-     */
-    transport_header = g_hash_table_lookup(req->headers, "Transport");
-    if ( transport_header == NULL ||
-         !ragel_parse_transport_header(rtsp, &transport, transport_header) ) {
-
-        rtsp_quick_response(req, RTSP_UnsupportedTransport);
         return;
     }
 
