@@ -174,6 +174,48 @@ void rtp_session_gslist_resume(GSList *sessions_list, double start_time) {
 }
 
 /**
+ * @brief Let a RTP session seek
+ *
+ * @param session_gen The session to seek for
+ * @param seek_time_gen Pointer to the time (in seconds) inside the
+ *                      stream to seek to.
+ *
+ * This function is used by the PLAY method of RTSP to seek further
+ * in the stream.
+ *
+ * The use of a pointer to double rather than a double itself is to
+ * make it possible to pass this function straight to foreach
+ * functions from glib.
+ *
+ * @internal This function should only be called from g_slist_foreach.
+ */
+static void rtp_session_seek(gpointer *session_gen, gpointer *seek_time_gen) {
+    RTP_session *session = (RTP_session*)session_gen;
+    double *seek_time = (double*)seek_time_gen;
+
+    g_mutex_lock(session->lock);
+
+    session->seek_time = *seek_time;
+    session->start_seq = 1 + session->seq_no;
+    session->start_rtptime = g_random_int();
+
+    g_mutex_unlock(session->lock);
+}
+
+/**
+ * @brief Seek into a GSList of RTP_sessions
+ *
+ * @param sessions_list GSList of sessions to resume
+ * @param seek_time Time to seek the sessions to
+ *
+ * This is a convenience function that wraps around rtp_session_seek
+ * and calls it with a foreach loop on the list
+ */
+void rtp_session_gslist_seek(GSList *sessions_list, double seek_time) {
+    g_slist_foreach(sessions_list, rtp_session_seek, &seek_time);
+}
+
+/**
  * @brief Check pre-requisite for sending data for a session
  *
  * @param session The RTP session to check for pre-requisites
