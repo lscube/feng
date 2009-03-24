@@ -267,16 +267,18 @@ gboolean rtsp_request_get_url(RTSP_Request *req, Url *url) {
  */
 char *rtsp_request_get_path(RTSP_Request *req) {
     Url url;
+    char *ret;
 
     if ( !rtsp_request_get_url(req, &url) )
         return NULL;
 
+    ret = url.path;
     /* Set the path to NULL so that it won't be deleted by
      * Url_destroy). */
     url.path = NULL;
     Url_destroy(&url);
 
-    return url.path;
+    return ret;
 }
 
 /**
