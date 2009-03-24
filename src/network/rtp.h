@@ -35,6 +35,10 @@
 
 #include "bufferqueue.h"
 
+struct Track;
+struct RTSP_buffer;
+struct RTSP_session;
+
 #define RTP_DEFAULT_PORT 5004
 #define RTCP_BUFFERSIZE    1024
 #define BUFFERED_FRAMES_DEFAULT 16
@@ -165,6 +169,9 @@ int RTP_release_port_pair(feng *srv, port_pair * pair);
  * @{
  */
 
+RTP_session *rtp_session_new(struct RTSP_buffer *, struct RTSP_session *,
+                             RTP_transport *, const char *,
+                             struct Track *);
 void rtp_session_free(RTP_session *);
 
 typedef struct play_args {
