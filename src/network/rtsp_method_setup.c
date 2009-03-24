@@ -34,12 +34,10 @@
 #include "rtp.h"
 #include "rtsp.h"
 #include "rtsp_method_setup.h"
+#include "eventloop.h"
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <fenice/schedule.h>
-
-// XXX move in an header
-void eventloop_local_callbacks(RTSP_buffer *rtsp);
 
 /**
  * Splits the path of a requested media finding the trackname and the removing
@@ -111,6 +109,36 @@ static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp,
  * interleaved transport
  */
 
+static void setup_interleaved_callbacks(RTSP_buffer *rtsp)
+{
+    void (*cb)(EV_P_ struct ev_io *w, int revents);
+    int i;
+
+    switch (Sock_type(rtsp->sock)) {
+        case TCP:
+            cb = interleaved_read_tcp_cb;
+        break;
+#ifdef HAVE_LIBSCTP
+        case SCTP:
+            cb = interleaved_read_sctp_cb;
+        break;
+        default:
+            // Shouldn't be possible
+        return;
+#endif
+    }
+
+    /* Let's hope this is unrolled by GCC, shall we? */
+    for (i = 0; i < 2; i++) {
+        Sock *sock = rtsp->interleaved[i].local;
+        sock->data = rtsp;
+        rtsp->interleaved[i].ev_io_listen.data = &rtsp->interleaved[i];
+        ev_io_init(&rtsp->interleaved[i].ev_io_listen, cb, Sock_fd(sock), EV_READ);
+        ev_io_start(rtsp->srv->loop, &rtsp->interleaved[i].ev_io_listen);
+    }
+}
+
+
 static gboolean
 interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
                       int rtp_ch, int rtcp_ch)
@@ -143,7 +171,7 @@ interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
     transport->rtp_ch = rtsp->interleaved[0].channel = rtp_ch;
     transport->rtcp_ch = rtsp->interleaved[1].channel = rtcp_ch;
 
-    eventloop_local_callbacks(rtsp);
+    setup_interleaved_callbacks(rtsp);
 
     return true;
 }

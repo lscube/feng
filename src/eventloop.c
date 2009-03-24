@@ -59,8 +59,7 @@ int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
     return n;
 }
 
-static void
-interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
+void interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     GString *str;
     uint16_t ne_n;
@@ -88,8 +87,7 @@ interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
 }
 
 #ifdef HAVE_LIBSCTP
-static void
-interleaved_read_sctp_cb(struct ev_loop *loop, ev_io *w, int revents)
+void interleaved_read_sctp_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     char buffer[RTSP_BUFFERSIZE + 1];
     RTSP_interleaved *intlvd = w->data;
@@ -116,35 +114,6 @@ find_sctp_interleaved(gconstpointer value, gconstpointer target)
 }
 
 #endif
-
-void eventloop_local_callbacks(RTSP_buffer *rtsp)
-{
-    void (*cb)(EV_P_ struct ev_io *w, int revents);
-    int i;
-
-    switch (Sock_type(rtsp->sock)) {
-        case TCP:
-            cb = interleaved_read_tcp_cb;
-        break;
-#ifdef HAVE_LIBSCTP
-        case SCTP:
-            cb = interleaved_read_sctp_cb;
-        break;
-        default:
-            // Shouldn't be possible
-        return;
-#endif
-    }
-
-    /* Let's hope this is unrolled by GCC, shall we? */
-    for (i = 0; i < 2; i++) {
-        Sock *sock = rtsp->interleaved[i].local;
-        sock->data = rtsp;
-        rtsp->interleaved[i].ev_io_listen.data = &rtsp->interleaved[i];
-        ev_io_init(&rtsp->interleaved[i].ev_io_listen, cb, Sock_fd(sock), EV_READ);
-        ev_io_start(rtsp->srv->loop, &rtsp->interleaved[i].ev_io_listen);
-    }
-}
 
 static void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
