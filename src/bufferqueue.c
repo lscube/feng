@@ -131,16 +131,6 @@ struct BufferQueue_Producer {
     gulong consumers;
 
     /**
-     * @brief New data available for blocked threads
-     *
-     * This condition is signalled once new data is available from the
-     * producer.
-     *
-     * @see bq_consuper_put
-     */
-    GCond *new_data;
-
-    /**
      * @brief Last consumer exited condition
      *
      * This condition is signalled once the last consumer of a stopped
@@ -239,7 +229,6 @@ BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function) {
     ret->queue = NULL;
     ret->free_function = free_function;
     ret->consumers = 0;
-    ret->new_data = g_cond_new();
     ret->last_consumer = g_cond_new();
     ret->stopped = 0;
     ret->reset_queue = 1;
@@ -378,8 +367,6 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
 
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
-
-    g_cond_broadcast(producer->new_data);
 }
 
 /**
@@ -542,6 +529,11 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
  *
  * @return A pointer to the payload of the newly selected element
  *
+ * @retval NULL No element can be read; this might be due to no data
+ *              present in the producer, or if the producer was
+ *              stopped. To know which one of the two conditions
+ *              happened, @ref bq_consumer_stopped should be called.
+ *
  * @note This function will require exclusive access to the producer,
  *       and will thus lock its mutex.
  *
@@ -554,29 +546,27 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     gpointer ret = NULL;
     GList *expected_next = NULL;
 
-    while ( expected_next == NULL ) {
-        if ( g_atomic_int_get(&producer->stopped) )
-            return NULL;
+    if ( g_atomic_int_get(&producer->stopped) )
+        return NULL;
 
-        /* Ensure we have the exclusive access */
-        g_mutex_lock(producer->lock);
+    /* Ensure we have the exclusive access */
+    g_mutex_lock(producer->lock);
 
-        while ( g_atomic_int_get(&producer->reset_queue) )
-            g_cond_wait(producer->new_data, producer->lock);
-
-        if ( consumer->last_queue != producer->queue ) {
-            /* If the last used queue does not correspond to the current
-             * producer's queue, we have to take the head of the new
-             * queue.
-             *
-             * This also hits at the first request, since the last_queue
-             * will be NULL.
-             */
-            expected_next = producer->queue->head;
-        } else if ( consumer->current_element_pointer ) {
-            expected_next = consumer->current_element_pointer->next;
-        }
+    if ( consumer->last_queue != producer->queue ) {
+        /* If the last used queue does not correspond to the current
+         * producer's queue, we have to take the head of the new
+         * queue.
+         *
+         * This also hits at the first request, since the last_queue
+         * will be NULL.
+         */
+        expected_next = producer->queue->head;
+    } else if ( consumer->current_element_pointer ) {
+        expected_next = consumer->current_element_pointer->next;
     }
+
+    if ( expected_next == NULL )
+        goto end;
 
     /* If there is any element at all saved, we take care of marking
      * it as seen. We don't have to check if it's non-NULL since the
@@ -593,10 +583,30 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     /* Get the payload of the element */
     ret = consumer->current_element_object->payload;
 
+ end:
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
 
     return ret;
+}
+
+/**
+ * @brief Checks if a consumer is tied to a stopped producer
+ *
+ * @param consumer The consumer object to get the data from
+ *
+ * @retval true The producer is currently stopped and no further
+ *              elements will be returned by @ref bq_consumer_get.
+ * @retval false The producer is still active, if @ref bq_consumer_get
+ *               returned NULL, it's because there is currently no
+ *               data available.
+ *
+ * @note This function does not lock @ref BufferQueue_Producer::lock,
+ *       instead it uses atomic operations to get the @ref
+ *       BufferQueue_Producer::stopped value.
+ */
+gboolean bq_consumer_stopped(BufferQueue_Consumer *consumer) {
+    return !!g_atomic_int_get(&consumer->producer->stopped);
 }
 
 /**@}*/
