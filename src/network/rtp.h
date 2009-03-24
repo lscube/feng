@@ -177,8 +177,8 @@ typedef struct play_args {
     double end_time;
 } rtp_play_args;
 
-void rtp_session_start(RTP_session *, rtp_play_args *);
-void rtp_session_resume(RTP_session *, rtp_play_args *);
+void rtp_session_start(RTP_session *, double);
+void rtp_session_resume(RTP_session *, double);
 
 void rtp_session_handle_sending(RTP_session *session);
 

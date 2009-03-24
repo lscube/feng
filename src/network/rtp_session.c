@@ -116,17 +116,16 @@ void rtp_session_free(RTP_session * session)
  * @brief Set up and mark a session as started
  *
  * @param session The session to start
- * @param play_args The argument used to set the session start up.
+ * @param start_time The time (in seconds) inside the stream to start
+ *                   from.
  *
- * @todo The args argument should probably be replaced by a single
- *       start_time argument.
  * @todo This function should probably take care of starting eventual
  *       libev events when the scheduler is replaced.
  * @todo @ref rtp_session_start and @ref rtp_session_resume should be
  *       factored in together. Also check @ref rtp_session_play in
  *       rtsp_method_play.c .
  */
-void rtp_session_start(RTP_session *session, rtp_play_args *args) {
+void rtp_session_start(RTP_session *session, double start_time) {
     feng *srv = session->srv;
     Track *tr;
     int i;
@@ -137,7 +136,7 @@ void rtp_session_start(RTP_session *session, rtp_play_args *args) {
 
     session->consumer = bq_consumer_new(tr->producer);
 
-    session->start_time = args->start_time;
+    session->start_time = start_time;
     session->send_time = 0.0;
     session->last_timestamp = 0;
     session->pause = 0;
@@ -160,23 +159,22 @@ void rtp_session_start(RTP_session *session, rtp_play_args *args) {
  * @brief Resume a paused session
  *
  * @param session The session to start
- * @param play_args The argument used to set the session start up.
+ * @param start_time The time (in seconds) inside the stream to start
+ *                   from.
  *
- * @todo The args argument should probably be replaced by a single
- *       start_time argument.
  * @todo This function should probably take care of starting eventual
  *       libev events when the scheduler is replaced.
  * @todo @ref rtp_session_start and @ref rtp_session_resume should be
  *       factored in together. Also check @ref rtp_session_play in
  *       rtsp_method_play.c .
  */
-void rtp_session_resume(RTP_session *session, rtp_play_args *args) {
+void rtp_session_resume(RTP_session *session, double start_time) {
     feng *srv = session->srv;
     int i;
 
     g_mutex_lock(session->lock);
 
-    session->start_time = args->start_time;
+    session->start_time = start_time;
     session->send_time = 0.0;
     session->pause=0;
 
