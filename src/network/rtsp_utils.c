@@ -269,8 +269,6 @@ void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer)
 {
     g_async_queue_push(rtsp->out_queue, buffer);
     ev_io_start(rtsp->srv->loop, rtsp->ev_io_write);
-
-    return ERR_NOERROR;
 }
 
 /**
