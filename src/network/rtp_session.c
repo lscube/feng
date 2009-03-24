@@ -113,6 +113,34 @@ void rtp_session_free(RTP_session * session)
 }
 
 /**
+ * @brief Internal version to resume an RTP session
+ *
+ * @param session Session to resume
+ * @param start_time The time (in seconds) inside the stream to start
+ *                   from.
+ *
+ * @internal This function does not lock @ref RTP_session::lock, so
+ * should only be used by functions that already take care of that.
+ *
+ * @see rtp_session_start
+ * @ses rtp_session_resume
+ */
+static void rtp_session_resume_internal(RTP_session *session,
+                                        double start_time) {
+    feng *srv = session->srv;
+    int i;
+
+    session->start_time = start_time;
+    session->send_time = 0.0;
+    session->pause = 0;
+    session->started = 1;
+
+    /* Prefetch frames */
+    for (i=0; i < srv->srvconf.buffered_frames; i++)
+        event_buffer_low(session, r_selected_track(session->track_selector));
+}
+
+/**
  * @brief Set up and mark a session as started
  *
  * @param session The session to start
@@ -126,9 +154,7 @@ void rtp_session_free(RTP_session * session)
  *       rtsp_method_play.c .
  */
 void rtp_session_start(RTP_session *session, double start_time) {
-    feng *srv = session->srv;
     Track *tr;
-    int i;
 
     g_mutex_lock(session->lock);
 
@@ -137,20 +163,14 @@ void rtp_session_start(RTP_session *session, double start_time) {
     session->consumer = bq_consumer_new(tr->producer);
 
     session->start_time = start_time;
-    session->send_time = 0.0;
     session->last_timestamp = 0;
-    session->pause = 0;
-    session->started = 1;
     session->MinimumReached = 0;
     session->MaximumReached = 0;
     session->PreviousCount = 0;
     session->rtcp_stats[i_client].RR_received = 0;
     session->rtcp_stats[i_client].SR_received = 0;
 
-    //Preload some frames in feng
-    for (i=0; i < srv->srvconf.buffered_frames; i++) {
-        event_buffer_low(session, r_selected_track(session->track_selector));
-    }
+    rtp_session_resume_internal(session, start_time);
 
     g_mutex_unlock(session->lock);
 }
@@ -169,19 +189,9 @@ void rtp_session_start(RTP_session *session, double start_time) {
  *       rtsp_method_play.c .
  */
 void rtp_session_resume(RTP_session *session, double start_time) {
-    feng *srv = session->srv;
-    int i;
-
     g_mutex_lock(session->lock);
 
-    session->start_time = start_time;
-    session->send_time = 0.0;
-    session->pause=0;
-
-    //Preload some frames in feng
-    for (i=0; i < srv->srvconf.buffered_frames; i++) {
-        event_buffer_low(session, r_selected_track(session->track_selector));
-    }
+    rtp_session_resume_internal(session, start_time);
 
     g_mutex_unlock(session->lock);
 }
