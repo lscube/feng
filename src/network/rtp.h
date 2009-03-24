@@ -100,7 +100,6 @@ typedef struct RTP_session {
     uint32_t start_rtptime;
 
     uint8_t pause;
-    uint8_t started;
 
     uint32_t ssrc;
 

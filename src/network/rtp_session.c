@@ -56,10 +56,14 @@ RTP_session *rtp_session_new(RTSP_buffer * rtsp, RTSP_session *rtsp_s,
                              Selector * track_sel) {
     feng *srv = rtsp->srv;
     RTP_session *rtp_s = g_slice_new0(RTP_session);
+    Track *tr = NULL;
 
     rtp_s->lock = g_mutex_new();
     g_mutex_lock(rtp_s->lock);
 
+    /* Make sure we start paused since we have to wait for parameters
+     * given by @ref rtp_session_resume.
+     */
     rtp_s->pause = 1;
     rtp_s->sd_filename = g_strdup(path);
 
@@ -67,7 +71,12 @@ RTP_session *rtp_session_new(RTSP_buffer * rtsp, RTSP_session *rtsp_s,
     rtp_s->start_rtptime = g_random_int();
     rtp_s->start_seq = g_random_int_range(0, G_MAXUINT16);
     rtp_s->seq_no = rtp_s->start_seq - 1;
+
+    /* Set up the track selector and get a consumer for the track */
     rtp_s->track_selector = track_sel;
+    tr = r_selected_track(rtp_s->track_selector);
+    rtp_s->consumer = bq_consumer_new(tr->producer);
+
     rtp_s->srv = srv;
     rtp_s->sched_id = schedule_add(rtp_s);
     rtp_s->ssrc = g_random_int();
@@ -123,8 +132,8 @@ void rtp_session_free(RTP_session * session)
  *       libev events when the scheduler is replaced.
  *
  * This function is used by the PLAY method of RTSP to start or resume
- * a session. For RTSP, there is no big difference between a paused or
- * non-started session, so we just need one function.
+ * a session; since a newly-created session starts as paused, this is
+ * the only method available.
  */
 void rtp_session_resume(RTP_session *session, double start_time) {
     feng *srv = session->srv;
@@ -134,30 +143,11 @@ void rtp_session_resume(RTP_session *session, double start_time) {
 
     /* We want to make sure that the session is at least in pause,
      * otherwise something is funky */
-    g_assert(session->pause || !session->started);
-
-    /* If we haven't started the session yet we have some setup to
-     * do. */
-    /** @todo This should probably be moved mostly in @ref
-     * rtp_session_new */
-    if ( ! session->started ) {
-        Track *tr =r_selected_track(session->track_selector);
-
-        session->consumer = bq_consumer_new(tr->producer);
-
-        session->start_time = start_time;
-        session->last_timestamp = 0;
-        session->MinimumReached = 0;
-        session->MaximumReached = 0;
-        session->PreviousCount = 0;
-        session->rtcp_stats[i_client].RR_received = 0;
-        session->rtcp_stats[i_client].SR_received = 0;
-    }
+    g_assert(session->pause);
 
     session->start_time = start_time;
     session->send_time = 0.0;
     session->pause = 0;
-    session->started = 1;
     session->last_packet_send_time = time(NULL);
 
     /* Prefetch frames */
@@ -198,9 +188,8 @@ static gboolean rtp_session_send_prereq(RTP_session *session) {
 
     tr = r_selected_track(session->track_selector);
 
-    if ( !session->started ||
-         ( session->pause &&
-           tr->properties->media_source != MS_live )
+    if ( session->pause &&
+         tr->properties->media_source != MS_live
          ) {
         g_mutex_unlock(session->lock);
         return false;
