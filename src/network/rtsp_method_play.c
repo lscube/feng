@@ -46,13 +46,13 @@ static void rtp_session_seek(gpointer value, gpointer user_data)
   RTP_session *rtp_sess = (RTP_session *)value;
   rtp_play_args *args = (rtp_play_args *)user_data;
 
-  if (rtp_sess->started && !rtp_sess->pause) {
-    /* Pause scheduler while reiniting RTP session */
-    rtp_sess->pause = 1;
-  }
+  g_mutex_lock(rtp_sess->lock);
+
   rtp_sess->start_seq = 1 + rtp_sess->seq_no;
   rtp_sess->start_rtptime = g_random_int();
   rtp_sess->seek_time = args->begin_time;
+
+  g_mutex_unlock(rtp_sess->lock);
 }
 
 /**
