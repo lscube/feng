@@ -51,7 +51,7 @@ typedef struct mt_excl_ins {
     struct mt_excl_ins *next;
 } mt_excl_ins;
 
-gpointer *mediathread(gpointer *arg);
+void mt_init();
 
 void mt_shutdown();
 int event_buffer_low(void *sender, Track *src);

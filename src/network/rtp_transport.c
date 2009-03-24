@@ -92,6 +92,13 @@ typedef struct {
  * @retval ERR_ALLOC Buffer allocation errors
  * @retval ERR_EOF End of stream
  * @return Same error values as event_buffer_low on event emission problems
+ *
+ * @note The caller function has to hold the @ref RTP_session::lock
+ *       mutex before calling this.
+ *
+ * @todo Some of the checks done here are also done in @ref
+ *       schedule_do in the inner loop, they should be moved here
+ *       entirely.
  */
 int RTP_send_packet(RTP_session * session)
 {
@@ -235,6 +242,8 @@ static int RTP_transport_close(RTP_session * session) {
 void RTP_session_destroy(RTP_session * session)
 {
     RTP_transport_close(session);
+
+    g_mutex_free(session->lock);
 
     // Close track selector
     r_close_tracks(session->track_selector);

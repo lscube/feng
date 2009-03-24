@@ -104,6 +104,14 @@ typedef struct RTP_session {
 
     uint32_t ssrc;
 
+    /**
+     * @brief Access lock to the session
+     *
+     * This is an important mutex that precludes uncoordinated access
+     * to a single session from multiple threads.
+     */
+    GMutex *lock;
+
     gchar *sd_filename; //!< resource name, including path from avroot
 
     //mediathread - TODO: find better placement

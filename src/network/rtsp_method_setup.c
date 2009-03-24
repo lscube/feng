@@ -232,14 +232,17 @@ static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
  * @param transport the transport to use
  * @param track_sel the track for which to generate the session
  * @return The newly generated RTP session
+ *
+ * @todo This should probably be partially moved inside
+ *       rtp_transport.c as an allocation function for RTP_session.
  */
 static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, Selector * track_sel)
 {
     feng *srv = rtsp->srv;
     RTP_session *rtp_s = g_new0(RTP_session, 1);
 
-    // Setup the RTP session
-    rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
+    rtp_s->lock = g_mutex_new();
+    g_mutex_lock(rtp_s->lock);
 
     rtp_s->pause = 1;
     rtp_s->sd_filename = g_strdup(url->path);
@@ -254,10 +257,17 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
     rtp_s->ssrc = g_random_int();
     rtp_s->rtsp_buffer = rtsp;
 
+#ifdef HAVE_METADATA
+	rtp_s->metadata = rtsp_s->resource->metadata;
+#endif
+
     rtp_s->transport.rtcp_watcher = g_new(ev_io, 1);
     rtp_s->transport.rtcp_watcher->data = rtp_s;
     ev_io_init(rtp_s->transport.rtcp_watcher, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
     ev_io_start(srv->loop, rtp_s->transport.rtcp_watcher);
+
+    // Setup the RTP session
+    rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
 
     return rtp_s;
 }
@@ -312,7 +322,7 @@ static void send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
     GString *transport = g_string_new("");
 
-    if (!rtp_s || !rtp_s->transport.rtp_sock)
+    if (!rtp_s->transport.rtp_sock)
         return;
     switch (Sock_type(rtp_s->transport.rtp_sock)) {
     case UDP:
@@ -443,17 +453,8 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
     // Setup the RTP session
     rtp_s = setup_rtp_session(&url, rtsp, rtsp_s, &transport, track_sel);
 
-    // Metadata Begin
-#ifdef HAVE_METADATA
-    // Setup Metadata Session
-    if (rtsp_s->resource->metadata!=NULL)
-	rtp_s->metadata = rtsp_s->resource->metadata;
-    else
-	rtp_s->metadata = NULL;
-#endif
-    // Metadata End
-
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
+    g_mutex_unlock(rtp_s->lock);
 
     if ( rtsp_s->cur_state == RTSP_SERVER_INIT )
         rtsp_s->cur_state = RTSP_SERVER_READY;

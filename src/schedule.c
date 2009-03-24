@@ -35,54 +35,71 @@
 #include <metadata/cpd.h>
 #endif
 
-typedef struct schedule_list {
-    GMutex *mux;
-    int valid;
-    RTP_session *rtp_session;
-    RTP_play_action play_action;
-} schedule_list;
+static struct RTP_session **sessions;
+static GStaticRWLock sessions_lock = G_STATIC_RW_LOCK_INIT;
 
-static struct schedule_list *sched;
+/** @brief Locks the @ref sessions_lock R/W lock in write mode */
+static void schedule_writer_lock() {
+    g_static_rw_lock_writer_lock(&sessions_lock);
+}
+
+/** @brief Release the @ref sessions_lock R/W lock in write mode */
+static void schedule_writer_unlock() {
+    g_static_rw_lock_writer_unlock(&sessions_lock);
+}
+
+/** @brief Locks the @ref sessions_lock R/W lock in read mode */
+static void schedule_reader_lock() {
+    g_static_rw_lock_reader_lock(&sessions_lock);
+}
+
+/** @brief Release the @ref sessions_lock R/W lock in read mode */
+static void schedule_reader_unlock() {
+    g_static_rw_lock_reader_unlock(&sessions_lock);
+}
 
 int schedule_add(RTP_session *rtp_session)
 {
-    int i;
+    int i, ret = ERR_GENERIC;
     feng *srv = rtp_session->srv;
+
+    schedule_writer_lock();
     for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
-    g_mutex_lock(sched[i].mux);
-        if (!sched[i].valid) {
-            sched[i].valid = 1;
-            sched[i].rtp_session = rtp_session;
-            sched[i].play_action = RTP_send_packet;
-            g_mutex_unlock(sched[i].mux);
-            return i;
+        if ( sessions[i] == NULL ) {
+            sessions[i] = rtp_session;
+            ret = i;
+            break;
         }
-    g_mutex_unlock(sched[i].mux);
     }
-    // if (i >= MAX_SESSION) {
-    return ERR_GENERIC;
-    // }
+    schedule_writer_unlock();
+
+    return ret;
 }
 
 int schedule_remove(RTP_session *session, void *unused)
 {
     int id = session->sched_id;
-    g_mutex_lock(sched[id].mux);
-    sched[id].valid = 0;
-    if (sched[id].rtp_session) {
-        RTP_session_destroy(sched[id].rtp_session);
-        sched[id].rtp_session = NULL;
-        fnc_log(FNC_LOG_INFO, "rtp session closed\n");
-    }
-    g_mutex_unlock(sched[id].mux);
+
+    schedule_writer_lock();
+
+    RTP_session_destroy(session);
+    fnc_log(FNC_LOG_INFO, "rtp session closed\n");
+    sessions[id] = NULL;
+
+    schedule_writer_unlock();
+
     return ERR_NOERROR;
 }
 
 int schedule_start(RTP_session *session, play_args *args)
 {
     feng *srv = session->srv;
-    Track *tr = r_selected_track(session->track_selector);
+    Track *tr;
     int i;
+
+    g_mutex_lock(session->lock);
+
+    tr = r_selected_track(session->track_selector);
 
     session->consumer = bq_consumer_new(tr->producer);
 
@@ -102,23 +119,29 @@ int schedule_start(RTP_session *session, play_args *args)
         event_buffer_low(session, r_selected_track(session->track_selector));
     }
 
+    g_mutex_unlock(session->lock);
+
     return ERR_NOERROR;
 }
 
 static void schedule_stop(RTP_session *session)
 {
+    g_mutex_lock(session->lock);
     RTCP_send_packet(session,SR);
     RTCP_send_packet(session,BYE);
     RTCP_flush(session);
 
     session->pause=1;
     session->started=0;
+    g_mutex_unlock(session->lock);
 }
 
 int schedule_resume(RTP_session *session, play_args *args)
 {
     feng *srv = session->srv;
     int i;
+
+    g_mutex_lock(session->lock);
 
     session->start_time = args->start_time;
     session->send_time = 0.0;
@@ -129,96 +152,96 @@ int schedule_resume(RTP_session *session, play_args *args)
         event_buffer_low(session, r_selected_track(session->track_selector));
     }
 
+    g_mutex_unlock(session->lock);
+
     return ERR_NOERROR;
 }
-
-#define SCHEDULER_TIMING 16000 //16ms. Sleep time suggested by Intel
 
 static void *schedule_do(void *arg)
 {
     int i = 0, res;
-    unsigned utime = SCHEDULER_TIMING;
     double now;
     feng *srv = arg;
 
     do {
-        // Fake waiting. Break the while loop to achieve fair kernel (re)scheduling and fair CPU loads.
-        usleep(utime);
-        utime = SCHEDULER_TIMING;
+        g_thread_yield();
+
+        schedule_reader_lock();
         for (i = 0; i < ONE_FORK_MAX_CONNECTION; ++i) {
-            g_mutex_lock(sched[i].mux);
-            if (sched[i].valid && sched[i].rtp_session->started) {
-                RTP_session * session = sched[i].rtp_session;
-                Track *tr = r_selected_track(session->track_selector);
-                if (!session->pause || tr->properties->media_source == MS_live) {
-                    now = gettimeinseconds(NULL);
+            RTP_session *session = sessions[i];
+            Track *tr = NULL;
 
-                    // METADATA begin
+            /* If the session does not exist, or if it's locked
+             * already by another thread working on it, skip it and
+             * try it again at the next iteration.
+             *
+             * Otherwise get the lock and proceed to the next set of
+             * checks.
+             */
+            if ( session == NULL ||
+                 !g_mutex_trylock(session->lock) )
+                continue;
+
+            tr = r_selected_track(session->track_selector);
+
+            /* If the session is not started yet, or if it's paused
+             * (and it's not a live session ), unlock the mutex and
+             * proceed to the next session in the list.
+             */
+            if ( !session->started ||
+                 ( session->pause &&
+                   tr->properties->media_source != MS_live )
+                 )
+                goto next_session;
+
+            now = gettimeinseconds(NULL);
+
 #ifdef HAVE_METADATA
-                    if (session->metadata)
-                    cpd_send(session, now);
-                    // METADATI end
+            if (session->metadata)
+                cpd_send(session, now);
 #endif
 
-                    res = ERR_NOERROR;
-                    while (res == ERR_NOERROR && now >= session->start_time && now >= session->start_time
-                        + session->send_time) {
-#if 1
-                        //TODO DSC will be implemented WAY later.
-#else
-                        stream_change(session,
-                        change_check(session));
-#endif
-                        // Send an RTP packet
-                        res = sched[i].play_action(session);
-                        switch (res) {
-                            case ERR_NOERROR: // All fine
-                                break;
-                            case ERR_EOF:
-                                if (tr->properties->media_source != MS_live) {
-                                    fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
-                                    RTCP_send_packet(session, SR);
-                                    RTCP_send_packet(session, BYE);
-                                    RTCP_flush(session);
-                                }
-                                break;
-                            case ERR_ALLOC:
-                                fnc_log(FNC_LOG_WARN, "[SCH] Cannot allocate memory");
-                                schedule_stop(session);
-                                break;
-                            default:
-                                fnc_log(FNC_LOG_WARN, "[SCH] Packet Lost");
-                                break;
-                        }
+            res = ERR_NOERROR;
+            while (res == ERR_NOERROR && now >= session->start_time && now >= session->start_time
+                   + session->send_time) {
+                /** @todo DSC will be implemented WAY later. */
 
-                        RTCP_handler(session);
+                /* Send the RTP packet and check its returned status */
+                switch ((res = RTP_send_packet(session))) {
+                case ERR_NOERROR: // All fine
+                    break;
+                case ERR_EOF:
+                    if (tr->properties->media_source != MS_live) {
+                        fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
+                        RTCP_send_packet(session, SR);
+                        RTCP_send_packet(session, BYE);
+                        RTCP_flush(session);
                     }
-                    if (res == ERR_NOERROR) {
-                        int next_send_time = fabs((session->start_time + session->send_time) - now) * 1000000;
-                        utime = min(utime, next_send_time);
-                    }
+                    break;
+                case ERR_ALLOC:
+                    fnc_log(FNC_LOG_WARN, "[SCH] Cannot allocate memory");
+                    schedule_stop(session);
+                    break;
+                default:
+                    fnc_log(FNC_LOG_WARN, "[SCH] Packet Lost");
+                    break;
                 }
-            }
-            g_mutex_unlock(sched[i].mux);
-        }
-    }
-    while (!srv->stop_schedule);
 
-    srv->stop_schedule = 0;
+                RTCP_handler(session);
+            }
+        next_session:
+            g_mutex_unlock(session->lock);
+        }
+
+        schedule_reader_unlock();
+    } while (!g_atomic_int_get(&srv->stop_schedule));
+
     return ERR_NOERROR;
 }
 
 void schedule_init(feng *srv)
 {
-    int i;
-    sched = g_new(schedule_list, ONE_FORK_MAX_CONNECTION);
-
-    for (i=0; i<ONE_FORK_MAX_CONNECTION; ++i) {
-        sched[i].rtp_session = NULL;
-        sched[i].play_action = NULL;
-        sched[i].valid = 0;
-	sched[i].mux = g_mutex_new();
-    }
+    sessions = g_new0(RTP_session *, ONE_FORK_MAX_CONNECTION);
 
     g_thread_create(schedule_do, srv, FALSE, NULL);
 }
@@ -234,22 +257,23 @@ void schedule_init(feng *srv)
  */
 RTP_session *schedule_find_multicast(feng *srv, const char *mrl)
 {
-  int i;
-  RTP_session *rtp_s = NULL;
+    int i;
+    RTP_session *rtp_s = NULL;
 
-  for (i = 0; !rtp_s && i<ONE_FORK_MAX_CONNECTION; ++i) {
-    g_mutex_lock(sched[i].mux);
-    if (sched[i].valid) {
-      Track *tr2 = r_selected_track(
-				    sched[i].rtp_session->track_selector);
-      if (!strncmp(tr2->info->mrl, mrl, 255)) {
-	rtp_s = sched[i].rtp_session;
-	fnc_log(FNC_LOG_DEBUG,
-		"Found multicast instance.");
-      }
+    schedule_reader_lock();
+    for (i = 0; !rtp_s && i<ONE_FORK_MAX_CONNECTION; ++i) {
+        if (sessions[i] == NULL)
+            continue;
+
+        Track *tr2 = r_selected_track(sessions[i]->track_selector);
+        if (!strncmp(tr2->info->mrl, mrl, 255)) {
+            rtp_s = sessions[i];
+            fnc_log(FNC_LOG_DEBUG,
+                    "Found multicast instance.");
+            break;
+        }
     }
-    g_mutex_unlock(sched[i].mux);
-  }
+    schedule_reader_unlock();
 
-  return rtp_s;
+    return rtp_s;
 }
