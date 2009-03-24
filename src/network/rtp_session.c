@@ -30,11 +30,38 @@
 #include "fenice/fnc_log.h"
 
 /**
- * @todo Luca has to document this! :P
+ * Read data from the socket linked to the session and put it inside
+ * the session buffer. Libev callback
+ * @param loop eventloop
+ * @param w callback data
+ * @param revents event type
+ * @todo extend it
  */
+
 static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
-    RTP_recv(w->data);
+    RTP_session * session = w->data;
+    Sock *s = session->transport.rtcp_sock;
+    struct sockaddr *sa_p = (struct sockaddr *)&(session->transport.last_stg);
+
+    if (!s)
+        return -1;
+
+    switch (s->socktype) {
+        case UDP:
+            session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
+                     sizeof(session->rtcp_inbuffer),
+                     sa_p, 0);
+            break;
+        case LOCAL:
+            session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
+                     sizeof(session->rtcp_inbuffer),
+                     NULL, 0);
+            break;
+        default:
+            session->rtcp_insize = -1;
+            break;
+    }
 }
 
 /**

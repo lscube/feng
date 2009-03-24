@@ -140,40 +140,6 @@ int rtp_packet_send(RTP_session *session, MParserBuffer *buffer) {
     return frames;
 }
 
-
-
-/**
- * Receives data from the socket linked to the session and puts it inside the session buffer
- * @param session the RTP session for which to receive the packets
- * @return size of te received data or -1 on error or invalid protocol request
- */
-ssize_t RTP_recv(RTP_session * session)
-{
-    Sock *s = session->transport.rtcp_sock;
-    struct sockaddr *sa_p = (struct sockaddr *)&(session->transport.last_stg);
-
-    if (!s)
-        return -1;
-
-    switch (s->socktype) {
-        case UDP:
-            session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
-                     sizeof(session->rtcp_inbuffer),
-                     sa_p, 0);
-            break;
-        case LOCAL:
-            session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
-                     sizeof(session->rtcp_inbuffer),
-                     NULL, 0);
-            break;
-        default:
-            session->rtcp_insize = -1;
-            break;
-    }
-
-    return session->rtcp_insize;
-}
-
 /**
  * Closes a transport linked to a session
  * @param session the RTP session for which to close the transport

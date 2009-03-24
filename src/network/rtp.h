@@ -202,7 +202,6 @@ void rtp_session_handle_sending(RTP_session *session);
 
 int RTP_transport_close(RTP_session *);
 int rtp_packet_send(RTP_session *, MParserBuffer *);
-ssize_t RTP_recv(RTP_session *);
 
 /**
  * @}
