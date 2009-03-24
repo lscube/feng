@@ -254,6 +254,10 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
     rtp_s->ssrc = g_random_int();
     rtp_s->rtsp_buffer = rtsp;
 
+#ifdef HAVE_METADATA
+	rtp_s->metadata = rtsp_s->resource->metadata;
+#endif
+
     rtp_s->transport.rtcp_watcher = g_new(ev_io, 1);
     rtp_s->transport.rtcp_watcher->data = rtp_s;
     ev_io_init(rtp_s->transport.rtcp_watcher, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
@@ -442,16 +446,6 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
 
     // Setup the RTP session
     rtp_s = setup_rtp_session(&url, rtsp, rtsp_s, &transport, track_sel);
-
-    // Metadata Begin
-#ifdef HAVE_METADATA
-    // Setup Metadata Session
-    if (rtsp_s->resource->metadata!=NULL)
-	rtp_s->metadata = rtsp_s->resource->metadata;
-    else
-	rtp_s->metadata = NULL;
-#endif
-    // Metadata End
 
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
 
