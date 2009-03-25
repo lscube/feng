@@ -45,7 +45,7 @@ feng_LDADD = \
 		mediathread/libmediath.a \
 		conf/liblight.a
 
-INCLUDES = -I$(feniceincludedir) -I..
+INCLUDES = -I$(feniceincludedir) -I.. -I$(srcdir)/nework
 
 if HAVE_RAGEL
 
