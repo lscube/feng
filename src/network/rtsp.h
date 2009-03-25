@@ -49,7 +49,6 @@
 
 #ifdef HAVE_LIBSCTP
 #include <netinet/sctp.h>
-#define MAX_SCTP_STREAMS 15
 #endif
 
 #define RTSP_RESERVED 4096
@@ -72,9 +71,6 @@ typedef enum {
 } RTSP_Server_State;
 
 #define RTSP_EL "\r\n"
-#define RTSP_RTP_AVP "RTP/AVP"
-
-typedef struct RTSP_interleaved RTSP_interleaved;
 
 typedef struct RTSP_session {
     char *session_id;
