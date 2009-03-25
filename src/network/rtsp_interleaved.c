@@ -26,6 +26,15 @@
 #include "fenice/fnc_log.h"
 
 /**
+ * @defgroup rtsp_interleaved Interleaved RTSP
+ * @ingroup RTSP
+ *
+ * @brief Interface to deal with interleaved RTSP.
+ *
+ * @{
+ */
+
+/**
  * @brief Represents a single channel of an interleaved RTSP
  *        connection.
  */
@@ -46,6 +55,10 @@ typedef struct {
     ev_io ev_io_listen;
 } RTSP_interleaved_channel;
 
+/**
+ * @brief Represent a full RTP connection inside an interleaved RTSP
+ *        connection.
+ */
 struct RTSP_interleaved {
     RTSP_interleaved_channel rtp;
     RTSP_interleaved_channel rtcp;
@@ -268,3 +281,7 @@ void interleaved_free_list(RTSP_buffer *rtsp)
   g_slist_foreach(rtsp->interleaved, interleaved_free, rtsp->srv->loop);
   g_slist_free(rtsp->interleaved);
 }
+
+/**
+ * @}
+ */
