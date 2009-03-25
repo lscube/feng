@@ -111,29 +111,6 @@ RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
 }
 
 /**
- * @brief Free a RTSP_interleaved instance
- *
- * @param element Instance to destroy and free
- * @param user_data The loop to stop libev I/O
- *
- * @internal This function should only be called through
- *           g_slist_foreach() by @ref rtsp_client_destroy.
- */
-static void rtsp_interleaved_destroy(gpointer element, gpointer user_data)
-{
-    struct ev_loop *loop = (struct ev_loop *)user_data;
-    RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
-
-    Sock_close(intlvd->rtp.local);
-    ev_io_stop(loop, &intlvd->rtp.ev_io_listen);
-
-    Sock_close(intlvd->rtcp.local);
-    ev_io_stop(loop, &intlvd->rtcp.ev_io_listen);
-
-    g_slice_free(RTSP_interleaved, element);
-}
-
-/**
  * Destroy and free resources for an RTSP client structure
  *
  * @param rtsp The client structure to destroy and free
@@ -157,8 +134,7 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
     rtsp->session = NULL;
   }
 
-  g_slist_foreach(rtsp->interleaved, rtsp_interleaved_destroy, rtsp->srv->loop);
-  g_slist_free(rtsp->interleaved);
+  interleaved_free_list(rtsp);
 
   // Remove the output queue
   g_async_queue_lock(rtsp->out_queue);

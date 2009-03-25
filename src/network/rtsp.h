@@ -317,6 +317,7 @@ void rtsp_session_free(RTSP_session *session);
 gboolean interleaved_setup_transport(RTSP_buffer *, RTP_transport *,
                                      int, int);
 void interleaved_rtcp_send(RTSP_buffer *, int, void *, size_t);
+void interleaved_list_free(RTSP_buffer *);
 
 /**
  * @}

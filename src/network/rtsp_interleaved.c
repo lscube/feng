@@ -203,3 +203,41 @@ void interleaved_rtcp_send(RTSP_buffer *rtsp, int channel, void *data, size_t le
     /* Write the actual data */
     Sock_write(intlvd->rtcp.local, data, len, NULL, MSG_DONTWAIT | MSG_EOR);
 }
+
+/**
+ * @brief Free a RTSP_interleaved instance
+ *
+ * @param element Instance to destroy and free
+ * @param user_data The loop to stop libev I/O
+ *
+ * @internal This function should only be called through
+ *           g_slist_foreach() by @ref interleaved_free_list.
+ *
+ * @see interleaved_setup_transport
+ */
+static void interleaved_free(gpointer element, gpointer user_data)
+{
+    struct ev_loop *loop = (struct ev_loop *)user_data;
+    RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
+
+    Sock_close(intlvd->rtp.local);
+    ev_io_stop(loop, &intlvd->rtp.ev_io_listen);
+
+    Sock_close(intlvd->rtcp.local);
+    ev_io_stop(loop, &intlvd->rtcp.ev_io_listen);
+
+    g_slice_free(RTSP_interleaved, element);
+}
+
+/**
+ * @brief Destroy and free a list of RTSP_interleaved objects
+ *
+ * @param rtsp The client from which to free the list
+ *
+ * @see interleaved_free
+ */
+void interleaved_free_list(RTSP_buffer *rtsp)
+{
+  g_slist_foreach(rtsp->interleaved, interleaved_free, rtsp->srv->loop);
+  g_slist_free(rtsp->interleaved);
+}
