@@ -59,10 +59,10 @@ typedef struct {
  * @brief Represent a full RTP connection inside an interleaved RTSP
  *        connection.
  */
-struct RTSP_interleaved {
+typedef struct {
     RTSP_interleaved_channel rtp;
     RTSP_interleaved_channel rtcp;
-};
+} RTSP_interleaved;
 
 
 /**
