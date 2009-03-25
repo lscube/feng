@@ -316,7 +316,7 @@ void rtsp_session_free(RTSP_session *session);
 
 gboolean interleaved_setup_transport(RTSP_buffer *, RTP_transport *,
                                      int, int);
-gboolean interleaved_rtcp_find_compare(gconstpointer, gconstpointer);
+void interleaved_rtcp_send(RTSP_buffer *, int, void *, size_t);
 
 /**
  * @}

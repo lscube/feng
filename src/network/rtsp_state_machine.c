@@ -425,31 +425,6 @@ static void rtsp_handle_request(RTSP_buffer *rtsp)
     rtsp_free_request(req);
 }
 
-static void rtsp_handle_interleaved(RTSP_buffer *rtsp, int blen, int hlen)
-{
-    RTSP_interleaved *channel;
-
-    int m = rtsp->input->data[1];
-    GSList *channel_it = g_slist_find_custom(rtsp->interleaved,
-                                             GINT_TO_POINTER(m),
-                                             interleaved_rtcp_find_compare);
-
-    if (!channel_it) {    // session not found
-        fnc_log(FNC_LOG_DEBUG,
-                "Interleaved RTP or RTCP packet arrived for unknown channel (%d)... discarding.\n",
-                m);
-        return;
-    }
-
-    channel = channel_it->data;
-
-    fnc_log(FNC_LOG_DEBUG,
-            "Interleaved RTCP packet arrived for channel %d (len: %d).\n",
-            m, blen);
-    Sock_write(channel->rtcp.local, &rtsp->input->data[hlen],
-               blen, NULL, MSG_DONTWAIT | MSG_EOR);
-}
-
 /**
  * Handles incoming RTSP message, validates them and then dispatches them
  * with RTSP_state_machine
@@ -467,7 +442,10 @@ int RTSP_handler(RTSP_buffer * rtsp)
             rtsp_handle_request(rtsp);
             break;
         case RTSP_interlvd_rcvd:
-            rtsp_handle_interleaved(rtsp, blen, hlen);
+            interleaved_rtcp_send(rtsp,
+                                  rtsp->input->data[1],
+                                  &rtsp->input->data[hlen],
+                                  blen);
             break;
         default:
             return full_msg;

@@ -155,12 +155,51 @@ gboolean interleaved_setup_transport(RTSP_buffer *rtsp, RTP_transport *transport
  * @param target The integer RTCP channel to look for
  *
  * @internal This should only be called through the
- *           g_slist_find_custom() function.
+ *           g_slist_find_custom() function by @ref
+ *           interleaved_rtcp_send.
  */
-gboolean interleaved_rtcp_find_compare(gconstpointer value, gconstpointer target)
+static gboolean interleaved_rtcp_find_compare(gconstpointer value, gconstpointer target)
 {
   RTSP_interleaved *i = (RTSP_interleaved *)value;
   gint m = GPOINTER_TO_INT(target);
 
   return (i->rtcp.channel == m);
+}
+
+/**
+ * @brief Send an interleaved RTCP packet down to the RTCP handler
+ *
+ * @param rtsp The RTSP client where the handler can be found
+ * @param channel The channel index where the package arrived
+ * @param data The pointer to the data to send
+ * @param len The length of the data to send
+ *
+ * This function is used to send data down to the actual RTCP handler
+ * after it has been received from an interleaved transport (TCP or
+ * SCTP alike).
+ */
+void interleaved_rtcp_send(RTSP_buffer *rtsp, int channel, void *data, size_t len)
+{
+    RTSP_interleaved *intlvd = NULL;
+    GSList *intlvd_iter = g_slist_find_custom(rtsp->interleaved,
+                                              interleaved_rtcp_find_compare,
+                                              GINT_TO_POINTER(channel));
+
+    /* We have to check if the value returned by g_slist_find_custom
+     * is valid before derefencing it.
+     */
+    if ( intlvd_iter == NULL ) {
+        fnc_log(FNC_LOG_DEBUG,
+                "Interleaved RTCP packet arrived for unknown channel (%d)... discarding.\n",
+                channel);
+        return;
+    }
+
+    intlvd = (RTSP_interleaved *)intlvd_iter->data;
+
+    /* We should be pretty sure this is not NULL */
+    g_assert(intlvd != NULL);
+
+    /* Write the actual data */
+    Sock_write(intlvd->rtcp.local, data, len, NULL, MSG_DONTWAIT | MSG_EOR);
 }

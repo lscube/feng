@@ -88,16 +88,7 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
                 n = -1;
             }
         } else {    /* if (rtsp->proto == SCTP && m != 0) */
-#ifdef HAVE_LIBSCTP
-        RTSP_interleaved *intlvd =
-            g_slist_find_custom(rtsp->interleaved, GINT_TO_POINTER(m),
-                                interleaved_rtcp_find_compare)->data;
-        if (intlvd) {
-            Sock_write(intlvd->rtcp.local, buffer, n, NULL, 0);
-        } else {
-            fnc_log(FNC_LOG_DEBUG, "Unknown rtcp stream %d ", m);
-        }
-#endif    // HAVE_LIBSCTP
+            interleaved_rtcp_send(rtsp, m, buffer, n);
         }
     }
 
