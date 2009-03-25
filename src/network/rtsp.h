@@ -74,31 +74,7 @@ typedef enum {
 #define RTSP_EL "\r\n"
 #define RTSP_RTP_AVP "RTP/AVP"
 
-/**
- * @brief Represents a single channel of an interleaved RTSP
- *        connection.
- */
-typedef struct {
-    /**
-     * Local socket to forward the received content to.
-     */
-    Sock *local;
-
-    /**
-     * Channel number used for receiving
-     */
-    int channel;
-
-    /**
-     * libev handler for the read callback
-     */
-    ev_io ev_io_listen;
-} RTSP_interleaved_channel;
-
-typedef struct RTSP_interleaved {
-    RTSP_interleaved_channel rtp;
-    RTSP_interleaved_channel rtcp;
-} RTSP_interleaved;
+typedef struct RTSP_interleaved RTSP_interleaved;
 
 typedef struct RTSP_session {
     char *session_id;

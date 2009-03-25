@@ -26,6 +26,33 @@
 #include "fenice/fnc_log.h"
 
 /**
+ * @brief Represents a single channel of an interleaved RTSP
+ *        connection.
+ */
+typedef struct {
+    /**
+     * Local socket to forward the received content to.
+     */
+    Sock *local;
+
+    /**
+     * Channel number used for receiving
+     */
+    int channel;
+
+    /**
+     * libev handler for the read callback
+     */
+    ev_io ev_io_listen;
+} RTSP_interleaved_channel;
+
+struct RTSP_interleaved {
+    RTSP_interleaved_channel rtp;
+    RTSP_interleaved_channel rtcp;
+};
+
+
+/**
  * @file
  *
  * @brief Interleaved (TCP and SCTP) support
