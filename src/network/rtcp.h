@@ -33,67 +33,6 @@ typedef enum {
     APP = 204
 } rtcp_pkt_type;
 
-typedef enum {
-    CNAME = 1,
-    NAME = 2,
-    EMAIL = 3,
-    PHONE = 4,
-    LOC = 5,
-    TOOL = 6,
-    NOTE = 7,
-    PRIV = 8
-} rtcp_info;
-
-typedef struct RTCP_header {
-#if (G_BYTE_ORDER == G_LITTLE_ENDIAN)
-    uint8_t count:5;    //< SC or RC
-    uint8_t padding:1;
-    uint8_t version:2;
-#elif (G_BYTE_ORDER == G_BIG_ENDIAN)
-    uint8_t version:2;
-    uint8_t padding:1;
-    uint8_t count:5;    //< SC or RC
-#else
-#error Neither big nor little
-#endif
-    uint8_t pt;
-    uint16_t length;
-} RTCP_header;
-
-typedef struct RTCP_header_SR {
-    uint32_t ssrc;
-    uint32_t ntp_timestampH;
-    uint32_t ntp_timestampL;
-    uint32_t rtp_timestamp;
-    uint32_t pkt_count;
-    uint32_t octet_count;
-} RTCP_header_SR;
-
-typedef struct RTCP_header_RR {
-    uint32_t ssrc;
-} RTCP_header_RR;
-
-typedef struct RTCP_header_SR_report_block {
-    uint32_t ssrc;
-    uint8_t fract_lost;
-    uint8_t pck_lost[3];
-    uint32_t h_seq_no;
-    uint32_t jitter;
-    uint32_t last_SR;
-    uint32_t delay_last_SR;
-} RTCP_header_SR_report_block;
-
-typedef struct RTCP_header_SDES {
-    uint32_t ssrc;
-    uint8_t attr_name;
-    uint8_t len;
-} __attribute__((__packed__)) RTCP_header_SDES;
-
-typedef struct RTCP_header_BYE {
-    uint32_t ssrc;
-    uint8_t length;
-} __attribute__((__packed__)) RTCP_header_BYE;
-
 int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type);
 int RTCP_recv_packet(RTP_session * session);
 int RTCP_handler(RTP_session * session);
