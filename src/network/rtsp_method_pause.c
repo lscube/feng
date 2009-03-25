@@ -24,19 +24,7 @@
  * @brief Contains PAUSE method and reply handlers
  */
 
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-
 #include "rtsp.h"
-#include <fenice/fnc_log.h>
-
-
-static void rtp_session_pause(gpointer element, gpointer user_data)
-{
-  RTP_session *r = (RTP_session *)element;
-
-  r->pause = 1;
-}
 
 /**
  * RTSP PAUSE method handler
@@ -55,7 +43,7 @@ void RTSP_pause(RTSP_Client * rtsp, RTSP_Request *req)
     if ( !rtsp_request_check_url(req) )
         return;
 
-    g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_pause, NULL);
+    rtp_session_gslist_pause(rtsp_sess->rtp_sessions);
 
     rtsp_quick_response(req, RTSP_Ok);
     rtsp_sess->cur_state = RTSP_SERVER_READY;

@@ -176,6 +176,7 @@ void rtp_session_free(RTP_session *);
 
 void rtp_session_gslist_resume(GSList *, double);
 void rtp_session_gslist_seek(GSList *, double);
+void rtp_session_gslist_pause(GSList *);
 
 void rtp_session_handle_sending(RTP_session *session);
 

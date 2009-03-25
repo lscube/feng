@@ -162,7 +162,7 @@ void rtp_session_free(RTP_session * session)
  *
  * @internal This function should only be called from g_slist_foreach.
  */
-static void rtp_session_resume(gpointer *session_gen, gpointer *start_time_gen) {
+static void rtp_session_resume(gpointer session_gen, gpointer start_time_gen) {
     RTP_session *session = (RTP_session*)session_gen;
     double *start_time = (double*)start_time_gen;
     feng *srv = session->srv;
@@ -192,11 +192,42 @@ static void rtp_session_resume(gpointer *session_gen, gpointer *start_time_gen) 
  * @param sessions_list GSList of sessions to resume
  * @param start_time Time to start the sessions at
  *
- * This is a convenience function that wraps around rtp_session_resume
- * and calls it with a foreach loop on the list
+ * This is a convenience function that wraps around @ref
+ * rtp_session_resume and calls it with a foreach loop on the list
  */
 void rtp_session_gslist_resume(GSList *sessions_list, double start_time) {
     g_slist_foreach(sessions_list, rtp_session_resume, &start_time);
+}
+
+/**
+ * @brief Pause a session
+ *
+ * @param session_gen The session to pause
+ * @param user_data Unused
+ *
+ * @todo This function should probably take care of pausing eventual
+ *       libev events when the scheduler is replaced.
+ *
+ * @internal This function should only be called from g_slist_foreach
+ */
+static void rtp_session_pause(gpointer session_gen, gpointer user_data) {
+    RTP_session *session = (RTP_session *)session_gen;
+
+    g_mutex_lock(session->lock);
+    session->pause = 1;
+    g_mutex_unlock(session->lock);
+}
+
+/**
+ * @brief Pause a GSList of RTP_sessions
+ *
+ * @param sessions_list GSList of sessions to pause
+ *
+ * This is a convenience function that wraps around @ref
+ * rtp_session_pause  and calls it with a foreach loop on the list
+ */
+void rtp_session_gslist_pause(GSList *sessions_list) {
+    g_slist_foreach(sessions_list, rtp_session_pause, NULL);
 }
 
 /**
