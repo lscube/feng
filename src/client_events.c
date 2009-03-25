@@ -26,7 +26,7 @@
 #include <sys/time.h>
 #include <ev.h>
 
-static void client_events_deregister(RTSP_buffer *rtsp)
+static void client_events_deregister(RTSP_Client *rtsp)
 {
     feng *srv = rtsp->srv;
 
@@ -40,7 +40,7 @@ static void client_events_deregister(RTSP_buffer *rtsp)
 
 static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int revents)
 {
-    RTSP_buffer *rtsp = w->data;
+    RTSP_Client *rtsp = w->data;
     feng *srv = rtsp->srv;
 
     //Prevent from requesting disconnection again
@@ -51,7 +51,7 @@ static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int 
     --srv->conn_count;
     srv->num_conn--;
 
-    // Release the RTSP_buffer
+    // Release the RTSP_Client
     srv->clients = g_slist_remove(srv->clients, rtsp);
     rtsp_client_destroy(rtsp);
     fnc_log(FNC_LOG_INFO, "[client] Client removed");
@@ -85,13 +85,13 @@ static void check_if_any_rtp_session_timedout(gpointer element, gpointer user_da
 
 static void client_ev_timeout(struct ev_loop *loop, ev_timer *w, int revents)
 {
-    RTSP_buffer *rtsp = w->data;
+    RTSP_Client *rtsp = w->data;
     g_slist_foreach(rtsp->session->rtp_sessions, check_if_any_rtp_session_timedout, NULL);
     ev_timer_again (loop, w);
 }
 
 
-void client_events_register(RTSP_buffer *rtsp)
+void client_events_register(RTSP_Client *rtsp)
 {
     feng *srv = rtsp->srv;
     ev_async *ev_as_client = g_new(ev_async, 1);

@@ -31,7 +31,7 @@
  * @param rtsp the rtsp connection to flush through the socket
  * @return the size of data sent
  */
-ssize_t rtsp_send(RTSP_buffer * rtsp)
+ssize_t rtsp_send(RTSP_Client * rtsp)
 {
     int n = 0;
 

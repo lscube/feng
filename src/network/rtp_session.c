@@ -78,7 +78,7 @@ static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
  *
  * @see rtp_session_free
  */
-RTP_session *rtp_session_new(RTSP_buffer *rtsp, RTSP_session *rtsp_s,
+RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
                              RTP_transport *transport, const char *path,
                              Track *tr) {
     feng *srv = rtsp->srv;

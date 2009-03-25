@@ -48,19 +48,19 @@
  * @{
  */
 
-typedef void (*rtsp_method_function)(RTSP_buffer * rtsp, RTSP_Request *req);
+typedef void (*rtsp_method_function)(RTSP_Client * rtsp, RTSP_Request *req);
 
-void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req);
+void RTSP_describe(RTSP_Client * rtsp, RTSP_Request *req);
 
-void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req);
+void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req);
 
-void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req);
+void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req);
 
-void RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req);
+void RTSP_pause(RTSP_Client * rtsp, RTSP_Request *req);
 
-void RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req);
+void RTSP_teardown(RTSP_Client * rtsp, RTSP_Request *req);
 
-void RTSP_options(RTSP_buffer * rtsp, RTSP_Request *req);
+void RTSP_options(RTSP_Client * rtsp, RTSP_Request *req);
 
 /**
  * @}
@@ -172,7 +172,7 @@ static gboolean check_session(RTSP_Request *req)
  *
  * @note In case of error, the response is sent to the client before returning.
  */
-static RTSP_Request *rtsp_parse_request(RTSP_buffer *rtsp)
+static RTSP_Request *rtsp_parse_request(RTSP_Client *rtsp)
 {
     RTSP_Request *req = g_slice_new0(RTSP_Request);
     size_t message_length = strlen(rtsp->input->data),
@@ -266,13 +266,13 @@ typedef enum {
  *
  * @retval -1 Error happened.
  * @retval RTSP_not_full A full RTSP message is *not* present in
- *         RTSP_buffer::input yet.
+ *         RTSP_Client::input yet.
  * @retval RTSP_method_rcvd A full RTSP message is present in
- *         RTSP_buffer::input and is ready to be handled.
+ *         RTSP_Client::input and is ready to be handled.
  * @retval RTSP_interlvd_rcvd A complete RTP/RTCP interleaved packet
  *         is present.
  */
-static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_buffer * rtsp,
+static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_Client * rtsp,
                                            int *hdr_len, int *body_len)
 {
     int eomh;          /*! end of message header found */
@@ -402,7 +402,7 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_buffer * rtsp,
  * This function takes care of parsing and getting a request from the client,
  * and freeing it afterward.
  */
-static void rtsp_handle_request(RTSP_buffer *rtsp)
+static void rtsp_handle_request(RTSP_Client *rtsp)
 {
     static const rtsp_method_function methods[] = {
         [RTSP_ID_DESCRIBE] = RTSP_describe,
@@ -432,7 +432,7 @@ static void rtsp_handle_request(RTSP_buffer *rtsp)
  * @param rtsp the buffer from where to read the message
  * @return ERR_NOERROR (can also mean RTSP_not_full if the message was not full)
  */
-int RTSP_handler(RTSP_buffer * rtsp)
+int RTSP_handler(RTSP_Client * rtsp)
 {
     while (rtsp->input->len) {
         int hlen, blen;

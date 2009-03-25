@@ -59,7 +59,7 @@
  *
  * @see rtsp_session_free();
  */
-RTSP_session *rtsp_session_new(RTSP_buffer *rtsp)
+RTSP_session *rtsp_session_new(RTSP_Client *rtsp)
 {
     RTSP_session *new = rtsp->session = g_slice_new0(RTSP_session);
 
@@ -100,9 +100,9 @@ void rtsp_session_free(RTSP_session *session)
  *
  * @see rtsp_client_destroy()
  */
-RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
+RTSP_Client *rtsp_client_new(feng *srv, Sock *client_sock)
 {
-    RTSP_buffer *new = g_slice_new0(RTSP_buffer);
+    RTSP_Client *new = g_slice_new0(RTSP_Client);
 
     new->sock = client_sock;
     new->input = g_byte_array_new();
@@ -119,7 +119,7 @@ RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
  *
  * @see rtsp_client_new()
  */
-void rtsp_client_destroy(RTSP_buffer *rtsp)
+void rtsp_client_destroy(RTSP_Client *rtsp)
 {
   GString *outbuf = NULL;
 
@@ -147,7 +147,7 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
 
   g_byte_array_free(rtsp->input, true);
 
-  g_slice_free(RTSP_buffer, rtsp);
+  g_slice_free(RTSP_Client, rtsp);
 }
 
 /**
@@ -301,7 +301,7 @@ gboolean rtsp_request_check_url(RTSP_Request *req) {
  * @note The buffer has to be considered destroyed after calling this function
  *       (the writing thread will take care of the actual destruction).
  */
-void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer)
+void rtsp_bwrite(const RTSP_Client *rtsp, GString *buffer)
 {
     g_async_queue_push(rtsp->out_queue, buffer);
     ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);

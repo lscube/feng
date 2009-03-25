@@ -77,7 +77,7 @@ static void interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
     uint16_t ne_n;
     char buffer[RTSP_BUFFERSIZE + 1];
     RTSP_interleaved_channel *intlvd = w->data;
-    RTSP_buffer *rtsp = intlvd->local->data;
+    RTSP_Client *rtsp = intlvd->local->data;
     int n;
 
     if ((n = Sock_read(intlvd->local, buffer,
@@ -103,7 +103,7 @@ static void interleaved_read_sctp_cb(struct ev_loop *loop, ev_io *w, int revents
 {
     char buffer[RTSP_BUFFERSIZE + 1];
     RTSP_interleaved_channel *intlvd = w->data;
-    RTSP_buffer *rtsp = intlvd->local->data;
+    RTSP_Client *rtsp = intlvd->local->data;
     struct sctp_sndrcvinfo sctp_info;
     int n;
 
@@ -118,7 +118,7 @@ static void interleaved_read_sctp_cb(struct ev_loop *loop, ev_io *w, int revents
 }
 #endif
 
-static void interleaved_setup_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd)
+static void interleaved_setup_callbacks(RTSP_Client *rtsp, RTSP_interleaved *intlvd)
 {
     void (*cb)(EV_P_ struct ev_io *w, int revents);
     int i;
@@ -148,7 +148,7 @@ static void interleaved_setup_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *int
     ev_io_start(rtsp->srv->loop, &intlvd->rtcp.ev_io_listen);
 }
 
-gboolean interleaved_setup_transport(RTSP_buffer *rtsp, RTP_transport *transport,
+gboolean interleaved_setup_transport(RTSP_Client *rtsp, RTP_transport *transport,
                                      int rtp_ch, int rtcp_ch) {
     RTSP_interleaved *intlvd = NULL;
     Sock *sock_pair[2][2];
@@ -218,7 +218,7 @@ static gboolean interleaved_rtcp_find_compare(gconstpointer value, gconstpointer
  * after it has been received from an interleaved transport (TCP or
  * SCTP alike).
  */
-void interleaved_rtcp_send(RTSP_buffer *rtsp, int channel, void *data, size_t len)
+void interleaved_rtcp_send(RTSP_Client *rtsp, int channel, void *data, size_t len)
 {
     RTSP_interleaved *intlvd = NULL;
     GSList *intlvd_iter = g_slist_find_custom(rtsp->interleaved,
@@ -276,7 +276,7 @@ static void interleaved_free(gpointer element, gpointer user_data)
  *
  * @see interleaved_free
  */
-void interleaved_free_list(RTSP_buffer *rtsp)
+void interleaved_free_list(RTSP_Client *rtsp)
 {
   g_slist_foreach(rtsp->interleaved, interleaved_free, rtsp->srv->loop);
   g_slist_free(rtsp->interleaved);

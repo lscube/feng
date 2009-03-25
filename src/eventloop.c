@@ -61,7 +61,7 @@ int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
 
 static void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
-    RTSP_buffer *rtsp = w->data;
+    RTSP_Client *rtsp = w->data;
     rtsp_send(rtsp);
 }
 
@@ -70,7 +70,7 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
     char buffer[RTSP_BUFFERSIZE + 1] = { 0, };    /* +1 to control the final '\0' */
     int n;
     gint m = 0;
-    RTSP_buffer *rtsp = w->data;
+    RTSP_Client *rtsp = w->data;
 
     n = rtsp_sock_read(rtsp->sock, &m, buffer, sizeof(buffer) - 1);
 
@@ -103,7 +103,7 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 
 static void add_client(feng *srv, Sock *client_sock)
 {
-    RTSP_buffer *rtsp = rtsp_client_new(srv, client_sock);
+    RTSP_Client *rtsp = rtsp_client_new(srv, client_sock);
 
     srv->clients = g_slist_prepend(srv->clients, rtsp);
     client_sock->data = srv;
@@ -130,7 +130,7 @@ static void add_client(feng *srv, Sock *client_sock)
 static gboolean
 connections_compare_socket(gconstpointer value, gconstpointer compare)
 {
-    RTSP_buffer *p = (RTSP_buffer*)value;
+    RTSP_Client *p = (RTSP_Client*)value;
     return !!Sock_compare((Sock *)compare, p->sock);
 }
 

@@ -70,7 +70,7 @@ static void send_describe_reply(RTSP_Request *req, GString *descr)
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
-void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_describe(RTSP_Client * rtsp, RTSP_Request *req)
 {
     feng *srv = rtsp->srv;
 

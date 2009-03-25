@@ -57,6 +57,6 @@ struct ParsedTransport {
     } parameters;
 };
 
-gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
+gboolean check_parsed_transport(RTSP_Client *rtsp, RTP_transport *rtp_t,
                                 struct ParsedTransport *transport);
 

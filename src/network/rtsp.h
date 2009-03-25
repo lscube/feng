@@ -77,7 +77,7 @@ typedef struct RTSP_session {
     feng *srv;
 } RTSP_session;
 
-typedef struct RTSP_buffer {
+typedef struct RTSP_Client {
     Sock *sock;
 
     /**
@@ -108,7 +108,7 @@ typedef struct RTSP_buffer {
 
     ev_io ev_io_read;
     ev_io ev_io_write;
-} RTSP_buffer;
+} RTSP_Client;
 
 /**
  * @brief RTSP method tokens
@@ -140,7 +140,7 @@ enum RTSP_method_token {
  */
 typedef struct {
     /** The client the request comes from */
-    RTSP_buffer *client;
+    RTSP_Client *client;
 
     /**
      * @brief String representing the method used
@@ -187,7 +187,7 @@ typedef struct {
     GHashTable *headers;
 } RTSP_Request;
 
-int RTSP_handler(RTSP_buffer * rtsp);
+int RTSP_handler(RTSP_Client * rtsp);
 
 /**
  * @}
@@ -203,7 +203,7 @@ typedef struct {
      *
      * Used to be able to send the response faster
      */
-    RTSP_buffer *client;
+    RTSP_Client *client;
 
     /**
      * @brief Reference to the original request
@@ -253,23 +253,23 @@ static inline void rtsp_quick_response(RTSP_Request *req, RTSP_ResponseCode code
 gboolean rtsp_check_invalid_state(const RTSP_Request *req,
                                   RTSP_Server_State invalid_state);
 
-ssize_t rtsp_send(RTSP_buffer * rtsp);
+ssize_t rtsp_send(RTSP_Client * rtsp);
 
 gboolean rtsp_request_get_url(RTSP_Request *req, Url *url);
 char *rtsp_request_get_path(RTSP_Request *req);
 gboolean rtsp_request_check_url(RTSP_Request *req);
 
-void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer);
+void rtsp_bwrite(const RTSP_Client *rtsp, GString *buffer);
 
-RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock);
-void rtsp_client_destroy(RTSP_buffer *rtsp);
+RTSP_Client *rtsp_client_new(feng *srv, Sock *client_sock);
+void rtsp_client_destroy(RTSP_Client *rtsp);
 
-RTSP_session *rtsp_session_new(RTSP_buffer *rtsp);
+RTSP_session *rtsp_session_new(RTSP_Client *rtsp);
 void rtsp_session_free(RTSP_session *session);
 
-gboolean interleaved_setup_transport(RTSP_buffer *, RTP_transport *,
+gboolean interleaved_setup_transport(RTSP_Client *, RTP_transport *,
                                      int, int);
-void interleaved_rtcp_send(RTSP_buffer *, int, void *, size_t);
-void interleaved_list_free(RTSP_buffer *);
+void interleaved_rtcp_send(RTSP_Client *, int, void *, size_t);
+void interleaved_list_free(RTSP_Client *);
 
 #endif // FN_RTSP_H

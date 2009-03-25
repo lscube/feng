@@ -43,7 +43,7 @@ static void rtp_session_pause(gpointer element, gpointer user_data)
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
-void RTSP_pause(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_pause(RTSP_Client * rtsp, RTSP_Request *req)
 {
     RTSP_session *rtsp_sess = rtsp->session;
 

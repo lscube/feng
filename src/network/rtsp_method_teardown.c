@@ -39,7 +39,7 @@
  * @param req The client request for the method
  * @return ERR_NOERROR
  */
-void RTSP_teardown(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_teardown(RTSP_Client * rtsp, RTSP_Request *req)
 {
     Url url;
     RTSP_session *s;

@@ -73,7 +73,7 @@ static char *split_resource_path(char *path)
 /**
  * bind&connect the socket
  */
-static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp,
+static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
                                            RTP_transport *transport,
                                            uint16_t rtp_port, uint16_t rtcp_port)
 {
@@ -111,7 +111,7 @@ static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp,
  * @param rtp_t The transport instance to set up with the parsed parameters
  * @param transport Structure containing the transport's parameters
  */
-gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
+gboolean check_parsed_transport(RTSP_Client *rtsp, RTP_transport *rtp_t,
                                 struct ParsedTransport *transport)
 {
     switch ( transport->protocol ) {
@@ -170,7 +170,7 @@ gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
     }
 }
 
-extern gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
+extern gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
                                              RTP_transport *rtp_t,
                                              const char *header);
 
@@ -208,7 +208,7 @@ static Track *select_requested_track(const char *path, RTSP_session * rtsp_s, co
  * @param session the new RTSP session allocated for the client
  * @param rtp_s the new RTP session allocated for the client
  */
-static void send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session * session, RTP_session * rtp_s)
+static void send_setup_reply(RTSP_Client * rtsp, RTSP_Request *req, RTSP_session * session, RTP_session * rtp_s)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
     GString *transport = g_string_new("");
@@ -277,7 +277,7 @@ static void send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
-void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
 {
     char *path = NULL;
     const char *trackname = NULL;

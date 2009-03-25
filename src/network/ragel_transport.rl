@@ -8,7 +8,7 @@
 
 %% machine ragel_transport_header;
 
-gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
+gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
                                       RTP_transport *rtp_t,
                                       const char *header) {
     struct ParsedTransport transport;

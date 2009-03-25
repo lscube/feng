@@ -145,7 +145,7 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
  *       and end_time parameters, since those are the only values used
  *       out of the structure.
  */
-static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
+static void send_play_reply(RTSP_Client * rtsp, RTSP_Request *req, Url *url,
                             RTSP_session * rtsp_session, rtp_play_args * args)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
@@ -193,7 +193,7 @@ static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
-void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
 {
     Url url;
     RTSP_session *rtsp_sess = rtsp->session;

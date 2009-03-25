@@ -38,7 +38,7 @@
 #include "bufferqueue.h"
 
 struct Track;
-struct RTSP_buffer;
+struct RTSP_Client;
 struct RTSP_session;
 
 #define RTP_DEFAULT_PORT 5004
@@ -141,7 +141,7 @@ typedef struct RTP_session {
 
     RTCP_stats rtcp_stats[2];    //client and server
     struct feng *srv;
-    struct RTSP_buffer *rtsp_buffer;
+    struct RTSP_Client *rtsp_buffer;
     uint32_t last_packet_send_time;
 } RTP_session;
 
@@ -171,7 +171,7 @@ int RTP_release_port_pair(feng *srv, port_pair * pair);
  * @{
  */
 
-RTP_session *rtp_session_new(struct RTSP_buffer *, struct RTSP_session *,
+RTP_session *rtp_session_new(struct RTSP_Client *, struct RTSP_session *,
                              RTP_transport *, const char *,
                              struct Track *);
 void rtp_session_free(RTP_session *);
