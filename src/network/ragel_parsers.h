@@ -32,7 +32,7 @@
 
 /**
  * @defgroup ragel Ragel parsing
- * @ingroup rtsp
+ * @ingroup RTSP
  *
  * @brief Functions and data structure for parsing of RTSP protocol.
  *
@@ -40,6 +40,8 @@
  * parsers written using Ragel (http://www.complang.org/ragel/) and
  * the users of those parsers, usually the method handlers (see @ref
  * rtsp_methods).
+ *
+ * @{
  */
 
 /**
