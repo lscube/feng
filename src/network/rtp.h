@@ -145,8 +145,6 @@ typedef struct RTP_session {
     uint32_t last_packet_send_time;
 } RTP_session;
 
-typedef int (*RTP_play_action) (RTP_session * sess);
-
 /**
  * @defgroup RTP RTP Layer
  * @{
