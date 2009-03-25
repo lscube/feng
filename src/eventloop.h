@@ -35,16 +35,4 @@ void eventloop_init(feng *srv);
 void eventloop(feng *srv);
 void eventloop_cleanup(feng *srv);
 
-/**
- * @defgroup interleaved_callbacks Callbacks for interleaved streaming
- * @{
- */
-
-void interleaved_read_sctp_cb(struct ev_loop *, ev_io *, int);
-void interleaved_read_tcp_cb(struct ev_loop *, ev_io *, int);
-
-/**
- * @}
- */
-
 #endif // FN_EVENTLOOP_H
