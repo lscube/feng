@@ -317,9 +317,7 @@ void rtp_session_handle_sending(RTP_session *session)
                  * finishing packets and go away.
                  */
                 fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
-                RTCP_send_packet(session, SR);
-                RTCP_send_packet(session, BYE);
-                RTCP_flush(session);
+                RTCP_send_bye(session);
                 break;
             }
 

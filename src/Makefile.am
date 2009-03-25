@@ -10,9 +10,7 @@ BUILT_SOURCES = \
 	network/ragel_range.c
 
 dist_feng_SOURCES = \
-	network/rtcp.h \
-	network/rtcp_handler.c \
-	network/rtcp_send_packet.c \
+	network/rtcp.c network/rtcp.h \
 	network/rtp.h \
 	network/rtp_port.c \
 	network/rtp_transport.c \

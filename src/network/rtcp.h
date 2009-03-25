@@ -25,29 +25,7 @@
 
 #include "rtp.h"
 
-typedef enum {
-    SR = 200,
-    RR = 201,
-    SDES = 202,
-    BYE = 203,
-    APP = 204
-} rtcp_pkt_type;
-
-int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type);
-int RTCP_recv_packet(RTP_session * session);
 int RTCP_handler(RTP_session * session);
-int RTCP_flush(RTP_session * session);
-
-int RTCP_get_pkt_lost(RTP_session * session);
-
-float RTCP_get_fract_lost(RTP_session * session);
-
-unsigned int RTCP_get_jitter(RTP_session * session);
-
-unsigned int RTCP_get_RR_received(RTP_session * session);
-
-unsigned int RTCP_get_total_packet(RTP_session * session);
-
-unsigned int RTCP_get_total_payload_octet(RTP_session * session);
+void RTCP_send_bye(RTP_session *session);
 
 #endif // FN_RTCP_H

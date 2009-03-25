@@ -32,6 +32,14 @@
 #include <netinet/in.h>
 
 typedef enum {
+    SR = 200,
+    RR = 201,
+    SDES = 202,
+    BYE = 203,
+    APP = 204
+} rtcp_pkt_type;
+
+typedef enum {
     CNAME = 1,
     NAME = 2,
     EMAIL = 3,
@@ -92,7 +100,7 @@ typedef struct RTCP_header_BYE {
     uint8_t length;
 } __attribute__((__packed__)) RTCP_header_BYE;
 
-int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
+static int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
 {
     unsigned char *payload = NULL;
     RTCP_header hdr;
@@ -190,4 +198,60 @@ int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
     }
     g_free(payload);
     return ERR_NOERROR;
+}
+
+/**
+ * Send the rtcp payloads in queue
+ */
+
+static int RTCP_flush(RTP_session * session)
+{
+    fd_set wset;
+    struct timeval t;
+    Sock *rtcp_sock = session->transport.rtcp_sock;
+
+    /*---------------SEE eventloop/rtsp_server.c-------*/
+    FD_ZERO(&wset);
+    t.tv_sec = 0;
+    t.tv_usec = 1000;
+
+    if (session->rtcp_outsize > 0)
+        FD_SET(Sock_fd(rtcp_sock), &wset);
+    if (select(Sock_fd(rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
+        fnc_log(FNC_LOG_ERR, "select error\n");
+        /*send_reply(500, NULL, rtsp); */
+        return ERR_GENERIC;
+    }
+
+    if (FD_ISSET(Sock_fd(rtcp_sock), &wset)) {
+        if (Sock_write(rtcp_sock, session->rtcp_outbuffer,
+            session->rtcp_outsize, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
+            fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
+        session->rtcp_outsize = 0;
+        fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
+    }
+
+    return ERR_NOERROR;
+}
+
+int RTCP_handler(RTP_session * session)
+{
+    if (session->rtcp_stats[i_server].pkt_count % 29 == 1) {
+        RTCP_send_packet(session, SR);
+        RTCP_send_packet(session, SDES);
+        return RTCP_flush(session);
+    }
+    return ERR_NOERROR;
+}
+
+/**
+ * @brief Send the disconnection sequence
+ *
+ * @param session The RTP session to disconnect
+ */
+void RTCP_send_bye(RTP_session *session)
+{
+    RTCP_send_packet(session, SR);
+    RTCP_send_packet(session, BYE);
+    RTCP_flush(session);
 }
