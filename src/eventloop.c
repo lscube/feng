@@ -67,12 +67,11 @@ static void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
 
 static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
-    char buffer[RTSP_BUFFERSIZE + 1];    /* +1 to control the final '\0' */
+    char buffer[RTSP_BUFFERSIZE + 1] = { 0, };    /* +1 to control the final '\0' */
     int n;
     gint m = 0;
     RTSP_buffer *rtsp = w->data;
 
-    memset(buffer, 0, sizeof(buffer));
     n = rtsp_sock_read(rtsp->sock, &m, buffer, sizeof(buffer) - 1);
 
     if (n > 0) {
