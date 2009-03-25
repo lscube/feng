@@ -431,7 +431,7 @@ find_tcp_interleaved(gconstpointer value, gconstpointer target)
   RTSP_interleaved *i = (RTSP_interleaved *)value;
   gint m = GPOINTER_TO_INT(target);
 
-  return (i[1].channel == m);
+  return (i->rtcp.channel == m);
 }
 
 static void rtsp_handle_interleaved(RTSP_buffer *rtsp, int blen, int hlen)
@@ -455,7 +455,7 @@ static void rtsp_handle_interleaved(RTSP_buffer *rtsp, int blen, int hlen)
     fnc_log(FNC_LOG_DEBUG,
             "Interleaved RTCP packet arrived for channel %d (len: %d).\n",
             m, blen);
-    Sock_write(channel->local, &rtsp->input->data[hlen],
+    Sock_write(channel->rtcp.local, &rtsp->input->data[hlen],
                blen, NULL, MSG_DONTWAIT | MSG_EOR);
 }
 

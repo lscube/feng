@@ -108,7 +108,7 @@ static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp,
  * interleaved transport
  */
 
-static void setup_interleaved_callbacks(RTSP_buffer *rtsp)
+static void setup_interleaved_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd)
 {
     void (*cb)(EV_P_ struct ev_io *w, int revents);
     int i;
@@ -127,50 +127,55 @@ static void setup_interleaved_callbacks(RTSP_buffer *rtsp)
 #endif
     }
 
-    /* Let's hope this is unrolled by GCC, shall we? */
-    for (i = 0; i < 2; i++) {
-        Sock *sock = rtsp->interleaved[i].local;
-        sock->data = rtsp;
-        rtsp->interleaved[i].ev_io_listen.data = &rtsp->interleaved[i];
-        ev_io_init(&rtsp->interleaved[i].ev_io_listen, cb, Sock_fd(sock), EV_READ);
-        ev_io_start(rtsp->srv->loop, &rtsp->interleaved[i].ev_io_listen);
-    }
-}
+    intlvd->rtp.local->data = rtsp;
+    intlvd->rtp.ev_io_listen.data = &intlvd->rtp;
+    ev_io_init(&intlvd->rtp.ev_io_listen, cb, Sock_fd(intlvd->rtp.local), EV_READ);
+    ev_io_start(rtsp->srv->loop, &intlvd->rtp.ev_io_listen);
 
+    intlvd->rtcp.local->data = rtsp;
+    intlvd->rtcp.ev_io_listen.data = &intlvd->rtcp;
+    ev_io_init(&intlvd->rtcp.ev_io_listen, cb, Sock_fd(intlvd->rtcp.local), EV_READ);
+    ev_io_start(rtsp->srv->loop, &intlvd->rtcp.ev_io_listen);
+}
 
 static gboolean
 interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
                       int rtp_ch, int rtcp_ch)
 {
-    Sock *sock_pair[2];
+    RTSP_interleaved *intlvd = NULL;
+    Sock *sock_pair[2][2];
 
     // RTP local sockpair
-    if ( Sock_socketpair(sock_pair) < 0) {
+    if ( Sock_socketpair(sock_pair[0]) < 0) {
         fnc_log(FNC_LOG_ERR,
                 "Cannot create AF_LOCAL socketpair for rtp\n");
         return false;
     }
 
-    transport->rtp_sock = sock_pair[0];
-    rtsp->interleaved[0].local = sock_pair[1];
-
     // RTCP local sockpair
-    if ( Sock_socketpair(sock_pair) < 0) {
+    if ( Sock_socketpair(sock_pair[1]) < 0) {
         fnc_log(FNC_LOG_ERR,
                 "Cannot create AF_LOCAL socketpair for rtcp\n");
-        Sock_close(transport->rtp_sock);
-        Sock_close(rtsp->interleaved[0].local);
+        Sock_close(sock_pair[0][0]);
+        Sock_close(sock_pair[0][1]);
         return false;
     }
 
-    transport->rtcp_sock = sock_pair[0];
-    rtsp->interleaved[1].local = sock_pair[1];
+    intlvd = g_slice_new0(RTSP_interleaved);
+
+    transport->rtp_sock = sock_pair[0][0];
+    intlvd->rtp.local = sock_pair[0][1];
+
+    transport->rtcp_sock = sock_pair[1][0];
+    intlvd->rtcp.local = sock_pair[1][1];
 
     // copy stream number in rtp_transport struct
-    transport->rtp_ch = rtsp->interleaved[0].channel = rtp_ch;
-    transport->rtcp_ch = rtsp->interleaved[1].channel = rtcp_ch;
+    transport->rtp_ch = intlvd->rtp.channel = rtp_ch;
+    transport->rtcp_ch = intlvd->rtcp.channel = rtcp_ch;
 
-    setup_interleaved_callbacks(rtsp);
+    setup_interleaved_callbacks(rtsp, intlvd);
+
+    rtsp->interleaved = g_slist_prepend(rtsp->interleaved, intlvd);
 
     return true;
 }

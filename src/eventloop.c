@@ -64,7 +64,7 @@ void interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
     GString *str;
     uint16_t ne_n;
     char buffer[RTSP_BUFFERSIZE + 1];
-    RTSP_interleaved *intlvd = w->data;
+    RTSP_interleaved_channel *intlvd = w->data;
     RTSP_buffer *rtsp = intlvd->local->data;
     int n;
 
@@ -90,7 +90,7 @@ void interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
 void interleaved_read_sctp_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     char buffer[RTSP_BUFFERSIZE + 1];
-    RTSP_interleaved *intlvd = w->data;
+    RTSP_interleaved_channel *intlvd = w->data;
     RTSP_buffer *rtsp = intlvd->local->data;
     struct sctp_sndrcvinfo sctp_info;
     int n;
@@ -110,7 +110,7 @@ find_sctp_interleaved(gconstpointer value, gconstpointer target)
 {
     RTSP_interleaved *i = (RTSP_interleaved *)value;
     gint m = GPOINTER_TO_INT(target);
-    return (i[1].channel == m);
+    return (i->rtcp.channel == m);
 }
 
 #endif
@@ -149,7 +149,7 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
             g_slist_find_custom(rtsp->interleaved, GINT_TO_POINTER(m),
                                 find_sctp_interleaved)->data;
         if (intlvd) {
-            Sock_write(intlvd->local, buffer, n, NULL, 0);
+            Sock_write(intlvd->rtcp.local, buffer, n, NULL, 0);
         } else {
             fnc_log(FNC_LOG_DEBUG, "Unknown rtcp stream %d ", m);
         }
