@@ -22,11 +22,31 @@
 /**
  * @file
  *
- * @brief Shared definitions between rtsp_method_setup.h and
- *        ragel_range.rl state machine.
+ * @brief Shared definitions between Ragel parsers and their users
  */
 
+#ifndef FENG_RAGEL_PARSERS_H
+#define FENG_RAGEL_PARSERS_H
+
 #include <network/rtsp.h>
+
+/**
+ * @defgroup ragel Ragel parsing
+ * @ingroup rtsp
+ *
+ * @brief Functions and data structure for parsing of RTSP protocol.
+ *
+ * This group enlists all the shared data structure between the
+ * parsers written using Ragel (http://www.complang.org/ragel/) and
+ * the users of those parsers, usually the method handlers (see @ref
+ * rtsp_methods).
+ */
+
+/**
+ * @defgroup ragel_transport Transport: header parsing
+ *
+ * @{
+ */
 
 /**
  * @brief Structure filled by the ragel parser of the transport header.
@@ -60,3 +80,16 @@ struct ParsedTransport {
 gboolean check_parsed_transport(RTSP_Client *rtsp, RTP_transport *rtp_t,
                                 struct ParsedTransport *transport);
 
+
+gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
+                                      RTP_transport *rtp_t,
+                                      const char *header);
+/**
+ *@}
+ */
+
+/**
+ *@}
+ */
+
+#endif

@@ -33,7 +33,7 @@
 
 #include "rtp.h"
 #include "rtsp.h"
-#include "rtsp_method_setup.h"
+#include "ragel_parsers.h"
 #include "eventloop.h"
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
@@ -169,10 +169,6 @@ gboolean check_parsed_transport(RTSP_Client *rtsp, RTP_transport *rtp_t,
         return false;
     }
 }
-
-extern gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
-                                             RTP_transport *rtp_t,
-                                             const char *header);
 
 /**
  * Gets the track requested for the object

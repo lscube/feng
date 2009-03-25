@@ -10,6 +10,7 @@ BUILT_SOURCES = \
 	network/ragel_range.c
 
 dist_feng_SOURCES = \
+	network/ragel_parsers.h \
 	network/rtcp.c network/rtcp.h \
 	network/rtp.h \
 	network/rtp_port.c \
@@ -22,7 +23,7 @@ dist_feng_SOURCES = \
 	network/rtsp_method_options.c \
 	network/rtsp_method_pause.c \
 	network/rtsp_method_play.c \
-	network/rtsp_method_setup.c network/rtsp_method_setup.h \
+	network/rtsp_method_setup.c \
 	network/rtsp_method_teardown.c \
 	network/rtsp_response.c \
 	network/rtsp_state_machine.c \
