@@ -44,7 +44,9 @@
 #include <fenice/fnc_log.h>
 
 /**
- * @addtogroup RTSP
+ * @defgroup rtsp_utils Utility functions
+ * @ingroup RTSP
+ *
  * @{
  */
 
@@ -150,7 +152,9 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
 
 /**
  * RTSP Header and request parsing and validation functions
- * @defgroup rtsp_validation RTSP requests parsing and validation
+ * @defgroup rtsp_validation Requests parsing and validation
+ * @ingroup rtsp_utils
+ *
  * @{
  */
 
@@ -243,8 +247,8 @@ gboolean rtsp_request_get_url(RTSP_Request *req, Url *url) {
  *
  * @retval NULL The URL was not valid and a reply was already sent.
  *
- * @important the returned string is allocated by netembryo with
- *            malloc(), so it should not be freed with g_free()!
+ * @note the returned string is allocated by netembryo with malloc(),
+ *       so it should not be freed with g_free()!
  */
 char *rtsp_request_get_path(RTSP_Request *req) {
     Url url;

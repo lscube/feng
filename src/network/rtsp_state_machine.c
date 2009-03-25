@@ -36,10 +36,11 @@
 
 /**
  * RTSP high level functions, mapping to the actual RTSP methods
- * @defgroup rtsp_methods RTSP Method functions
+ *
+ * @defgroup rtsp_methods Method functions
  * @ingroup RTSP
  *
- * The declaration of these functions are in rtsp_state_machine.c
+ * The declaration of these functions is in rtsp_state_machine.c
  * because the awareness of their existance outside their own
  * translation unit has to be limited to the state machine function
  * itself.

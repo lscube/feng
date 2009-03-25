@@ -20,16 +20,6 @@
  *
  * */
 
-/**
- * @addtogroup RTSP
- * @{
- */
-
-/**
- * @file
- * @brief feng-wide RTSP definitions
- */
-
 #ifndef FN_RTSP_H
 #define FN_RTSP_H
 
@@ -50,6 +40,11 @@
 #ifdef HAVE_LIBSCTP
 #include <netinet/sctp.h>
 #endif
+
+/**
+ * @addtogroup RTSP
+ * @{
+ */
 
 #define RTSP_RESERVED 4096
 #define RTSP_BUFFERSIZE (65536 + RTSP_RESERVED)
@@ -195,6 +190,10 @@ typedef struct {
 int RTSP_handler(RTSP_buffer * rtsp);
 
 /**
+ * @}
+ */
+
+/**
  * @brief Structure respresenting a response sent to the client
  * @ingroup rtsp_response
  */
@@ -254,14 +253,6 @@ static inline void rtsp_quick_response(RTSP_Request *req, RTSP_ResponseCode code
 gboolean rtsp_check_invalid_state(const RTSP_Request *req,
                                   RTSP_Server_State invalid_state);
 
-/**
- * RTSP low level functions, they handle message specific parsing and
- * communication.
- *
- * @defgroup rtsp_low RTSP low level functions
- * @{
- */
-
 ssize_t rtsp_send(RTSP_buffer * rtsp);
 
 gboolean rtsp_request_get_url(RTSP_Request *req, Url *url);
@@ -276,16 +267,9 @@ void rtsp_client_destroy(RTSP_buffer *rtsp);
 RTSP_session *rtsp_session_new(RTSP_buffer *rtsp);
 void rtsp_session_free(RTSP_session *session);
 
-/**
- * @}
- */
-
 gboolean interleaved_setup_transport(RTSP_buffer *, RTP_transport *,
                                      int, int);
 void interleaved_rtcp_send(RTSP_buffer *, int, void *, size_t);
 void interleaved_list_free(RTSP_buffer *);
 
-/**
- * @}
- */
 #endif // FN_RTSP_H

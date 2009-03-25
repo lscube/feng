@@ -2,18 +2,18 @@
  *  This file is part of Feng
  *
  * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
- * See AUTHORS for more details 
- *  
- * Feng is free software; you can redistribute it and/or 
+ * See AUTHORS for more details
+ *
+ * Feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * Feng is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
- * General Public License for more details. 
- * 
+ *
+ * Feng is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
  * You should have received a copy of the GNU General Public License
  * along with Feng; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
@@ -32,7 +32,7 @@
  */
 
 /**
- * @defgroup rtsp_response RTSP Response functions
+ * @defgroup rtsp_response Response messages
  * @ingroup RTSP
  *
  * This module contains the functions that are used to produce RTSP response
@@ -40,13 +40,13 @@
  *
  * RTSP responses are comprised of status line, headers and an eventual body
  * (entity), and are described by RFC2326, Section 7.
- * 
+ *
  * @{
  */
 
 /**
  * @brief Return a timestamp using HTTP Time specification
- * 
+ *
  * Create a timestamp in the format of "23 Jan 1997 15:35:06 GMT".
  *
  * The timestamp format is described in RFC2616, Section 14.18, and is actually
@@ -65,7 +65,7 @@ static char *rtsp_timestamp() {
 
 /**
  * @brief Create a new RTSP_Response structure
- * 
+ *
  * @param req The request to respond to
  * @param code The status code of the response
  *
@@ -200,7 +200,7 @@ static void rtsp_log_access(RTSP_Response *response)
 void rtsp_response_send(RTSP_Response *response)
 {
     GString *str = g_string_new("");
-    
+
     /* Generate the status line, see RFC 2326 Sec. 7.1 */
     g_string_printf(str, "%s %d %s" RTSP_EL,
                     "RTSP/1.0", response->status,

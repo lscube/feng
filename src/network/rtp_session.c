@@ -69,17 +69,17 @@ static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
  *
  * @param rtsp The buffer for which to generate the session
  * @param rtsp_s The RTSP session
- * @param path The path of the URL
- * @param transport The transport
- * @param track_sel The track
+ * @param path The path of the resource
+ * @param transport The transport used by the session
+ * @param tr The track that will be sent over the session
  *
  * @return A pointer to a newly-allocated RTP_session, that needs to
  *         be freed with @ref rtp_session_free.
  *
  * @see rtp_session_free
  */
-RTP_session *rtp_session_new(RTSP_buffer * rtsp, RTSP_session *rtsp_s,
-                             RTP_transport * transport, const char *path,
+RTP_session *rtp_session_new(RTSP_buffer *rtsp, RTSP_session *rtsp_s,
+                             RTP_transport *transport, const char *path,
                              Track *tr) {
     feng *srv = rtsp->srv;
     RTP_session *rtp_s = g_slice_new0(RTP_session);
@@ -257,8 +257,8 @@ void rtp_session_gslist_seek(GSList *sessions_list, double seek_time) {
  * not paused (or it's live), or has to be skipped for any reason at
  * all.
  *
- * @important If this function returned true, you need to unlock the
- *            mutex one way or another!
+ * @note If this function returned true, you need to unlock the mutex
+ *       one way or another!
  */
 static gboolean rtp_session_send_prereq(RTP_session *session) {
     /* We have this if here because we need to unlock the mutex if

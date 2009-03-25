@@ -108,6 +108,7 @@ static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp,
  * @brief Check the value parsed out of a transport specification.
  *
  * @param rtsp Client from which the request arrived
+ * @param rtp_t The transport instance to set up with the parsed parameters
  * @param transport Structure containing the transport's parameters
  */
 gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,

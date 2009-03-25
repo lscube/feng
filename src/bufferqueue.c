@@ -206,7 +206,7 @@ struct BufferQueue_Consumer {
      * @brief Pointer to the last seen element
      *
      * Since a producer can change queue, the @ref
-     * BufferQueue_Consumer::current_element pointer might not be
+     * BufferQueue_Consumer::current_element_pointer might not be
      * valid any longer; to make sure that the element is not deleted
      * before time, a copy of it is kept here.
      */

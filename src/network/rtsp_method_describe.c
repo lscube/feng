@@ -37,7 +37,6 @@
 /**
  * Sends the reply for the describe method
  * @param req The client request for the method
- * @param url the URL for the resource to describe
  * @param descr the description string to send
  */
 static void send_describe_reply(RTSP_Request *req, GString *descr)

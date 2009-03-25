@@ -26,11 +26,6 @@
 #include <fenice/fnc_log.h>
 #include <fenice/utils.h>
 
-/** @file
- * @brief Contains most of lowlevel RTSP functions
- */
-
-
 /**
  * Sends the rtsp output buffer through the socket
  * @param rtsp the rtsp connection to flush through the socket

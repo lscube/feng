@@ -133,12 +133,17 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
 }
 
 /**
- * Sends the reply for the play method
+ * @brief Sends the reply for the play method
+ *
  * @param rtsp the buffer where to write the reply
  * @param req The Request to respond to.
  * @param url the Url related to the object that we wanted to play
  * @param rtsp_session the session for which to generate the reply
- * @return ERR_NOERROR
+ * @param args The arguments to use to play
+ *
+ * @todo The args parameter should probably replaced by two begin_time
+ *       and end_time parameters, since those are the only values used
+ *       out of the structure.
  */
 static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
                             RTSP_session * rtsp_session, rtp_play_args * args)
