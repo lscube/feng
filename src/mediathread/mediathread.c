@@ -37,7 +37,19 @@ static GAsyncQueue *el_head;
 static GStaticMutex mt_mutex = G_STATIC_MUTEX_INIT;
 static int stopped = 0;
 
+typedef enum {
+    MT_EV_BUFFER_LOW,   //!< Buffer needs to be filled. ARGS= Track*
+    MT_EV_SHUTDOWN,     //!< The server is going to close. ARGS= NULL
+    MT_EV_CLOSE         //!< The resource must be closed
+} mt_event_id;
+
+typedef struct {
+    mt_event_id id;
+    Resource *resource;
+} mt_event_item;
+
 static inline int mt_process_event(mt_event_item *ev) {
+    Resource *r = ev->resource;
 
     if (!ev)
         return ERR_GENERIC;
@@ -46,11 +58,7 @@ static inline int mt_process_event(mt_event_item *ev) {
 
     switch (ev->id) {
     case MT_EV_BUFFER_LOW:
-        {
-            Track *t = ev->args[1];
-            Resource *r = t->parent;
-
-            fnc_log(FNC_LOG_VERBOSE, "[MT] Filling buffer for track %p", t);
+            fnc_log(FNC_LOG_VERBOSE, "[MT] Filling buffer for resource %p", r);
 
             switch (r->demuxer->read_packet(r)) {
             case RESOURCE_OK:
@@ -65,43 +73,26 @@ static inline int mt_process_event(mt_event_item *ev) {
                         "[MT] read_packet() error.");
                 break;
             }
-        }
         break;
     case MT_EV_SHUTDOWN:
         stopped = 1;
         break;
     case MT_EV_CLOSE:
-        r_close(ev->args[0]);
-        break;
-    default:
+        r_close(r);
         break;
     }
+
+    g_free(ev);
     return ERR_NOERROR;
 }
 
-static inline void mt_dispose_event_args(mt_event_id id, void ** args) {
-    switch (id) {
-    default:
-        break;
-    }
-    g_free(args);
-}
-
-static inline void mt_dispose_event(mt_event_item *ev) {
-    if (!ev)
-        return;
-    if (ev->args)
-        mt_dispose_event_args(ev->id, ev->args);
-    g_free(ev);
-}
-
-static void mt_add_event(mt_event_id id, void **args) {
+static void mt_add_event(mt_event_id id, Resource *r) {
     mt_event_item *item = g_new0(mt_event_item, 1);
 
     fnc_log(FNC_LOG_VERBOSE, "[MT] Created event: %#x", item);
 
     item->id = id;
-    item->args = args;
+    item->resource = r;
 
     g_async_queue_ref(el_head);
     g_async_queue_push(el_head, item);
@@ -128,7 +119,6 @@ static gpointer *mediathread(gpointer *arg) {
         if (el_cur) {
             g_static_mutex_lock(&mt_mutex);
             mt_process_event(el_cur);
-            mt_dispose_event(el_cur);
             g_static_mutex_unlock(&mt_mutex);
         }
     }
@@ -172,12 +162,9 @@ Resource *mt_resource_open(feng *srv, const char *filename) {
 }
 
 void mt_resource_close(Resource *resource) {
-    void **args;
     if (!resource)
         return;
-    args = g_new(void *, 1);
-    args[0] = resource;
-    mt_add_event(MT_EV_CLOSE, args); //XXX consider failing?
+    mt_add_event(MT_EV_CLOSE, resource);
 }
 
 int mt_resource_seek(Resource *resource, double time) {
@@ -189,14 +176,8 @@ int mt_resource_seek(Resource *resource, double time) {
     return res;
 }
 
-int event_buffer_low(void *sender, Track *src) {
-    void **args;
-    if (src->parent->eos) return ERR_EOF;
-    args = g_new(void *, 2);
-    args[0] = sender;
-    args[1] = src;
-    mt_add_event(MT_EV_BUFFER_LOW, args);
-    return ERR_NOERROR;
+void event_buffer_low(Resource *r) {
+    mt_add_event(MT_EV_BUFFER_LOW, r);
 }
 
 void mt_shutdown() {

@@ -181,7 +181,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer start_time_gen) {
 
     /* Prefetch frames */
     for (i=0; i < srv->srvconf.buffered_frames; i++)
-        event_buffer_low(session, session->track);
+        event_buffer_low(session->track->parent);
 
     g_mutex_unlock(session->lock);
 }
@@ -356,14 +356,7 @@ void rtp_session_handle_sending(RTP_session *session)
         }
 
         if (rtp_packet_send(session, buffer) <= session->srv->srvconf.buffered_frames) {
-            switch( event_buffer_low(session, session->track) ) {
-            case ERR_EOF:
-            case ERR_NOERROR:
-                break;
-            default:
-                fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low");
-                break;
-            }
+            event_buffer_low(session->track->parent);
         }
 
         RTCP_handler(session);
