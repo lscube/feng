@@ -309,6 +309,20 @@ void rtsp_session_free(RTSP_session *session);
  */
 
 /**
+ * @defgroup rtsp_interleaved Function to deal with interleaved RTSP
+ *
+ * @{
+ */
+
+gboolean interleaved_setup_transport(RTSP_buffer *, RTP_transport *,
+                                     int, int);
+gboolean interleaved_rtcp_find_compare(gconstpointer, gconstpointer);
+
+/**
+ * @}
+ */
+
+/**
  * @}
  */
 #endif // FN_RTSP_H

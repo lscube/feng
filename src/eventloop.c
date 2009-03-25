@@ -59,62 +59,6 @@ int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
     return n;
 }
 
-void interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
-{
-    GString *str;
-    uint16_t ne_n;
-    char buffer[RTSP_BUFFERSIZE + 1];
-    RTSP_interleaved_channel *intlvd = w->data;
-    RTSP_buffer *rtsp = intlvd->local->data;
-    int n;
-
-    if ((n = Sock_read(intlvd->local, buffer,
-                       RTSP_BUFFERSIZE, NULL, 0)) < 0) {
-        fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
-        return;
-    }
-
-    ne_n = htons((uint16_t)n);
-    str = g_string_sized_new(n+4);
-
-    g_string_append_c(str, '$');
-    g_string_append_c(str, (unsigned char)intlvd->channel);
-    g_string_append_len(str, (gchar *)&ne_n, 2);
-    g_string_append_len(str, (const gchar *)buffer, n);
-
-    g_async_queue_push(rtsp->out_queue, str);
-    ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
-}
-
-#ifdef HAVE_LIBSCTP
-void interleaved_read_sctp_cb(struct ev_loop *loop, ev_io *w, int revents)
-{
-    char buffer[RTSP_BUFFERSIZE + 1];
-    RTSP_interleaved_channel *intlvd = w->data;
-    RTSP_buffer *rtsp = intlvd->local->data;
-    struct sctp_sndrcvinfo sctp_info;
-    int n;
-
-    if ((n = Sock_read(intlvd->local, buffer,
-                       RTSP_BUFFERSIZE, NULL, 0)) < 0) {
-        fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
-        return;
-    }
-
-    sctp_info.sinfo_stream = intlvd->channel;
-    Sock_write(rtsp->sock, buffer, n, &sctp_info, MSG_DONTWAIT | MSG_EOR);
-}
-
-static gboolean
-find_sctp_interleaved(gconstpointer value, gconstpointer target)
-{
-    RTSP_interleaved *i = (RTSP_interleaved *)value;
-    gint m = GPOINTER_TO_INT(target);
-    return (i->rtcp.channel == m);
-}
-
-#endif
-
 static void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     RTSP_buffer *rtsp = w->data;
@@ -147,7 +91,7 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 #ifdef HAVE_LIBSCTP
         RTSP_interleaved *intlvd =
             g_slist_find_custom(rtsp->interleaved, GINT_TO_POINTER(m),
-                                find_sctp_interleaved)->data;
+                                interleaved_rtcp_find_compare)->data;
         if (intlvd) {
             Sock_write(intlvd->rtcp.local, buffer, n, NULL, 0);
         } else {

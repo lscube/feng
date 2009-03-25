@@ -18,6 +18,7 @@ dist_feng_SOURCES = \
 	network/rtp_transport.c \
 	network/rtp_session.c \
 	network/rtsp.h \
+	network/rtsp_interleaved.c \
 	network/rtsp_lowlevel.c \
 	network/rtsp_method_describe.c \
 	network/rtsp_method_options.c \

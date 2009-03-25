@@ -425,15 +425,6 @@ static void rtsp_handle_request(RTSP_buffer *rtsp)
     rtsp_free_request(req);
 }
 
-static gboolean
-find_tcp_interleaved(gconstpointer value, gconstpointer target)
-{
-  RTSP_interleaved *i = (RTSP_interleaved *)value;
-  gint m = GPOINTER_TO_INT(target);
-
-  return (i->rtcp.channel == m);
-}
-
 static void rtsp_handle_interleaved(RTSP_buffer *rtsp, int blen, int hlen)
 {
     RTSP_interleaved *channel;
@@ -441,7 +432,7 @@ static void rtsp_handle_interleaved(RTSP_buffer *rtsp, int blen, int hlen)
     int m = rtsp->input->data[1];
     GSList *channel_it = g_slist_find_custom(rtsp->interleaved,
                                              GINT_TO_POINTER(m),
-                                             find_tcp_interleaved);
+                                             interleaved_rtcp_find_compare);
 
     if (!channel_it) {    // session not found
         fnc_log(FNC_LOG_DEBUG,

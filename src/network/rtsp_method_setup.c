@@ -105,82 +105,6 @@ static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp,
 }
 
 /**
- * interleaved transport
- */
-
-static void setup_interleaved_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd)
-{
-    void (*cb)(EV_P_ struct ev_io *w, int revents);
-    int i;
-
-    switch (Sock_type(rtsp->sock)) {
-        case TCP:
-            cb = interleaved_read_tcp_cb;
-        break;
-#ifdef HAVE_LIBSCTP
-        case SCTP:
-            cb = interleaved_read_sctp_cb;
-        break;
-        default:
-            // Shouldn't be possible
-        return;
-#endif
-    }
-
-    intlvd->rtp.local->data = rtsp;
-    intlvd->rtp.ev_io_listen.data = &intlvd->rtp;
-    ev_io_init(&intlvd->rtp.ev_io_listen, cb, Sock_fd(intlvd->rtp.local), EV_READ);
-    ev_io_start(rtsp->srv->loop, &intlvd->rtp.ev_io_listen);
-
-    intlvd->rtcp.local->data = rtsp;
-    intlvd->rtcp.ev_io_listen.data = &intlvd->rtcp;
-    ev_io_init(&intlvd->rtcp.ev_io_listen, cb, Sock_fd(intlvd->rtcp.local), EV_READ);
-    ev_io_start(rtsp->srv->loop, &intlvd->rtcp.ev_io_listen);
-}
-
-static gboolean
-interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
-                      int rtp_ch, int rtcp_ch)
-{
-    RTSP_interleaved *intlvd = NULL;
-    Sock *sock_pair[2][2];
-
-    // RTP local sockpair
-    if ( Sock_socketpair(sock_pair[0]) < 0) {
-        fnc_log(FNC_LOG_ERR,
-                "Cannot create AF_LOCAL socketpair for rtp\n");
-        return false;
-    }
-
-    // RTCP local sockpair
-    if ( Sock_socketpair(sock_pair[1]) < 0) {
-        fnc_log(FNC_LOG_ERR,
-                "Cannot create AF_LOCAL socketpair for rtcp\n");
-        Sock_close(sock_pair[0][0]);
-        Sock_close(sock_pair[0][1]);
-        return false;
-    }
-
-    intlvd = g_slice_new0(RTSP_interleaved);
-
-    transport->rtp_sock = sock_pair[0][0];
-    intlvd->rtp.local = sock_pair[0][1];
-
-    transport->rtcp_sock = sock_pair[1][0];
-    intlvd->rtcp.local = sock_pair[1][1];
-
-    // copy stream number in rtp_transport struct
-    transport->rtp_ch = intlvd->rtp.channel = rtp_ch;
-    transport->rtcp_ch = intlvd->rtcp.channel = rtcp_ch;
-
-    setup_interleaved_callbacks(rtsp, intlvd);
-
-    rtsp->interleaved = g_slist_prepend(rtsp->interleaved, intlvd);
-
-    return true;
-}
-
-/**
  * @brief Check the value parsed out of a transport specification.
  *
  * @param rtsp Client from which the request arrived
@@ -216,9 +140,9 @@ gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
             return false;
         }
 
-        return interleaved_transport(rtsp, rtp_t,
-                                     transport->parameters.TCP.ich_rtp,
-                                     transport->parameters.TCP.ich_rtcp);
+        return interleaved_setup_transport(rtsp, rtp_t,
+                                           transport->parameters.TCP.ich_rtp,
+                                           transport->parameters.TCP.ich_rtcp);
     case TransportSCTP:
         if ( transport->parameters.SCTP.ch_rtp &&
              !transport->parameters.SCTP.ch_rtcp )
@@ -236,9 +160,9 @@ gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
             return false;
         }
 
-        return interleaved_transport(rtsp, rtp_t,
-                                     transport->parameters.SCTP.ch_rtp,
-                                     transport->parameters.SCTP.ch_rtcp);
+        return interleaved_setup_transport(rtsp, rtp_t,
+                                           transport->parameters.SCTP.ch_rtp,
+                                           transport->parameters.SCTP.ch_rtcp);
 
     default:
         return false;
