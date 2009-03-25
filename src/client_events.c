@@ -62,8 +62,6 @@ static void check_if_any_rtp_session_timedout(gpointer element, gpointer user_da
     RTP_session *session = (RTP_session *)element;
     time_t now = time(NULL);
 
-    if (session->pause) return;
-
     /* Check if we didn't send any data for more then STREAM_BYE_TIMEOUT seconds
      * this will happen if we are not receiving any more from live producer or
      * if the stored stream ended.
