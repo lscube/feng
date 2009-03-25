@@ -174,16 +174,6 @@ RTP_session *rtp_session_new(struct RTSP_Client *, struct RTSP_session *,
                              struct Track *);
 void rtp_session_free(RTP_session *);
 
-typedef struct play_args {
-    struct tm playback_time;
-    gboolean playback_time_valid;
-    gboolean seek_time_valid;
-    double start_time;   //! time in seconds
-    double begin_time;
-    double end_time;
-} rtp_play_args;
-
-
 void rtp_session_gslist_resume(GSList *, double);
 void rtp_session_gslist_seek(GSList *, double);
 

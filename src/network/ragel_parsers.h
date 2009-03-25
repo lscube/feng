@@ -89,6 +89,40 @@ gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
  */
 
 /**
+ * @defgroup ragel_range Range: header parsing
+ *
+ * @{
+ */
+
+/**
+ * @brief Structure filled by the parser of the Range header.
+ *
+ * This structure contains the software-accessible range data as
+ * parsed by the ragel state machine from the RTSP Range header as
+ * specified by RFC 2326 Section 12.29.
+ *
+ * @internal
+ */
+typedef struct {
+    /** Seconds into the stream to start the playback at */
+    double begin_time;
+
+    /** Seconds into the stream to stop the playback at */
+    double end_time;
+
+    /** Real-time timestamp when to start the playback */
+    double playback_time;
+} ParsedRange;
+
+gboolean ragel_parse_range_header(const char *header,
+                                  ParsedRange *range);
+
+/**
+ *@}
+ */
+
+
+/**
  *@}
  */
 

@@ -1,12 +1,12 @@
 /* -*- c -*- */
 
 #include <stdbool.h>
-#include <fenice/schedule.h>
+#include "network/ragel_parsers.h"
 
 %% machine ragel_range_header;
 
 gboolean ragel_parse_range_header(const char *header,
-                                  rtp_play_args *args) {
+                                  ParsedRange *range) {
 
     int cs;
     const char *p = header, *pe = p + strlen(p) +1;
@@ -77,13 +77,12 @@ gboolean ragel_parse_range_header(const char *header,
             NTPSeconds | NTPhhmmss;
 
         action set_begin {
-            args->begin_time = seconds;
-            args->seek_time_valid = true;
+            range->begin_time = seconds;
             seconds = 0;
         }
 
         action set_end {
-            args->end_time = seconds;
+            range->end_time = seconds;
             seconds = 0;
         }
 
@@ -142,8 +141,7 @@ gboolean ragel_parse_range_header(const char *header,
         UTCTimeSpec = (UTCDate . "T" . UTCTime . "Z") > start_utcts;
 
         action set_playback_time {
-            memcpy(&(args->playback_time), &utctime, sizeof(struct tm));
-            args->playback_time_valid = true;
+            range->playback_time = mktime(&utctime);
         }
 
         RangeHeader = (NTPRangeHeader | RangeSpecifier) .
