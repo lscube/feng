@@ -271,6 +271,7 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 // allocation of all data structures
 
     r = g_new0(Resource, 1);
+    r->lock = g_mutex_new();
 
 // we use MObject_new: that will alloc memory and exits the program
 // if something goes wrong
@@ -314,6 +315,7 @@ static void free_track(Track *t, Resource *r)
 void r_close(Resource *r)
 {
     if(r) {
+        g_mutex_free(r->lock);
         istream_close(r->i_stream);
         MObject_unref(MOBJECT(r->info));
         r->info = NULL;
@@ -381,9 +383,14 @@ static void r_producer_reset_queue(gpointer track_gen, gpointer unused) {
 }
 
 int r_seek(Resource *resource, double time) {
-    int res = resource->demuxer->seek(resource, time);
+    int res;
+
+    g_mutex_lock(resource->lock);
+    res = resource->demuxer->seek(resource, time);
 
     g_list_foreach(resource->tracks, r_producer_reset_queue, NULL);
+
+    g_mutex_unlock(resource->lock);
 
     return res;
 }
