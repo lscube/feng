@@ -5,7 +5,6 @@ noinst_HEADERS = \
 	include/fenice/fnc_log.h \
 	include/fenice/multicast.h \
 	include/fenice/prefs.h \
-	include/fenice/schedule.h \
 	include/fenice/server.h \
 	include/fenice/sdp_grammar.h
 

@@ -35,7 +35,6 @@
 #include "rtp.h"
 #include "rtcp.h"
 #include "sdp2.h"
-#include <fenice/schedule.h>
 
 #ifdef HAVE_LIBSCTP
 #include <netinet/sctp.h>

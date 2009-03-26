@@ -37,7 +37,6 @@ dist_feng_SOURCES = \
 	fnc_log.c \
 	is_valid_multicast_address.c \
 	main.c \
-	schedule.c \
 	\
 	$(BUILT_SOURCES)
 

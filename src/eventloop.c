@@ -36,8 +36,6 @@
 #include "network/rtsp.h"
 #include <fenice/utils.h>
 
-#include <fenice/schedule.h>
-
 static GPtrArray *io_watchers; //!< keep track of ev_io allocated
 
 static inline

@@ -24,14 +24,7 @@
  * @brief Contains TEARDOWN method and reply handlers
  */
 
-#include <inttypes.h> /* For PRIu64 */
-
-
 #include "rtsp.h"
-#include <fenice/prefs.h>
-#include <fenice/schedule.h>
-#include <fenice/fnc_log.h>
-#include <glib.h>
 
 /**
  * RTSP TEARDOWN method handler

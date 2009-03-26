@@ -45,7 +45,7 @@ static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
     struct sockaddr *sa_p = (struct sockaddr *)&(session->transport.last_stg);
 
     if (!s)
-        return -1;
+        return;
 
     switch (s->socktype) {
         case UDP:
@@ -62,6 +62,17 @@ static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
             session->rtcp_insize = -1;
             break;
     }
+}
+
+static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
+{
+    rtp_session_handle_sending(w->data);
+}
+
+static ev_tstamp rtp_reschedule_cb(ev_periodic *w, ev_tstamp now)
+{
+    RTP_session *sess = w->data;
+    return now + sess->track->properties->frame_duration/2;
 }
 
 /**
@@ -103,7 +114,6 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
     rtp_s->consumer = bq_consumer_new(tr->producer);
 
     rtp_s->srv = srv;
-    rtp_s->sched_id = schedule_add(rtp_s);
     rtp_s->ssrc = g_random_int();
     rtp_s->rtsp_buffer = rtsp;
 
@@ -112,8 +122,13 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
 #endif
 
     rtp_s->transport.rtcp_watcher.data = rtp_s;
-    ev_io_init(&rtp_s->transport.rtcp_watcher, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
+    ev_io_init(&rtp_s->transport.rtcp_watcher, rtcp_read_cb,
+               Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
     ev_io_start(srv->loop, &rtp_s->transport.rtcp_watcher);
+
+    rtp_s->transport.rtp_writer.data = rtp_s;
+    ev_periodic_init(&rtp_s->transport.rtp_writer, rtp_write_cb,
+                     0, 0, rtp_reschedule_cb);
 
     // Setup the RTP session
     rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
@@ -175,6 +190,9 @@ static void rtp_session_resume(gpointer session_gen, gpointer start_time_gen) {
     g_assert(session->pause);
 
     session->start_time = *start_time;
+
+    ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
+
     session->send_time = 0.0;
     session->pause = 0;
     session->last_packet_send_time = time(NULL);
@@ -320,47 +338,40 @@ static gboolean rtp_session_send_prereq(RTP_session *session) {
 void rtp_session_handle_sending(RTP_session *session)
 {
     MParserBuffer *buffer = NULL;
-    double now;
 
     if ( !rtp_session_send_prereq(session) )
         return;
-
-    now = gettimeinseconds(NULL);
 
 #ifdef HAVE_METADATA
     if (session->metadata)
         cpd_send(session, now);
 #endif
 
-    while ( now >= session->start_time &&
-            now >= (session->start_time + session->send_time) ) {
+    /* Get the current buffer, if there is enough data */
+    if ( !(buffer = bq_consumer_get(session->consumer)) ) {
+        /* If there is no buffer, it means that either the producer
+         * has been stopped (as we reached the end of stream) or that
+         * there is no data for the consumer to read. If that's the
+         * case we just give control back to the main loop for now.
+         */
 
-        /* Get the current buffer, if there is enough data */
-        if ( !(buffer = bq_consumer_get(session->consumer)) ) {
-            /* If there is no buffer, it means that either the producer
-             * has been stopped (as we reached the end of stream) or that
-             * there is no data for the consumer to read. If that's the
-             * case we just give control back to the main loop for now.
+        if ( bq_consumer_stopped(session->consumer) ) {
+            /* If the producer has been stopped, we send the
+             * finishing packets and go away.
              */
-
-            if ( bq_consumer_stopped(session->consumer) ) {
-                /* If the producer has been stopped, we send the
-                 * finishing packets and go away.
-                 */
-                fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
-                RTCP_send_bye(session);
-                break;
-            }
-
-            break;
+            fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
+            RTCP_send_bye(session);
+            return;
         }
-
-        if (rtp_packet_send(session, buffer) <= session->srv->srvconf.buffered_frames) {
-            event_buffer_low(session->track->parent);
-        }
-
-        RTCP_handler(session);
+        return;
     }
+
+    if (rtp_packet_send(session, buffer) <=
+            session->srv->srvconf.buffered_frames) {
+        event_buffer_low(session->track->parent);
+    }
+
+    RTCP_handler(session);
 
     g_mutex_unlock(session->lock);
 }
