@@ -147,21 +147,6 @@ void mt_init() {
     g_thread_create(mediathread, NULL, FALSE, NULL);
 }
 
-Resource *mt_resource_open(feng *srv, const char *filename) {
-    // TODO: add to a list in order to close resources on shutdown!
-
-    Resource *res;
-
-    // open AV resource
-    res = r_open(srv, filename);
-
-#ifdef HAVE_METADATA
-    cpd_find_request(srv, res, filename);
-#endif
-
-    return res;
-}
-
 void mt_resource_close(Resource *resource) {
     if (!resource)
         return;

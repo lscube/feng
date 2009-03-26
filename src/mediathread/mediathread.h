@@ -37,7 +37,6 @@ void event_buffer_low(Resource *);
 
 struct feng;
 
-Resource *mt_resource_open(struct feng *srv, const char *inner_path);
 void mt_resource_close(Resource *);
 
 #endif // FN_MEDIA_THREAD_H

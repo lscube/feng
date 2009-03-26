@@ -291,6 +291,10 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 
     r_descr_cache_update(r);
 
+#ifdef HAVE_METADATA
+    cpd_find_request(srv, r, filename);
+#endif
+
     return r;
 }
 

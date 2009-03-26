@@ -188,7 +188,7 @@ static Track *select_requested_track(const char *path, RTSP_session * rtsp_s, co
 
     // it should parse the request giving us object!trackname
     if (!rtsp_s->resource) {
-        if (!(rtsp_s->resource = mt_resource_open(srv, path))) {
+        if (!(rtsp_s->resource = r_open(srv, path))) {
             fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", path);
             return NULL;
         }
