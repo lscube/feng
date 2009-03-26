@@ -37,61 +37,59 @@ static GAsyncQueue *el_head;
 static GStaticMutex mt_mutex = G_STATIC_MUTEX_INIT;
 static int stopped = 0;
 
-typedef enum {
-    MT_EV_BUFFER_LOW,   //!< Buffer needs to be filled. ARGS= Track*
-    MT_EV_SHUTDOWN,     //!< The server is going to close. ARGS= NULL
-    MT_EV_CLOSE         //!< The resource must be closed
-} mt_event_id;
+typedef void (*mt_callback)(Resource *);
 
 typedef struct {
-    mt_event_id id;
+    mt_callback cb;
     Resource *resource;
 } mt_event_item;
 
-static inline int mt_process_event(mt_event_item *ev) {
-    Resource *r = ev->resource;
+/**
+ * @brief Buffer low event
+ *
+ * @param r Resource to read data from
+ *
+ * This function is used to re-fill the buffer for the resource that
+ * it's given, to make sure that there is enough data to send to the
+ * clients.
+ */
+static void mt_cb_buffer_low(Resource *r)
+{
+    fnc_log(FNC_LOG_VERBOSE, "[MT] Filling buffer for resource %p", r);
 
-    if (!ev)
-        return ERR_GENERIC;
-
-    fnc_log(FNC_LOG_VERBOSE, "[MT] Processing event: %#x", ev->id);
-
-    switch (ev->id) {
-    case MT_EV_BUFFER_LOW:
-            fnc_log(FNC_LOG_VERBOSE, "[MT] Filling buffer for resource %p", r);
-
-            switch (r->demuxer->read_packet(r)) {
-            case RESOURCE_OK:
-                fnc_log(FNC_LOG_VERBOSE, "[MT] Done!");
-                break;
-            case RESOURCE_EOF:
-                // Signal the end of stream
-                r->eos = 1;
-                break;
-            default:
-                fnc_log(FNC_LOG_FATAL,
-                        "[MT] read_packet() error.");
-                break;
-            }
+    switch (r->demuxer->read_packet(r)) {
+    case RESOURCE_OK:
+        fnc_log(FNC_LOG_VERBOSE, "[MT] Done!");
         break;
-    case MT_EV_SHUTDOWN:
-        stopped = 1;
+    case RESOURCE_EOF:
+        // Signal the end of stream
+        r->eos = 1;
         break;
-    case MT_EV_CLOSE:
-        r_close(r);
+    default:
+        fnc_log(FNC_LOG_FATAL,
+                "[MT] read_packet() error.");
         break;
     }
-
-    g_free(ev);
-    return ERR_NOERROR;
 }
 
-static void mt_add_event(mt_event_id id, Resource *r) {
+/**
+ * @brief Shutdown event
+ *
+ * @param unused Never used, unimportant garbage
+ *
+ * Stop the mediathread
+ */
+static void mt_cb_shutdown(Resource *unused)
+{
+    stopped =1;
+}
+
+static void mt_add_event(mt_callback cb, Resource *r) {
     mt_event_item *item = g_new0(mt_event_item, 1);
 
     fnc_log(FNC_LOG_VERBOSE, "[MT] Created event: %#x", item);
 
-    item->id = id;
+    item->cb = cb;
     item->resource = r;
 
     /* This is already referenced for this thread; mt_add_event() is
@@ -108,7 +106,7 @@ static void mt_add_event(mt_event_id id, Resource *r) {
  *
  * @see mt_init
  */
-static gpointer *mediathread(gpointer *arg) {
+static gpointer mediathread(gpointer arg) {
     fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started");
 
     g_async_queue_ref(el_head);
@@ -116,11 +114,12 @@ static gpointer *mediathread(gpointer *arg) {
     while(!stopped) {
         //this replaces the previous nanosleep loop,
         //as this will block until data is available
-        mt_event_item *el_cur = g_async_queue_pop (el_head);
-        if (el_cur) {
+        mt_event_item *evt = g_async_queue_pop (el_head);
+        if (evt) {
             g_static_mutex_lock(&mt_mutex);
-            mt_process_event(el_cur);
+            evt->cb(evt->resource);
             g_static_mutex_unlock(&mt_mutex);
+            g_free(evt);
         }
     }
 
@@ -165,7 +164,7 @@ Resource *mt_resource_open(feng *srv, const char *filename) {
 void mt_resource_close(Resource *resource) {
     if (!resource)
         return;
-    mt_add_event(MT_EV_CLOSE, resource);
+    mt_add_event(r_close, resource);
 }
 
 int mt_resource_seek(Resource *resource, double time) {
@@ -178,9 +177,9 @@ int mt_resource_seek(Resource *resource, double time) {
 }
 
 void event_buffer_low(Resource *r) {
-    mt_add_event(MT_EV_BUFFER_LOW, r);
+    mt_add_event(mt_cb_buffer_low, r);
 }
 
 void mt_shutdown() {
-    mt_add_event(MT_EV_SHUTDOWN, NULL);
+    mt_add_event(mt_cb_shutdown, NULL);
 }
