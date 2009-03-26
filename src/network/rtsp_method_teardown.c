@@ -44,7 +44,7 @@ void RTSP_teardown(RTSP_Client * rtsp, RTSP_Request *req)
     Url url;
     RTSP_session *s;
 
-    if ( !rtsp_request_check_url(req) );
+    if ( !rtsp_request_check_url(req) )
         return;
 
     s = rtsp->session;
