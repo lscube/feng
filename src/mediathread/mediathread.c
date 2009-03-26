@@ -94,9 +94,10 @@ static void mt_add_event(mt_event_id id, Resource *r) {
     item->id = id;
     item->resource = r;
 
-    g_async_queue_ref(el_head);
+    /* This is already referenced for this thread; mt_add_event() is
+     * called by the main eventloop, which is where the queue was
+     * created in the first place. */
     g_async_queue_push(el_head, item);
-    g_async_queue_unref(el_head);
 }
 
 /**
