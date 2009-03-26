@@ -269,6 +269,6 @@ void rtsp_session_free(RTSP_session *session);
 gboolean interleaved_setup_transport(RTSP_Client *, RTP_transport *,
                                      int, int);
 void interleaved_rtcp_send(RTSP_Client *, int, void *, size_t);
-void interleaved_list_free(RTSP_Client *);
+void interleaved_free_list(RTSP_Client *);
 
 #endif // FN_RTSP_H
