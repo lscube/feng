@@ -420,7 +420,6 @@ static void rtsp_handle_request(RTSP_Client *rtsp)
     /* We're safe to use the array of functions since rtsp_parse_request() takes
      * care of responding with an error if the method is not implemented.
      */
-
     methods[req->method_id](rtsp, req);
 
     rtsp_free_request(req);
