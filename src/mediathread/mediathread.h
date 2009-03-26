@@ -39,7 +39,6 @@ struct feng;
 
 Resource *mt_resource_open(struct feng *srv, const char *inner_path);
 void mt_resource_close(Resource *);
-int mt_resource_seek(Resource *, double);
 
 #endif // FN_MEDIA_THREAD_H
 

@@ -168,10 +168,6 @@ void mt_resource_close(Resource *resource) {
     mt_add_event(r_close, resource);
 }
 
-int mt_resource_seek(Resource *resource, double time) {
-    return r_seek(resource, time);
-}
-
 void event_buffer_low(Resource *r) {
     mt_add_event(mt_cb_buffer_low, r);
 }

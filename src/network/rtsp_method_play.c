@@ -53,7 +53,7 @@ static RTSP_ResponseCode do_play(RTSP_session * rtsp_sess,
 {
     /* If a seek was requested, execute it */
     if ( !isnan(range->begin_time) ) {
-        if ( mt_resource_seek(rtsp_sess->resource, range->begin_time) )
+        if ( r_seek(rtsp_sess->resource, range->begin_time) )
             return RTSP_InvalidRange;
         else
             rtp_session_gslist_seek(rtsp_sess->rtp_sessions, range->begin_time);
