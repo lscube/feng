@@ -81,6 +81,7 @@ MObject_def(ResourceInfo_s)
 } ResourceInfo;
 
 typedef struct Resource {
+    GMutex *lock;
     InputStream *i_stream;
     struct Demuxer *demuxer;
     ResourceInfo *info;

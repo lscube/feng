@@ -34,7 +34,6 @@
 #endif
 
 static GAsyncQueue *el_head;
-static GStaticMutex mt_mutex = G_STATIC_MUTEX_INIT;
 static int stopped = 0;
 
 typedef void (*mt_callback)(Resource *);
@@ -57,6 +56,8 @@ static void mt_cb_buffer_low(Resource *r)
 {
     fnc_log(FNC_LOG_VERBOSE, "[MT] Filling buffer for resource %p", r);
 
+    g_mutex_lock(r->lock);
+
     switch (r->demuxer->read_packet(r)) {
     case RESOURCE_OK:
         fnc_log(FNC_LOG_VERBOSE, "[MT] Done!");
@@ -70,6 +71,8 @@ static void mt_cb_buffer_low(Resource *r)
                 "[MT] read_packet() error.");
         break;
     }
+
+    g_mutex_unlock(r->lock);
 }
 
 /**
@@ -116,9 +119,7 @@ static gpointer mediathread(gpointer arg) {
         //as this will block until data is available
         mt_event_item *evt = g_async_queue_pop (el_head);
         if (evt) {
-            g_static_mutex_lock(&mt_mutex);
             evt->cb(evt->resource);
-            g_static_mutex_unlock(&mt_mutex);
             g_free(evt);
         }
     }
@@ -168,12 +169,7 @@ void mt_resource_close(Resource *resource) {
 }
 
 int mt_resource_seek(Resource *resource, double time) {
-    int res;
-    g_static_mutex_lock(&mt_mutex);
-    res = r_seek(resource, time);
-    g_static_mutex_unlock(&mt_mutex);
-
-    return res;
+    return r_seek(resource, time);
 }
 
 void event_buffer_low(Resource *r) {
