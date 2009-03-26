@@ -263,8 +263,6 @@ static int command_environment(feng *srv, int argc, char **argv)
                           progname);
 
         Sock_init(fn);
-
-        g_free(progname);
     }
 
     return 0;
