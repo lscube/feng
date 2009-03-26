@@ -38,16 +38,14 @@
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  * @return ERR_NOERROR
+ * @todo trigger the release of rtp resources here
  */
 void RTSP_teardown(RTSP_Client * rtsp, RTSP_Request *req)
 {
-    Url url;
-    RTSP_session *s;
-
     if ( !rtsp_request_check_url(req) )
         return;
 
-    s = rtsp->session;
+//    ev_async_send(rtsp->srv->loop, rtsp->ev_sig_disconnect);
 
     rtsp_quick_response(req, RTSP_Ok);
 }
