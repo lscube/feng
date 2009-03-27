@@ -50,11 +50,6 @@ typedef struct {
     int RTCP;
 } port_pair;
 
-typedef enum {
-    rtp_proto = 0,
-    rtcp_proto
-} rtp_protos;
-
 typedef struct RTP_transport {
     Sock *rtp_sock;
     Sock *rtcp_sock;
