@@ -82,8 +82,8 @@ static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
     g_string_append_printf(descr, "%d RTP/AVP",
 			   m_descr_rtp_port(m_descr));
 
-    for (tmp_mdl = list_first(m_descr_list); tmp_mdl;
-         tmp_mdl = list_next(tmp_mdl))
+    for (tmp_mdl = g_list_first(m_descr_list); tmp_mdl;
+         tmp_mdl = g_list_next(tmp_mdl))
       g_string_append_printf(descr, " %u",
 			     m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl)));
 
@@ -105,11 +105,11 @@ static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
 			     m_descr_frame_rate(m_descr));
 
     // other sdp private data
-    for (tmp_mdl = list_first(m_descr_list); tmp_mdl;
-         tmp_mdl = list_next(tmp_mdl))
+    for (tmp_mdl = g_list_first(m_descr_list); tmp_mdl;
+         tmp_mdl = g_list_next(tmp_mdl))
         if ((sdp_private = m_descr_sdp_private(MEDIA_DESCR(tmp_mdl))))
-            for (sdp_private = list_first(sdp_private); sdp_private;
-                 sdp_private = list_next(sdp_private)) {
+            for (sdp_private = g_list_first(sdp_private); sdp_private;
+                 sdp_private = g_list_next(sdp_private)) {
                 switch (SDP_FIELD(sdp_private)->type) {
                     case empty_field:
 		      g_string_append_printf(descr, "%s"SDP2_EL,
@@ -250,9 +250,9 @@ GString *sdp_session_descr(struct feng *srv, const char *server, const char *nam
 
     // other private data
     if ( (sdp_private=r_descr_sdp_private(r_descr)) )
-        for (sdp_private = list_first(sdp_private);
+        for (sdp_private = g_list_first(sdp_private);
              sdp_private;
-             sdp_private = list_next(sdp_private)) {
+             sdp_private = g_list_next(sdp_private)) {
             switch (SDP_FIELD(sdp_private)->type) {
                 case empty_field:
 		  g_string_append_printf(descr, "%s"SDP2_EL,
@@ -268,7 +268,7 @@ GString *sdp_session_descr(struct feng *srv, const char *server, const char *nam
     m_descrs = r_descr_get_media(r_descr);
 
     for (i=0;i<m_descrs->len;i++) { /// @TODO wrap g_array functions
-        sdp_media_descr(array_data(m_descrs)[i], descr);
+        sdp_media_descr(m_descrs->pdata[i], descr);
     }
 
     fnc_log(FNC_LOG_INFO, "[SDP2] description:\n%s", descr->str);

@@ -56,14 +56,6 @@ typedef GList *MediaDescrList;
 typedef GList *SelList;
 typedef GPtrArray *MediaDescrListArray;
 
-//! Some macros to wrap GList functions
-#define list_first(x) g_list_first(x)
-#define list_next(x) g_list_next(x)
-
-//! Some mecros to wrap GPtrArray functions
-#define array_data(x) x->pdata
-#define array_index(x, y) x->pdata[y]
-
 MObject_def(ResourceInfo_s)
     char *mrl;
     char *name;
