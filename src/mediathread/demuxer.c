@@ -506,16 +506,18 @@ ResourceDescr *r_descr_get(struct feng *srv, const char *inner_path)
  * @internal This function should only be called by g_list_foreach().
  */
 static void r_descr_find_media(gpointer element, gpointer user_data) {
-    MediaDescrList m_descr_it = (MediaDescrList)element;
+    MediaDescr *m_descr = (MediaDescr *)element;
     MediaDescrListArray new_m_descrs = (MediaDescrListArray)user_data;
 
     gboolean found = 0;
-    MediaDescr *m_descr = MEDIA_DESCR(m_descr_it);
     guint i;
 
     for (i = 0; i < new_m_descrs->len; ++i) {
         MediaDescrList m_descr_list_it = g_ptr_array_index(new_m_descrs, i);
         MediaDescr *m_descr_list = MEDIA_DESCR(m_descr_list_it);
+
+        if ( m_descr_list == NULL )
+            continue;
 
         if ( (m_descr_type(m_descr) ==
               m_descr_type(m_descr_list)) &&
