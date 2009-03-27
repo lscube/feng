@@ -375,6 +375,22 @@ void r_close(Resource *r)
 }
 
 /**
+ * @brief Comparison function to compare a Track to a name
+ *
+ * @param a Track pointer to the element in the list
+ * @param b String with the name to compare to
+ *
+ * @return The strcmp() result between the correspondent Track name
+ *         and the given name.
+ *
+ * @internal This function should _only_ be used by @ref r_find_track.
+ */
+static gint r_find_track_cmp_name(gconstpointer a, gconstpointer b)
+{
+    return strcmp( ((Track *)a)->info->name, (const char *)b);
+}
+
+/**
  * @brief Find the given track name in the resource
  *
  * @param resource The Resource object to look into
@@ -390,17 +406,17 @@ void r_close(Resource *r)
  * @todo Capabilities aren't used yet.
  */
 Track *r_find_track(Resource *resource, const char *track_name) {
-    GList *track;
+    GList *track = g_list_find_custom(resource->tracks,
+                                      track_name,
+                                      r_find_track_cmp_name);
 
-    for (track=g_list_first(resource->tracks); track; track=g_list_next(track))
-        if( !strcmp(TRACK(track)->info->name, track_name) ) {
-            return TRACK(track);
-        }
+    if ( !track ) {
+        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
+                track_name, resource->info->mrl);
+        return NULL;
+    }
 
-    fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
-            track_name, resource->info->mrl);
-
-    return NULL;
+    return track->data;
 }
 
 static int r_changed(ResourceDescr *descr)
