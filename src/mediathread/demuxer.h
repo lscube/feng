@@ -44,12 +44,6 @@
 #define MAX_TRACKS 20
 #define MAX_SEL_TRACKS 5
 
-//! Macros that take the data part of a GList element and cast to correct type
-#define RESOURCE(x) ((Resource *)x->data)
-#define TRACK(x) ((Track *)x->data)
-#define RESOURCE_DESCR(x) ((ResourceDescr *)x->data)
-#define MEDIA_DESCR(x) ((MediaDescr *)x->data)
-
 //! typedefs that give convenient names to GLists used
 typedef GList *TrackList;
 typedef GList *MediaDescrList;
