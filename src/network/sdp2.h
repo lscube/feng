@@ -31,6 +31,6 @@ struct feng;
 #define SDP2_VERSION 0
 #define SDP2_TRACK_ID "TrackID"
 
-GString *sdp_session_descr(struct feng *srv, char *server, char *name);
+GString *sdp_session_descr(struct feng *, const char *, const char *);
 
 #endif // FN_SDP2_H

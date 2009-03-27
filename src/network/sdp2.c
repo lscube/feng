@@ -213,7 +213,7 @@ static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
  * @TODO Consider receiving a netembryo Url structure pointer instead
  *       of separated server and resource names.
  */
-GString *sdp_session_descr(struct feng *srv, char *server, char *name)
+GString *sdp_session_descr(struct feng *srv, const char *server, const char *name)
 {
     GString *descr = NULL;
     ResourceDescr *r_descr;
