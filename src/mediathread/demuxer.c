@@ -226,7 +226,7 @@ static void r_descr_cache_update(Resource *r)
     ResourceDescr *r_descr=NULL;
 
     if ( ( cache_el = r_descr_find(r->info->mrl) ) ) {
-        r_descr = RESOURCE_DESCR(cache_el);
+        r_descr = cache_el->data;
         // TODO free ResourceDescr
         descr_cache = g_list_remove_link(descr_cache, cache_el);
         if (r_changed(r_descr)) {
@@ -241,7 +241,7 @@ static void r_descr_cache_update(Resource *r)
 
     if (g_list_length(descr_cache)>MAX_DESCR_CACHE_SIZE) {
         cache_el = g_list_last(descr_cache);
-        r_descr_free(RESOURCE_DESCR(cache_el));
+        r_descr_free(cache_el->data);
         descr_cache = g_list_delete_link(descr_cache, cache_el);
     }
 }
@@ -576,7 +576,7 @@ ResourceDescr *r_descr_get(struct feng *srv, const char *inner_path)
 
     g_free(mrl);
 
-    return RESOURCE_DESCR(cache_el);
+    return cache_el->data;
 }
 
 /**
