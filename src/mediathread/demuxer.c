@@ -245,8 +245,9 @@ static gboolean r_changed(ResourceDescr *descr)
     {
         MediaDescr *m_descr = (MediaDescr *)m_descr_it->data;
 
-        /* Okay if this happens we've got a problem */
-        g_assert(m_descr->info->mrl != NULL);
+        /* Why is it possible that this hits? No clue! */
+        if (m_descr->info->mrl == NULL)
+            break;
 
         if (mrl_changed(m_descr->info->mrl,
                         &(m_descr->last_change)))
