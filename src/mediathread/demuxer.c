@@ -626,10 +626,10 @@ static void r_descr_find_media(gpointer element, gpointer user_data) {
 
     if (found) {
         MediaDescrList found_list = g_ptr_array_index(new_m_descrs, i);
-        found_list = g_list_prepend(found_list, m_descr);
+        found_list = g_list_append(found_list, m_descr);
         new_m_descrs->pdata[i] = found_list;
     } else {
-        MediaDescrList new_list = g_list_prepend(NULL, m_descr);
+        MediaDescrList new_list = g_list_append(NULL, m_descr);
         g_ptr_array_add(new_m_descrs, new_list);
     }
 }
@@ -647,19 +647,11 @@ static void r_descr_find_media(gpointer element, gpointer user_data) {
  */
 MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
 {
-    MediaDescrListArray new_m_descrs;
-    guint i;
-
-    new_m_descrs = g_ptr_array_sized_new(
-                        g_list_position(r_descr->media,
-                                        g_list_last(r_descr->media))+1);
+    MediaDescrListArray new_m_descrs =
+        g_ptr_array_sized_new(g_list_position(r_descr->media,
+                                              g_list_last(r_descr->media))+1);
 
     g_list_foreach(r_descr->media, r_descr_find_media, new_m_descrs);
-
-    for (i = 0; i < new_m_descrs->len; ++i) {
-        MediaDescrList m_descr_list = g_ptr_array_index(new_m_descrs, i);
-        m_descr_list = g_list_reverse(m_descr_list);
-    }
 
     return new_m_descrs;
 }
