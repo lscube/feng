@@ -40,6 +40,46 @@
 #include <netembryo/url.h>
 
 /**
+ * @brief Iteration function to find all the media of a given type
+ *        with the given name.
+ *
+ * @param element The current media_description to test
+ * @param user_data The array of lists
+ *
+ * @internal This function should only be called by g_list_foreach().
+ */
+static void r_descr_find_media(gpointer element, gpointer user_data) {
+    MediaDescrList m_descr_it = (MediaDescrList)element;
+    MediaDescrListArray new_m_descrs = (MediaDescrListArray)user_data;
+
+    gboolean found = 0;
+    MediaDescr *m_descr = MEDIA_DESCR(m_descr_it);
+    guint i;
+
+    for (i = 0; i < new_m_descrs->len; ++i) {
+        MediaDescrList m_descr_list_it = g_ptr_array_index(new_m_descrs, i);
+        MediaDescr *m_descr_list = MEDIA_DESCR(m_descr_list_it);
+
+        if ( (m_descr_type(m_descr) ==
+              m_descr_type(m_descr_list)) &&
+             !strcmp(m_descr_name(m_descr),
+                     m_descr_name(m_descr_list)) ) {
+            found = true;
+            break;
+        }
+    }
+
+    if (found) {
+        MediaDescrList found_list = g_ptr_array_index(new_m_descrs, i);
+        found_list = g_list_prepend(found_list, m_descr);
+        new_m_descrs->pdata[i] = found_list;
+    } else {
+        MediaDescrList new_list = g_list_prepend(NULL, m_descr);
+        g_ptr_array_add(new_m_descrs, new_list);
+    }
+}
+
+/**
  * @brief Creates an array of MediaDescrList containing media
  *        descriptions.
  *
@@ -53,45 +93,17 @@
 static MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
 {
     MediaDescrListArray new_m_descrs;
-    MediaDescrList m_descr_it;
     guint i;
 
     new_m_descrs = g_ptr_array_sized_new(
                         g_list_position(r_descr->media,
                                         g_list_last(r_descr->media))+1);
 
-    for (m_descr_it = g_list_first(r_descr->media);
-         m_descr_it;
-         m_descr_it = g_list_next(m_descr_it)) {
-        gboolean found = 0;
-        MediaDescr *m_descr = MEDIA_DESCR(m_descr_it);
-
-        for (i = 0; i < new_m_descrs->len; ++i) {
-            MediaDescrList m_descr_list_it = g_ptr_array_index(new_m_descrs, i);
-            MediaDescr *m_descr_list = MEDIA_DESCR(m_descr_list_it);
-
-            if ( (m_descr_type(m_descr) ==
-                  m_descr_type(m_descr_list)) &&
-                 !strcmp(m_descr_name(m_descr),
-                         m_descr_name(m_descr_list)) ) {
-                found = 1;
-                break;
-            }
-        }
-
-        if (found) {
-            MediaDescrList m_descr_list = g_ptr_array_index(new_m_descrs, i);
-            m_descr_list = g_list_prepend(m_descr_list, m_descr);
-            new_m_descrs->pdata[i] = m_descr_list;
-        } else {
-            MediaDescrList m_descr_list = g_list_prepend(NULL, m_descr);
-            g_ptr_array_add(new_m_descrs, m_descr_list);
-        }
-    }
+    g_list_foreach(r_descr->media, r_descr_find_media, new_m_descrs);
 
     for (i = 0; i < new_m_descrs->len; ++i) {
-            MediaDescrList m_descr_list = g_ptr_array_index(new_m_descrs, i);
-            m_descr_list = g_list_reverse(m_descr_list);
+        MediaDescrList m_descr_list = g_ptr_array_index(new_m_descrs, i);
+        m_descr_list = g_list_reverse(m_descr_list);
     }
 
     return new_m_descrs;
