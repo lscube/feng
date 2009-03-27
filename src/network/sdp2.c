@@ -40,6 +40,91 @@
 #include <netembryo/url.h>
 
 /**
+ * @brief Simple pair for compound parameters in foreach functions
+ *
+ * This data structure is used to pass parameters along with foreach
+ * functions, like @ref sdp_mdescr_private_append.
+ */
+typedef struct {
+    /** The string to append the SDP2 description to */
+    GString *descr;
+    /** The currently-described media description object */
+    MediaDescr *media;
+} sdp_mdescr_append_pair;
+
+/**
+ * @brief Append media private field information to an SDP2 string
+ *
+ * @param element An sdp_field object in the list
+ * @param user_data An sdp_mdescr_append_pair object
+ *
+ * @internal This function is only to be called by g_list_foreach().
+ */
+void sdp_mdescr_private_append(gpointer element, gpointer user_data)
+{
+    sdp_field *private = (sdp_field *)element;
+    sdp_mdescr_append_pair *pair = (sdp_mdescr_append_pair *)user_data;
+
+    switch (private->type) {
+    case empty_field:
+        g_string_append_printf(pair->descr, "%s"SDP2_EL,
+                               private->field);
+        break;
+    case fmtp:
+        g_string_append_printf(pair->descr, "a=fmtp:%u %s"SDP2_EL,
+                               m_descr_rtp_pt(pair->media),
+                               private->field);
+        break;
+    case rtpmap:
+        g_string_append_printf(pair->descr, "a=rtpmap:%u %s"SDP2_EL,
+                               m_descr_rtp_pt(pair->media),
+                               private->field);
+        break;
+    default: /* Ignore other private fields */
+        break;
+    }
+}
+
+/**
+ * @brief Append all the private fields for a media description to an
+ *        SDP2 string.
+ *
+ * @param element The media description to append the fields of
+ * @param user_data The GString object to append the description to
+ *
+ * @internal This function is only to be called by g_list_foreach().
+ */
+void sdp_mdescr_private_list_append(gpointer element, gpointer user_data)
+{
+    sdp_mdescr_append_pair pair = {
+        .descr = (GString *)user_data,
+        .media = (MediaDescr *)element
+    };
+
+    g_list_foreach(m_descr_sdp_private(pair.media),
+                   sdp_mdescr_private_append,
+                   &pair);
+}
+
+/**
+ * @brief Append the payload type for the media description to an SDP2
+ *        string.
+ *
+ * @param element The media description to append the fields of
+ * @param user_data The GString object to append the description to
+ *
+ * @internal This function is only to be called by g_list_foreach().
+ */
+void sdp_mdescr_pt_append(gpointer element, gpointer user_data)
+{
+    MediaDescr *mdescr = (MediaDescr *)element;
+    GString *descr = (GString *)user_data;
+
+    g_string_append_printf(descr, " %u",
+                           m_descr_rtp_pt(mdescr));
+}
+
+/**
  * @brief Append the description for a given media to an SDP
  *        description.
  *
@@ -50,8 +135,6 @@
 static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
 {
     MediaDescr *m_descr = m_descr_list ? (MediaDescr *)m_descr_list->data : NULL;
-    MediaDescrList tmp_mdl;
-    sdp_field_list sdp_private;
     char *encoded_media_name;
 
     if (!m_descr)
@@ -82,10 +165,9 @@ static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
     g_string_append_printf(descr, "%d RTP/AVP",
                            m_descr_rtp_port(m_descr));
 
-    for (tmp_mdl = g_list_first(m_descr_list); tmp_mdl;
-         tmp_mdl = g_list_next(tmp_mdl))
-        g_string_append_printf(descr, " %u",
-                               m_descr_rtp_pt(tmp_mdl->data));
+    g_list_foreach(m_descr_list,
+                   sdp_mdescr_pt_append,
+                   descr);
 
     g_string_append(descr, SDP2_EL);
 
@@ -104,32 +186,10 @@ static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
         g_string_append_printf(descr, "a=framerate:%f"SDP2_EL,
                                m_descr_frame_rate(m_descr));
 
-    // other sdp private data
-    for (tmp_mdl = g_list_first(m_descr_list); tmp_mdl;
-         tmp_mdl = g_list_next(tmp_mdl))
-        if ((sdp_private = m_descr_sdp_private(tmp_mdl->data)))
-            for (sdp_private = g_list_first(sdp_private); sdp_private;
-                 sdp_private = g_list_next(sdp_private)) {
-                switch (SDP_FIELD(sdp_private)->type) {
-                case empty_field:
-                    g_string_append_printf(descr, "%s"SDP2_EL,
-                                           SDP_FIELD(sdp_private)->field);
-                    break;
-                case fmtp:
-                    g_string_append_printf(descr, "a=fmtp:%u %s"SDP2_EL,
-                                           m_descr_rtp_pt(tmp_mdl->data),
-                                           SDP_FIELD(sdp_private)->field);
-                    break;
-                case rtpmap:
-                    g_string_append_printf(descr, "a=rtpmap:%u %s"SDP2_EL,
-                                           m_descr_rtp_pt(tmp_mdl->data),
-                                           SDP_FIELD(sdp_private)->field);
-                    break;
-                    // other supported private fields?
-                default: // ignore private field
-                    break;
-                }
-            }
+    g_list_foreach(m_descr_list,
+                    sdp_mdescr_private_list_append,
+                    descr);
+
     // CC licenses *
     if (m_descr_commons_deed(m_descr))
         g_string_append_printf(descr, "a=uriLicense:%s"SDP2_EL,
@@ -143,6 +203,30 @@ static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
     if (m_descr_author(m_descr))
         g_string_append_printf(descr, "a=author:%s"SDP2_EL,
                                m_descr_author(m_descr));
+}
+
+/**
+ * @brief Append resource private field information to an SDP2 string
+ *
+ * @param element An sdp_field object in the list
+ * @param user_data The GString object to append the data to
+ *
+ * @internal This function is only to be called by g_list_foreach().
+ */
+void sdp_rdescr_private_append(gpointer element, gpointer user_data)
+{
+    sdp_field *private = (sdp_field *)element;
+    GString *descr = (GString *)user_data;
+
+    switch (private->type) {
+    case empty_field:
+        g_string_append_printf(descr, "%s"SDP2_EL,
+                               private->field);
+        break;
+
+    default: /* Ignore other private fields */
+        break;
+    }
 }
 
 /**
@@ -164,7 +248,6 @@ GString *sdp_session_descr(struct feng *srv, const char *server, const char *nam
     GString *descr = NULL;
     ResourceDescr *r_descr;
     MediaDescrListArray m_descrs;
-    sdp_field_list sdp_private;
     guint i;
     double duration;
 
@@ -249,20 +332,9 @@ GString *sdp_session_descr(struct feng *srv, const char *server, const char *nam
         g_string_append_printf(descr, "a=range:npt=0-%f"SDP2_EL, duration);
 
     // other private data
-    if ( (sdp_private=r_descr_sdp_private(r_descr)) )
-        for (sdp_private = g_list_first(sdp_private);
-             sdp_private;
-             sdp_private = g_list_next(sdp_private)) {
-            switch (SDP_FIELD(sdp_private)->type) {
-            case empty_field:
-                g_string_append_printf(descr, "%s"SDP2_EL,
-                                       SDP_FIELD(sdp_private)->field);
-                break;
-                // other supported private fields?
-            default: // ignore private field
-                break;
-            }
-        }
+    g_list_foreach(r_descr_sdp_private(r_descr),
+                   sdp_rdescr_private_append,
+                   descr);
 
     // media
     m_descrs = r_descr_get_media(r_descr);
