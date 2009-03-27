@@ -339,22 +339,28 @@ Resource *r_open(struct feng *srv, const char *inner_path)
     return r;
 }
 
-static void free_track(Track *t, Resource *r)
+/**
+ * @brief Frees the resources of a Track object
+ *
+ * @param element Track to free
+ * @param user_data Unused, for compatibility with g_list_foreach().
+ */
+static void free_track(gpointer element, gpointer user_data)
 {
-    if (!t)
+    Track *track = (Track*)element;
+
+    if (!track)
         return;
 
-    MObject_unref(MOBJECT(t->info));
-    MObject_unref(MOBJECT(t->properties));
-    mparser_unreg(t->parser, t->private_data);
+    MObject_unref(MOBJECT(track->info));
+    MObject_unref(MOBJECT(track->properties));
+    mparser_unreg(track->parser, track->private_data);
 
-    bq_producer_stop(t->producer);
+    bq_producer_stop(track->producer);
 
-    istream_close(t->i_stream);
+    istream_close(track->i_stream);
 
-    r->tracks = g_list_remove(r->tracks, t);
-    g_free(t);
-    r->num_tracks--;
+    g_free(track);
 }
 
 void r_close(Resource *r)
@@ -368,7 +374,7 @@ void r_close(Resource *r)
     r->info = NULL;
     r->demuxer->uninit(r);
 
-    g_list_foreach(r->tracks, (GFunc)free_track, r);
+    g_list_foreach(r->tracks, free_track, NULL);
     g_list_free(r->tracks);
 
     g_free(r);
@@ -460,8 +466,7 @@ int r_seek(Resource *resource, double time) {
 #define ADD_TRACK_ERROR(level, ...) \
     { \
         fnc_log(level, __VA_ARGS__); \
-        free_track(t, r); \
-        return NULL; \
+        goto error; \
     }
 
 /*! Add track to resource tree.  This function adds a new track data struct to
@@ -528,6 +533,10 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     r->num_tracks++;
 
     return t;
+
+ error:
+    free_track(t, NULL);
+    return NULL;
 }
 #undef ADD_TRACK_ERROR
 
