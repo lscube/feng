@@ -35,23 +35,29 @@ extern Demuxer fnc_demuxer_sd;
 extern Demuxer fnc_demuxer_ds;
 extern Demuxer fnc_demuxer_avf;
 
-// static array containing all the available demuxers:
-static Demuxer *demuxers[] = {
+/**
+ * @brief Array of available built-in demuxers
+ */
+static Demuxer *const demuxers[] = {
     &fnc_demuxer_sd,
     &fnc_demuxer_ds,
     &fnc_demuxer_avf,
     NULL
 };
 
-/*! @brief The resource description cache.
- * This list holds the cache of resource descriptions. This way the mediathread
- * can provide the description buffer without opening the resource every time.
- * This will result in a better performance for RTSP DESCRIBE metod response.
- * Descriptions are ordered for access time, so that the last is the less
- * recently addressed media description and will be chosen for removal if cache
- * reaches the limit.
- * */
-static GList *descr_cache=NULL;
+/**
+ * @brief The resource description cache.
+ *
+ * This list holds the cache of resource descriptions. This way the
+ * mediathread can provide the description buffer without opening the
+ * resource every time.  This will result in a better performance for
+ * RTSP DESCRIBE metod response.  Descriptions are ordered for access
+ * time, so that the last is the less recently addressed media
+ * description and will be chosen for removal if cache reaches the
+ * limit.
+ */
+static GList *descr_cache;
+
 //! cache size of descriptions (maybe we need to take it from fenice configuration file?)
 #define MAX_DESCR_CACHE_SIZE 10
 
