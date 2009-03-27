@@ -131,32 +131,59 @@ static gint cache_cmp(gconstpointer a, gconstpointer b)
     return strcmp( ((ResourceDescr *)a)->info->mrl, (const char *)b );
 }
 
+/**
+ * @brief Create new media descriptions
+ *
+ * @param element The track to create a media description for
+ * @param user_data The new resource descriptions to add the
+ *                  descriptions to
+ *
+ * @internal This function should only be called through
+ *           g_list_foreach().
+ */
+static void r_descr_new_mdescr(gpointer element, gpointer user_data)
+{
+    ResourceDescr *new_descr = (ResourceDescr *)user_data;
+    Track *track = (Track*)element;
+
+    MediaDescr *new_mdescr = g_new(MediaDescr, 1);
+    new_mdescr->info = track->info;
+    MObject_ref(track->info);
+    new_mdescr->properties = track->properties;
+    MObject_ref(track->properties);
+    new_mdescr->last_change = mrl_mtime(track->info->mrl);
+    new_descr->media = g_list_append(new_descr->media, new_mdescr);
+}
+
 static ResourceDescr *r_descr_new(Resource *r)
 {
-    ResourceDescr *new_descr;
-    MediaDescr *new_mdescr;
-    GList *tracks;
-
-    new_descr=g_new(ResourceDescr, 1);
+    ResourceDescr *new_descr = g_new(ResourceDescr, 1);
     new_descr->media = NULL;
 
     new_descr->info=r->info;
     MObject_ref(r->info);
     new_descr->last_change=mrl_mtime(r->info->mrl);
 
-    for (tracks=g_list_first(r->tracks); tracks; tracks=g_list_next(tracks)) {
-        new_mdescr = g_new(MediaDescr, 1);
-        new_mdescr->info = TRACK(tracks)->info;
-        MObject_ref(TRACK(tracks)->info);
-        new_mdescr->properties = TRACK(tracks)->properties;
-        MObject_ref(TRACK(tracks)->properties);
-        new_mdescr->last_change = mrl_mtime(TRACK(tracks)->info->mrl);
-        new_descr->media = g_list_prepend(new_descr->media, new_mdescr);
-    }
-    // put the Media description in the same order of tracks.
-    new_descr->media=g_list_reverse(new_descr->media);
+    g_list_foreach(r->tracks, r_descr_new_mdescr, new_descr);
 
     return new_descr;
+}
+
+/**
+ * @brief Unreference a list of media descriptions
+ *
+ * @param element The media description to unreference
+ * @param user_data Unused
+ *
+ * @internal This function should only be called through
+ *           g_list_foreach().
+ */
+static void r_descr_free_media(gpointer element, gpointer user_data)
+{
+    MediaDescr *m_descr = (MediaDescr *)element;
+
+    MObject_unref( MOBJECT(m_descr->info) );
+    MObject_unref( MOBJECT(m_descr->properties) );
 }
 
 static void r_descr_free(ResourceDescr *descr)
@@ -166,13 +193,7 @@ static void r_descr_free(ResourceDescr *descr)
     if (!descr)
         return;
 
-    for (m_descr=g_list_first(descr->media);
-         m_descr;
-         m_descr=g_list_next(m_descr) )
-    {
-        MObject_unref( MOBJECT(MEDIA_DESCR(m_descr)->info) );
-        MObject_unref( MOBJECT(MEDIA_DESCR(m_descr)->properties) );
-    }
+    g_list_foreach(descr->media, r_descr_free_media, NULL);
     g_list_free(descr->media);
 
     MObject_unref( MOBJECT(descr->info) );
@@ -240,8 +261,8 @@ static void properties_free(void *properties)
 
     if (!props)
         return;
-    if (props->sdp_private)
-        g_list_foreach(props->sdp_private, (GFunc)free_sdp_field, NULL);
+
+    g_list_foreach(props->sdp_private, (GFunc)free_sdp_field, NULL);
 
     g_free(props);
 }
