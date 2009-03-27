@@ -229,10 +229,8 @@ static void free_sdp_field(sdp_field *sdp, void *unused)
 {
     if (!sdp)
         return;
-    if (sdp->field)
-    {
-        g_free(sdp->field);
-    }
+
+    g_free(sdp->field);
     g_free(sdp);
 }
 
