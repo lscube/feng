@@ -28,8 +28,7 @@ dist_feng_SOURCES = \
 	network/rtsp_response.c \
 	network/rtsp_state_machine.c \
 	network/rtsp_utils.c \
-	network/sdp2.h \
-	network/sdp_session_descr.c \
+	network/sdp2.c network/sdp2.h \
 	\
 	bufferqueue.c bufferqueue.h \
 	client_events.h client_events.c \
