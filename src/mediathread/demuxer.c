@@ -339,18 +339,19 @@ static void free_track(Track *t, Resource *r)
 
 void r_close(Resource *r)
 {
-    if(r) {
-        g_mutex_free(r->lock);
-        istream_close(r->i_stream);
-        MObject_unref(MOBJECT(r->info));
-        r->info = NULL;
-        r->demuxer->uninit(r);
+    if (!r)
+        return;
 
-        if(r->tracks)
-            g_list_foreach(r->tracks, (GFunc)free_track, r);
+    g_mutex_free(r->lock);
+    istream_close(r->i_stream);
+    MObject_unref(MOBJECT(r->info));
+    r->info = NULL;
+    r->demuxer->uninit(r);
 
-        g_free(r);
-    }
+    g_list_foreach(r->tracks, (GFunc)free_track, r);
+    g_list_free(r->tracks);
+
+    g_free(r);
 }
 
 /**
