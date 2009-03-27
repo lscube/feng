@@ -444,19 +444,37 @@ static int r_changed(ResourceDescr *descr)
     return 0;
 }
 
-static void r_producer_reset_queue(gpointer track_gen, gpointer unused) {
-    Track *t = (Track*)track_gen;
+/**
+ * @brief Resets the BufferQueue producer queue for a given track
+ *
+ * @param element The Track element from the list
+ * @param user_data Unused, for compatibility with g_list_foreach().
+ *
+ * @see bq_producer_reset_queue
+ */
+static void r_track_producer_reset_queue(gpointer element, gpointer user_data) {
+    Track *t = (Track*)element;
 
     bq_producer_reset_queue(t->producer);
 }
 
+/**
+ * @brief Seek a resource to a given time in stream
+ *
+ * @param resource The Resource to seek
+ * @param time The time in seconds within the stream to seek to
+ *
+ * @return The value returned by @ref Demuxer::seek
+ *
+ * @note This function will lock the @ref Resource::lock mutex.
+ */
 int r_seek(Resource *resource, double time) {
     int res;
 
     g_mutex_lock(resource->lock);
     res = resource->demuxer->seek(resource, time);
 
-    g_list_foreach(resource->tracks, r_producer_reset_queue, NULL);
+    g_list_foreach(resource->tracks, r_track_producer_reset_queue, NULL);
 
     g_mutex_unlock(resource->lock);
 
