@@ -80,12 +80,12 @@ static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
     /// @TODO shawill: probably the transport should not be hard coded,
     /// but obtained in some way
     g_string_append_printf(descr, "%d RTP/AVP",
-			   m_descr_rtp_port(m_descr));
+                           m_descr_rtp_port(m_descr));
 
     for (tmp_mdl = g_list_first(m_descr_list); tmp_mdl;
          tmp_mdl = g_list_next(tmp_mdl))
-      g_string_append_printf(descr, " %u",
-			     m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl)));
+        g_string_append_printf(descr, " %u",
+                               m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl)));
 
     g_string_append(descr, SDP2_EL);
 
@@ -97,12 +97,12 @@ static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
     encoded_media_name = g_uri_escape_string(m_descr_name(m_descr), NULL, false);
 
     g_string_append_printf(descr, "a=control:"SDP2_TRACK_ID"=%s"SDP2_EL,
-			   encoded_media_name);
+                           encoded_media_name);
     g_free(encoded_media_name);
 
     if (m_descr_frame_rate(m_descr) && m_descr_type(m_descr) == MP_video)
-      g_string_append_printf(descr, "a=framerate:%f"SDP2_EL,
-			     m_descr_frame_rate(m_descr));
+        g_string_append_printf(descr, "a=framerate:%f"SDP2_EL,
+                               m_descr_frame_rate(m_descr));
 
     // other sdp private data
     for (tmp_mdl = g_list_first(m_descr_list); tmp_mdl;
@@ -111,38 +111,38 @@ static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
             for (sdp_private = g_list_first(sdp_private); sdp_private;
                  sdp_private = g_list_next(sdp_private)) {
                 switch (SDP_FIELD(sdp_private)->type) {
-                    case empty_field:
-		      g_string_append_printf(descr, "%s"SDP2_EL,
-					     SDP_FIELD(sdp_private)->field);
+                case empty_field:
+                    g_string_append_printf(descr, "%s"SDP2_EL,
+                                           SDP_FIELD(sdp_private)->field);
                     break;
-                    case fmtp:
-		      g_string_append_printf(descr, "a=fmtp:%u %s"SDP2_EL,
-					     m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl)),
-					     SDP_FIELD(sdp_private)->field);
+                case fmtp:
+                    g_string_append_printf(descr, "a=fmtp:%u %s"SDP2_EL,
+                                           m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl)),
+                                           SDP_FIELD(sdp_private)->field);
                     break;
-                    case rtpmap:
-		      g_string_append_printf(descr, "a=rtpmap:%u %s"SDP2_EL,
-					     m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl)),
-					     SDP_FIELD(sdp_private)->field);
+                case rtpmap:
+                    g_string_append_printf(descr, "a=rtpmap:%u %s"SDP2_EL,
+                                           m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl)),
+                                           SDP_FIELD(sdp_private)->field);
                     break;
-                // other supported private fields?
+                    // other supported private fields?
                 default: // ignore private field
                     break;
+                }
             }
-        }
     // CC licenses *
     if (m_descr_commons_deed(m_descr))
-      g_string_append_printf(descr, "a=uriLicense:%s"SDP2_EL,
-			     m_descr_commons_deed(m_descr));
+        g_string_append_printf(descr, "a=uriLicense:%s"SDP2_EL,
+                               m_descr_commons_deed(m_descr));
     if (m_descr_rdf_page(m_descr))
-      g_string_append_printf(descr, "a=uriMetadata:%s"SDP2_EL,
-			     m_descr_rdf_page(m_descr));
+        g_string_append_printf(descr, "a=uriMetadata:%s"SDP2_EL,
+                               m_descr_rdf_page(m_descr));
     if (m_descr_title(m_descr))
-      g_string_append_printf(descr, "a=title:%s"SDP2_EL,
-			     m_descr_title(m_descr));
+        g_string_append_printf(descr, "a=title:%s"SDP2_EL,
+                               m_descr_title(m_descr));
     if (m_descr_author(m_descr))
-      g_string_append_printf(descr, "a=author:%s"SDP2_EL,
-			     m_descr_author(m_descr));
+        g_string_append_printf(descr, "a=author:%s"SDP2_EL,
+                               m_descr_author(m_descr));
 }
 
 /**
@@ -186,29 +186,29 @@ GString *sdp_session_descr(struct feng *srv, const char *server, const char *nam
     restime_float = restime ? NTP_time(restime) : currtime_float;
 
     if ( (resname = r_descr_name(r_descr)) == NULL )
-      resname = "RTSP Session";
+        resname = "RTSP Session";
 
     g_string_append_printf(descr, "v=%d"SDP2_EL, SDP2_VERSION);
 
     /* Network type: Internet; Address type: IP4. */
     g_string_append_printf(descr, "o=- %.0f %.0f IN IP4 %s"SDP2_EL,
-			   currtime_float, restime_float, server);
+                           currtime_float, restime_float, server);
 
     g_string_append_printf(descr, "s=%s"SDP2_EL,
-			   resname);
+                           resname);
     // u=
     if (r_descr_descrURI(r_descr))
-      g_string_append_printf(descr, "u=%s"SDP2_EL,
-			     r_descr_descrURI(r_descr));
+        g_string_append_printf(descr, "u=%s"SDP2_EL,
+                               r_descr_descrURI(r_descr));
 
     // e=
     if (r_descr_email(r_descr))
-      g_string_append_printf(descr, "e=%s"SDP2_EL,
-			     r_descr_email(r_descr));
+        g_string_append_printf(descr, "e=%s"SDP2_EL,
+                               r_descr_email(r_descr));
     // p=
     if (r_descr_phone(r_descr))
-      g_string_append_printf(descr, "p=%s"SDP2_EL,
-			     r_descr_phone(r_descr));
+        g_string_append_printf(descr, "p=%s"SDP2_EL,
+                               r_descr_phone(r_descr));
 
     // c=
     /* Network type: Internet. */
@@ -217,17 +217,17 @@ GString *sdp_session_descr(struct feng *srv, const char *server, const char *nam
 
     if(r_descr_multicast(r_descr)) {
         g_string_append_printf(descr, "%s/",
-			       r_descr_multicast(r_descr));
+                               r_descr_multicast(r_descr));
         if (r_descr_ttl(r_descr))
-	  g_string_append_printf(descr, "%s"SDP2_EL,
-				 r_descr_ttl(r_descr));
+            g_string_append_printf(descr, "%s"SDP2_EL,
+                                   r_descr_ttl(r_descr));
         else
-	  /* @TODO the possibility to change ttl.
-	   * See multicast.h, RTSP_setup.c, send_setup_reply.c*/
-	  g_string_append_printf(descr, "%d"SDP2_EL,
-				 DEFAULT_TTL);
+            /* @TODO the possibility to change ttl.
+             * See multicast.h, RTSP_setup.c, send_setup_reply.c*/
+            g_string_append_printf(descr, "%d"SDP2_EL,
+                                   DEFAULT_TTL);
     } else
-	g_string_append(descr, "0.0.0.0"SDP2_EL);
+        g_string_append(descr, "0.0.0.0"SDP2_EL);
 
     // b=
     // t=
@@ -241,12 +241,12 @@ GString *sdp_session_descr(struct feng *srv, const char *server, const char *nam
     // tool attribute. Feng promo
     /// @TODO choose a better session description
     g_string_append_printf(descr, "a=tool:%s %s Streaming Server"SDP2_EL,
-		    PACKAGE, VERSION);
+                           PACKAGE, VERSION);
     // control attribute. We should look if aggregate metod is supported?
     g_string_append(descr, "a=control:*"SDP2_EL);
 
     if ((duration = r_descr_time(r_descr)) > 0)
-      g_string_append_printf(descr, "a=range:npt=0-%f"SDP2_EL, duration);
+        g_string_append_printf(descr, "a=range:npt=0-%f"SDP2_EL, duration);
 
     // other private data
     if ( (sdp_private=r_descr_sdp_private(r_descr)) )
@@ -254,13 +254,13 @@ GString *sdp_session_descr(struct feng *srv, const char *server, const char *nam
              sdp_private;
              sdp_private = g_list_next(sdp_private)) {
             switch (SDP_FIELD(sdp_private)->type) {
-                case empty_field:
-		  g_string_append_printf(descr, "%s"SDP2_EL,
-					 SDP_FIELD(sdp_private)->field);
-                    break;
+            case empty_field:
+                g_string_append_printf(descr, "%s"SDP2_EL,
+                                       SDP_FIELD(sdp_private)->field);
+                break;
                 // other supported private fields?
-                default: // ignore private field
-                    break;
+            default: // ignore private field
+                break;
             }
         }
 
