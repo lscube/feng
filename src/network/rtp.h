@@ -64,20 +64,6 @@ typedef struct RTP_transport {
     ev_periodic rtp_writer;
 } RTP_transport;
 
-typedef struct RTCP_stats {
-    unsigned int RR_received;
-    unsigned int SR_received;
-    unsigned long dest_SSRC;
-    unsigned int pkt_count;
-    unsigned int octet_count;
-    unsigned int pkt_lost;
-    unsigned char fract_lost;
-    unsigned int highest_seq_no;
-    unsigned int jitter;
-    unsigned int last_SR;
-    unsigned int delay_since_last_SR;
-} RTCP_stats;
-
 typedef struct RTP_session {
     /** Session paused (or never started) */
     gboolean pause;
@@ -143,7 +129,19 @@ typedef struct RTP_session {
         uint8_t inbuffer[RTCP_BUFFERSIZE];
         uint8_t outbuffer[RTCP_BUFFERSIZE];
 
-        RTCP_stats server_stats;
+        struct {
+            unsigned int RR_received;
+            unsigned int SR_received;
+            unsigned long dest_SSRC;
+            unsigned int pkt_count;
+            unsigned int octet_count;
+            unsigned int pkt_lost;
+            unsigned char fract_lost;
+            unsigned int highest_seq_no;
+            unsigned int jitter;
+            unsigned int last_SR;
+            unsigned int delay_since_last_SR;
+        } server_stats;
     } rtcp;
 } RTP_session;
 
