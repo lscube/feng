@@ -260,7 +260,7 @@ static int avf_read_packet(Resource * r)
     for (tr_it = g_list_first(r->tracks);
          tr_it !=NULL;
          tr_it = g_list_next(tr_it)) {
-        Track *tr = (Track*)tr_it;
+        Track *tr = (Track*)tr_it->data;
         if (pkt.stream_index == tr->info->id) {
 // push it to the framer
             stream = priv->avfc->streams[tr->info->id];
