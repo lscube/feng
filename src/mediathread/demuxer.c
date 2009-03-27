@@ -22,9 +22,11 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <fenice/server.h>
 #include "demuxer.h"
+#include "description.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
@@ -492,4 +494,74 @@ ResourceDescr *r_descr_get(struct feng *srv, const char *inner_path)
     g_free(mrl);
 
     return RESOURCE_DESCR(cache_el);
+}
+
+/**
+ * @brief Iteration function to find all the media of a given type
+ *        with the given name.
+ *
+ * @param element The current media_description to test
+ * @param user_data The array of lists
+ *
+ * @internal This function should only be called by g_list_foreach().
+ */
+static void r_descr_find_media(gpointer element, gpointer user_data) {
+    MediaDescrList m_descr_it = (MediaDescrList)element;
+    MediaDescrListArray new_m_descrs = (MediaDescrListArray)user_data;
+
+    gboolean found = 0;
+    MediaDescr *m_descr = MEDIA_DESCR(m_descr_it);
+    guint i;
+
+    for (i = 0; i < new_m_descrs->len; ++i) {
+        MediaDescrList m_descr_list_it = g_ptr_array_index(new_m_descrs, i);
+        MediaDescr *m_descr_list = MEDIA_DESCR(m_descr_list_it);
+
+        if ( (m_descr_type(m_descr) ==
+              m_descr_type(m_descr_list)) &&
+             !strcmp(m_descr_name(m_descr),
+                     m_descr_name(m_descr_list)) ) {
+            found = true;
+            break;
+        }
+    }
+
+    if (found) {
+        MediaDescrList found_list = g_ptr_array_index(new_m_descrs, i);
+        found_list = g_list_prepend(found_list, m_descr);
+        new_m_descrs->pdata[i] = found_list;
+    } else {
+        MediaDescrList new_list = g_list_prepend(NULL, m_descr);
+        g_ptr_array_add(new_m_descrs, new_list);
+    }
+}
+
+/**
+ * @brief Creates an array of MediaDescrList containing media
+ *        descriptions.
+ *
+ * @return An array, each element of which is a MediaDescrList
+ *         containing all the media of the same type with the same
+ *         name. All the elements in each list can be included
+ *         together in the sdp description, in a single 'm=' block.
+ *
+ * @param r_descr Resource description containing all the media.
+ */
+MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
+{
+    MediaDescrListArray new_m_descrs;
+    guint i;
+
+    new_m_descrs = g_ptr_array_sized_new(
+                        g_list_position(r_descr->media,
+                                        g_list_last(r_descr->media))+1);
+
+    g_list_foreach(r_descr->media, r_descr_find_media, new_m_descrs);
+
+    for (i = 0; i < new_m_descrs->len; ++i) {
+        MediaDescrList m_descr_list = g_ptr_array_index(new_m_descrs, i);
+        m_descr_list = g_list_reverse(m_descr_list);
+    }
+
+    return new_m_descrs;
 }
