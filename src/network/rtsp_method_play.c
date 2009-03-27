@@ -52,7 +52,7 @@ static RTSP_ResponseCode do_play(RTSP_session * rtsp_sess,
                                  ParsedRange *range)
 {
     /* If a seek was requested, execute it */
-    if ( !isnan(range->begin_time) ) {
+    if ( range->begin_time > 0 ) {
         if ( r_seek(rtsp_sess->resource, range->begin_time) )
             return RTSP_InvalidRange;
         else
@@ -132,12 +132,12 @@ static void send_play_reply(RTSP_Request *req, Url *url,
     GString *str = g_string_new("npt=");
 
     /* Create Range header */
-    if (!isnan(range->begin_time))
+    if (range->begin_time > 0)
         g_string_append_printf(str, "%f", range->begin_time);
 
     g_string_append(str, "-");
 
-    if (!isnan(range->end_time))
+    if (range->end_time > 0)
       g_string_append_printf(str, "%f", range->end_time);
 
     g_hash_table_insert(response->headers,
@@ -190,13 +190,11 @@ static void send_play_reply(RTSP_Request *req, Url *url,
 RTSP_ResponseCode parse_range_header(RTSP_session *rtsp_sess, const char *range_hdr,
                                      ParsedRange *range)
 {
-    const double not_read = nan("");
-
     /* Initialise the ParsedRange structure by setting the three
-     * values all at our nan constant. */
-    range->begin_time = not_read;
-    range->end_time = not_read;
-    range->playback_time = not_read;
+     * values all to a negative (invalid) value. */
+    range->begin_time = -0.1;
+    range->end_time = -0.1;
+    range->playback_time = -0.1;
 
     /* If there is any kind of parsing error, the range is considered
      * not implemented. It might not be entirely certainl but until we
@@ -208,25 +206,10 @@ RTSP_ResponseCode parse_range_header(RTSP_session *rtsp_sess, const char *range_
     /* We don't set begin_time if it was not read, since the client
      * didn't request any seek and thus we won't do any seek to that.
      */
-    if ( isnan(range->end_time) )
+    if ( range->end_time < 0 )
         range->end_time = rtsp_sess->resource->info->duration;
-    if ( isnan(range->playback_time) )
+    if ( range->playback_time < 0 )
         range->playback_time = gettimeinseconds(NULL);
-
-    if ( !isnan(range->begin_time) &&
-         range->begin_time < 0.0 )
-        return RTSP_InvalidRange;
-
-    /* We still check that it's not a NaN because we might want to
-     * remove the fallback above, similarly to begin_time. */
-    if ( !isnan(range->end_time) &&
-         range->end_time < 0.0 )
-        return RTSP_InvalidRange;
-
-    /** @todo We might want to error out if the time is also
-     *  impossibly back in the past */
-    if ( range->playback_time < 0.0 )
-        return RTSP_InvalidRange;
 
     return RTSP_Ok;
 }
