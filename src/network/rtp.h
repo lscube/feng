@@ -45,11 +45,6 @@ struct RTSP_session;
 #define RTCP_BUFFERSIZE    1024
 #define BUFFERED_FRAMES_DEFAULT 16
 
-typedef enum {
-    i_server = 0,
-    i_client = 1
-} rtcp_index;
-
 typedef struct {
     int RTP;
     int RTCP;
@@ -84,31 +79,26 @@ typedef struct RTCP_stats {
 } RTCP_stats;
 
 typedef struct RTP_session {
-    RTP_transport transport;
-    uint8_t rtcp_inbuffer[RTCP_BUFFERSIZE];
-    size_t rtcp_insize;
-    uint8_t rtcp_outbuffer[RTCP_BUFFERSIZE];
-    size_t rtcp_outsize;
+    /** Session paused (or never started) */
+    gboolean pause;
+
+    /** Multicast session (treated in a special way) */
+    gboolean multicast;
+
+    uint16_t start_seq;
+    uint16_t seq_no;
+
+    uint32_t start_rtptime;
+
+    uint32_t ssrc;
+
+    uint32_t last_packet_send_time;
 
     //these time vars now are now back here
     double start_time;
     double seek_time;
     double send_time;
     double last_timestamp;
-    //Dynamic Stream Change
-    unsigned int PreviousCount;
-    short MinimumReached;
-    short MaximumReached;
-    // Back references
-    int sched_id;
-    uint16_t start_seq;
-    uint16_t seq_no;
-
-    uint32_t start_rtptime;
-
-    uint8_t pause;
-
-    uint32_t ssrc;
 
     /**
      * @brief Access lock to the session
@@ -118,19 +108,15 @@ typedef struct RTP_session {
      */
     GMutex *lock;
 
-    gchar *sd_filename; //!< resource name, including path from avroot
+    /** Resource name, including path from avroot */
+    gchar *sd_filename;
 
     /** Pointer to the currently-selected track */
     Track *track;
 
-    // Metadata Begin
 #ifdef HAVE_METADATA
     void *metadata;
 #endif
-    // Metadata End
-
-    //multicast management
-    uint8_t is_multicast; //!< 0, treat as usual, >0 do nothing
 
     /**
      * @brief Consumer for the track buffer queue
@@ -140,10 +126,25 @@ typedef struct RTP_session {
      */
     BufferQueue_Consumer *consumer;
 
-    RTCP_stats rtcp_stats[2];    //client and server
     struct feng *srv;
-    struct RTSP_Client *rtsp_buffer;
-    uint32_t last_packet_send_time;
+    struct RTSP_Client *client;
+
+    RTP_transport transport;
+
+    /**
+     * @brief RTCP data for RTP sessions
+     *
+     * This anonymous sub-structure contains the data needed to handle
+     * RTCP packets for the session.
+     */
+    struct {
+        size_t insize;
+        size_t outsize;
+        uint8_t inbuffer[RTCP_BUFFERSIZE];
+        uint8_t outbuffer[RTCP_BUFFERSIZE];
+
+        RTCP_stats server_stats;
+    } rtcp;
 } RTP_session;
 
 /**

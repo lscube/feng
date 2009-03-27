@@ -130,8 +130,8 @@ int rtp_packet_send(RTP_session *session, MParserBuffer *buffer) {
                   tr->properties->frame_duration) + 1;
         session->send_time += calc_send_time(session, buffer);
         session->last_timestamp = buffer->timestamp;
-        session->rtcp_stats[i_server].pkt_count++;
-        session->rtcp_stats[i_server].octet_count += buffer->data_size;
+        session->rtcp.server_stats.pkt_count++;
+        session->rtcp.server_stats.octet_count += buffer->data_size;
 
         session->last_packet_send_time = time(NULL);
     }

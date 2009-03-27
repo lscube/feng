@@ -77,7 +77,7 @@ static void check_if_any_rtp_session_timedout(gpointer element, gpointer user_da
      */
     if ((now - session->last_packet_send_time) >= STREAM_TIMEOUT) {
         fnc_log(FNC_LOG_INFO, "[client] Stream Timeout, client kicked off!");
-        ev_async_send(session->srv->loop, session->rtsp_buffer->ev_sig_disconnect);
+        ev_async_send(session->srv->loop, session->client->ev_sig_disconnect);
     }
 }
 

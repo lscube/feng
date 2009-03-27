@@ -60,7 +60,7 @@ static RTSP_ResponseCode do_play(RTSP_session * rtsp_sess,
     }
 
     if ( rtsp_sess->rtp_sessions &&
-         ((RTP_session*)(rtsp_sess->rtp_sessions->data))->is_multicast )
+         ((RTP_session*)(rtsp_sess->rtp_sessions->data))->multicast )
         return RTSP_Ok;
 
     rtsp_sess->started = 1;

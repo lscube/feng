@@ -128,8 +128,8 @@ static int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
             htonl((unsigned int) ((now - session->start_time) *
                   t->properties->clock_rate) + session->start_rtptime);
 
-        hdr_sr.pkt_count = htonl(session->rtcp_stats[i_server].pkt_count);
-        hdr_sr.octet_count = htonl(session->rtcp_stats[i_server].octet_count);
+        hdr_sr.pkt_count = htonl(session->rtcp.server_stats.pkt_count);
+        hdr_sr.octet_count = htonl(session->rtcp.server_stats.octet_count);
         payload = g_malloc0(payload_s);
         if (payload == NULL)
             return ERR_ALLOC;
@@ -188,11 +188,11 @@ static int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
     pkt_size += payload_s + hdr_s;
     hdr.length = htons((pkt_size >> 2) - 1);
 
-    if (session->rtcp_outsize + pkt_size <= sizeof(session->rtcp_outbuffer)) {
-        memcpy(session->rtcp_outbuffer + session->rtcp_outsize, &hdr, hdr_s);
-        memcpy(session->rtcp_outbuffer + session->rtcp_outsize + hdr_s,
+    if (session->rtcp.outsize + pkt_size <= sizeof(session->rtcp.outbuffer)) {
+        memcpy(session->rtcp.outbuffer + session->rtcp.outsize, &hdr, hdr_s);
+        memcpy(session->rtcp.outbuffer + session->rtcp.outsize + hdr_s,
                payload, payload_s);
-        session->rtcp_outsize += pkt_size;
+        session->rtcp.outsize += pkt_size;
     } else {
         fnc_log(FNC_LOG_VERBOSE, "Output RTCP packet lost\n");
     }
@@ -215,7 +215,7 @@ static int RTCP_flush(RTP_session * session)
     t.tv_sec = 0;
     t.tv_usec = 1000;
 
-    if (session->rtcp_outsize > 0)
+    if (session->rtcp.outsize > 0)
         FD_SET(Sock_fd(rtcp_sock), &wset);
     if (select(Sock_fd(rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
         fnc_log(FNC_LOG_ERR, "select error\n");
@@ -224,10 +224,10 @@ static int RTCP_flush(RTP_session * session)
     }
 
     if (FD_ISSET(Sock_fd(rtcp_sock), &wset)) {
-        if (Sock_write(rtcp_sock, session->rtcp_outbuffer,
-            session->rtcp_outsize, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
+        if (Sock_write(rtcp_sock, session->rtcp.outbuffer,
+            session->rtcp.outsize, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
             fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
-        session->rtcp_outsize = 0;
+        session->rtcp.outsize = 0;
         fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
     }
 
@@ -236,7 +236,7 @@ static int RTCP_flush(RTP_session * session)
 
 int RTCP_handler(RTP_session * session)
 {
-    if (session->rtcp_stats[i_server].pkt_count % 29 == 1) {
+    if (session->rtcp.server_stats.pkt_count % 29 == 1) {
         RTCP_send_packet(session, SR);
         RTCP_send_packet(session, SDES);
         return RTCP_flush(session);

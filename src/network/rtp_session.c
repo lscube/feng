@@ -49,17 +49,17 @@ static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 
     switch (s->socktype) {
         case UDP:
-            session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
-                     sizeof(session->rtcp_inbuffer),
+            session->rtcp.insize = Sock_read(s, session->rtcp.inbuffer,
+                     sizeof(session->rtcp.inbuffer),
                      sa_p, 0);
             break;
         case LOCAL:
-            session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
-                     sizeof(session->rtcp_inbuffer),
+            session->rtcp.insize = Sock_read(s, session->rtcp.inbuffer,
+                     sizeof(session->rtcp.inbuffer),
                      NULL, 0);
             break;
         default:
-            session->rtcp_insize = -1;
+            session->rtcp.insize = -1;
             break;
     }
 }
@@ -115,7 +115,7 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
 
     rtp_s->srv = srv;
     rtp_s->ssrc = g_random_int();
-    rtp_s->rtsp_buffer = rtsp;
+    rtp_s->client = rtsp;
 
 #ifdef HAVE_METADATA
 	rtp_s->metadata = rtsp_s->resource->metadata;
