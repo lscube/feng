@@ -249,11 +249,7 @@ err_alloc:
 static int avf_read_packet(Resource * r)
 {
     int ret = RESOURCE_OK;
-#if 0
-    Selector *sel;
-#else
-    TrackList tr;
-#endif
+    TrackList tr_it;
     AVPacket pkt;
     AVStream *stream;
     lavf_priv_t *priv = r->private_data;
@@ -261,41 +257,42 @@ static int avf_read_packet(Resource * r)
 // get a packet
     if(av_read_frame(priv->avfc, &pkt) < 0)
         return RESOURCE_EOF; //FIXME
-    for (tr = g_list_first(r->tracks);
-         tr !=NULL;
-         tr = g_list_next(tr)) {
-        if (pkt.stream_index == TRACK(tr)->info->id) {
+    for (tr_it = g_list_first(r->tracks);
+         tr_it !=NULL;
+         tr_it = g_list_next(tr_it)) {
+        Track *tr = (Track*)tr_it;
+        if (pkt.stream_index == tr->info->id) {
 // push it to the framer
-            stream = priv->avfc->streams[TRACK(tr)->info->id];
+            stream = priv->avfc->streams[tr->info->id];
             fnc_log(FNC_LOG_VERBOSE, "[avf] Parsing track %s",
-                    TRACK(tr)->info->name);
+                    tr->info->name);
             if(pkt.pts != AV_NOPTS_VALUE) {
-                TRACK(tr)->properties->mtime = r->timescaler (r,
+                tr->properties->mtime = r->timescaler (r,
                     pkt.pts * av_q2d(stream->time_base));
                 fnc_log(FNC_LOG_VERBOSE, "[avf] timestamp %f",
-                        TRACK(tr)->properties->mtime);
+                        tr->properties->mtime);
             } else {
                 fnc_log(FNC_LOG_VERBOSE, "[avf] missing timestamp");
             }
 
             if (pkt.duration) {
-                TRACK(tr)->properties->frame_duration = pkt.duration *
+                tr->properties->frame_duration = pkt.duration *
                     av_q2d(stream->time_base);
             } else { // welcome to the wonderland ehm, hackland...
                 switch (stream->codec->codec_id) {
                     case CODEC_ID_MP2:
                     case CODEC_ID_MP3:
-                        TRACK(tr)->properties->frame_duration = 1152.0/
-                                TRACK(tr)->properties->sample_rate;
+                        tr->properties->frame_duration = 1152.0/
+                                tr->properties->sample_rate;
                         break;
                     default: break;
                 }
             }
 
             fnc_log(FNC_LOG_VERBOSE, "[avf] packet duration %f",
-                TRACK(tr)->properties->frame_duration);
+                tr->properties->frame_duration);
 
-            ret = TRACK(tr)->parser->parse(TRACK(tr), pkt.data, pkt.size,
+            ret = tr->parser->parse(tr, pkt.data, pkt.size,
                                     stream->codec->extradata,
                                     stream->codec->extradata_size);
             break;

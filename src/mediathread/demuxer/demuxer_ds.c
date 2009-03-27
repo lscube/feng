@@ -204,9 +204,11 @@ static void edl_buffer_switcher(edl_priv_data *data) {
     p = old_item->r->tracks;
     q = new_item->r->tracks;
     while (p && q) {
-        BufferQueue_Producer *tmp = TRACK(q)->producer;
-        TRACK(q)->producer = TRACK(p)->producer;
-        TRACK(p)->producer = tmp;
+        Track *pt = (Track *)p->data;
+        Track *qt = (Track *)q->data;
+        BufferQueue_Producer *tmp = qt->producer;
+        qt->producer = pt->producer;
+        pt->producer = tmp;
         p = g_list_next(p);
         q = g_list_next(q);
     }
