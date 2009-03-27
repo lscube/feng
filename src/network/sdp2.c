@@ -60,7 +60,7 @@ typedef struct {
  *
  * @internal This function is only to be called by g_list_foreach().
  */
-void sdp_mdescr_private_append(gpointer element, gpointer user_data)
+static void sdp_mdescr_private_append(gpointer element, gpointer user_data)
 {
     sdp_field *private = (sdp_field *)element;
     sdp_mdescr_append_pair *pair = (sdp_mdescr_append_pair *)user_data;
@@ -94,7 +94,7 @@ void sdp_mdescr_private_append(gpointer element, gpointer user_data)
  *
  * @internal This function is only to be called by g_list_foreach().
  */
-void sdp_mdescr_private_list_append(gpointer element, gpointer user_data)
+static void sdp_mdescr_private_list_append(gpointer element, gpointer user_data)
 {
     sdp_mdescr_append_pair pair = {
         .descr = (GString *)user_data,
@@ -115,7 +115,7 @@ void sdp_mdescr_private_list_append(gpointer element, gpointer user_data)
  *
  * @internal This function is only to be called by g_list_foreach().
  */
-void sdp_mdescr_pt_append(gpointer element, gpointer user_data)
+static void sdp_mdescr_pt_append(gpointer element, gpointer user_data)
 {
     MediaDescr *mdescr = (MediaDescr *)element;
     GString *descr = (GString *)user_data;
@@ -229,7 +229,7 @@ static void sdp_media_descr(gpointer element, gpointer user_data)
  *
  * @internal This function is only to be called by g_list_foreach().
  */
-void sdp_rdescr_private_append(gpointer element, gpointer user_data)
+static void sdp_rdescr_private_append(gpointer element, gpointer user_data)
 {
     sdp_field *private = (sdp_field *)element;
     GString *descr = (GString *)user_data;
