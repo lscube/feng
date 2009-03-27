@@ -128,12 +128,16 @@ void sdp_mdescr_pt_append(gpointer element, gpointer user_data)
  * @brief Append the description for a given media to an SDP
  *        description.
  *
- * @param m_descr_list List of MediaDescr instances to fetch the data
+ * @param element List of MediaDescr instances to fetch the data
  *                     from.
- * @param descr GString instance to append the description to
+ * @param user_data GString instance to append the description to
+ *
+ * @internal This function is only to be called by g_ptr_array_foreach().
  */
-static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
+static void sdp_media_descr(gpointer element, gpointer user_data)
 {
+    MediaDescrList m_descr_list = (MediaDescrList)element;
+    GString *descr = (GString *)user_data;
     MediaDescr *m_descr = m_descr_list ? (MediaDescr *)m_descr_list->data : NULL;
     char *encoded_media_name;
 
@@ -247,8 +251,6 @@ GString *sdp_session_descr(struct feng *srv, const char *server, const char *nam
 {
     GString *descr = NULL;
     ResourceDescr *r_descr;
-    MediaDescrListArray m_descrs;
-    guint i;
     double duration;
 
     const char *resname;
@@ -336,12 +338,9 @@ GString *sdp_session_descr(struct feng *srv, const char *server, const char *nam
                    sdp_rdescr_private_append,
                    descr);
 
-    // media
-    m_descrs = r_descr_get_media(r_descr);
-
-    for (i=0;i<m_descrs->len;i++) { /// @TODO wrap g_array functions
-        sdp_media_descr(m_descrs->pdata[i], descr);
-    }
+    g_ptr_array_foreach(r_descr_get_media(r_descr),
+                        sdp_media_descr,
+                        descr);
 
     fnc_log(FNC_LOG_INFO, "[SDP2] description:\n%s", descr->str);
 
