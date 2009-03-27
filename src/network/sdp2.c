@@ -49,7 +49,7 @@
  */
 static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
 {
-    MediaDescr *m_descr = m_descr_list ? MEDIA_DESCR(m_descr_list) : NULL;
+    MediaDescr *m_descr = m_descr_list ? (MediaDescr *)m_descr_list->data : NULL;
     MediaDescrList tmp_mdl;
     sdp_field_list sdp_private;
     char *encoded_media_name;
@@ -85,7 +85,7 @@ static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
     for (tmp_mdl = g_list_first(m_descr_list); tmp_mdl;
          tmp_mdl = g_list_next(tmp_mdl))
         g_string_append_printf(descr, " %u",
-                               m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl)));
+                               m_descr_rtp_pt(tmp_mdl->data));
 
     g_string_append(descr, SDP2_EL);
 
@@ -107,7 +107,7 @@ static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
     // other sdp private data
     for (tmp_mdl = g_list_first(m_descr_list); tmp_mdl;
          tmp_mdl = g_list_next(tmp_mdl))
-        if ((sdp_private = m_descr_sdp_private(MEDIA_DESCR(tmp_mdl))))
+        if ((sdp_private = m_descr_sdp_private(tmp_mdl->data)))
             for (sdp_private = g_list_first(sdp_private); sdp_private;
                  sdp_private = g_list_next(sdp_private)) {
                 switch (SDP_FIELD(sdp_private)->type) {
@@ -117,12 +117,12 @@ static void sdp_media_descr(MediaDescrList m_descr_list, GString *descr)
                     break;
                 case fmtp:
                     g_string_append_printf(descr, "a=fmtp:%u %s"SDP2_EL,
-                                           m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl)),
+                                           m_descr_rtp_pt(tmp_mdl->data),
                                            SDP_FIELD(sdp_private)->field);
                     break;
                 case rtpmap:
                     g_string_append_printf(descr, "a=rtpmap:%u %s"SDP2_EL,
-                                           m_descr_rtp_pt(MEDIA_DESCR(tmp_mdl)),
+                                           m_descr_rtp_pt(tmp_mdl->data),
                                            SDP_FIELD(sdp_private)->field);
                     break;
                     // other supported private fields?

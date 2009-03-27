@@ -614,7 +614,7 @@ static void r_descr_find_media(gpointer element, gpointer user_data) {
 
     for (i = 0; i < new_m_descrs->len; ++i) {
         MediaDescrList m_descr_list_it = g_ptr_array_index(new_m_descrs, i);
-        MediaDescr *m_descr_list = MEDIA_DESCR(m_descr_list_it);
+        MediaDescr *m_descr_list = (MediaDescr *)m_descr_list_it->data;
 
         if ( m_descr_list == NULL )
             continue;
