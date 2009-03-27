@@ -9,6 +9,8 @@ AC_DEFUN([LSC_CHECK_SCTP], [
   AS_IF([test "x$enable_sctp" = "xyes"], [
     AC_MSG_RESULT([yes, checking prerequisites])
 
+    AC_CHECK_HEADERS([sys/socket.h])
+
     AC_CHECK_TYPE([struct sctp_sndrcvinfo], [
         save_LIBS="$LIBS"
         AC_SEARCH_LIBS([sctp_recvmsg], [sctp], [
@@ -19,7 +21,10 @@ AC_DEFUN([LSC_CHECK_SCTP], [
 	LIBS="$save_LIBS"
 	],
       AC_MSG_WARN([SCTP disabled: headers not found]),
-      [#include <netinet/sctp.h>
+      [#ifdef HAVE_SYS_SOCKET_H
+       #include <sys/socket.h>
+       #endif
+       #include <netinet/sctp.h>
       ])
   ], [
     AC_MSG_RESULT([no, disabled by user])
