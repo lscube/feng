@@ -85,8 +85,6 @@ static GList *r_descr_find(const char *mrl)
     return g_list_find_custom(descr_cache, mrl, r_descr_find_cmp_mrl);
 }
 
-static int r_changed(ResourceDescr *descr);
-
 // private functions for specific demuxer
 
 /**
@@ -218,6 +216,40 @@ static void r_descr_free(ResourceDescr *descr)
 
     MObject_unref( MOBJECT(descr->info) );
     g_free(descr);
+}
+
+/**
+ * @brief Check if a given resource has changed on disk
+ *
+ * @param descr The description of the resource to change
+ *
+ * @retval true The resource has changed on disk since last time
+ * @retval false The resource hasn't changed on disk
+ *
+ * @see ResourceDescr::last_change
+ */
+static gboolean r_changed(ResourceDescr *descr)
+{
+    GList *m_descr_it;
+
+    if ( mrl_changed(descr->info->mrl, &descr->last_change) )
+        return true;
+
+    for (m_descr_it = g_list_first(descr->media);
+         m_descr_it;
+         m_descr_it = g_list_next(m_descr_it) )
+    {
+        MediaDescr *m_descr = (MediaDescr *)m_descr_it->data;
+
+        /* Okay if this happens we've got a problem */
+        g_assert(m_descr->info->mrl != NULL);
+
+        if (mrl_changed(m_descr->info->mrl,
+                        &(m_descr->last_change)))
+            return true;
+    }
+
+    return false;
 }
 
 static void r_descr_cache_update(Resource *r)
@@ -423,25 +455,6 @@ Track *r_find_track(Resource *resource, const char *track_name) {
     }
 
     return track->data;
-}
-
-static int r_changed(ResourceDescr *descr)
-{
-    GList *m_descr = g_list_first(descr->media);
-
-    if ( mrl_changed(descr->info->mrl, &descr->last_change) )
-        return 1;
-
-    for (/* m_descr=descr->media */;
-         m_descr && MEDIA_DESCR(m_descr)->info->mrl;
-         m_descr=g_list_next(m_descr))
-    {
-        if (mrl_changed(MEDIA_DESCR(m_descr)->info->mrl,
-                        &(MEDIA_DESCR(m_descr)->last_change)))
-            return 1;
-    }
-
-    return 0;
 }
 
 /**
