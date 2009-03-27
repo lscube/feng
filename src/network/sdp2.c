@@ -141,12 +141,23 @@ static void sdp_media_descr(gpointer element, gpointer user_data)
     MediaDescr *m_descr = m_descr_list ? (MediaDescr *)m_descr_list->data : NULL;
     char *encoded_media_name;
 
+    /* The following variables are used to read the data out of the
+     * m_descr pointer, without calling the same inline function
+     * twice.
+     */
+    MediaType type;
+    float frame_rate;
+    const char *commons_deed;
+    const char *rdf_page;
+    const char *title;
+    const char *author;
+
     if (!m_descr)
         return;
 
     // m=
     /// @TODO Convert this to a string table
-    switch (m_descr_type(m_descr)) {
+    switch ( (type = m_descr_type(m_descr)) ) {
     case MP_audio:
         g_string_append(descr, "m=audio ");
         break;
@@ -186,27 +197,28 @@ static void sdp_media_descr(gpointer element, gpointer user_data)
                            encoded_media_name);
     g_free(encoded_media_name);
 
-    if (m_descr_frame_rate(m_descr) && m_descr_type(m_descr) == MP_video)
+    if ( (frame_rate = m_descr_frame_rate(m_descr))
+         && type == MP_video)
         g_string_append_printf(descr, "a=framerate:%f"SDP2_EL,
-                               m_descr_frame_rate(m_descr));
+                               frame_rate);
 
     g_list_foreach(m_descr_list,
                     sdp_mdescr_private_list_append,
                     descr);
 
     // CC licenses *
-    if (m_descr_commons_deed(m_descr))
+    if ( (commons_deed = m_descr_commons_deed(m_descr)) )
         g_string_append_printf(descr, "a=uriLicense:%s"SDP2_EL,
-                               m_descr_commons_deed(m_descr));
-    if (m_descr_rdf_page(m_descr))
+                               commons_deed);
+    if ( (rdf_page = m_descr_rdf_page(m_descr)) )
         g_string_append_printf(descr, "a=uriMetadata:%s"SDP2_EL,
-                               m_descr_rdf_page(m_descr));
-    if (m_descr_title(m_descr))
+                               rdf_page);
+    if ( (title = m_descr_title(m_descr)) )
         g_string_append_printf(descr, "a=title:%s"SDP2_EL,
-                               m_descr_title(m_descr));
-    if (m_descr_author(m_descr))
+                               title);
+    if ( (author = m_descr_author(m_descr)) )
         g_string_append_printf(descr, "a=author:%s"SDP2_EL,
-                               m_descr_author(m_descr));
+                               author);
 }
 
 /**
