@@ -184,6 +184,6 @@ Track *r_find_track(Resource *, const char *);
 Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 
 // Resources and Media descriptions
-ResourceDescr *r_descr_get(feng *srv, char *inner_path);
+ResourceDescr *r_descr_get(feng *srv, const char *inner_path);
 
 #endif // FN_DEMUXER_H

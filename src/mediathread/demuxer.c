@@ -473,7 +473,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 }
 #undef ADD_TRACK_ERROR
 
-ResourceDescr *r_descr_get(struct feng *srv, char *inner_path)
+ResourceDescr *r_descr_get(struct feng *srv, const char *inner_path)
 {
     GList *cache_el;
     gchar *mrl = g_strjoin ("/",
