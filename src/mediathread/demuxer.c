@@ -55,15 +55,35 @@ static GList *descr_cache=NULL;
 //! cache size of descriptions (maybe we need to take it from fenice configuration file?)
 #define MAX_DESCR_CACHE_SIZE 10
 
-// --- Description Cache management --- //
-static gint cache_cmp(gconstpointer a, gconstpointer b)
+/**
+ * @brief Comparison function used to compare a ResourceDescr to a MRL
+ *
+ * @param a ResourceDescr pointer of the element in the list
+ * @param b String with the MRL to compare to
+ *
+ * @return The strcmp() result between the correspondent ResourceInfo
+ *         MRL and the given MRL.
+ *
+ * @internal This function should _only_ be used by @ref r_descr_find.
+ */
+static gint r_descr_find_cmp_mrl(gconstpointer a, gconstpointer b)
 {
     return strcmp( ((ResourceDescr *)a)->info->mrl, (const char *)b );
 }
 
-/*! Private functions for exclusive tracks.
- * */
-#define r_descr_find(mrl) g_list_find_custom(descr_cache, mrl, cache_cmp)
+/**
+ * @brief Find a given ResourceDecr in the cache, from its MRL
+ *
+ * @param mrl The MRL to look for
+ *
+ * @return A GList pointer to the requested resource description.
+ *
+ * @see r_descr_find_cmp_mrl
+ */
+static GList *r_descr_find(const char *mrl)
+{
+    return g_list_find_custom(descr_cache, mrl, r_descr_find_cmp_mrl);
+}
 
 static int r_changed(ResourceDescr *descr);
 
