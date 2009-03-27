@@ -98,7 +98,7 @@ static void interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
     ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
 }
 
-#ifdef HAVE_LIBSCTP
+#ifdef HAVE_SCTP
 static void interleaved_read_sctp_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     char buffer[RTSP_BUFFERSIZE + 1];
@@ -127,7 +127,7 @@ static void interleaved_setup_callbacks(RTSP_Client *rtsp, RTSP_interleaved *int
         case TCP:
             cb = interleaved_read_tcp_cb;
         break;
-#ifdef HAVE_LIBSCTP
+#ifdef HAVE_SCTP
         case SCTP:
             cb = interleaved_read_sctp_cb;
         break;

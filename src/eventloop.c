@@ -42,7 +42,7 @@ static inline
 int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
 {
     int n;
-#ifdef HAVE_LIBSCTP
+#ifdef HAVE_SCTP
     struct sctp_sndrcvinfo sctp_info;
     if (Sock_type(sock) == SCTP) {
         memset(&sctp_info, 0, sizeof(sctp_info));
@@ -51,7 +51,7 @@ int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
         fnc_log(FNC_LOG_DEBUG,
             "Sock_read() received %d bytes from sctp stream %d\n", n, stream);
     } else    // RTSP protocol is TCP
-#endif    // HAVE_LIBSCTP
+#endif    // HAVE_SCTP
 
     n = Sock_read(sock, buffer, size, NULL, 0);
 

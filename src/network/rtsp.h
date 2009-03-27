@@ -36,7 +36,7 @@
 #include "rtcp.h"
 #include "sdp2.h"
 
-#ifdef HAVE_LIBSCTP
+#ifdef HAVE_SCTP
 #include <netinet/sctp.h>
 #endif
 
