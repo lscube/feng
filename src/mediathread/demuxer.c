@@ -206,8 +206,6 @@ static void r_descr_free_media(gpointer element, gpointer user_data)
 
 static void r_descr_free(ResourceDescr *descr)
 {
-    GList *m_descr;
-
     if (!descr)
         return;
 
