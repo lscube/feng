@@ -55,6 +55,12 @@ static GList *descr_cache=NULL;
 //! cache size of descriptions (maybe we need to take it from fenice configuration file?)
 #define MAX_DESCR_CACHE_SIZE 10
 
+// --- Description Cache management --- //
+static gint cache_cmp(gconstpointer a, gconstpointer b)
+{
+    return strcmp( ((ResourceDescr *)a)->info->mrl, (const char *)b );
+}
+
 /*! Private functions for exclusive tracks.
  * */
 #define r_descr_find(mrl) g_list_find_custom(descr_cache, mrl, cache_cmp)
@@ -123,12 +129,6 @@ static int find_demuxer(InputStream *i_stream)
     }
 
     return found ? i: -1;
-}
-
-// --- Description Cache management --- //
-static gint cache_cmp(gconstpointer a, gconstpointer b)
-{
-    return strcmp( ((ResourceDescr *)a)->info->mrl, (const char *)b );
 }
 
 /**
