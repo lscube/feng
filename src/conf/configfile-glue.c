@@ -38,6 +38,8 @@
  *
  */
 
+#include <glib.h>
+
 #include <string.h>
 
 //#include "base.h"
