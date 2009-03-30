@@ -220,9 +220,9 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
     /* check parent first */
     if (dc->parent && dc->parent->context_ndx) {
         /**
-         * a nested conditional 
+         * a nested conditional
          *
-         * if the parent is not decided yet or false, we can't be true either 
+         * if the parent is not decided yet or false, we can't be true either
          */
         if (con->conf.log_condition_handling) {
             log_error_write(srv, __FILE__, __LINE__,  "sb", "go parent", dc->parent->key);
@@ -242,7 +242,7 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
         /**
          * a else branch
          *
-         * we can only be executed, if all of our previous brothers 
+         * we can only be executed, if all of our previous brothers
          * are false
          */
         if (con->conf.log_condition_handling) {
@@ -263,7 +263,7 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 
     if (!con->conditional_is_valid[dc->comp]) {
         if (con->conf.log_condition_handling) {
-            log_error_write(srv, __FILE__, __LINE__,  "dss", 
+            log_error_write(srv, __FILE__, __LINE__,  "dss",
                 dc->comp,
                 dc->key->ptr,
                 con->conditional_is_valid[dc->comp] ? "yeah" : "nej");
@@ -506,7 +506,7 @@ static cond_result_t config_check_cond_cached(server *srv, connection *con, data
         if (con->conf.log_condition_handling) {
             log_error_write(srv, __FILE__, __LINE__, "dss", dc->context_ndx,
                     "(cached) result:",
-                    caches[dc->context_ndx].result == COND_RESULT_UNSET ? "unknown" : 
+                    caches[dc->context_ndx].result == COND_RESULT_UNSET ? "unknown" :
                         (caches[dc->context_ndx].result == COND_RESULT_TRUE ? "true" : "false"));
         }
     }
@@ -522,7 +522,7 @@ void config_cond_cache_reset_item(server *srv, connection *con, comp_key_t item)
     size_t i;
 
     for (i = 0; i < srv->config_context->used; i++) {
-        if (item == COMP_LAST_ELEMENT || 
+        if (item == COMP_LAST_ELEMENT ||
             con->cond_cache[i].comp_type == item) {
             con->cond_cache[i].result = COND_RESULT_UNSET;
             con->cond_cache[i].patterncount = 0;
