@@ -38,9 +38,23 @@
 
 static GPtrArray *io_watchers; //!< keep track of ev_io allocated
 
-static inline
-int rtsp_sock_read(Sock *sock, int *stream, char *buffer, int size)
+/**
+ * @brief Read data out of an RTSP client socket
+ *
+ * @param rtsp The client to read data from
+ * @param stream Pointer to the variable to save the stream number to
+ * @param buffer Pointer to the memory area to read
+ * @param size The size of the memory area to read
+ *
+ * @return The amount of data read from the socket
+ * @return -1 Error during read.
+ *
+ * @todo The size parameter and the return value should be size_t
+ *       instead of int.
+ */
+static int rtsp_sock_read(RTSP_Client *rtsp, int *stream, char *buffer, int size)
 {
+    Sock *sock = rtsp->sock;
     int n;
 #ifdef HAVE_SCTP
     struct sctp_sndrcvinfo sctp_info;
@@ -71,7 +85,7 @@ static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
     gint channel = 0;
     RTSP_Client *rtsp = w->data;
 
-    if ( (read_size = rtsp_sock_read(rtsp->sock,
+    if ( (read_size = rtsp_sock_read(rtsp,
                                      &channel,
                                      buffer,
                                      sizeof(buffer) - 1)
