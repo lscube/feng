@@ -67,36 +67,49 @@ static void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
 static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     char buffer[RTSP_BUFFERSIZE + 1] = { 0, };    /* +1 to control the final '\0' */
-    int n;
-    gint m = 0;
+    int read_size;
+    gint channel = 0;
     RTSP_Client *rtsp = w->data;
 
-    n = rtsp_sock_read(rtsp->sock, &m, buffer, sizeof(buffer) - 1);
+    if ( (read_size = rtsp_sock_read(rtsp->sock,
+                                     &channel,
+                                     buffer,
+                                     sizeof(buffer) - 1)
+          ) <= 0 )
+        goto client_close;
 
-    if (n > 0) {
-        if (m == 0) {
-            if (rtsp->input->len + n > RTSP_BUFFERSIZE) {
-                fnc_log(FNC_LOG_DEBUG,
-                    "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
-                n = -1;
-            }
-            g_byte_array_append(rtsp->input, buffer, n);
-            if (RTSP_handler(rtsp) == ERR_GENERIC) {
-                fnc_log(FNC_LOG_ERR, "Invalid input message.\n");
-                n = -1;
-            }
-        } else {    /* if (rtsp->proto == SCTP && m != 0) */
-            interleaved_rtcp_send(rtsp, m, buffer, n);
-        }
+    /* If we got a channel number from the socket, it means that we're
+     * reading data out of some interleaved lower level protocol
+     * protocol; right now this only means SCTP.
+    */
+    if ( channel != 0 ) {
+        interleaved_rtcp_send(rtsp, channel, buffer, read_size);
+        return;
     }
 
-    if (n > 0)
-        return;
-    else if (n == 0)
-        fnc_log(FNC_LOG_INFO, "RTSP connection closed by client.");
-    else if (n < 0)
-        fnc_log(FNC_LOG_INFO, "RTSP connection closed by server.");
+    if (rtsp->input->len + read_size > RTSP_BUFFERSIZE) {
+        fnc_log(FNC_LOG_DEBUG,
+                "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
+        goto server_close;
+    }
 
+    g_byte_array_append(rtsp->input, buffer, read_size);
+    if (RTSP_handler(rtsp) == ERR_GENERIC) {
+        fnc_log(FNC_LOG_ERR, "Invalid input message.\n");
+        goto server_close;
+    }
+
+    return;
+
+ client_close:
+    fnc_log(FNC_LOG_INFO, "RTSP connection closed by client.");
+    goto disconnect;
+
+ server_close:
+    fnc_log(FNC_LOG_INFO, "RTSP connection closed by server.");
+    goto disconnect;
+
+ disconnect:
     ev_async_send(loop, rtsp->ev_sig_disconnect);
 }
 
