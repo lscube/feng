@@ -26,15 +26,9 @@
 #include <fenice/fnc_log.h>
 #include <fenice/utils.h>
 
-/**
- * Sends the rtsp output buffer through the socket
- * @param rtsp the rtsp connection to flush through the socket
- * @return the size of data sent
- */
-ssize_t rtsp_send(RTSP_Client * rtsp)
+void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
-    int n = 0;
-
+    RTSP_Client *rtsp = w->data;
     GString *outpkt = (GString *)g_async_queue_try_pop(rtsp->out_queue);
 
     if (outpkt == NULL) {
@@ -42,8 +36,8 @@ ssize_t rtsp_send(RTSP_Client * rtsp)
         return 0;
     }
 
-    if ( (n = Sock_write(rtsp->sock, outpkt->str, outpkt->len,
-          NULL, MSG_DONTWAIT)) < outpkt->len) {
+    if ( Sock_write(rtsp->sock, outpkt->str, outpkt->len,
+                    NULL, MSG_DONTWAIT) < outpkt->len) {
         switch (errno) {
             case EACCES:
                 fnc_log(FNC_LOG_ERR, "EACCES error");
@@ -101,5 +95,4 @@ ssize_t rtsp_send(RTSP_Client * rtsp)
     }
 
     g_string_free(outpkt, TRUE);
-    return n;
 }

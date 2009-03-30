@@ -72,12 +72,6 @@ static int rtsp_sock_read(RTSP_Client *rtsp, int *stream, char *buffer, int size
     return n;
 }
 
-static void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
-{
-    RTSP_Client *rtsp = w->data;
-    rtsp_send(rtsp);
-}
-
 static void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     char buffer[RTSP_BUFFERSIZE + 1] = { 0, };    /* +1 to control the final '\0' */

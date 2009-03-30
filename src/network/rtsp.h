@@ -252,7 +252,7 @@ static inline void rtsp_quick_response(RTSP_Request *req, RTSP_ResponseCode code
 gboolean rtsp_check_invalid_state(const RTSP_Request *req,
                                   RTSP_Server_State invalid_state);
 
-ssize_t rtsp_send(RTSP_Client * rtsp);
+void rtsp_write_cb(struct ev_loop *, ev_io *, int);
 
 gboolean rtsp_request_get_url(RTSP_Request *req, Url *url);
 char *rtsp_request_get_path(RTSP_Request *req);
