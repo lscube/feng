@@ -64,76 +64,10 @@ static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
     }
 }
 
-static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
-{
-    rtp_session_handle_sending(w->data);
-}
-
 static ev_tstamp rtp_reschedule_cb(ev_periodic *w, ev_tstamp now)
 {
     RTP_session *sess = w->data;
     return now + sess->track->properties->frame_duration/2;
-}
-
-/**
- * @brief Create a new RTP session object.
- *
- * @param rtsp The buffer for which to generate the session
- * @param rtsp_s The RTSP session
- * @param path The path of the resource
- * @param transport The transport used by the session
- * @param tr The track that will be sent over the session
- *
- * @return A pointer to a newly-allocated RTP_session, that needs to
- *         be freed with @ref rtp_session_free.
- *
- * @see rtp_session_free
- */
-RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
-                             RTP_transport *transport, const char *path,
-                             Track *tr) {
-    feng *srv = rtsp->srv;
-    RTP_session *rtp_s = g_slice_new0(RTP_session);
-
-    rtp_s->lock = g_mutex_new();
-    g_mutex_lock(rtp_s->lock);
-
-    /* Make sure we start paused since we have to wait for parameters
-     * given by @ref rtp_session_resume.
-     */
-    rtp_s->pause = 1;
-    rtp_s->sd_filename = g_strdup(path);
-
-    memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
-    rtp_s->start_rtptime = g_random_int();
-    rtp_s->start_seq = g_random_int_range(0, G_MAXUINT16);
-    rtp_s->seq_no = rtp_s->start_seq - 1;
-
-    /* Set up the track selector and get a consumer for the track */
-    rtp_s->track = tr;
-    rtp_s->consumer = bq_consumer_new(tr->producer);
-
-    rtp_s->srv = srv;
-    rtp_s->ssrc = g_random_int();
-    rtp_s->client = rtsp;
-
-#ifdef HAVE_METADATA
-	rtp_s->metadata = rtsp_s->resource->metadata;
-#endif
-
-    rtp_s->transport.rtcp_watcher.data = rtp_s;
-    ev_io_init(&rtp_s->transport.rtcp_watcher, rtcp_read_cb,
-               Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
-    ev_io_start(srv->loop, &rtp_s->transport.rtcp_watcher);
-
-    rtp_s->transport.rtp_writer.data = rtp_s;
-    ev_periodic_init(&rtp_s->transport.rtp_writer, rtp_write_cb,
-                     0, 0, rtp_reschedule_cb);
-
-    // Setup the RTP session
-    rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
-
-    return rtp_s;
 }
 
 /**
@@ -328,15 +262,17 @@ static gboolean rtp_session_send_prereq(RTP_session *session) {
 }
 
 /**
- * Handle sending pending RTP packets to a session.
+ * Send pending RTP packets to a session.
  *
- * @param session the RTP session for which to send the packets
+ * @param loop eventloop
+ * @param w contains the session the RTP session for which to send the packets
  *
  * @note This function will require exclusive access to the session,
  *       so it'll lock the @ref RTP_session::lock mutex.
  */
-void rtp_session_handle_sending(RTP_session *session)
+static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
 {
+    RTP_session *session = w->data;
     MParserBuffer *buffer = NULL;
 
     if ( !rtp_session_send_prereq(session) )
@@ -374,4 +310,65 @@ void rtp_session_handle_sending(RTP_session *session)
     RTCP_handler(session);
 
     g_mutex_unlock(session->lock);
+}
+
+/**
+ * @brief Create a new RTP session object.
+ *
+ * @param rtsp The buffer for which to generate the session
+ * @param rtsp_s The RTSP session
+ * @param path The path of the resource
+ * @param transport The transport used by the session
+ * @param tr The track that will be sent over the session
+ *
+ * @return A pointer to a newly-allocated RTP_session, that needs to
+ *         be freed with @ref rtp_session_free.
+ *
+ * @see rtp_session_free
+ */
+RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
+                             RTP_transport *transport, const char *path,
+                             Track *tr) {
+    feng *srv = rtsp->srv;
+    RTP_session *rtp_s = g_slice_new0(RTP_session);
+
+    rtp_s->lock = g_mutex_new();
+    g_mutex_lock(rtp_s->lock);
+
+    /* Make sure we start paused since we have to wait for parameters
+     * given by @ref rtp_session_resume.
+     */
+    rtp_s->pause = 1;
+    rtp_s->sd_filename = g_strdup(path);
+
+    memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
+    rtp_s->start_rtptime = g_random_int();
+    rtp_s->start_seq = g_random_int_range(0, G_MAXUINT16);
+    rtp_s->seq_no = rtp_s->start_seq - 1;
+
+    /* Set up the track selector and get a consumer for the track */
+    rtp_s->track = tr;
+    rtp_s->consumer = bq_consumer_new(tr->producer);
+
+    rtp_s->srv = srv;
+    rtp_s->ssrc = g_random_int();
+    rtp_s->client = rtsp;
+
+#ifdef HAVE_METADATA
+	rtp_s->metadata = rtsp_s->resource->metadata;
+#endif
+
+    rtp_s->transport.rtcp_watcher.data = rtp_s;
+    ev_io_init(&rtp_s->transport.rtcp_watcher, rtcp_read_cb,
+               Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
+    ev_io_start(srv->loop, &rtp_s->transport.rtcp_watcher);
+
+    rtp_s->transport.rtp_writer.data = rtp_s;
+    ev_periodic_init(&rtp_s->transport.rtp_writer, rtp_write_cb,
+                     0, 0, rtp_reschedule_cb);
+
+    // Setup the RTP session
+    rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
+
+    return rtp_s;
 }
