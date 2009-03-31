@@ -52,9 +52,11 @@
 #include <metadata/cpd.h>
 #endif
 
+/**
+ *  Handler to cleanly shut down feng
+ */
 static void sigint_cb (struct ev_loop *loop, ev_signal *w, int revents)
 {
-
     mt_shutdown();
     ev_unloop (loop, EVUNLOOP_ALL);
 }
@@ -155,13 +157,16 @@ static int feng_bind_ports(feng *srv)
  * block PIPE signal
  */
 
-static ev_signal signal_watcher;
+static ev_signal signal_watcher_int;
+static ev_signal signal_watcher_term;
 
 static void feng_handle_signals(feng *srv)
 {
     sigset_t block_set;
-    ev_signal_init (&signal_watcher, sigint_cb, SIGINT);
-    ev_signal_start (srv->loop, &signal_watcher);
+    ev_signal_init (&signal_watcher_int, sigint_cb, SIGINT);
+    ev_signal_start (srv->loop, &signal_watcher_int);
+    ev_signal_init (&signal_watcher_term, sigint_cb, SIGTERM);
+    ev_signal_start (srv->loop, &signal_watcher_term);
 
     /* block PIPE signal */
     sigemptyset(&block_set);
