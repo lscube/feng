@@ -7,9 +7,12 @@ bin_PROGRAMS = feng
 BUILT_SOURCES = \
 	network/ragel_request_line.c \
 	network/ragel_transport.c \
-	network/ragel_range.c
+	network/ragel_range.c \
+	liberis/headers_parser.c
 
 dist_feng_SOURCES = \
+	liberis/headers.h \
+	liberis/utils.c liberis/utils.h \
 	network/rtcp.h \
 	network/rtcp_handler.c \
 	network/rtcp_send_packet.c \
