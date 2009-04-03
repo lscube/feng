@@ -54,24 +54,6 @@
 #define ERR_FATAL               -9
 #define ERR_CONNECTION_CLOSE    -10
 
-/*! message header keywords see rfc2326 and rfc2068 */
-
-#define HDR_CONTENTLENGTH       "Content-Length"
-#define HDR_ACCEPT              "Accept"
-#define HDR_ALLOW               "Allow"
-#define HDR_BLOCKSIZE           "Blocksize"
-#define HDR_CONTENTTYPE         "Content-Type"
-#define HDR_DATE                "Date"
-#define HDR_REQUIRE             "Require"
-#define HDR_TRANSPORTREQUIRE    "Transport-Require"
-#define HDR_SEQUENCENO          "SequenceNo"
-#define HDR_CSEQ                "CSeq"
-#define HDR_STREAM              "Stream"
-#define HDR_SESSION             "Session"
-#define HDR_TRANSPORT           "Transport"
-#define HDR_RANGE               "Range"
-#define HDR_USER_AGENT          "User-Agent"
-
 #define NTP_time(t) ((float)t + 2208988800U)
 
 /**
