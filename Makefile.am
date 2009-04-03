@@ -3,8 +3,7 @@ SUBDIRS = src
 noinst_HEADERS = \
 	include/fenice/utils.h \
 	include/fenice/prefs.h \
-	include/fenice/server.h \
-	include/fenice/sdp_grammar.h
+	include/fenice/server.h
 
 EXTRA_DIST = RELEASE
 

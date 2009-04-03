@@ -14,6 +14,7 @@ libmediath_a_SOURCES =	cache.c \
 			mediathread.h \
 			mediautils.c \
 			mediautils.h \
+			sdp_grammar.h \
 			parser/mpeg12.c \
 			parser/mpegaudio.c \
 			parser/mpeg2t.c \

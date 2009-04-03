@@ -26,7 +26,7 @@
 #include <stdint.h>
 
 #include "mediautils.h"
-#include <fenice/sdp_grammar.h>
+#include "sdp_grammar.h"
 
 struct Track;
 

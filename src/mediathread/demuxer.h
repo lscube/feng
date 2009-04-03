@@ -30,7 +30,7 @@
 #include "InputStream.h"
 #include "mediaparser.h"
 #include "bufferqueue.h"
-#include <fenice/sdp_grammar.h>
+#include "sdp_grammar.h"
 #include <fenice/server.h>
 
 #define RESOURCE_OK 0
