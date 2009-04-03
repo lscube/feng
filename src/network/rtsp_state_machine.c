@@ -32,7 +32,7 @@
 
 #include "rtsp.h"
 #include <fenice/utils.h>
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 
 /**
  * RTSP high level functions, mapping to the actual RTSP methods

@@ -41,7 +41,6 @@
 #include <fenice/prefs.h>
 #include "sdp2.h"
 #include "rtsp.h"
-#include <fenice/fnc_log.h>
 
 /**
  * @defgroup rtsp_utils Utility functions

@@ -32,7 +32,7 @@
 #include <stdbool.h>
 
 #include <fenice/prefs.h>
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 #include "sdp2.h"
 #include "mediathread/description.h"
 #include <netembryo/wsocket.h>

@@ -28,7 +28,7 @@
 
 #include "InputStream.h"
 #include <fenice/utils.h>
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 
 static int read_from_net(int fd, void *buf, size_t nbytes);/*not implemented yet*/
 static int read_from_device(int fd, void *buf, size_t nbytes);/*not implemented yet*/

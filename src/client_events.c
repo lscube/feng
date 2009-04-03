@@ -22,6 +22,7 @@
 
 #include "network/rtsp.h"
 #include "client_events.h"
+#include "fnc_log.h"
 
 #include <sys/time.h>
 #include <ev.h>

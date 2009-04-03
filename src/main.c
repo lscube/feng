@@ -41,6 +41,7 @@
 #include "conf/configfile.h"
 
 #include <fenice/server.h>
+#include "fnc_log.h"
 #include "eventloop.h"
 #include <fenice/prefs.h>
 #include <fenice/utils.h>

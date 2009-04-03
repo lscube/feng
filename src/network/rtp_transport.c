@@ -27,7 +27,7 @@
 #include "rtcp.h"
 #include "mediathread/mediathread.h"
 #include "mediathread/demuxer.h"
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 #include <sys/time.h>
 
 /**

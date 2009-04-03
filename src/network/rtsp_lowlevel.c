@@ -23,7 +23,7 @@
 #include <strings.h>
 
 #include "rtsp.h"
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 #include <fenice/utils.h>
 
 /**

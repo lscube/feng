@@ -23,7 +23,7 @@
 #include <stdbool.h>
 
 #include "rtsp.h"
-#include "fenice/fnc_log.h"
+#include "fnc_log.h"
 
 /**
  * @defgroup rtsp_interleaved Interleaved RTSP

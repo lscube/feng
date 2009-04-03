@@ -28,7 +28,7 @@
 #include "demuxer.h"
 #include "description.h"
 #include <fenice/utils.h>
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 
 // global demuxer modules:
 extern Demuxer fnc_demuxer_sd;

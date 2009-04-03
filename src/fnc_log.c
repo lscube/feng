@@ -28,7 +28,7 @@
 #include <syslog.h>
 #include <stdarg.h>
 
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 
 #undef fnc_log
 

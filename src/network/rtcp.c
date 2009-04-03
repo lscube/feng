@@ -28,7 +28,7 @@
 
 #include <fenice/utils.h>
 #include <fenice/server.h>
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 #include <netinet/in.h>
 
 typedef enum {

@@ -36,7 +36,7 @@
 #include "ragel_parsers.h"
 #include "eventloop.h"
 #include <fenice/prefs.h>
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 
 /**
  * Splits the path of a requested media finding the trackname and the removing

@@ -36,7 +36,7 @@ dist_feng_SOURCES = \
 	bufferqueue.c bufferqueue.h \
 	client_events.h client_events.c \
 	eventloop.c eventloop.h \
-	fnc_log.c \
+	fnc_log.c fnc_log.h \
 	main.c \
 	\
 	$(BUILT_SOURCES)
