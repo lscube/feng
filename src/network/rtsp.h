@@ -85,7 +85,7 @@ typedef struct RTSP_Client {
      */
     GByteArray *input;
 
-    GAsyncQueue *out_queue;
+    GQueue *out_queue;
 
     // Run-Time
     RTSP_session *session;

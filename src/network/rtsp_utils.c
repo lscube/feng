@@ -104,7 +104,7 @@ RTSP_Client *rtsp_client_new(feng *srv, Sock *client_sock)
 
     new->sock = client_sock;
     new->input = g_byte_array_new();
-    new->out_queue = g_async_queue_new();
+    new->out_queue = g_queue_new();
     new->srv = srv;
 
     return new;
@@ -134,11 +134,10 @@ void rtsp_client_destroy(RTSP_Client *rtsp)
   interleaved_free_list(rtsp);
 
   // Remove the output queue
-  g_async_queue_lock(rtsp->out_queue);
-  while( (outbuf = g_async_queue_try_pop_unlocked(rtsp->out_queue)) )
+  while( (outbuf = g_queue_pop_tail(rtsp->out_queue)) )
     g_string_free(outbuf, TRUE);
-  g_async_queue_unlock(rtsp->out_queue);
-  g_async_queue_unref(rtsp->out_queue);
+
+  g_queue_free(rtsp->out_queue);
 
   g_byte_array_free(rtsp->input, true);
 
@@ -298,7 +297,7 @@ gboolean rtsp_request_check_url(RTSP_Request *req) {
  */
 void rtsp_bwrite(const RTSP_Client *rtsp, GString *buffer)
 {
-    g_async_queue_push(rtsp->out_queue, buffer);
+    g_queue_push_head(rtsp->out_queue, buffer);
     ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
 }
 

@@ -117,7 +117,7 @@ void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     RTSP_Client *rtsp = w->data;
-    GString *outpkt = (GString *)g_async_queue_try_pop(rtsp->out_queue);
+    GString *outpkt = (GString *)g_queue_pop_tail(rtsp->out_queue);
 
     if (outpkt == NULL) {
         ev_io_stop(rtsp->srv->loop, &rtsp->ev_io_write);
