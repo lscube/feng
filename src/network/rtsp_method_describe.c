@@ -30,7 +30,6 @@
 
 #include "rtsp.h"
 #include <fenice/utils.h>
-#include <fenice/prefs.h>
 #include "sdp2.h"
 
 /**

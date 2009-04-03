@@ -32,7 +32,6 @@
 
 #include <netembryo/wsocket.h>
 
-#include <fenice/prefs.h>
 #include "mediathread/mediathread.h"
 
 #include "bufferqueue.h"

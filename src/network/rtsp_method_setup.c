@@ -35,7 +35,6 @@
 #include "rtsp.h"
 #include "ragel_parsers.h"
 #include "eventloop.h"
-#include <fenice/prefs.h>
 #include "fnc_log.h"
 
 /**

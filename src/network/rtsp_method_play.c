@@ -32,7 +32,6 @@
 
 #include "rtsp.h"
 #include "ragel_parsers.h"
-#include <fenice/prefs.h>
 #include <math.h>
 #include <stdbool.h>
 #include <netembryo/url.h>

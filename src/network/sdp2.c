@@ -31,7 +31,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include <fenice/prefs.h>
 #include "fnc_log.h"
 #include "sdp2.h"
 #include "mediathread/description.h"
