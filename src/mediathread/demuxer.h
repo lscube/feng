@@ -30,7 +30,8 @@
 #include "mediaparser.h"
 #include "bufferqueue.h"
 #include "sdp_grammar.h"
-#include <fenice/server.h>
+
+struct feng;
 
 #define RESOURCE_OK 0
 #define RESOURCE_NOT_FOUND -1
@@ -87,7 +88,7 @@ typedef struct Resource {
     int num_tracks;
     void *private_data; /* Demuxer private data */
     int eos; //!< signals the end of stream
-    feng *srv;
+    struct feng *srv;
 } Resource;
 
 MObject_def(Trackinfo_s)
@@ -157,7 +158,7 @@ typedef struct {
 
 // Resources
 
-Resource *r_open(feng *srv, const char *inner_path);
+Resource *r_open(struct feng *srv, const char *inner_path);
 
 void r_close(Resource *);
 
@@ -169,7 +170,7 @@ Track *r_find_track(Resource *, const char *);
 Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 
 // Resources and Media descriptions
-ResourceDescr *r_descr_get(feng *srv, const char *inner_path);
+ResourceDescr *r_descr_get(struct feng *srv, const char *inner_path);
 MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr);
 
 #endif // FN_DEMUXER_H

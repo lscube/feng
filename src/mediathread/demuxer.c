@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include <fenice/server.h>
+#include "feng.h"
 #include "demuxer.h"
 #include "description.h"
 #include "fnc_log.h"

@@ -1,8 +1,5 @@
 SUBDIRS = src
 
-noinst_HEADERS = \
-	include/fenice/server.h
-
 EXTRA_DIST = RELEASE
 
 ACLOCAL_AMFLAGS = -I m4

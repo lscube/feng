@@ -24,6 +24,7 @@
  * @brief Contains PAUSE method and reply handlers
  */
 
+#include "feng.h"
 #include "rtsp.h"
 
 /**

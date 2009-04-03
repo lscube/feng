@@ -30,6 +30,7 @@
 
 #include <liberis/headers.h>
 
+#include "feng.h"
 #include "rtsp.h"
 #include "ragel_parsers.h"
 #include <math.h>

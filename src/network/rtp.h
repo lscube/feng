@@ -29,6 +29,7 @@
 #include <sys/timeb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <ev.h>
 
 #include <netembryo/wsocket.h>
 
@@ -36,6 +37,7 @@
 
 #include "bufferqueue.h"
 
+struct feng;
 struct Track;
 struct RTSP_Client;
 struct RTSP_session;
@@ -150,9 +152,9 @@ typedef struct RTP_session {
  * @{
  */
 
-void RTP_port_pool_init(feng *srv, int port);
-int RTP_get_port_pair(feng *srv, port_pair * pair);
-int RTP_release_port_pair(feng *srv, port_pair * pair);
+void RTP_port_pool_init(struct feng *srv, int port);
+int RTP_get_port_pair(struct feng *srv, port_pair * pair);
+int RTP_release_port_pair(struct feng *srv, port_pair * pair);
 
 /**
  * @}

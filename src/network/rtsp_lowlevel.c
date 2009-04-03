@@ -22,9 +22,14 @@
 
 #include <strings.h>
 
+#include "feng.h"
 #include "rtsp.h"
 #include "fnc_log.h"
 #include "feng_utils.h"
+
+#ifdef HAVE_SCTP
+# include <netinet/sctp.h>
+#endif
 
 /**
  * @brief Read data out of an RTSP client socket

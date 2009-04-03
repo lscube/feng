@@ -23,6 +23,7 @@
 
 #include <config.h>
 
+#include "feng.h"
 #include "rtp.h"
 #include "rtcp.h"
 #include "mediathread/mediathread.h"

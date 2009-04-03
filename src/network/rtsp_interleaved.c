@@ -22,8 +22,13 @@
 
 #include <stdbool.h>
 
+#include "feng.h"
 #include "rtsp.h"
 #include "fnc_log.h"
+
+#ifdef HAVE_SCTP
+# include <netinet/sctp.h>
+#endif
 
 /**
  * @defgroup rtsp_interleaved Interleaved RTSP

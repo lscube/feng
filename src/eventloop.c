@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <ev.h>
 
+#include "feng.h"
 #include "fnc_log.h"
 #include "eventloop.h"
 #include "client_events.h"

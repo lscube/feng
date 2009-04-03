@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "feng.h"
 #include "feng_utils.h"
 #include "fnc_log.h"
 

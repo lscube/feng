@@ -24,6 +24,7 @@
 
 #include <stdbool.h>
 
+#include "feng.h"
 #include "rtp.h"
 #include "rtsp.h"
 #include "rtcp.h"

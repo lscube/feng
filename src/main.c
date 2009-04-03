@@ -40,7 +40,7 @@
 #include "conf/array.h"
 #include "conf/configfile.h"
 
-#include <fenice/server.h>
+#include "feng.h"
 #include "fnc_log.h"
 #include "eventloop.h"
 #include "mediathread/mediathread.h"
