@@ -126,11 +126,8 @@ void rtsp_client_destroy(RTSP_Client *rtsp)
   if (rtsp->session != NULL) {
 
     // Release all RTP sessions
-  //  g_slist_foreach(rtsp->session->rtp_sessions, schedule_remove, NULL);
+    g_slist_foreach(rtsp->session->rtp_sessions, rtp_session_free, NULL);
     g_slist_free(rtsp->session->rtp_sessions);
-
-    // Close connection
-    //close(rtsp->session->fd);
 
     rtsp_session_free(rtsp->session);
     rtsp->session = NULL;

@@ -73,12 +73,13 @@ static ev_tstamp rtp_reschedule_cb(ev_periodic *w, ev_tstamp now)
 /**
  * Deallocates an RTP session, closing its tracks and transports
  *
- * @param session The RTP session to free
+ * @param arg The RTP session to free
  *
  * @see rtp_session_new
  */
-void rtp_session_free(RTP_session * session)
+void rtp_session_free(gpointer arg, gpointer unused)
 {
+    RTP_session *session = arg;
     RTP_transport_close(session);
 
     g_mutex_free(session->lock);
