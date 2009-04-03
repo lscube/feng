@@ -25,8 +25,7 @@
 #include "mediaparser.h"
 #include "demuxer.h"
 #include "bufferqueue.h"
-#include <fenice/utils.h>
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 
 // global media parsers modules:
 extern MediaParser fnc_mediaparser_mpv;

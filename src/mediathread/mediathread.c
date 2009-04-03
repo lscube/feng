@@ -25,12 +25,11 @@
 #endif
 
 #include "mediathread.h"
-#include <fenice/fnc_log.h>
-#include <fenice/utils.h>
+#include "fnc_log.h"
 #include <time.h>
 
 #ifdef HAVE_METADATA
-#include <metadata/cpd.h>
+#include "metadata/cpd.h"
 #endif
 
 static GAsyncQueue *el_head;

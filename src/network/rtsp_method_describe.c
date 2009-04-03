@@ -29,10 +29,7 @@
 #include <liberis/headers.h>
 
 #include "rtsp.h"
-#include <fenice/utils.h>
-#include <fenice/prefs.h>
 #include "sdp2.h"
-#include <fenice/fnc_log.h>
 
 /**
  * Sends the reply for the describe method
@@ -72,8 +69,6 @@ static void send_describe_reply(RTSP_Request *req, GString *descr)
  */
 void RTSP_describe(RTSP_Client * rtsp, RTSP_Request *req)
 {
-    feng *srv = rtsp->srv;
-
     Url url;
     GString *descr;
 
@@ -81,7 +76,7 @@ void RTSP_describe(RTSP_Client * rtsp, RTSP_Request *req)
         return;
 
     // Get Session Description
-    descr = sdp_session_descr(srv, url.hostname, url.path);
+    descr = sdp_session_descr(rtsp->srv, url.hostname, url.path);
 
     Url_destroy(&url);
 

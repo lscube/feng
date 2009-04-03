@@ -40,16 +40,16 @@
 #include "conf/array.h"
 #include "conf/configfile.h"
 
-#include <fenice/server.h>
+#include "feng.h"
+#include "fnc_log.h"
 #include "eventloop.h"
-#include <fenice/prefs.h>
-#include <fenice/utils.h>
 #include "mediathread/mediathread.h"
+#include "network/rtp.h"
 #include <glib.h>
 #include <getopt.h>
 
 #ifdef HAVE_METADATA
-#include <metadata/cpd.h>
+#include "mediathread/metadata/cpd.h"
 #endif
 
 /**

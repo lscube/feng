@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
-#include <metadata/cpd.h>
+#include "cpd.h"
 
 void fnc_log(int level, const char *fmt, ...) {
     va_list vl;

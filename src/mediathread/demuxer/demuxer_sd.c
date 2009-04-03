@@ -22,16 +22,192 @@
 #include <string.h>
 #include <strings.h>
 #include <stdio.h>
+#include <stdbool.h>
 
-#include <fenice/utils.h>
-#include <fenice/fnc_log.h>
-
-#include <fenice/multicast.h>    /*is_valid_multicast_address */
+#include "feng.h"
+#include "feng_utils.h"
+#include "fnc_log.h"
 
 #include "demuxer_module.h"
 
 #include "mediathread/mediaparser.h"
 
+#define FENG_IN_IS_ADDR_MULTICAST(a)  ((((in_addr_t)(a)) & 0xf0000000) == 0xe0000000)
+#define FENG_IN6_IS_ADDR_MULTICAST(a) (((__const uint8_t *) (a))[0] == 0xff)
+
+#define DEFAULT_MULTICAST_ADDRESS "224.124.0.1"
+
+/* The following two functions were adapted from glibc's
+   implementation of inet_pton, written by Paul Vixie. */
+
+static bool is_valid_ipv4_address (const char *str, const char *end)
+{
+    bool saw_digit = false;
+    int octets = 0;
+    int val = 0;
+
+    while (str < end) {
+        int ch = *str++;
+
+        if (ch >= '0' && ch <= '9') {
+            val = val * 10 + (ch - '0');
+            if (val > 255)
+                return false;
+            if (!saw_digit) {
+                if (++octets > 4)
+                    return false;
+                saw_digit = true;
+            }
+        }
+        else if (ch == '.' && saw_digit) {
+            if (octets == 4)
+                return false;
+            val = 0;
+            saw_digit = false;
+        }
+        else
+            return false;
+    }
+    if (octets < 4)
+        return false;
+
+    return true;
+}
+
+static bool is_valid_ipv6_address (const char *str, const char *end)
+{
+    /* Use lower-case for these to avoid clash with system headers.  */
+    enum {
+        ns_inaddrsz  = 4,
+        ns_in6addrsz = 16,
+        ns_int16sz   = 2
+    };
+
+    const char *curtok;
+    int tp;
+    const char *colonp;
+    bool saw_xdigit;
+    unsigned int val;
+
+    tp = 0;
+    colonp = NULL;
+
+    if (str == end)
+        return false;
+
+    /* Leading :: requires some special handling. */
+    if (*str == ':') {
+        ++str;
+        if (str == end || *str != ':')
+            return false;
+    }
+
+    curtok = str;
+    saw_xdigit = false;
+    val = 0;
+
+    while (str < end) {
+        int ch = *str++;
+
+        /* if ch is a number, add it to val. */
+        if (g_ascii_isxdigit (ch)) {
+            val <<= 4;
+            val |= g_ascii_xdigit_value (ch);
+            if (val > 0xffff)
+                return false;
+            saw_xdigit = true;
+            continue;
+        }
+
+        /* if ch is a colon ... */
+        if (ch == ':') {
+            curtok = str;
+            if (!saw_xdigit) {
+                if (colonp != NULL)
+                    return false;
+                colonp = str + tp;
+                continue;
+            }
+            else if (str == end)
+                return false;
+            if (tp > ns_in6addrsz - ns_int16sz)
+                return false;
+            tp += ns_int16sz;
+            saw_xdigit = false;
+            val = 0;
+            continue;
+        }
+        /* if ch is a dot ... */
+        if (ch == '.' && (tp <= ns_in6addrsz - ns_inaddrsz)
+                && is_valid_ipv4_address (curtok, end) == 1) {
+            tp += ns_inaddrsz;
+            saw_xdigit = false;
+            break;
+        }
+
+        return false;
+    }
+    if (saw_xdigit) {
+        if (tp > ns_in6addrsz - ns_int16sz)
+            return false;
+        tp += ns_int16sz;
+    }
+
+    if (colonp != NULL) {
+        if (tp == ns_in6addrsz)
+            return false;
+        tp = ns_in6addrsz;
+    }
+
+    if (tp != ns_in6addrsz)
+        return false;
+
+
+    return true;
+}
+
+static int is_valid_multicast_address(char *ip)
+{
+    sa_family_t family;
+
+    if(!ip)
+        return ERR_PARSE;
+
+    if(is_valid_ipv4_address (ip, &ip[strlen(ip)-1]))
+        family = AF_INET;
+    else if(is_valid_ipv6_address (ip, &ip[strlen(ip)-1]))
+        family = AF_INET6;
+    else
+        return ERR_PARSE;
+
+    switch (family) {
+        case AF_INET: {
+            struct in_addr haddr;
+            if(!inet_aton(ip, &haddr))
+                return ERR_PARSE;  /* not a valid address */
+
+            if (FENG_IN_IS_ADDR_MULTICAST(htonl( haddr.s_addr )))
+                return ERR_NOERROR;
+
+        }
+#ifdef  IPV6
+        case AF_INET6: {
+            if (FENG_IN6_IS_ADDR_MULTICAST(ip))
+                return ERR_NOERROR;
+        }
+#endif
+#ifdef  AF_UNIX
+        case AF_UNIX:
+            return ERR_GENERIC;
+#endif
+#ifdef  HAVE_SOCKADDR_DL_STRUCT
+        case AF_LINK:
+            return ERR_GENERIC;
+#endif
+        default:
+            return ERR_GENERIC;
+    }
+}
 
 /*
  * Struct for automatic probing of live media sources

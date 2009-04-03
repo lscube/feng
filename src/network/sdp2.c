@@ -31,13 +31,15 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include <fenice/prefs.h>
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 #include "sdp2.h"
 #include "mediathread/description.h"
-#include <fenice/multicast.h>
 #include <netembryo/wsocket.h>
 #include <netembryo/url.h>
+
+#define DEFAULT_TTL 32
+
+#define NTP_time(t) ((float)t + 2208988800U)
 
 /**
  * @brief Simple pair for compound parameters in foreach functions

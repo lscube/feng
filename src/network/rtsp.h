@@ -28,7 +28,7 @@
 
 #include <glib.h>
 
-#include <fenice/utils.h>
+#include "feng_utils.h"
 #include <netembryo/wsocket.h>
 #include <netembryo/rtsp.h>
 #include <netembryo/url.h>
@@ -36,9 +36,7 @@
 #include "rtcp.h"
 #include "sdp2.h"
 
-#ifdef HAVE_SCTP
-#include <netinet/sctp.h>
-#endif
+struct feng;
 
 /**
  * @addtogroup RTSP
@@ -73,7 +71,7 @@ typedef struct RTSP_session {
     GSList *rtp_sessions; // Of type RTP_session
     // mediathread resource
     Resource *resource;
-    feng *srv;
+    struct feng *srv;
 } RTSP_session;
 
 typedef struct RTSP_Client {
@@ -91,7 +89,7 @@ typedef struct RTSP_Client {
 
     // Run-Time
     RTSP_session *session;
-    feng *srv;
+    struct feng *srv;
 
     /**
      * @brief Interleaved setup data
@@ -261,7 +259,7 @@ gboolean rtsp_request_check_url(RTSP_Request *req);
 
 void rtsp_bwrite(const RTSP_Client *rtsp, GString *buffer);
 
-RTSP_Client *rtsp_client_new(feng *srv, Sock *client_sock);
+RTSP_Client *rtsp_client_new(struct feng *srv, Sock *client_sock);
 void rtsp_client_destroy(RTSP_Client *rtsp);
 
 RTSP_session *rtsp_session_new(RTSP_Client *rtsp);

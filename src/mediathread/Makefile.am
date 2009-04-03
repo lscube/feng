@@ -14,6 +14,7 @@ libmediath_a_SOURCES =	cache.c \
 			mediathread.h \
 			mediautils.c \
 			mediautils.h \
+			sdp_grammar.h \
 			parser/mpeg12.c \
 			parser/mpegaudio.c \
 			parser/mpeg2t.c \
@@ -21,7 +22,7 @@ libmediath_a_SOURCES =	cache.c \
 			demuxer/demuxer_ds.c
 
 if FENG_CPD
-libmediath_a_SOURCES += metadata/cpd.c
+libmediath_a_SOURCES += metadata/cpd.c metadata/cpd.h
 endif
 
 if FENICE_FFMPEG

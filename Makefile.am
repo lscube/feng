@@ -1,13 +1,5 @@
 SUBDIRS = src
 
-noinst_HEADERS = \
-	include/fenice/utils.h \
-	include/fenice/fnc_log.h \
-	include/fenice/multicast.h \
-	include/fenice/prefs.h \
-	include/fenice/server.h \
-	include/fenice/sdp_grammar.h
-
 EXTRA_DIST = RELEASE
 
 ACLOCAL_AMFLAGS = -I m4

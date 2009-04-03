@@ -24,10 +24,11 @@
 
 #include <stdbool.h>
 
+#include "feng.h"
 #include "rtp.h"
 #include "rtsp.h"
 #include "rtcp.h"
-#include "fenice/fnc_log.h"
+#include "fnc_log.h"
 
 /**
  * Read data from the socket linked to the session and put it inside

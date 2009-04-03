@@ -31,10 +31,11 @@
 #include <unistd.h>
 #include <ev.h>
 
+#include "feng.h"
+#include "fnc_log.h"
 #include "eventloop.h"
 #include "client_events.h"
 #include "network/rtsp.h"
-#include <fenice/utils.h>
 
 static GPtrArray *io_watchers; //!< keep track of ev_io allocated
 

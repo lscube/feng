@@ -30,10 +30,9 @@
 
 #include <liberis/headers.h>
 
+#include "feng.h"
 #include "rtsp.h"
 #include "ragel_parsers.h"
-#include <fenice/prefs.h>
-#include <fenice/fnc_log.h>
 #include <math.h>
 #include <stdbool.h>
 #include <netembryo/url.h>

@@ -37,9 +37,9 @@
 #include <errno.h>
 #include <unistd.h>
 
-#include <fenice/utils.h>
+#include "feng_utils.h"
 #include "InputStream.h"
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 
 #ifdef HAVE_MMAP
 #include <sys/mman.h>

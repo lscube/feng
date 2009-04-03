@@ -23,16 +23,12 @@
 #ifndef FN_EVENTLOOP_H
 #define FN_EVENTLOOP_H
 
-#include <netembryo/wsocket.h>
-#include <fenice/fnc_log.h>
-#include "network/rtsp.h"
-#include <fenice/server.h>
+struct feng;
+struct specific_config;
 
-#define MAX_FDS 800
-
-int feng_bind_port(feng *srv, char *host, char *port, specific_config *s);
-void eventloop_init(feng *srv);
-void eventloop(feng *srv);
-void eventloop_cleanup(feng *srv);
+int feng_bind_port(struct feng *srv, char *host, char *port, struct specific_config *s);
+void eventloop_init(struct feng *srv);
+void eventloop(struct feng *srv);
+void eventloop_cleanup(struct feng *srv);
 
 #endif // FN_EVENTLOOP_H

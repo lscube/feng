@@ -24,8 +24,9 @@
 #include <stdio.h>
 #include <math.h>
 
-#include <fenice/utils.h>
-#include <fenice/fnc_log.h>
+#include "feng.h"
+#include "feng_utils.h"
+#include "fnc_log.h"
 
 #include "demuxer_module.h"
 

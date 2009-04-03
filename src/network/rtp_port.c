@@ -25,6 +25,7 @@
  * Port handling utility functions
  */
 
+#include "feng.h"
 #include "rtp.h"
 
 static int start_port; //!< initial rtp port

@@ -36,8 +36,9 @@ dist_feng_SOURCES = \
 	bufferqueue.c bufferqueue.h \
 	client_events.h client_events.c \
 	eventloop.c eventloop.h \
-	fnc_log.c \
-	is_valid_multicast_address.c \
+	fnc_log.c fnc_log.h \
+	feng.h \
+	feng_utils.h \
 	main.c \
 	\
 	$(BUILT_SOURCES)

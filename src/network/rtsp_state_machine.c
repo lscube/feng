@@ -31,8 +31,7 @@
 #include <liberis/headers.h>
 
 #include "rtsp.h"
-#include <fenice/utils.h>
-#include <fenice/fnc_log.h>
+#include "fnc_log.h"
 
 /**
  * RTSP high level functions, mapping to the actual RTSP methods
@@ -355,10 +354,10 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_Client * rtsp,
          * a message body.
          */
         if (!mb) {    /* content length token not yet encountered. */
-            if (!g_ascii_strncasecmp (rtsp->input->data + ml, HDR_CONTENTLENGTH,
+            if (!g_ascii_strncasecmp (rtsp->input->data + ml, eris_hdr_content_length,
                  RTSP_BUFFERSIZE - ml)) {
                 mb = 1;    /* there is a message body. */
-                ml += strlen(HDR_CONTENTLENGTH);
+                ml += strlen(eris_hdr_content_length);
                 while (ml < rtsp->input->len) {
                     c = rtsp->input->data[ml];
                     if ((c == ':') || (c == ' '))

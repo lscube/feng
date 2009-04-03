@@ -29,8 +29,6 @@ typedef enum {empty_field, fmtp, rtpmap} sdp_field_types;
 
 typedef GList *sdp_field_list;
 
-#define SDP_FIELD(x) ((sdp_field *)x->data)
-
 typedef struct {
 	sdp_field_types type;
 	char *field;

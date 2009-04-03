@@ -24,9 +24,7 @@
 #define FN_CLIENT_EVENTS_H
 
 #include <netembryo/wsocket.h>
-#include <fenice/fnc_log.h>
 #include "network/rtsp.h"
-#include <fenice/server.h>
 
 #define LIVE_STREAM_BYE_TIMEOUT 6
 #define STREAM_TIMEOUT 12 /* This one must be big enough to permit to VLC to switch to another

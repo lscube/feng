@@ -23,8 +23,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <fenice/utils.h>
-#include <fenice/fnc_log.h>
+#include "feng_utils.h"
+#include "fnc_log.h"
 
 #include "demuxer_module.h"
 

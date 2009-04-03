@@ -33,14 +33,6 @@
 #include <math.h>
 #include <string.h>
 
-//XXX should me moved somewhere else
-#ifdef WIN32
-#define open(a, b)   _open(a, b)
-#define read(a,b,c)  _read(a,b,c)
-#define lseek(a,b,c) _lseek(a,b,c)
-#define close(a)     _close(a)
-#endif
-
 /*! autodescriptive error values */
 #define ERR_NOERROR              0
 #define ERR_GENERIC             -1
@@ -53,26 +45,6 @@
 #define ERR_EOF                 -8
 #define ERR_FATAL               -9
 #define ERR_CONNECTION_CLOSE    -10
-
-/*! message header keywords see rfc2326 and rfc2068 */
-
-#define HDR_CONTENTLENGTH       "Content-Length"
-#define HDR_ACCEPT              "Accept"
-#define HDR_ALLOW               "Allow"
-#define HDR_BLOCKSIZE           "Blocksize"
-#define HDR_CONTENTTYPE         "Content-Type"
-#define HDR_DATE                "Date"
-#define HDR_REQUIRE             "Require"
-#define HDR_TRANSPORTREQUIRE    "Transport-Require"
-#define HDR_SEQUENCENO          "SequenceNo"
-#define HDR_CSEQ                "CSeq"
-#define HDR_STREAM              "Stream"
-#define HDR_SESSION             "Session"
-#define HDR_TRANSPORT           "Transport"
-#define HDR_RANGE               "Range"
-#define HDR_USER_AGENT          "User-Agent"
-
-#define NTP_time(t) ((float)t + 2208988800U)
 
 /**
  * Returns the current time in seconds

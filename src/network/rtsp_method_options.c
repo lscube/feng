@@ -27,7 +27,6 @@
 #include <liberis/headers.h>
 
 #include "rtsp.h"
-#include <fenice/fnc_log.h>
 
 /**
  * RTSP OPTIONS method handler

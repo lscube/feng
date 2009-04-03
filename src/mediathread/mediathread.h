@@ -28,14 +28,11 @@
 #include <glib.h>
 
 #include "demuxer.h"
-#include <fenice/server.h>
 
 void mt_init();
 
 void mt_shutdown();
 void event_buffer_low(Resource *);
-
-struct feng;
 
 void mt_resource_close(Resource *);
 
