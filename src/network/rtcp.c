@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "rtcp.h"
 
@@ -92,118 +93,40 @@ typedef struct RTCP_header_SDES {
     uint32_t ssrc;
     uint8_t attr_name;
     uint8_t len;
+    char name[];
 } __attribute__((__packed__)) RTCP_header_SDES;
 
 typedef struct RTCP_header_BYE {
     uint32_t ssrc;
     uint8_t length;
+    char reason[];
 } __attribute__((__packed__)) RTCP_header_BYE;
 
-static int RTCP_send_packet(RTP_session * session, rtcp_pkt_type type)
-{
-    unsigned char *payload = NULL;
-    RTCP_header hdr;
-    size_t pkt_size = 0, hdr_s = 0, payload_s = 0;
-    Track *t = session->track;
-
-    hdr.version = 2;
-    hdr.padding = 0;
-    hdr.count = 0;
-    hdr.pt = type;
-    hdr_s = sizeof(hdr);
-    switch (type) {
-    case SR:{
-        struct timespec ntp_time;
-        double now;
-        RTCP_header_SR hdr_sr;
-        payload_s = sizeof(hdr_sr);
-        hdr_sr.ssrc = htonl(session->ssrc);
-        now = gettimeinseconds(&ntp_time);
-        hdr_sr.ntp_timestampH =
-            htonl((unsigned int) ntp_time.tv_sec + 2208988800u);
-        hdr_sr.ntp_timestampL =
-            htonl((((uint64_t) ntp_time.tv_nsec) << 32) / 1000000000u);
-        hdr_sr.rtp_timestamp =
-            htonl((unsigned int) ((now - session->start_time) *
-                  t->properties->clock_rate) + session->start_rtptime);
-
-        hdr_sr.pkt_count = htonl(session->rtcp.server_stats.pkt_count);
-        hdr_sr.octet_count = htonl(session->rtcp.server_stats.octet_count);
-        payload = g_malloc0(payload_s);
-        if (payload == NULL)
-            return ERR_ALLOC;
-        memcpy(payload, &hdr_sr, payload_s);
-        break;
-    }
-    case RR:{
-        RTCP_header_RR hdr_rr;
-        payload_s = sizeof(hdr_rr);
-        hdr_rr.ssrc = htonl(session->ssrc);
-        payload = g_malloc0(payload_s);
-        if (payload == NULL)
-            return ERR_ALLOC;
-        memcpy(payload, &hdr_rr, payload_s);
-        break;
-    }
-    case SDES:{
-        RTCP_header_SDES hdr_sdes;
-        const char *name = session->transport.rtcp_sock->local_host ?
-	  session->transport.rtcp_sock->local_host : "::";
-        int hdr_sdes_s = sizeof(hdr_sdes);
-        size_t name_s = strlen(name);
-        payload_s = hdr_sdes_s + name_s;
-        // Padding
-        payload_s += (((hdr_s + payload_s) % 4) ? 1 : 0);
-        payload = g_malloc0(payload_s);
-        if (payload == NULL)
-            return ERR_ALLOC;
-        hdr.count = 1;
-        hdr_sdes.ssrc = htonl(session->ssrc);
-        hdr_sdes.attr_name = CNAME;    // 1=CNAME
-        hdr_sdes.len = name_s;
-        memcpy(payload, &hdr_sdes, hdr_sdes_s);
-        memcpy(payload + hdr_sdes_s, name, name_s);
-        break;
-    }
-    case BYE:{
-        RTCP_header_BYE hdr_bye;
-        int hdr_bye_s = sizeof(hdr_bye);
-        static const char reason[20] = "The medium is over.";
-        payload_s = hdr_bye_s + sizeof(reason);
-        hdr.count = 1;
-        hdr_bye.ssrc = htonl(session->ssrc);
-        hdr_bye.length = htonl(sizeof(reason)-1);
-        payload = g_malloc0(payload_s);
-        if (payload == NULL)
-            return ERR_ALLOC;
-        memcpy(payload, &hdr_bye, hdr_bye_s);
-        memcpy(payload + hdr_bye_s, reason, sizeof(reason));
-        break;
-    }
-    default:
-        return ERR_NOERROR;
-    }
-
-    pkt_size += payload_s + hdr_s;
-    hdr.length = htons((pkt_size >> 2) - 1);
-
-    if (session->rtcp.outsize + pkt_size <= sizeof(session->rtcp.outbuffer)) {
-        memcpy(session->rtcp.outbuffer + session->rtcp.outsize, &hdr, hdr_s);
-        memcpy(session->rtcp.outbuffer + session->rtcp.outsize + hdr_s,
-               payload, payload_s);
-        session->rtcp.outsize += pkt_size;
-    } else {
-        fnc_log(FNC_LOG_VERBOSE, "Output RTCP packet lost\n");
-    }
-    g_free(payload);
-    return ERR_NOERROR;
-}
+/**
+ * @brief Basic polymorphic structure of a Server Report RTCP compound
+ *
+ * Please note that since both @ref RTCP_header_SDES and @ref
+ * RTCP_header_BYE are variable sized, there can't be anything after
+ * the payload.
+ *
+ * This structure is designed to be directly applied over the memory
+ * area that will be sent as a packet. Its definition is described in
+ * RFC 3550 Section 6.4.1.
+ */
+typedef struct {
+    RTCP_header sr_hdr;
+    RTCP_header_SR sr_pkt;
+    RTCP_header payload_hdr;
+    union {
+        RTCP_header_SDES sdes;
+        RTCP_header_BYE bye;
+    } payload;
+} RTCP_SR_Compound;
 
 /**
- * Send the rtcp payloads in queue
+ * Send the given RTCP compound report
  */
-
-static int RTCP_flush(RTP_session * session)
+static gboolean rtcp_send_and_flush(RTP_session * session, GByteArray *buffer)
 {
     fd_set wset;
     struct timeval t;
@@ -214,33 +137,183 @@ static int RTCP_flush(RTP_session * session)
     t.tv_sec = 0;
     t.tv_usec = 1000;
 
-    if (session->rtcp.outsize > 0)
-        FD_SET(Sock_fd(rtcp_sock), &wset);
+    FD_SET(Sock_fd(rtcp_sock), &wset);
     if (select(Sock_fd(rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
         fnc_log(FNC_LOG_ERR, "select error\n");
-        /*send_reply(500, NULL, rtsp); */
-        return ERR_GENERIC;
+        return false;
     }
 
     if (FD_ISSET(Sock_fd(rtcp_sock), &wset)) {
-        if (Sock_write(rtcp_sock, session->rtcp.outbuffer,
-            session->rtcp.outsize, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
+        if (Sock_write(rtcp_sock, buffer->data,
+            buffer->len, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
             fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
-        session->rtcp.outsize = 0;
         fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
     }
 
-    return ERR_NOERROR;
+    return true;
 }
 
-int RTCP_handler(RTP_session * session)
+/**
+ * @brief Sets the SR preamble for the given compound
+ *
+ * @param session The session to send the RTCP data of
+ * @param outpkt The compound packet to set data in
+ */
+static void rtcp_set_sr(RTP_session *session, RTCP_SR_Compound *outpkt)
 {
-    if (session->rtcp.server_stats.pkt_count % 29 == 1) {
-        RTCP_send_packet(session, SR);
-        RTCP_send_packet(session, SDES);
-        return RTCP_flush(session);
+    struct timespec ntp_time;
+    double now;
+
+    outpkt->sr_hdr.version = 2;
+    outpkt->sr_hdr.padding = 0;
+    outpkt->sr_hdr.count = 0;
+    outpkt->sr_hdr.pt = SR;
+    outpkt->sr_hdr.length = sizeof(RTCP_header) + sizeof(RTCP_header_SR);
+
+    outpkt->sr_pkt.ssrc = htonl(session->ssrc);
+    now = gettimeinseconds(&ntp_time);
+    outpkt->sr_pkt.ntp_timestampH =
+        htonl((unsigned int) ntp_time.tv_sec + 2208988800u);
+    outpkt->sr_pkt.ntp_timestampL =
+        htonl((((uint64_t) ntp_time.tv_nsec) << 32) / 1000000000u);
+    outpkt->sr_pkt.rtp_timestamp =
+        htonl((unsigned int) ((now - session->start_time) *
+                              session->track->properties->clock_rate)
+              + session->start_rtptime);
+
+    outpkt->sr_pkt.pkt_count = htonl(session->rtcp.server_stats.pkt_count);
+    outpkt->sr_pkt.octet_count = htonl(session->rtcp.server_stats.octet_count);
+}
+
+/**
+ * @brief Create a new compound server report for SDES packets
+ *
+ * @param session The session to create the report for
+ */
+static GByteArray *rtcp_pkt_sr_sdes(RTP_session *session)
+{
+    RTCP_SR_Compound *outpkt;
+    GByteArray *outpkt_buffer;
+
+    const char *name = session->transport.rtcp_sock->local_host ?
+        session->transport.rtcp_sock->local_host : "::";
+    const size_t name_len = strlen(name);
+
+    size_t outpkt_size =
+        sizeof(RTCP_header) + sizeof(RTCP_header_SR) +
+        sizeof(RTCP_header) + sizeof(RTCP_header) +
+        name_len;
+
+    /* Pad to 32-bit */
+    if ( outpkt_size%4 != 0 )
+        outpkt_size += 4-(outpkt_size%4);
+
+    outpkt_buffer = g_byte_array_sized_new(outpkt_size);
+
+    outpkt = (RTCP_SR_Compound*)outpkt_buffer->data;
+
+    rtcp_set_sr(session, outpkt);
+
+    outpkt->payload_hdr.version = 2;
+    outpkt->payload_hdr.padding = 0;
+    outpkt->payload_hdr.count = 1;
+    outpkt->payload_hdr.pt = SDES;
+    outpkt->payload_hdr.length = outpkt_size
+        - sizeof(RTCP_header) + sizeof(RTCP_header_SR);
+
+    outpkt->payload.sdes.ssrc = htonl(session->ssrc);
+    outpkt->payload.sdes.attr_name = CNAME;
+    outpkt->payload.sdes.len = name_len;
+
+    memcpy(&outpkt->payload.sdes.name, name, name_len);
+
+    return outpkt_buffer;
+}
+
+/**
+ * @brief Create a new compound server report for BYE packets
+ *
+ * @param session The session to create the report for
+ *
+ * @todo The reason should probably be a parameter
+ */
+static GByteArray *rtcp_pkt_sr_bye(RTP_session *session)
+{
+    static const char reason[] = "The medium is over.";
+
+    RTCP_SR_Compound *outpkt;
+    GByteArray *outpkt_buffer;
+    size_t outpkt_size =
+        sizeof(RTCP_header) + sizeof(RTCP_header_SR) +
+        sizeof(RTCP_header) + sizeof(RTCP_header) +
+        sizeof(reason);
+
+    /* Pad to 32-bit */
+    if ( outpkt_size%4 != 0 )
+        outpkt_size += 4-(outpkt_size%4);
+
+    outpkt_buffer = g_byte_array_sized_new(outpkt_size);
+
+    outpkt = (RTCP_SR_Compound*)outpkt_buffer->data;
+
+    rtcp_set_sr(session, outpkt);
+
+    outpkt->payload_hdr.version = 2;
+    outpkt->payload_hdr.padding = 0;
+    outpkt->payload_hdr.count = 1;
+    outpkt->payload_hdr.pt = BYE;
+    outpkt->payload_hdr.length = outpkt_size
+        - sizeof(RTCP_header) + sizeof(RTCP_header_SR);
+
+    outpkt->payload.bye.ssrc = htonl(session->ssrc);
+    outpkt->payload.bye.length = htonl(sizeof(reason)-1);
+
+    memcpy(&outpkt->payload.bye.reason, &reason, sizeof(reason));
+
+    return outpkt_buffer;
+}
+
+/**
+ * @brief Send a compound RTCP server report
+ *
+ * @param session The RTP session to send the command for
+ * @param type The type of packet to send after the SR preamble
+ *
+ * Warning! This function will actually send a compound response of
+ * _two_ packets, the first is the SR packet, and the second is the
+ * one requested with the @p type parameter.
+ *
+ * Since the two packets are sent with a single message, only one call
+ * is needed.
+ */
+gboolean rtcp_server_report(RTP_session *session, rtcp_pkt_type type)
+{
+    GByteArray *outpkt;
+    gboolean ret;
+
+    switch(type) {
+    case SDES:
+        outpkt = rtcp_pkt_sr_sdes(session);
+        break;
+    case BYE:
+        outpkt = rtcp_pkt_sr_bye(session);
+        break;
+    default:
+        g_assert_not_reached();
     }
-    return ERR_NOERROR;
+
+    g_assert(outpkt != NULL);
+
+    ret = rtcp_send_and_flush(session, outpkt);
+
+    g_byte_array_free(outpkt, true);
+    return ret;
+}
+
+void RTCP_handler(RTP_session * session)
+{
+    if (session->rtcp.server_stats.pkt_count % 29 == 1)
+        rtcp_server_report(session, SDES);
 }
 
 /**
@@ -250,7 +323,5 @@ int RTCP_handler(RTP_session * session)
  */
 void RTCP_send_bye(RTP_session *session)
 {
-    RTCP_send_packet(session, SR);
-    RTCP_send_packet(session, BYE);
-    RTCP_flush(session);
+    rtcp_server_report(session, BYE);
 }

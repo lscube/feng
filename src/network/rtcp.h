@@ -25,7 +25,7 @@
 
 #include "rtp.h"
 
-int RTCP_handler(RTP_session * session);
+void RTCP_handler(RTP_session * session);
 void RTCP_send_bye(RTP_session *session);
 
 #endif // FN_RTCP_H
