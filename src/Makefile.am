@@ -37,6 +37,7 @@ dist_feng_SOURCES = \
 	client_events.h client_events.c \
 	eventloop.c eventloop.h \
 	fnc_log.c fnc_log.h \
+	feng_utils.h \
 	main.c \
 	\
 	$(BUILT_SOURCES)

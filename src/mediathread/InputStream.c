@@ -37,7 +37,7 @@
 #include <errno.h>
 #include <unistd.h>
 
-#include <fenice/utils.h>
+#include "feng_utils.h"
 #include "InputStream.h"
 #include "fnc_log.h"
 

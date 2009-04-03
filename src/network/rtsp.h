@@ -28,7 +28,7 @@
 
 #include <glib.h>
 
-#include <fenice/utils.h>
+#include "feng_utils.h"
 #include <netembryo/wsocket.h>
 #include <netembryo/rtsp.h>
 #include <netembryo/url.h>

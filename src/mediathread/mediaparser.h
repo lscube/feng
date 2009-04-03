@@ -25,7 +25,7 @@
 #include <glib.h>
 #include <stdint.h>
 
-#include <fenice/utils.h>
+#include "feng_utils.h"
 #include "mediautils.h"
 #include "sdp_grammar.h"
 

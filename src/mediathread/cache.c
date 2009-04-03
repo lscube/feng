@@ -27,7 +27,7 @@
 #include <glib.h>
 
 #include "InputStream.h"
-#include <fenice/utils.h>
+#include "feng_utils.h"
 #include "fnc_log.h"
 
 static int read_from_net(int fd, void *buf, size_t nbytes);/*not implemented yet*/

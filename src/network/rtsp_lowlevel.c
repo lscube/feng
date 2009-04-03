@@ -24,7 +24,7 @@
 
 #include "rtsp.h"
 #include "fnc_log.h"
-#include <fenice/utils.h>
+#include "feng_utils.h"
 
 /**
  * @brief Read data out of an RTSP client socket

@@ -24,7 +24,7 @@
 #include "fnc_log.h"
 #include "mediaparser.h"
 #include "mediaparser_module.h"
-#include <fenice/utils.h>
+#include "feng_utils.h"
 
 #include <libavutil/md5.h>
 

@@ -26,7 +26,7 @@
 
 #include "rtcp.h"
 
-#include <fenice/utils.h>
+#include "feng_utils.h"
 #include <fenice/server.h>
 #include "fnc_log.h"
 #include <netinet/in.h>

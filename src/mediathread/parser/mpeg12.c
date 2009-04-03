@@ -24,7 +24,7 @@
 #include "demuxer.h"
 #include "mediaparser.h"
 #include "mediaparser_module.h"
-#include <fenice/utils.h>
+#include "feng_utils.h"
 
 static const MediaParserInfo info = {
     "MPV",
