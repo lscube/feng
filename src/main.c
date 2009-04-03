@@ -43,7 +43,6 @@
 #include <fenice/server.h>
 #include "fnc_log.h"
 #include "eventloop.h"
-#include <fenice/utils.h>
 #include "mediathread/mediathread.h"
 #include <glib.h>
 #include <getopt.h>

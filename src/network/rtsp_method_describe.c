@@ -29,7 +29,6 @@
 #include <liberis/headers.h>
 
 #include "rtsp.h"
-#include <fenice/utils.h>
 #include "sdp2.h"
 
 /**

@@ -26,7 +26,6 @@
 
 #include "mediathread.h"
 #include "fnc_log.h"
-#include <fenice/utils.h>
 #include <time.h>
 
 #ifdef HAVE_METADATA

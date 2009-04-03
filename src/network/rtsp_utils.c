@@ -37,7 +37,6 @@
 #include <netembryo/rtsp.h>
 #include <glib.h>
 
-#include <fenice/utils.h>
 #include "sdp2.h"
 #include "rtsp.h"
 

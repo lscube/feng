@@ -27,7 +27,6 @@
 #include <fenice/server.h>
 #include "demuxer.h"
 #include "description.h"
-#include <fenice/utils.h>
 #include "fnc_log.h"
 
 // global demuxer modules:

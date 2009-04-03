@@ -25,7 +25,6 @@
 
 #include <glib.h>
 
-#include <fenice/utils.h>
 #include "mediautils.h"
 #include "InputStream.h"
 #include "mediaparser.h"
