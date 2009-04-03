@@ -297,7 +297,18 @@ gboolean rtsp_request_check_url(RTSP_Request *req) {
  */
 void rtsp_bwrite(const RTSP_Client *rtsp, GString *buffer)
 {
-    g_queue_push_head(rtsp->out_queue, buffer);
+    /* Copy the GString into a GByteArray; we can avoid copying the
+       data since both are transparent structures with a g_malloc'd
+       data pointer.
+     */
+    GByteArray *outpkt = g_byte_array_new();
+    outpkt->data = buffer->str;
+    outpkt->len = buffer->len;
+
+    /* make sure you don't free the actual data pointer! */
+    g_string_free(buffer, false);
+
+    g_queue_push_head(rtsp->out_queue, outpkt);
     ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
 }
 

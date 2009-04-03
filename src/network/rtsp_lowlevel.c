@@ -117,14 +117,14 @@ void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
 void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     RTSP_Client *rtsp = w->data;
-    GString *outpkt = (GString *)g_queue_pop_tail(rtsp->out_queue);
+    GByteArray *outpkt = (GByteArray *)g_queue_pop_tail(rtsp->out_queue);
 
     if (outpkt == NULL) {
         ev_io_stop(rtsp->srv->loop, &rtsp->ev_io_write);
         return 0;
     }
 
-    if ( Sock_write(rtsp->sock, outpkt->str, outpkt->len,
+    if ( Sock_write(rtsp->sock, outpkt->data, outpkt->len,
                     NULL, MSG_DONTWAIT) < outpkt->len) {
         switch (errno) {
             case EACCES:
@@ -182,5 +182,5 @@ void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
         fnc_log(FNC_LOG_ERR, "Sock_write() error in rtsp_send()");
     }
 
-    g_string_free(outpkt, TRUE);
+    g_byte_array_free(outpkt, TRUE);
 }

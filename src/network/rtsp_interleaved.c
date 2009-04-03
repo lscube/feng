@@ -78,7 +78,7 @@ typedef struct {
 
 static void interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
-    GString *str;
+    GByteArray *pkt;
     uint16_t ne_n;
     char buffer[RTSP_BUFFERSIZE + 1];
     RTSP_interleaved_channel *intlvd = w->data;
@@ -92,14 +92,14 @@ static void interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
     }
 
     ne_n = htons((uint16_t)n);
-    str = g_string_sized_new(n+4);
+    pkt = g_byte_array_sized_new(n+4);
 
-    g_string_append_c(str, '$');
-    g_string_append_c(str, (unsigned char)intlvd->channel);
-    g_string_append_len(str, (gchar *)&ne_n, 2);
-    g_string_append_len(str, (const gchar *)buffer, n);
+    pkt->data[0] = '$';
+    pkt->data[1] = (uint8_t)intlvd->channel;
+    memcpy(&pkt->data[2], &ne_n, sizeof(ne_n));
+    memcpy(&pkt->data[4], buffer, n);
 
-    g_queue_push_head(rtsp->out_queue, str);
+    g_queue_push_head(rtsp->out_queue, pkt);
     ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
 }
 
