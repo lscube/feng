@@ -124,11 +124,8 @@ static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     if (len > payload) {
         while (len > payload) {
             memcpy(packet + AU_HEADER_SIZE, data + off, payload);
-            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                                      packet, mtu)) {
-                fnc_log(FNC_LOG_ERR, "Cannot write feng");
-                goto err_alloc;
-            }
+            mparser_buffer_write(tr, 0,
+                            packet, mtu);
 
             len -= payload;
             off += payload;
@@ -136,11 +133,8 @@ static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     }
 
     memcpy(packet + AU_HEADER_SIZE, data + off, len);
-    if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 1,
-                      packet, len + AU_HEADER_SIZE)) {
-        fnc_log(FNC_LOG_ERR, "Cannot write feng");
-        goto err_alloc;
-    }
+    mparser_buffer_write(tr, 1,
+                    packet, len + AU_HEADER_SIZE);
 
     g_free(packet);
     return ERR_NOERROR;

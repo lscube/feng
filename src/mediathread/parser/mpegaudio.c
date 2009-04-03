@@ -53,11 +53,8 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     if (mtu >= len + 4) {
         memset (dst, 0, 4);
         memcpy (dst + 4, data, len);
-        if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                              dst, len + 4)) {
-                fnc_log(FNC_LOG_ERR, "Cannot write feng");
-                return ERR_ALLOC;
-        }
+        mparser_buffer_write(tr, 0,
+                        dst, len + 4);
         fnc_log(FNC_LOG_VERBOSE, "[mp3] no frags");
     } else {
         do {
@@ -67,11 +64,8 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             offset = htonl(offset & 0xffff);
             memcpy (dst, &offset, 4);
 
-            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                                  dst, min(mtu, rem + 4))) {
-                fnc_log(FNC_LOG_ERR, "Cannot write feng");
-                return ERR_ALLOC;
-            }
+            mparser_buffer_write(tr, 0,
+                            dst, min(mtu, rem + 4));
             rem -= mtu - 4;
             fnc_log(FNC_LOG_VERBOSE, "[mp3] frags");
         } while (rem >= 0);

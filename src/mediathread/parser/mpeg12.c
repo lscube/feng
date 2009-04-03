@@ -169,11 +169,8 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             memcpy(q, data, payload);
             q += payload;
 
-            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0,
-                         (payload == rem), dst, q - dst)) {
-                fnc_log(FNC_LOG_ERR, "Cannot write feng");
-                return ERR_ALLOC;
-            }
+            mparser_buffer_write(tr,
+                            (payload == rem), dst, q - dst);
             b = e;
             e = 0;
             data += payload;

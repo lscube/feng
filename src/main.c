@@ -52,9 +52,11 @@
 #include <metadata/cpd.h>
 #endif
 
+/**
+ *  Handler to cleanly shut down feng
+ */
 static void sigint_cb (struct ev_loop *loop, ev_signal *w, int revents)
 {
-
     mt_shutdown();
     ev_unloop (loop, EVUNLOOP_ALL);
 }
@@ -155,13 +157,16 @@ static int feng_bind_ports(feng *srv)
  * block PIPE signal
  */
 
-static ev_signal signal_watcher;
+static ev_signal signal_watcher_int;
+static ev_signal signal_watcher_term;
 
 static void feng_handle_signals(feng *srv)
 {
     sigset_t block_set;
-    ev_signal_init (&signal_watcher, sigint_cb, SIGINT);
-    ev_signal_start (srv->loop, &signal_watcher);
+    ev_signal_init (&signal_watcher_int, sigint_cb, SIGINT);
+    ev_signal_start (srv->loop, &signal_watcher_int);
+    ev_signal_init (&signal_watcher_term, sigint_cb, SIGTERM);
+    ev_signal_start (srv->loop, &signal_watcher_term);
 
     /* block PIPE signal */
     sigemptyset(&block_set);
@@ -263,9 +268,6 @@ static int command_environment(feng *srv, int argc, char **argv)
                           progname);
 
         Sock_init(fn);
-        bp_log_init(fn);
-
-        g_free(progname);
     }
 
     return 0;
@@ -324,9 +326,7 @@ int main(int argc, char **argv)
 
     if (!g_thread_supported ()) g_thread_init (NULL);
 
-    schedule_init(srv);
-
-    g_thread_create((GThreadFunc)mediathread, NULL, FALSE, NULL);
+    mt_init();
 
 #ifdef HAVE_METADATA
     g_thread_create(cpd_server, (void *) srv, FALSE, NULL);

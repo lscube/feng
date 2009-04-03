@@ -30,37 +30,14 @@
 #include "demuxer.h"
 #include <fenice/server.h>
 
-#define MT_BUFFERSIZE 8192
-
-typedef enum {
-    MT_EV_NOP,          //!< Fake event do nothing. ARGS= NULL;
-    MT_EV_BUFFER_LOW,   //!< Buffer needs to be filled. ARGS= Track*
-    MT_EV_DATA_EOF,     //!< Track has no more data. ARGS= Track*
-    MT_EV_DATA_BOUND,   //!< Track reached request bound. ARGS= Track*
-    MT_EV_SHUTDOWN,     //!< The server is going to close. ARGS= NULL
-    MT_EV_CLOSE         //!< The resource must be closed
-} mt_event_id;
-
-typedef struct {
-    mt_event_id id;
-    void **args;        //! args[0] = sender
-} mt_event_item;
-
-typedef struct mt_excl_ins {
-    InputStream *i_stream;
-    struct mt_excl_ins *next;
-} mt_excl_ins;
-
-gpointer *mediathread(gpointer *arg);
+void mt_init();
 
 void mt_shutdown();
-int event_buffer_low(void *sender, Track *src);
+void event_buffer_low(Resource *);
 
 struct feng;
 
-Resource *mt_resource_open(struct feng *srv, const char *inner_path);
 void mt_resource_close(Resource *);
-int mt_resource_seek(Resource *, double);
 
 #endif // FN_MEDIA_THREAD_H
 

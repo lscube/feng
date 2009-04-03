@@ -29,7 +29,7 @@
 #include "mediautils.h"
 #include "InputStream.h"
 #include "mediaparser.h"
-#include <bufferpool/bufferpool.h>
+#include "bufferqueue.h"
 #include <fenice/sdp_grammar.h>
 #include <fenice/server.h>
 
@@ -44,25 +44,11 @@
 #define MAX_TRACKS 20
 #define MAX_SEL_TRACKS 5
 
-//! Macros that take the data part of a GList element and cast to correct type
-#define RESOURCE(x) ((Resource *)x->data)
-#define TRACK(x) ((Track *)x->data)
-#define RESOURCE_DESCR(x) ((ResourceDescr *)x->data)
-#define MEDIA_DESCR(x) ((MediaDescr *)x->data)
-
 //! typedefs that give convenient names to GLists used
 typedef GList *TrackList;
 typedef GList *MediaDescrList;
 typedef GList *SelList;
 typedef GPtrArray *MediaDescrListArray;
-
-//! Some macros to wrap GList functions
-#define list_first(x) g_list_first(x)
-#define list_next(x) g_list_next(x)
-
-//! Some mecros to wrap GPtrArray functions
-#define array_data(x) x->pdata
-#define array_index(x, y) x->pdata[y]
 
 MObject_def(ResourceInfo_s)
     char *mrl;
@@ -81,6 +67,7 @@ MObject_def(ResourceInfo_s)
 } ResourceInfo;
 
 typedef struct Resource {
+    GMutex *lock;
     InputStream *i_stream;
     struct Demuxer *demuxer;
     ResourceInfo *info;
@@ -117,13 +104,13 @@ MObject_def(Trackinfo_s)
     //end CC
 } TrackInfo;
 
-typedef struct {
+typedef struct Track {
     InputStream *i_stream;
     TrackInfo *info;
     long int timestamp;
     MediaParser *parser;
     /*feng*/
-    BPBuffer *buffer;
+    BufferQueue_Producer *producer;
     MediaProperties *properties; /* track properties */
     Resource *parent;
     /* private data is managed by specific media parser: from allocation to deallocation
@@ -131,15 +118,6 @@ typedef struct {
     void *private_data;
     void *parser_private; /* private data of media parser */
 } Track;
-
-typedef struct {
-    // Track *tracks[MAX_SEL_TRACKS];
-    TrackList tracks;
-    Track cur;
-    uint32_t default_index;
-    uint32_t selected_index;/**/
-    uint32_t total; /*total tracks in selector*/
-} Selector;
 
 typedef struct {
     /*name of demuxer module*/
@@ -184,18 +162,15 @@ Resource *r_open(feng *srv, const char *inner_path);
 
 void r_close(Resource *);
 
-Selector *r_open_tracks(Resource *, const char *track_name);/*open the right tracks*/
-void r_close_tracks(Selector *);/*close all tracks*/ // shawill: XXX do we need it?
+int r_seek(Resource *resource, double time);
 
-//Selector handling functions
-Track *r_selected_track(Selector *);
-
-// TrackList handling functions
+Track *r_find_track(Resource *, const char *);
 
 // Tracks
 Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 
 // Resources and Media descriptions
-ResourceDescr *r_descr_get(feng *srv, char *inner_path);
+ResourceDescr *r_descr_get(feng *srv, const char *inner_path);
+MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr);
 
 #endif // FN_DEMUXER_H

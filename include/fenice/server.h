@@ -28,7 +28,6 @@
 #ifndef FN_SERVER_H
 #define FN_SERVER_H
 
-// #include <fenice/schedule.h>
 #include <fenice/prefs.h>
 #include "conf/array.h"
 #include "conf/conf.h"

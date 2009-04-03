@@ -34,148 +34,129 @@
 #endif
 
 static GAsyncQueue *el_head;
-static GStaticMutex el_mutex = G_STATIC_MUTEX_INIT;
-static GStaticMutex mt_mutex = G_STATIC_MUTEX_INIT;
 static int stopped = 0;
 
-static inline int mt_process_event(mt_event_item *ev) {
+typedef void (*mt_callback)(Resource *);
 
-    if (!ev)
-        return ERR_GENERIC;
+typedef struct {
+    mt_callback cb;
+    Resource *resource;
+} mt_event_item;
 
-    fnc_log(FNC_LOG_VERBOSE, "[MT] Processing event: %#x", ev->id);
+/**
+ * @brief Buffer low event
+ *
+ * @param r Resource to read data from
+ *
+ * This function is used to re-fill the buffer for the resource that
+ * it's given, to make sure that there is enough data to send to the
+ * clients.
+ */
+static void mt_cb_buffer_low(Resource *r)
+{
+    fnc_log(FNC_LOG_VERBOSE, "[MT] Filling buffer for resource %p", r);
 
-    switch (ev->id) {
-    case MT_EV_BUFFER_LOW:
-        {
-            Track *t = ev->args[1];
-            Resource *r = t->parent;
+    g_mutex_lock(r->lock);
 
-            fnc_log(FNC_LOG_VERBOSE, "[MT] Filling buffer for track %p", t);
-
-            switch (r->demuxer->read_packet(r)) {
-            case RESOURCE_OK:
-                fnc_log(FNC_LOG_VERBOSE, "[MT] Done!");
-                break;
-            case RESOURCE_EOF:
-                // Signal the end of stream
-                r->eos = 1;
-                break;
-            default:
-                fnc_log(FNC_LOG_FATAL,
-                        "[MT] read_packet() error.");
-                break;
-            }
-        }
+    switch (r->demuxer->read_packet(r)) {
+    case RESOURCE_OK:
+        fnc_log(FNC_LOG_VERBOSE, "[MT] Done!");
         break;
-    case MT_EV_SHUTDOWN:
-        stopped = 1;
-        break;
-    case MT_EV_CLOSE:
-        r_close(ev->args[0]);
+    case RESOURCE_EOF:
+        // Signal the end of stream
+        r->eos = 1;
         break;
     default:
+        fnc_log(FNC_LOG_FATAL,
+                "[MT] read_packet() error.");
         break;
     }
-    return ERR_NOERROR;
+
+    g_mutex_unlock(r->lock);
 }
 
-static inline void mt_dispose_event_args(mt_event_id id, void ** args) {
-    switch (id) {
-    default:
-        break;
-    }
-    g_free(args);
+/**
+ * @brief Shutdown event
+ *
+ * @param unused Never used, unimportant garbage
+ *
+ * Stop the mediathread
+ */
+static void mt_cb_shutdown(Resource *unused)
+{
+    stopped =1;
 }
 
-static inline void mt_dispose_event(mt_event_item *ev) {
-    if (!ev)
-        return;
-    if (ev->args)
-        mt_dispose_event_args(ev->id, ev->args);
-    g_free(ev);
-}
-
-static void mt_add_event(mt_event_id id, void **args) {
+static void mt_add_event(mt_callback cb, Resource *r) {
     mt_event_item *item = g_new0(mt_event_item, 1);
 
     fnc_log(FNC_LOG_VERBOSE, "[MT] Created event: %#x", item);
 
-    item->id = id;
-    item->args = args;
+    item->cb = cb;
+    item->resource = r;
 
-    g_static_mutex_lock(&el_mutex);
+    /* This is already referenced for this thread; mt_add_event() is
+     * called by the main eventloop, which is where the queue was
+     * created in the first place. */
     g_async_queue_push(el_head, item);
-    g_static_mutex_unlock(&el_mutex);
 }
 
-gpointer *mediathread(gpointer *arg) {
-    mt_event_item *el_cur;
-
-    if (!g_thread_supported ()) g_thread_init (NULL);
-
-    el_head = g_async_queue_new();
-
+/**
+ * @brief MediaThread runner function
+ *
+ * This is the function that does most of the work for MediaThread, as
+ * it waits for events and takes care of processing them properly.
+ *
+ * @see mt_init
+ */
+static gpointer mediathread(gpointer arg) {
     fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started");
+
+    g_async_queue_ref(el_head);
 
     while(!stopped) {
         //this replaces the previous nanosleep loop,
         //as this will block until data is available
-        el_cur = g_async_queue_pop (el_head);
-        if (el_cur) {
-            g_static_mutex_lock(&mt_mutex);
-            mt_process_event(el_cur);
-            mt_dispose_event(el_cur);
-            g_static_mutex_unlock(&mt_mutex);
+        mt_event_item *evt = g_async_queue_pop (el_head);
+        if (evt) {
+            evt->cb(evt->resource);
+            g_free(evt);
         }
     }
+
     return NULL;
 }
 
-Resource *mt_resource_open(feng *srv, const char *filename) {
-    // TODO: add to a list in order to close resources on shutdown!
+/**
+ * @brief Initialisation for the mediathread thread handling
+ *
+ * This function takes care of initialising MediaThread in its
+ * entirety. It creates the @ref el_head queue and also creates the
+ * actual mediathread.
+ *
+ * @note This function has to be called before any other mt_*
+ *       function, but after threads have been initialised.
+ *
+ * @see mediathread
+ */
+void mt_init() {
+    g_assert(g_thread_supported());
 
-    Resource *res;
+    el_head = g_async_queue_new();
 
-    // open AV resource
-    res = r_open(srv, filename);
-
-#ifdef HAVE_METADATA
-    cpd_find_request(srv, res, filename);
-#endif
-
-    return res;
+    g_thread_create(mediathread, NULL, FALSE, NULL);
 }
 
 void mt_resource_close(Resource *resource) {
-    void **args;
     if (!resource)
         return;
-    args = g_new(void *, 1);
-    args[0] = resource;
-    mt_add_event(MT_EV_CLOSE, args); //XXX consider failing?
+    mt_add_event(r_close, resource);
 }
 
-int mt_resource_seek(Resource *resource, double time) {
-    int res;
-    g_static_mutex_lock(&mt_mutex);
-    res = resource->demuxer->seek(resource, time);
-    g_static_mutex_unlock(&mt_mutex);
-
-    return res;
-}
-
-int event_buffer_low(void *sender, Track *src) {
-    void **args;
-    if (src->parent->eos) return ERR_EOF;
-    args = g_new(void *, 2);
-    args[0] = sender;
-    args[1] = src;
-    mt_add_event(MT_EV_BUFFER_LOW, args);
-    return ERR_NOERROR;
+void event_buffer_low(Resource *r) {
+    mt_add_event(mt_cb_buffer_low, r);
 }
 
 void mt_shutdown() {
-    mt_add_event(MT_EV_SHUTDOWN, NULL);
+    mt_add_event(mt_cb_shutdown, NULL);
 }
-

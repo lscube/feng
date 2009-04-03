@@ -23,18 +23,14 @@
 #ifndef FN_SDP2_H
 #define FN_SDP2_H
 
-#include <sys/types.h>
-#include <unistd.h>
 #include <glib.h>
 
-#include <fenice/server.h>
+struct feng;
 
 #define SDP2_EL "\r\n"
 #define SDP2_VERSION 0
 #define SDP2_TRACK_ID "TrackID"
 
-#define MAX_DESCR_LENGTH 63000
-
-GString *sdp_session_descr(feng *srv, char *server, char *name);
+GString *sdp_session_descr(struct feng *, const char *, const char *);
 
 #endif // FN_SDP2_H

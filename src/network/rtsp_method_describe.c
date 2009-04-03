@@ -1,9 +1,9 @@
-/* * 
+/* *
  * This file is part of Feng
  *
  * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
- * 
+ *
  * feng is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with feng; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * */
 
@@ -37,7 +37,6 @@
 /**
  * Sends the reply for the describe method
  * @param req The client request for the method
- * @param url the URL for the resource to describe
  * @param descr the description string to send
  */
 static void send_describe_reply(RTSP_Request *req, GString *descr)
@@ -71,7 +70,7 @@ static void send_describe_reply(RTSP_Request *req, GString *descr)
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
-void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_describe(RTSP_Client * rtsp, RTSP_Request *req)
 {
     feng *srv = rtsp->srv;
 
@@ -83,6 +82,8 @@ void RTSP_describe(RTSP_buffer * rtsp, RTSP_Request *req)
 
     // Get Session Description
     descr = sdp_session_descr(srv, url.hostname, url.path);
+
+    Url_destroy(&url);
 
     /* The only error we may have here is when the file does not exist
        or if a demuxer is not available for the given file */

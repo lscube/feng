@@ -20,31 +20,22 @@
  *
  * */
 
-#ifndef FN_SCHEDULE_H
-#define FN_SCHEDULE_H
+#ifndef FENG_BUFFERQUEUE_H
+#define FENG_BUFFERQUEUE_H
 
-
-#include <time.h>
-#include <sys/time.h>
 #include <glib.h>
-#include "network/rtp.h"
-#include <fenice/prefs.h>
 
-typedef struct play_args {
-    struct tm playback_time;
-    short playback_time_valid;
-    short seek_time_valid;
-    double start_time;   //! time in seconds
-    double begin_time;
-    double end_time;
-} play_args;
+typedef struct BufferQueue_Producer BufferQueue_Producer;
+typedef struct BufferQueue_Consumer BufferQueue_Consumer;
 
-void schedule_init(feng *srv);
+BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function);
+void bq_producer_put(BufferQueue_Producer *producer, gpointer payload);
+void bq_producer_reset_queue(BufferQueue_Producer *producer);
+void bq_producer_stop(BufferQueue_Producer *producer);
 
-int schedule_add(RTP_session * rtp_session);
-int schedule_start(RTP_session * rtp_session, play_args * args);
-int schedule_remove(RTP_session * rtp_session, void *unused);
-int schedule_resume(RTP_session * rtp_session, play_args * args);
-RTP_session *schedule_find_multicast(feng *srv, const char *mrl);
+BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer);
+gpointer bq_consumer_get(BufferQueue_Consumer *consumer);
+gboolean bq_consumer_stopped(BufferQueue_Consumer *consumer);
+void bq_consumer_free(BufferQueue_Consumer *consumer);
 
-#endif // FN_SCHEDULE_H
+#endif

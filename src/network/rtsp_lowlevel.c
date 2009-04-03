@@ -26,29 +26,101 @@
 #include <fenice/fnc_log.h>
 #include <fenice/utils.h>
 
-/** @file
- * @brief Contains most of lowlevel RTSP functions
- */
-
-
 /**
- * Sends the rtsp output buffer through the socket
- * @param rtsp the rtsp connection to flush through the socket
- * @return the size of data sent
+ * @brief Read data out of an RTSP client socket
+ *
+ * @param rtsp The client to read data from
+ * @param stream Pointer to the variable to save the stream number to
+ * @param buffer Pointer to the memory area to read
+ * @param size The size of the memory area to read
+ *
+ * @return The amount of data read from the socket
+ * @return -1 Error during read.
+ *
+ * @todo The size parameter and the return value should be size_t
+ *       instead of int.
  */
-ssize_t rtsp_send(RTSP_buffer * rtsp)
+static int rtsp_sock_read(RTSP_Client *rtsp, int *stream, char *buffer, int size)
 {
-    int n = 0;
+    Sock *sock = rtsp->sock;
+    int n;
+#ifdef HAVE_SCTP
+    struct sctp_sndrcvinfo sctp_info;
+    if (Sock_type(sock) == SCTP) {
+        memset(&sctp_info, 0, sizeof(sctp_info));
+        n = Sock_read(sock, buffer, size, &sctp_info, 0);
+        *stream = sctp_info.sinfo_stream;
+        fnc_log(FNC_LOG_DEBUG,
+            "Sock_read() received %d bytes from sctp stream %d\n", n, stream);
+    } else    // RTSP protocol is TCP
+#endif    // HAVE_SCTP
 
+    n = Sock_read(sock, buffer, size, NULL, 0);
+
+    return n;
+}
+
+void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+    char buffer[RTSP_BUFFERSIZE + 1] = { 0, };    /* +1 to control the final '\0' */
+    int read_size;
+    gint channel = 0;
+    RTSP_Client *rtsp = w->data;
+
+    if ( (read_size = rtsp_sock_read(rtsp,
+                                     &channel,
+                                     buffer,
+                                     sizeof(buffer) - 1)
+          ) <= 0 )
+        goto client_close;
+
+    /* If we got a channel number from the socket, it means that we're
+     * reading data out of some interleaved lower level protocol
+     * protocol; right now this only means SCTP.
+    */
+    if ( channel != 0 ) {
+        interleaved_rtcp_send(rtsp, channel, buffer, read_size);
+        return;
+    }
+
+    if (rtsp->input->len + read_size > RTSP_BUFFERSIZE) {
+        fnc_log(FNC_LOG_DEBUG,
+                "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
+        goto server_close;
+    }
+
+    g_byte_array_append(rtsp->input, buffer, read_size);
+    if (RTSP_handler(rtsp) == ERR_GENERIC) {
+        fnc_log(FNC_LOG_ERR, "Invalid input message.\n");
+        goto server_close;
+    }
+
+    return;
+
+ client_close:
+    fnc_log(FNC_LOG_INFO, "RTSP connection closed by client.");
+    goto disconnect;
+
+ server_close:
+    fnc_log(FNC_LOG_INFO, "RTSP connection closed by server.");
+    goto disconnect;
+
+ disconnect:
+    ev_async_send(loop, rtsp->ev_sig_disconnect);
+}
+
+void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+    RTSP_Client *rtsp = w->data;
     GString *outpkt = (GString *)g_async_queue_try_pop(rtsp->out_queue);
 
     if (outpkt == NULL) {
-        ev_io_stop(rtsp->srv->loop, rtsp->ev_io_write);
+        ev_io_stop(rtsp->srv->loop, &rtsp->ev_io_write);
         return 0;
     }
 
-    if ( (n = Sock_write(rtsp->sock, outpkt->str, outpkt->len,
-          NULL, MSG_DONTWAIT)) < outpkt->len) {
+    if ( Sock_write(rtsp->sock, outpkt->str, outpkt->len,
+                    NULL, MSG_DONTWAIT) < outpkt->len) {
         switch (errno) {
             case EACCES:
                 fnc_log(FNC_LOG_ERR, "EACCES error");
@@ -106,5 +178,4 @@ ssize_t rtsp_send(RTSP_buffer * rtsp)
     }
 
     g_string_free(outpkt, TRUE);
-    return n;
 }

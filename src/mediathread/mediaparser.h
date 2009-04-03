@@ -28,6 +28,8 @@
 #include "mediautils.h"
 #include <fenice/sdp_grammar.h>
 
+struct Track;
+
 // return errors
 #define MP_PKT_TOO_SMALL -101
 #define MP_NOT_FULL_FRAME -102
@@ -110,6 +112,22 @@ void mparser_unreg(MediaParser *, void *);
 /**
  * @}
  */
+
+/**
+ * @brief Buffer passed between parsers and RTP sessions
+ *
+ * This is what is being encapsulated by @ref BufferQueue_Element.
+ */
+typedef struct {
+    double timestamp;   /*!< presentation time of packet */
+    uint8_t marker;
+    size_t data_size;
+    uint8_t data[];
+} MParserBuffer;
+
+void mparser_buffer_write(struct Track *tr, uint8_t marker,
+                          uint8_t *data, size_t data_size);
+
 
 #define DEFAULT_MTU 1440
 

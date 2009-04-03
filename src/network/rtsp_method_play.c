@@ -28,10 +28,10 @@
 #include <inttypes.h>
 #include <strings.h>
 
-#include <bufferpool/bufferpool.h>
 #include <liberis/headers.h>
 
 #include "rtsp.h"
+#include "ragel_parsers.h"
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
 #include <math.h>
@@ -39,112 +39,36 @@
 #include <netembryo/url.h>
 #include <glib.h>
 
-extern gboolean ragel_parse_range_header(const char *header,
-                                         play_args *args);
-
-static void rtp_session_seek(gpointer value, gpointer user_data)
-{
-  RTP_session *rtp_sess = (RTP_session *)value;
-  play_args *args = (play_args *)user_data;
-
-  if (rtp_sess->started && !rtp_sess->pause) {
-    /* Pause scheduler while reiniting RTP session */
-    rtp_sess->pause = 1;
-  }
-  rtp_sess->start_seq = 1 + rtp_sess->seq_no;
-  rtp_sess->start_rtptime = g_random_int();
-  rtp_sess->seek_time = args->begin_time;
-
-  if (rtp_sess->cons) {
-    while (bp_getreader(rtp_sess->cons)) {
-      /* Drop spurious packets after seek */
-      bp_gotreader(rtp_sess->cons);
-    }
-  }
-}
-
-/**
- * Actually seek through the media using mediathread
- * @param rtsp_sess the session for which to start playing
- * @param args the range to play
- * @return RTSP_Ok or RTSP_InvalidRange
- */
-static RTSP_ResponseCode do_seek(RTSP_session * rtsp_sess, play_args * args)
-{
-    Resource *r = rtsp_sess->resource;
-
-    if (args->seek_time_valid &&
-        ((rtsp_sess->started && args->begin_time == 0.0)
-            || args->begin_time > 0.0)) {
-        if(mt_resource_seek(r, args->begin_time)) {
-            return RTSP_HeaderFieldNotValidforResource;
-        }
-	g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_seek, args);
-    } else if (args->begin_time < 0.0) {
-        fnc_log(FNC_LOG_DEBUG,"[RTSP] Negative seek to %f", args->begin_time);
-        return RTSP_InvalidRange;
-    }
-
-    return RTSP_Ok;
-}
-
-static void rtp_session_play(gpointer value, gpointer user_data)
-{
-    RTP_session *rtp_sess = (RTP_session *) value;
-    play_args *args = (play_args *) user_data;
-
-    // Start playing all the presentation
-    if (!rtp_sess->started) {
-        // Start new -- assume no allocation error
-        rtp_sess->last_packet_send_time = time(NULL);
-        schedule_start(rtp_sess, args);
-    }
-    else {
-        // Resume existing
-        if (rtp_sess->pause) {
-            rtp_sess->last_packet_send_time = time(NULL);
-            schedule_resume(rtp_sess, args);
-        }
-    }
-}
-
 /**
  * Actually starts playing the media using mediathread
- * @param url the Url for which to start playing
+ *
  * @param rtsp_sess the session for which to start playing
- * @param args the range to play
- * @return RTSP_Ok or RTSP_InternalServerError
+ * @param range The parsed value of the Range: header
+ *
+ * @retval RTSP_Ok Operation successful
+ * @retval RTSP_InvalidRange Seek couldn't be completed
  */
-static RTSP_ResponseCode do_play(Url *url, RTSP_session * rtsp_sess, play_args * args)
+static RTSP_ResponseCode do_play(RTSP_session * rtsp_sess,
+                                 ParsedRange *range)
 {
-    RTSP_ResponseCode error = RTSP_Ok;
-    char *q = NULL;
-
-    if (!(q = strchr(url->path, '='))) {
-        //if '=' is not present then a file has not been specified
-        // aggregate content requested
-        // Perform seek if needed
-        if ((error = do_seek(rtsp_sess, args)) != RTSP_Ok) {
-            return error;
-        }
-	if ( rtsp_sess->rtp_sessions &&
-	     ((RTP_session*)(rtsp_sess->rtp_sessions->data))->is_multicast )
-	  return RTSP_Ok;
-
-	rtsp_sess->started = 1;
-
-	g_slist_foreach(rtsp_sess->rtp_sessions, rtp_session_play, args);
-    } else {
-        // FIXME complete with the other stuff
-        return RTSP_InternalServerError; /* Internal server error */
-#if 0
-        // resource!trackname
-        strcpy (trackname, q + 1);
-        // XXX Not really nice...
-        while (url->path != q) if (*--q == '/') break;
-        *q = '\0';
-#endif
+    /* If a seek was requested, execute it */
+    if ( range->begin_time > 0 ) {
+        if ( r_seek(rtsp_sess->resource, range->begin_time) )
+            return RTSP_InvalidRange;
+        else
+            rtp_session_gslist_seek(rtsp_sess->rtp_sessions, range->begin_time);
     }
+
+    if ( rtsp_sess->rtp_sessions &&
+         ((RTP_session*)(rtsp_sess->rtp_sessions->data))->multicast )
+        return RTSP_Ok;
+
+    rtsp_sess->started = 1;
+
+    /** @todo This is always fixed to “now”, it should not be and
+     *        should read the ParsedRange::playback_time value
+     *        instead. */
+    rtp_session_gslist_resume(rtsp_sess->rtp_sessions, gettimeinseconds(NULL));
 
     return RTSP_Ok;
 }
@@ -159,7 +83,7 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
   rtp_session_send_play_reply_pair *pair = (rtp_session_send_play_reply_pair *)user_data;
 
   RTP_session *p = (RTP_session *)element;
-  Track *t = r_selected_track(p->track_selector);
+  Track *t = p->track;
 
   g_string_append_printf(pair->str,
 			 "url=%s%s/"SDP2_TRACK_ID"=", pair->baseurl, p->sd_filename);
@@ -175,15 +99,19 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
 }
 
 /**
- * Sends the reply for the play method
- * @param rtsp the buffer where to write the reply
+ * @brief Sends the reply for the play method
+ *
  * @param req The Request to respond to.
  * @param url the Url related to the object that we wanted to play
  * @param rtsp_session the session for which to generate the reply
- * @return ERR_NOERROR
+ * @param args The arguments to use to play
+ *
+ * @todo The args parameter should probably replaced by two begin_time
+ *       and end_time parameters, since those are the only values used
+ *       out of the structure.
  */
-static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
-                            RTSP_session * rtsp_session, play_args * args)
+static void send_play_reply(RTSP_Request *req, Url *url,
+                            RTSP_session * rtsp_session, ParsedRange *range)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
     rtp_session_send_play_reply_pair pair = {
@@ -201,12 +129,16 @@ static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
     };
 
     /* temporary string used for creating headers */
-    GString *str = g_string_new("");
+    GString *str = g_string_new("npt=");
 
     /* Create Range header */
-    g_string_printf(str, "npt=%f-", args->begin_time);
-    if (args->end_time != HUGE_VAL)
-      g_string_append_printf(str, "%f", args->end_time);
+    if (range->begin_time > 0)
+        g_string_append_printf(str, "%f", range->begin_time);
+
+    g_string_append(str, "-");
+
+    if (range->end_time > 0)
+      g_string_append_printf(str, "%f", range->end_time);
 
     g_hash_table_insert(response->headers,
                         g_strdup(eris_hdr_range),
@@ -226,65 +158,107 @@ static void send_play_reply(RTSP_buffer * rtsp, RTSP_Request *req, Url *url,
 }
 
 /**
+ * @brief Parse the Range header
+ *
+ * @param rtsp_sess The session to seek for
+ * @param range_hdr The range header to parse (if NULL, the default
+ *                  will apply)
+ * @param range The structure carrying the parsed data
+ *
+ * @retval RTSP_Ok The range header was parsed correctly.
+ * @retval RTSP_NotImplemented The range header specified the time in
+ *                             a format we don't support
+ * @retval RTSP_InvalidRange The range specified was not valid
+ *
+ * If the parse fails, it's because the Range header specifies something we
+ * don't know how to deal with (like clock or smtpe ranges) and thus we
+ * respond to the client with a 501 “Not Implemented” error, as specified by
+ * RFC2326 Section 12.29.
+ *
+ * RFC2326 only mandates server to know NPT time, clock and smtpe times are
+ * optional, and we currently support neither of them.
+ *
+ * @todo For now the only reason why we return RTSP_InvalidRange is
+ *       that the parsed values are negative. We should probably check
+ *       that they also don't go over the end of the trace _if_ the
+ *       stream is not a live stream.
+ * @todo If the stream is live we should not even call this function,
+ *       the mere presence of the range header should warrant an error
+ *       response with code 456 ”Header Field Not Valid For Resource”
+ *       as suggested by RFC2326 Section 11.3.7.
+ */
+RTSP_ResponseCode parse_range_header(RTSP_session *rtsp_sess, const char *range_hdr,
+                                     ParsedRange *range)
+{
+    /* Initialise the ParsedRange structure by setting the three
+     * values all to a negative (invalid) value. */
+    range->begin_time = -0.1;
+    range->end_time = -0.1;
+    range->playback_time = -0.1;
+
+    /* If there is any kind of parsing error, the range is considered
+     * not implemented. It might not be entirely certainl but until we
+     * have better indications, it should be fine. */
+    if ( range_hdr &&
+         !ragel_parse_range_header(range_hdr, range) )
+        return RTSP_NotImplemented;
+
+    /* We don't set begin_time if it was not read, since the client
+     * didn't request any seek and thus we won't do any seek to that.
+     */
+    if ( range->end_time < 0 )
+        range->end_time = rtsp_sess->resource->info->duration;
+    if ( range->playback_time < 0 )
+        range->playback_time = gettimeinseconds(NULL);
+
+    return RTSP_Ok;
+}
+
+/**
  * RTSP PLAY method handler
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
-void RTSP_play(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
 {
     Url url;
     RTSP_session *rtsp_sess = rtsp->session;
-    play_args args = {
-        .playback_time = { 0, },
-        .playback_time_valid = false,
-        .seek_time_valid = false,
-        .start_time = gettimeinseconds(NULL),
-        .begin_time = 0.0,
-        .end_time = rtsp_sess->resource->info->duration
-    };
-
-    const char *range_hdr;
-
     RTSP_ResponseCode error;
+
+    ParsedRange range;
 
     if ( !rtsp_check_invalid_state(req, RTSP_SERVER_INIT) )
         return;
 
-    /* Parse the Range header.
-     *
-     * If the parse fails, it's because the Range header specifies something we
-     * don't know how to deal with (like clock or smtpe ranges) and thus we
-     * respond to the client with a 501 "Not Implemented" error, as specified by
-     * RFC2326 Section 12.29.
-     *
-     * RFC2326 only mandates server to know NPT time, clock and smtpe times are
-     * optional, and we currently support neither of them.
-     */
-    range_hdr = g_hash_table_lookup(req->headers, "Range");
-    if ( range_hdr && !ragel_parse_range_header(range_hdr, &args) ) {
-        rtsp_quick_response(req, RTSP_NotImplemented);
+    if ( !rtsp_request_get_url(req, &url) )
         return;
-    }
 
     if ( rtsp_sess->session_id == 0 ) {
         error = RTSP_BadRequest;
         goto error_management;
     }
 
-    if ( !rtsp_request_get_url(req, &url) )
-        return;
-
-    if ( (error = do_play(&url, rtsp_sess, &args)) != RTSP_Ok ) {
+    if ( (error = parse_range_header(rtsp->session,
+                                     g_hash_table_lookup(req->headers, "Range"),
+                                     &range)) != RTSP_Ok )
         goto error_management;
-    }
 
-    send_play_reply(rtsp, req, &url, rtsp_sess, &args);
+
+    if ( (error = do_play(rtsp_sess, &range)) != RTSP_Ok )
+        goto error_management;
+
+    send_play_reply(req, &url, rtsp_sess, &range);
+
+    Url_destroy(&url);
 
     rtsp_sess->cur_state = RTSP_SERVER_PLAYING;
+
+    ev_timer_again (rtsp->srv->loop, rtsp->ev_timeout);
 
     return;
 
 error_management:
+    Url_destroy(&url);
     rtsp_quick_response(req, error);
     return;
 }

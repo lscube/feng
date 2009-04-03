@@ -30,6 +30,8 @@
  * Main configuration parsing functions
  */
 
+#include <glib.h>
+
 #include <sys/stat.h>
 
 #include <stdlib.h>

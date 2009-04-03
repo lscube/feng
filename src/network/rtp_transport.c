@@ -24,6 +24,7 @@
 #include <config.h>
 
 #include "rtp.h"
+#include "rtcp.h"
 #include "mediathread/mediathread.h"
 #include "mediathread/demuxer.h"
 #include <fenice/fnc_log.h>
@@ -39,17 +40,17 @@
  * depending on what is available
  * @param session RTP session of the packet
  * @param clock_rate RTP clock rate (depends on media)
- * @param slot Slot of which calculate timestamp
+ * @param buffer Buffer of which calculate timestamp
  * @return RTP Timestamp (in local endianess)
  */
-static inline uint32_t RTP_calc_rtptime(RTP_session *session, int clock_rate, BPSlot *slot) {
-    uint32_t calc_rtptime = (uint32_t)((slot->timestamp - session->seek_time) * clock_rate);
-    return (session->start_rtptime + (slot->rtp_time ? slot->rtp_time : calc_rtptime));
+static inline uint32_t RTP_calc_rtptime(RTP_session *session, int clock_rate, MParserBuffer *buffer) {
+    uint32_t calc_rtptime = (uint32_t)((buffer->timestamp - session->seek_time) * clock_rate);
+    return (session->start_rtptime + calc_rtptime);
 }
 
-static inline double calc_send_time(RTP_session *session, BPSlot *slot) {
-    double last_timestamp = (slot->last_timestamp - session->seek_time);
-    return (last_timestamp - session->send_time)/slot->pkt_num;
+static inline double calc_send_time(RTP_session *session, MParserBuffer *buffer) {
+    double last_timestamp = (session->last_timestamp - session->seek_time);
+    return (last_timestamp - session->send_time);
 }
 
 typedef struct {
@@ -86,121 +87,57 @@ typedef struct {
 } RTP_packet;
 
 /**
- * Sends pending RTP packets for the given session
- * @param session the RTP session for which to send the packets
- * @retval ERR_NOERROR
- * @retval ERR_ALLOC Buffer allocation errors
- * @retval ERR_EOF End of stream
- * @return Same error values as event_buffer_low on event emission problems
+ * @brief Send the actual buffer as an RTP packet to the client
+ *
+ * @param session The RTP session to send the packet for
+ * @param buffer The data for the packet to be sent
+ *
+ * @return The number of frames sent to the client.
+ * @retval -1 Error during writing.
  */
-int RTP_send_packet(RTP_session * session)
-{
-    int res = ERR_NOERROR, bp_frames = 0;
-    BPSlot *slot = NULL;
-    ssize_t psize_sent = 0;
-    feng *srv = session->srv;
-    Track *t = r_selected_track(session->track_selector);
-    uint32_t now=time(NULL);
+int rtp_packet_send(RTP_session *session, MParserBuffer *buffer) {
+    const size_t packet_size = sizeof(RTP_packet) + buffer->data_size;
+    RTP_packet *packet = g_malloc0(packet_size);
+    Track *tr = session->track;
+    const uint32_t timestamp = RTP_calc_rtptime(session,
+                                                tr->properties->clock_rate,
+                                                buffer);
+    int frames = -1;
 
-    if ((slot = bp_getreader(session->cons))) {
-        if (!(session->pause && t->properties->media_source == MS_live)) {
-            const uint32_t timestamp = RTP_calc_rtptime(session,
-                                                        t->properties->clock_rate,
-                                                        slot);
-            const size_t packet_size = sizeof(RTP_packet) + slot->data_size;
-            RTP_packet *packet = g_malloc0(packet_size);
+    packet->version = 2;
+    packet->padding = 0;
+    packet->extension = 0;
+    packet->csrc_len = 0;
+    packet->marker = buffer->marker & 0x1;
+    packet->payload = tr->properties->payload_type & 0x7f;
+    packet->seq_no = htons(++session->seq_no);
+    packet->timestamp = htonl(timestamp);
+    packet->ssrc = htonl(session->ssrc);
 
-            if (packet == NULL) {
-                return ERR_ALLOC;
-            }
+    fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(timestamp));
 
-            packet->version = 2;
-            packet->padding = 0;
-            packet->extension = 0;
-            packet->csrc_len = 0;
-            packet->marker = slot->marker & 0x1;
-            packet->payload = t->properties->payload_type & 0x7f;
-            packet->seq_no = htons(session->seq_no += slot->seq_delta);
-            packet->timestamp = htonl(timestamp);
-            packet->ssrc = htonl(session->ssrc);
+    memcpy(packet->data, buffer->data, buffer->data_size);
 
-            fnc_log(FNC_LOG_VERBOSE, "[RTP] Timestamp: %u", ntohl(timestamp));
+    if (Sock_write(session->transport.rtp_sock, packet,
+                   packet_size, NULL, MSG_DONTWAIT
+                   | MSG_EOR) < 0) {
+        fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
+    } else {
+        if (!session->send_time)
+            session->send_time = buffer->timestamp - session->seek_time;
 
-            memcpy(packet->data, slot->data, slot->data_size);
+        frames = (fabs(session->last_timestamp - buffer->timestamp) /
+                  tr->properties->frame_duration) + 1;
+        session->send_time += calc_send_time(session, buffer);
+        session->last_timestamp = buffer->timestamp;
+        session->rtcp.server_stats.pkt_count++;
+        session->rtcp.server_stats.octet_count += buffer->data_size;
 
-            if ((psize_sent =
-                 Sock_write(session->transport.rtp_sock, packet,
-                 packet_size, NULL, MSG_DONTWAIT
-                 | MSG_EOR)) < 0) {
-                fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
-            } else {
-                if (!session->send_time) {
-                    session->send_time = slot->timestamp - session->seek_time;
-                }
-                bp_frames = (fabs(slot->last_timestamp - slot->timestamp) /
-                    t->properties->frame_duration) + 1;
-                session->send_time += calc_send_time(session, slot);
-                session->rtcp_stats[i_server].pkt_count += slot->seq_delta;
-                session->rtcp_stats[i_server].octet_count += slot->data_size;
-
-                session->last_packet_send_time = now;
-            }
-            g_free(packet);
-        } else {
-#warning Remove as soon as feng is fixed
-            usleep(1000);
-        }
-        bp_gotreader(session->cons);
+        session->last_packet_send_time = time(NULL);
     }
-    if (!slot || bp_frames <= srv->srvconf.buffered_frames) {
-        res = event_buffer_low(session, t);
-    }
-    switch (res) {
-        case ERR_NOERROR:
-            break;
-        case ERR_EOF:
-            if (slot) {
-                //Wait to empty feng before sending BYE packets.
-                res = ERR_NOERROR;
-            }
-        break;
-        default:
-            fnc_log(FNC_LOG_FATAL, "Unable to emit event buffer low");
-            break;
-    }
-    return res;
-}
+    g_free(packet);
 
-/**
- * Receives data from the socket linked to the session and puts it inside the session buffer
- * @param session the RTP session for which to receive the packets
- * @return size of te received data or -1 on error or invalid protocol request
- */
-ssize_t RTP_recv(RTP_session * session)
-{
-    Sock *s = session->transport.rtcp_sock;
-    struct sockaddr *sa_p = (struct sockaddr *)&(session->transport.last_stg);
-
-    if (!s)
-        return -1;
-
-    switch (s->socktype) {
-        case UDP:
-            session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
-                     sizeof(session->rtcp_inbuffer),
-                     sa_p, 0);
-            break;
-        case LOCAL:
-            session->rtcp_insize = Sock_read(s, session->rtcp_inbuffer,
-                     sizeof(session->rtcp_inbuffer),
-                     NULL, 0);
-            break;
-        default:
-            session->rtcp_insize = -1;
-            break;
-    }
-
-    return session->rtcp_insize;
+    return frames;
 }
 
 /**
@@ -208,13 +145,12 @@ ssize_t RTP_recv(RTP_session * session)
  * @param session the RTP session for which to close the transport
  * @return always 0
  */
-static int RTP_transport_close(RTP_session * session) {
+int RTP_transport_close(RTP_session * session) {
     port_pair pair;
     pair.RTP = get_local_port(session->transport.rtp_sock);
     pair.RTCP = get_local_port(session->transport.rtcp_sock);
 
-    ev_io_stop(session->srv->loop, session->transport.rtcp_watcher);
-    g_free(session->transport.rtcp_watcher);
+    ev_io_stop(session->srv->loop, &session->transport.rtcp_watcher);
 
     switch (session->transport.rtp_sock->socktype) {
         case UDP:
@@ -225,24 +161,4 @@ static int RTP_transport_close(RTP_session * session) {
     Sock_close(session->transport.rtp_sock);
     Sock_close(session->transport.rtcp_sock);
     return 0;
-}
-
-/**
- * Deallocates an RTP session, closing its tracks and transports
- * @param session the RTP session to remove
- * @return the subsequent session
- */
-void RTP_session_destroy(RTP_session * session)
-{
-    RTP_transport_close(session);
-
-    // Close track selector
-    r_close_tracks(session->track_selector);
-
-    // destroy consumer
-    bp_unref(session->cons);
-
-    // Deallocate memory
-    g_free(session->sd_filename);
-    g_free(session);
 }

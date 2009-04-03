@@ -166,11 +166,8 @@ static int amr_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         /*fill the frame content*/
         while (len > payload) {
             memcpy(packet + header_len, data + off, payload);
-            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                                      packet, header_len + payload)) {
-                fnc_log(FNC_LOG_ERR, "Cannot write feng");
-                goto err_alloc;
-            }
+            mparser_buffer_write(tr, 0,
+                            packet, header_len + payload);
 
             len -= payload;
             off += payload;
@@ -191,11 +188,8 @@ static int amr_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 
     /*fill the frame content*/
     memcpy(packet + header_len, data + off, len);
-    if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                      packet, len + body_num)) {
-        fnc_log(FNC_LOG_ERR, "Cannot write feng");
-        goto err_alloc;
-    }
+    mparser_buffer_write(tr, 0,
+                    packet, len + body_num);
     return ERR_NOERROR;
 
  err_alloc:

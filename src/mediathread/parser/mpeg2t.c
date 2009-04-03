@@ -285,11 +285,8 @@ static int mp2t_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         ret = mp2t_packetize(dst, &dst_len, data, len, tr->properties,
                   tr->parser_private);
         if (ret >= 0) {
-            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 0,
-                              dst, dst_len)) {
-                fnc_log(FNC_LOG_ERR, "Cannot write feng\n");
-                return ERR_ALLOC;
-            }
+            mparser_buffer_write(tr, 0,
+                            dst, dst_len);
             dst_len = len;
         }
     } while (ret);

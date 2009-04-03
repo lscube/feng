@@ -25,6 +25,8 @@
  * from Diego Pettenò <flameeyes@gentoo.org>
  */
 
+#include <glib.h>
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,8 +44,6 @@
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif
-
-#include <glib.h>
 
 static int open_mrl(char *, InputStream *);
 static int open_mrl_st_file(InputStream *);

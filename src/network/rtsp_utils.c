@@ -44,7 +44,9 @@
 #include <fenice/fnc_log.h>
 
 /**
- * @addtogroup RTSP
+ * @defgroup rtsp_utils Utility functions
+ * @ingroup RTSP
+ *
  * @{
  */
 
@@ -57,7 +59,7 @@
  *
  * @see rtsp_session_free();
  */
-RTSP_session *rtsp_session_new(RTSP_buffer *rtsp)
+RTSP_session *rtsp_session_new(RTSP_Client *rtsp)
 {
     RTSP_session *new = rtsp->session = g_slice_new0(RTSP_session);
 
@@ -98,32 +100,16 @@ void rtsp_session_free(RTSP_session *session)
  *
  * @see rtsp_client_destroy()
  */
-RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock)
+RTSP_Client *rtsp_client_new(feng *srv, Sock *client_sock)
 {
-    RTSP_buffer *new = g_slice_new0(RTSP_buffer);
+    RTSP_Client *new = g_slice_new0(RTSP_Client);
 
-    new->srv = srv;
     new->sock = client_sock;
+    new->input = g_byte_array_new();
     new->out_queue = g_async_queue_new();
+    new->srv = srv;
 
     return new;
-}
-
-static void interleaved_close_fds(gpointer element, gpointer user_data)
-{
-    RTSP_interleaved *intlvd = (RTSP_interleaved *)element;
-
-    Sock_close(intlvd[0].local);
-    Sock_close(intlvd[1].local);
-    g_free(intlvd);
-}
-
-static void stop_ev(gpointer element, gpointer user_data)
-{
-    ev_io *io = element;
-    feng *srv = user_data;
-    ev_io_stop(srv->loop, io);
-    g_free(io);
 }
 
 /**
@@ -133,14 +119,14 @@ static void stop_ev(gpointer element, gpointer user_data)
  *
  * @see rtsp_client_new()
  */
-void rtsp_client_destroy(RTSP_buffer *rtsp)
+void rtsp_client_destroy(RTSP_Client *rtsp)
 {
   GString *outbuf = NULL;
 
   if (rtsp->session != NULL) {
 
     // Release all RTP sessions
-    g_slist_foreach(rtsp->session->rtp_sessions, schedule_remove, NULL);
+  //  g_slist_foreach(rtsp->session->rtp_sessions, schedule_remove, NULL);
     g_slist_free(rtsp->session->rtp_sessions);
 
     // Close connection
@@ -150,12 +136,7 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
     rtsp->session = NULL;
   }
 
-  // close local fds
-  g_slist_foreach(rtsp->interleaved, interleaved_close_fds, NULL);
-  g_slist_foreach(rtsp->ev_io, stop_ev, rtsp->srv);
-
-  g_slist_free(rtsp->interleaved);
-  g_slist_free(rtsp->ev_io);
+  interleaved_free_list(rtsp);
 
   // Remove the output queue
   g_async_queue_lock(rtsp->out_queue);
@@ -164,12 +145,16 @@ void rtsp_client_destroy(RTSP_buffer *rtsp)
   g_async_queue_unlock(rtsp->out_queue);
   g_async_queue_unref(rtsp->out_queue);
 
-  g_slice_free(RTSP_buffer, rtsp);
+  g_byte_array_free(rtsp->input, true);
+
+  g_slice_free(RTSP_Client, rtsp);
 }
 
 /**
  * RTSP Header and request parsing and validation functions
- * @defgroup rtsp_validation RTSP requests parsing and validation
+ * @defgroup rtsp_validation Requests parsing and validation
+ * @ingroup rtsp_utils
+ *
  * @{
  */
 
@@ -252,6 +237,57 @@ gboolean rtsp_request_get_url(RTSP_Request *req, Url *url) {
 
   return true;
 }
+
+/**
+ * @brief Extract only the path from a request structure
+ *
+ * @param req The request structure from where to extract the URL
+ *
+ * @return A newly allocated string to be freed with free().
+ *
+ * @retval NULL The URL was not valid and a reply was already sent.
+ *
+ * @note the returned string is allocated by netembryo with malloc(),
+ *       so it should not be freed with g_free()!
+ */
+char *rtsp_request_get_path(RTSP_Request *req) {
+    Url url;
+    char *ret;
+
+    if ( !rtsp_request_get_url(req, &url) )
+        return NULL;
+
+    ret = url.path;
+    /* Set the path to NULL so that it won't be deleted by
+     * Url_destroy). */
+    url.path = NULL;
+    Url_destroy(&url);
+
+    return ret;
+}
+
+/**
+ * @brief Check the URL from a request structure without saving it
+ *
+ * @param req The request structure from where to check the URL
+ *
+ * @retval true The URL is valid and allowed
+ * @retval false The URL is not not valid or forbidden
+ *
+ * @note This function will allocate and destroy the memory by itself,
+ *       it's used where the actual URL is not relevant to the code
+ */
+gboolean rtsp_request_check_url(RTSP_Request *req) {
+    Url url;
+
+    if ( !rtsp_request_get_url(req, &url) )
+        return false;
+
+    Url_destroy(&url);
+
+    return true;
+}
+
 /**
  * @}
  */
@@ -265,12 +301,10 @@ gboolean rtsp_request_get_url(RTSP_Request *req, Url *url) {
  * @note The buffer has to be considered destroyed after calling this function
  *       (the writing thread will take care of the actual destruction).
  */
-void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer)
+void rtsp_bwrite(const RTSP_Client *rtsp, GString *buffer)
 {
     g_async_queue_push(rtsp->out_queue, buffer);
-    ev_io_start(rtsp->srv->loop, rtsp->ev_io_write);
-
-    return ERR_NOERROR;
+    ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
 }
 
 /**

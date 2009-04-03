@@ -31,48 +31,49 @@
 
 #include <liberis/headers.h>
 
+#include "rtp.h"
 #include "rtsp.h"
-#include "network/rtsp_method_setup.h"
+#include "ragel_parsers.h"
+#include "eventloop.h"
 #include <fenice/prefs.h>
 #include <fenice/fnc_log.h>
-#include <fenice/schedule.h>
-
-// XXX move in an header
-void eventloop_local_callbacks(RTSP_buffer *rtsp, RTSP_interleaved *intlvd);
 
 /**
  * Splits the path of a requested media finding the trackname and the removing
  * it from the object
  *
- * @param url the Url for which to split the object
- * @param trackname where to save the trackname removed from the object
- * @param trackname_max_len maximum length of the trackname buffer
+ * @param path The string to use as path to spli
  *
- * @retval true No error
- * @retval false No trackname provided
+ * @return A pointer to the start of the trackname part of the path.
+ *
+ * @note This function changes the content of the string, by replacing
+ *       the last '/' character with a '\0' (NULL) character.
+ *
+ * @todo This works by pure chance basically since having a '=' in a
+ *       resource name would make this fail _badly_.
+ * @todo And even if we don't rewrite it entirely it should at least
+ *       use strrchr, most likely.
  */
-static gboolean split_resource_path(Url * url, char * trackname, size_t trackname_max_len)
+static char *split_resource_path(char *path)
 {
-    char * p;
+    char *p, *ret = NULL;
 
     //if '=' is not present then a file has not been specified
-    if (!(p = strchr(url->path, '=')))
-        return false;
-    else {
+    if ((p = strchr(path, '='))) {
         // SETUP resource!trackname
-        g_strlcpy(trackname, p + 1, trackname_max_len);
+        ret = p+1;
         // XXX Not really nice...
-        while (url->path != p) if (*--p == '/') break;
+        while (path != p) if (*--p == '/') break;
         *p = '\0';
     }
 
-    return true;
+    return ret;
 }
 
 /**
  * bind&connect the socket
  */
-static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp,
+static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
                                            RTP_transport *transport,
                                            uint16_t rtp_port, uint16_t rtcp_port)
 {
@@ -104,59 +105,13 @@ static RTSP_ResponseCode unicast_transport(RTSP_buffer *rtsp,
 }
 
 /**
- * interleaved transport
- */
-
-static gboolean
-interleaved_transport(RTSP_buffer *rtsp, RTP_transport *transport,
-                      int rtp_ch, int rtcp_ch)
-{
-    RTSP_interleaved *intlvd;
-    Sock *sock_pair[2];
-
-    // RTP local sockpair
-    if ( Sock_socketpair(sock_pair) < 0) {
-        fnc_log(FNC_LOG_ERR,
-                "Cannot create AF_LOCAL socketpair for rtp\n");
-        return false;
-    }
-
-    intlvd = g_new0(RTSP_interleaved, 2);
-
-    transport->rtp_sock = sock_pair[0];
-    intlvd[0].local = sock_pair[1];
-
-    // RTCP local sockpair
-    if ( Sock_socketpair(sock_pair) < 0) {
-        fnc_log(FNC_LOG_ERR,
-                "Cannot create AF_LOCAL socketpair for rtcp\n");
-        Sock_close(transport->rtp_sock);
-        Sock_close(intlvd[0].local);
-        g_free(intlvd);
-        return false;
-    }
-
-    transport->rtcp_sock = sock_pair[0];
-    intlvd[1].local = sock_pair[1];
-
-    // copy stream number in rtp_transport struct
-    transport->rtp_ch = intlvd[0].channel = rtp_ch;
-    transport->rtcp_ch = intlvd[1].channel = rtcp_ch;
-
-    rtsp->interleaved = g_slist_prepend(rtsp->interleaved, intlvd);
-
-    eventloop_local_callbacks(rtsp, intlvd);
-
-    return true;
-}
-
-/**
  * @brief Check the value parsed out of a transport specification.
  *
  * @param rtsp Client from which the request arrived
+ * @param rtp_t The transport instance to set up with the parsed parameters
  * @param transport Structure containing the transport's parameters
  */
-gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
+gboolean check_parsed_transport(RTSP_Client *rtsp, RTP_transport *rtp_t,
                                 struct ParsedTransport *transport)
 {
     switch ( transport->protocol ) {
@@ -186,9 +141,9 @@ gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
             return false;
         }
 
-        return interleaved_transport(rtsp, rtp_t,
-                                     transport->parameters.TCP.ich_rtp,
-                                     transport->parameters.TCP.ich_rtcp);
+        return interleaved_setup_transport(rtsp, rtp_t,
+                                           transport->parameters.TCP.ich_rtp,
+                                           transport->parameters.TCP.ich_rtcp);
     case TransportSCTP:
         if ( transport->parameters.SCTP.ch_rtp &&
              !transport->parameters.SCTP.ch_rtcp )
@@ -206,64 +161,13 @@ gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
             return false;
         }
 
-        return interleaved_transport(rtsp, rtp_t,
-                                     transport->parameters.SCTP.ch_rtp,
-                                     transport->parameters.SCTP.ch_rtcp);
+        return interleaved_setup_transport(rtsp, rtp_t,
+                                           transport->parameters.SCTP.ch_rtp,
+                                           transport->parameters.SCTP.ch_rtcp);
 
     default:
         return false;
     }
-}
-
-extern gboolean ragel_parse_transport_header(RTSP_buffer *rtsp,
-                                             RTP_transport *rtp_t,
-                                             const char *header);
-
-static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
-{
-    RTP_recv(w->data);
-}
-
-/**
- * sets up the RTP session
- * @param url the Url for which to generate the session
- * @param rtsp the buffer for which to generate the session
- * @param rtsp_s the RTSP session to use
- * @param transport the transport to use
- * @param track_sel the track for which to generate the session
- * @return The newly generated RTP session
- */
-static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_session * rtsp_s, RTP_transport * transport, Selector * track_sel)
-{
-    feng *srv = rtsp->srv;
-    RTP_session *rtp_s = g_new0(RTP_session, 1);
-
-    // Setup the RTP session
-    rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
-
-    rtp_s->pause = 1;
-    rtp_s->sd_filename = g_strdup(url->path);
-
-    memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
-    rtp_s->start_rtptime = g_random_int();
-    rtp_s->start_seq = g_random_int_range(0, G_MAXUINT16);
-    rtp_s->seq_no = rtp_s->start_seq - 1;
-    rtp_s->track_selector = track_sel;
-    rtp_s->srv = srv;
-    rtp_s->sched_id = schedule_add(rtp_s);
-    rtp_s->ssrc = g_random_int();
-    rtp_s->rtsp_buffer = rtsp;
-
-#ifdef HAVE_METADATA
-	rtp_s->metadata = rtsp_s->resource->metadata;
-#endif
-
-    rtp_s->transport.rtcp_watcher = g_new(ev_io, 1);
-    rtp_s->transport.rtcp_watcher->data = rtp_s;
-    ev_io_init(rtp_s->transport.rtcp_watcher, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
-    ev_io_start(srv->loop, rtp_s->transport.rtcp_watcher);
-
-    return rtp_s;
 }
 
 /**
@@ -272,36 +176,25 @@ static RTP_session * setup_rtp_session(Url * url, RTSP_buffer * rtsp, RTSP_sessi
  * @param path Path of the track to select
  * @param rtsp_s the session where to save the addressed resource
  * @param trackname the name of the track to open
- * @param track_sel where to save the selector for the opened track
- * @param req_track where to save the data of the opened track
  *
- * @retval RTSP_Ok No error
- * @retval RTSP_NotFound Object or track not found
- * @retval RTSP_InternalServerError Impossible to retrieve the data of the opened
- *                                  track
+ * @return The pointer to the requested track
+ *
+ * @retval NULL Unable to find the requested resource or track; the
+ *              client should receive a “Not found” (404) response.
  */
-static RTSP_ResponseCode select_requested_track(const char *path, RTSP_session * rtsp_s, char * trackname, Selector ** track_sel, Track ** req_track)
+static Track *select_requested_track(const char *path, RTSP_session * rtsp_s, const char *trackname)
 {
     feng *srv = rtsp_s->srv;
 
     // it should parse the request giving us object!trackname
     if (!rtsp_s->resource) {
-        if (!(rtsp_s->resource = mt_resource_open(srv, path))) {
+        if (!(rtsp_s->resource = r_open(srv, path))) {
             fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", path);
-            return RTSP_NotFound;
+            return NULL;
         }
     }
 
-    if (!(*track_sel = r_open_tracks(rtsp_s->resource, trackname))) {
-        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
-                trackname, path);
-        return RTSP_NotFound;
-    }
-
-    if (!(*req_track = r_selected_track(*track_sel)))
-        return RTSP_InternalServerError;    // Internal server error
-
-    return RTSP_Ok;
+    return r_find_track(rtsp_s->resource, trackname);
 }
 
 /**
@@ -311,7 +204,7 @@ static RTSP_ResponseCode select_requested_track(const char *path, RTSP_session *
  * @param session the new RTSP session allocated for the client
  * @param rtp_s the new RTP session allocated for the client
  */
-static void send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session * session, RTP_session * rtp_s)
+static void send_setup_reply(RTSP_Client * rtsp, RTSP_Request *req, RTSP_session * session, RTP_session * rtp_s)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
     GString *transport = g_string_new("");
@@ -380,53 +273,24 @@ static void send_setup_reply(RTSP_buffer * rtsp, RTSP_Request *req, RTSP_session
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
-void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
+void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
 {
-    Url url;
-    char trackname[255];
+    char *path = NULL;
+    const char *trackname = NULL;
+    const char *transport_header = NULL;
     RTP_transport transport;
 
-    Selector *track_sel = NULL;
     Track *req_track = NULL;
 
     //mediathread pointers
     RTP_session *rtp_s = NULL;
     RTSP_session *rtsp_s;
 
-    RTSP_ResponseCode error;
-
-    char *transport_header = NULL;
-
     // init
     memset(&transport, 0, sizeof(transport));
 
-    if ( !rtsp_request_get_url(req, &url) )
+    if ( !(path = rtsp_request_get_path(req)) )
         return;
-
-    /* Check if we still have space for new connections, if not, respond with a
-     * 453 status (Not Enough Bandwidth), so that client knows what happened. */
-    if (rtsp->srv->num_conn > rtsp->srv->srvconf.max_conns) {
-        /* @todo should redirect, but we haven't the code to do that just
-         * yet. */
-        rtsp_quick_response(req, RTSP_NotEnoughBandwidth);
-        return;
-    }
-
-    // Split resource!trackname
-    if ( !split_resource_path(&url, trackname, sizeof(trackname)) ) {
-        rtsp_quick_response(req, RTSP_InternalServerError);
-        return;
-    }
-
-    /* Here we'd be adding a new session if we supported more than one */
-    if ( (rtsp_s = rtsp->session) == NULL )
-        rtsp_s = rtsp_session_new(rtsp);
-
-    // Get the selected track
-    if ( (error = select_requested_track(url.path, rtsp_s, trackname, &track_sel, &req_track)) != RTSP_Ok ) {
-        rtsp_quick_response(req, error);
-        return;
-    }
 
     /* Parse the transport header through Ragel-generated state machine.
      *
@@ -441,14 +305,43 @@ void RTSP_setup(RTSP_buffer * rtsp, RTSP_Request *req)
          !ragel_parse_transport_header(rtsp, &transport, transport_header) ) {
 
         rtsp_quick_response(req, RTSP_UnsupportedTransport);
-        return;
+        goto end;
     }
 
-    // Setup the RTP session
-    rtp_s = setup_rtp_session(&url, rtsp, rtsp_s, &transport, track_sel);
+    /* Check if we still have space for new connections, if not, respond with a
+     * 453 status (Not Enough Bandwidth), so that client knows what happened. */
+    if (rtsp->srv->num_conn > rtsp->srv->srvconf.max_conns) {
+        /* @todo should redirect, but we haven't the code to do that just
+         * yet. */
+        rtsp_quick_response(req, RTSP_NotEnoughBandwidth);
+        goto end;
+    }
+
+    // Split resource!trackname
+    if ( (trackname = split_resource_path(path)) == NULL ) {
+        rtsp_quick_response(req, RTSP_InternalServerError);
+        goto end;
+    }
+
+    /* Here we'd be adding a new session if we supported more than one */
+    if ( (rtsp_s = rtsp->session) == NULL )
+        rtsp_s = rtsp_session_new(rtsp);
+
+    // Get the selected track
+    if ( (req_track = select_requested_track(path, rtsp_s, trackname)) == NULL ) {
+        rtsp_quick_response(req, RTSP_NotFound);
+        goto end;
+    }
+
+    rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, path, req_track);
 
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
+    g_mutex_unlock(rtp_s->lock);
 
     if ( rtsp_s->cur_state == RTSP_SERVER_INIT )
         rtsp_s->cur_state = RTSP_SERVER_READY;
+
+ end:
+    free(path);
+    return;
 }

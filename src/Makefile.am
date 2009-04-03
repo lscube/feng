@@ -13,32 +13,32 @@ BUILT_SOURCES = \
 dist_feng_SOURCES = \
 	liberis/headers.h \
 	liberis/utils.c liberis/utils.h \
-	network/rtcp.h \
-	network/rtcp_handler.c \
-	network/rtcp_send_packet.c \
+	network/ragel_parsers.h \
+	network/rtcp.c network/rtcp.h \
 	network/rtp.h \
 	network/rtp_port.c \
 	network/rtp_transport.c \
+	network/rtp_session.c \
 	network/rtsp.h \
+	network/rtsp_interleaved.c \
 	network/rtsp_lowlevel.c \
 	network/rtsp_method_describe.c \
 	network/rtsp_method_options.c \
 	network/rtsp_method_pause.c \
 	network/rtsp_method_play.c \
-	network/rtsp_method_setup.c network/rtsp_method_setup.h \
+	network/rtsp_method_setup.c \
 	network/rtsp_method_teardown.c \
 	network/rtsp_response.c \
 	network/rtsp_state_machine.c \
 	network/rtsp_utils.c \
-	network/sdp2.h \
-	network/sdp_session_descr.c \
+	network/sdp2.c network/sdp2.h \
 	\
+	bufferqueue.c bufferqueue.h \
 	client_events.h client_events.c \
 	eventloop.c eventloop.h \
 	fnc_log.c \
 	is_valid_multicast_address.c \
 	main.c \
-	schedule.c \
 	\
 	$(BUILT_SOURCES)
 
@@ -46,7 +46,7 @@ feng_LDADD = \
 		mediathread/libmediath.a \
 		conf/liblight.a
 
-INCLUDES = -I$(feniceincludedir) -I..
+INCLUDES = -I$(feniceincludedir) -I.. -I$(srcdir)/nework
 
 if HAVE_RAGEL
 

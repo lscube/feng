@@ -22,11 +22,33 @@
 /**
  * @file
  *
- * @brief Shared definitions between rtsp_method_setup.h and
- *        ragel_range.rl state machine.
+ * @brief Shared definitions between Ragel parsers and their users
  */
 
+#ifndef FENG_RAGEL_PARSERS_H
+#define FENG_RAGEL_PARSERS_H
+
 #include <network/rtsp.h>
+
+/**
+ * @defgroup ragel Ragel parsing
+ * @ingroup RTSP
+ *
+ * @brief Functions and data structure for parsing of RTSP protocol.
+ *
+ * This group enlists all the shared data structure between the
+ * parsers written using Ragel (http://www.complang.org/ragel/) and
+ * the users of those parsers, usually the method handlers (see @ref
+ * rtsp_methods).
+ *
+ * @{
+ */
+
+/**
+ * @defgroup ragel_transport Transport: header parsing
+ *
+ * @{
+ */
 
 /**
  * @brief Structure filled by the ragel parser of the transport header.
@@ -57,6 +79,53 @@ struct ParsedTransport {
     } parameters;
 };
 
-gboolean check_parsed_transport(RTSP_buffer *rtsp, RTP_transport *rtp_t,
+gboolean check_parsed_transport(RTSP_Client *rtsp, RTP_transport *rtp_t,
                                 struct ParsedTransport *transport);
 
+
+gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
+                                      RTP_transport *rtp_t,
+                                      const char *header);
+/**
+ *@}
+ */
+
+/**
+ * @defgroup ragel_range Range: header parsing
+ *
+ * @{
+ */
+
+/**
+ * @brief Structure filled by the parser of the Range header.
+ *
+ * This structure contains the software-accessible range data as
+ * parsed by the ragel state machine from the RTSP Range header as
+ * specified by RFC 2326 Section 12.29.
+ *
+ * @internal
+ */
+typedef struct {
+    /** Seconds into the stream to start the playback at */
+    double begin_time;
+
+    /** Seconds into the stream to stop the playback at */
+    double end_time;
+
+    /** Real-time timestamp when to start the playback */
+    double playback_time;
+} ParsedRange;
+
+gboolean ragel_parse_range_header(const char *header,
+                                  ParsedRange *range);
+
+/**
+ *@}
+ */
+
+
+/**
+ *@}
+ */
+
+#endif

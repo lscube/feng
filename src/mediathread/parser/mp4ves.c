@@ -90,20 +90,14 @@ static int mp4ves_parse(void *track, uint8_t *data, long len, uint8_t *extradata
 #endif
 
     if (mtu >= len) {
-        if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, 1,
-                              data, len)) {
-                fnc_log(FNC_LOG_ERR, "Cannot write feng");
-                return ERR_ALLOC;
-        }
+        mparser_buffer_write(tr, 1,
+                        data, len);
         fnc_log(FNC_LOG_VERBOSE, "[mp4v] no frags");
     } else {
         do {
             offset = len - rem;
-            if (bp_write(tr->buffer, 0, tr->properties->mtime, 0, (rem <= mtu),
-                                  data + offset, min(rem, mtu))) {
-                fnc_log(FNC_LOG_ERR, "Cannot write feng");
-                return ERR_ALLOC;
-            }
+            mparser_buffer_write(tr, (rem <= mtu),
+                            data + offset, min(rem, mtu));
             rem -= mtu;
             fnc_log(FNC_LOG_VERBOSE, "[mp4v] frags");
         } while (rem >= 0);

@@ -22,9 +22,11 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <fenice/server.h>
 #include "demuxer.h"
+#include "description.h"
 #include <fenice/utils.h>
 #include <fenice/fnc_log.h>
 
@@ -33,31 +35,61 @@ extern Demuxer fnc_demuxer_sd;
 extern Demuxer fnc_demuxer_ds;
 extern Demuxer fnc_demuxer_avf;
 
-// static array containing all the available demuxers:
-static Demuxer *demuxers[] = {
+/**
+ * @brief Array of available built-in demuxers
+ */
+static Demuxer *const demuxers[] = {
     &fnc_demuxer_sd,
     &fnc_demuxer_ds,
     &fnc_demuxer_avf,
     NULL
 };
 
-/*! @brief The resource description cache.
- * This list holds the cache of resource descriptions. This way the mediathread
- * can provide the description buffer without opening the resource every time.
- * This will result in a better performance for RTSP DESCRIBE metod response.
- * Descriptions are ordered for access time, so that the last is the less
- * recently addressed media description and will be chosen for removal if cache
- * reaches the limit.
- * */
-static GList *descr_cache=NULL;
+/**
+ * @brief The resource description cache.
+ *
+ * This list holds the cache of resource descriptions. This way the
+ * mediathread can provide the description buffer without opening the
+ * resource every time.  This will result in a better performance for
+ * RTSP DESCRIBE metod response.  Descriptions are ordered for access
+ * time, so that the last is the less recently addressed media
+ * description and will be chosen for removal if cache reaches the
+ * limit.
+ */
+static GList *descr_cache;
+
 //! cache size of descriptions (maybe we need to take it from fenice configuration file?)
 #define MAX_DESCR_CACHE_SIZE 10
 
-/*! Private functions for exclusive tracks.
- * */
-#define r_descr_find(mrl) g_list_find_custom(descr_cache, mrl, cache_cmp)
+/**
+ * @brief Comparison function used to compare a ResourceDescr to a MRL
+ *
+ * @param a ResourceDescr pointer of the element in the list
+ * @param b String with the MRL to compare to
+ *
+ * @return The strcmp() result between the correspondent ResourceInfo
+ *         MRL and the given MRL.
+ *
+ * @internal This function should _only_ be used by @ref r_descr_find.
+ */
+static gint r_descr_find_cmp_mrl(gconstpointer a, gconstpointer b)
+{
+    return strcmp( ((ResourceDescr *)a)->info->mrl, (const char *)b );
+}
 
-static int r_changed(ResourceDescr *descr);
+/**
+ * @brief Find a given ResourceDecr in the cache, from its MRL
+ *
+ * @param mrl The MRL to look for
+ *
+ * @return A GList pointer to the requested resource description.
+ *
+ * @see r_descr_find_cmp_mrl
+ */
+static GList *r_descr_find(const char *mrl)
+{
+    return g_list_find_custom(descr_cache, mrl, r_descr_find_cmp_mrl);
+}
 
 // private functions for specific demuxer
 
@@ -123,58 +155,106 @@ static int find_demuxer(InputStream *i_stream)
     return found ? i: -1;
 }
 
-// --- Description Cache management --- //
-static gint cache_cmp(gconstpointer a, gconstpointer b)
+/**
+ * @brief Create new media descriptions
+ *
+ * @param element The track to create a media description for
+ * @param user_data The new resource descriptions to add the
+ *                  descriptions to
+ *
+ * @internal This function should only be called through
+ *           g_list_foreach().
+ */
+static void r_descr_new_mdescr(gpointer element, gpointer user_data)
 {
-    return strcmp( ((ResourceDescr *)a)->info->mrl, (const char *)b );
+    ResourceDescr *new_descr = (ResourceDescr *)user_data;
+    Track *track = (Track*)element;
+
+    MediaDescr *new_mdescr = g_new(MediaDescr, 1);
+    new_mdescr->info = track->info;
+    MObject_ref(track->info);
+    new_mdescr->properties = track->properties;
+    MObject_ref(track->properties);
+    new_mdescr->last_change = mrl_mtime(track->info->mrl);
+    new_descr->media = g_list_append(new_descr->media, new_mdescr);
 }
 
 static ResourceDescr *r_descr_new(Resource *r)
 {
-    ResourceDescr *new_descr;
-    MediaDescr *new_mdescr;
-    GList *tracks;
-
-    new_descr=g_new(ResourceDescr, 1);
+    ResourceDescr *new_descr = g_new(ResourceDescr, 1);
     new_descr->media = NULL;
 
     new_descr->info=r->info;
     MObject_ref(r->info);
     new_descr->last_change=mrl_mtime(r->info->mrl);
 
-    for (tracks=g_list_first(r->tracks); tracks; tracks=g_list_next(tracks)) {
-        new_mdescr = g_new(MediaDescr, 1);
-        new_mdescr->info = TRACK(tracks)->info;
-        MObject_ref(TRACK(tracks)->info);
-        new_mdescr->properties = TRACK(tracks)->properties;
-        MObject_ref(TRACK(tracks)->properties);
-        new_mdescr->last_change = mrl_mtime(TRACK(tracks)->info->mrl);
-        new_descr->media = g_list_prepend(new_descr->media, new_mdescr);
-    }
-    // put the Media description in the same order of tracks.
-    new_descr->media=g_list_reverse(new_descr->media);
+    g_list_foreach(r->tracks, r_descr_new_mdescr, new_descr);
 
     return new_descr;
 }
 
+/**
+ * @brief Unreference a list of media descriptions
+ *
+ * @param element The media description to unreference
+ * @param user_data Unused
+ *
+ * @internal This function should only be called through
+ *           g_list_foreach().
+ */
+static void r_descr_free_media(gpointer element, gpointer user_data)
+{
+    MediaDescr *m_descr = (MediaDescr *)element;
+
+    MObject_unref( MOBJECT(m_descr->info) );
+    MObject_unref( MOBJECT(m_descr->properties) );
+}
+
 static void r_descr_free(ResourceDescr *descr)
 {
-    GList *m_descr;
-
     if (!descr)
         return;
 
-    for (m_descr=g_list_first(descr->media);
-         m_descr;
-         m_descr=g_list_next(m_descr) )
-    {
-        MObject_unref( MOBJECT(MEDIA_DESCR(m_descr)->info) );
-        MObject_unref( MOBJECT(MEDIA_DESCR(m_descr)->properties) );
-    }
+    g_list_foreach(descr->media, r_descr_free_media, NULL);
     g_list_free(descr->media);
 
     MObject_unref( MOBJECT(descr->info) );
     g_free(descr);
+}
+
+/**
+ * @brief Check if a given resource has changed on disk
+ *
+ * @param descr The description of the resource to change
+ *
+ * @retval true The resource has changed on disk since last time
+ * @retval false The resource hasn't changed on disk
+ *
+ * @see ResourceDescr::last_change
+ */
+static gboolean r_changed(ResourceDescr *descr)
+{
+    GList *m_descr_it;
+
+    if ( mrl_changed(descr->info->mrl, &descr->last_change) )
+        return true;
+
+    for (m_descr_it = g_list_first(descr->media);
+         m_descr_it;
+         m_descr_it = g_list_next(m_descr_it) )
+    {
+        MediaDescr *m_descr = (MediaDescr *)m_descr_it->data;
+
+        /* Why is it possible that this hits? No clue! */
+        if (m_descr->info->mrl == NULL)
+            break;
+
+        if (mrl_changed(m_descr->info->mrl,
+                        &(m_descr->last_change)))
+            return true;
+    }
+
+    return false;
 }
 
 static void r_descr_cache_update(Resource *r)
@@ -183,7 +263,7 @@ static void r_descr_cache_update(Resource *r)
     ResourceDescr *r_descr=NULL;
 
     if ( ( cache_el = r_descr_find(r->info->mrl) ) ) {
-        r_descr = RESOURCE_DESCR(cache_el);
+        r_descr = cache_el->data;
         // TODO free ResourceDescr
         descr_cache = g_list_remove_link(descr_cache, cache_el);
         if (r_changed(r_descr)) {
@@ -198,7 +278,7 @@ static void r_descr_cache_update(Resource *r)
 
     if (g_list_length(descr_cache)>MAX_DESCR_CACHE_SIZE) {
         cache_el = g_list_last(descr_cache);
-        r_descr_free(RESOURCE_DESCR(cache_el));
+        r_descr_free(cache_el->data);
         descr_cache = g_list_delete_link(descr_cache, cache_el);
     }
 }
@@ -227,10 +307,8 @@ static void free_sdp_field(sdp_field *sdp, void *unused)
 {
     if (!sdp)
         return;
-    if (sdp->field)
-    {
-        g_free(sdp->field);
-    }
+
+    g_free(sdp->field);
     g_free(sdp);
 }
 
@@ -240,8 +318,8 @@ static void properties_free(void *properties)
 
     if (!props)
         return;
-    if (props->sdp_private)
-        g_list_foreach(props->sdp_private, (GFunc)free_sdp_field, NULL);
+
+    g_list_foreach(props->sdp_private, (GFunc)free_sdp_field, NULL);
 
     g_free(props);
 }
@@ -271,6 +349,7 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 // allocation of all data structures
 
     r = g_new0(Resource, 1);
+    r->lock = g_mutex_new();
 
 // we use MObject_new: that will alloc memory and exits the program
 // if something goes wrong
@@ -290,108 +369,140 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 
     r_descr_cache_update(r);
 
+#ifdef HAVE_METADATA
+    cpd_find_request(srv, r, filename);
+#endif
+
     return r;
 }
 
-static void free_track(Track *t, Resource *r)
+/**
+ * @brief Frees the resources of a Track object
+ *
+ * @param element Track to free
+ * @param user_data Unused, for compatibility with g_list_foreach().
+ */
+static void free_track(gpointer element, gpointer user_data)
 {
-    if (!t)
+    Track *track = (Track*)element;
+
+    if (!track)
         return;
 
-    MObject_unref(MOBJECT(t->info));
-    MObject_unref(MOBJECT(t->properties));
-    mparser_unreg(t->parser, t->private_data);
+    MObject_unref(MOBJECT(track->info));
+    MObject_unref(MOBJECT(track->properties));
+    mparser_unreg(track->parser, track->private_data);
 
-    if (t->buffer)
-        bp_free(t->buffer);
+    bq_producer_stop(track->producer);
 
-    istream_close(t->i_stream);
+    istream_close(track->i_stream);
 
-    r->tracks = g_list_remove(r->tracks, t);
-    g_free(t);
-    r->num_tracks--;
+    g_free(track);
 }
 
 void r_close(Resource *r)
 {
-    if(r) {
-        istream_close(r->i_stream);
-        MObject_unref(MOBJECT(r->info));
-        r->info = NULL;
-        r->demuxer->uninit(r);
+    if (!r)
+        return;
 
-        if(r->tracks)
-            g_list_foreach(r->tracks, (GFunc)free_track, r);
+    g_mutex_free(r->lock);
+    istream_close(r->i_stream);
+    MObject_unref(MOBJECT(r->info));
+    r->info = NULL;
+    r->demuxer->uninit(r);
 
-        g_free(r);
-    }
+    g_list_foreach(r->tracks, free_track, NULL);
+    g_list_free(r->tracks);
+
+    g_free(r);
 }
 
-Selector *r_open_tracks(Resource *r, const char *track_name) // RTSP_setup.c uses it !!
+/**
+ * @brief Comparison function to compare a Track to a name
+ *
+ * @param a Track pointer to the element in the list
+ * @param b String with the name to compare to
+ *
+ * @return The strcmp() result between the correspondent Track name
+ *         and the given name.
+ *
+ * @internal This function should _only_ be used by @ref r_find_track.
+ */
+static gint r_find_track_cmp_name(gconstpointer a, gconstpointer b)
 {
-    Selector *s;
-    //Track *tracks[MAX_SEL_TRACKS];
-    GList *track, *sel_tracks=NULL;
+    return strcmp( ((Track *)a)->info->name, (const char *)b);
+}
 
-    /*Capabilities aren't used yet. TODO*/
+/**
+ * @brief Find the given track name in the resource
+ *
+ * @param resource The Resource object to look into
+ * @param track_name The name of the track to look for
+ *
+ * @return A pointer to the Track object for the requested track.
+ *
+ * @retval NULL No track in the resource corresponded to the given
+ *              parameters.
+ *
+ * @todo This only returns the first resource corresponding to the
+ *       parameters.
+ * @todo Capabilities aren't used yet.
+ */
+Track *r_find_track(Resource *resource, const char *track_name) {
+    GList *track = g_list_find_custom(resource->tracks,
+                                      track_name,
+                                      r_find_track_cmp_name);
 
-    for (track=g_list_first(r->tracks); track; track=g_list_next(track))
-        if( !strcmp(TRACK(track)->info->name, track_name) ){
-            sel_tracks = g_list_prepend(sel_tracks, TRACK(track));
-        }
-    if (!sel_tracks)
+    if ( !track ) {
+        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
+                track_name, resource->info->mrl);
         return NULL;
-
-    if((s=g_new(Selector, 1))==NULL) {
-        fnc_log(FNC_LOG_FATAL,"Memory allocation problems.\n");
-        return NULL;
-    }
-
-    s->tracks = sel_tracks;
-    s->total = g_list_length(sel_tracks);
-    s->default_index = 0;/*TODO*/
-    s->selected_index = 0;/*TODO*/
-    //...
-    return s;
-}
-
-inline Track *r_selected_track(Selector *selector) // UNUSED
-{
-    if (!selector)
-        return NULL;
-
-    return g_list_nth_data(selector->tracks, selector->selected_index);
-}
-
-void r_close_tracks(Selector *s) // UNUSED
-{
-    g_free(s);
-}
-
-static int r_changed(ResourceDescr *descr)
-{
-    GList *m_descr = g_list_first(descr->media);
-
-    if ( mrl_changed(descr->info->mrl, &descr->last_change) )
-        return 1;
-
-    for (/* m_descr=descr->media */;
-         m_descr && MEDIA_DESCR(m_descr)->info->mrl;
-         m_descr=g_list_next(m_descr))
-    {
-        if (mrl_changed(MEDIA_DESCR(m_descr)->info->mrl,
-                        &(MEDIA_DESCR(m_descr)->last_change)))
-            return 1;
     }
 
-    return 0;
+    return track->data;
+}
+
+/**
+ * @brief Resets the BufferQueue producer queue for a given track
+ *
+ * @param element The Track element from the list
+ * @param user_data Unused, for compatibility with g_list_foreach().
+ *
+ * @see bq_producer_reset_queue
+ */
+static void r_track_producer_reset_queue(gpointer element, gpointer user_data) {
+    Track *t = (Track*)element;
+
+    bq_producer_reset_queue(t->producer);
+}
+
+/**
+ * @brief Seek a resource to a given time in stream
+ *
+ * @param resource The Resource to seek
+ * @param time The time in seconds within the stream to seek to
+ *
+ * @return The value returned by @ref Demuxer::seek
+ *
+ * @note This function will lock the @ref Resource::lock mutex.
+ */
+int r_seek(Resource *resource, double time) {
+    int res;
+
+    g_mutex_lock(resource->lock);
+    res = resource->demuxer->seek(resource, time);
+
+    g_list_foreach(resource->tracks, r_track_producer_reset_queue, NULL);
+
+    g_mutex_unlock(resource->lock);
+
+    return res;
 }
 
 #define ADD_TRACK_ERROR(level, ...) \
     { \
         fnc_log(level, __VA_ARGS__); \
-        free_track(t, r); \
-        return NULL; \
+        goto error; \
     }
 
 /*! Add track to resource tree.  This function adds a new track data struct to
@@ -429,7 +540,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 
     switch (t->properties->media_source) {
     case MS_stored:
-        if( !(t->buffer = bp_new(BPBUFFER_DEFAULT_DIM)) )
+        if( !(t->producer = bq_producer_new(g_free)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
         if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
             ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
@@ -458,10 +569,14 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     r->num_tracks++;
 
     return t;
+
+ error:
+    free_track(t, NULL);
+    return NULL;
 }
 #undef ADD_TRACK_ERROR
 
-ResourceDescr *r_descr_get(struct feng *srv, char *inner_path)
+ResourceDescr *r_descr_get(struct feng *srv, const char *inner_path)
 {
     GList *cache_el;
     gchar *mrl = g_strjoin ("/",
@@ -479,5 +594,69 @@ ResourceDescr *r_descr_get(struct feng *srv, char *inner_path)
 
     g_free(mrl);
 
-    return RESOURCE_DESCR(cache_el);
+    return cache_el->data;
+}
+
+/**
+ * @brief Iteration function to find all the media of a given type
+ *        with the given name.
+ *
+ * @param element The current media_description to test
+ * @param user_data The array of lists
+ *
+ * @internal This function should only be called by g_list_foreach().
+ */
+static void r_descr_find_media(gpointer element, gpointer user_data) {
+    MediaDescr *m_descr = (MediaDescr *)element;
+    MediaDescrListArray new_m_descrs = (MediaDescrListArray)user_data;
+
+    gboolean found = 0;
+    guint i;
+
+    for (i = 0; i < new_m_descrs->len; ++i) {
+        MediaDescrList m_descr_list_it = g_ptr_array_index(new_m_descrs, i);
+        MediaDescr *m_descr_list = (MediaDescr *)m_descr_list_it->data;
+
+        if ( m_descr_list == NULL )
+            continue;
+
+        if ( (m_descr_type(m_descr) ==
+              m_descr_type(m_descr_list)) &&
+             !strcmp(m_descr_name(m_descr),
+                     m_descr_name(m_descr_list)) ) {
+            found = true;
+            break;
+        }
+    }
+
+    if (found) {
+        MediaDescrList found_list = g_ptr_array_index(new_m_descrs, i);
+        found_list = g_list_append(found_list, m_descr);
+        new_m_descrs->pdata[i] = found_list;
+    } else {
+        MediaDescrList new_list = g_list_append(NULL, m_descr);
+        g_ptr_array_add(new_m_descrs, new_list);
+    }
+}
+
+/**
+ * @brief Creates an array of MediaDescrList containing media
+ *        descriptions.
+ *
+ * @return An array, each element of which is a MediaDescrList
+ *         containing all the media of the same type with the same
+ *         name. All the elements in each list can be included
+ *         together in the sdp description, in a single 'm=' block.
+ *
+ * @param r_descr Resource description containing all the media.
+ */
+MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
+{
+    MediaDescrListArray new_m_descrs =
+        g_ptr_array_sized_new(g_list_position(r_descr->media,
+                                              g_list_last(r_descr->media))+1);
+
+    g_list_foreach(r_descr->media, r_descr_find_media, new_m_descrs);
+
+    return new_m_descrs;
 }

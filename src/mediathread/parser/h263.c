@@ -104,11 +104,9 @@ static int h263_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             memset(header, 0, 2);
             header_len = 2;
         }
-        if (bp_write(tr->buffer, 0, tr->properties->mtime, 0,
-            cur + payload >= len, dst, payload + header_len)) {
-            fnc_log(FNC_LOG_ERR, "Cannot write feng");
-            return ERR_ALLOC;
-        }
+        mparser_buffer_write(tr,
+                        cur + payload >= len, dst,
+                        payload + header_len);
         cur += payload;
     }
 

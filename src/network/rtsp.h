@@ -20,16 +20,6 @@
  *
  * */
 
-/**
- * @addtogroup RTSP
- * @{
- */
-
-/**
- * @file
- * @brief feng-wide RTSP definitions
- */
-
 #ifndef FN_RTSP_H
 #define FN_RTSP_H
 
@@ -45,12 +35,15 @@
 #include "rtp.h"
 #include "rtcp.h"
 #include "sdp2.h"
-#include <fenice/schedule.h>
 
-#ifdef HAVE_LIBSCTP
+#ifdef HAVE_SCTP
 #include <netinet/sctp.h>
-#define MAX_SCTP_STREAMS 15
 #endif
+
+/**
+ * @addtogroup RTSP
+ * @{
+ */
 
 #define RTSP_RESERVED 4096
 #define RTSP_BUFFERSIZE (65536 + RTSP_RESERVED)
@@ -72,12 +65,6 @@ typedef enum {
 } RTSP_Server_State;
 
 #define RTSP_EL "\r\n"
-#define RTSP_RTP_AVP "RTP/AVP"
-
-typedef struct RTSP_interleaved {
-    Sock *local;
-    int channel;
-} RTSP_interleaved;
 
 typedef struct RTSP_session {
     char *session_id;
@@ -89,26 +76,38 @@ typedef struct RTSP_session {
     feng *srv;
 } RTSP_session;
 
-typedef struct RTSP_buffer {
+typedef struct RTSP_Client {
     Sock *sock;
-    //unsigned int port;
-    // Buffers
-    char in_buffer[RTSP_BUFFERSIZE];
-    size_t in_size;
-    GAsyncQueue *out_queue;
-    GSList *interleaved;
-    GSList *ev_io;
 
-    ev_io *ev_io_read;
-    ev_io *ev_io_write;
+    /**
+     * @brief Input buffer
+     *
+     * This is the input buffer as read straight from the sock socket;
+     * GByteArray allows for automatic sizing of the array.
+     */
+    GByteArray *input;
+
+    GAsyncQueue *out_queue;
+
     // Run-Time
     RTSP_session *session;
     feng *srv;
 
+    /**
+     * @brief Interleaved setup data
+     *
+     * Singly-linked list of @ref RTSP_interleaved instances, one per
+     * RTP session linked to the RTSP session.
+     */
+    GSList *interleaved;
+
     //Events
     ev_async *ev_sig_disconnect;
     ev_timer *ev_timeout;
-} RTSP_buffer;
+
+    ev_io ev_io_read;
+    ev_io ev_io_write;
+} RTSP_Client;
 
 /**
  * @brief RTSP method tokens
@@ -132,29 +131,66 @@ enum RTSP_method_token {
 };
 
 /**
- * @brief Structure representing a request coming from the client.
+ * @brief Structure representing an incoming request
+ *
+ * This structure is used to access all the data related to a request
+ * message. Since it also embeds the client, it's everything the
+ * server needs to send a response for the request.
  */
 typedef struct {
-    RTSP_buffer *client; //!< The client the request comes from
+    /** The client the request comes from */
+    RTSP_Client *client;
 
-    char *method; //!< String of the method (used for logging, mostly)
-    enum RTSP_method_token method_id; //!< ID of the method (for the state machine)
+    /**
+     * @brief String representing the method used
+     *
+     * Mostly used for logging purposes.
+     */
+    char *method;
+    /**
+     * @brief Machine-readable ID of the method
+     *
+     * Used by the state machine to choose the callback method.
+     */
+    enum RTSP_method_token method_id;
 
-    char *object; //!< Object of the request (URL or *)
+    /**
+     * @brief Object of the request
+     *
+     * Represents the object to work on, usually the URL for the
+     * request (either a resource URL or a track URL). It can be "*"
+     * for methods like OPTIONS.
+     */
+    char *object;
 
     /**
      * @brief Protocol version used
      *
      * This can only be RTSP/1.0 right now. We log it here for access.log and to
      * remove more logic from the parser itself.
+     *
+     * @todo This could be HTTP/1.0 or 1.1 when requests come from
+     *       QuickTime's proxy-passthrough. Currently that is not the
+     *       case though.
      */
     char *version;
 
-    /** All the headers we don't parse specifically */
+    /**
+     * @brief All the headers of the request, unparsed.
+     *
+     * This hash table contains all the headers of the request, in
+     * unparsed string form; they can used for debugging purposes or
+     * simply to access the original value of an header for
+     * pass-through copy.
+     */
     GHashTable *headers;
 } RTSP_Request;
 
-int RTSP_handler(RTSP_buffer * rtsp);
+int RTSP_handler(RTSP_Client * rtsp);
+
+/**
+ * @}
+ */
 
 /**
  * @brief Structure respresenting a response sent to the client
@@ -166,7 +202,7 @@ typedef struct {
      *
      * Used to be able to send the response faster
      */
-    RTSP_buffer *client;
+    RTSP_Client *client;
 
     /**
      * @brief Reference to the original request
@@ -216,31 +252,24 @@ static inline void rtsp_quick_response(RTSP_Request *req, RTSP_ResponseCode code
 gboolean rtsp_check_invalid_state(const RTSP_Request *req,
                                   RTSP_Server_State invalid_state);
 
-/**
- * RTSP low level functions, they handle message specific parsing and
- * communication.
- *
- * @defgroup rtsp_low RTSP low level functions
- * @{
- */
-
-ssize_t rtsp_send(RTSP_buffer * rtsp);
+void rtsp_write_cb(struct ev_loop *, ev_io *, int);
+void rtsp_read_cb(struct ev_loop *, ev_io *, int);
 
 gboolean rtsp_request_get_url(RTSP_Request *req, Url *url);
+char *rtsp_request_get_path(RTSP_Request *req);
+gboolean rtsp_request_check_url(RTSP_Request *req);
 
-void rtsp_bwrite(const RTSP_buffer *rtsp, GString *buffer);
+void rtsp_bwrite(const RTSP_Client *rtsp, GString *buffer);
 
-RTSP_buffer *rtsp_client_new(feng *srv, Sock *client_sock);
-void rtsp_client_destroy(RTSP_buffer *rtsp);
+RTSP_Client *rtsp_client_new(feng *srv, Sock *client_sock);
+void rtsp_client_destroy(RTSP_Client *rtsp);
 
-RTSP_session *rtsp_session_new(RTSP_buffer *rtsp);
+RTSP_session *rtsp_session_new(RTSP_Client *rtsp);
 void rtsp_session_free(RTSP_session *session);
 
-/**
- * @}
- */
+gboolean interleaved_setup_transport(RTSP_Client *, RTP_transport *,
+                                     int, int);
+void interleaved_rtcp_send(RTSP_Client *, int, void *, size_t);
+void interleaved_free_list(RTSP_Client *);
 
-/**
- * @}
- */
 #endif // FN_RTSP_H
