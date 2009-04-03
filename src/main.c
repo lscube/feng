@@ -44,6 +44,7 @@
 #include "fnc_log.h"
 #include "eventloop.h"
 #include "mediathread/mediathread.h"
+#include "network/rtp.h"
 #include <glib.h>
 #include <getopt.h>
 
