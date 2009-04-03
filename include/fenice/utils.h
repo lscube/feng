@@ -33,14 +33,6 @@
 #include <math.h>
 #include <string.h>
 
-//XXX should me moved somewhere else
-#ifdef WIN32
-#define open(a, b)   _open(a, b)
-#define read(a,b,c)  _read(a,b,c)
-#define lseek(a,b,c) _lseek(a,b,c)
-#define close(a)     _close(a)
-#endif
-
 /*! autodescriptive error values */
 #define ERR_NOERROR              0
 #define ERR_GENERIC             -1
