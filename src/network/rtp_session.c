@@ -83,8 +83,6 @@ void rtp_session_free(gpointer arg, gpointer unused)
     RTP_session *session = arg;
     RTP_transport_close(session);
 
-    g_mutex_free(session->lock);
-
     /* Remove the consumer */
     bq_consumer_free(session->consumer);
 
@@ -119,8 +117,6 @@ static void rtp_session_resume(gpointer session_gen, gpointer start_time_gen) {
     feng *srv = session->srv;
     int i;
 
-    g_mutex_lock(session->lock);
-
     /* We want to make sure that the session is at least in pause,
      * otherwise something is funky */
     g_assert(session->pause);
@@ -136,8 +132,6 @@ static void rtp_session_resume(gpointer session_gen, gpointer start_time_gen) {
     /* Prefetch frames */
     for (i=0; i < srv->srvconf.buffered_frames; i++)
         event_buffer_low(session->track->parent);
-
-    g_mutex_unlock(session->lock);
 }
 
 /**
@@ -167,9 +161,7 @@ void rtp_session_gslist_resume(GSList *sessions_list, double start_time) {
 static void rtp_session_pause(gpointer session_gen, gpointer user_data) {
     RTP_session *session = (RTP_session *)session_gen;
 
-    g_mutex_lock(session->lock);
     session->pause = 1;
-    g_mutex_unlock(session->lock);
 }
 
 /**
@@ -204,13 +196,9 @@ static void rtp_session_seek(gpointer *session_gen, gpointer *seek_time_gen) {
     RTP_session *session = (RTP_session*)session_gen;
     double *seek_time = (double*)seek_time_gen;
 
-    g_mutex_lock(session->lock);
-
     session->seek_time = *seek_time;
     session->start_seq = 1 + session->seq_no;
     session->start_rtptime = g_random_int();
-
-    g_mutex_unlock(session->lock);
 }
 
 /**
@@ -249,18 +237,11 @@ static gboolean rtp_session_send_prereq(RTP_session *session) {
     /* We have this if here because we need to unlock the mutex if
      * we're not ready after locking it!
      */
-    if (session == NULL ||
-        !g_mutex_trylock(session->lock))
-        return false;
-
-    if ( session->pause &&
-         session->track->properties->media_source != MS_live
-         ) {
-        g_mutex_unlock(session->lock);
-        return false;
-    }
-
-    return true;
+    return ( session != NULL &&
+             ( !session->pause ||
+               session->track->properties->media_source == MS_live
+               )
+             );
 }
 
 /**
@@ -310,8 +291,6 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
     }
 
     RTCP_handler(session);
-
-    g_mutex_unlock(session->lock);
 }
 
 /**
@@ -333,9 +312,6 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
                              Track *tr) {
     feng *srv = rtsp->srv;
     RTP_session *rtp_s = g_slice_new0(RTP_session);
-
-    rtp_s->lock = g_mutex_new();
-    g_mutex_lock(rtp_s->lock);
 
     /* Make sure we start paused since we have to wait for parameters
      * given by @ref rtp_session_resume.

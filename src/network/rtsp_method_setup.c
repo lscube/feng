@@ -336,7 +336,6 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
     rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, path, req_track);
 
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
-    g_mutex_unlock(rtp_s->lock);
 
     if ( rtsp_s->cur_state == RTSP_SERVER_INIT )
         rtsp_s->cur_state = RTSP_SERVER_READY;

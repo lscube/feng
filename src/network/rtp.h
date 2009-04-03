@@ -82,14 +82,6 @@ typedef struct RTP_session {
     double send_time;
     double last_timestamp;
 
-    /**
-     * @brief Access lock to the session
-     *
-     * This is an important mutex that precludes uncoordinated access
-     * to a single session from multiple threads.
-     */
-    GMutex *lock;
-
     /** Resource name, including path from avroot */
     gchar *sd_filename;
 
