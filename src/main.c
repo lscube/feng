@@ -50,7 +50,7 @@
 #include <getopt.h>
 
 #ifdef HAVE_METADATA
-#include <metadata/cpd.h>
+#include "mediathread/metadata/cpd.h"
 #endif
 
 /**

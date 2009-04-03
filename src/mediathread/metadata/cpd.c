@@ -26,7 +26,7 @@
 
 #include <sys/select.h>
 #include "fnc_log.h"
-#include <metadata/cpd.h>
+#include "cpd.h"
 
 // it must be the last header to be included
 #include <mysql/mysql.h>

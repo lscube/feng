@@ -21,7 +21,7 @@ libmediath_a_SOURCES =	cache.c \
 			demuxer/demuxer_ds.c
 
 if FENG_CPD
-libmediath_a_SOURCES += metadata/cpd.c
+libmediath_a_SOURCES += metadata/cpd.c metadata/cpd.h
 endif
 
 if FENICE_FFMPEG

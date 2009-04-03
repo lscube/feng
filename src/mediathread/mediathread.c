@@ -30,7 +30,7 @@
 #include <time.h>
 
 #ifdef HAVE_METADATA
-#include <metadata/cpd.h>
+#include "metadata/cpd.h"
 #endif
 
 static GAsyncQueue *el_head;
