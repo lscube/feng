@@ -43,14 +43,20 @@
  * @param buffer Buffer of which calculate timestamp
  * @return RTP Timestamp (in local endianess)
  */
-static inline uint32_t RTP_calc_rtptime(RTP_session *session, int clock_rate, MParserBuffer *buffer) {
-    uint32_t calc_rtptime = (uint32_t)((buffer->timestamp - session->seek_time) * clock_rate);
-    return (session->start_rtptime + calc_rtptime);
+static inline uint32_t RTP_calc_rtptime(RTP_session *session,
+                                        int clock_rate,
+                                        MParserBuffer *buffer)
+{
+    uint32_t calc_rtptime =
+        (buffer->timestamp - session->seek_time) * clock_rate;
+    return session->start_rtptime + calc_rtptime;
 }
 
-static inline double calc_send_time(RTP_session *session, MParserBuffer *buffer) {
-    double last_timestamp = (session->last_timestamp - session->seek_time);
-    return (last_timestamp - session->send_time);
+static inline double calc_send_time(RTP_session *session,
+                                    MParserBuffer *buffer)
+{
+    double last_timestamp = session->last_timestamp - session->seek_time;
+    return last_timestamp - session->send_time;
 }
 
 typedef struct {
@@ -95,7 +101,8 @@ typedef struct {
  * @return The number of frames sent to the client.
  * @retval -1 Error during writing.
  */
-int rtp_packet_send(RTP_session *session, MParserBuffer *buffer) {
+int rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
+{
     const size_t packet_size = sizeof(RTP_packet) + buffer->data_size;
     RTP_packet *packet = g_malloc0(packet_size);
     Track *tr = session->track;
@@ -145,7 +152,8 @@ int rtp_packet_send(RTP_session *session, MParserBuffer *buffer) {
  * @param session the RTP session for which to close the transport
  * @return always 0
  */
-int RTP_transport_close(RTP_session * session) {
+int RTP_transport_close(RTP_session * session)
+{
     port_pair pair;
     pair.RTP = get_local_port(session->transport.rtp_sock);
     pair.RTCP = get_local_port(session->transport.rtcp_sock);

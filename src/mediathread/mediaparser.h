@@ -34,11 +34,21 @@ struct Track;
 #define MP_PKT_TOO_SMALL -101
 #define MP_NOT_FULL_FRAME -102
 
-typedef enum {MP_undef=-1, MP_audio, MP_video, MP_application, MP_data, MP_control} MediaType;
+typedef enum {
+    MP_undef = -1,
+    MP_audio,
+    MP_video,
+    MP_application,
+    MP_data,
+    MP_control
+} MediaType;
 
-typedef enum {MS_stored=0, MS_live} MediaSource;
+typedef enum {
+    MS_stored=0,
+    MS_live
+} MediaSource;
 
-MObject_def(MediaProperties_s)
+MObject_def(MediaProperties)
     int bit_rate; /*!< average if VBR or -1 is not useful*/
     int payload_type;
     unsigned int clock_rate;
@@ -120,9 +130,9 @@ void mparser_unreg(MediaParser *, void *);
  */
 typedef struct {
     double timestamp;   /*!< presentation time of packet */
-    uint8_t marker;
-    size_t data_size;
-    uint8_t data[];
+    uint8_t marker;     /*!< marker bit used to signal we are handling frags */
+    size_t data_size;   /*!< packet size */
+    uint8_t data[];     /*!< actual packet data */
 } MParserBuffer;
 
 void mparser_buffer_write(struct Track *tr, uint8_t marker,
