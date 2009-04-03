@@ -35,9 +35,10 @@
 #include <fenice/fnc_log.h>
 #include "sdp2.h"
 #include "mediathread/description.h"
-#include <fenice/multicast.h>
 #include <netembryo/wsocket.h>
 #include <netembryo/url.h>
+
+#define DEFAULT_TTL 32
 
 /**
  * @brief Simple pair for compound parameters in foreach functions
