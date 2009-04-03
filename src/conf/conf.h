@@ -95,7 +95,7 @@ typedef struct {
 */
 } server_config;
 
-typedef struct {
+typedef struct specific_config {
 	array *mimetypes;
 
 	/* virtual-servers */
