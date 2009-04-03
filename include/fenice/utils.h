@@ -54,8 +54,6 @@
 #define ERR_FATAL               -9
 #define ERR_CONNECTION_CLOSE    -10
 
-#define NTP_time(t) ((float)t + 2208988800U)
-
 /**
  * Returns the current time in seconds
  */
