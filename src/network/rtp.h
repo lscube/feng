@@ -102,27 +102,10 @@ typedef struct RTP_session {
     struct feng *srv;
     struct RTSP_Client *client;
 
-    RTP_transport transport;
+    uint32_t octet_count;
+    uint32_t pkt_count;
 
-    /**
-     * @brief RTP server statistics for RTCP
-     *
-     * This anonymous sub-structure contains the data needed to handle
-     * RTCP reports for the session.
-     */
-    struct {
-        unsigned int RR_received;
-        unsigned int SR_received;
-        unsigned long dest_SSRC;
-        unsigned int pkt_count;
-        unsigned int octet_count;
-        unsigned int pkt_lost;
-        unsigned char fract_lost;
-        unsigned int highest_seq_no;
-        unsigned int jitter;
-        unsigned int last_SR;
-        unsigned int delay_since_last_SR;
-    } server_stats;
+    RTP_transport transport;
 } RTP_session;
 
 /**
