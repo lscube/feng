@@ -35,6 +35,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <grp.h>
+#include <string.h>
 
 #include "conf/buffer.h"
 #include "conf/array.h"

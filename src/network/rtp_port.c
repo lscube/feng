@@ -26,6 +26,7 @@
  */
 
 #include "feng.h"
+#include "feng_utils.h"
 #include "rtp.h"
 
 static int start_port; //!< initial rtp port

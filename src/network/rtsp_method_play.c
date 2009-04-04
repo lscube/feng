@@ -33,6 +33,7 @@
 #include "feng.h"
 #include "rtsp.h"
 #include "ragel_parsers.h"
+#include "mediathread/demuxer.h"
 #include <math.h>
 #include <stdbool.h>
 #include <netembryo/url.h>

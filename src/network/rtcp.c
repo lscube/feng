@@ -26,6 +26,7 @@
 #include <stdbool.h>
 
 #include "rtcp.h"
+#include "mediathread/demuxer.h"
 
 #include "feng_utils.h"
 #include "fnc_log.h"

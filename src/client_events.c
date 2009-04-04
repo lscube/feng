@@ -24,6 +24,7 @@
 #include "network/rtsp.h"
 #include "client_events.h"
 #include "fnc_log.h"
+#include "mediathread/demuxer.h"
 
 #include <sys/time.h>
 #include <ev.h>

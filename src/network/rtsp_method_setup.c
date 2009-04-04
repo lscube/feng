@@ -37,6 +37,7 @@
 #include "ragel_parsers.h"
 #include "eventloop.h"
 #include "fnc_log.h"
+#include "mediathread/demuxer.h"
 
 /**
  * Splits the path of a requested media finding the trackname and the removing

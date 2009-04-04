@@ -85,7 +85,7 @@ typedef struct RTP_session {
     gchar *sd_filename;
 
     /** Pointer to the currently-selected track */
-    Track *track;
+    struct Track *track;
 
 #ifdef HAVE_METADATA
     void *metadata;

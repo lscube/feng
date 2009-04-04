@@ -37,6 +37,7 @@
 #include "sdp2.h"
 
 struct feng;
+struct Resource;
 
 /**
  * @addtogroup RTSP
@@ -70,7 +71,7 @@ typedef struct RTSP_session {
     int started;
     GSList *rtp_sessions; // Of type RTP_session
     // mediathread resource
-    Resource *resource;
+    struct Resource *resource;
     struct feng *srv;
 } RTSP_session;
 
