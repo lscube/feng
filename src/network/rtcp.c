@@ -286,7 +286,7 @@ static GByteArray *rtcp_pkt_sr_bye(RTP_session *session)
  * Since the two packets are sent with a single message, only one call
  * is needed.
  */
-gboolean rtcp_server_report(RTP_session *session, rtcp_pkt_type type)
+static gboolean rtcp_server_report(RTP_session *session, rtcp_pkt_type type)
 {
     GByteArray *outpkt;
     gboolean ret;
