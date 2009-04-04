@@ -20,25 +20,14 @@
  *
  * */
 
+#include <glib.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <stdbool.h>
-
-#include "rtcp.h"
-#include "mediathread/demuxer.h"
-
-#include "feng_utils.h"
-#include "fnc_log.h"
 #include <netinet/in.h>
 
-typedef enum {
-    SR = 200,
-    RR = 201,
-    SDES = 202,
-    BYE = 203,
-    APP = 204
-} rtcp_pkt_type;
+#include "rtp.h"
+#include "fnc_log.h"
+#include "mediathread/demuxer.h"
 
 typedef enum {
     CNAME = 1,
@@ -287,7 +276,7 @@ static GByteArray *rtcp_pkt_sr_bye(RTP_session *session)
  * Since the two packets are sent with a single message, only one call
  * is needed.
  */
-static gboolean rtcp_server_report(RTP_session *session, rtcp_pkt_type type)
+gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type)
 {
     GByteArray *outpkt;
     gboolean ret;
@@ -309,20 +298,4 @@ static gboolean rtcp_server_report(RTP_session *session, rtcp_pkt_type type)
 
     g_byte_array_free(outpkt, true);
     return ret;
-}
-
-void RTCP_handler(RTP_session * session)
-{
-    if (session->pkt_count % 29 == 1)
-        rtcp_server_report(session, SDES);
-}
-
-/**
- * @brief Send the disconnection sequence
- *
- * @param session The RTP session to disconnect
- */
-void RTCP_send_bye(RTP_session *session)
-{
-    rtcp_server_report(session, BYE);
 }

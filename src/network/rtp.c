@@ -27,7 +27,6 @@
 #include "feng.h"
 #include "rtp.h"
 #include "rtsp.h"
-#include "rtcp.h"
 #include "fnc_log.h"
 #include "mediathread/demuxer.h"
 #include "mediathread/mediathread.h"
@@ -393,7 +392,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
              * finishing packets and go away.
              */
             fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
-            RTCP_send_bye(session);
+            rtcp_send_sr(session, BYE);
             return;
         }
         return;
@@ -404,7 +403,8 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         mt_resource_read(session->track->parent);
     }
 
-    RTCP_handler(session);
+    if (session->pkt_count % 29 == 1)
+        rtcp_send_sr(session, SDES);
 }
 
 /**

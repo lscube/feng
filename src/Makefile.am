@@ -14,7 +14,7 @@ dist_feng_SOURCES = \
 	liberis/headers.h \
 	liberis/utils.c liberis/utils.h \
 	network/ragel_parsers.h \
-	network/rtcp.c network/rtcp.h \
+	network/rtcp.c \
 	network/rtp.c network/rtp.h \
 	network/rtp_port.c \
 	network/rtsp.h \

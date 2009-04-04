@@ -33,7 +33,6 @@
 #include <netembryo/rtsp.h>
 #include <netembryo/url.h>
 #include "rtp.h"
-#include "rtcp.h"
 #include "sdp2.h"
 
 struct feng;

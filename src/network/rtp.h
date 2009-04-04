@@ -41,7 +41,6 @@ struct RTSP_Client;
 struct RTSP_session;
 
 #define RTP_DEFAULT_PORT 5004
-#define RTCP_BUFFERSIZE    1024
 #define BUFFERED_FRAMES_DEFAULT 16
 
 typedef struct {
@@ -140,6 +139,25 @@ void rtp_session_gslist_pause(GSList *);
 void rtp_session_gslist_free(GSList *);
 
 void rtp_session_handle_sending(RTP_session *session);
+
+/**
+ * @}
+ */
+
+/**
+ * @defgroup rtcp RTCP Handling
+ * @{
+ */
+
+typedef enum {
+    SR = 200,
+    RR = 201,
+    SDES = 202,
+    BYE = 203,
+    APP = 204
+} rtcp_pkt_type;
+
+gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type);
 
 /**
  * @}
