@@ -30,41 +30,6 @@
 #include "rtcp.h"
 #include "fnc_log.h"
 
-/**
- * Read data from the socket linked to the session and put it inside
- * the session buffer. Libev callback
- * @param loop eventloop
- * @param w callback data
- * @param revents event type
- * @todo extend it
- */
-
-static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
-{
-    RTP_session * session = w->data;
-    Sock *s = session->transport.rtcp_sock;
-    struct sockaddr *sa_p = (struct sockaddr *)&(session->transport.last_stg);
-
-    if (!s)
-        return;
-
-    switch (s->socktype) {
-        case UDP:
-            session->rtcp.insize = Sock_read(s, session->rtcp.inbuffer,
-                     sizeof(session->rtcp.inbuffer),
-                     sa_p, 0);
-            break;
-        case LOCAL:
-            session->rtcp.insize = Sock_read(s, session->rtcp.inbuffer,
-                     sizeof(session->rtcp.inbuffer),
-                     NULL, 0);
-            break;
-        default:
-            session->rtcp.insize = -1;
-            break;
-    }
-}
-
 static ev_tstamp rtp_reschedule_cb(ev_periodic *w, ev_tstamp now)
 {
     RTP_session *sess = w->data;
@@ -335,11 +300,6 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
 #ifdef HAVE_METADATA
 	rtp_s->metadata = rtsp_s->resource->metadata;
 #endif
-
-    rtp_s->transport.rtcp_watcher.data = rtp_s;
-    ev_io_init(&rtp_s->transport.rtcp_watcher, rtcp_read_cb,
-               Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
-    ev_io_start(srv->loop, &rtp_s->transport.rtcp_watcher);
 
     rtp_s->transport.rtp_writer.data = rtp_s;
     ev_periodic_init(&rtp_s->transport.rtp_writer, rtp_write_cb,

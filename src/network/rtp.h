@@ -56,7 +56,6 @@ typedef struct RTP_transport {
     Sock *rtcp_sock;
     struct sockaddr_storage last_stg;
     int rtp_ch, rtcp_ch;
-    ev_io rtcp_watcher;
     ev_periodic rtp_writer;
 } RTP_transport;
 
@@ -106,29 +105,24 @@ typedef struct RTP_session {
     RTP_transport transport;
 
     /**
-     * @brief RTCP data for RTP sessions
+     * @brief RTP server statistics for RTCP
      *
      * This anonymous sub-structure contains the data needed to handle
-     * RTCP packets for the session.
+     * RTCP reports for the session.
      */
     struct {
-        size_t insize;
-        uint8_t inbuffer[RTCP_BUFFERSIZE];
-
-        struct {
-            unsigned int RR_received;
-            unsigned int SR_received;
-            unsigned long dest_SSRC;
-            unsigned int pkt_count;
-            unsigned int octet_count;
-            unsigned int pkt_lost;
-            unsigned char fract_lost;
-            unsigned int highest_seq_no;
-            unsigned int jitter;
-            unsigned int last_SR;
-            unsigned int delay_since_last_SR;
-        } server_stats;
-    } rtcp;
+        unsigned int RR_received;
+        unsigned int SR_received;
+        unsigned long dest_SSRC;
+        unsigned int pkt_count;
+        unsigned int octet_count;
+        unsigned int pkt_lost;
+        unsigned char fract_lost;
+        unsigned int highest_seq_no;
+        unsigned int jitter;
+        unsigned int last_SR;
+        unsigned int delay_since_last_SR;
+    } server_stats;
 } RTP_session;
 
 /**

@@ -138,8 +138,8 @@ int rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
                   tr->properties->frame_duration) + 1;
         session->send_time += calc_send_time(session, buffer);
         session->last_timestamp = buffer->timestamp;
-        session->rtcp.server_stats.pkt_count++;
-        session->rtcp.server_stats.octet_count += buffer->data_size;
+        session->server_stats.pkt_count++;
+        session->server_stats.octet_count += buffer->data_size;
 
         session->last_packet_send_time = time(NULL);
     }
@@ -159,7 +159,6 @@ int RTP_transport_close(RTP_session * session)
     pair.RTP = get_local_port(session->transport.rtp_sock);
     pair.RTCP = get_local_port(session->transport.rtcp_sock);
 
-    ev_io_stop(session->srv->loop, &session->transport.rtcp_watcher);
     ev_periodic_stop(session->srv->loop, &session->transport.rtp_writer);
 
     switch (session->transport.rtp_sock->socktype) {

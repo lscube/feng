@@ -181,8 +181,8 @@ static void rtcp_set_sr(RTP_session *session, RTCP_SR_Compound *outpkt)
                               session->track->properties->clock_rate)
               + session->start_rtptime);
 
-    outpkt->sr_pkt.pkt_count = htonl(session->rtcp.server_stats.pkt_count);
-    outpkt->sr_pkt.octet_count = htonl(session->rtcp.server_stats.octet_count);
+    outpkt->sr_pkt.pkt_count = htonl(session->server_stats.pkt_count);
+    outpkt->sr_pkt.octet_count = htonl(session->server_stats.octet_count);
 }
 
 /**
@@ -312,7 +312,7 @@ static gboolean rtcp_server_report(RTP_session *session, rtcp_pkt_type type)
 
 void RTCP_handler(RTP_session * session)
 {
-    if (session->rtcp.server_stats.pkt_count % 29 == 1)
+    if (session->server_stats.pkt_count % 29 == 1)
         rtcp_server_report(session, SDES);
 }
 
