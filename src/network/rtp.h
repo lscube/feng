@@ -148,18 +148,6 @@ void rtp_session_handle_sending(RTP_session *session);
  */
 
 /**
- * @defgroup rtp_transport Low-level functions for RTP transport
- * @{
- */
-
-int RTP_transport_close(RTP_session *);
-int rtp_packet_send(RTP_session *, MParserBuffer *);
-
-/**
- * @}
- */
-
-/**
  * @}
  */
 
