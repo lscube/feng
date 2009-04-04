@@ -29,7 +29,6 @@
 #define WARNING 1
 
 #include "network/rtp.h"
-#include "mediathread/mediathread.h"
 
 typedef struct {
     double Timestamp;

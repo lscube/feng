@@ -33,8 +33,6 @@
 
 #include <netembryo/wsocket.h>
 
-#include "mediathread/mediathread.h"
-
 #include "bufferqueue.h"
 
 struct feng;

@@ -30,6 +30,7 @@
 #include "rtcp.h"
 #include "fnc_log.h"
 #include "mediathread/demuxer.h"
+#include "mediathread/mediathread.h"
 
 static ev_tstamp rtp_reschedule_cb(ev_periodic *w, ev_tstamp now)
 {

@@ -40,6 +40,7 @@
 #include "feng.h"
 #include "sdp2.h"
 #include "rtsp.h"
+#include "mediathread/mediathread.h"
 
 /**
  * @defgroup rtsp_utils Utility functions
