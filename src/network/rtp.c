@@ -194,7 +194,7 @@ void rtp_session_gslist_pause(GSList *sessions_list) {
  *
  * @internal This function should only be called from g_slist_foreach.
  */
-static void rtp_session_seek(gpointer *session_gen, gpointer *seek_time_gen) {
+static void rtp_session_seek(gpointer session_gen, gpointer seek_time_gen) {
     RTP_session *session = (RTP_session*)session_gen;
     double *seek_time = (double*)seek_time_gen;
 
