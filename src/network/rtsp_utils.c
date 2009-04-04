@@ -296,7 +296,7 @@ gboolean rtsp_request_check_url(RTSP_Request *req) {
  * @note The buffer has to be considered destroyed after calling this function
  *       (the writing thread will take care of the actual destruction).
  */
-void rtsp_bwrite(const RTSP_Client *rtsp, GString *buffer)
+void rtsp_bwrite(RTSP_Client *rtsp, GString *buffer)
 {
     /* Copy the GString into a GByteArray; we can avoid copying the
        data since both are transparent structures with a g_malloc'd

@@ -258,7 +258,7 @@ gboolean rtsp_request_get_url(RTSP_Request *req, Url *url);
 char *rtsp_request_get_path(RTSP_Request *req);
 gboolean rtsp_request_check_url(RTSP_Request *req);
 
-void rtsp_bwrite(const RTSP_Client *rtsp, GString *buffer);
+void rtsp_bwrite(RTSP_Client *rtsp, GString *buffer);
 
 RTSP_Client *rtsp_client_new(struct feng *srv, Sock *client_sock);
 void rtsp_client_destroy(RTSP_Client *rtsp);
