@@ -20,39 +20,36 @@
  *
  * */
 
-#ifdef HAVE_CONFIG
-#include <config.h>
-#endif
+#include "config.h"
+
+#include <glib.h>
+#include <stdbool.h>
 
 #include "mediathread.h"
+#include "demuxer.h"
 #include "fnc_log.h"
-#include <time.h>
 
 #ifdef HAVE_METADATA
 #include "metadata/cpd.h"
 #endif
 
-static GAsyncQueue *el_head;
-static int stopped = 0;
-
-typedef void (*mt_callback)(Resource *);
-
-typedef struct {
-    mt_callback cb;
-    Resource *resource;
-} mt_event_item;
-
 /**
  * @brief Buffer low event
  *
- * @param r Resource to read data from
+ * @param resource Resource to read data from
+ * @param user_data Unused
  *
  * This function is used to re-fill the buffer for the resource that
  * it's given, to make sure that there is enough data to send to the
  * clients.
+ *
+ * @internal This function is used to initialise @ref
+ *           mt_resource_read_pool.
  */
-static void mt_cb_buffer_low(Resource *r)
+static void mt_cb_read(gpointer resource, gpointer user_data)
 {
+    Resource *r = (Resource*)resource;
+
     fnc_log(FNC_LOG_VERBOSE, "[MT] Filling buffer for resource %p", r);
 
     g_mutex_lock(r->lock);
@@ -75,87 +72,48 @@ static void mt_cb_buffer_low(Resource *r)
 }
 
 /**
- * @brief Shutdown event
+ * @brief Wrapper function to call r_close
  *
- * @param unused Never used, unimportant garbage
+ * @param resource The resource to close
+ * @param user_data Unused
  *
- * Stop the mediathread
+ * @internal This function is used to initialise @ref
+ *           mt_resource_close_pool.
  */
-static void mt_cb_shutdown(Resource *unused)
+static void mt_cb_close(gpointer resource, gpointer user_data)
 {
-    stopped =1;
+    r_close((Resource*)resource);
 }
 
-static void mt_add_event(mt_callback cb, Resource *r) {
-    mt_event_item *item = g_new0(mt_event_item, 1);
-
-    fnc_log(FNC_LOG_VERBOSE, "[MT] Created event: %#x", item);
-
-    item->cb = cb;
-    item->resource = r;
-
-    /* This is already referenced for this thread; mt_add_event() is
-     * called by the main eventloop, which is where the queue was
-     * created in the first place. */
-    g_async_queue_push(el_head, item);
-}
+GThreadPool *mt_resource_read_pool = NULL;
+GThreadPool *mt_resource_close_pool = NULL;
 
 /**
- * @brief MediaThread runner function
- *
- * This is the function that does most of the work for MediaThread, as
- * it waits for events and takes care of processing them properly.
- *
- * @see mt_init
- */
-static gpointer mediathread(gpointer arg) {
-    fnc_log(FNC_LOG_DEBUG, "[MT] Mediathread started");
-
-    g_async_queue_ref(el_head);
-
-    while(!stopped) {
-        //this replaces the previous nanosleep loop,
-        //as this will block until data is available
-        mt_event_item *evt = g_async_queue_pop (el_head);
-        if (evt) {
-            evt->cb(evt->resource);
-            g_free(evt);
-        }
-    }
-
-    return NULL;
-}
-
-/**
- * @brief Initialisation for the mediathread thread handling
- *
- * This function takes care of initialising MediaThread in its
- * entirety. It creates the @ref el_head queue and also creates the
- * actual mediathread.
- *
- * @note This function has to be called before any other mt_*
- *       function, but after threads have been initialised.
- *
- * @see mediathread
+ * @brief Initialises the thread pools.
  */
 void mt_init() {
-    g_assert(g_thread_supported());
+    mt_resource_read_pool = g_thread_pool_new(mt_cb_read,
+                                              NULL, -1, false, NULL);
+    mt_resource_close_pool = g_thread_pool_new(mt_cb_close,
+                                               NULL, -1, false, NULL);
+}
 
-    el_head = g_async_queue_new();
+/**
+ * @brief Frees the thread pools
+ */
+void mt_shutdown() {
+    g_thread_pool_free(mt_resource_read_pool, true, true);
+    g_thread_pool_free(mt_resource_close_pool, true, true);
+}
 
-    g_thread_create(mediathread, NULL, FALSE, NULL);
+void mt_resource_read(Resource *resource) {
+    g_thread_pool_push(mt_resource_read_pool,
+                       resource,
+                       NULL);
 }
 
 void mt_resource_close(Resource *resource) {
-    if (!resource)
-        return;
-    mt_add_event(r_close, resource);
-}
-
-void event_buffer_low(Resource *r) {
-    mt_add_event(mt_cb_buffer_low, r);
-}
-
-void mt_shutdown() {
-    mt_add_event(mt_cb_shutdown, NULL);
+    g_thread_pool_push(mt_resource_close_pool,
+                       resource,
+                       NULL);
 }

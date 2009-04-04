@@ -23,18 +23,12 @@
 #ifndef FN_MEDIA_THREAD_H
 #define FN_MEDIA_THREAD_H
 
-#define ENABLE_MEDIATHREAD 1
-
-#include <glib.h>
-
-#include "demuxer.h"
+struct Resource;
 
 void mt_init();
-
 void mt_shutdown();
-void event_buffer_low(Resource *);
-
-void mt_resource_close(Resource *);
+void mt_resource_read(struct Resource *resource);
+void mt_resource_close(struct Resource *resource);
 
 #endif // FN_MEDIA_THREAD_H
 

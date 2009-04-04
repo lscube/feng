@@ -134,7 +134,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer start_time_gen) {
 
     /* Prefetch frames */
     for (i=0; i < srv->srvconf.buffered_frames; i++)
-        event_buffer_low(session->track->parent);
+        mt_resource_read(session->track->parent);
 }
 
 /**
@@ -400,7 +400,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
 
     if (rtp_packet_send(session, buffer) <=
             session->srv->srvconf.buffered_frames) {
-        event_buffer_low(session->track->parent);
+        mt_resource_read(session->track->parent);
     }
 
     RTCP_handler(session);
