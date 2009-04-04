@@ -113,9 +113,7 @@ typedef struct RTP_session {
      */
     struct {
         size_t insize;
-        size_t outsize;
         uint8_t inbuffer[RTCP_BUFFERSIZE];
-        uint8_t outbuffer[RTCP_BUFFERSIZE];
 
         struct {
             unsigned int RR_received;
