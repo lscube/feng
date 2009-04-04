@@ -59,7 +59,7 @@ static int amr_init(MediaProperties *properties, void **private_data)
     else
     {
         sdp_private->field =  g_strdup_printf("octet-align=1; config=%s", config);
-        free(config);
+        g_free(config);
     }
 
     properties->sdp_private =
