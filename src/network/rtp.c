@@ -263,11 +263,9 @@ static inline uint32_t RTP_calc_rtptime(RTP_session *session,
     return session->start_rtptime + calc_rtptime;
 }
 
-static inline double calc_send_time(RTP_session *session,
-                                    MParserBuffer *buffer)
+static inline double calc_send_time(RTP_session *session)
 {
-    double last_timestamp = session->last_timestamp - session->seek_time;
-    return last_timestamp - session->send_time;
+    return session->last_timestamp - session->seek_time - session->send_time;
 }
 
 typedef struct {
@@ -346,7 +344,7 @@ static int rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
 
         frames = (fabs(session->last_timestamp - buffer->timestamp) /
                   tr->properties->frame_duration) + 1;
-        session->send_time += calc_send_time(session, buffer);
+        session->send_time += calc_send_time(session);
         session->last_timestamp = buffer->timestamp;
         session->pkt_count++;
         session->octet_count += buffer->data_size;
