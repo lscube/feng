@@ -135,11 +135,11 @@ int RTP_release_port_pair(struct feng *srv, port_pair * pair);
 RTP_session *rtp_session_new(struct RTSP_Client *, struct RTSP_session *,
                              RTP_transport *, const char *,
                              struct Track *);
-void rtp_session_free(gpointer arg, gpointer unused);
 
 void rtp_session_gslist_resume(GSList *, double);
 void rtp_session_gslist_seek(GSList *, double);
 void rtp_session_gslist_pause(GSList *);
+void rtp_session_gslist_free(GSList *);
 
 void rtp_session_handle_sending(RTP_session *session);
 

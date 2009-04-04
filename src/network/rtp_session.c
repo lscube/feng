@@ -39,21 +39,36 @@ static ev_tstamp rtp_reschedule_cb(ev_periodic *w, ev_tstamp now)
 /**
  * Deallocates an RTP session, closing its tracks and transports
  *
- * @param arg The RTP session to free
+ * @param session_gen The RTP session to free
  *
  * @see rtp_session_new
+ *
+ * @internal This function should only be called from g_slist_foreach.
  */
-void rtp_session_free(gpointer arg, gpointer unused)
+static void rtp_session_free(gpointer session_gen, gpointer unused)
 {
-    RTP_session *session = arg;
+    RTP_session *session = (RTP_session*)session_gen;
+
     RTP_transport_close(session);
 
     /* Remove the consumer */
     bq_consumer_free(session->consumer);
 
-    // Deallocate memory
+    /* Deallocate memory */
     g_free(session->sd_filename);
     g_slice_free(RTP_session, session);
+}
+
+/**
+ * @brief Free a GSList of RTP_sessions
+ *
+ * @param sessions_list GSList of sessions to free
+ *
+ * This is a convenience function that wraps around @ref
+ * rtp_session_free and calls it with a foreach loop on the list
+ */
+void rtp_session_gslist_free(GSList *sessions_list) {
+    g_slist_foreach(sessions_list, rtp_session_free, NULL);
 }
 
 /**
