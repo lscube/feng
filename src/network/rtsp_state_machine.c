@@ -25,8 +25,6 @@
  */
 
 #include <stdbool.h>
-#include <strings.h>
-#include <inttypes.h> /* For SCNu64 */
 
 #include <liberis/headers.h>
 

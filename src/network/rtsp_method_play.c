@@ -24,20 +24,19 @@
  *  @brief Contains PLAY method and reply handlers
  */
 
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-#include <strings.h>
+#include <glib.h>
+#include <math.h>
+#include <stdbool.h>
+#include <netembryo/url.h>
 
 #include <liberis/headers.h>
 
 #include "feng.h"
 #include "rtsp.h"
+#include "rtp.h"
+#include "sdp2.h"
 #include "ragel_parsers.h"
 #include "mediathread/demuxer.h"
-#include <math.h>
-#include <stdbool.h>
-#include <netembryo/url.h>
-#include <glib.h>
 
 /**
  * Actually starts playing the media using mediathread

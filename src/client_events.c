@@ -22,6 +22,7 @@
 
 #include "feng.h"
 #include "network/rtsp.h"
+#include "network/rtp.h"
 #include "client_events.h"
 #include "fnc_log.h"
 #include "mediathread/demuxer.h"

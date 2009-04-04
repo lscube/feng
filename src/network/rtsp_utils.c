@@ -29,17 +29,13 @@
  */
 
 #include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
-#include <inttypes.h> /* For SCNu64 */
 
 #include <liberis/headers.h>
-#include <netembryo/rtsp.h>
 #include <glib.h>
 
 #include "feng.h"
-#include "sdp2.h"
 #include "rtsp.h"
+#include "rtp.h"
 #include "mediathread/mediathread.h"
 
 /**

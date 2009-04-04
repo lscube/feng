@@ -28,7 +28,10 @@
 #ifndef FENG_RAGEL_PARSERS_H
 #define FENG_RAGEL_PARSERS_H
 
-#include <network/rtsp.h>
+#include <glib.h>
+
+struct RTSP_Client;
+struct RTP_transport;
 
 /**
  * @defgroup ragel Ragel parsing
@@ -79,12 +82,13 @@ struct ParsedTransport {
     } parameters;
 };
 
-gboolean check_parsed_transport(RTSP_Client *rtsp, RTP_transport *rtp_t,
+gboolean check_parsed_transport(struct RTSP_Client *rtsp,
+                                struct RTP_transport *rtp_t,
                                 struct ParsedTransport *transport);
 
 
-gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
-                                      RTP_transport *rtp_t,
+gboolean ragel_parse_transport_header(struct RTSP_Client *rtsp,
+                                      struct RTP_transport *rtp_t,
                                       const char *header);
 /**
  *@}

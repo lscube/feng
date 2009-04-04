@@ -27,16 +27,16 @@
 #include <config.h>
 
 #include <glib.h>
+#include <ev.h>
 
 #include "feng_utils.h"
 #include <netembryo/wsocket.h>
 #include <netembryo/rtsp.h>
 #include <netembryo/url.h>
-#include "rtp.h"
-#include "sdp2.h"
 
 struct feng;
 struct Resource;
+struct RTP_transport;
 
 /**
  * @addtogroup RTSP
@@ -265,7 +265,7 @@ void rtsp_client_destroy(RTSP_Client *rtsp);
 RTSP_session *rtsp_session_new(RTSP_Client *rtsp);
 void rtsp_session_free(RTSP_session *session);
 
-gboolean interleaved_setup_transport(RTSP_Client *, RTP_transport *,
+gboolean interleaved_setup_transport(RTSP_Client *, struct RTP_transport *,
                                      int, int);
 void interleaved_rtcp_send(RTSP_Client *, int, void *, size_t);
 void interleaved_free_list(RTSP_Client *);

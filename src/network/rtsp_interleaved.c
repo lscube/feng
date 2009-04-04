@@ -24,6 +24,7 @@
 
 #include "feng.h"
 #include "rtsp.h"
+#include "rtp.h"
 #include "fnc_log.h"
 
 #ifdef HAVE_SCTP

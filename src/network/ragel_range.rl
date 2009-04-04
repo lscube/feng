@@ -1,6 +1,9 @@
 /* -*- c -*- */
 
+#include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
+
 #include "network/ragel_parsers.h"
 
 %% machine ragel_range_header;

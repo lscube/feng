@@ -26,6 +26,7 @@
 
 #include "feng.h"
 #include "rtsp.h"
+#include "rtp.h"
 
 /**
  * RTSP PAUSE method handler

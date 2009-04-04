@@ -25,10 +25,6 @@
  * Network main loop
  */
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/select.h>
-#include <unistd.h>
 #include <ev.h>
 
 #include "feng.h"
