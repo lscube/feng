@@ -30,6 +30,6 @@
 #define STREAM_TIMEOUT 12 /* This one must be big enough to permit to VLC to switch to another
                              transmission protocol and must be a multiple of LIVE_STREAM_BYE_TIMEOUT */
 
-void client_events_register(RTSP_Client *rtsp);
+void client_add(feng *srv, Sock *client_sock);
 
 #endif // FN_CLIENT_EVENTS_H

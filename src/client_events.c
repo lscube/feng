@@ -88,9 +88,22 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w, int revents)
 }
 
 
-void client_events_register(RTSP_Client *rtsp)
+void client_add(feng *srv, Sock *client_sock)
 {
-    feng *srv = rtsp->srv;
+    RTSP_Client *rtsp = rtsp_client_new(srv, client_sock);
+
+    srv->connection_count++;
+    client_sock->data = srv;
+
+    rtsp->ev_io_read.data = rtsp;
+    ev_io_init(&rtsp->ev_io_read, rtsp_read_cb, Sock_fd(client_sock), EV_READ);
+    ev_io_start(srv->loop, &rtsp->ev_io_read);
+
+    /* to be started/stopped when necessary */
+    rtsp->ev_io_write.data = rtsp;
+    ev_io_init(&rtsp->ev_io_write, rtsp_write_cb, Sock_fd(client_sock), EV_WRITE);
+    fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
+            Sock_fd(client_sock));
 
     rtsp->ev_sig_disconnect.data = rtsp;
     ev_async_init(&rtsp->ev_sig_disconnect, client_ev_disconnect_handler);
@@ -101,4 +114,3 @@ void client_events_register(RTSP_Client *rtsp)
     rtsp->ev_timeout.repeat = STREAM_TIMEOUT;
     ev_timer_again (srv->loop, &rtsp->ev_timeout);
 }
-

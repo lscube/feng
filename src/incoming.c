@@ -28,26 +28,6 @@
 #include "client_events.h"
 #include "network/rtsp.h"
 
-static void add_client(feng *srv, Sock *client_sock)
-{
-    RTSP_Client *rtsp = rtsp_client_new(srv, client_sock);
-
-    srv->connection_count++;
-    client_sock->data = srv;
-
-    rtsp->ev_io_read.data = rtsp;
-    ev_io_init(&rtsp->ev_io_read, rtsp_read_cb, Sock_fd(client_sock), EV_READ);
-    ev_io_start(srv->loop, &rtsp->ev_io_read);
-
-    /* to be started/stopped when necessary */
-    rtsp->ev_io_write.data = rtsp;
-    ev_io_init(&rtsp->ev_io_write, rtsp_write_cb, Sock_fd(client_sock), EV_WRITE);
-    fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
-            Sock_fd(client_sock));
-
-    client_events_register(rtsp);
-}
-
 /**
  * Accepts the new connection if possible.
  */
@@ -67,7 +47,7 @@ incoming_connection_cb(struct ev_loop *loop, ev_io *w, int revents)
         return;
     }
 
-    add_client(srv, client_sock);
+    client_add(srv, client_sock);
     fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
 }
 
