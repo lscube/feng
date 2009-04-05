@@ -78,6 +78,10 @@ void rtsp_session_free(RTSP_session *session)
     if ( !session )
         return;
 
+    /* Release all the connected RTP sessions */
+    rtp_session_gslist_free(session->rtp_sessions);
+    g_slist_free(session->rtp_sessions);
+
     /* Release mediathread resource */
     mt_resource_close(session->resource);
 
@@ -85,61 +89,6 @@ void rtsp_session_free(RTSP_session *session)
     g_slice_free(RTSP_session, session);
 }
 
-/**
- * Allocate and initialise a new RTSP client structure
- *
- * @param srv The feng server that accepted the connection.
- * @param client_sock The socket the client is connected to.
- *
- * @return A pointer to a newly allocated structure.
- *
- * @see rtsp_client_destroy()
- */
-RTSP_Client *rtsp_client_new(feng *srv, Sock *client_sock)
-{
-    RTSP_Client *new = g_slice_new0(RTSP_Client);
-
-    new->sock = client_sock;
-    new->input = g_byte_array_new();
-    new->out_queue = g_queue_new();
-    new->srv = srv;
-
-    return new;
-}
-
-/**
- * Destroy and free resources for an RTSP client structure
- *
- * @param rtsp The client structure to destroy and free
- *
- * @see rtsp_client_new()
- */
-void rtsp_client_destroy(RTSP_Client *rtsp)
-{
-  GString *outbuf = NULL;
-
-  if (rtsp->session != NULL) {
-
-    // Release all RTP sessions
-    rtp_session_gslist_free(rtsp->session->rtp_sessions);
-    g_slist_free(rtsp->session->rtp_sessions);
-
-    rtsp_session_free(rtsp->session);
-    rtsp->session = NULL;
-  }
-
-  interleaved_free_list(rtsp);
-
-  // Remove the output queue
-  while( (outbuf = g_queue_pop_tail(rtsp->out_queue)) )
-    g_string_free(outbuf, TRUE);
-
-  g_queue_free(rtsp->out_queue);
-
-  g_byte_array_free(rtsp->input, true);
-
-  g_slice_free(RTSP_Client, rtsp);
-}
 
 /**
  * RTSP Header and request parsing and validation functions

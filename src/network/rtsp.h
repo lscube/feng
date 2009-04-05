@@ -107,6 +107,8 @@ typedef struct RTSP_Client {
     ev_io ev_io_write;
 } RTSP_Client;
 
+void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents);
+
 /**
  * @brief RTSP method tokens
  *
@@ -258,9 +260,6 @@ char *rtsp_request_get_path(RTSP_Request *req);
 gboolean rtsp_request_check_url(RTSP_Request *req);
 
 void rtsp_bwrite(RTSP_Client *rtsp, GString *buffer);
-
-RTSP_Client *rtsp_client_new(struct feng *srv, Sock *client_sock);
-void rtsp_client_destroy(RTSP_Client *rtsp);
 
 RTSP_session *rtsp_session_new(RTSP_Client *rtsp);
 void rtsp_session_free(RTSP_session *session);

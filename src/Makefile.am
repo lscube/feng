@@ -18,6 +18,7 @@ dist_feng_SOURCES = \
 	network/rtp.c network/rtp.h \
 	network/rtp_port.c \
 	network/rtsp.h \
+	network/rtsp_client.c \
 	network/rtsp_interleaved.c \
 	network/rtsp_lowlevel.c \
 	network/rtsp_method_describe.c \
@@ -32,9 +33,8 @@ dist_feng_SOURCES = \
 	network/sdp2.c network/sdp2.h \
 	\
 	bufferqueue.c bufferqueue.h \
-	client_events.h client_events.c \
-	eventloop.c eventloop.h \
 	fnc_log.c fnc_log.h \
+	incoming.c incoming.h \
 	feng.h \
 	feng_utils.h \
 	main.c \

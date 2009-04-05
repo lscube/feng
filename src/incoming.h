@@ -20,16 +20,13 @@
  *
  * */
 
-#ifndef FN_CLIENT_EVENTS_H
-#define FN_CLIENT_EVENTS_H
+#ifndef FENG_INCOMING_H
+#define FENG_INCOMING_H
 
-#include <netembryo/wsocket.h>
-#include "network/rtsp.h"
+#include <glib.h>
 
-#define LIVE_STREAM_BYE_TIMEOUT 6
-#define STREAM_TIMEOUT 12 /* This one must be big enough to permit to VLC to switch to another
-                             transmission protocol and must be a multiple of LIVE_STREAM_BYE_TIMEOUT */
+struct feng;
 
-void client_events_register(RTSP_Client *rtsp);
+gboolean feng_bind_ports(struct feng *srv);
 
-#endif // FN_CLIENT_EVENTS_H
+#endif

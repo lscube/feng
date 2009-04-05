@@ -35,7 +35,6 @@
 #include "rtp.h"
 #include "rtsp.h"
 #include "ragel_parsers.h"
-#include "eventloop.h"
 #include "fnc_log.h"
 #include "mediathread/demuxer.h"
 
@@ -311,7 +310,7 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
 
     /* Check if we still have space for new connections, if not, respond with a
      * 453 status (Not Enough Bandwidth), so that client knows what happened. */
-    if (rtsp->srv->num_conn > rtsp->srv->srvconf.max_conns) {
+    if (rtsp->srv->connection_count > rtsp->srv->srvconf.max_conns) {
         /* @todo should redirect, but we haven't the code to do that just
          * yet. */
         rtsp_quick_response(req, RTSP_NotEnoughBandwidth);

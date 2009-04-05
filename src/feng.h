@@ -43,11 +43,7 @@ typedef struct feng {
     void *metadata_clients;	    //!< CPD Clients
 #endif
     // Metadata end
-/**
- * @name lighttpd-alike preferences
- * lemon based, lighttpd alike preferences
- */
-//@{
+
     array *config;
     array *config_touched;
 
@@ -55,22 +51,29 @@ typedef struct feng {
     specific_config **config_storage;
 
     server_config srvconf;
-//@}
-/**
- * @name eventloop state
- * Includes the
- */
-//@{
+
     /**
-     * Once it reaches the maximum the server redirects
+     * @brief libev listeners for incoming connections on opened ports
+     *
+     * This is an array of ev_io objects allocated with the g_new0()
+     * function (which this need to be freed with g_free()).
+     *
+     * The indexes are the same as for @ref feng::config_storage.
+     *
+     * @see feng_bind_ports
+     * @see feng_bind_port
+     * @see feng_free
+     */
+    ev_io *listeners;
+    struct ev_loop *loop;       //!< event loop
+
+    /**
+     * @brief Number of active connections
+     *
+     * Once it reaches the maximum the server is supposd to redirect
      * to a twin if available
      */
-    struct ev_loop *loop;       //!< event loop
-    int num_conn;               //!< number of active connections
-    int conn_count;             //!< number of active connections (FIXME)
-    int stop_schedule;          //!< to be refactored away
-    GSList *clients;            //!< currently connected clients
-//@}
+    size_t connection_count;
 } feng;
 
 typedef feng server;

@@ -43,7 +43,7 @@
 
 #include "feng.h"
 #include "fnc_log.h"
-#include "eventloop.h"
+#include "incoming.h"
 #include "mediathread/mediathread.h"
 #include "network/rtp.h"
 #include <glib.h>
@@ -99,59 +99,6 @@ static void feng_drop_privs(feng *srv)
     }
 }
 
-static int feng_bind_ports(feng *srv)
-{
-    int i, err = 0;
-    char *host = srv->srvconf.bindhost->ptr;
-    char *port = g_strdup_printf("%d", srv->srvconf.port);
-
-    if ((err = feng_bind_port(srv, host, port, srv->config_storage[0]))) {
-        g_free(port);
-        return err;
-    }
-
-    g_free(port);
-
-   /* check for $SERVER["socket"] */
-    for (i = 1; i < srv->config_context->used; i++) {
-        data_config *dc = (data_config *)srv->config_context->data[i];
-        specific_config *s = srv->config_storage[i];
-//        size_t j;
-
-        /* not our stage */
-        if (COMP_SERVER_SOCKET != dc->comp) continue;
-
-        if (dc->cond != CONFIG_COND_EQ) {
-            fnc_log(FNC_LOG_ERR,"only == is allowed for $SERVER[\"socket\"].");
-            return 1;
-        }
-        /* check if we already know this socket,
-         * if yes, don't init it */
-
-        /* split the host:port line */
-        host = dc->string->ptr;
-        port = strrchr(host, ':');
-        if (!port) {
-            fnc_log(FNC_LOG_ERR,"Cannot parse \"%s\" as host:port",
-                                dc->string->ptr);
-            return 1;
-        }
-
-        port[0] = '\0';
-
-        if (host[0] == '[' && port[-1] == ']') {
-            port[-1] = '\0';
-            host++;
-            s->use_ipv6 = 1; //XXX
-        }
-
-        port++;
-
-        if (feng_bind_port(srv, host, port, s)) return 1;
-    }
-
-    return 0;
-}
 
 /**
  * catch TERM and INT signals
@@ -192,6 +139,8 @@ static void feng_free(feng* srv)
     CLEAN(config_touched);
     CLEAN(srvconf.modules);
 #undef CLEAN
+
+    g_free(srv->listeners);
 }
 
 static void fncheader()
@@ -318,7 +267,7 @@ int main(int argc, char **argv)
 
     feng_handle_signals(srv);
 
-    if (feng_bind_ports(srv))
+    if (!feng_bind_ports(srv))
         return 1;
 
     feng_drop_privs(srv);
