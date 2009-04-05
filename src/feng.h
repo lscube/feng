@@ -75,7 +75,6 @@ typedef struct feng {
      */
     size_t connection_count;
 
-    int stop_schedule;          //!< to be refactored away
     GSList *clients;            //!< currently connected clients
 } feng;
 
