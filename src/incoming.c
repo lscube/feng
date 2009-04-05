@@ -20,16 +20,11 @@
  *
  * */
 
-/**
- * @file eventloop.c
- * Network main loop
- */
-
 #include <ev.h>
 
 #include "feng.h"
 #include "fnc_log.h"
-#include "eventloop.h"
+#include "incoming.h"
 #include "client_events.h"
 #include "network/rtsp.h"
 

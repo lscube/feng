@@ -35,7 +35,6 @@
 #include "rtp.h"
 #include "rtsp.h"
 #include "ragel_parsers.h"
-#include "eventloop.h"
 #include "fnc_log.h"
 #include "mediathread/demuxer.h"
 

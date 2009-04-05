@@ -20,12 +20,12 @@
  *
  * */
 
-#ifndef FN_EVENTLOOP_H
-#define FN_EVENTLOOP_H
+#ifndef FENG_INCOMING_H
+#define FENG_INCOMING_H
 
 struct feng;
 struct specific_config;
 
 int feng_bind_port(struct feng *srv, char *host, char *port, struct specific_config *s);
 
-#endif // FN_EVENTLOOP_H
+#endif
