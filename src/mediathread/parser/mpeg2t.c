@@ -285,8 +285,8 @@ static int mp2t_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         ret = mp2t_packetize(dst, &dst_len, data, len, tr->properties,
                   tr->parser_private);
         if (ret >= 0) {
-            mparser_buffer_write(tr, 0,
-                            dst, dst_len);
+            mparser_buffer_write(tr, tr->parent->info->duration,
+                                 1, dst, dst_len);
             dst_len = len;
         }
     } while (ret);

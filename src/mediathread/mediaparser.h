@@ -131,12 +131,13 @@ void mparser_unreg(MediaParser *, void *);
  */
 typedef struct {
     double timestamp;   /*!< presentation time of packet */
-    uint8_t marker;     /*!< marker bit used to signal we are handling frags */
+    double duration;    /*!< packet duration */
+    gboolean marker;    /*!< marker bit, set if we are sending the last frag */
     size_t data_size;   /*!< packet size */
     uint8_t data[];     /*!< actual packet data */
 } MParserBuffer;
 
-void mparser_buffer_write(struct Track *tr, uint8_t marker,
+void mparser_buffer_write(struct Track *tr, double duration, gboolean marker,
                           uint8_t *data, size_t data_size);
 
 

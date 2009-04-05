@@ -79,11 +79,22 @@ void mparser_unreg(MediaParser *p, void *private_data)
     if (p) p->uninit(private_data);
 }
 
-void mparser_buffer_write(struct Track *tr, uint8_t marker,
-                          uint8_t *data, size_t data_size) {
+/**
+ *  Insert a rtp packet inside the track buffer queue
+ *  @param tr track the packetized frames/samples belongs to
+ *  @param duration the actual packet duration, a multiple of the frame/samples
+ *  duration
+ *  @param marker tell if we are handling a frame/sample fragment
+ *  @param data actual packet data
+ *  @param data_size actual packet data size
+ */
+void mparser_buffer_write(struct Track *tr, double duration, gboolean marker,
+                          uint8_t *data, size_t data_size)
+{
     MParserBuffer *buffer = g_malloc(sizeof(MParserBuffer) + data_size);
 
     buffer->timestamp = tr->properties->mtime;
+    buffer->duration = duration;
     buffer->marker = marker;
     buffer->data_size = data_size;
 

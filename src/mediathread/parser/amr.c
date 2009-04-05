@@ -166,7 +166,7 @@ static int amr_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         /*fill the frame content*/
         while (len > payload) {
             memcpy(packet + header_len, data + off, payload);
-            mparser_buffer_write(tr, 0,
+            mparser_buffer_write(tr, tr->parent->info->duration, 0,
                             packet, header_len + payload);
 
             len -= payload;
@@ -188,7 +188,7 @@ static int amr_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 
     /*fill the frame content*/
     memcpy(packet + header_len, data + off, len);
-    mparser_buffer_write(tr, 0,
+    mparser_buffer_write(tr, tr->parent->info->duration, 1,
                     packet, len + body_num);
     return ERR_NOERROR;
 

@@ -53,8 +53,8 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     if (mtu >= len + 4) {
         memset (dst, 0, 4);
         memcpy (dst + 4, data, len);
-        mparser_buffer_write(tr, 0,
-                        dst, len + 4);
+        mparser_buffer_write(tr, tr->parent->info->duration,
+                             1, dst, len + 4);
         fnc_log(FNC_LOG_VERBOSE, "[mp3] no frags");
     } else {
         do {
@@ -64,7 +64,7 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             offset = htonl(offset & 0xffff);
             memcpy (dst, &offset, 4);
 
-            mparser_buffer_write(tr, 0,
+            mparser_buffer_write(tr, tr->parent->info->duration, 0,
                             dst, min(mtu, rem + 4));
             rem -= mtu - 4;
             fnc_log(FNC_LOG_VERBOSE, "[mp3] frags");
