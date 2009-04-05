@@ -33,8 +33,6 @@
 #include "client_events.h"
 #include "network/rtsp.h"
 
-static GPtrArray *io_watchers; //!< keep track of ev_io allocated
-
 static void add_client(feng *srv, Sock *client_sock)
 {
     RTSP_Client *rtsp = rtsp_client_new(srv, client_sock);
@@ -151,7 +149,6 @@ int feng_bind_port(feng *srv, char *host, char *port, specific_config *s)
  */
 void eventloop_init(feng *srv)
 {
-    io_watchers = g_ptr_array_new();
     srv->loop = ev_default_loop(0);
     srv->clients = NULL;
 }
@@ -170,5 +167,4 @@ void eventloop(feng *srv)
  * @brief Cleanup data structure needed by the eventloop
  */
 void eventloop_cleanup(feng *srv) {
-    g_ptr_array_free(io_watchers, TRUE);
 }
