@@ -100,8 +100,8 @@ typedef struct RTSP_Client {
     GSList *interleaved;
 
     //Events
-    ev_async *ev_sig_disconnect;
-    ev_timer *ev_timeout;
+    ev_async ev_sig_disconnect;
+    ev_timer ev_timeout;
 
     ev_io ev_io_read;
     ev_io ev_io_write;

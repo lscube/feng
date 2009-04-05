@@ -111,7 +111,7 @@ void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
     goto disconnect;
 
  disconnect:
-    ev_async_send(loop, rtsp->ev_sig_disconnect);
+    ev_async_send(loop, &rtsp->ev_sig_disconnect);
 }
 
 void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)

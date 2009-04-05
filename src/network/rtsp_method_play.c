@@ -252,7 +252,7 @@ void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
 
     rtsp_sess->cur_state = RTSP_SERVER_PLAYING;
 
-    ev_timer_again (rtsp->srv->loop, rtsp->ev_timeout);
+    ev_timer_again (rtsp->srv->loop, &rtsp->ev_timeout);
 
     return;
 
