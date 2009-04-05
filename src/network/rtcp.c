@@ -199,6 +199,7 @@ static GByteArray *rtcp_pkt_sr_sdes(RTP_session *session)
         outpkt_size += 4-(outpkt_size%4);
 
     outpkt_buffer = g_byte_array_sized_new(outpkt_size);
+    g_byte_array_set_size(outpkt_buffer, outpkt_size);
 
     outpkt = (RTCP_SR_Compound*)outpkt_buffer->data;
 
@@ -243,6 +244,7 @@ static GByteArray *rtcp_pkt_sr_bye(RTP_session *session)
         outpkt_size += 4-(outpkt_size%4);
 
     outpkt_buffer = g_byte_array_sized_new(outpkt_size);
+    g_byte_array_set_size(outpkt_buffer, outpkt_size);
 
     outpkt = (RTCP_SR_Compound*)outpkt_buffer->data;
 
