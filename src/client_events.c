@@ -49,8 +49,7 @@ static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int 
 
     //Close connection
     Sock_close(rtsp->sock);
-    --srv->conn_count;
-    srv->num_conn--;
+    srv->connection_count--;
 
     // Release the RTSP_Client
     srv->clients = g_slist_remove(srv->clients, rtsp);

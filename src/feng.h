@@ -70,11 +70,11 @@ typedef struct feng {
     /**
      * @brief Number of active connections
      *
-     * Once it reaches the maximum the server redirects
+     * Once it reaches the maximum the server is supposd to redirect
      * to a twin if available
      */
-    int num_conn;
-    int conn_count;             //!< number of active connections (FIXME)
+    size_t connection_count;
+
     int stop_schedule;          //!< to be refactored away
     GSList *clients;            //!< currently connected clients
 } feng;

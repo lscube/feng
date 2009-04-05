@@ -82,14 +82,13 @@ incoming_connection_cb(struct ev_loop *loop, ev_io *w, int revents)
                             connections_compare_socket);
 
     if ( p == NULL ) {
-        if (srv->conn_count < ONE_FORK_MAX_CONNECTION) {
-            ++srv->conn_count;
+        if (srv->connection_count < ONE_FORK_MAX_CONNECTION) {
             add_client(srv, client_sock);
         } else {
             Sock_close(client_sock);
         }
-        srv->num_conn++;
-        fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->num_conn);
+        srv->connection_count++;
+        fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
 
         return;
     }
