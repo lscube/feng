@@ -113,9 +113,9 @@ incoming_connection_cb(struct ev_loop *loop, ev_io *w, int revents)
 
 int feng_bind_port(feng *srv, char *host, char *port, specific_config *s)
 {
+    static ev_io ev_io_listen;
     int is_sctp = s->is_sctp;
     Sock *sock;
-    ev_io *ev_io_listen = g_new(ev_io, 1);
 
     if (is_sctp)
         sock = Sock_bind(host, port, NULL, SCTP, NULL);
@@ -140,11 +140,10 @@ int feng_bind_port(feng *srv, char *host, char *port, specific_config *s)
         return 1;
     }
     sock->data = srv;
-    ev_io_listen->data = sock;
-    g_ptr_array_add(io_watchers, ev_io_listen);
-    ev_io_init(ev_io_listen, incoming_connection_cb,
+    ev_io_listen.data = sock;
+    ev_io_init(&ev_io_listen, incoming_connection_cb,
                Sock_fd(sock), EV_READ);
-    ev_io_start(srv->loop, ev_io_listen);
+    ev_io_start(srv->loop, &ev_io_listen);
     return 0;
 }
 
