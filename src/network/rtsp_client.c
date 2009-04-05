@@ -23,12 +23,18 @@
 #include "feng.h"
 #include "network/rtsp.h"
 #include "network/rtp.h"
-#include "client_events.h"
 #include "fnc_log.h"
 #include "mediathread/demuxer.h"
 
 #include <sys/time.h>
+#include <stdbool.h>
 #include <ev.h>
+
+#define LIVE_STREAM_BYE_TIMEOUT 6
+#define STREAM_TIMEOUT 12 /* This one must be big enough to permit to VLC to switch to another
+                             transmission protocol and must be a multiple of LIVE_STREAM_BYE_TIMEOUT */
+
+static void rtsp_client_free(RTSP_Client *rtsp);
 
 static void client_events_deregister(RTSP_Client *rtsp)
 {
@@ -52,7 +58,7 @@ static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int 
     srv->connection_count--;
 
     // Release the RTSP_Client
-    rtsp_client_destroy(rtsp);
+    rtsp_client_free(rtsp);
     fnc_log(FNC_LOG_INFO, "[client] Client removed");
 }
 
@@ -87,10 +93,23 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w, int revents)
     ev_timer_again (loop, w);
 }
 
-
-void client_add(feng *srv, Sock *client_sock)
+/**
+ * @brief Create and connect a new RTSP client object
+ *
+ * @param srv The feng server that accepted the connection.
+ * @param client_sock The socket the client is connected to.
+ *
+ * @note The newly-created instance has to be deleted with the @ref
+ *       rtsp_client_free function.
+ */
+void rtsp_client_connect(feng *srv, Sock *client_sock)
 {
-    RTSP_Client *rtsp = rtsp_client_new(srv, client_sock);
+    RTSP_Client *rtsp = g_slice_new0(RTSP_Client);
+
+    rtsp->sock = client_sock;
+    rtsp->input = g_byte_array_new();
+    rtsp->out_queue = g_queue_new();
+    rtsp->srv = srv;
 
     srv->connection_count++;
     client_sock->data = srv;
@@ -113,4 +132,30 @@ void client_add(feng *srv, Sock *client_sock)
     ev_init(&rtsp->ev_timeout, client_ev_timeout);
     rtsp->ev_timeout.repeat = STREAM_TIMEOUT;
     ev_timer_again (srv->loop, &rtsp->ev_timeout);
+}
+
+/**
+ * @brief Free resources for an RTSP_Client object
+ *
+ * @param rtsp The client structure to free
+ *
+ * @see rtsp_client_connect
+ */
+static void rtsp_client_free(RTSP_Client *rtsp)
+{
+  GString *outbuf = NULL;
+
+  rtsp_session_free(rtsp->session);
+
+  interleaved_free_list(rtsp);
+
+  // Remove the output queue
+  while( (outbuf = g_queue_pop_tail(rtsp->out_queue)) )
+    g_string_free(outbuf, TRUE);
+
+  g_queue_free(rtsp->out_queue);
+
+  g_byte_array_free(rtsp->input, true);
+
+  g_slice_free(RTSP_Client, rtsp);
 }

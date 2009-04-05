@@ -25,7 +25,6 @@
 #include "feng.h"
 #include "fnc_log.h"
 #include "incoming.h"
-#include "client_events.h"
 #include "network/rtsp.h"
 
 /**
@@ -47,7 +46,7 @@ incoming_connection_cb(struct ev_loop *loop, ev_io *w, int revents)
         return;
     }
 
-    client_add(srv, client_sock);
+    rtsp_client_connect(srv, client_sock);
     fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
 }
 
