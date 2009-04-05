@@ -143,28 +143,3 @@ int feng_bind_port(feng *srv, char *host, char *port, specific_config *s)
     ev_io_start(srv->loop, &ev_io_listen);
     return 0;
 }
-
-/**
- * @brief Initialise data structure needed for eventloop
- */
-void eventloop_init(feng *srv)
-{
-    srv->loop = ev_default_loop(0);
-    srv->clients = NULL;
-}
-
-/**
- * Main loop waiting for clients
- * @param srv server instance variable.
- */
-
-void eventloop(feng *srv)
-{
-    ev_loop (srv->loop, 0);
-}
-
-/**
- * @brief Cleanup data structure needed by the eventloop
- */
-void eventloop_cleanup(feng *srv) {
-}

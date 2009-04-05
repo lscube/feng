@@ -27,8 +27,5 @@ struct feng;
 struct specific_config;
 
 int feng_bind_port(struct feng *srv, char *host, char *port, struct specific_config *s);
-void eventloop_init(struct feng *srv);
-void eventloop(struct feng *srv);
-void eventloop_cleanup(struct feng *srv);
 
 #endif // FN_EVENTLOOP_H

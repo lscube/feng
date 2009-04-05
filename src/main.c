@@ -192,8 +192,6 @@ static void feng_free(feng* srv)
     CLEAN(config_touched);
     CLEAN(srvconf.modules);
 #undef CLEAN
-
-    eventloop_cleanup(srv);
 }
 
 static void fncheader()
@@ -316,7 +314,7 @@ int main(int argc, char **argv)
     config_set_defaults(srv);
 
     /* This goes before feng_bind_ports */
-    eventloop_init(srv);
+    srv->loop = ev_default_loop(0);
 
     feng_handle_signals(srv);
 
@@ -338,9 +336,7 @@ int main(int argc, char **argv)
 
     RTP_port_pool_init(srv, srv->srvconf.first_udp_port);
 
-    eventloop(srv);
-
-    eventloop_cleanup(srv);
+    ev_loop (srv->loop, 0);
 
     return 0;
 }
