@@ -145,7 +145,7 @@ void rtp_session_handle_sending(RTP_session *session);
  */
 
 /**
- * @defgroup rtcp RTCP Handling
+ * @addtogroup rtcp
  * @{
  */
 

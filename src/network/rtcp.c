@@ -29,6 +29,13 @@
 #include "fnc_log.h"
 #include "mediathread/demuxer.h"
 
+/**
+ * @defgroup rtcp RTCP Handling
+ * @brief Data structures and functions to handle RTCP
+ *
+ * @{
+ */
+
 typedef enum {
     CNAME = 1,
     NAME = 2,
@@ -104,11 +111,17 @@ typedef struct RTCP_header_BYE {
  * RFC 3550 Section 6.4.1.
  */
 typedef struct {
+    /** The header for the SR preamble */
     RTCP_header sr_hdr;
+    /** The actual SR preamble */
     RTCP_header_SR sr_pkt;
+    /** The header for the payload packet */
     RTCP_header payload_hdr;
+    /** Polymorphic payload */
     union {
+        /** Payload for the source description packet */
         RTCP_header_SDES sdes;
+        /** Payload for the goodbye packet */
         RTCP_header_BYE bye;
     } payload;
 } RTCP_SR_Compound;
@@ -301,3 +314,7 @@ gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type)
     g_byte_array_free(outpkt, true);
     return ret;
 }
+
+/**
+ * @}
+ */
