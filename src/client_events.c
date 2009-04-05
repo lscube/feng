@@ -52,7 +52,6 @@ static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int 
     srv->connection_count--;
 
     // Release the RTSP_Client
-    srv->clients = g_slist_remove(srv->clients, rtsp);
     rtsp_client_destroy(rtsp);
     fnc_log(FNC_LOG_INFO, "[client] Client removed");
 }

@@ -32,7 +32,7 @@ static void add_client(feng *srv, Sock *client_sock)
 {
     RTSP_Client *rtsp = rtsp_client_new(srv, client_sock);
 
-    srv->clients = g_slist_prepend(srv->clients, rtsp);
+    srv->connection_count++;
     client_sock->data = srv;
 
     rtsp->ev_io_read.data = rtsp;
@@ -49,18 +49,6 @@ static void add_client(feng *srv, Sock *client_sock)
 }
 
 /**
- * @brief Search function for connections in the clients list
- * @param value Current entry
- * @param compare Socket to find in the list
- */
-static gboolean
-connections_compare_socket(gconstpointer value, gconstpointer compare)
-{
-    RTSP_Client *p = (RTSP_Client*)value;
-    return !!Sock_compare((Sock *)compare, p->sock);
-}
-
-/**
  * Accepts the new connection if possible.
  */
 
@@ -70,32 +58,17 @@ incoming_connection_cb(struct ev_loop *loop, ev_io *w, int revents)
     Sock *sock = w->data;
     feng *srv = sock->data;
     Sock *client_sock = NULL;
-    GSList *p = NULL;
 
-    client_sock = Sock_accept(sock, NULL);
-
-    // Handle a new connection
-    if (!client_sock)
+    if ( (client_sock = Sock_accept(sock, NULL)) == NULL )
         return;
 
-    p = g_slist_find_custom(srv->clients, client_sock,
-                            connections_compare_socket);
-
-    if ( p == NULL ) {
-        if (srv->connection_count < ONE_FORK_MAX_CONNECTION) {
-            add_client(srv, client_sock);
-        } else {
-            Sock_close(client_sock);
-        }
-        srv->connection_count++;
-        fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
-
+    if (srv->connection_count >= ONE_FORK_MAX_CONNECTION) {
+        Sock_close(client_sock);
         return;
     }
 
-    Sock_close(client_sock);
-
-    fnc_log(FNC_LOG_INFO, "Connection found: %d\n", Sock_fd(client_sock));
+    add_client(srv, client_sock);
+    fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
 }
 
 /**

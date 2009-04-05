@@ -74,8 +74,6 @@ typedef struct feng {
      * to a twin if available
      */
     size_t connection_count;
-
-    GSList *clients;            //!< currently connected clients
 } feng;
 
 typedef feng server;
