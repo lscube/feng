@@ -54,19 +54,9 @@ static void mt_cb_read(gpointer resource, gpointer user_data)
 
     g_mutex_lock(r->lock);
 
-    switch (r->demuxer->read_packet(r)) {
-    case RESOURCE_OK:
-        fnc_log(FNC_LOG_VERBOSE, "[MT] Done!");
-        break;
-    case RESOURCE_EOF:
-        // Signal the end of stream
-        r->eos = 1;
-        break;
-    default:
+    if ( r->demuxer->read_packet(r) != RESOURCE_OK )
         fnc_log(FNC_LOG_FATAL,
                 "[MT] read_packet() error.");
-        break;
-    }
 
     g_mutex_unlock(r->lock);
 }

@@ -87,7 +87,6 @@ typedef struct Resource {
     int num_sel;
     int num_tracks;
     void *private_data; /* Demuxer private data */
-    int eos; //!< signals the end of stream
     struct feng *srv;
 } Resource;
 
