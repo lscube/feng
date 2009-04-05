@@ -23,8 +23,10 @@
 #ifndef FENG_INCOMING_H
 #define FENG_INCOMING_H
 
+#include <glib.h>
+
 struct feng;
 
-int feng_bind_port(struct feng *srv, const char *host, const char *port, size_t cfg_storage_idx);
+gboolean feng_bind_ports(struct feng *srv);
 
 #endif

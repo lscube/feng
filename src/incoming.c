@@ -20,6 +20,7 @@
  *
  * */
 
+#include <stdbool.h>
 #include <ev.h>
 
 #include "feng.h"
@@ -36,11 +37,11 @@
  * @param cfg_storage_idx The index in @ref feng::config_storage array
  *                        for the current configuration
  *
- * @retval 1 Error during binding
- * @retval 0 Binding complete
+ * @retval true Binding complete
+ * @retval false Error during binding
  */
-int feng_bind_port(struct feng *srv, const char *host, const char *port,
-                   size_t cfg_storage_idx)
+static int feng_bind_port(feng *srv, const char *host, const char *port,
+                          size_t cfg_storage_idx)
 {
     specific_config *s = srv->config_storage[cfg_storage_idx];
     gboolean is_sctp = !!s->is_sctp;
@@ -55,7 +56,7 @@ int feng_bind_port(struct feng *srv, const char *host, const char *port,
         fprintf(stderr,
                 "[fatal] Sock_bind() error in main() for port %s.\n",
                 port);
-        return 1;
+        return false;
     }
 
     fnc_log(FNC_LOG_INFO, "Listening to port %s (%s) on %s",
@@ -66,7 +67,7 @@ int feng_bind_port(struct feng *srv, const char *host, const char *port,
     if(Sock_listen(sock, SOMAXCONN)) {
         fnc_log(FNC_LOG_ERR, "Sock_listen() error for TCP socket.");
         fprintf(stderr, "[fatal] Sock_listen() error for TCP socket.\n");
-        return 1;
+        return false;
     }
     sock->data = srv;
     srv->listeners[cfg_storage_idx].data = sock;
@@ -74,5 +75,63 @@ int feng_bind_port(struct feng *srv, const char *host, const char *port,
                rtsp_client_incoming_cb,
                Sock_fd(sock), EV_READ);
     ev_io_start(srv->loop, &srv->listeners[cfg_storage_idx]);
-    return 0;
+
+    return true;
+}
+
+gboolean feng_bind_ports(feng *srv)
+{
+    size_t i;
+    int err = 0;
+    char *host = srv->srvconf.bindhost->ptr;
+    char *port = g_strdup_printf("%d", srv->srvconf.port);
+
+    srv->listeners = g_new0(ev_io, srv->config_context->used);
+
+    if ((err = feng_bind_port(srv, host, port, 0))) {
+        g_free(port);
+        return err;
+    }
+
+    g_free(port);
+
+   /* check for $SERVER["socket"] */
+    for (i = 1; i < srv->config_context->used; i++) {
+        data_config *dc = (data_config *)srv->config_context->data[i];
+        specific_config *s = srv->config_storage[i];
+//        size_t j;
+
+        /* not our stage */
+        if (COMP_SERVER_SOCKET != dc->comp) continue;
+
+        if (dc->cond != CONFIG_COND_EQ) {
+            fnc_log(FNC_LOG_ERR,"only == is allowed for $SERVER[\"socket\"].");
+            return false;
+        }
+        /* check if we already know this socket,
+         * if yes, don't init it */
+
+        /* split the host:port line */
+        host = dc->string->ptr;
+        port = strrchr(host, ':');
+        if (!port) {
+            fnc_log(FNC_LOG_ERR,"Cannot parse \"%s\" as host:port",
+                                dc->string->ptr);
+            return false;
+        }
+
+        port[0] = '\0';
+
+        if (host[0] == '[' && port[-1] == ']') {
+            port[-1] = '\0';
+            host++;
+            s->use_ipv6 = 1; //XXX
+        }
+
+        port++;
+
+        if (!feng_bind_port(srv, host, port, i)) return false;
+    }
+
+    return true;
 }
