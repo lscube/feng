@@ -101,12 +101,21 @@ incoming_connection_cb(struct ev_loop *loop, ev_io *w, int revents)
 
 /**
  * Bind to the defined listening port
+ *
+ * @param srv The server instance to bind ports for
+ * @param host The hostname to bind ports on
+ * @param port The port to bind
+ * @param cfg_storage_idx The index in @ref feng::config_storage array
+ *                        for the current configuration
+ *
+ * @retval 1 Error during binding
+ * @retval 0 Binding complete
  */
-
-int feng_bind_port(feng *srv, char *host, char *port, specific_config *s)
+int feng_bind_port(struct feng *srv, const char *host, const char *port,
+                   size_t cfg_storage_idx)
 {
-    static ev_io ev_io_listen;
-    int is_sctp = s->is_sctp;
+    specific_config *s = srv->config_storage[cfg_storage_idx];
+    gboolean is_sctp = !!s->is_sctp;
     Sock *sock;
 
     if (is_sctp)
@@ -132,9 +141,9 @@ int feng_bind_port(feng *srv, char *host, char *port, specific_config *s)
         return 1;
     }
     sock->data = srv;
-    ev_io_listen.data = sock;
-    ev_io_init(&ev_io_listen, incoming_connection_cb,
+    srv->listeners[cfg_storage_idx].data = sock;
+    ev_io_init(&srv->listeners[cfg_storage_idx], incoming_connection_cb,
                Sock_fd(sock), EV_READ);
-    ev_io_start(srv->loop, &ev_io_listen);
+    ev_io_start(srv->loop, &srv->listeners[cfg_storage_idx]);
     return 0;
 }

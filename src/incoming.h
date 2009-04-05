@@ -24,8 +24,7 @@
 #define FENG_INCOMING_H
 
 struct feng;
-struct specific_config;
 
-int feng_bind_port(struct feng *srv, char *host, char *port, struct specific_config *s);
+int feng_bind_port(struct feng *srv, const char *host, const char *port, size_t cfg_storage_idx);
 
 #endif

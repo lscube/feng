@@ -52,6 +52,19 @@ typedef struct feng {
 
     server_config srvconf;
 
+    /**
+     * @brief libev listeners for incoming connections on opened ports
+     *
+     * This is an array of ev_io objects allocated with the g_new0()
+     * function (which this need to be freed with g_free()).
+     *
+     * The indexes are the same as for @ref feng::config_storage.
+     *
+     * @see feng_bind_ports
+     * @see feng_bind_port
+     * @see feng_free
+     */
+    ev_io *listeners;
     struct ev_loop *loop;       //!< event loop
 
     /**

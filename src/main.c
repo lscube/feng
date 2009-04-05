@@ -105,7 +105,9 @@ static int feng_bind_ports(feng *srv)
     char *host = srv->srvconf.bindhost->ptr;
     char *port = g_strdup_printf("%d", srv->srvconf.port);
 
-    if ((err = feng_bind_port(srv, host, port, srv->config_storage[0]))) {
+    srv->listeners = g_new0(ev_io, srv->config_context->used);
+
+    if ((err = feng_bind_port(srv, host, port, 0))) {
         g_free(port);
         return err;
     }
@@ -147,7 +149,7 @@ static int feng_bind_ports(feng *srv)
 
         port++;
 
-        if (feng_bind_port(srv, host, port, s)) return 1;
+        if (feng_bind_port(srv, host, port, i)) return 1;
     }
 
     return 0;
@@ -192,6 +194,8 @@ static void feng_free(feng* srv)
     CLEAN(config_touched);
     CLEAN(srvconf.modules);
 #undef CLEAN
+
+    g_free(srv->listeners);
 }
 
 static void fncheader()
