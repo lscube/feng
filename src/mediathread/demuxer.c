@@ -347,7 +347,7 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 
 // allocation of all data structures
 
-    r = g_new0(Resource, 1);
+    r = g_slice_new0(Resource);
     r->lock = g_mutex_new();
 
 // we use MObject_new: that will alloc memory and exits the program
@@ -396,7 +396,7 @@ static void free_track(gpointer element, gpointer user_data)
 
     istream_close(track->i_stream);
 
-    g_free(track);
+    g_slice_free(Track, track);
 }
 
 void r_close(Resource *r)
@@ -413,7 +413,7 @@ void r_close(Resource *r)
     g_list_foreach(r->tracks, free_track, NULL);
     g_list_free(r->tracks);
 
-    g_free(r);
+    g_slice_free(Resource, r);
 }
 
 /**
@@ -521,7 +521,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     if(r->num_tracks>=MAX_TRACKS)
         return NULL;
 
-    t = g_new0(Track, 1);
+    t = g_slice_new0(Track);
 
     if (info)
         t->info = MObject_dup(info, sizeof(TrackInfo));
