@@ -168,7 +168,7 @@ static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             memcpy(q, data, payload);
             q += payload;
 
-            mparser_buffer_write(tr, tr->parent->info->duration,
+            mparser_buffer_write(tr, tr->properties->frame_duration,
                                  (payload == rem), dst, q - dst);
             b = e;
             e = 0;

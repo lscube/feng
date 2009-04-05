@@ -31,12 +31,6 @@
 #include "mediathread/demuxer.h"
 #include "mediathread/mediathread.h"
 
-static ev_tstamp rtp_reschedule_cb(ev_periodic *w, ev_tstamp now)
-{
-    RTP_session *sess = w->data;
-    return now + sess->track->properties->frame_duration/2;
-}
-
 /**
  * Closes a transport linked to a session
  * @param session the RTP session for which to close the transport
@@ -125,7 +119,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer start_time_gen) {
     g_assert(session->pause);
 
     session->start_time = *start_time;
-
+    ev_periodic_set(&session->transport.rtp_writer, *start_time, 0, NULL);
     ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
 
     session->send_time = 0.0;
@@ -215,27 +209,6 @@ static void rtp_session_seek(gpointer session_gen, gpointer seek_time_gen) {
  */
 void rtp_session_gslist_seek(GSList *sessions_list, double seek_time) {
     g_slist_foreach(sessions_list, rtp_session_seek, &seek_time);
-}
-
-/**
- * @brief Check pre-requisite for sending data for a session
- *
- * @param session The RTP session to check for pre-requisites
- *
- * @retval true The session is ready to send
- * @retval false The session is not ready to send, for whatever
- *               reason, and should just be ignored.
- *
- * This function is used to make sure that we're ready to deal with a
- * particular session. In particular this checks if the session is not
- * paused (or it's live), or has to be skipped for any reason at all.
- */
-static gboolean rtp_session_send_prereq(RTP_session *session) {
-    return ( session != NULL &&
-             ( !session->pause ||
-               session->track->properties->media_source == MS_live
-               )
-             );
 }
 
 /**
@@ -353,14 +326,13 @@ static int rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
  *
  * @param loop eventloop
  * @param w contains the session the RTP session for which to send the packets
+ * @todo implement a saner ratecontrol
  */
 static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
 {
     RTP_session *session = w->data;
     MParserBuffer *buffer = NULL;
-
-    if ( !rtp_session_send_prereq(session) )
-        return;
+    ev_tstamp next_time = ev_now(loop);
 
 #ifdef HAVE_METADATA
     if (session->metadata)
@@ -379,20 +351,30 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
             /* If the producer has been stopped, we send the
              * finishing packets and go away.
              */
-            fnc_log(FNC_LOG_INFO, "[SCH] Stream Finished");
+            fnc_log(FNC_LOG_INFO, "[rtp] Stream Finished");
             rtcp_send_sr(session, BYE);
             return;
         }
-        return;
-    }
+        /* We wait a bit of time to get the data but before it is
+         * expired.
+         */
+        next_time += session->track->properties->frame_duration/3;
+    } else {
+        if (rtp_packet_send(session, buffer) <=
+                session->srv->srvconf.buffered_frames) {
+            mt_resource_read(session->track->parent);
+        }
 
-    if (rtp_packet_send(session, buffer) <=
-            session->srv->srvconf.buffered_frames) {
-        mt_resource_read(session->track->parent);
+        if (session->pkt_count % 29 == 1)
+            rtcp_send_sr(session, SDES);
+        if (buffer->marker)
+            next_time += buffer->duration/2;
     }
-
-    if (session->pkt_count % 29 == 1)
-        rtcp_send_sr(session, SDES);
+    fprintf(stderr, "[send] %s %f mtime %f duration %f send time %f\n",
+                     session->track->parser->info->encoding_name, ev_now(loop),
+                     buffer->timestamp, buffer->duration, next_time);
+    ev_periodic_set(&session->transport.rtp_writer, next_time, 0, NULL);
+    ev_periodic_again(session->srv->loop, &session->transport.rtp_writer);
 }
 
 /**
@@ -439,8 +421,7 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
 #endif
 
     rtp_s->transport.rtp_writer.data = rtp_s;
-    ev_periodic_init(&rtp_s->transport.rtp_writer, rtp_write_cb,
-                     0, 0, rtp_reschedule_cb);
+    ev_periodic_init(&rtp_s->transport.rtp_writer, rtp_write_cb, 0, 0, NULL);
 
     // Setup the RTP session
     rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);

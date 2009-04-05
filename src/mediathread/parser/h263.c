@@ -103,7 +103,7 @@ static int h263_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             memset(header, 0, 2);
             header_len = 2;
         }
-        mparser_buffer_write(tr, tr->parent->info->duration,
+        mparser_buffer_write(tr, tr->properties->frame_duration,
                         cur + payload >= len, dst,
                         payload + header_len);
         cur += payload;
