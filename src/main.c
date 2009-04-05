@@ -27,12 +27,7 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <time.h>
 #include <stdlib.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h> /*SOMAXCONN*/
-#include <signal.h>
 #include <errno.h>
 #include <grp.h>
 #include <string.h>
@@ -47,7 +42,6 @@
 #include "mediathread/mediathread.h"
 #include "network/rtp.h"
 #include <glib.h>
-#include <getopt.h>
 
 #ifdef HAVE_METADATA
 #include "mediathread/metadata/cpd.h"
