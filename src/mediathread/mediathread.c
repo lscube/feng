@@ -34,13 +34,32 @@
 #endif
 
 /**
- * @brief Buffer low event
+ * @defgroup mediathread Mediathread framework
+ *
+ * The mediathread framework, now a misnomer, does not create a single
+ * thread for processing requests, but uses two thread pools (@ref
+ * mt_resource_read_pool and @ref mt_resource_close_pool), set to call
+ * two different callback functions (@ref mt_cb_read and @ref
+ * mt_cb_close).
+ *
+ * By calling these two functions, the read and close operations on
+ * resources are scheduled to be executed asynchronously in one of the
+ * pools' threads. This avoids reimplementing a message-passing system
+ * to signal the thread which resource to handle, and at the same time
+ * allows for multiple clients to read or close resources at the same
+ * time with different threads.
+ *
+ * @{
+ */
+
+/**
+ * @brief Callback function to read from a resource
  *
  * @param resource Resource to read data from
  * @param user_data Unused
  *
- * This function is used to re-fill the buffer for the resource that
- * it's given, to make sure that there is enough data to send to the
+ * This function is used to read more data from the resource into the
+ * buffers, to make sure that there is enough data to send to the
  * clients.
  *
  * @internal This function is used to initialise @ref
@@ -67,6 +86,9 @@ static void mt_cb_read(gpointer resource, gpointer user_data)
  * @param resource The resource to close
  * @param user_data Unused
  *
+ * This function wraps around the r_close function to allow closing
+ * asynchronously the resource.
+ *
  * @internal This function is used to initialise @ref
  *           mt_resource_close_pool.
  */
@@ -80,6 +102,12 @@ GThreadPool *mt_resource_close_pool = NULL;
 
 /**
  * @brief Initialises the thread pools.
+ *
+ * This function has to be called by the main initialisation routine,
+ * after threading is enabled but before using mediathread.
+ *
+ * It creates the threadpool objects that will be used to handle the
+ * asynchronous resource requests.
  */
 void mt_init() {
     mt_resource_read_pool = g_thread_pool_new(mt_cb_read,
@@ -90,20 +118,51 @@ void mt_init() {
 
 /**
  * @brief Frees the thread pools
+ *
+ * This function has to be called by the main shutdown routine, after
+ * all the clients exited.
+ *
+ * It destroys the threadpools, leaving time for the currently-running
+ * task to complete to avoid aborting them directly.
  */
 void mt_shutdown() {
     g_thread_pool_free(mt_resource_read_pool, true, true);
     g_thread_pool_free(mt_resource_close_pool, true, true);
 }
 
+/**
+ * @brief Request an asynchronous read on a resource
+ *
+ * @param resource The resource to request the read for
+ *
+ * This function is used by the RTSP and RTP server code to request
+ * more data to be read for the given resource. Since this is done
+ * through a threadpool, the read happens asynchronously without
+ * stopping the processing.
+ */
 void mt_resource_read(Resource *resource) {
     g_thread_pool_push(mt_resource_read_pool,
                        resource,
                        NULL);
 }
 
+/**
+ * @brief Request an asynchronous close on a resource
+ *
+ * @param resource The resource to close
+ *
+ * This function is used by the RTSP server code to close down a given
+ * resource, usually after a client disconnected. Since this is done
+ * through a threadpool, the closing (and thus the memory free and all
+ * the related paths) happens asynchronously without stopping the
+ * processing.
+ */
 void mt_resource_close(Resource *resource) {
     g_thread_pool_push(mt_resource_close_pool,
                        resource,
                        NULL);
 }
+
+/**
+ * @}
+ */
