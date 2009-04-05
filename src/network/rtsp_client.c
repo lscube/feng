@@ -34,31 +34,44 @@
 #define STREAM_TIMEOUT 12 /* This one must be big enough to permit to VLC to switch to another
                              transmission protocol and must be a multiple of LIVE_STREAM_BYE_TIMEOUT */
 
-static void rtsp_client_free(RTSP_Client *rtsp);
-
-static void client_events_deregister(RTSP_Client *rtsp)
+/**
+ * @brief Handle client disconnection and free resources
+ *
+ * @param loop The event loop where the event was issued
+ * @param w The async event object
+ * @param revents Unused
+ *
+ * This event is triggered when a client disconnects or is forcefully
+ * disconnected. It stops the other events from running, and frees all
+ * the remaining resources for the client itself.
+ */
+static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int revents)
 {
+    RTSP_Client *rtsp = (RTSP_Client*)w->data;
+    GString *outbuf = NULL;
     feng *srv = rtsp->srv;
 
     ev_io_stop(srv->loop, &rtsp->ev_io_read);
     ev_async_stop(srv->loop, &rtsp->ev_sig_disconnect);
     ev_timer_stop(srv->loop, &rtsp->ev_timeout);
-}
 
-static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int revents)
-{
-    RTSP_Client *rtsp = w->data;
-    feng *srv = rtsp->srv;
-
-    //Prevent from requesting disconnection again
-    client_events_deregister(rtsp);
-
-    //Close connection
     Sock_close(rtsp->sock);
     srv->connection_count--;
 
-    // Release the RTSP_Client
-    rtsp_client_free(rtsp);
+    rtsp_session_free(rtsp->session);
+
+    interleaved_free_list(rtsp);
+
+    /* Remove the output queue */
+    while( (outbuf = g_queue_pop_tail(rtsp->out_queue)) )
+        g_string_free(outbuf, TRUE);
+
+    g_queue_free(rtsp->out_queue);
+
+    g_byte_array_free(rtsp->input, true);
+
+    g_slice_free(RTSP_Client, rtsp);
+
     fnc_log(FNC_LOG_INFO, "[client] Client removed");
 }
 
@@ -99,8 +112,8 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w, int revents)
  * @param srv The feng server that accepted the connection.
  * @param client_sock The socket the client is connected to.
  *
- * @note The newly-created instance has to be deleted with the @ref
- *       rtsp_client_free function.
+ * The newly created instance is deleted by @ref
+ * client_ev_disconnect_handler.
  */
 void rtsp_client_connect(feng *srv, Sock *client_sock)
 {
@@ -132,30 +145,4 @@ void rtsp_client_connect(feng *srv, Sock *client_sock)
     ev_init(&rtsp->ev_timeout, client_ev_timeout);
     rtsp->ev_timeout.repeat = STREAM_TIMEOUT;
     ev_timer_again (srv->loop, &rtsp->ev_timeout);
-}
-
-/**
- * @brief Free resources for an RTSP_Client object
- *
- * @param rtsp The client structure to free
- *
- * @see rtsp_client_connect
- */
-static void rtsp_client_free(RTSP_Client *rtsp)
-{
-  GString *outbuf = NULL;
-
-  rtsp_session_free(rtsp->session);
-
-  interleaved_free_list(rtsp);
-
-  // Remove the output queue
-  while( (outbuf = g_queue_pop_tail(rtsp->out_queue)) )
-    g_string_free(outbuf, TRUE);
-
-  g_queue_free(rtsp->out_queue);
-
-  g_byte_array_free(rtsp->input, true);
-
-  g_slice_free(RTSP_Client, rtsp);
 }
