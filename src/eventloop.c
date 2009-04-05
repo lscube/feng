@@ -43,7 +43,6 @@ static void add_client(feng *srv, Sock *client_sock)
     client_sock->data = srv;
 
     rtsp->ev_io_read.data = rtsp;
-    g_ptr_array_add(io_watchers, &rtsp->ev_io_read);
     ev_io_init(&rtsp->ev_io_read, rtsp_read_cb, Sock_fd(client_sock), EV_READ);
     ev_io_start(srv->loop, &rtsp->ev_io_read);
 
