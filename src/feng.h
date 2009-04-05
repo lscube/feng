@@ -43,11 +43,7 @@ typedef struct feng {
     void *metadata_clients;	    //!< CPD Clients
 #endif
     // Metadata end
-/**
- * @name lighttpd-alike preferences
- * lemon based, lighttpd alike preferences
- */
-//@{
+
     array *config;
     array *config_touched;
 
@@ -55,22 +51,19 @@ typedef struct feng {
     specific_config **config_storage;
 
     server_config srvconf;
-//@}
-/**
- * @name eventloop state
- * Includes the
- */
-//@{
+
+    struct ev_loop *loop;       //!< event loop
+
     /**
+     * @brief Number of active connections
+     *
      * Once it reaches the maximum the server redirects
      * to a twin if available
      */
-    struct ev_loop *loop;       //!< event loop
-    int num_conn;               //!< number of active connections
+    int num_conn;
     int conn_count;             //!< number of active connections (FIXME)
     int stop_schedule;          //!< to be refactored away
     GSList *clients;            //!< currently connected clients
-//@}
 } feng;
 
 typedef feng server;
