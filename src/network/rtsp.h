@@ -107,7 +107,7 @@ typedef struct RTSP_Client {
     ev_io ev_io_write;
 } RTSP_Client;
 
-void rtsp_client_connect(struct feng *srv, Sock *client_sock);
+void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents);
 
 /**
  * @brief RTSP method tokens

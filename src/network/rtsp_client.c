@@ -107,18 +107,44 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w, int revents)
 }
 
 /**
- * @brief Create and connect a new RTSP client object
+ * @brief Handle an incoming RTSP connection
  *
- * @param srv The feng server that accepted the connection.
- * @param client_sock The socket the client is connected to.
+ * @param loop The event loop where the incoming connection was triggered
+ * @param w The watcher that triggered the incoming connection
+ * @param revents Unused
+ *
+ * This function takes care of all the handling of an incoming RTSP
+ * client connection:
+ *
+ * @li accept the new socket;
+ *
+ * @li checks that there is space for new connections for the current
+ *     fork;
+ *
+ * @li creates and sets up the @ref RTSP_Client object.
  *
  * The newly created instance is deleted by @ref
  * client_ev_disconnect_handler.
+ *
+ * @internal This function should be used as callback for an ev_io
+ *           listener.
  */
-void rtsp_client_connect(feng *srv, Sock *client_sock)
+void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
-    RTSP_Client *rtsp = g_slice_new0(RTSP_Client);
+    Sock *sock = w->data;
+    feng *srv = sock->data;
+    Sock *client_sock = NULL;
+    RTSP_Client *rtsp;
 
+    if ( (client_sock = Sock_accept(sock, NULL)) == NULL )
+        return;
+
+    if (srv->connection_count >= ONE_FORK_MAX_CONNECTION) {
+        Sock_close(client_sock);
+        return;
+    }
+
+    rtsp = g_slice_new0(RTSP_Client);
     rtsp->sock = client_sock;
     rtsp->input = g_byte_array_new();
     rtsp->out_queue = g_queue_new();
@@ -145,4 +171,6 @@ void rtsp_client_connect(feng *srv, Sock *client_sock)
     ev_init(&rtsp->ev_timeout, client_ev_timeout);
     rtsp->ev_timeout.repeat = STREAM_TIMEOUT;
     ev_timer_again (srv->loop, &rtsp->ev_timeout);
+
+    fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
 }

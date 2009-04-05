@@ -28,29 +28,6 @@
 #include "network/rtsp.h"
 
 /**
- * Accepts the new connection if possible.
- */
-
-static void
-incoming_connection_cb(struct ev_loop *loop, ev_io *w, int revents)
-{
-    Sock *sock = w->data;
-    feng *srv = sock->data;
-    Sock *client_sock = NULL;
-
-    if ( (client_sock = Sock_accept(sock, NULL)) == NULL )
-        return;
-
-    if (srv->connection_count >= ONE_FORK_MAX_CONNECTION) {
-        Sock_close(client_sock);
-        return;
-    }
-
-    rtsp_client_connect(srv, client_sock);
-    fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
-}
-
-/**
  * Bind to the defined listening port
  *
  * @param srv The server instance to bind ports for
@@ -93,7 +70,8 @@ int feng_bind_port(struct feng *srv, const char *host, const char *port,
     }
     sock->data = srv;
     srv->listeners[cfg_storage_idx].data = sock;
-    ev_io_init(&srv->listeners[cfg_storage_idx], incoming_connection_cb,
+    ev_io_init(&srv->listeners[cfg_storage_idx],
+               rtsp_client_incoming_cb,
                Sock_fd(sock), EV_READ);
     ev_io_start(srv->loop, &srv->listeners[cfg_storage_idx]);
     return 0;
