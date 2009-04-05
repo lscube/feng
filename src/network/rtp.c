@@ -222,24 +222,15 @@ void rtp_session_gslist_seek(GSList *sessions_list, double seek_time) {
  *
  * @param session The RTP session to check for pre-requisites
  *
- * @retval true The session is ready to send, and the @ref
- *              RTP_session::lock mutex has been locked.
+ * @retval true The session is ready to send
  * @retval false The session is not ready to send, for whatever
  *               reason, and should just be ignored.
  *
  * This function is used to make sure that we're ready to deal with a
  * particular session. In particular this checks if the session is not
- * locked (we can just wait the next iteration if that's the case), is
- * not paused (or it's live), or has to be skipped for any reason at
- * all.
- *
- * @note If this function returned true, you need to unlock the mutex
- *       one way or another!
+ * paused (or it's live), or has to be skipped for any reason at all.
  */
 static gboolean rtp_session_send_prereq(RTP_session *session) {
-    /* We have this if here because we need to unlock the mutex if
-     * we're not ready after locking it!
-     */
     return ( session != NULL &&
              ( !session->pause ||
                session->track->properties->media_source == MS_live
@@ -362,9 +353,6 @@ static int rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
  *
  * @param loop eventloop
  * @param w contains the session the RTP session for which to send the packets
- *
- * @note This function will require exclusive access to the session,
- *       so it'll lock the @ref RTP_session::lock mutex.
  */
 static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
 {
