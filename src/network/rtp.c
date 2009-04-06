@@ -339,6 +339,8 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         cpd_send(session, now);
 #endif
 
+    mt_resource_read(session->track->parent);
+
     /* Get the current buffer, if there is enough data */
     if ( !(buffer = bq_consumer_get(session->consumer)) ) {
         /* If there is no buffer, it means that either the producer
@@ -360,10 +362,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
          */
         next_time += session->track->properties->frame_duration/3;
     } else {
-        if (rtp_packet_send(session, buffer) <=
-                session->srv->srvconf.buffered_frames) {
-            mt_resource_read(session->track->parent);
-        }
+        rtp_packet_send(session, buffer);
 
         if (session->pkt_count % 29 == 1)
             rtcp_send_sr(session, SDES);
