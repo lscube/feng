@@ -208,8 +208,11 @@ static GByteArray *rtcp_pkt_sr_sdes(RTP_session *session)
         sdes_size;
 
     /* Pad to 32-bit */
-    if ( outpkt_size%4 != 0 )
-        outpkt_size += 4-(outpkt_size%4);
+    if ( outpkt_size%4 != 0 ) {
+        const size_t padding = 4-(outpkt_size%4);
+        sdes_size += padding;
+        outpkt_size += padding;
+    }
 
     outpkt_buffer = g_byte_array_sized_new(outpkt_size);
     g_byte_array_set_size(outpkt_buffer, outpkt_size);
@@ -252,9 +255,13 @@ static GByteArray *rtcp_pkt_sr_bye(RTP_session *session)
         sizeof(reason);
     size_t outpkt_size = sizeof(RTCP_header) + sizeof(RTCP_header_SR) +
         bye_size;
+
     /* Pad to 32-bit */
-    if ( outpkt_size%4 != 0 )
-        outpkt_size += 4-(outpkt_size%4);
+    if ( outpkt_size%4 != 0 ) {
+        const size_t padding = 4-(outpkt_size%4);
+        bye_size += padding;
+        outpkt_size += padding;
+    }
 
     outpkt_buffer = g_byte_array_sized_new(outpkt_size);
     g_byte_array_set_size(outpkt_buffer, outpkt_size);
