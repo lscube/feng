@@ -166,12 +166,13 @@ static void rtcp_set_sr(RTP_session *session, RTCP_SR_Compound *outpkt)
 {
     struct timespec ntp_time;
     double now;
+    size_t sr_size = sizeof(RTCP_header) + sizeof(RTCP_header_SR);
 
     outpkt->sr_hdr.version = 2;
     outpkt->sr_hdr.padding = 0;
     outpkt->sr_hdr.count = 0;
     outpkt->sr_hdr.pt = SR;
-    outpkt->sr_hdr.length = sizeof(RTCP_header) + sizeof(RTCP_header_SR);
+    outpkt->sr_hdr.length = htons((sr_size>>2) -1);
 
     outpkt->sr_pkt.ssrc = htonl(session->ssrc);
     now = gettimeinseconds(&ntp_time);
@@ -201,11 +202,10 @@ static GByteArray *rtcp_pkt_sr_sdes(RTP_session *session)
     const char *name = session->transport.rtcp_sock->local_host ?
         session->transport.rtcp_sock->local_host : "::";
     const size_t name_len = strlen(name);
-
-    size_t outpkt_size =
-        sizeof(RTCP_header) + sizeof(RTCP_header_SR) +
-        sizeof(RTCP_header) + sizeof(RTCP_header) +
+    size_t sdes_size = sizeof(RTCP_header) + sizeof(RTCP_header_SDES) +
         name_len;
+    size_t outpkt_size = sizeof(RTCP_header) + sizeof(RTCP_header_SR) +
+        sdes_size;
 
     /* Pad to 32-bit */
     if ( outpkt_size%4 != 0 )
@@ -213,17 +213,18 @@ static GByteArray *rtcp_pkt_sr_sdes(RTP_session *session)
 
     outpkt_buffer = g_byte_array_sized_new(outpkt_size);
     g_byte_array_set_size(outpkt_buffer, outpkt_size);
+    memset(outpkt_buffer->data, 0, outpkt_size);
 
     outpkt = (RTCP_SR_Compound*)outpkt_buffer->data;
 
     rtcp_set_sr(session, outpkt);
 
     outpkt->payload_hdr.version = 2;
-    outpkt->payload_hdr.padding = 0;
+    outpkt->payload_hdr.padding = 0; // Avoid padding
     outpkt->payload_hdr.count = 1;
     outpkt->payload_hdr.pt = SDES;
-    outpkt->payload_hdr.length = outpkt_size
-        - sizeof(RTCP_header) + sizeof(RTCP_header_SR);
+
+    outpkt->payload_hdr.length = htons((sdes_size>>2) -1);
 
     outpkt->payload.sdes.ssrc = htonl(session->ssrc);
     outpkt->payload.sdes.attr_name = CNAME;
@@ -247,17 +248,17 @@ static GByteArray *rtcp_pkt_sr_bye(RTP_session *session)
 
     RTCP_SR_Compound *outpkt;
     GByteArray *outpkt_buffer;
-    size_t outpkt_size =
-        sizeof(RTCP_header) + sizeof(RTCP_header_SR) +
-        sizeof(RTCP_header) + sizeof(RTCP_header) +
+    size_t bye_size = sizeof(RTCP_header) + sizeof(RTCP_header_BYE) +
         sizeof(reason);
-
+    size_t outpkt_size = sizeof(RTCP_header) + sizeof(RTCP_header_SR) +
+        bye_size;
     /* Pad to 32-bit */
     if ( outpkt_size%4 != 0 )
         outpkt_size += 4-(outpkt_size%4);
 
     outpkt_buffer = g_byte_array_sized_new(outpkt_size);
     g_byte_array_set_size(outpkt_buffer, outpkt_size);
+    memset(outpkt_buffer->data, 0, outpkt_size);
 
     outpkt = (RTCP_SR_Compound*)outpkt_buffer->data;
 
@@ -267,8 +268,7 @@ static GByteArray *rtcp_pkt_sr_bye(RTP_session *session)
     outpkt->payload_hdr.padding = 0;
     outpkt->payload_hdr.count = 1;
     outpkt->payload_hdr.pt = BYE;
-    outpkt->payload_hdr.length = outpkt_size
-        - sizeof(RTCP_header) + sizeof(RTCP_header_SR);
+    outpkt->payload_hdr.length = htons((bye_size>>2) -1);
 
     outpkt->payload.bye.ssrc = htonl(session->ssrc);
     outpkt->payload.bye.length = htonl(sizeof(reason)-1);
