@@ -102,13 +102,12 @@ static GList *r_descr_find(const char *mrl)
  * found.
  * */
 
-static int find_demuxer(InputStream *i_stream)
+Demuxer *find_demuxer(InputStream *i_stream)
 {
     // this int will contain the index of the demuxer already probed second
     // the extension suggestion, in order to not probe twice the same
     // demuxer that was proved to be not usable.
     int probed = -1;
-    char found = 0; // flag for demuxer found.
     int i; // index
     char exts[128], *res_ext, *tkn; /* temp string containing extension
                                      * served by probing demuxer.
@@ -130,28 +129,24 @@ static int find_demuxer(InputStream *i_stream)
                         fnc_log(FNC_LOG_DEBUG,
                                 "[MT] probing demuxer: \"%s\" demuxer found\n",
                                 demuxers[i]->info->name);
-                        found = 1;
-                        break;
+                        return demuxers[i];
                     }
                 }
-            }
-            if (found) break;
-        }
-    }
-    if (!found) {
-        for (i=0; demuxers[i]; i++) {
-            if ((i!=probed) && (demuxers[i]->probe(i_stream) == RESOURCE_OK))
-            {
-                fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\""
-                                       "demuxer found\n",
-                                        demuxers[i]->info->name);
-                found = 1;
-                break;
             }
         }
     }
 
-    return found ? i: -1;
+    for (i=0; demuxers[i]; i++) {
+        if ((i!=probed) && (demuxers[i]->probe(i_stream) == RESOURCE_OK))
+            {
+                fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\""
+                        "demuxer found\n",
+                        demuxers[i]->info->name);
+                return demuxers[i];
+            }
+    }
+
+    return NULL;
 }
 
 /**
@@ -256,7 +251,7 @@ static gboolean r_changed(ResourceDescr *descr)
     return false;
 }
 
-static void r_descr_cache_update(Resource *r)
+void r_descr_cache_update(Resource *r)
 {
     GList *cache_el;
     ResourceDescr *r_descr=NULL;
@@ -282,6 +277,9 @@ static void r_descr_cache_update(Resource *r)
     }
 }
 
+/**
+ * @brief Free a @ref ResourceInfo object
+ */
 static void resinfo_free(void *resinfo)
 {
     if (!resinfo)
@@ -290,6 +288,18 @@ static void resinfo_free(void *resinfo)
     g_free(((ResourceInfo *)resinfo)->mrl);
 
     g_free(resinfo);
+}
+
+/**
+ * @brief Creates a new @ref ResourceInfo object
+ */
+ResourceInfo *resinfo_new() {
+    ResourceInfo *rinfo;
+
+    rinfo = MObject_new0(ResourceInfo, 1);
+    MObject_destructor(rinfo, resinfo_free);
+
+    return rinfo;
 }
 
 static void trackinfo_free(void *trackinfo)
@@ -323,57 +333,6 @@ static void properties_free(void *properties)
     g_free(props);
 }
 
-Resource *r_open(struct feng *srv, const char *inner_path)
-{
-    Resource *r;
-    int dmx_idx;
-    InputStream *i_stream;
-    gchar *mrl = g_strjoin ("/",
-                            srv->config_storage[0]->document_root->ptr,
-                            inner_path,
-                            NULL);
-
-    if( !(i_stream = istream_open(mrl)) )
-        return NULL;
-
-    if ( (dmx_idx = find_demuxer(i_stream))<0 ) {
-        fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer"
-                                       " for resource %s\n", mrl);
-        return NULL;
-    }
-
-    fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource"
-                               "\"%s\"\n", demuxers[dmx_idx]->info->name, mrl);
-
-// allocation of all data structures
-
-    r = g_slice_new0(Resource);
-    r->lock = g_mutex_new();
-
-// we use MObject_new: that will alloc memory and exits the program
-// if something goes wrong
-    r->info = MObject_new0(ResourceInfo, 1);
-    MObject_destructor(r->info, resinfo_free);
-
-    r->info->mrl = mrl;
-    r->info->name = g_path_get_basename(inner_path);
-    r->i_stream = i_stream;
-    r->demuxer = demuxers[dmx_idx];
-    r->srv = srv;
-
-    if (r->demuxer->init(r)) {
-        r_close(r);
-        return NULL;
-    }
-
-    r_descr_cache_update(r);
-
-#ifdef HAVE_METADATA
-    cpd_find_request(srv, r, filename);
-#endif
-
-    return r;
-}
 
 /**
  * @brief Frees the resources of a Track object
@@ -381,7 +340,7 @@ Resource *r_open(struct feng *srv, const char *inner_path)
  * @param element Track to free
  * @param user_data Unused, for compatibility with g_list_foreach().
  */
-static void free_track(gpointer element, gpointer user_data)
+void free_track(gpointer element, gpointer user_data)
 {
     Track *track = (Track*)element;
 
@@ -399,104 +358,6 @@ static void free_track(gpointer element, gpointer user_data)
     g_slice_free(Track, track);
 }
 
-void r_close(Resource *r)
-{
-    if (!r)
-        return;
-
-    g_mutex_free(r->lock);
-    istream_close(r->i_stream);
-    MObject_unref(MOBJECT(r->info));
-    r->info = NULL;
-    r->demuxer->uninit(r);
-
-    g_list_foreach(r->tracks, free_track, NULL);
-    g_list_free(r->tracks);
-
-    g_slice_free(Resource, r);
-}
-
-/**
- * @brief Comparison function to compare a Track to a name
- *
- * @param a Track pointer to the element in the list
- * @param b String with the name to compare to
- *
- * @return The strcmp() result between the correspondent Track name
- *         and the given name.
- *
- * @internal This function should _only_ be used by @ref r_find_track.
- */
-static gint r_find_track_cmp_name(gconstpointer a, gconstpointer b)
-{
-    return strcmp( ((Track *)a)->info->name, (const char *)b);
-}
-
-/**
- * @brief Find the given track name in the resource
- *
- * @param resource The Resource object to look into
- * @param track_name The name of the track to look for
- *
- * @return A pointer to the Track object for the requested track.
- *
- * @retval NULL No track in the resource corresponded to the given
- *              parameters.
- *
- * @todo This only returns the first resource corresponding to the
- *       parameters.
- * @todo Capabilities aren't used yet.
- */
-Track *r_find_track(Resource *resource, const char *track_name) {
-    GList *track = g_list_find_custom(resource->tracks,
-                                      track_name,
-                                      r_find_track_cmp_name);
-
-    if ( !track ) {
-        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
-                track_name, resource->info->mrl);
-        return NULL;
-    }
-
-    return track->data;
-}
-
-/**
- * @brief Resets the BufferQueue producer queue for a given track
- *
- * @param element The Track element from the list
- * @param user_data Unused, for compatibility with g_list_foreach().
- *
- * @see bq_producer_reset_queue
- */
-static void r_track_producer_reset_queue(gpointer element, gpointer user_data) {
-    Track *t = (Track*)element;
-
-    bq_producer_reset_queue(t->producer);
-}
-
-/**
- * @brief Seek a resource to a given time in stream
- *
- * @param resource The Resource to seek
- * @param time The time in seconds within the stream to seek to
- *
- * @return The value returned by @ref Demuxer::seek
- *
- * @note This function will lock the @ref Resource::lock mutex.
- */
-int r_seek(Resource *resource, double time) {
-    int res;
-
-    g_mutex_lock(resource->lock);
-    res = resource->demuxer->seek(resource, time);
-
-    g_list_foreach(resource->tracks, r_track_producer_reset_queue, NULL);
-
-    g_mutex_unlock(resource->lock);
-
-    return res;
-}
 
 #define ADD_TRACK_ERROR(level, ...) \
     { \
@@ -514,8 +375,6 @@ int r_seek(Resource *resource, double time) {
 Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 {
     Track *t;
-    char *shm_name;
-
     // TODO: search first of all in exclusive tracks
 
     if(r->num_tracks>=MAX_TRACKS)

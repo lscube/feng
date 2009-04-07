@@ -66,8 +66,11 @@ MObject_def(ResourceInfo_s)
     char ttl[4];
 } ResourceInfo;
 
+ResourceInfo *resinfo_new();
+
 typedef struct Resource {
     GMutex *lock;
+    GThreadPool *read_pool;
     InputStream *i_stream;
     struct Demuxer *demuxer;
     ResourceInfo *info;
@@ -82,9 +85,7 @@ typedef struct Resource {
     /* EDL specific data */
     struct Resource *edl;
     /* Multiformat related things */
-    SelList sel;
     TrackList tracks;
-    int num_sel;
     int num_tracks;
     void *private_data; /* Demuxer private data */
     struct feng *srv;
@@ -155,20 +156,24 @@ typedef struct {
 
 // --- functions --- //
 
-// Resources
+Demuxer *find_demuxer(InputStream *i_stream);
 
 Resource *r_open(struct feng *srv, const char *inner_path);
 
-void r_close(Resource *);
-
+void r_read(Resource *resource, gint count);
 int r_seek(Resource *resource, double time);
+
+void r_close(Resource *resource);
 
 Track *r_find_track(Resource *, const char *);
 
 // Tracks
 Track *add_track(Resource *, TrackInfo *, MediaProperties *);
+void free_track(gpointer element, gpointer user_data);
 
 // Resources and Media descriptions
+
+void r_descr_cache_update(Resource *r);
 ResourceDescr *r_descr_get(struct feng *srv, const char *inner_path);
 MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr);
 

@@ -39,7 +39,6 @@
 #include "feng.h"
 #include "fnc_log.h"
 #include "incoming.h"
-#include "mediathread/mediathread.h"
 #include "network/rtp.h"
 #include <glib.h>
 
@@ -52,7 +51,6 @@
  */
 static void sigint_cb (struct ev_loop *loop, ev_signal *w, int revents)
 {
-    mt_shutdown();
     ev_unloop (loop, EVUNLOOP_ALL);
 }
 
@@ -267,8 +265,6 @@ int main(int argc, char **argv)
     feng_drop_privs(srv);
 
     if (!g_thread_supported ()) g_thread_init (NULL);
-
-    mt_init();
 
 #ifdef HAVE_METADATA
     g_thread_create(cpd_server, (void *) srv, FALSE, NULL);

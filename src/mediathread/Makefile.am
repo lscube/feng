@@ -10,10 +10,9 @@ libmediath_a_SOURCES =	cache.c \
 			InputStream.h \
 			mediaparser.c \
 			mediaparser.h mediaparser_module.h \
-			mediathread.c \
-			mediathread.h \
 			mediautils.c \
 			mediautils.h \
+			resource.c \
 			sdp_grammar.h \
 			parser/mpeg12.c \
 			parser/mpegaudio.c \

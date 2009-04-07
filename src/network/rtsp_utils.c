@@ -36,7 +36,6 @@
 #include "feng.h"
 #include "rtsp.h"
 #include "rtp.h"
-#include "mediathread/mediathread.h"
 
 /**
  * @defgroup rtsp_utils Utility functions
@@ -82,8 +81,7 @@ void rtsp_session_free(RTSP_session *session)
     rtp_session_gslist_free(session->rtp_sessions);
     g_slist_free(session->rtp_sessions);
 
-    /* Release mediathread resource */
-    mt_resource_close(session->resource);
+    r_close(session->resource);
 
     g_free(session->session_id);
     g_slice_free(RTSP_session, session);

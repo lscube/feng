@@ -29,7 +29,6 @@
 #include "rtsp.h"
 #include "fnc_log.h"
 #include "mediathread/demuxer.h"
-#include "mediathread/mediathread.h"
 
 /**
  * Closes a transport linked to a session
@@ -127,8 +126,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer start_time_gen) {
     session->last_packet_send_time = time(NULL);
 
     /* Prefetch frames */
-    for (i=0; i < srv->srvconf.buffered_frames; i++)
-        mt_resource_read(session->track->parent);
+    r_read(session->track->parent, srv->srvconf.buffered_frames);
 }
 
 /**
@@ -339,7 +337,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         cpd_send(session, now);
 #endif
 
-    mt_resource_read(session->track->parent);
+    r_read(session->track->parent, 1);
 
     /* Get the current buffer, if there is enough data */
     if ( !(buffer = bq_consumer_get(session->consumer)) ) {
@@ -368,10 +366,11 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
             rtcp_send_sr(session, SDES);
         if (buffer->marker)
             next_time += buffer->duration/2;
+
+        fprintf(stderr, "[send] %s %f mtime %f duration %f send time %f\n",
+                session->track->parser->info->encoding_name, ev_now(loop),
+                buffer->timestamp, buffer->duration, next_time);
     }
-    fprintf(stderr, "[send] %s %f mtime %f duration %f send time %f\n",
-                     session->track->parser->info->encoding_name, ev_now(loop),
-                     buffer->timestamp, buffer->duration, next_time);
     ev_periodic_set(&session->transport.rtp_writer, next_time, 0, NULL);
     ev_periodic_again(session->srv->loop, &session->transport.rtp_writer);
 }
