@@ -28,10 +28,6 @@
 
 struct feng;
 
-#define SDP2_EL "\r\n"
-#define SDP2_VERSION 0
-#define SDP2_TRACK_ID "TrackID"
-
 GString *sdp_session_descr(struct feng *srv, const Url *url);
 
 #endif // FN_SDP2_H

@@ -37,6 +37,7 @@
 #include <netembryo/wsocket.h>
 #include <netembryo/url.h>
 
+#define SDP2_EL "\r\n"
 #define DEFAULT_TTL 32
 
 #define NTP_time(t) ((float)t + 2208988800U)
@@ -195,7 +196,7 @@ static void sdp_media_descr(gpointer element, gpointer user_data)
     // a=*
     encoded_media_name = g_uri_escape_string(m_descr_name(m_descr), NULL, false);
 
-    g_string_append_printf(descr, "a=control:"SDP2_TRACK_ID"=%s"SDP2_EL,
+    g_string_append_printf(descr, "a=control:TrackID=%s"SDP2_EL,
                            encoded_media_name);
     g_free(encoded_media_name);
 
@@ -273,7 +274,7 @@ GString *sdp_session_descr(struct feng *srv, const Url *url)
         return NULL;
     }
 
-    descr = g_string_new("");
+    descr = g_string_new("v=0"SDP2_EL);
 
     /* Near enough approximation to run it now */
     currtime_float = NTP_time(time(NULL));
@@ -282,8 +283,6 @@ GString *sdp_session_descr(struct feng *srv, const Url *url)
 
     if ( (resname = r_descr_name(r_descr)) == NULL )
         resname = "RTSP Session";
-
-    g_string_append_printf(descr, "v=%d"SDP2_EL, SDP2_VERSION);
 
     /* Network type: Internet; Address type: IP4. */
     g_string_append_printf(descr, "o=- %.0f %.0f IN IP4 %s"SDP2_EL,
