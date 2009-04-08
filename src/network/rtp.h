@@ -57,8 +57,6 @@ typedef struct RTP_transport {
 } RTP_transport;
 
 typedef struct RTP_session {
-    /** Session paused (or never started) */
-    gboolean pause;
 
     /** Multicast session (treated in a special way) */
     gboolean multicast;

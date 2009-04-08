@@ -113,16 +113,11 @@ static void rtp_session_resume(gpointer session_gen, gpointer start_time_gen) {
     feng *srv = session->srv;
     int i;
 
-    /* We want to make sure that the session is at least in pause,
-     * otherwise something is funky */
-    g_assert(session->pause);
-
     session->start_time = *start_time;
     ev_periodic_set(&session->transport.rtp_writer, *start_time, 0, NULL);
     ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
 
     session->send_time = 0.0;
-    session->pause = 0;
     session->last_packet_send_time = time(NULL);
 
     /* Prefetch frames */
@@ -156,7 +151,7 @@ void rtp_session_gslist_resume(GSList *sessions_list, double start_time) {
 static void rtp_session_pause(gpointer session_gen, gpointer user_data) {
     RTP_session *session = (RTP_session *)session_gen;
 
-    session->pause = 1;
+    ev_periodic_stop(session->srv->loop, &session->transport.rtp_writer);
 }
 
 /**
@@ -365,14 +360,20 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         if (session->pkt_count % 29 == 1)
             rtcp_send_sr(session, SDES);
         if (buffer->marker)
-            next_time += buffer->duration/2;
-
-        fprintf(stderr, "[send] %s %f mtime %f duration %f send time %f\n",
-                session->track->parser->info->encoding_name, ev_now(loop),
-                buffer->timestamp, buffer->duration, next_time);
+            next_time += buffer->duration;
     }
-    ev_periodic_set(&session->transport.rtp_writer, next_time, 0, NULL);
-    ev_periodic_again(session->srv->loop, &session->transport.rtp_writer);
+
+
+    fprintf(stderr,
+            "[send] current %f stream %s timestamp %f (%d) duration %f next %f\n",
+                     session->track->parser->info->encoding_name,
+                     ev_now(loop) - session->start_time,
+                     buffer->timestamp,
+                     buffer->marker,
+                     buffer->duration,
+                     next_time - session->start_time);
+    ev_periodic_set(w, next_time, 0, NULL);
+    ev_periodic_again(loop, w);
 }
 
 /**
@@ -398,7 +399,6 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
     /* Make sure we start paused since we have to wait for parameters
      * given by @ref rtp_session_resume.
      */
-    rtp_s->pause = 1;
     rtp_s->sd_filename = g_strdup(path);
 
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));

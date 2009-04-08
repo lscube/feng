@@ -77,10 +77,10 @@ static void frag_fu_a(uint8_t *nal, int fragsize, int mtu,
         }
         memcpy(buf + 2, nal, fraglen);
         fnc_log(FNC_LOG_VERBOSE, "[h264] Frag %d %d",buf[0], buf[1]);
+        mparser_buffer_write(tr, tr->properties->frame_duration,
+                             (fragsize<=fraglen), buf, fraglen + 2);
         fragsize -= fraglen;
         nal      += fraglen;
-        mparser_buffer_write(tr, tr->properties->frame_duration,
-                             0, buf, fraglen + 2);
     }
 }
 
