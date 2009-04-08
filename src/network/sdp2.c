@@ -155,28 +155,28 @@ static void sdp_media_descr(gpointer element, gpointer user_data)
     const char *title;
     const char *author;
 
+    /* Associative-array of media types and their SDP strings.
+     *
+     * Note that the space at the end is used to avoid using
+     * printf-like interfaces.
+     */
+    static const char *const sdp_media_types[] = {
+        [MP_audio] = "m=audio ",
+        [MP_video] = "m=video ",
+        [MP_application] = "m=application ",
+        [MP_data] = "m=data ",
+        [MP_control] = "m=control "
+    };
+
     if (!m_descr)
         return;
 
-    // m=
-    /// @TODO Convert this to a string table
-    switch ( (type = m_descr_type(m_descr)) ) {
-    case MP_audio:
-        g_string_append(descr, "m=audio ");
-        break;
-    case MP_video:
-        g_string_append(descr, "m=video ");
-        break;
-    case MP_application:
-        g_string_append(descr, "m=application ");
-        break;
-    case MP_data:
-        g_string_append(descr, "m=data ");
-        break;
-    case MP_control:
-        g_string_append(descr, "m=control ");
-        break;
-    }
+    type = m_descr_type(m_descr);
+
+    /* MP_undef is the only case we don't handle. */
+    g_assert(type != MP_undef);
+
+    g_string_append(descr, sdp_media_types[type]);
 
     /// @TODO shawill: probably the transport should not be hard coded,
     /// but obtained in some way
