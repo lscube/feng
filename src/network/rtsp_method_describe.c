@@ -76,7 +76,7 @@ void RTSP_describe(RTSP_Client * rtsp, RTSP_Request *req)
         return;
 
     // Get Session Description
-    descr = sdp_session_descr(rtsp->srv, url.hostname, url.path);
+    descr = sdp_session_descr(rtsp->srv, &url);
 
     Url_destroy(&url);
 

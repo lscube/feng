@@ -24,6 +24,7 @@
 #define FN_SDP2_H
 
 #include <glib.h>
+#include <netembryo/url.h>
 
 struct feng;
 
@@ -31,6 +32,6 @@ struct feng;
 #define SDP2_VERSION 0
 #define SDP2_TRACK_ID "TrackID"
 
-GString *sdp_session_descr(struct feng *, const char *, const char *);
+GString *sdp_session_descr(struct feng *srv, const Url *url);
 
 #endif // FN_SDP2_H

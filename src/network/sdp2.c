@@ -251,17 +251,13 @@ static void sdp_rdescr_private_append(gpointer element, gpointer user_data)
  * @brief Create description for an SDP session
  *
  * @param srv Pointer to the server-specific data instance.
- * @param server Hostname of the server used for the request.
- * @param name Name of the resource to describe.
+ * @param url Url of the resource to describe
  *
  * @return A new GString containing the complete description of the
  *         session or NULL if the resource was not found or no demuxer
  *         was found to handle it.
- *
- * @TODO Consider receiving a netembryo Url structure pointer instead
- *       of separated server and resource names.
  */
-GString *sdp_session_descr(struct feng *srv, const char *server, const char *name)
+GString *sdp_session_descr(struct feng *srv, const Url *url)
 {
     GString *descr = NULL;
     ResourceDescr *r_descr;
@@ -271,9 +267,9 @@ GString *sdp_session_descr(struct feng *srv, const char *server, const char *nam
     time_t restime;
     float currtime_float, restime_float;
 
-    fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s", name);
-    if ( !(r_descr=r_descr_get(srv, name)) ) {
-        fnc_log(FNC_LOG_ERR, "[SDP2] %s not found", name);
+    fnc_log(FNC_LOG_DEBUG, "[SDP2] opening %s", url->path);
+    if ( !(r_descr=r_descr_get(srv, url->path)) ) {
+        fnc_log(FNC_LOG_ERR, "[SDP2] %s not found", url->path);
         return NULL;
     }
 
@@ -291,7 +287,7 @@ GString *sdp_session_descr(struct feng *srv, const char *server, const char *nam
 
     /* Network type: Internet; Address type: IP4. */
     g_string_append_printf(descr, "o=- %.0f %.0f IN IP4 %s"SDP2_EL,
-                           currtime_float, restime_float, server);
+                           currtime_float, restime_float, url->hostname);
 
     g_string_append_printf(descr, "s=%s"SDP2_EL,
                            resname);
