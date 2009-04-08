@@ -398,8 +398,9 @@ static int sd_read_packet(Resource * r)
             struct mq_attr attr;
             mqd_t mpd;
 
-            char message_buffer[1500];
+            uint8_t *msg_buffer;
             ssize_t msg_len;
+            int marker;
 
             if ((mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN, O_RDONLY, S_IRWXU, NULL)) < 0) {
                 fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s", 
@@ -408,16 +409,20 @@ static int sd_read_packet(Resource * r)
             }
 
             mq_getattr(mpd, &attr);
-            msg_len = mq_receive(mpd, message_buffer, attr.mq_msgsize, NULL);
+            msg_buffer = g_malloc(attr.mq_msgsize);
+            msg_len = mq_receive(mpd, msg_buffer, attr.mq_msgsize, NULL);
             mq_close(mpd);
 
             if (msg_len < 0) {
                 fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
                                      tr->info->mrl, strerror(errno));
+                g_free(msg_buffer);
                 return RESOURCE_EOF;
             }
 
-            mparser_buffer_write(tr, 0.0, (message_buffer[1]>>7), message_buffer, msg_len);
+            marker = (msg_buffer[1]>>7);
+            mparser_buffer_write(tr, 0.0, marker, msg_buffer, msg_len);
+            g_free(msg_buffer);
     }   
 
     return RESOURCE_OK;
