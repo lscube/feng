@@ -76,8 +76,8 @@ typedef struct RTP_session {
     double send_time;
     double last_timestamp;
 
-    /** Resource name, including path from avroot */
-    gchar *sd_filename;
+    /** URI of the resouce for RTP-Info */
+    char *uri;
 
     /** Pointer to the currently-selected track */
     struct Track *track;

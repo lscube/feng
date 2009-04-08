@@ -72,36 +72,28 @@ static RTSP_ResponseCode do_play(RTSP_session * rtsp_sess,
     return RTSP_Ok;
 }
 
-typedef struct {
-    GString *str;
-    char *baseurl;
-} rtp_session_send_play_reply_pair;
-
 static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
 {
-  rtp_session_send_play_reply_pair *pair = (rtp_session_send_play_reply_pair *)user_data;
+  GString *str = (GString *)user_data;
 
   RTP_session *p = (RTP_session *)element;
   Track *t = p->track;
 
-  g_string_append_printf(pair->str,
-			 "url=%s%s/"SDP2_TRACK_ID"=", pair->baseurl, p->sd_filename);
-
-  g_string_append_printf(pair->str,
-			 "%s;seq=%u", t->info->name, p->start_seq);
+  g_string_append_printf(str, "url=%s;seq=%u",
+                         p->uri,
+                         p->start_seq);
 
   if (t->properties->media_source != MS_live)
-    g_string_append_printf(pair->str,
+    g_string_append_printf(str,
 			   ";rtptime=%u", p->start_rtptime);
 
-  g_string_append(pair->str, ",");
+  g_string_append(str, ",");
 }
 
 /**
  * @brief Sends the reply for the play method
  *
  * @param req The Request to respond to.
- * @param url the Url related to the object that we wanted to play
  * @param rtsp_session the session for which to generate the reply
  * @param args The arguments to use to play
  *
@@ -109,23 +101,11 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
  *       and end_time parameters, since those are the only values used
  *       out of the structure.
  */
-static void send_play_reply(RTSP_Request *req, Url *url,
+static void send_play_reply(RTSP_Request *req,
                             RTSP_session * rtsp_session, ParsedRange *range)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
-    rtp_session_send_play_reply_pair pair = {
-        .str = g_string_new(""),
-
-        /* We create here a base URL parameter with the hostname and port.  If
-         * we only use protocol and server name it won't be correct when the
-         * object has a port value too.
-         */
-        .baseurl = g_strdup_printf("%s://%s%s%s/",
-                                   url->protocol,
-                                   url->hostname,
-                                   url->port ? ":" : "",
-                                   url->port ? url->port : "")
-    };
+    GString *rtp_info = g_string_new("");
 
     /* temporary string used for creating headers */
     GString *str = g_string_new("npt=");
@@ -144,14 +124,13 @@ static void send_play_reply(RTSP_Request *req, Url *url,
                         g_string_free(str, false));
 
     /* Create RTP-Info header */
-    g_slist_foreach(rtsp_session->rtp_sessions, rtp_session_send_play_reply, &pair);
-    g_free(pair.baseurl);
+    g_slist_foreach(rtsp_session->rtp_sessions, rtp_session_send_play_reply, rtp_info);
 
-    g_string_truncate(pair.str, pair.str->len-1);
+    g_string_truncate(rtp_info, rtp_info->len-1);
 
     g_hash_table_insert(response->headers,
                         g_strdup(eris_hdr_rtp_info),
-                        g_string_free(pair.str, false));
+                        g_string_free(rtp_info, false));
 
     rtsp_response_send(response);
 }
@@ -220,7 +199,6 @@ RTSP_ResponseCode parse_range_header(RTSP_session *rtsp_sess, const char *range_
  */
 void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
 {
-    Url url;
     RTSP_session *rtsp_sess = rtsp->session;
     RTSP_ResponseCode error;
 
@@ -229,7 +207,7 @@ void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
     if ( !rtsp_check_invalid_state(req, RTSP_SERVER_INIT) )
         return;
 
-    if ( !rtsp_request_get_url(req, &url) )
+    if ( !rtsp_request_check_url(req) )
         return;
 
     if ( rtsp_sess->session_id == 0 ) {
@@ -246,9 +224,7 @@ void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
     if ( (error = do_play(rtsp_sess, &range)) != RTSP_Ok )
         goto error_management;
 
-    send_play_reply(req, &url, rtsp_sess, &range);
-
-    Url_destroy(&url);
+    send_play_reply(req, rtsp_sess, &range);
 
     rtsp_sess->cur_state = RTSP_SERVER_PLAYING;
 
@@ -257,7 +233,6 @@ void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
     return;
 
 error_management:
-    Url_destroy(&url);
     rtsp_quick_response(req, error);
     return;
 }

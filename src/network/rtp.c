@@ -71,7 +71,7 @@ static void rtp_session_free(gpointer session_gen, gpointer unused)
     bq_consumer_free(session->consumer);
 
     /* Deallocate memory */
-    g_free(session->sd_filename);
+    g_free(session->uri);
     g_slice_free(RTP_session, session);
 }
 
@@ -374,7 +374,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
  *
  * @param rtsp The buffer for which to generate the session
  * @param rtsp_s The RTSP session
- * @param path The path of the resource
+ * @param uri The URI for the current RTP session
  * @param transport The transport used by the session
  * @param tr The track that will be sent over the session
  *
@@ -384,7 +384,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
  * @see rtp_session_free
  */
 RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
-                             RTP_transport *transport, const char *path,
+                             RTP_transport *transport, const char *uri,
                              Track *tr) {
     feng *srv = rtsp->srv;
     RTP_session *rtp_s = g_slice_new0(RTP_session);
@@ -392,7 +392,7 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
     /* Make sure we start paused since we have to wait for parameters
      * given by @ref rtp_session_resume.
      */
-    rtp_s->sd_filename = g_strdup(path);
+    rtp_s->uri = g_strdup(uri);
 
     memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
     rtp_s->start_rtptime = g_random_int();

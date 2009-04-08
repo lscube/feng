@@ -333,7 +333,7 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
         goto end;
     }
 
-    rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, path, req_track);
+    rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, req->object, req_track);
 
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
 
