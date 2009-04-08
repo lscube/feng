@@ -131,7 +131,7 @@ static void send_play_reply(RTSP_Request *req, Url *url,
     GString *str = g_string_new("npt=");
 
     /* Create Range header */
-    if (range->begin_time > 0)
+    if (range->begin_time >= 0)
         g_string_append_printf(str, "%f", range->begin_time);
 
     g_string_append(str, "-");
