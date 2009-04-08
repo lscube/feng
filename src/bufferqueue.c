@@ -22,6 +22,8 @@
 
 #include "bufferqueue.h"
 
+#include <stdbool.h>
+
 /**
  * @defgroup bufferqueue Buffer Queue
  *
@@ -523,6 +525,81 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
 }
 
 /**
+ * @brief Actually move to the next element in a consumer
+ *
+ * @retval true The move was successful
+ * @retval false The move wasn't successful.
+ *
+ * @param consumer The consumer object to move
+ */
+static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
+    BufferQueue_Producer *producer = consumer->producer;
+    GList *expected_next = NULL;
+
+    if ( consumer->last_queue != producer->queue ) {
+        /* If the last used queue does not correspond to the current
+         * producer's queue, we have to take the head of the new
+         * queue.
+         *
+         * This also hits at the first request, since the last_queue
+         * will be NULL.
+         */
+        expected_next = producer->queue->head;
+    } else if ( consumer->current_element_pointer ) {
+        expected_next = consumer->current_element_pointer->next;
+    }
+
+    if ( expected_next == NULL )
+        return false;
+
+    /* If there is any element at all saved, we take care of marking
+     * it as seen. We don't have to check if it's non-NULL since the
+     * function takes care of that. We _have_ to do this after we
+     * found the new "next" pointer.
+     */
+    bq_consumer_elem_unref(consumer);
+
+    /* Now we have a new "next" element and we can set it properly */
+    consumer->last_queue = producer->queue;
+    consumer->current_element_pointer = expected_next;
+    consumer->current_element_object = (BufferQueue_Element *)consumer->current_element_pointer->data;
+
+    return true;
+}
+
+/**
+ * @brief Move to the next element in a consumer
+ *
+ * @param consumer The consumer object to move
+ *
+ * @retval true The move was successful
+ * @retval false The move wasn't successful, the producer may be stopped.
+ *
+ * @note This function will require exclusive access to the producer,
+ *       and will thus lock its mutex.
+ *
+ * This is actually just a locking-wrapper around @ref
+ * bq_consumer_move_internal.
+ */
+gboolean bq_consumer_move(BufferQueue_Consumer *consumer) {
+    BufferQueue_Producer *producer = consumer->producer;
+    gboolean ret;
+
+    if ( g_atomic_int_get(&producer->stopped) )
+        return false;
+
+    /* Ensure we have the exclusive access */
+    g_mutex_lock(producer->lock);
+
+    ret = bq_consumer_move_internal(consumer);
+
+    /* Leave the exclusive access */
+    g_mutex_unlock(producer->lock);
+
+    return ret;
+}
+
+/**
  * @brief Get the next element from the consumer list
  *
  * @param consumer The consumer object to get the data from
@@ -544,7 +621,6 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
 gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     gpointer ret = NULL;
-    GList *expected_next = NULL;
 
     if ( g_atomic_int_get(&producer->stopped) )
         return NULL;
@@ -552,33 +628,12 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
-    if ( consumer->last_queue != producer->queue ) {
-        /* If the last used queue does not correspond to the current
-         * producer's queue, we have to take the head of the new
-         * queue.
-         *
-         * This also hits at the first request, since the last_queue
-         * will be NULL.
-         */
-        expected_next = producer->queue->head;
-    } else if ( consumer->current_element_pointer ) {
-        expected_next = consumer->current_element_pointer->next;
-    }
-
-    if ( expected_next == NULL )
-        goto end;
-
-    /* If there is any element at all saved, we take care of marking
-     * it as seen. We don't have to check if it's non-NULL since the
-     * function takes care of that. We _have_ to do this after we
-     * found the new "next" pointer.
+    /* If we don't have a queue yet, like for the first read, “move
+     * next” (or rather first).
      */
-    bq_consumer_elem_unref(consumer);
-
-    /* Now we have a new "next" element and we can set it properly */
-    consumer->last_queue = producer->queue;
-    consumer->current_element_pointer = expected_next;
-    consumer->current_element_object = (BufferQueue_Element *)consumer->current_element_pointer->data;
+    if ( consumer->last_queue == NULL &&
+         !bq_consumer_move_internal(consumer) )
+        goto end;
 
     /* Get the payload of the element */
     ret = consumer->current_element_object->payload;

@@ -352,16 +352,18 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
             rtcp_send_sr(session, SDES);
         if (buffer->marker)
             next_time += buffer->duration;
-    }
-    if (buffer)
+
         fnc_log(FNC_LOG_VERBOSE,
-            "[send] current %f stream %s timestamp %f (%d) duration %f next %f\n",
-                     ev_now(loop) - session->start_time,
-                     session->track->parser->info->encoding_name,
-                     buffer->timestamp,
-                     buffer->marker,
-                     buffer->duration,
-                     next_time - session->start_time);
+                "[send] current %f stream %s timestamp %f (%d) duration %f next %f\n",
+                ev_now(loop) - session->start_time,
+                session->track->parser->info->encoding_name,
+                buffer->timestamp,
+                buffer->marker,
+                buffer->duration,
+                next_time - session->start_time);
+
+        bq_consumer_move(session->consumer);
+    }
 
     ev_periodic_set(w, next_time, 0, NULL);
     ev_periodic_again(loop, w);
