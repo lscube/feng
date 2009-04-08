@@ -221,11 +221,6 @@ static inline uint32_t RTP_calc_rtptime(RTP_session *session,
     return session->start_rtptime + calc_rtptime;
 }
 
-static inline double calc_send_time(RTP_session *session)
-{
-    return session->last_timestamp - session->seek_time - session->send_time;
-}
-
 typedef struct {
     /* byte 0 */
 #if (G_BYTE_ORDER == G_LITTLE_ENDIAN)
@@ -297,12 +292,8 @@ static int rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
                    | MSG_EOR) < 0) {
         fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
     } else {
-        if (!session->send_time)
-            session->send_time = buffer->timestamp - session->seek_time;
-
         frames = (fabs(session->last_timestamp - buffer->timestamp) /
                   tr->properties->frame_duration) + 1;
-        session->send_time += calc_send_time(session);
         session->last_timestamp = buffer->timestamp;
         session->pkt_count++;
         session->octet_count += buffer->data_size;
@@ -325,7 +316,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
 {
     RTP_session *session = w->data;
     MParserBuffer *buffer = NULL;
-    ev_tstamp next_time = ev_now(loop);
+    ev_tstamp next_time = w->offset;
 
 #ifdef HAVE_METADATA
     if (session->metadata)
@@ -362,16 +353,16 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         if (buffer->marker)
             next_time += buffer->duration;
     }
-
-
-    fprintf(stderr,
+    if (buffer)
+        fnc_log(FNC_LOG_VERBOSE,
             "[send] current %f stream %s timestamp %f (%d) duration %f next %f\n",
-                     session->track->parser->info->encoding_name,
                      ev_now(loop) - session->start_time,
+                     session->track->parser->info->encoding_name,
                      buffer->timestamp,
                      buffer->marker,
                      buffer->duration,
                      next_time - session->start_time);
+
     ev_periodic_set(w, next_time, 0, NULL);
     ev_periodic_again(loop, w);
 }
