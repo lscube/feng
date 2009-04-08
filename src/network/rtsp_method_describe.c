@@ -29,7 +29,7 @@
 #include <liberis/headers.h>
 
 #include "rtsp.h"
-#include "sdp2.h"
+#include "sdp.h"
 
 /**
  * Sends the reply for the describe method
