@@ -192,8 +192,7 @@ static int avf_init(Resource * r)
             fnc_log(FNC_LOG_DEBUG, "[avf] Parsing AVStream %s",
                     props.encoding_name);
         } else {
-            fnc_log(FNC_LOG_DEBUG, "[avf] Cannot map stream id %d",
-                    codec->codec_id);
+            fnc_log(FNC_LOG_DEBUG, "[avf] Cannot map stream id %d", i);
             continue;
         }
         switch(codec->codec_type){
