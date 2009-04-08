@@ -409,6 +409,10 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
                             t->properties->encoding_name);
         break;
 
+    case MS_live:
+        if( !(t->producer = bq_producer_new(g_free)) )
+            ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
+        break;
 /*
     case MS_live:
 	shm_name = strstr(t->info->mrl, FNC_PROTO_SEPARATOR) + strlen(FNC_PROTO_SEPARATOR);

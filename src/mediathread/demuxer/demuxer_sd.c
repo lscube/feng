@@ -23,7 +23,7 @@
 #include "config.h"
 
 #include <stdbool.h>
-#include <arpa/inet.h>
+#include <mqueue.h>
 
 #include "feng.h"
 #include "feng_utils.h"
@@ -32,183 +32,6 @@
 #include "demuxer_module.h"
 
 #include "mediathread/mediaparser.h"
-
-#define FENG_IN_IS_ADDR_MULTICAST(a)  ((((in_addr_t)(a)) & 0xf0000000) == 0xe0000000)
-#define FENG_IN6_IS_ADDR_MULTICAST(a) (((__const uint8_t *) (a))[0] == 0xff)
-
-#define DEFAULT_MULTICAST_ADDRESS "224.124.0.1"
-
-/* The following two functions were adapted from glibc's
-   implementation of inet_pton, written by Paul Vixie. */
-
-static bool is_valid_ipv4_address (const char *str, const char *end)
-{
-    bool saw_digit = false;
-    int octets = 0;
-    int val = 0;
-
-    while (str < end) {
-        int ch = *str++;
-
-        if (ch >= '0' && ch <= '9') {
-            val = val * 10 + (ch - '0');
-            if (val > 255)
-                return false;
-            if (!saw_digit) {
-                if (++octets > 4)
-                    return false;
-                saw_digit = true;
-            }
-        }
-        else if (ch == '.' && saw_digit) {
-            if (octets == 4)
-                return false;
-            val = 0;
-            saw_digit = false;
-        }
-        else
-            return false;
-    }
-    if (octets < 4)
-        return false;
-
-    return true;
-}
-
-static bool is_valid_ipv6_address (const char *str, const char *end)
-{
-    /* Use lower-case for these to avoid clash with system headers.  */
-    enum {
-        ns_inaddrsz  = 4,
-        ns_in6addrsz = 16,
-        ns_int16sz   = 2
-    };
-
-    const char *curtok;
-    int tp;
-    const char *colonp;
-    bool saw_xdigit;
-    unsigned int val;
-
-    tp = 0;
-    colonp = NULL;
-
-    if (str == end)
-        return false;
-
-    /* Leading :: requires some special handling. */
-    if (*str == ':') {
-        ++str;
-        if (str == end || *str != ':')
-            return false;
-    }
-
-    curtok = str;
-    saw_xdigit = false;
-    val = 0;
-
-    while (str < end) {
-        int ch = *str++;
-
-        /* if ch is a number, add it to val. */
-        if (g_ascii_isxdigit (ch)) {
-            val <<= 4;
-            val |= g_ascii_xdigit_value (ch);
-            if (val > 0xffff)
-                return false;
-            saw_xdigit = true;
-            continue;
-        }
-
-        /* if ch is a colon ... */
-        if (ch == ':') {
-            curtok = str;
-            if (!saw_xdigit) {
-                if (colonp != NULL)
-                    return false;
-                colonp = str + tp;
-                continue;
-            }
-            else if (str == end)
-                return false;
-            if (tp > ns_in6addrsz - ns_int16sz)
-                return false;
-            tp += ns_int16sz;
-            saw_xdigit = false;
-            val = 0;
-            continue;
-        }
-        /* if ch is a dot ... */
-        if (ch == '.' && (tp <= ns_in6addrsz - ns_inaddrsz)
-                && is_valid_ipv4_address (curtok, end) == 1) {
-            tp += ns_inaddrsz;
-            saw_xdigit = false;
-            break;
-        }
-
-        return false;
-    }
-    if (saw_xdigit) {
-        if (tp > ns_in6addrsz - ns_int16sz)
-            return false;
-        tp += ns_int16sz;
-    }
-
-    if (colonp != NULL) {
-        if (tp == ns_in6addrsz)
-            return false;
-        tp = ns_in6addrsz;
-    }
-
-    if (tp != ns_in6addrsz)
-        return false;
-
-
-    return true;
-}
-
-static int is_valid_multicast_address(char *ip)
-{
-    sa_family_t family;
-
-    if(!ip)
-        return ERR_PARSE;
-
-    if(is_valid_ipv4_address (ip, &ip[strlen(ip)-1]))
-        family = AF_INET;
-    else if(is_valid_ipv6_address (ip, &ip[strlen(ip)-1]))
-        family = AF_INET6;
-    else
-        return ERR_PARSE;
-
-    switch (family) {
-        case AF_INET: {
-            struct in_addr haddr;
-            if(!inet_aton(ip, &haddr))
-                return ERR_PARSE;  /* not a valid address */
-
-            if (FENG_IN_IS_ADDR_MULTICAST(htonl( haddr.s_addr )))
-                return ERR_NOERROR;
-
-        }
-#ifdef  IPV6
-        case AF_INET6: {
-            if (FENG_IN6_IS_ADDR_MULTICAST(ip))
-                return ERR_NOERROR;
-        }
-#endif
-#ifdef  AF_UNIX
-        case AF_UNIX:
-            return ERR_GENERIC;
-#endif
-#ifdef  HAVE_SOCKADDR_DL_STRUCT
-        case AF_LINK:
-            return ERR_GENERIC;
-#endif
-        default:
-            return ERR_GENERIC;
-    }
-}
 
 /*
  * Struct for automatic probing of live media sources
@@ -317,23 +140,9 @@ RTP_static_payload RTP_payload[] ={
 #define SD_FILENAME         "file_name"
 #define SD_CLOCK_RATE       "clock_rate"
 #define SD_PAYLOAD_TYPE     "payload_type"
-#define SD_AUDIO_CHANNELS   "audio_channels"
 #define SD_ENCODING_NAME    "encoding_name"
 #define SD_MEDIA_TYPE       "media_type"
-#define SD_BIT_PER_SAMPLE   "bit_per_sample"
-#define SD_SAMPLE_RATE      "sample_rate"
-#define SD_CODING_TYPE      "coding_type"
-#define SD_FRAME_LEN        "frame_len"
-#define SD_PKT_LEN          "pkt_len"
-#define SD_PRIORITY         "priority"
-#define SD_BITRATE          "bitrate"
-#define SD_FRAME_RATE       "frame_rate"
-#define SD_FORCE_FRAME_RATE "force_frame_rate"
-#define SD_BYTE_PER_PCKT    "byte_per_pckt"
-#define SD_MEDIA_SOURCE     "media_source"
-#define SD_TWIN             "twin"
-#define SD_MULTICAST        "multicast"
-#define SD_PORT             "port"
+#define SD_AUDIO_CHANNELS   "audio_channels"
 #define SD_FMTP             "fmtp"
 /*! Creative commons specific tags */
 #define SD_LICENSE          "license"
@@ -342,7 +151,7 @@ RTP_static_payload RTP_payload[] ={
 #define SD_CREATOR          "creator"
 
 static const DemuxerInfo info = {
-    "Source Description",
+    "Live Source Description",
     "sd",
     "LScube Team",
     "",
@@ -431,16 +240,6 @@ static int sd_init(Resource * r)
         while (g_ascii_strcasecmp(keyword, SD_STREAM) && !feof(fd)) {
             fgets(line, sizeof(line), fd);
             sscanf(line, "%79s", keyword);
-            /* validate twin */
-            if (!g_ascii_strcasecmp(keyword, SD_TWIN)) {
-                sscanf(line, "%*s%255s", r->info->twin);
-		// FIXME: removed a parse_url that was never used.
-            /* validate multicast */
-            } else if (!g_ascii_strcasecmp(keyword, SD_MULTICAST)) {
-                sscanf(line, "%*s%15s", r->info->multicast);
-                if (!is_valid_multicast_address(r->info->multicast))
-                    strcpy(r->info->multicast, DEFAULT_MULTICAST_ADDRESS);
-            }
         }
         if (feof(fd))
             return RESOURCE_OK;
@@ -480,12 +279,6 @@ static int sd_init(Resource * r)
                     if (!clock_rate_forced)
                         props_hints.clock_rate = info->ClockRate;
                 }
-            } else if (!g_ascii_strcasecmp(keyword, SD_PRIORITY)) {
-                // SD_PRIORITY //XXX once pt change is back...
-//                sscanf(line, "%*s %d\n", &me.data.priority);
-            } else if (!g_ascii_strcasecmp(keyword, SD_BITRATE)) {
-                // SD_BITRATE
-                sscanf(line, "%*s %d\n", &props_hints.bit_rate);
             } else if (!g_ascii_strcasecmp(keyword, SD_PAYLOAD_TYPE)) {
                 // SD_PAYLOAD_TYPE
                 sscanf(line, "%*s %u\n", &props_hints.payload_type);
@@ -498,15 +291,6 @@ static int sd_init(Resource * r)
             } else if (!g_ascii_strcasecmp(keyword, SD_AUDIO_CHANNELS)) {
                 // SD_AUDIO_CHANNELS
                 sscanf(line, "%*s %d\n", &props_hints.audio_channels);
-            } else if (!g_ascii_strcasecmp(keyword, SD_SAMPLE_RATE)) {
-                // SD_SAMPLE_RATE
-                sscanf(line, "%*s%f", &props_hints.sample_rate);
-            } else if (!g_ascii_strcasecmp(keyword, SD_BIT_PER_SAMPLE)) {
-                // SD_BIT_PER_SAMPLE
-                sscanf(line, "%*s%u", &props_hints.bit_per_sample);
-            } else if (!g_ascii_strcasecmp(keyword, SD_FRAME_RATE)) {
-                // SD_FRAME_RATE
-                sscanf(line, "%*s%f", &props_hints.frame_rate);
             } else if (!g_ascii_strcasecmp(keyword, SD_MEDIA_TYPE)) {
                 // SD_MEDIA_TYPE
                 sscanf(line, "%*s%10s", sparam);
@@ -555,9 +339,7 @@ static int sd_init(Resource * r)
                     i++;
                 }
                 trackinfo.author[i] = '\0';
-            }  else if (*r->info->multicast &&
-                        (!g_ascii_strcasecmp(keyword, SD_PORT)))
-                sscanf(line, "%*s%d", &trackinfo.rtp_port);
+            }
         }        /*end while !STREAM_END or eof */
 
         if (!trackinfo.mrl)
@@ -565,7 +347,7 @@ static int sd_init(Resource * r)
 
         if (!(track = add_track(r, &trackinfo, &props_hints)))
             return ERR_ALLOC;
-
+        
         if (sdp_private)
             track->properties->sdp_private =
                 g_list_prepend(track->properties->sdp_private, sdp_private);
@@ -601,16 +383,44 @@ static int sd_init(Resource * r)
     return RESOURCE_OK;
 }
 
+#define FNC_LIVE_PROTOCOL "mq://"
+#define FNC_LIVE_PROTOCOL_LEN 5
+
 static int sd_read_packet(Resource * r)
 {
-    switch(r->info->media_source) {
-        case MS_stored:
-            return RESOURCE_NOT_PARSEABLE;
-        case MS_live:
-            return RESOURCE_EOF;
-        default:
-            return RESOURCE_DAMAGED;
-    }
+    TrackList tr_it;
+
+    if (r->info->media_source != MS_live)
+        return RESOURCE_NOT_PARSEABLE;
+
+    for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {
+            Track *tr = (Track*)tr_it->data;
+            struct mq_attr attr;
+            mqd_t mpd;
+
+            char message_buffer[1500];
+            ssize_t msg_len;
+
+            if ((mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN, O_RDONLY, S_IRWXU, NULL)) < 0) {
+                fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s", 
+                                     tr->info->mrl, strerror(errno));
+                return RESOURCE_EOF;
+            }
+
+            mq_getattr(mpd, &attr);
+            msg_len = mq_receive(mpd, message_buffer, attr.mq_msgsize, NULL);
+            mq_close(mpd);
+
+            if (msg_len < 0) {
+                fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
+                                     tr->info->mrl, strerror(errno));
+                return RESOURCE_EOF;
+            }
+
+            mparser_buffer_write(tr, 0.0, (message_buffer[1]>>7), message_buffer, msg_len);
+    }   
+
+    return RESOURCE_OK;
 }
 
 static int sd_seek(Resource * r, double time_sec)
