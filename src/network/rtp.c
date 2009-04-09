@@ -346,23 +346,33 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
          */
         next_time += session->track->properties->frame_duration/3;
     } else {
+        MParserBuffer *next;
+
         rtp_packet_send(session, buffer);
 
         if (session->pkt_count % 29 == 1)
             rtcp_send_sr(session, SDES);
-        if (buffer->marker)
-            next_time += buffer->duration;
 
-        fnc_log(FNC_LOG_VERBOSE,
+        if (bq_consumer_move(session->consumer)) {
+            next = bq_consumer_get(session->consumer);
+
+            fprintf(stderr, "NEXT ");
+            next_time = session->start_time + next->timestamp;
+        } else {
+            fprintf(stderr, "NO");
+            if (buffer->marker)
+                next_time += buffer->duration;
+        }
+
+        //fnc_log(FNC_LOG_VERBOSE,
+        fprintf(stderr,
                 "[send] current %f stream %s timestamp %f (%d) duration %f next %f\n",
                 ev_now(loop) - session->start_time,
-                session->track->parser ? session->track->parser->info->encoding_name : "live",
+                session->track->properties->encoding_name,
                 buffer->timestamp,
                 buffer->marker,
                 buffer->duration,
                 next_time - session->start_time);
-
-        bq_consumer_move(session->consumer);
     }
 
     ev_periodic_set(w, next_time, 0, NULL);
