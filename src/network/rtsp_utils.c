@@ -81,6 +81,7 @@ void rtsp_session_free(RTSP_session *session)
     rtp_session_gslist_free(session->rtp_sessions);
     g_slist_free(session->rtp_sessions);
 
+    g_free(session->resource_uri);
     r_close(session->resource);
 
     g_free(session->session_id);

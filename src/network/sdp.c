@@ -196,7 +196,7 @@ static void sdp_media_descr(gpointer element, gpointer user_data)
     // a=*
     encoded_media_name = g_uri_escape_string(m_descr_name(m_descr), NULL, false);
 
-    g_string_append_printf(descr, "a=control:TrackID=%s"SDP_EL,
+    g_string_append_printf(descr, "a=control:"SDP_TRACK_SEPARATOR"%s"SDP_EL,
                            encoded_media_name);
     g_free(encoded_media_name);
 

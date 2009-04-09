@@ -71,6 +71,7 @@ typedef struct RTSP_session {
     GSList *rtp_sessions; // Of type RTP_session
     // mediathread resource
     struct Resource *resource;
+    char *resource_uri;
     struct feng *srv;
 } RTSP_session;
 

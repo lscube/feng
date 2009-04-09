@@ -34,41 +34,10 @@
 #include "feng.h"
 #include "rtp.h"
 #include "rtsp.h"
+#include "sdp.h"
 #include "ragel_parsers.h"
 #include "fnc_log.h"
 #include "mediathread/demuxer.h"
-
-/**
- * Splits the path of a requested media finding the trackname and the removing
- * it from the object
- *
- * @param path The string to use as path to spli
- *
- * @return A pointer to the start of the trackname part of the path.
- *
- * @note This function changes the content of the string, by replacing
- *       the last '/' character with a '\0' (NULL) character.
- *
- * @todo This works by pure chance basically since having a '=' in a
- *       resource name would make this fail _badly_.
- * @todo And even if we don't rewrite it entirely it should at least
- *       use strrchr, most likely.
- */
-static char *split_resource_path(char *path)
-{
-    char *p, *ret = NULL;
-
-    //if '=' is not present then a file has not been specified
-    if ((p = strchr(path, '='))) {
-        // SETUP resource!trackname
-        ret = p+1;
-        // XXX Not really nice...
-        while (path != p) if (*--p == '/') break;
-        *p = '\0';
-    }
-
-    return ret;
-}
 
 /**
  * bind&connect the socket
@@ -173,28 +142,96 @@ gboolean check_parsed_transport(RTSP_Client *rtsp, RTP_transport *rtp_t,
 /**
  * Gets the track requested for the object
  *
- * @param path Path of the track to select
  * @param rtsp_s the session where to save the addressed resource
- * @param trackname the name of the track to open
  *
  * @return The pointer to the requested track
  *
- * @retval NULL Unable to find the requested resource or track; the
- *              client should receive a “Not found” (404) response.
+ * @retval NULL Unable to find the requested resource or track, or
+ *              other errors. The client already received a response.
  */
-static Track *select_requested_track(const char *path, RTSP_session * rtsp_s, const char *trackname)
+static Track *select_requested_track(RTSP_Request *req, RTSP_session *rtsp_s)
 {
     feng *srv = rtsp_s->srv;
+    char *trackname = NULL;
+    Track *selected_track = NULL;
 
-    // it should parse the request giving us object!trackname
-    if (!rtsp_s->resource) {
-        if (!(rtsp_s->resource = r_open(srv, path))) {
-            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", path);
+    /* Just an extra safety to abort if we have URI and not resource
+     * or vice-versa */
+    g_assert( (rtsp_s->resource && rtsp_s->resource_uri) ||
+              (!rtsp_s->resource && !rtsp_s->resource_uri) );
+
+    /* Check if the requested URL is valid. If we already have a
+     * session open, the resource URL has to be the same; otherwise,
+     * we have to check if we're given a propr presentation URL
+     * (having the SDP_TRACK_SEPARATOR string in it).
+     */
+    if ( !rtsp_s->resource ) {
+        /* Here we don't know the URL and we have to find it out, we
+         * check for the presence of the SDP_TRACK_URI_SEPARATOR */
+        Url url;
+        char *path;
+
+        char *separator = strstr(req->object, SDP_TRACK_URI_SEPARATOR);
+
+        /* If we found no separator it's a resource URI */
+        if ( separator == NULL ) {
+            rtsp_quick_response(req, RTSP_AggregateOnly);
             return NULL;
         }
+
+        trackname = separator + strlen(SDP_TRACK_URI_SEPARATOR);
+
+        /* Here we set the base resource URI, which is different from
+         * the path; since the object is going to be used and freed we
+         * have to dupe it here. */
+        rtsp_s->resource_uri = g_strndup(req->object, separator - req->object);
+
+        Url_init(&url, rtsp_s->resource_uri);
+        path = g_uri_unescape_string(url.path, "/");
+        Url_destroy(&url);
+
+        if (!(rtsp_s->resource = r_open(srv, path))) {
+            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", path);
+
+            g_free(path);
+            g_free(rtsp_s->resource_uri);
+            rtsp_s->resource_uri = NULL;
+
+            rtsp_quick_response(req, RTSP_NotFound);
+            return NULL;
+        }
+
+        g_free(path);
+    } else {
+        /* We know the URL already */
+        const size_t resource_uri_length = strlen(rtsp_s->resource_uri);
+
+        /* Check that it starts with the correct resource URI */
+        if ( strncmp(req->object, rtsp_s->resource_uri, resource_uri_length) != 0 ) {
+            rtsp_quick_response(req, RTSP_AggregateNotAllowed);
+            return NULL;
+        }
+
+        /* Now make sure that we got a presentation URL, rather than a
+         * resource URL
+         */
+        if ( strncmp(req->object + resource_uri_length,
+                     SDP_TRACK_URI_SEPARATOR,
+                     strlen(SDP_TRACK_URI_SEPARATOR)) != 0 ) {
+            rtsp_quick_response(req, RTSP_AggregateOnly);
+            return NULL;
+        }
+
+        trackname = req->object
+            + resource_uri_length
+            + strlen(SDP_TRACK_URI_SEPARATOR);
     }
 
-    return r_find_track(rtsp_s->resource, trackname);
+    if ( (selected_track = r_find_track(rtsp_s->resource, trackname))
+         == NULL )
+        rtsp_quick_response(req, RTSP_NotFound);
+
+    return selected_track;
 }
 
 /**
@@ -275,8 +312,6 @@ static void send_setup_reply(RTSP_Client * rtsp, RTSP_Request *req, RTSP_session
  */
 void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
 {
-    char *path = NULL;
-    const char *trackname = NULL;
     const char *transport_header = NULL;
     RTP_transport transport;
 
@@ -289,7 +324,7 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
     // init
     memset(&transport, 0, sizeof(transport));
 
-    if ( !(path = rtsp_request_get_path(req)) )
+    if ( !rtsp_request_check_url(req) )
         return;
 
     /* Parse the transport header through Ragel-generated state machine.
@@ -305,7 +340,7 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
          !ragel_parse_transport_header(rtsp, &transport, transport_header) ) {
 
         rtsp_quick_response(req, RTSP_UnsupportedTransport);
-        goto end;
+        return;
     }
 
     /* Check if we still have space for new connections, if not, respond with a
@@ -314,24 +349,20 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
         /* @todo should redirect, but we haven't the code to do that just
          * yet. */
         rtsp_quick_response(req, RTSP_NotEnoughBandwidth);
-        goto end;
+        return;
     }
 
-    // Split resource!trackname
-    if ( (trackname = split_resource_path(path)) == NULL ) {
-        rtsp_quick_response(req, RTSP_InternalServerError);
-        goto end;
-    }
-
-    /* Here we'd be adding a new session if we supported more than one */
+    /* Here we'd be adding a new session if we supported more than
+     * one, and the user didn't provide one. */
     if ( (rtsp_s = rtsp->session) == NULL )
         rtsp_s = rtsp_session_new(rtsp);
 
-    // Get the selected track
-    if ( (req_track = select_requested_track(path, rtsp_s, trackname)) == NULL ) {
-        rtsp_quick_response(req, RTSP_NotFound);
-        goto end;
-    }
+    /* Get the selected track; if the URI was invalid or the track
+     * couldn't be found, the function will take care of sending out
+     * the error response, so we don't need to do anything else.
+     */
+    if ( (req_track = select_requested_track(req, rtsp_s)) == NULL )
+        return;
 
     rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, req->object, req_track);
 
@@ -339,8 +370,4 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
 
     if ( rtsp_s->cur_state == RTSP_SERVER_INIT )
         rtsp_s->cur_state = RTSP_SERVER_READY;
-
- end:
-    free(path);
-    return;
 }
