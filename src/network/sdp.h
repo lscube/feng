@@ -20,8 +20,8 @@
  *
  * */
 
-#ifndef FN_SDP2_H
-#define FN_SDP2_H
+#ifndef FN_SDP_H
+#define FN_SDP_H
 
 #include <glib.h>
 #include <netembryo/url.h>
@@ -49,4 +49,4 @@ struct feng;
 
 GString *sdp_session_descr(struct feng *srv, const Url *url);
 
-#endif // FN_SDP2_H
+#endif // FN_SDP_H
