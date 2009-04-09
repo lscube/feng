@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <grp.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "conf/buffer.h"
 #include "conf/array.h"
@@ -149,7 +150,7 @@ static gboolean show_version(const gchar *option_name, const gchar *value,
   exit(0);
 }
 
-static int command_environment(feng *srv, int argc, char **argv)
+static gboolean command_environment(feng *srv, int argc, char **argv)
 {
     gchar *config_file = NULL;
     gboolean quiet = FALSE, verbose = FALSE, syslog = FALSE;
@@ -173,10 +174,11 @@ static int command_environment(feng *srv, int argc, char **argv)
     g_option_context_add_main_entries(context, optionsTable, PACKAGE_TARNAME);
 
     g_option_context_parse(context, &argc, &argv, &error);
+    g_option_context_free(context);
 
     if ( error != NULL ) {
         g_critical("%s\n", error->message);
-        exit(-1);
+        return false;
     }
 
     if (!quiet) fncheader();
@@ -186,9 +188,10 @@ static int command_environment(feng *srv, int argc, char **argv)
 
     if (config_read(srv, config_file)) {
         g_critical("unable to read configuration file '%s'\n", config_file);
-        feng_free(srv);
-        exit(-1);
+        g_free(config_file);
+        return false;
     }
+    g_free(config_file);
 
     {
         gchar *progname = g_path_get_basename(argv[0]);
@@ -210,7 +213,7 @@ static int command_environment(feng *srv, int argc, char **argv)
         Sock_init(fn);
     }
 
-    return 0;
+    return true;
 }
 
 /**
@@ -244,13 +247,19 @@ static feng *feng_alloc(void)
 
 int main(int argc, char **argv)
 {
-    feng *srv = feng_alloc();
+    feng *srv;
+    int res = 0;
 
-    if (!srv) return 1;
+    if (! (srv = feng_alloc()) ) {
+        res = 1;
+        goto end;
+    }
 
     /* parses the command line and initializes the log*/
-    if (command_environment(srv, argc, argv))
-        return 1;
+    if ( !command_environment(srv, argc, argv) ) {
+        res = 1;
+        goto end;
+    }
 
     config_set_defaults(srv);
 
@@ -259,8 +268,10 @@ int main(int argc, char **argv)
 
     feng_handle_signals(srv);
 
-    if (!feng_bind_ports(srv))
-        return 1;
+    if (!feng_bind_ports(srv)) {
+        res = 1;
+        goto end;
+    }
 
     feng_drop_privs(srv);
 
@@ -277,5 +288,17 @@ int main(int argc, char **argv)
 
     ev_loop (srv->loop, 0);
 
-    return 0;
+ end:
+#ifndef NDEBUG
+    /* Free resources; this is conditional on debugging since it's
+     * unneeded for actual production code, exiting the process is
+     * good enough.
+     */
+    if ( srv ) {
+        ev_loop_destroy(srv->loop);
+        g_free(srv);
+    }
+#endif
+
+    return res;
 }
