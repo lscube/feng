@@ -347,7 +347,7 @@ static int sd_init(Resource * r)
 
         if (!(track = add_track(r, &trackinfo, &props_hints)))
             return ERR_ALLOC;
-        
+
         if (sdp_private)
             track->properties->sdp_private =
                 g_list_prepend(track->properties->sdp_private, sdp_private);
@@ -403,7 +403,7 @@ static int sd_read_packet(Resource * r)
             int marker;
 
             if ((mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN, O_RDONLY, S_IRWXU, NULL)) < 0) {
-                fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s", 
+                fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
                                      tr->info->mrl, strerror(errno));
                 return RESOURCE_EOF;
             }
@@ -423,7 +423,7 @@ static int sd_read_packet(Resource * r)
             marker = (msg_buffer[1]>>7);
             mparser_buffer_write(tr, 0.0, marker, msg_buffer, msg_len);
             g_free(msg_buffer);
-    }   
+    }
 
     return RESOURCE_OK;
 }
