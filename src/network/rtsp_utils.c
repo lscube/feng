@@ -178,34 +178,6 @@ gboolean rtsp_request_get_url(RTSP_Request *req, Url *url) {
 }
 
 /**
- * @brief Extract only the path from a request structure
- *
- * @param req The request structure from where to extract the URL
- *
- * @return A newly allocated string to be freed with free().
- *
- * @retval NULL The URL was not valid and a reply was already sent.
- *
- * @note the returned string is allocated by netembryo with malloc(),
- *       so it should not be freed with g_free()!
- */
-char *rtsp_request_get_path(RTSP_Request *req) {
-    Url url;
-    char *ret;
-
-    if ( !rtsp_request_get_url(req, &url) )
-        return NULL;
-
-    ret = url.path;
-    /* Set the path to NULL so that it won't be deleted by
-     * Url_destroy). */
-    url.path = NULL;
-    Url_destroy(&url);
-
-    return ret;
-}
-
-/**
  * @brief Check the URL from a request structure without saving it
  *
  * @param req The request structure from where to check the URL

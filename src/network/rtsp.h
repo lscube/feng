@@ -257,7 +257,6 @@ void rtsp_write_cb(struct ev_loop *, ev_io *, int);
 void rtsp_read_cb(struct ev_loop *, ev_io *, int);
 
 gboolean rtsp_request_get_url(RTSP_Request *req, Url *url);
-char *rtsp_request_get_path(RTSP_Request *req);
 gboolean rtsp_request_check_url(RTSP_Request *req);
 
 void rtsp_bwrite(RTSP_Client *rtsp, GString *buffer);
