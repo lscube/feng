@@ -45,7 +45,7 @@ typedef struct RTP_static_payload {
         float PktLen;       // In msec
 } RTP_static_payload;
 
-RTP_static_payload RTP_payload[] ={
+static const RTP_static_payload RTP_payload[] ={
         // Audio
         { 0 ,"PCMU"   ,8000 ,1 ,8 ,20 },
         {-1 ,""       ,-1   ,-1,-1,-1 },
@@ -159,7 +159,7 @@ static const DemuxerInfo info = {
 };
 
 //Probe informations from RTPPTDEFS table form codec_name
-static RTP_static_payload * probe_stream_info(char const *codec_name)
+static const RTP_static_payload * probe_stream_info(char const *codec_name)
 {
     int i;
     for (i=0; i<96; ++i) {
@@ -271,7 +271,7 @@ static int sd_init(Resource * r)
                 sscanf(line, "%*s%10s", props_hints.encoding_name);
 
                 // Automatic media detection
-                RTP_static_payload *info = probe_stream_info(props_hints.encoding_name);
+                const RTP_static_payload *info = probe_stream_info(props_hints.encoding_name);
                 if (info) {
                     fnc_log(FNC_LOG_INFO, "[.SD] Static Payload Detected, probing info...");
                     if (!payload_type_forced)
