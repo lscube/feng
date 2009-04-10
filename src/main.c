@@ -116,26 +116,6 @@ static void feng_handle_signals(feng *srv)
 }
 
 
-static void feng_free(feng* srv)
-{
-#define CLEAN(x) \
-    buffer_free(srv->srvconf.x)
-    CLEAN(bindhost);
-    CLEAN(errorlog_file);
-    CLEAN(username);
-    CLEAN(groupname);
-#undef CLEAN
-
-#define CLEAN(x) \
-    array_free(srv->x)
-    CLEAN(config_context);
-    CLEAN(config_touched);
-    CLEAN(srvconf.modules);
-#undef CLEAN
-
-    g_free(srv->listeners);
-}
-
 static void fncheader()
 {
     printf("\n%s - Feng %s\n LScube Project - Politecnico di Torino\n",
@@ -245,6 +225,45 @@ static feng *feng_alloc(void)
     return srv;
 }
 
+/**
+ * @brief Free the feng server object
+ *
+ * @param srv The object to free
+ *
+ * This function frees the resources connected to the server object;
+ * this function is empty when debug is disabled since it's unneeded
+ * for actual production use, exiting the project will free them just
+ * as fine.
+ *
+ * What this is useful for during debug is to avoid false positives in
+ * tools like valgrind that expect a complete freeing of all
+ * resources.
+ */
+static void feng_free(feng* srv)
+{
+#ifndef NDEBUG
+
+#define CLEAN(x) \
+    buffer_free(srv->srvconf.x)
+    CLEAN(bindhost);
+    CLEAN(errorlog_file);
+    CLEAN(username);
+    CLEAN(groupname);
+#undef CLEAN
+
+#define CLEAN(x) \
+    array_free(srv->x)
+    CLEAN(config_context);
+    CLEAN(config_touched);
+    CLEAN(srvconf.modules);
+#undef CLEAN
+
+    g_free(srv->listeners);
+    g_free(srv);
+
+#endif /* NDEBUG */
+}
+
 int main(int argc, char **argv)
 {
     feng *srv;
@@ -289,16 +308,7 @@ int main(int argc, char **argv)
     ev_loop (srv->loop, 0);
 
  end:
-#ifndef NDEBUG
-    /* Free resources; this is conditional on debugging since it's
-     * unneeded for actual production code, exiting the process is
-     * good enough.
-     */
-    if ( srv ) {
-        ev_loop_destroy(srv->loop);
-        g_free(srv);
-    }
-#endif
+    feng_free(srv);
 
     return res;
 }
