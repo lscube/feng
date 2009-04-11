@@ -47,6 +47,18 @@
 #include "mediathread/metadata/cpd.h"
 #endif
 
+#ifdef CLEANUP_DESTRUCTOR
+/**
+ * @brief Program name to clean up
+ */
+static char *progname;
+
+static void CLEANUP_DESTRUCTOR main_cleanup()
+{
+    g_free(progname);
+}
+#endif
+
 /**
  *  Handler to cleanly shut down feng
  */
@@ -174,10 +186,14 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
     g_free(config_file);
 
     {
-        gchar *progname = g_path_get_basename(argv[0]);
+#ifndef CLEANUP_DESTRUCTOR
+        gchar *progname;
+#endif
         fnc_log_t fn;
-
         int view_log;
+
+        progname = g_path_get_basename(argv[0]);
+
         if ( verbose )
             view_log = FNC_LOG_OUT;
         else if ( syslog )
