@@ -192,8 +192,8 @@ EXPAND_ONLY_PREDEF     = NO
 SEARCH_INCLUDES        = YES
 INCLUDE_PATH           =
 INCLUDE_FILE_PATTERNS  =
-PREDEFINED             = DOXYGEN CLEANUP_DESTRUCTORS
-EXPAND_AS_DEFINED      =
+PREDEFINED             = DOXYGEN CLEANUP_DESTRUCTOR=
+EXPAND_AS_DEFINED      = CLEANUP_DESTRUCTOR=
 SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------
 # Configuration::additions related to external references

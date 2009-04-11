@@ -70,7 +70,7 @@ AC_SEARCH_LIBS([clock_gettime], [rt],
 CC_ATTRIBUTE_DESTRUCTOR
 
 AH_BOTTOM([#if !defined(NDEBUG) && defined(SUPPORT_ATTRIBUTE_DESTRUCTOR)
-	   # define CLEANUP_DESTRUCTORS
+	   # define CLEANUP_DESTRUCTOR __attribute__((__destructor__))
 	   #endif
 	  ])
 
