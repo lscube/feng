@@ -29,6 +29,40 @@
 #include "network/rtsp.h"
 
 /**
+ * @brief libev listeners for incoming connections on opened ports
+ *
+ * This is an array of ev_io objects allocated with the g_new0()
+ * function (which this need to be freed with g_free()).
+ *
+ * The indexes are the same as for @ref feng::config_storage.
+ *
+ * @see feng_bind_ports
+ * @see feng_bind_port
+ * @see feng_free
+ */
+static ev_io *listeners;
+
+#ifdef CLEANUP_DESTRUCTORS
+/**
+ * @brief Cleanup function for the @ref listeners array
+ *
+ * This function is used to free the @ref listeners array that was
+ * allocated in @ref feng_bind_ports; note that this function is
+ * called automatically as a destructur when the compiler supports it,
+ * and debug is not disabled.
+ *
+ * This function is unnecessary on production code, since the memory
+ * would be freed only at the end of execution, when the resources
+ * would be freed anyway.
+ */
+static void __attribute__((__destructor__))
+feng_ports_cleanup()
+{
+    g_free(listeners);
+}
+#endif
+
+/**
  * Bind to the defined listening port
  *
  * @param srv The server instance to bind ports for
@@ -70,11 +104,11 @@ static int feng_bind_port(feng *srv, const char *host, const char *port,
         return false;
     }
     sock->data = srv;
-    srv->listeners[cfg_storage_idx].data = sock;
-    ev_io_init(&srv->listeners[cfg_storage_idx],
+    listeners[cfg_storage_idx].data = sock;
+    ev_io_init(&listeners[cfg_storage_idx],
                rtsp_client_incoming_cb,
                Sock_fd(sock), EV_READ);
-    ev_io_start(srv->loop, &srv->listeners[cfg_storage_idx]);
+    ev_io_start(srv->loop, &listeners[cfg_storage_idx]);
 
     return true;
 }
@@ -84,22 +118,20 @@ gboolean feng_bind_ports(feng *srv)
     size_t i;
     int err = 0;
     char *host = srv->srvconf.bindhost->ptr;
-    char *port = g_strdup_printf("%d", srv->srvconf.port);
+    char port[6] = { 0, };
 
-    srv->listeners = g_new0(ev_io, srv->config_context->used);
+    snprintf(port, sizeof(port), "%d", srv->srvconf.port);
 
-    if ((err = feng_bind_port(srv, host, port, 0))) {
-        g_free(port);
+    listeners = g_new0(ev_io, srv->config_context->used);
+
+    if ((err = feng_bind_port(srv, host, port, 0)))
         return err;
-    }
-
-    g_free(port);
 
    /* check for $SERVER["socket"] */
     for (i = 1; i < srv->config_context->used; i++) {
         data_config *dc = (data_config *)srv->config_context->data[i];
         specific_config *s = srv->config_storage[i];
-//        size_t j;
+        char *port, *host;
 
         /* not our stage */
         if (COMP_SERVER_SOCKET != dc->comp) continue;

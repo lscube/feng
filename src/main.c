@@ -258,7 +258,6 @@ static void feng_free(feng* srv)
     CLEAN(srvconf.modules);
 #undef CLEAN
 
-    g_free(srv->listeners);
     g_free(srv);
 
 #endif /* NDEBUG */
