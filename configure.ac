@@ -67,6 +67,8 @@ AC_CHECK_HEADERS([syslog.h])
 AC_SEARCH_LIBS([clock_gettime], [rt],
   [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define this if you have clock_gettime])])
 
+CC_ATTRIBUTE_DESTRUCTOR
+
 dnl check if we have the generic struct for net addresses the has max
 dnl possible size
 AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
