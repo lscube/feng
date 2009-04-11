@@ -28,6 +28,7 @@
 #include "incoming.h"
 #include "network/rtsp.h"
 
+#ifdef CLEANUP_DESTRUCTOR
 /**
  * @brief libev listeners for incoming connections on opened ports
  *
@@ -36,13 +37,10 @@
  *
  * The indexes are the same as for @ref feng::config_storage.
  *
- * @see feng_bind_ports
- * @see feng_bind_port
- * @see feng_free
+ * @note Part of the cleanup destructors code, not compiled in
+ *       production use.
  */
 static ev_io *listeners;
-
-#ifdef CLEANUP_DESTRUCTORS
 
 /**
  * @brief List of listening sockets for the process
@@ -51,6 +49,9 @@ static ev_io *listeners;
  * feng_bind_port if the cleanup destructors are enabled, and will be
  * used by @ref feng_ports_cleanup() to close the sockets and free
  * their memory.
+ *
+ * @note Part of the cleanup destructors code, not compiled in
+ *       production use.
  */
 static GPtrArray *listening_sockets;
 
@@ -61,6 +62,9 @@ static GPtrArray *listening_sockets;
  * @param user_data Unused
  *
  * This function is used to close the opened software during cleanup.
+ *
+ * @note Part of the cleanup destructors code, not compiled in
+ *       production use.
  */
 static void feng_bound_socket_close(gpointer element, gpointer user_data)
 {
@@ -78,9 +82,11 @@ static void feng_bound_socket_close(gpointer element, gpointer user_data)
  * This function is unnecessary on production code, since the memory
  * would be freed only at the end of execution, when the resources
  * would be freed anyway.
+ *
+ * @note Part of the cleanup destructors code, not compiled in
+ *       production use.
  */
-static void __attribute__((__destructor__))
-feng_ports_cleanup()
+static void CLEANUP_DESTRUCTOR feng_ports_cleanup()
 {
     g_ptr_array_foreach(listening_sockets, feng_bound_socket_close, NULL);
     g_ptr_array_free(listening_sockets, true);
@@ -94,16 +100,15 @@ feng_ports_cleanup()
  * @param srv The server instance to bind ports for
  * @param host The hostname to bind ports on
  * @param port The port to bind
- * @param cfg_storage_idx The index in @ref feng::config_storage array
- *                        for the current configuration
+ * @param s The specific configuration from @ref feng::config_storage
+ * @param listener The listener pointer from @ref listeners
  *
  * @retval true Binding complete
  * @retval false Error during binding
  */
 static int feng_bind_port(feng *srv, const char *host, const char *port,
-                          size_t cfg_storage_idx)
+                          specific_config *s, ev_io *listener)
 {
-    specific_config *s = srv->config_storage[cfg_storage_idx];
     gboolean is_sctp = !!s->is_sctp;
     Sock *sock;
 
@@ -119,7 +124,7 @@ static int feng_bind_port(feng *srv, const char *host, const char *port,
         return false;
     }
 
-#ifdef CLEANUP_DESTRUCTORS
+#ifdef CLEANUP_DESTRUCTOR
     g_ptr_array_add(listening_sockets, sock);
 #endif
 
@@ -134,11 +139,11 @@ static int feng_bind_port(feng *srv, const char *host, const char *port,
         return false;
     }
     sock->data = srv;
-    listeners[cfg_storage_idx].data = sock;
-    ev_io_init(&listeners[cfg_storage_idx],
+    listener->data = sock;
+    ev_io_init(listener,
                rtsp_client_incoming_cb,
                Sock_fd(sock), EV_READ);
-    ev_io_start(srv->loop, &listeners[cfg_storage_idx]);
+    ev_io_start(srv->loop, listener);
 
     return true;
 }
@@ -149,15 +154,22 @@ gboolean feng_bind_ports(feng *srv)
     int err = 0;
     char *host = srv->srvconf.bindhost->ptr;
     char port[6] = { 0, };
+#ifndef CLEANUP_DESTRUCTORS
+    /* We make it local if we don't need the cleanup */
+    ev_io *listeners;
+#endif
 
     snprintf(port, sizeof(port), "%d", srv->srvconf.port);
 
+    /* This is either static or local, we don't care */
     listeners = g_new0(ev_io, srv->config_context->used);
-#ifdef CLEANUP_DESTRUCTORS
+#ifdef CLEANUP_DESTRUCTOR
     listening_sockets = g_ptr_array_sized_new(srv->config_context->used);
 #endif
 
-    if ((err = feng_bind_port(srv, host, port, 0)))
+    if ((err = feng_bind_port(srv, host, port,
+                              srv->config_storage[0],
+                              &listeners[0])))
         return err;
 
    /* check for $SERVER["socket"] */
@@ -195,7 +207,9 @@ gboolean feng_bind_ports(feng *srv)
 
         port++;
 
-        if (!feng_bind_port(srv, host, port, i)) return false;
+        if (!feng_bind_port(srv, host, port,
+                            s, &listeners[i]))
+            return false;
     }
 
     return true;
