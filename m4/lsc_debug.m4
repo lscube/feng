@@ -10,7 +10,7 @@ AC_DEFUN([LSC_MUDFLAP], [
   AC_ARG_ENABLE(mudflap,
     AS_HELP_STRING([--enable-mudflap], [enable mudflap support (implies --enable-debug) [[default=no]]]),,
     enable_mudflap="no")
-  
+
   AS_IF([test "$enable_mudflap" = "yes"], [
     CC_CHECK_CFLAGS([-fmudflapth], ,
       [AC_MSG_ERROR([mudflap support requested, but the compiler does not support it])])
@@ -37,9 +37,8 @@ AC_DEFUN([LSC_DEBUG], [
 
   AS_IF([test "$enable_debug" = "yes"], [
     CC_CHECK_CFLAGS_APPEND([-ggdb -g], [break;])
-    AC_DEFINE(ENABLE_DEBUG, 1,[Debug enabled])
   ], [
-    AC_DEFINE(ENABLE_DEBUG, 0,[Debug disabled])
+    CC_CHECK_CFLAGS_APPEND([-DNDEBUG -DG_DISABLE_ASSERT])
   ])
 ])
 
