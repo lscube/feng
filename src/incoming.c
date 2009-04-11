@@ -43,6 +43,30 @@
 static ev_io *listeners;
 
 #ifdef CLEANUP_DESTRUCTORS
+
+/**
+ * @brief List of listening sockets for the process
+ *
+ * This array is created in @ref feng_bind_ports and used in @ref
+ * feng_bind_port if the cleanup destructors are enabled, and will be
+ * used by @ref feng_ports_cleanup() to close the sockets and free
+ * their memory.
+ */
+static GPtrArray *listening_sockets;
+
+/**
+ * @brief Close sockets in the listening_sockets array
+ *
+ * @param element The Sock object to close
+ * @param user_data Unused
+ *
+ * This function is used to close the opened software during cleanup.
+ */
+static void feng_bound_socket_close(gpointer element, gpointer user_data)
+{
+    Sock_close((Sock*)element);
+}
+
 /**
  * @brief Cleanup function for the @ref listeners array
  *
@@ -58,6 +82,8 @@ static ev_io *listeners;
 static void __attribute__((__destructor__))
 feng_ports_cleanup()
 {
+    g_ptr_array_foreach(listening_sockets, feng_bound_socket_close, NULL);
+    g_ptr_array_free(listening_sockets, true);
     g_free(listeners);
 }
 #endif
@@ -93,6 +119,10 @@ static int feng_bind_port(feng *srv, const char *host, const char *port,
         return false;
     }
 
+#ifdef CLEANUP_DESTRUCTORS
+    g_ptr_array_add(listening_sockets, sock);
+#endif
+
     fnc_log(FNC_LOG_INFO, "Listening to port %s (%s) on %s",
             port,
             (is_sctp? "SCTP" : "TCP"),
@@ -123,6 +153,9 @@ gboolean feng_bind_ports(feng *srv)
     snprintf(port, sizeof(port), "%d", srv->srvconf.port);
 
     listeners = g_new0(ev_io, srv->config_context->used);
+#ifdef CLEANUP_DESTRUCTORS
+    listening_sockets = g_ptr_array_sized_new(srv->config_context->used);
+#endif
 
     if ((err = feng_bind_port(srv, host, port, 0)))
         return err;
