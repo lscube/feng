@@ -69,6 +69,11 @@ AC_SEARCH_LIBS([clock_gettime], [rt],
 
 CC_ATTRIBUTE_DESTRUCTOR
 
+AH_BOTTOM([#if !defined(NDEBUG) && defined(SUPPORT_ATTRIBUTE_DESTRUCTOR)
+	   # define CLEANUP_DESTRUCTORS
+	   #endif
+	  ])
+
 dnl check if we have the generic struct for net addresses the has max
 dnl possible size
 AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
