@@ -79,6 +79,18 @@ typedef struct {
      *       BufferQueue_Producer lock.
      */
     gulong seen;
+
+    /**
+     * @brief Serial number of the buffer
+     *
+     * This value is the “serial number” of the buffer, which, simply
+     * put, is the sequence number of the current buffer in its queue.
+     *
+     * This is taken from @ref BufferQueue_Producer::next_serial, and
+     * is used by @ref bq_consumer_unseen() to provide the number of
+     * not yet seen buffers.
+     */
+    gulong serial;
 } BufferQueue_Element;
 
 /**
@@ -109,6 +121,16 @@ struct BufferQueue_Producer {
      * that the BufferQueue framework deals with.
      */
     GQueue *queue;
+
+    /**
+     * @brief Next serial to use for the added elements
+     *
+     * This is the next value for @ref BufferQueue_Element::serial; it
+     * starts from zero and it's reset to zero each time the queue is
+     * reset; each element added to the queue gets this value before
+     * getting incremented; it is used by @ref bq_consumer_unseen().
+     */
+    gulong next_serial;
 
     /**
      * @brief Function to free elements
@@ -352,6 +374,7 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     elem = g_slice_new(BufferQueue_Element);
     elem->payload = payload;
     elem->seen = 0;
+    elem->serial = producer->next_serial++;
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
@@ -363,6 +386,7 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
 
         producer->queue = g_queue_new();
         producer->reset_queue = 0;
+        producer->next_serial = 0;
     }
 
     g_queue_push_tail(producer->queue, elem);
@@ -565,6 +589,39 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     consumer->current_element_object = (BufferQueue_Element *)consumer->current_element_pointer->data;
 
     return true;
+}
+
+/**
+ * @brief Tells how many buffers are queued to be seen
+ *
+ * @param consumer The consuemr object to check
+ *
+ * @return The number of buffers queued in the producer that have not
+ *         been seen.
+ *
+ * @note This function will require exclusive access to the producer,
+ *       and will thus lock its mutex.
+ */
+gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
+    BufferQueue_Producer *producer = consumer->producer;
+    gulong serial;
+
+    if ( g_atomic_int_get(&producer->stopped) )
+        return 0;
+
+    /* Ensure we have the exclusive access */
+    g_mutex_lock(producer->lock);
+
+    serial = producer->next_serial;
+
+    if ( consumer->last_queue == producer->queue
+         && consumer->current_element_object != NULL )
+        serial -= consumer->current_element_object->serial;
+
+    /* Leave the exclusive access */
+    g_mutex_unlock(producer->lock);
+
+    return serial;
 }
 
 /**

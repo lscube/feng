@@ -317,30 +317,44 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
     RTP_session *session = w->data;
     MParserBuffer *buffer = NULL;
     ev_tstamp next_time = w->offset;
+    glong extra_cached_frames;
 
 #ifdef HAVE_METADATA
     if (session->metadata)
         cpd_send(session, now);
 #endif
 
-    r_read(session->track->parent, 1);
+    /* If there is no buffer, it means that either the producer
+     * has been stopped (as we reached the end of stream) or that
+     * there is no data for the consumer to read. If that's the
+     * case we just give control back to the main loop for now.
+     */
+    if ( bq_consumer_stopped(session->consumer) ) {
+        /* If the producer has been stopped, we send the
+         * finishing packets and go away.
+         */
+        fnc_log(FNC_LOG_INFO, "[rtp] Stream Finished");
+        rtcp_send_sr(session, BYE);
+        return;
+    }
+
+    /* Check whether we have enough extra frames to send. If we have
+     * no extra frames we have a problem, since we're going to send
+     * one packet at least.
+     *
+     * We add one to the number of missing frames so that the value is
+     * _never_ zero, otherwise the GThreadPool internal implementation
+     * bails out.
+     */
+    /** @todo It's not really correct to assume one frame per packet,
+     *        it's actually quite wrong, in both senses.
+     */
+    if ( (extra_cached_frames = bq_consumer_unseen(session->consumer)
+          - session->srv->srvconf.buffered_frames) <= 0 )
+        r_read(session->track->parent, abs(extra_cached_frames)+1);
 
     /* Get the current buffer, if there is enough data */
     if ( !(buffer = bq_consumer_get(session->consumer)) ) {
-        /* If there is no buffer, it means that either the producer
-         * has been stopped (as we reached the end of stream) or that
-         * there is no data for the consumer to read. If that's the
-         * case we just give control back to the main loop for now.
-         */
-
-        if ( bq_consumer_stopped(session->consumer) ) {
-            /* If the producer has been stopped, we send the
-             * finishing packets and go away.
-             */
-            fnc_log(FNC_LOG_INFO, "[rtp] Stream Finished");
-            rtcp_send_sr(session, BYE);
-            return;
-        }
         /* We wait a bit of time to get the data but before it is
          * expired.
          */
