@@ -347,6 +347,9 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         next_time += session->track->properties->frame_duration/3;
     } else {
         MParserBuffer *next;
+        double timestamp = buffer->timestamp;
+        double duration = buffer->duration;
+        gboolean marker = buffer->marker;
 
         rtp_packet_send(session, buffer);
 
@@ -355,11 +358,12 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
 
         if (bq_consumer_move(session->consumer)) {
             next = bq_consumer_get(session->consumer);
-
-            fprintf(stderr, "NEXT ");
-            next_time = session->start_time + next->timestamp;
+            if (session->track->properties->media_source == MS_live) {
+                duration = next->timestamp - timestamp;
+                next_time += next->timestamp - timestamp;
+            } else
+                next_time = session->start_time + next->timestamp;
         } else {
-            fprintf(stderr, "NO");
             if (buffer->marker)
                 next_time += buffer->duration;
         }
@@ -369,9 +373,9 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
                 "[send] current %f stream %s timestamp %f (%d) duration %f next %f\n",
                 ev_now(loop) - session->start_time,
                 session->track->properties->encoding_name,
-                buffer->timestamp,
-                buffer->marker,
-                buffer->duration,
+                timestamp,
+                marker,
+                duration,
                 next_time - session->start_time);
     }
 

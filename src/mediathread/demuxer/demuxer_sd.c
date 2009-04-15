@@ -421,7 +421,14 @@ static int sd_read_packet(Resource * r)
             }
 
             marker = (msg_buffer[1]>>7);
-            mparser_buffer_write(tr, 0.0, marker, msg_buffer, msg_len);
+
+            tr->properties->mtime =
+                ((unsigned)msg_buffer[4] << 24 |
+                (unsigned)msg_buffer[5] << 16  |
+                (unsigned)msg_buffer[6] << 8   |
+                (unsigned)msg_buffer[7])/((double)tr->properties->clock_rate);
+
+            mparser_buffer_write(tr, 0.0, marker, msg_buffer+12, msg_len-12);
             g_free(msg_buffer);
     }
 
