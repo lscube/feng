@@ -91,8 +91,7 @@ void rtp_session_gslist_free(GSList *sessions_list) {
  * @brief Resume (or start) an RTP session
  *
  * @param session_gen The session to resume or start
- * @param start_time_gen Pointer to the time (in seconds) inside the
- *                       stream to start from.
+ * @param range_gen Pointer tp @ref RTSP_Range to start with
  *
  * @todo This function should probably take care of starting eventual
  *       libev events when the scheduler is replaced.
@@ -107,18 +106,20 @@ void rtp_session_gslist_free(GSList *sessions_list) {
  *
  * @internal This function should only be called from g_slist_foreach.
  */
-static void rtp_session_resume(gpointer session_gen, gpointer start_time_gen) {
+static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     RTP_session *session = (RTP_session*)session_gen;
-    double *start_time = (double*)start_time_gen;
+    RTSP_Range *range = (RTSP_Range*)range_gen;
     feng *srv = session->srv;
     int i;
 
-    session->start_time = *start_time;
-    ev_periodic_set(&session->transport.rtp_writer, *start_time, 0, NULL);
-    ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
-
+    session->range = range;
+    session->start_seq = 1 + session->seq_no;
+    session->start_rtptime = g_random_int();
     session->send_time = 0.0;
     session->last_packet_send_time = time(NULL);
+
+    ev_periodic_set(&session->transport.rtp_writer, range->playback_time, 0, NULL);
+    ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
 
     /* Prefetch frames */
     r_read(session->track->parent, srv->srvconf.buffered_frames);
@@ -128,13 +129,13 @@ static void rtp_session_resume(gpointer session_gen, gpointer start_time_gen) {
  * @brief Resume a GSList of RTP_sessions
  *
  * @param sessions_list GSList of sessions to resume
- * @param start_time Time to start the sessions at
+ * @param range The RTSP Range to start from
  *
  * This is a convenience function that wraps around @ref
  * rtp_session_resume and calls it with a foreach loop on the list
  */
-void rtp_session_gslist_resume(GSList *sessions_list, double start_time) {
-    g_slist_foreach(sessions_list, rtp_session_resume, &start_time);
+void rtp_session_gslist_resume(GSList *sessions_list, RTSP_Range *range) {
+    g_slist_foreach(sessions_list, rtp_session_resume, range);
 }
 
 /**
@@ -167,44 +168,6 @@ void rtp_session_gslist_pause(GSList *sessions_list) {
 }
 
 /**
- * @brief Let a RTP session seek
- *
- * @param session_gen The session to seek for
- * @param seek_time_gen Pointer to the time (in seconds) inside the
- *                      stream to seek to.
- *
- * This function is used by the PLAY method of RTSP to seek further
- * in the stream.
- *
- * The use of a pointer to double rather than a double itself is to
- * make it possible to pass this function straight to foreach
- * functions from glib.
- *
- * @internal This function should only be called from g_slist_foreach.
- */
-static void rtp_session_seek(gpointer session_gen, gpointer seek_time_gen) {
-    RTP_session *session = (RTP_session*)session_gen;
-    double *seek_time = (double*)seek_time_gen;
-
-    session->seek_time = *seek_time;
-    session->start_seq = 1 + session->seq_no;
-    session->start_rtptime = g_random_int();
-}
-
-/**
- * @brief Seek into a GSList of RTP_sessions
- *
- * @param sessions_list GSList of sessions to resume
- * @param seek_time Time to seek the sessions to
- *
- * This is a convenience function that wraps around rtp_session_seek
- * and calls it with a foreach loop on the list
- */
-void rtp_session_gslist_seek(GSList *sessions_list, double seek_time) {
-    g_slist_foreach(sessions_list, rtp_session_seek, &seek_time);
-}
-
-/**
  * Calculate RTP time from media timestamp or using pregenerated timestamp
  * depending on what is available
  * @param session RTP session of the packet
@@ -217,7 +180,7 @@ static inline uint32_t RTP_calc_rtptime(RTP_session *session,
                                         MParserBuffer *buffer)
 {
     uint32_t calc_rtptime =
-        (buffer->timestamp - session->seek_time) * clock_rate;
+        (buffer->timestamp - session->range->begin_time) * clock_rate;
     return session->start_rtptime + calc_rtptime;
 }
 
@@ -377,7 +340,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
                 duration = next->timestamp - timestamp;
                 next_time += next->timestamp - timestamp;
             } else
-                next_time = session->start_time + next->timestamp;
+                next_time = session->range->playback_time + ( next->timestamp - session->range->begin_time );
                 calculated_duration = next->timestamp - timestamp;
         } else {
             if (buffer->marker)
@@ -385,17 +348,19 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         }
 
         //fnc_log(FNC_LOG_VERBOSE,
+        /*
         fprintf(stderr,
                 "[send] current %5.3f|%5.3f stream %s timestamp %5.3f (%d) duration %5.3f|%5.3f next %5.3f|%5.3f\n",
-                ev_now(loop) - session->start_time,
-                w->offset - session->start_time,
+                ev_now(loop) - session->start_offset,
+                w->offset - session->start_offset,
                 session->track->properties->encoding_name,
                 timestamp,
                 marker,
                 duration,
                 calculated_duration,
-                next_time - session->start_time,
-                w->offset + calculated_duration - session->start_time);
+                next_time - session->start_offset,
+                w->offset + calculated_duration - session->start_offset);
+        */
         next_time = w->offset + calculated_duration;
     }
 

@@ -45,6 +45,45 @@
  */
 
 /**
+ * @brief Append a range to an RTSP session's editlist
+ *
+ * @param session The RTSP session to append the range to
+ * @param range The range to append
+ *
+ * This functin forms the basis used for editlist handling as defined
+ * by RFC 2326 Section 10.5.
+ */
+void rtsp_session_editlist_append(RTSP_session *session, RTSP_Range *range)
+{
+    g_queue_push_tail(session->play_requests, range);
+}
+
+/**
+ * @brief Free the single range in an editlist
+ *
+ * @param element The Range to free
+ * @param user_data Unused
+ *
+ * @internal This should only be called through g_list_foreach by @ref
+ *           rtsp_session_editlist_free.
+ */
+static void rtsp_range_free(gpointer element, gpointer user_data)
+{
+    g_slice_free(RTSP_Range, element);
+}
+
+/**
+ * @brief Free the editlist of a given session
+ *
+ * @param session The RTSP session to free the editlist of
+ */
+void rtsp_session_editlist_free(RTSP_session *session)
+{
+    g_queue_foreach(session->play_requests, rtsp_range_free, NULL);
+    g_queue_clear(session->play_requests);
+}
+
+/**
  * @brief Allocate and initialise a new RTSP session object
  *
  * @param rtsp The RTSP client for which to allocate the session
@@ -61,6 +100,7 @@ RTSP_session *rtsp_session_new(RTSP_Client *rtsp)
     new->session_id = g_strdup_printf("%08x%08x",
                                       g_random_int(),
                                       g_random_int());
+    new->play_requests = g_queue_new();
 
     return new;
 }
@@ -80,6 +120,9 @@ void rtsp_session_free(RTSP_session *session)
     /* Release all the connected RTP sessions */
     rtp_session_gslist_free(session->rtp_sessions);
     g_slist_free(session->rtp_sessions);
+
+    rtsp_session_editlist_free(session);
+    g_queue_free(session->play_requests);
 
     g_free(session->resource_uri);
     r_close(session->resource);

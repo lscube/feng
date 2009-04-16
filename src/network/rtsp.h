@@ -73,7 +73,39 @@ typedef struct RTSP_session {
     struct Resource *resource;
     char *resource_uri;
     struct feng *srv;
+
+    /**
+     * @brief List of playback requests (of type @ref RTSP_Range)
+     *
+     * RFC 2326 Section 10.5 defines queues of PLAY requests, which
+     * allows precise editing by the client; we keep a list here to
+     * make it easier to actually implement the (currently missing)
+     * feature.
+     */
+    GQueue *play_requests;
 } RTSP_session;
+
+/**
+ * @brief Structure representing a playing range
+ *
+ * This structure contains the software-accessible range data as
+ * provided by the client with the Range header (specified by RFC 2326
+ * Section 12.29).
+ *
+ * This structure is usually filled in by the Ragel parser in @ref
+ * ragel_parser_range_header, but is also changed when PAUSE requests
+ * are received.
+ */
+typedef struct RTSP_Range {
+    /** Seconds into the stream (NTP) to start the playback at */
+    double begin_time;
+
+    /** Seconds into the stream (NTP) to stop the playback at */
+    double end_time;
+
+    /** Real-time timestamp when to start the playback */
+    double playback_time;
+} RTSP_Range;
 
 typedef struct RTSP_Client {
     Sock *sock;
@@ -263,6 +295,8 @@ void rtsp_bwrite(RTSP_Client *rtsp, GString *buffer);
 
 RTSP_session *rtsp_session_new(RTSP_Client *rtsp);
 void rtsp_session_free(RTSP_session *session);
+void rtsp_session_editlist_append(RTSP_session *session, RTSP_Range *range);
+void rtsp_session_editlist_free(RTSP_session *session);
 
 gboolean interleaved_setup_transport(RTSP_Client *, struct RTP_transport *,
                                      int, int);

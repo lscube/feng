@@ -38,6 +38,7 @@
 struct feng;
 struct Track;
 struct RTSP_Client;
+struct RTSP_Range;
 struct RTSP_session;
 
 #define RTP_DEFAULT_PORT 5004
@@ -70,9 +71,7 @@ typedef struct RTP_session {
 
     uint32_t last_packet_send_time;
 
-    //these time vars now are now back here
-    double start_time;
-    double seek_time;
+    struct RTSP_Range *range;
     double send_time;
     double last_timestamp;
 
@@ -131,8 +130,7 @@ RTP_session *rtp_session_new(struct RTSP_Client *, struct RTSP_session *,
                              RTP_transport *, const char *,
                              struct Track *);
 
-void rtp_session_gslist_resume(GSList *, double);
-void rtp_session_gslist_seek(GSList *, double);
+void rtp_session_gslist_resume(GSList *, struct RTSP_Range *range);
 void rtp_session_gslist_pause(GSList *);
 void rtp_session_gslist_free(GSList *);
 

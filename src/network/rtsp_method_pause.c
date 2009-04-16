@@ -36,6 +36,8 @@
 void RTSP_pause(RTSP_Client * rtsp, RTSP_Request *req)
 {
     RTSP_session *rtsp_sess = rtsp->session;
+    /* Get the first range, so that we can record the pause point */
+    RTSP_Range *range = g_queue_peek_head(rtsp_sess->play_requests);
 
     /* This is only valid in Playing state */
     if ( !rtsp_check_invalid_state(req, RTSP_SERVER_INIT) ||
@@ -45,10 +47,17 @@ void RTSP_pause(RTSP_Client * rtsp, RTSP_Request *req)
     if ( !rtsp_request_check_url(req) )
         return;
 
+    /** @todo we need to check if the client provided a Range
+     *        header */
+    range->begin_time = ev_now(rtsp_sess->srv->loop)
+        - range->playback_time;
+    range->playback_time = -0.1;
+
     rtp_session_gslist_pause(rtsp_sess->rtp_sessions);
 
     ev_timer_stop(rtsp->srv->loop, &rtsp->ev_timeout);
 
-    rtsp_quick_response(req, RTSP_Ok);
     rtsp_sess->cur_state = RTSP_SERVER_READY;
+
+    rtsp_quick_response(req, RTSP_Ok);
 }

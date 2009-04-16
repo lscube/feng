@@ -4,12 +4,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "network/rtsp.h"
 #include "network/ragel_parsers.h"
 
 %% machine ragel_range_header;
 
 gboolean ragel_parse_range_header(const char *header,
-                                  ParsedRange *range) {
+                                  RTSP_Range *range) {
 
     int cs;
     const char *p = header, *pe = p + strlen(p) +1;
