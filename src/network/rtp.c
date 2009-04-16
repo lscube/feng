@@ -363,6 +363,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         MParserBuffer *next;
         double timestamp = buffer->timestamp;
         double duration = buffer->duration;
+        double calculated_duration = -0.1;
         gboolean marker = buffer->marker;
 
         rtp_packet_send(session, buffer);
@@ -377,6 +378,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
                 next_time += next->timestamp - timestamp;
             } else
                 next_time = session->start_time + next->timestamp;
+                calculated_duration = next->timestamp - timestamp;
         } else {
             if (buffer->marker)
                 next_time += buffer->duration;
@@ -384,13 +386,17 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
 
         //fnc_log(FNC_LOG_VERBOSE,
         fprintf(stderr,
-                "[send] current %f stream %s timestamp %f (%d) duration %f next %f\n",
+                "[send] current %5.3f|%5.3f stream %s timestamp %5.3f (%d) duration %5.3f|%5.3f next %5.3f|%5.3f\n",
                 ev_now(loop) - session->start_time,
+                w->offset - session->start_time,
                 session->track->properties->encoding_name,
                 timestamp,
                 marker,
                 duration,
-                next_time - session->start_time);
+                calculated_duration,
+                next_time - session->start_time,
+                w->offset + calculated_duration - session->start_time);
+        next_time = w->offset + calculated_duration;
     }
 
     ev_periodic_set(w, next_time, 0, NULL);
