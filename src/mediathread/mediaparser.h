@@ -137,7 +137,9 @@ typedef struct {
     uint8_t data[];     /*!< actual packet data */
 } MParserBuffer;
 
-void mparser_buffer_write(struct Track *tr, double duration, gboolean marker,
+void mparser_buffer_write(struct Track *tr,
+                          double timestamp, double duration,
+                          gboolean marker,
                           uint8_t *data, size_t data_size);
 
 
