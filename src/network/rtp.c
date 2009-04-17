@@ -119,7 +119,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     session->last_packet_send_time = time(NULL);
 
     ev_periodic_set(&session->transport.rtp_writer,
-                    range->playback_time - 0.03,
+                    range->playback_time - 0.05,
                     0, NULL);
     ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
 
@@ -282,6 +282,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
     RTP_session *session = w->data;
     MParserBuffer *buffer = NULL;
     ev_tstamp next_time = w->offset;
+    ev_tstamp delay = 0.0;
     glong extra_cached_frames;
 
 #ifdef HAVE_METADATA
@@ -344,9 +345,15 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
             if (buffer->marker)
                 next_time += buffer->duration;
         }
+        delay = ev_time() - w->offset;
+        fprintf(stderr, "[%s] Now: %5.4f, cur %5.4f, next %5.4f, delay %5.4f\n",
+            session->track->properties->encoding_name,
+            ev_now(loop) - session->range->playback_time,
+            timestamp,
+            next_time - session->range->playback_time,
+            delay);
     }
-
-    ev_periodic_set(w, next_time - 0.03, 0, NULL);
+    ev_periodic_set(w, next_time - delay, 0, NULL);
     ev_periodic_again(loop, w);
 }
 
