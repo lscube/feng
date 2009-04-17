@@ -118,7 +118,9 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     session->send_time = 0.0;
     session->last_packet_send_time = time(NULL);
 
-    ev_periodic_set(&session->transport.rtp_writer, range->playback_time, 0, NULL);
+    ev_periodic_set(&session->transport.rtp_writer,
+                    range->playback_time - 0.03,
+                    0, NULL);
     ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
 
     /* Prefetch frames */
@@ -325,9 +327,6 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
     } else {
         MParserBuffer *next;
         double timestamp = buffer->timestamp;
-        double duration = buffer->duration;
-        double calculated_duration = -0.1;
-        gboolean marker = buffer->marker;
 
         rtp_packet_send(session, buffer);
 
@@ -337,34 +336,17 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         if (bq_consumer_move(session->consumer)) {
             next = bq_consumer_get(session->consumer);
             if (session->track->properties->media_source == MS_live) {
-                duration = next->timestamp - timestamp;
                 next_time += next->timestamp - timestamp;
             } else
-                next_time = session->range->playback_time + ( next->timestamp - session->range->begin_time );
-                calculated_duration = next->timestamp - timestamp;
+                next_time = session->range->playback_time +
+                            ( next->timestamp - session->range->begin_time );
         } else {
             if (buffer->marker)
                 next_time += buffer->duration;
         }
-
-        //fnc_log(FNC_LOG_VERBOSE,
-        /*
-        fprintf(stderr,
-                "[send] current %5.3f|%5.3f stream %s timestamp %5.3f (%d) duration %5.3f|%5.3f next %5.3f|%5.3f\n",
-                ev_now(loop) - session->start_offset,
-                w->offset - session->start_offset,
-                session->track->properties->encoding_name,
-                timestamp,
-                marker,
-                duration,
-                calculated_duration,
-                next_time - session->start_offset,
-                w->offset + calculated_duration - session->start_offset);
-        */
-        next_time = w->offset + calculated_duration;
     }
 
-    ev_periodic_set(w, next_time, 0, NULL);
+    ev_periodic_set(w, next_time - 0.03, 0, NULL);
     ev_periodic_again(loop, w);
 }
 
