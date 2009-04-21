@@ -29,16 +29,35 @@
 #include "rtp.h"
 
 /**
+ *  Actually pause playing the media using mediathread
+ *
+ *  @param rtsp the client requesting pause
+ */
+
+void rtsp_do_pause(RTSP_Client *rtsp)
+{
+    RTSP_session *rtsp_sess = rtsp->session;
+    /* Get the first range, so that we can record the pause point */
+    RTSP_Range *range = g_queue_peek_head(rtsp_sess->play_requests);
+
+    range->begin_time = ev_now(rtsp_sess->srv->loop) -
+                        range->playback_time;
+    range->playback_time = -0.1;
+
+    rtp_session_gslist_pause(rtsp_sess->rtp_sessions);
+
+    ev_timer_stop(rtsp->srv->loop, &rtsp->ev_timeout);
+
+    rtsp_sess->cur_state = RTSP_SERVER_READY;
+}
+
+/**
  * RTSP PAUSE method handler
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
 void RTSP_pause(RTSP_Client * rtsp, RTSP_Request *req)
 {
-    RTSP_session *rtsp_sess = rtsp->session;
-    /* Get the first range, so that we can record the pause point */
-    RTSP_Range *range = g_queue_peek_head(rtsp_sess->play_requests);
-
     /* This is only valid in Playing state */
     if ( !rtsp_check_invalid_state(req, RTSP_SERVER_INIT) ||
          !rtsp_check_invalid_state(req, RTSP_SERVER_READY) )
@@ -49,15 +68,7 @@ void RTSP_pause(RTSP_Client * rtsp, RTSP_Request *req)
 
     /** @todo we need to check if the client provided a Range
      *        header */
-    range->begin_time = ev_now(rtsp_sess->srv->loop)
-        - range->playback_time;
-    range->playback_time = -0.1;
-
-    rtp_session_gslist_pause(rtsp_sess->rtp_sessions);
-
-    ev_timer_stop(rtsp->srv->loop, &rtsp->ev_timeout);
-
-    rtsp_sess->cur_state = RTSP_SERVER_READY;
+    rtsp_do_pause(rtsp);
 
     rtsp_quick_response(req, RTSP_Ok);
 }

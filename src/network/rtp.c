@@ -350,12 +350,14 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         }
         if(marker)
             delay = ev_time() - w->offset;
-        fprintf(stderr, "[%s] Now: %5.4f, cur %5.4f, next %5.4f, delay %5.4f\n",
+        fprintf(stderr,
+            "[%s] Now: %5.4f, cur %5.4f, next %5.4f, delay %5.4f %s\n",
             session->track->properties->encoding_name,
             ev_now(loop) - session->range->playback_time,
             timestamp,
             next_time - session->range->playback_time,
-            delay);
+            delay,
+            marker? "M" : " ");
     }
     ev_periodic_set(w, next_time - delay, 0, NULL);
     ev_periodic_again(loop, w);

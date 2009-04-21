@@ -303,4 +303,6 @@ gboolean interleaved_setup_transport(RTSP_Client *, struct RTP_transport *,
 void interleaved_rtcp_send(RTSP_Client *, int, void *, size_t);
 void interleaved_free_list(RTSP_Client *);
 
+void rtsp_do_pause(RTSP_Client *rtsp);
+
 #endif // FN_RTSP_H

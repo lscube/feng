@@ -34,6 +34,7 @@
 #include "feng.h"
 #include "rtsp.h"
 #include "rtp.h"
+#include "fnc_log.h"
 #include "ragel_parsers.h"
 #include "mediathread/demuxer.h"
 
@@ -256,6 +257,11 @@ void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
 
     if ( (error = parse_range_header(req)) != RTSP_Ok )
         goto error_management;
+
+/*    if ( rtsp_sess->cur_state == RTSP_SERVER_PLAYING ) {
+        fnc_log(FNC_LOG_WARN, "Workaround known broken seek");
+        rtsp_do_pause(rtsp);
+    } */
 
     if ( rtsp_sess->cur_state != RTSP_SERVER_PLAYING &&
          (error = do_play(rtsp_sess)) != RTSP_Ok )
