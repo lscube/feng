@@ -210,12 +210,14 @@ static RTSP_ResponseCode parse_range_header(RTSP_Request *req)
     /* We don't set begin_time if it was not read, since the client
      * didn't request any seek and thus we won't do any seek to that.
      */
-    if ( range->end_time < 0 )
+    if ( range->end_time < 0 ||
+         range->end_time > session->resource->info->duration)
         range->end_time = session->resource->info->duration;
-    else if ( range->end_time > session->resource->info->duration ) {
+/*    else if ( range->end_time > session->resource->info->duration ) {
         g_slice_free(RTSP_Range, range);
         return RTSP_InvalidRange;
     }
+*/
 
     if ( range->playback_time < 0 )
         range->playback_time = ev_now(session->srv->loop);
