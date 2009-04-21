@@ -229,8 +229,8 @@ void interleaved_rtcp_send(RTSP_Client *rtsp, int channel,
 {
     RTSP_interleaved *intlvd = NULL;
     GSList *intlvd_iter = g_slist_find_custom(rtsp->interleaved,
-                                              interleaved_rtcp_find_compare,
-                                              GINT_TO_POINTER(channel));
+                                              GINT_TO_POINTER(channel),
+                                              interleaved_rtcp_find_compare);
 
     /* We have to check if the value returned by g_slist_find_custom
      * is valid before derefencing it.
