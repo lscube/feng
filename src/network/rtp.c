@@ -328,6 +328,8 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
     } else {
         MParserBuffer *next;
         double timestamp = buffer->timestamp;
+        double duration = buffer->duration;
+        gboolean marker = buffer->marker;
 
         rtp_packet_send(session, buffer);
 
@@ -339,13 +341,15 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
             if (session->track->properties->media_source == MS_live) {
                 next_time += next->timestamp - timestamp;
             } else
-                next_time = session->range->playback_time +
-                            ( next->timestamp - session->range->begin_time );
+                if(marker)
+                    next_time = session->range->playback_time +
+                            ( timestamp + duration - session->range->begin_time );
         } else {
             if (buffer->marker)
                 next_time += buffer->duration;
         }
-        delay = ev_time() - w->offset;
+        if(marker)
+            delay = ev_time() - w->offset;
         fprintf(stderr, "[%s] Now: %5.4f, cur %5.4f, next %5.4f, delay %5.4f\n",
             session->track->properties->encoding_name,
             ev_now(loop) - session->range->playback_time,
