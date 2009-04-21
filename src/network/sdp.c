@@ -339,7 +339,8 @@ GString *sdp_session_descr(struct feng *srv, const Url *url)
     // control attribute. We should look if aggregate metod is supported?
     g_string_append(descr, "a=control:*"SDP_EL);
 
-    if ((duration = r_descr_time(r_descr)) > 0)
+    if ((duration = r_descr_time(r_descr)) > 0 &&
+        duration != HUGE_VAL)
         g_string_append_printf(descr, "a=range:npt=0-%f"SDP_EL, duration);
 
     // other private data
