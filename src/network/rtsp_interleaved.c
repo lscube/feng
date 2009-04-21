@@ -204,12 +204,12 @@ gboolean interleaved_setup_transport(RTSP_Client *rtsp, RTP_transport *transport
  *           g_slist_find_custom() function by @ref
  *           interleaved_rtcp_send.
  */
-static gboolean interleaved_rtcp_find_compare(gconstpointer value, gconstpointer target)
+static gboolean interleaved_rtcp_find_compare(gconstpointer value,
+                                              gconstpointer target)
 {
-  RTSP_interleaved *i = (RTSP_interleaved *)value;
-  gint m = GPOINTER_TO_INT(target);
-
-  return (i->rtcp.channel == m);
+    RTSP_interleaved *i = (RTSP_interleaved *)value;
+    gint m = GPOINTER_TO_INT(target);
+    return (i->rtcp.channel == m);
 }
 
 /**
@@ -224,7 +224,8 @@ static gboolean interleaved_rtcp_find_compare(gconstpointer value, gconstpointer
  * after it has been received from an interleaved transport (TCP or
  * SCTP alike).
  */
-void interleaved_rtcp_send(RTSP_Client *rtsp, int channel, void *data, size_t len)
+void interleaved_rtcp_send(RTSP_Client *rtsp, int channel,
+                           void *data, size_t len)
 {
     RTSP_interleaved *intlvd = NULL;
     GSList *intlvd_iter = g_slist_find_custom(rtsp->interleaved,
