@@ -59,17 +59,20 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
 
     /* Call this first, so that all the reading threads will stop
        before continuing to free resources */
-    g_thread_pool_free(resource->read_pool, true, true);
+    if (resource->read_pool)
+        g_thread_pool_free(resource->read_pool, true, true);
 
-    g_mutex_free(resource->lock);
+    if (resource->lock)
+        g_mutex_free(resource->lock);
     istream_close(resource->i_stream);
     MObject_unref(MOBJECT(resource->info));
     resource->info = NULL;
     resource->demuxer->uninit(resource);
 
-    g_list_foreach(resource->tracks, free_track, NULL);
-    g_list_free(resource->tracks);
-
+    if (resource->tracks) {
+        g_list_foreach(resource->tracks, free_track, NULL);
+        g_list_free(resource->tracks);
+    }
     g_slice_free(Resource, resource);
 }
 
