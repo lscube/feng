@@ -50,7 +50,13 @@ static RTSP_ResponseCode do_play(RTSP_session * rtsp_sess)
 {
     RTSP_Range *range = g_queue_peek_head(rtsp_sess->play_requests);
 
-    if ( r_seek(rtsp_sess->resource, range->begin_time) )
+    /* Don't try to seek if the source is a live stream;
+     * parse_range_header() would have already ensured the range is
+     * valid for the resource, and in particular ensured that if the
+     * presentation is live we only have the “0-” range selected.
+     */
+    if ( rtsp_sess->resource->info->media_source != MS_live &&
+         r_seek(rtsp_sess->resource, range->begin_time) )
         return RTSP_InvalidRange;
 
     rtsp_sess->cur_state = RTSP_SERVER_PLAYING;
@@ -153,12 +159,17 @@ static void send_play_reply(RTSP_Request *req,
  *                           beyond the end of the resource.
  *
  * @retval RTSP_HeaderFieldNotValidforResource
- *                           A Range header was present in a live
- *                           presentation session, which is invalid as
- *                           per RFC 2326 Section 11.3.7.
+ *                           A Range header with a range different
+ *                           from 0- was present in a live
+ *                           presentation session.
  *
  * RFC 2326 only mandates server to know NPT time, clock and smtpe
  * times are optional, and we currently support neither of them.
+ *
+ * Because both live555-based clients (VLC) and QuickTime always send
+ * the Range: header even for live presentations, we have to accept
+ * the range "0-" even if the mere presence of the Range header should
+ * make the request invalid. Compare RFC 2326 Section 11.3.7.
  *
  * @see ragel_parse_range_header()
  */
@@ -200,17 +211,32 @@ static RTSP_ResponseCode parse_range_header(RTSP_Request *req)
      * not implemented. It might not be entirely correct but until we
      * have better indications, it should be fine. */
     if (range_hdr) {
-        if ( session->resource->info->media_source == MS_live ) {
-            g_slice_free(RTSP_Range, range);
-            return RTSP_HeaderFieldNotValidforResource;
-        }
-
         if ( !ragel_parse_range_header(range_hdr, range) ) {
             g_slice_free(RTSP_Range, range);
             /** @todo We should be differentiating between not-implemented and
              *        invalid ranges.
              */
             return RTSP_NotImplemented;
+        }
+
+        /* This is a very lax check on what range the client provided;
+         * unfortunately both live555-based clients and QuickTime
+         * always send a Range: header even if the SDP had no range
+         * attribute, and there seems to be no way to tell them not to
+         * (at least there is none with the current live555, not sure
+         * about QuickTime).
+         *
+         * But just to be on the safe side, if we're streaming live
+         * and the resulting value is not 0-inf, we want to respond
+         * with a "Header Field Not Valid For Resource". If clients
+         * handled this correctly, the mere presence of the Range
+         * header in this condition would trigger that response.
+         */
+        if ( session->resource->info->media_source == MS_live &&
+             range->begin_time != 0 &&
+             range->end_time != -0.1 ) {
+            g_slice_free(RTSP_Range, range);
+            return RTSP_HeaderFieldNotValidforResource;
         }
     }
 
