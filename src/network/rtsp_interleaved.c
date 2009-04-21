@@ -94,6 +94,7 @@ static void interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
 
     ne_n = htons((uint16_t)n);
     pkt = g_byte_array_sized_new(n+4);
+    g_byte_array_set_size(pkt, n+4);
 
     pkt->data[0] = '$';
     pkt->data[1] = (uint8_t)intlvd->channel;
@@ -228,8 +229,8 @@ void interleaved_rtcp_send(RTSP_Client *rtsp, int channel, void *data, size_t le
 {
     RTSP_interleaved *intlvd = NULL;
     GSList *intlvd_iter = g_slist_find_custom(rtsp->interleaved,
-                                              interleaved_rtcp_find_compare,
-                                              GINT_TO_POINTER(channel));
+                                              GINT_TO_POINTER(channel),
+                                              interleaved_rtcp_find_compare);
 
     /* We have to check if the value returned by g_slist_find_custom
      * is valid before derefencing it.
