@@ -199,13 +199,19 @@ static RTSP_ResponseCode parse_range_header(RTSP_Request *req)
     /* If there is any kind of parsing error, the range is considered
      * not implemented. It might not be entirely correct but until we
      * have better indications, it should be fine. */
-    if ( range_hdr &&
-         !ragel_parse_range_header(range_hdr, range) ) {
-        g_slice_free(RTSP_Range, range);
-        /** @todo We should be differentiating between not-implemented and
-         *        invalid ranges.
-         */
-        return RTSP_NotImplemented;
+    if (range_hdr) {
+        if ( session->resource->info->media_source == MS_live ) {
+            g_slice_free(RTSP_Range, range);
+            return RTSP_HeaderFieldNotValidforResource;
+        }
+
+        if ( !ragel_parse_range_header(range_hdr, range) ) {
+            g_slice_free(RTSP_Range, range);
+            /** @todo We should be differentiating between not-implemented and
+             *        invalid ranges.
+             */
+            return RTSP_NotImplemented;
+        }
     }
 
     /* We don't set begin_time if it was not read, since the client
