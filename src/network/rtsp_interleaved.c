@@ -94,6 +94,7 @@ static void interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
 
     ne_n = htons((uint16_t)n);
     pkt = g_byte_array_sized_new(n+4);
+    g_byte_array_set_size(pkt, n+4);
 
     pkt->data[0] = '$';
     pkt->data[1] = (uint8_t)intlvd->channel;
