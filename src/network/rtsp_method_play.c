@@ -275,6 +275,7 @@ void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
 {
     RTSP_session *rtsp_sess = rtsp->session;
     RTSP_ResponseCode error;
+    const char *user_agent;
 
     if ( !rtsp_check_invalid_state(req, RTSP_SERVER_INIT) )
         return;
@@ -287,13 +288,21 @@ void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
         goto error_management;
     }
 
+    /* This is a workaround for broken VLC (up to 0.9.9 on *
+     * 2008-04-22): instead of using a series of PLAY/PAUSE/PLAY for
+     * seeking, it only sends PLAY requests. As per RFC 2326 Section
+     * 10.5 this behaviour would suggest creating an edit list,
+     * instead of seeking.
+    */
+    if ( rtsp_sess->cur_state == RTSP_SERVER_PLAYING &&
+         (user_agent = g_hash_table_lookup(req->headers, eris_hdr_user_agent)) &&
+         strncmp(user_agent, "VLC media player", strlen("VLC media player")) == 0 ) {
+        fnc_log(FNC_LOG_WARN, "Working around broken seek of %s", user_agent);
+        rtsp_do_pause(rtsp);
+    }
+
     if ( (error = parse_range_header(req)) != RTSP_Ok )
         goto error_management;
-
-/*    if ( rtsp_sess->cur_state == RTSP_SERVER_PLAYING ) {
-        fnc_log(FNC_LOG_WARN, "Workaround known broken seek");
-        rtsp_do_pause(rtsp);
-    } */
 
     if ( rtsp_sess->cur_state != RTSP_SERVER_PLAYING &&
          (error = do_play(rtsp_sess)) != RTSP_Ok )
