@@ -50,12 +50,12 @@ static RTSP_ResponseCode do_play(RTSP_session * rtsp_sess)
 {
     RTSP_Range *range = g_queue_peek_head(rtsp_sess->play_requests);
 
-    /* Don't try to seek if the source is a live stream;
+    /* Don't try to seek if the source is not seekable;
      * parse_range_header() would have already ensured the range is
      * valid for the resource, and in particular ensured that if the
-     * presentation is live we only have the “0-” range selected.
+     * resource is not seekable we only have the “0-” range selected.
      */
-    if ( rtsp_sess->resource->info->media_source != MS_live &&
+    if ( rtsp_sess->resource->info->seekable &&
          r_seek(rtsp_sess->resource, range->begin_time) )
         return RTSP_InvalidRange;
 
@@ -226,13 +226,14 @@ static RTSP_ResponseCode parse_range_header(RTSP_Request *req)
          * (at least there is none with the current live555, not sure
          * about QuickTime).
          *
-         * But just to be on the safe side, if we're streaming live
-         * and the resulting value is not 0-inf, we want to respond
-         * with a "Header Field Not Valid For Resource". If clients
-         * handled this correctly, the mere presence of the Range
-         * header in this condition would trigger that response.
+         * But just to be on the safe side, if we're streaming a
+         * non-seekable resource (like live) and the resulting value
+         * is not 0-inf, we want to respond with a "Header Field Not
+         * Valid For Resource". If clients handled this correctly, the
+         * mere presence of the Range header in this condition would
+         * trigger that response.
          */
-        if ( session->resource->info->media_source == MS_live &&
+        if ( !session->resource->info->seekable &&
              range->begin_time != 0 &&
              range->end_time != -0.1 ) {
             g_slice_free(RTSP_Range, range);

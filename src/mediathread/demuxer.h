@@ -36,7 +36,6 @@ struct feng;
 #define RESOURCE_OK 0
 #define RESOURCE_NOT_FOUND -1
 #define RESOURCE_DAMAGED -2
-#define RESOURCE_NOT_SEEKABLE -3
 #define RESOURCE_TRACK_NOT_FOUND -4
 #define RESOURCE_NOT_PARSEABLE -5
 #define RESOURCE_EOF -6
@@ -64,6 +63,19 @@ MObject_def(ResourceInfo_s)
     char multicast[16];
     int port;
     char ttl[4];
+
+    /**
+     * @brief Seekable resource flag
+     *
+     * Right now this is only false when the resource is a live
+     * resource (@ref ResourceInfo::media_source set to @ref MS_live)
+     * or when the demuxer provides no @ref Demuxer::seek function.
+     *
+     * In the future this can be extended to be set to false if the
+     * user disable seeking in a particular stored (and otherwise
+     * seekable) resource.
+     */
+    gboolean seekable;
 } ResourceInfo;
 
 ResourceInfo *resinfo_new();

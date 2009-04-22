@@ -441,10 +441,11 @@ static int sd_read_packet(Resource * r)
     return RESOURCE_OK;
 }
 
-static int sd_seek(Resource * r, double time_sec)
-{
-    return RESOURCE_NOT_SEEKABLE;
-}
+/* Define the “sd_seek” macro to NULL so that FNC_LIB_DEMUXER will
+ * pick it up and set it to NULL. This actually saves us from having
+ * to devise a way to define non-seekable demuxers.
+ */
+#define sd_seek NULL
 
 static int sd_uninit(Resource * r)
 {

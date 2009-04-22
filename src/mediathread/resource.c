@@ -151,6 +151,8 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 
     r->info->mrl = mrl;
     r->info->name = g_path_get_basename(inner_path);
+    r->info->seekable = (dmx->seek != NULL);
+
     r->i_stream = i_stream;
     r->demuxer = dmx;
     r->srv = srv;

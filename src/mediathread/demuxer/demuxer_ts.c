@@ -216,10 +216,11 @@ static int mpegts_read_packet(Resource * r)
     return RESOURCE_OK;
 }
 
-static int mpegts_seek(Resource * r, double time_sec)
-{
-    return RESOURCE_NOT_SEEKABLE;
-}
+/* Define the “mpegts_seek” macro to NULL so that FNC_LIB_DEMUXER will
+ * pick it up and set it to NULL. This actually saves us from having
+ * to devise a way to define non-seekable demuxers.
+ */
+#define mpegts_seek NULL
 
 static int mpegts_uninit(Resource * r)
 {
