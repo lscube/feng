@@ -103,7 +103,9 @@ static void check_if_any_rtp_session_timedout(gpointer element, gpointer user_da
 static void client_ev_timeout(struct ev_loop *loop, ev_timer *w, int revents)
 {
     RTSP_Client *rtsp = w->data;
-    g_slist_foreach(rtsp->session->rtp_sessions, check_if_any_rtp_session_timedout, NULL);
+    if(rtsp->session->rtp_sessions)
+        g_slist_foreach(rtsp->session->rtp_sessions,
+                        check_if_any_rtp_session_timedout, NULL);
     ev_timer_again (loop, w);
 }
 
@@ -171,7 +173,6 @@ void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents)
     rtsp->ev_timeout.data = rtsp;
     ev_init(&rtsp->ev_timeout, client_ev_timeout);
     rtsp->ev_timeout.repeat = STREAM_TIMEOUT;
-    ev_timer_again (srv->loop, &rtsp->ev_timeout);
 
     fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
 }
