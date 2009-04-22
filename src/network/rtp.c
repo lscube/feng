@@ -327,9 +327,10 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         next_time += session->track->properties->frame_duration/3;
     } else {
         MParserBuffer *next;
+        double delivery  = buffer->delivery;
         double timestamp = buffer->timestamp;
-        double duration = buffer->duration;
-        gboolean marker = buffer->marker;
+        double duration  = buffer->duration;
+        gboolean marker  = buffer->marker;
 
         rtp_packet_send(session, buffer);
 
@@ -339,27 +340,30 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         if (bq_consumer_move(session->consumer)) {
             next = bq_consumer_get(session->consumer);
             if (session->track->properties->media_source == MS_live) {
-                next_time += next->timestamp - timestamp;
+                next_time += next->delivery - delivery;
             } else
                 if(marker)
-                    next_time = session->range->playback_time +
-                            ( timestamp + duration - session->range->begin_time );
+                    next_time = session->range->playback_time -
+                                session->range->begin_time +
+                                delivery;
         } else {
             if (buffer->marker)
                 next_time += buffer->duration;
         }
         if(marker)
             delay = ev_time() - w->offset;
+
         fprintf(stderr,
-            "[%s] Now: %5.4f, cur %5.4f, next %5.4f, delay %5.4f %s\n",
+            "[%s] Now: %5.4f, cur %5.4f[%5.4f], next %5.4f, delay %5.4f %s\n",
             session->track->properties->encoding_name,
             ev_now(loop) - session->range->playback_time,
+            delivery,
             timestamp,
             next_time - session->range->playback_time,
             delay,
             marker? "M" : " ");
     }
-    ev_periodic_set(w, next_time - delay, 0, NULL);
+    ev_periodic_set(w, next_time, 0, NULL);
     ev_periodic_again(loop, w);
 }
 

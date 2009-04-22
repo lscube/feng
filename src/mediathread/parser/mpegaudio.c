@@ -53,7 +53,9 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     if (mtu >= len + 4) {
         memset (dst, 0, 4);
         memcpy (dst + 4, data, len);
-        mparser_buffer_write(tr, tr->properties->mtime,
+        mparser_buffer_write(tr,
+                             tr->properties->pts,
+                             tr->properties->dts,
                              tr->properties->frame_duration,
                              1,
                              dst, len + 4);
@@ -66,7 +68,9 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
             offset = htonl(offset & 0xffff);
             memcpy (dst, &offset, 4);
 
-            mparser_buffer_write(tr, tr->properties->mtime,
+            mparser_buffer_write(tr,
+                                 tr->properties->pts,
+                                 tr->properties->dts,
                                  tr->properties->frame_duration,
                                  0,
                                  dst, min(mtu, rem + 4));

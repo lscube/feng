@@ -219,7 +219,9 @@ static int vorbis_parse(void *track, uint8_t *data, long len, uint8_t *extradata
             packet[3] = frag << 6;  //frag type
 //            packet[3] |= 0 << 4; //data type
             memcpy(packet + XIPH_HEADER_SIZE, data + off, payload);
-            mparser_buffer_write(tr, tr->properties->mtime,
+            mparser_buffer_write(tr,
+                                 tr->properties->pts,
+                                 tr->properties->dts,
                                  tr->properties->frame_duration,
                                  0,
                                  packet, mtu);
@@ -237,7 +239,9 @@ static int vorbis_parse(void *track, uint8_t *data, long len, uint8_t *extradata
     packet[4] = (len>>8)&0xff;
     packet[5] = len&0xff;
     memcpy(packet + XIPH_HEADER_SIZE, data + off, len);
-    mparser_buffer_write(tr, tr->properties->mtime,
+    mparser_buffer_write(tr,
+                         tr->properties->pts,
+                         tr->properties->dts,
                          tr->properties->frame_duration,
                          1,
                          packet, len + XIPH_HEADER_SIZE);

@@ -90,7 +90,9 @@ static int mp4ves_parse(void *track, uint8_t *data, long len, uint8_t *extradata
 #endif
 
     if (mtu >= len) {
-        mparser_buffer_write(tr, tr->properties->mtime,
+        mparser_buffer_write(tr,
+                             tr->properties->pts,
+                             tr->properties->dts,
                              tr->properties->frame_duration,
                              1,
                              data, len);
@@ -98,7 +100,9 @@ static int mp4ves_parse(void *track, uint8_t *data, long len, uint8_t *extradata
     } else {
         do {
             offset = len - rem;
-            mparser_buffer_write(tr, tr->properties->mtime,
+            mparser_buffer_write(tr,
+                                 tr->properties->pts,
+                                 tr->properties->dts,
                                  tr->properties->frame_duration,
                                  (rem <= mtu),
                                  data + offset, min(rem, mtu));

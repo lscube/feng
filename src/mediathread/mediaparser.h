@@ -58,8 +58,9 @@ MObject_def(MediaProperties)
     MediaSource media_source;
     int codec_id; /*!< Codec ID as defined by ffmpeg */
     int codec_sub_id; /*!< Subcodec ID as defined by ffmpeg */
-    double mtime;    //FIXME Move to feng   //time is in seconds
-    double frame_duration; //time is in seconds
+    double pts;             //time is in seconds
+    double dts;             //time is in seconds
+    double frame_duration;  //time is in seconds
     float sample_rate;/*!< SamplingFrequency*/
     float OutputSamplingFrequency;
     int audio_channels;
@@ -131,6 +132,7 @@ void mparser_unreg(MediaParser *, void *);
  */
 typedef struct {
     double timestamp;   /*!< presentation time of packet */
+    double delivery;    /*!< decoding time of packet */
     double duration;    /*!< packet duration */
     gboolean marker;    /*!< marker bit, set if we are sending the last frag */
     size_t data_size;   /*!< packet size */
@@ -138,7 +140,9 @@ typedef struct {
 } MParserBuffer;
 
 void mparser_buffer_write(struct Track *tr,
-                          double timestamp, double duration,
+                          double presentation,
+                          double delivery,
+                          double duration,
                           gboolean marker,
                           uint8_t *data, size_t data_size);
 

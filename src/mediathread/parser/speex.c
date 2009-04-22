@@ -48,7 +48,9 @@ static int speex_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     if (len > mtu)
         return ERR_ALLOC;
 
-    mparser_buffer_write(tr, tr->properties->mtime,
+    mparser_buffer_write(tr,
+                         tr->properties->pts,
+                         tr->properties->dts,
                          tr->properties->frame_duration,
                          1,
                          data, len);

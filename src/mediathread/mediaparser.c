@@ -82,7 +82,10 @@ void mparser_unreg(MediaParser *p, void *private_data)
 /**
  *  Insert a rtp packet inside the track buffer queue
  *  @param tr track the packetized frames/samples belongs to
- *  @param timestamp the actual packet timestamp in fractional seconds
+ *  @param presentation the actual packet presentation timestamp
+ *         in fractional seconds, will be embedded in the rtp packet
+ *  @param delivery the actual packet delivery timestamp
+ *         in fractional seconds, will be used to calculate sending time
  *  @param duration the actual packet duration, a multiple of the frame/samples
  *  duration
  *  @param marker tell if we are handling a frame/sample fragment
@@ -90,13 +93,16 @@ void mparser_unreg(MediaParser *p, void *private_data)
  *  @param data_size actual packet data size
  */
 void mparser_buffer_write(Track *tr,
-                          double timestamp, double duration,
+                          double presentation,
+                          double delivery,
+                          double duration,
                           gboolean marker,
                           uint8_t *data, size_t data_size)
 {
     MParserBuffer *buffer = g_malloc(sizeof(MParserBuffer) + data_size);
 
-    buffer->timestamp = timestamp;
+    buffer->timestamp = presentation;
+    buffer->delivery = delivery;
     buffer->duration = duration;
     buffer->marker = marker;
     buffer->data_size = data_size;

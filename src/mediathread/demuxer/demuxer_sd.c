@@ -429,7 +429,10 @@ static int sd_read_packet(Resource * r)
                 (unsigned)msg_buffer[6] << 8   |
                 (unsigned)msg_buffer[7])/((double)tr->properties->clock_rate);
 
-            mparser_buffer_write(tr, timestamp, 0.0,
+            mparser_buffer_write(tr,
+                                 timestamp,
+                                 timestamp,
+                                 0.0,
                                  marker,
                                  msg_buffer+12, msg_len-12);
             g_free(msg_buffer);

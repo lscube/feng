@@ -265,13 +265,25 @@ static int avf_read_packet(Resource * r)
             stream = priv->avfc->streams[tr->info->id];
             fnc_log(FNC_LOG_VERBOSE, "[avf] Parsing track %s",
                     tr->info->name);
-            if(pkt.pts != AV_NOPTS_VALUE) {
-                tr->properties->mtime = r->timescaler (r,
-                    pkt.pts * av_q2d(stream->time_base));
-                fnc_log(FNC_LOG_VERBOSE, "[avf] timestamp %f",
-                        tr->properties->mtime);
+            if(pkt.dts != AV_NOPTS_VALUE) {
+                tr->properties->dts = r->timescaler (r,
+                    pkt.dts * av_q2d(stream->time_base));
+                fnc_log(FNC_LOG_VERBOSE,
+                        "[avf] delivery timestamp %f",
+                        tr->properties->dts);
             } else {
-                fnc_log(FNC_LOG_VERBOSE, "[avf] missing timestamp");
+                fnc_log(FNC_LOG_VERBOSE,
+                        "[avf] missing delivery timestamp");
+            }
+
+            if(pkt.pts != AV_NOPTS_VALUE) {
+                tr->properties->pts = r->timescaler (r,
+                    pkt.pts * av_q2d(stream->time_base));
+                fnc_log(FNC_LOG_VERBOSE,
+                        "[avf] presentation timestamp %f",
+                        tr->properties->pts);
+            } else {
+                fnc_log(FNC_LOG_VERBOSE, "[avf] missing presentation timestamp");
             }
 
             if (pkt.duration) {

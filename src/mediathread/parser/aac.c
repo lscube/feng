@@ -124,7 +124,9 @@ static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     if (len > payload) {
         while (len > payload) {
             memcpy(packet + AU_HEADER_SIZE, data + off, payload);
-            mparser_buffer_write(tr, tr->properties->mtime,
+            mparser_buffer_write(tr,
+                                 tr->properties->pts,
+                                 tr->properties->dts,
                                  tr->properties->frame_duration,
                                  0,
                                  packet, mtu);
@@ -135,7 +137,9 @@ static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     }
 
     memcpy(packet + AU_HEADER_SIZE, data + off, len);
-    mparser_buffer_write(tr, tr->properties->mtime,
+    mparser_buffer_write(tr,
+                         tr->properties->pts,
+                         tr->properties->dts,
                          tr->properties->frame_duration,
                          1,
                          packet, len + AU_HEADER_SIZE);
