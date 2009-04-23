@@ -403,7 +403,8 @@ static int sd_read_packet(Resource * r)
             ssize_t msg_len;
             int marker;
 
-            if ((mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN, O_RDONLY, S_IRWXU, NULL)) < 0) {
+            if ((mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN,
+                               O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) < 0) {
                 fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
                                      tr->info->mrl, strerror(errno));
                 return RESOURCE_EOF;
