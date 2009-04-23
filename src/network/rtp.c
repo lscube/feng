@@ -341,6 +341,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
             next = bq_consumer_get(session->consumer);
             if (session->track->properties->media_source == MS_live) {
                 next_time += next->delivery - delivery;
+                fprintf(stderr,"next  %5.4f\n", next->delivery);
             } else
                 if(marker)
                     next_time = session->range->playback_time -
@@ -348,17 +349,18 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
                                 delivery;
         } else {
             if (buffer->marker)
-                next_time += buffer->duration;
+                next_time += duration;
         }
         if(marker)
             delay = ev_time() - w->offset;
 
         fprintf(stderr,
-            "[%s] Now: %5.4f, cur %5.4f[%5.4f], next %5.4f, delay %5.4f %s\n",
+            "[%s] Now: %5.4f, cur %5.4f[%5.4f][%5.4f], next %5.4f, delay %5.4f %s\n",
             session->track->properties->encoding_name,
             ev_now(loop) - session->range->playback_time,
             delivery,
             timestamp,
+            duration,
             next_time - session->range->playback_time,
             delay,
             marker? "M" : " ");

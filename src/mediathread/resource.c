@@ -96,14 +96,23 @@ static void r_read_cb(gpointer count_p, gpointer user_data)
     int result;
 
     g_mutex_lock(resource->lock);
-
+    fnc_log(FNC_LOG_INFO,
+            "r_read_cb: %s read_packet() start.",
+            resource->info->mrl);
     while (
         (result = resource->demuxer->read_packet(resource)) == RESOURCE_OK &&
             count-- > 0 );
 
     switch ( result ) {
     case RESOURCE_OK:
+        fnc_log(FNC_LOG_INFO,
+                "r_read_cb: %s read_packet() ok.",
+                resource->info->mrl);
+        break;
     case RESOURCE_EOF:
+        fnc_log(FNC_LOG_INFO,
+                "r_read_cb: %s read_packet() end of file.",
+                resource->info->mrl);
         break;
     default:
         fnc_log(FNC_LOG_FATAL,
@@ -194,7 +203,7 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 void r_read(Resource *resource, gint count)
 {
     g_mutex_lock(resource->lock);
-
+    fprintf(stderr,"Read %d frames\n", count);
     g_thread_pool_push(resource->read_pool,
                        GINT_TO_POINTER(count),
                        NULL);
