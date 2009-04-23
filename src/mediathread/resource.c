@@ -97,7 +97,8 @@ static void r_read_cb(gpointer count_p, gpointer user_data)
 
     g_mutex_lock(resource->lock);
 
-    while ( (result = resource->demuxer->read_packet(resource)) == RESOURCE_OK &&
+    while (
+        (result = resource->demuxer->read_packet(resource)) == RESOURCE_OK &&
             count-- > 0 );
 
     switch ( result ) {
