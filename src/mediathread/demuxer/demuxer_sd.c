@@ -394,49 +394,49 @@ static int sd_read_packet(Resource * r)
         return RESOURCE_NOT_PARSEABLE;
 
     for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {
-            Track *tr = (Track*)tr_it->data;
-            double timestamp;
-            struct mq_attr attr;
-            mqd_t mpd;
+        Track *tr = (Track*)tr_it->data;
+        double timestamp;
+        struct mq_attr attr;
+        mqd_t mpd;
 
-            uint8_t *msg_buffer;
-            ssize_t msg_len;
-            int marker;
+        uint8_t *msg_buffer;
+        ssize_t msg_len;
+        int marker;
 
-            if ((mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN,
-                               O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) < 0) {
-                fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
-                                     tr->info->mrl, strerror(errno));
-                return RESOURCE_EOF;
-            }
+        if ((mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN,
+                           O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) < 0) {
+            fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
+                                 tr->info->mrl, strerror(errno));
+            return RESOURCE_EOF;
+        }
 
-            mq_getattr(mpd, &attr);
-            msg_buffer = g_malloc(attr.mq_msgsize);
-            msg_len = mq_receive(mpd, msg_buffer, attr.mq_msgsize, NULL);
-            mq_close(mpd);
+        mq_getattr(mpd, &attr);
+        msg_buffer = g_malloc(attr.mq_msgsize);
+        msg_len = mq_receive(mpd, msg_buffer, attr.mq_msgsize, NULL);
+        mq_close(mpd);
 
-            if (msg_len < 0) {
-                fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
-                                     tr->info->mrl, strerror(errno));
-                g_free(msg_buffer);
-                return RESOURCE_EOF;
-            }
-
-            marker = (msg_buffer[1]>>7);
-
-            timestamp =
-                ((unsigned)msg_buffer[4] << 24 |
-                (unsigned)msg_buffer[5] << 16  |
-                (unsigned)msg_buffer[6] << 8   |
-                (unsigned)msg_buffer[7])/((double)tr->properties->clock_rate);
-
-            mparser_buffer_write(tr,
-                                 timestamp,
-                                 timestamp,
-                                 0.0,
-                                 marker,
-                                 msg_buffer+12, msg_len-12);
+        if (msg_len < 0) {
+            fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
+                                 tr->info->mrl, strerror(errno));
             g_free(msg_buffer);
+            return RESOURCE_EOF;
+        }
+
+        marker = (msg_buffer[1]>>7);
+
+        timestamp =
+            ((unsigned)msg_buffer[4] << 24 |
+            (unsigned)msg_buffer[5] << 16  |
+            (unsigned)msg_buffer[6] << 8   |
+            (unsigned)msg_buffer[7])/((double)tr->properties->clock_rate);
+
+        mparser_buffer_write(tr,
+                             timestamp,
+                             timestamp,
+                             0.0,
+                             marker,
+                             msg_buffer+12, msg_len-12);
+        g_free(msg_buffer);
     }
 
     return RESOURCE_OK;
