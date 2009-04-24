@@ -389,6 +389,7 @@ static int sd_init(Resource * r)
 static int sd_read_packet(Resource * r)
 {
     TrackList tr_it;
+    double now = ev_time() - 0.4;
 
     if (r->info->media_source != MS_live)
         return RESOURCE_NOT_PARSEABLE;
@@ -396,6 +397,8 @@ static int sd_read_packet(Resource * r)
     for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {
         Track *tr = (Track*)tr_it->data;
         double timestamp;
+        double delivery;
+        int seq;
         struct mq_attr attr;
         mqd_t mpd;
 
@@ -412,27 +415,39 @@ static int sd_read_packet(Resource * r)
 
         mq_getattr(mpd, &attr);
         msg_buffer = g_malloc(attr.mq_msgsize);
-        msg_len = mq_receive(mpd, msg_buffer, attr.mq_msgsize, NULL);
-        mq_close(mpd);
+        // discard every stale frame
+        do {
+            msg_len = mq_receive(mpd, msg_buffer, attr.mq_msgsize, NULL);
 
-        if (msg_len < 0) {
-            fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
+            if (msg_len < 0) {
+                fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
                                  tr->info->mrl, strerror(errno));
-            g_free(msg_buffer);
-            return RESOURCE_EOF;
-        }
+                mq_close(mpd);
+                g_free(msg_buffer);
+                return RESOURCE_EOF;
+            }
 
-        marker = (msg_buffer[1]>>7);
+            marker = (msg_buffer[1]>>7);
 
-        timestamp =
-            ((unsigned)msg_buffer[4] << 24 |
-            (unsigned)msg_buffer[5] << 16  |
-            (unsigned)msg_buffer[6] << 8   |
-            (unsigned)msg_buffer[7])/((double)tr->properties->clock_rate);
+            if (tr->timestamp == 0)
+                tr->timestamp = ntohl(*(long*)(msg_buffer+4));
+
+            delivery = (ntohl(*(long*)(msg_buffer+4)));
+
+            timestamp = delivery/((double)tr->properties->clock_rate);
+            delivery = (delivery - tr->timestamp)
+                           /((double)tr->properties->clock_rate);
+
+            seq = ((unsigned)msg_buffer[2] << 8) | ((unsigned)msg_buffer[3]);
+            fprintf(stderr, "[%5.4f|%5.4f]packet %d %5.4f\n",
+                now, delivery,
+                seq,
+                timestamp);
+        } while (delivery < now);
 
         mparser_buffer_write(tr,
                              timestamp,
-                             timestamp,
+                             delivery,
                              0.0,
                              marker,
                              msg_buffer+12, msg_len-12);
