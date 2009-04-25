@@ -422,7 +422,7 @@ static int sd_read_packet(Resource * r)
         }
 
         msg_buffer = g_malloc(attr.mq_msgsize);
-        msg_len = mq_receive(mpd, msg_buffer, attr.mq_msgsize, NULL);
+        msg_len = mq_receive(mpd, (char*)msg_buffer, attr.mq_msgsize, NULL);
         mq_close(mpd);
 
         if (msg_len < 0) {
@@ -434,13 +434,13 @@ static int sd_read_packet(Resource * r)
 
         marker = (msg_buffer[1]>>7);
 
-        delivery = package_timestamp = (ntohl(*(uint32_t*)(msg_buffer+4)));
+        package_timestamp = (ntohl(*(uint32_t*)(msg_buffer+4)));
 
         if (tr->timestamp == 0)
             tr->timestamp = package_timestamp;
 
-        timestamp = delivery/((double)tr->properties->clock_rate);
-        delivery = (delivery - tr->timestamp)
+        timestamp = package_timestamp/((double)tr->properties->clock_rate);
+        delivery = (package_timestamp - tr->timestamp)
                        /((double)tr->properties->clock_rate);
 
         seq = ((unsigned)msg_buffer[2] << 8) | ((unsigned)msg_buffer[3]);
