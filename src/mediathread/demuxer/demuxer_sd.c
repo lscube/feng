@@ -429,9 +429,9 @@ static int sd_read_packet(Resource * r)
         marker = (msg_buffer[1]>>7);
 
         if (tr->timestamp == 0)
-            tr->timestamp = ntohl(*(long*)(msg_buffer+4));
+            tr->timestamp = ntohl(*(uint32_t*)(msg_buffer+4));
 
-        delivery = (ntohl(*(long*)(msg_buffer+4)));
+        delivery = (ntohl(*(uint32_t*)(msg_buffer+4)));
 
         timestamp = delivery/((double)tr->properties->clock_rate);
         delivery = (delivery - tr->timestamp)
