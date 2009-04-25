@@ -415,35 +415,33 @@ static int sd_read_packet(Resource * r)
 
         mq_getattr(mpd, &attr);
         msg_buffer = g_malloc(attr.mq_msgsize);
-        // discard every stale frame
-        do {
-            msg_len = mq_receive(mpd, msg_buffer, attr.mq_msgsize, NULL);
 
-            if (msg_len < 0) {
-                fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
-                                 tr->info->mrl, strerror(errno));
-                mq_close(mpd);
-                g_free(msg_buffer);
-                return RESOURCE_EOF;
-            }
+        msg_len = mq_receive(mpd, msg_buffer, attr.mq_msgsize, NULL);
+        mq_close(mpd);
 
-            marker = (msg_buffer[1]>>7);
+        if (msg_len < 0) {
+            fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
+                             tr->info->mrl, strerror(errno));
+            g_free(msg_buffer);
+            return RESOURCE_EOF;
+        }
 
-            if (tr->timestamp == 0)
-                tr->timestamp = ntohl(*(long*)(msg_buffer+4));
+        marker = (msg_buffer[1]>>7);
 
-            delivery = (ntohl(*(long*)(msg_buffer+4)));
+        if (tr->timestamp == 0)
+            tr->timestamp = ntohl(*(long*)(msg_buffer+4));
 
-            timestamp = delivery/((double)tr->properties->clock_rate);
-            delivery = (delivery - tr->timestamp)
-                           /((double)tr->properties->clock_rate);
+        delivery = (ntohl(*(long*)(msg_buffer+4)));
 
-            seq = ((unsigned)msg_buffer[2] << 8) | ((unsigned)msg_buffer[3]);
-            fprintf(stderr, "[%5.4f|%5.4f]packet %d %5.4f\n",
-                now, delivery,
-                seq,
-                timestamp);
-        } while (delivery < now);
+        timestamp = delivery/((double)tr->properties->clock_rate);
+        delivery = (delivery - tr->timestamp)
+                       /((double)tr->properties->clock_rate);
+
+        seq = ((unsigned)msg_buffer[2] << 8) | ((unsigned)msg_buffer[3]);
+        fprintf(stderr, "[%5.4f|%5.4f]packet %d %5.4f\n",
+            now, delivery,
+            seq,
+            timestamp);
 
         mparser_buffer_write(tr,
                              timestamp,
@@ -451,6 +449,7 @@ static int sd_read_packet(Resource * r)
                              0.0,
                              marker,
                              msg_buffer+12, msg_len-12);
+
         g_free(msg_buffer);
     }
 
