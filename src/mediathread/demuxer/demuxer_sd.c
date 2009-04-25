@@ -396,6 +396,7 @@ static int sd_read_packet(Resource * r)
 
     for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {
         Track *tr = (Track*)tr_it->data;
+        uint32_t package_timestamp;
         double timestamp;
         double delivery;
         int seq;
@@ -428,10 +429,10 @@ static int sd_read_packet(Resource * r)
 
         marker = (msg_buffer[1]>>7);
 
-        if (tr->timestamp == 0)
-            tr->timestamp = ntohl(*(uint32_t*)(msg_buffer+4));
+        delivery = package_timestamp = (ntohl(*(uint32_t*)(msg_buffer+4)));
 
-        delivery = (ntohl(*(uint32_t*)(msg_buffer+4)));
+        if (tr->timestamp == 0)
+            tr->timestamp = package_timestamp;
 
         timestamp = delivery/((double)tr->properties->clock_rate);
         delivery = (delivery - tr->timestamp)
