@@ -389,7 +389,6 @@ static int sd_init(Resource * r)
 static int sd_read_packet(Resource * r)
 {
     TrackList tr_it;
-    double now = ev_time() - 0.4;
 
     if (r->info->media_source != MS_live)
         return RESOURCE_NOT_PARSEABLE;
@@ -414,8 +413,14 @@ static int sd_read_packet(Resource * r)
         }
 
         mq_getattr(mpd, &attr);
-        msg_buffer = g_malloc(attr.mq_msgsize);
 
+        /* Check if there are available packets */
+        if (!attr.mq_curmsgs) {
+            mq_close(mpd);
+            continue;
+        }
+
+        msg_buffer = g_malloc(attr.mq_msgsize);
         msg_len = mq_receive(mpd, msg_buffer, attr.mq_msgsize, NULL);
         mq_close(mpd);
 
@@ -438,11 +443,13 @@ static int sd_read_packet(Resource * r)
                        /((double)tr->properties->clock_rate);
 
         seq = ((unsigned)msg_buffer[2] << 8) | ((unsigned)msg_buffer[3]);
+
 #if 0
-        fprintf(stderr, "[%5.4f|%5.4f]packet %d %5.4f\n",
-            now, delivery,
+        fprintf(stderr, "[%s] packet %d %5.4f (%5.4f)\n",
+            tr->info->mrl,
             seq,
-            timestamp);
+            timestamp,
+            delivery);
 #endif
 
         mparser_buffer_write(tr,
