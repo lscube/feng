@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include <stdbool.h>
+#include <time.h>
 #include <mqueue.h>
 
 #include "feng.h"
@@ -395,7 +396,8 @@ static int sd_read_packet(Resource * r)
 
     for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {
         Track *tr = (Track*)tr_it->data;
-        uint32_t package_timestamp;
+        double package_dts;
+        double package_start_dts;
         double timestamp;
         double delivery;
         int seq;
@@ -403,8 +405,10 @@ static int sd_read_packet(Resource * r)
         mqd_t mpd;
 
         uint8_t *msg_buffer;
+        uint8_t *packet;
         ssize_t msg_len;
         int marker;
+        unsigned long delta;
 
         if ((mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN,
                            O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) < 0) {
@@ -422,28 +426,37 @@ static int sd_read_packet(Resource * r)
         }
 
         msg_buffer = g_malloc(attr.mq_msgsize);
-        msg_len = mq_receive(mpd, (char*)msg_buffer, attr.mq_msgsize, NULL);
-        mq_close(mpd);
+        do {
+            msg_len = mq_receive(mpd, (char*)msg_buffer, attr.mq_msgsize, NULL);
+            if (msg_len < 0)
+                break;
+
+            package_start_dts = *((double*)msg_buffer);
+            package_dts = *((double*)(msg_buffer+sizeof(double)));
+            delta = ev_time() - package_dts;
+        } while(delta>0.2);
+        mq_close(mpd);        
 
         if (msg_len < 0) {
             fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
                              tr->info->mrl, strerror(errno));
             g_free(msg_buffer);
-            return RESOURCE_EOF;
+            continue;
         }
 
-        marker = (msg_buffer[1]>>7);
+        tr->start_time = package_start_dts;
 
-        package_timestamp = (ntohl(*(uint32_t*)(msg_buffer+4)));
+        packet = msg_buffer+sizeof(double)*2+sizeof(unsigned int);
+        msg_len -= (sizeof(double)*2+sizeof(unsigned int));
 
-        if (tr->timestamp == 0)
-            tr->timestamp = package_timestamp;
+        seq = ((unsigned)packet[2] << 8) | ((unsigned)packet[3]);
+        marker = (packet[1]>>7);
+
+        uint32_t package_timestamp = ntohl(*(uint32_t*)(packet+4));
+        unsigned int package_start_ts = *((unsigned int*)(msg_buffer+sizeof(double)*2));
 
         timestamp = package_timestamp/((double)tr->properties->clock_rate);
-        delivery = (package_timestamp - tr->timestamp)
-                       /((double)tr->properties->clock_rate);
-
-        seq = ((unsigned)msg_buffer[2] << 8) | ((unsigned)msg_buffer[3]);
+        delivery = (package_timestamp - package_start_ts)/((double)tr->properties->clock_rate);
 
 #if 0
         fprintf(stderr, "[%s] packet %d %5.4f (%5.4f)\n",
@@ -458,7 +471,7 @@ static int sd_read_packet(Resource * r)
                              delivery,
                              0.0,
                              marker,
-                             msg_buffer+12, msg_len-12);
+                             packet+12, msg_len-12);
 
         g_free(msg_buffer);
     }

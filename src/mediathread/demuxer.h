@@ -119,7 +119,7 @@ MObject_def(Trackinfo_s)
 typedef struct Track {
     InputStream *i_stream;
     TrackInfo *info;
-    long int timestamp;
+    double start_time;
     MediaParser *parser;
     /*feng*/
     BufferQueue_Producer *producer;
