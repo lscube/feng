@@ -445,6 +445,10 @@ static int sd_read_packet(Resource * r)
             package_timestamp = ntohl(*(uint32_t*)(packet+4));
             delivery = (package_timestamp - package_start_ts)/((double)tr->properties->clock_rate);
             delta = ev_time() - (package_start_dts + delivery);
+
+#if 0
+            fprintf(stderr, "[%s] read %5.4f\n", tr->info->mrl, delta);
+#endif
         } while(delta>0.3);
         mq_close(mpd);        
 
@@ -459,11 +463,11 @@ static int sd_read_packet(Resource * r)
         marker = (packet[1]>>7);
 
 #if 0
-        fprintf(stderr, "[%s] packet %d %5.4f (%5.4f)\n",
+        fprintf(stderr, "[%s] packet %5.4f : %5.4f -> %5.4f\n",
             tr->info->mrl,
-            seq,
-            timestamp,
-            delivery);
+            delivery,
+            ev_time() - tr->start_time + delivery,
+            tr->start_time + delivery);
 #endif
 
         mparser_buffer_write(tr,
