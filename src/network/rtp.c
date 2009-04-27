@@ -282,7 +282,6 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
     RTP_session *session = w->data;
     MParserBuffer *buffer = NULL;
     ev_tstamp next_time = w->offset;
-    ev_tstamp delay = 0.0;
     glong extra_cached_frames;
 
 #ifdef HAVE_METADATA
@@ -341,7 +340,8 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
             next = bq_consumer_get(session->consumer);
             if(delivery != next->delivery) {
                 if (session->track->start_time)
-                    next_time = session->track->start_time + next->delivery + 0.3;
+                    next_time = session->track->start_time + 
+                                next->delivery + 0.3;
                 else
                     next_time = session->range->playback_time -
                                 session->range->begin_time +
@@ -351,19 +351,16 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
             if (marker)
                 next_time += duration;
         }
-        if(marker)
-            delay = ev_time() - w->offset;
 
 #if 0
         fprintf(stderr,
-            "[%s] Now: %5.4f, cur %5.4f[%5.4f][%5.4f], next %5.4f, delay %5.4f %s\n",
+            "[%s] Now: %5.4f, cur %5.4f[%5.4f][%5.4f], next %5.4f %s\n",
             session->track->properties->encoding_name,
             ev_now(loop) - session->range->playback_time,
             delivery,
             timestamp,
             duration,
             next_time - session->range->playback_time,
-            delay,
             marker? "M" : " ");
 #endif
 
