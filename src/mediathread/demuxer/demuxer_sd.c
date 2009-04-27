@@ -396,11 +396,12 @@ static int sd_read_packet(Resource * r)
 
     for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {
         Track *tr = (Track*)tr_it->data;
-        double package_dts;
-        double package_start_dts;
+
+        uint32_t package_timestamp;
         double timestamp;
         double delivery;
-        int seq;
+        double delta;
+        
         struct mq_attr attr;
         mqd_t mpd;
 
@@ -408,7 +409,6 @@ static int sd_read_packet(Resource * r)
         uint8_t *packet;
         ssize_t msg_len;
         int marker;
-        unsigned long delta;
 
         if ((mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN,
                            O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) < 0) {
@@ -427,14 +427,25 @@ static int sd_read_packet(Resource * r)
 
         msg_buffer = g_malloc(attr.mq_msgsize);
         do {
+            double package_start_dts;
+            unsigned int package_start_ts;
+
             msg_len = mq_receive(mpd, (char*)msg_buffer, attr.mq_msgsize, NULL);
             if (msg_len < 0)
                 break;
 
             package_start_dts = *((double*)msg_buffer);
-            package_dts = *((double*)(msg_buffer+sizeof(double)));
-            delta = ev_time() - package_dts;
-        } while(delta>0.2);
+            package_start_ts = *((unsigned int*)(msg_buffer+sizeof(double)*2));
+
+            tr->start_time = package_start_dts;
+
+            packet = msg_buffer+sizeof(double)*2+sizeof(unsigned int);
+            msg_len -= (sizeof(double)*2+sizeof(unsigned int));
+
+            package_timestamp = ntohl(*(uint32_t*)(packet+4));
+            delivery = (package_timestamp - package_start_ts)/((double)tr->properties->clock_rate);
+            delta = ev_time() - (package_start_dts + delivery);
+        } while(delta>0.3);
         mq_close(mpd);        
 
         if (msg_len < 0) {
@@ -444,19 +455,9 @@ static int sd_read_packet(Resource * r)
             continue;
         }
 
-        tr->start_time = package_start_dts;
-
-        packet = msg_buffer+sizeof(double)*2+sizeof(unsigned int);
-        msg_len -= (sizeof(double)*2+sizeof(unsigned int));
-
-        seq = ((unsigned)packet[2] << 8) | ((unsigned)packet[3]);
-        marker = (packet[1]>>7);
-
-        uint32_t package_timestamp = ntohl(*(uint32_t*)(packet+4));
-        unsigned int package_start_ts = *((unsigned int*)(msg_buffer+sizeof(double)*2));
-
         timestamp = package_timestamp/((double)tr->properties->clock_rate);
-        delivery = (package_timestamp - package_start_ts)/((double)tr->properties->clock_rate);
+
+        marker = (packet[1]>>7);
 
 #if 0
         fprintf(stderr, "[%s] packet %d %5.4f (%5.4f)\n",
