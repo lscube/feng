@@ -456,7 +456,6 @@ static int sd_read_packet(Resource * r)
         }
 
         timestamp = package_timestamp/((double)tr->properties->clock_rate);
-
         marker = (packet[1]>>7);
 
 #if 0
