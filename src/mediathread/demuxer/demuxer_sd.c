@@ -401,7 +401,7 @@ static int sd_read_packet(Resource * r)
         double timestamp;
         double delivery;
         double delta;
-        
+
         struct mq_attr attr;
         mqd_t mpd;
 
@@ -449,8 +449,8 @@ static int sd_read_packet(Resource * r)
 #if 0
             fprintf(stderr, "[%s] read %5.4f\n", tr->info->mrl, delta);
 #endif
-        } while(delta>0.3);
-        mq_close(mpd);        
+        } while(delta > 1.0f);
+        mq_close(mpd);
 
         if (msg_len < 0) {
             fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
@@ -483,7 +483,7 @@ static int sd_read_packet(Resource * r)
     return RESOURCE_OK;
 }
 
-/* Define the “sd_seek” macro to NULL so that FNC_LIB_DEMUXER will
+/* Define the "sd_seek" macro to NULL so that FNC_LIB_DEMUXER will
  * pick it up and set it to NULL. This actually saves us from having
  * to devise a way to define non-seekable demuxers.
  */
