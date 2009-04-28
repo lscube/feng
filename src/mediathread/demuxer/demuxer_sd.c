@@ -463,16 +463,17 @@ static int sd_read_packet(Resource * r)
         marker = (packet[1]>>7);
 
 #if 0
-        fprintf(stderr, "[%s] packet %5.4f : %5.4f -> %5.4f\n",
+        fprintf(stderr, "[%s] packet TS: %5.4f DELIVERY: %5.4f : %5.4f -> %5.4f\n",
             tr->info->mrl,
+            timestamp,
             delivery,
-            ev_time() - tr->start_time + delivery,
+            ev_time() - (tr->start_time + delivery),
             tr->start_time + delivery);
 #endif
 
         mparser_buffer_write(tr,
                              timestamp,
-                             delivery,
+                             tr->start_time + delivery,
                              0.0,
                              marker,
                              packet+12, msg_len-12);

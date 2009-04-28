@@ -340,8 +340,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
             next = bq_consumer_get(session->consumer);
             if(delivery != next->delivery) {
                 if (session->track->start_time)
-                    next_time = session->track->start_time + 
-                                next->delivery + 0.5;
+                    next_time = next->delivery + 0.5;
                 else
                     next_time = session->range->playback_time -
                                 session->range->begin_time +
