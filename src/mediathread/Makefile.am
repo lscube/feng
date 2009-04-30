@@ -17,7 +17,6 @@ libmediath_a_SOURCES =	cache.c \
 			parser/mpeg12.c \
 			parser/mpegaudio.c \
 			parser/mpeg2t.c \
-			demuxer/demuxer_sd.c \
 			demuxer/demuxer_ds.c
 
 if FENG_CPD
@@ -34,6 +33,10 @@ libmediath_a_SOURCES += parser/h264.c \
 			parser/h263.c \
 			parser/amr.c \
 			demuxer/demuxer_avf.c
+endif
+
+if LIVE_STREAMING
+libmediath_a_SOURCES += demuxer/demuxer_sd.c
 endif
 
 INCLUDES = -I$(feniceincludedir) -I$(top_srcdir)/src

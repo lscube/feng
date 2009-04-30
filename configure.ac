@@ -100,6 +100,13 @@ AC_SUBST(LIBNETEMBRYO_REQUIRES)
 CPPFLAGS="$CPPFLAGS $LIBNETEMBRYO_CFLAGS"
 LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 
+dnl Check for prerequisites to enable live streaming with flux.
+live_streaming=yes
+
+AC_SEARCH_LIBS([mq_open], [rt], [], [live_streaming=no])
+
+AM_CONDITIONAL([LIVE_STREAMING], [test "x$live_streaming" = "xyes"])
+
 if test "x$enable_metadata" = "xyes"; then
 dnl MYSQL
 AX_LIB_MYSQL([5.0])
@@ -249,6 +256,7 @@ Feng Log File ................ : $fenice_log_file
 Feng Multimedia Files root ... : $fenice_avroot_dir
 Feng RTSP listening port ..... : $fenice_rtsp_port
 
+live streaming supported...... : $live_streaming
 sctp support enabled ......... : $enable_sctp
 avformat support enabled ..... : $avformat_msg
 avutil support enabled ....... : $avutil_msg
