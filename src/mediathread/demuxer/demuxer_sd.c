@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <mqueue.h>
+#include <fcntl.h> /* for mq_open's O_* options */
 
 #include "feng.h"
 #include "feng_utils.h"
