@@ -28,12 +28,13 @@
 #ifndef FN_SERVER_H
 #define FN_SERVER_H
 
+#include <glib.h>
+#include <netembryo/wsocket.h>
+#include <ev.h>
+#include <pwd.h>
+
 #include "conf/array.h"
 #include "conf/conf.h"
-#include <netembryo/wsocket.h>
-#include <glib.h>
-#include <pwd.h>
-#include <ev.h>
 
 typedef struct feng {
 
