@@ -372,18 +372,18 @@ void configparserTrace(FILE *TraceFILE, char *zTracePrompt){
 /* For tracing shifts, the names of all terminals and nonterminals
 ** are required.  The following table supplies these names */
 static const char *yyTokenName[] = {
-  "$",             "EOL",           "ASSIGN",        "APPEND",      
-  "LKEY",          "PLUS",          "STRING",        "INTEGER",     
+  "$",             "EOL",           "ASSIGN",        "APPEND",
+  "LKEY",          "PLUS",          "STRING",        "INTEGER",
   "LPARAN",        "RPARAN",        "COMMA",         "ARRAY_ASSIGN",
-  "GLOBAL",        "LCURLY",        "RCURLY",        "ELSE",        
-  "DOLLAR",        "SRVVARNAME",    "LBRACKET",      "RBRACKET",    
-  "EQ",            "MATCH",         "NE",            "NOMATCH",     
-  "INCLUDE",       "INCLUDE_SHELL",  "error",         "input",       
-  "metalines",     "metaline",      "varline",       "global",      
-  "condlines",     "include",       "include_shell",  "value",       
-  "expression",    "aelement",      "condline",      "aelements",   
-  "array",         "key",           "stringop",      "cond",        
-  "eols",          "globalstart",   "context",     
+  "GLOBAL",        "LCURLY",        "RCURLY",        "ELSE",
+  "DOLLAR",        "SRVVARNAME",    "LBRACKET",      "RBRACKET",
+  "EQ",            "MATCH",         "NE",            "NOMATCH",
+  "INCLUDE",       "INCLUDE_SHELL",  "error",         "input",
+  "metalines",     "metaline",      "varline",       "global",
+  "condlines",     "include",       "include_shell",  "value",
+  "expression",    "aelement",      "condline",      "aelements",
+  "array",         "key",           "stringop",      "cond",
+  "eols",          "globalstart",   "context",
 };
 #endif /* NDEBUG */
 

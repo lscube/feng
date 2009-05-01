@@ -1,8 +1,8 @@
 dnl
 dnl configure.in helper macros
-dnl 
- 
-AC_DEFUN([WITH_MYSQL], [ 
+dnl
+
+AC_DEFUN([WITH_MYSQL], [
   AC_MSG_CHECKING(for mysql_config executable)
 
   AC_ARG_WITH(mysql, [  --with-mysql=PATH path to mysql_config binary or mysql prefix dir], [
@@ -10,7 +10,7 @@ AC_DEFUN([WITH_MYSQL], [
     then
       MYSQL_CONFIG=$withval
     elif test -x $withval/bin/mysql_config -a -f $withval/bin/mysql_config
-    then 
+    then
      MYSQL_CONFIG=$withval/bin/mysql_config
     fi
   ], [
@@ -23,16 +23,16 @@ AC_DEFUN([WITH_MYSQL], [
     fi
   ])
 
-  if test "x$MYSQL_CONFIG" = "x" 
+  if test "x$MYSQL_CONFIG" = "x"
   then
     AC_MSG_RESULT(not found)
     exit 3
   else
     AC_PROG_CC
     AC_PROG_CXX
- 
+
     # add regular MySQL C flags
-    ADDFLAGS=`$MYSQL_CONFIG --cflags` 
+    ADDFLAGS=`$MYSQL_CONFIG --cflags`
 
     # add NDB API specific C flags
     IBASE=`$MYSQL_CONFIG --include`
@@ -40,12 +40,12 @@ AC_DEFUN([WITH_MYSQL], [
     ADDFLAGS="$ADDFLAGS $IBASE/storage/ndb/ndbapi"
     ADDFLAGS="$ADDFLAGS $IBASE/storage/ndb/mgmapi"
 
-    CFLAGS="$CFLAGS $ADDFLAGS"    
-    CXXFLAGS="$CXXFLAGS $ADDFLAGS"    
+    CFLAGS="$CFLAGS $ADDFLAGS"
+    CXXFLAGS="$CXXFLAGS $ADDFLAGS"
 
     LDFLAGS="$LDFLAGS "`$MYSQL_CONFIG --libs_r`" -lndbclient -lmystrings -lmysys"
     LDFLAGS="$LDFLAGS "`$MYSQL_CONFIG --libs_r`" -lndbclient -lmystrings"
-    
+
     AC_MSG_RESULT($MYSQL_CONFIG)
-  fi  
+  fi
 ])
