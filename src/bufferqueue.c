@@ -160,7 +160,7 @@ struct BufferQueue_Producer {
      * This condition is signalled once the last consumer of a stopped
      * producer (see @ref stopped) exits.
      *
-     * @see bq_consumer_stop
+     * @see bq_consumer_unref
      */
     GCond *last_consumer;
 
@@ -169,7 +169,7 @@ struct BufferQueue_Producer {
      *
      * When this value is set to true, the consumer is stopped and no
      * further elements can be added. To set this flag call the
-     * @ref bq_producer_stop function.
+     * @ref bq_producer_unref function.
      *
      * A stopped producer cannot accept any new consumer, and will
      * wait for all the currently-connected consumers to return before
@@ -244,7 +244,7 @@ struct BufferQueue_Consumer {
  *                      the queue.
  *
  * @return A new BufferQueue_Producer object that needs to be freed
- *         with @ref bq_producer_stop.
+ *         with @ref bq_producer_unref.
  */
 BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function) {
     BufferQueue_Producer *ret = g_slice_new(BufferQueue_Producer);
@@ -307,18 +307,17 @@ static void bq_producer_free_internal(BufferQueue_Producer *producer) {
 }
 
 /**
- * @brief Stop a producer
+ * @brief Frees a producer if there aren't consumers attached to it
  *
- * @param producer Producer to stop
+ * @param producer Producer to be freed
  *
- * This function marks a producer as stopped, refusing further
- * consumers from connecting, then waits for all of the consumer to
- * disconnect before deleting the producer object itself.
  */
-void bq_producer_stop(BufferQueue_Producer *producer) {
+void bq_producer_unref(BufferQueue_Producer *producer) {
     /* Compatibility with free(3) */
     if ( producer == NULL )
         return;
+
+    if ( producer->consumers > 0 ) return;
 
     g_assert(g_atomic_int_get(&producer->stopped) == 0);
 
@@ -326,9 +325,6 @@ void bq_producer_stop(BufferQueue_Producer *producer) {
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
-
-    if ( producer->consumers > 0 )
-        g_cond_wait(producer->last_consumer, producer->lock);
 
     bq_producer_free_internal(producer);
 }
@@ -594,7 +590,7 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
 /**
  * @brief Tells how many buffers are queued to be seen
  *
- * @param consumer The consuemr object to check
+ * @param consumer The consumer object to check
  *
  * @return The number of buffers queued in the producer that have not
  *         been seen.

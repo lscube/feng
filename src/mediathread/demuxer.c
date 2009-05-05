@@ -351,8 +351,7 @@ void free_track(gpointer element, gpointer user_data)
     MObject_unref(MOBJECT(track->info));
     MObject_unref(MOBJECT(track->properties));
     mparser_unreg(track->parser, track->private_data);
-
-    bq_producer_stop(track->producer);
+    bq_producer_unref(track->producer);
 
     istream_close(track->i_stream);
 
@@ -411,16 +410,13 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
         break;
 
     case MS_live:
-        if( !(t->producer = bq_producer_new(g_free)) )
-            ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
+        if(!(t->producer = g_hash_table_lookup(r->srv->live_mq, t->info->mrl)))
+            if( !(t->producer = bq_producer_new(g_free)) ) {
+                ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
+            } else
+                g_hash_table_insert(r->srv->live_mq,
+                                    t->info->mrl, t->producer);
         break;
-/*
-    case MS_live:
-	shm_name = strstr(t->info->mrl, FNC_PROTO_SEPARATOR) + strlen(FNC_PROTO_SEPARATOR);
-        if( !(t->buffer = bp_shm_map(shm_name)) )
-            ADD_TRACK_ERROR(FNC_LOG_FATAL, "Shared memory problems\n");
-        break;
-*/
 
     default:
         ADD_TRACK_ERROR(FNC_LOG_FATAL, "Media source not supported!");

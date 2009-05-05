@@ -125,8 +125,6 @@ typedef struct Track {
     BufferQueue_Producer *producer;
     MediaProperties *properties; /* track properties */
     Resource *parent;
-    /* private data is managed by specific media parser: from allocation to deallocation
-     * track MUST NOT do anything on this pointer! */
     void *private_data;
     void *parser_private; /* private data of media parser */
 } Track;

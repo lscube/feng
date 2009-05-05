@@ -238,6 +238,8 @@ static feng *feng_alloc(void)
     CLEAN(srvconf.modules);
 #undef CLEAN
 
+    srv->live_mq = g_hash_table_new(g_str_hash, g_str_equal);
+
     return srv;
 }
 

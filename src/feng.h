@@ -58,10 +58,12 @@ typedef struct feng {
     /**
      * @brief Number of active connections
      *
-     * Once it reaches the maximum the server is supposd to redirect
+     * Once it reaches the maximum the server is supposed to redirect
      * to a twin if available
      */
     size_t connection_count;
+    GHashTable *live_mq; //!< keeps the association producer/mq
+
 } feng;
 
 typedef feng server;
