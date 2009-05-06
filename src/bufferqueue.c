@@ -377,6 +377,8 @@ void bq_producer_reset_queue(BufferQueue_Producer *producer) {
  */
 void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     BufferQueue_Element *elem;
+    /* Ensure we have the exclusive access */
+    g_mutex_lock(producer->lock);
 
     /* Make sure the producer is not stopped */
     g_assert(g_atomic_int_get(&producer->stopped) == 0);
@@ -386,8 +388,6 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     elem->seen = 0;
     elem->serial = producer->next_serial++;
 
-    /* Ensure we have the exclusive access */
-    g_mutex_lock(producer->lock);
 
     /* Check whether we have to reset the queue */
     if ( producer->reset_queue ) {
