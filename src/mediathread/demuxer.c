@@ -351,8 +351,10 @@ void free_track(gpointer element, gpointer user_data)
     MObject_unref(MOBJECT(track->info));
     MObject_unref(MOBJECT(track->properties));
     mparser_unreg(track->parser, track->private_data);
-    bq_producer_unref(track->producer);
-
+    if (!bq_producer_consumers(track->producer)) {
+        g_hash_table_remove(track->parent->srv->live_mq, track->info->mrl);
+        bq_producer_unref(track->producer);
+    }
     istream_close(track->i_stream);
 
     g_slice_free(Track, track);

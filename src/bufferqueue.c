@@ -307,7 +307,7 @@ static void bq_producer_free_internal(BufferQueue_Producer *producer) {
 }
 
 /**
- * @brief Frees a producer if there aren't consumers attached to it
+ * @brief Frees a producer
  *
  * @param producer Producer to be freed
  *
@@ -316,8 +316,6 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
     /* Compatibility with free(3) */
     if ( producer == NULL )
         return;
-
-    if ( producer->consumers > 0 ) return;
 
     g_assert(g_atomic_int_get(&producer->stopped) == 0);
 
@@ -328,6 +326,22 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
 
     bq_producer_free_internal(producer);
 }
+
+/**
+ * @brief return the number of attached consumers.
+ *
+ * @param producer Producer being queried
+ *
+ * @return the number of attached consumers
+ *
+ * @see free_track
+ */
+
+gulong bq_producer_consumers(BufferQueue_Producer *producer)
+{
+    return producer->consumers;
+}
+
 
 /**
  * @brief Resets a producer's queue
