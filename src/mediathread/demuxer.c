@@ -349,7 +349,9 @@ void free_track(gpointer element, gpointer user_data)
         return;
 
     if (!bq_producer_consumers(track->producer)) {
-        g_hash_table_remove(track->parent->srv->live_mq, track->info->mrl);
+        // track->info->mrl is expected to be set by live only
+        if(track->info->mrl)
+            g_hash_table_remove(track->parent->srv->live_mq, track->info->mrl);
         bq_producer_unref(track->producer);
     }
 
