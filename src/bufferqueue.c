@@ -546,7 +546,7 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
              *
              * But let's be safe and assert this.
              */
-            g_assert_cmpuint(elem->seen, <, producer->consumers);
+            g_assert_cmpuint(elem->seen, <=, producer->consumers);
 
             elem->seen--;
         } while ( (it = it->prev) != NULL );
