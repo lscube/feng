@@ -49,7 +49,7 @@ typedef GList *MediaDescrList;
 typedef GList *SelList;
 typedef GPtrArray *MediaDescrListArray;
 
-MObject_def(ResourceInfo_s)
+typedef struct ResourceInfo_s {
     char *mrl;
     char *name;
     char *description;
@@ -103,7 +103,7 @@ typedef struct Resource {
     struct feng *srv;
 } Resource;
 
-MObject_def(Trackinfo_s)
+typedef struct Trackinfo_s {
     char *mrl;
     char name[256];
     int id; // should it more generic?

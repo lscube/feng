@@ -49,7 +49,7 @@ typedef enum {
     MS_live
 } MediaSource;
 
-MObject_def(MediaProperties)
+typedef struct MediaProperties {
     int bit_rate; /*!< average if VBR or -1 is not useful*/
     int payload_type;
     unsigned int clock_rate;

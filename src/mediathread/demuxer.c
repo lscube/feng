@@ -201,8 +201,8 @@ static void r_descr_free_media(gpointer element, gpointer user_data)
 {
     MediaDescr *m_descr = (MediaDescr *)element;
 
-    MObject_unref( MOBJECT(m_descr->info) );
-    MObject_unref( MOBJECT(m_descr->properties) );
+    MObject_unref( m_descr->info );
+    MObject_unref( m_descr->properties );
 }
 
 static void r_descr_free(ResourceDescr *descr)
@@ -213,7 +213,7 @@ static void r_descr_free(ResourceDescr *descr)
     g_list_foreach(descr->media, r_descr_free_media, NULL);
     g_list_free(descr->media);
 
-    MObject_unref( MOBJECT(descr->info) );
+    MObject_unref( descr->info );
     g_free(descr);
 }
 
@@ -287,8 +287,6 @@ static void resinfo_free(void *resinfo)
         return;
 
     g_free(((ResourceInfo *)resinfo)->mrl);
-
-    g_free(resinfo);
 }
 
 /**
@@ -297,8 +295,7 @@ static void resinfo_free(void *resinfo)
 ResourceInfo *resinfo_new() {
     ResourceInfo *rinfo;
 
-    rinfo = MObject_new0(ResourceInfo, 1);
-    MObject_destructor(rinfo, resinfo_free);
+    rinfo = MObject_new(ResourceInfo, resinfo_free);
 
     return rinfo;
 }
@@ -309,8 +306,6 @@ static void trackinfo_free(void *trackinfo)
         return;
 
     g_free(((TrackInfo *)trackinfo)->mrl);
-
-    g_free(trackinfo);
 }
 
 static void free_sdp_field(sdp_field *sdp, void *unused)
@@ -330,8 +325,6 @@ static void properties_free(void *properties)
         return;
 
     g_list_foreach(props->sdp_private, (GFunc)free_sdp_field, NULL);
-
-    g_free(props);
 }
 
 
@@ -358,8 +351,8 @@ void free_track(gpointer element, gpointer user_data)
         bq_producer_unref(track->producer);
     }
 
-    MObject_unref(MOBJECT(track->info));
-    MObject_unref(MOBJECT(track->properties));
+    MObject_unref(track->info);
+    MObject_unref(track->properties);
     mparser_unreg(track->parser, track->private_data);
     istream_close(track->i_stream);
 
@@ -392,19 +385,11 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 
     t->lock = g_mutex_new();
 
-    if (info)
-        t->info = MObject_dup(info, sizeof(TrackInfo));
-    else
-        t->info = MObject_new0(TrackInfo, 1);
+    t->info = MObject_new(TrackInfo, trackinfo_free);
+    memcpy(t->info, &info, sizeof(TrackInfo));
 
-    MObject_destructor(t->info, trackinfo_free);
-
-    if (prop_hints)
-        t->properties = MObject_dup(prop_hints, sizeof(MediaProperties));
-    else
-        t->properties = MObject_new0(MediaProperties, 1);
-
-    MObject_destructor(t->properties, properties_free);
+    t->properties = MObject_new(MediaProperties, properties_free);
+    memcpy(t->properties, &prop_hints, sizeof(MediaProperties));
 
     switch (t->properties->media_source) {
     case MS_stored:

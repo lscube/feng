@@ -65,7 +65,7 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
     if (resource->lock)
         g_mutex_free(resource->lock);
     istream_close(resource->i_stream);
-    MObject_unref(MOBJECT(resource->info));
+    MObject_unref(resource->info);
     resource->info = NULL;
     resource->demuxer->uninit(resource);
 

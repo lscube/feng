@@ -83,19 +83,12 @@ static gboolean pid_equal(gconstpointer v1, gconstpointer v2)
 static int mpegts_init(Resource * r)
 {
     mp2t_priv *priv = g_new0(mp2t_priv, 1);
-    MediaProperties props;
     Track *track = NULL;
-    TrackInfo trackinfo;
 
     priv->pid_status_table = g_hash_table_new_full(pid_hash, pid_equal,
                                                    value_destroy,
                                                    value_destroy);
 
-    MObject_init(MOBJECT(&trackinfo));
-    MObject_0(MOBJECT(&trackinfo), TrackInfo);
-    MObject_init(MOBJECT(&props));
-    MObject_0(MOBJECT(&props), MediaProperties);
-    props.clock_rate = 90000; //Default
     // XXX fill with the correct informations.
 
     //open the file

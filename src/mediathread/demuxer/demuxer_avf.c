@@ -131,6 +131,7 @@ static int avf_init(Resource * r)
     int i, pt = 96;
 
     memset(&ap, 0, sizeof(AVFormatParameters));
+    memset(&trackinfo, 0, sizeof(TrackInfo));
 
     avfc = av_alloc_format_context();
     ap.prealloced_context = 1;
@@ -151,9 +152,6 @@ static int avf_init(Resource * r)
                 r->i_stream->name);
         goto err_alloc;
     }
-
-    MObject_init(MOBJECT(&trackinfo));
-    MObject_0(MOBJECT(&trackinfo), TrackInfo);
 
 /* throw it in the sdp?
     if(avfc->title    [0])
@@ -178,8 +176,7 @@ static int avf_init(Resource * r)
         const char *id = tag_from_id(codec->codec_id);
 
         if (id) {
-            MObject_init(MOBJECT(&props));
-            MObject_0(MOBJECT(&props), MediaProperties);
+            memset(&props, 0, sizeof(MediaProperties));
             props.clock_rate = 90000; //Default
             props.extradata = codec->extradata;
             props.extradata_len = codec->extradata_size;
