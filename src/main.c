@@ -237,7 +237,7 @@ static feng *feng_alloc(void)
     CLEAN(config_touched);
     CLEAN(srvconf.modules);
 #undef CLEAN
-
+    srv->lock = g_mutex_new();
     srv->live_mq = g_hash_table_new(g_str_hash, g_str_equal);
 
     return srv;
@@ -286,6 +286,8 @@ int main(int argc, char **argv)
     feng *srv;
     int res = 0;
 
+    if (!g_thread_supported ()) g_thread_init (NULL);
+
     if (! (srv = feng_alloc()) ) {
         res = 1;
         goto end;
@@ -311,7 +313,6 @@ int main(int argc, char **argv)
 
     feng_drop_privs(srv);
 
-    if (!g_thread_supported ()) g_thread_init (NULL);
 
 #ifdef HAVE_METADATA
     g_thread_create(cpd_server, (void *) srv, FALSE, NULL);

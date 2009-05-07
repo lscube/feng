@@ -62,6 +62,8 @@ typedef struct feng {
      * to a twin if available
      */
     size_t connection_count;
+
+    GMutex *lock;        //!< lock to access live_mq
     GHashTable *live_mq; //!< keeps the association producer/mq
 
 } feng;

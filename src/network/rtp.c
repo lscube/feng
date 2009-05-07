@@ -228,7 +228,7 @@ typedef struct {
  * @return The number of frames sent to the client.
  * @retval -1 Error during writing.
  */
-static int rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
+static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
 {
     const size_t packet_size = sizeof(RTP_packet) + buffer->data_size;
     RTP_packet *packet = g_malloc0(packet_size);
@@ -236,7 +236,6 @@ static int rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     const uint32_t timestamp = RTP_calc_rtptime(session,
                                                 tr->properties->clock_rate,
                                                 buffer);
-    int frames = -1;
 
     packet->version = 2;
     packet->padding = 0;
@@ -257,8 +256,6 @@ static int rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
                    | MSG_EOR) < 0) {
         fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
     } else {
-        frames = (fabs(session->last_timestamp - buffer->timestamp) /
-                  tr->properties->frame_duration) + 1;
         session->last_timestamp = buffer->timestamp;
         session->pkt_count++;
         session->octet_count += buffer->data_size;
@@ -266,8 +263,6 @@ static int rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
         session->last_packet_send_time = time(NULL);
     }
     g_free(packet);
-
-    return frames;
 }
 
 /**
@@ -323,7 +318,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         /* We wait a bit of time to get the data but before it is
          * expired.
          */
-        next_time += session->track->properties->frame_duration/3;
+        next_time += 0.01; // assumed to be enough
     } else {
         MParserBuffer *next;
         double delivery  = buffer->delivery;

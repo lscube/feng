@@ -438,8 +438,6 @@ static int sd_read_packet(Resource * r)
             package_start_dts = *((double*)msg_buffer);
             package_start_ts = *((unsigned int*)(msg_buffer+sizeof(double)*2));
 
-            tr->start_time = package_start_dts;
-
             packet = msg_buffer+sizeof(double)*2+sizeof(unsigned int);
             msg_len -= (sizeof(double)*2+sizeof(unsigned int));
 

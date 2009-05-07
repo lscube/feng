@@ -117,6 +117,7 @@ MObject_def(Trackinfo_s)
 } TrackInfo;
 
 typedef struct Track {
+    GMutex *lock;
     InputStream *i_stream;
     TrackInfo *info;
     double start_time;
