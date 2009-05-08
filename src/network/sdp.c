@@ -33,7 +33,7 @@
 
 #include "fnc_log.h"
 #include "sdp.h"
-#include "mediathread/description.h"
+#include "mediathread/demuxer.h"
 #include <netembryo/wsocket.h>
 #include <netembryo/url.h>
 
@@ -51,8 +51,8 @@
 typedef struct {
     /** The string to append the SDP description to */
     GString *descr;
-    /** The currently-described media description object */
-    MediaDescr *media;
+    /** The currently-described Track object */
+    Track *track;
 } sdp_mdescr_append_pair;
 
 /**
@@ -63,7 +63,7 @@ typedef struct {
  *
  * @internal This function is only to be called by g_list_foreach().
  */
-static void sdp_mdescr_private_append(gpointer element, gpointer user_data)
+static void sdp_track_private_append(gpointer element, gpointer user_data)
 {
     sdp_field *private = (sdp_field *)element;
     sdp_mdescr_append_pair *pair = (sdp_mdescr_append_pair *)user_data;
@@ -75,12 +75,12 @@ static void sdp_mdescr_private_append(gpointer element, gpointer user_data)
         break;
     case fmtp:
         g_string_append_printf(pair->descr, "a=fmtp:%u %s"SDP_EL,
-                               m_descr_rtp_pt(pair->media),
+                               pair->track->properties->payload_type,
                                private->field);
         break;
     case rtpmap:
         g_string_append_printf(pair->descr, "a=rtpmap:%u %s"SDP_EL,
-                               m_descr_rtp_pt(pair->media),
+                               pair->track->properties->payload_type,
                                private->field);
         break;
     default: /* Ignore other private fields */
@@ -89,71 +89,28 @@ static void sdp_mdescr_private_append(gpointer element, gpointer user_data)
 }
 
 /**
- * @brief Append all the private fields for a media description to an
- *        SDP string.
- *
- * @param element The media description to append the fields of
- * @param user_data The GString object to append the description to
- *
- * @internal This function is only to be called by g_list_foreach().
- */
-static void sdp_mdescr_private_list_append(gpointer element, gpointer user_data)
-{
-    sdp_mdescr_append_pair pair = {
-        .descr = (GString *)user_data,
-        .media = (MediaDescr *)element
-    };
-
-    g_list_foreach(m_descr_sdp_private(pair.media),
-                   sdp_mdescr_private_append,
-                   &pair);
-}
-
-/**
- * @brief Append the payload type for the media description to an SDP
- *        string.
- *
- * @param element The media description to append the fields of
- * @param user_data The GString object to append the description to
- *
- * @internal This function is only to be called by g_list_foreach().
- */
-static void sdp_mdescr_pt_append(gpointer element, gpointer user_data)
-{
-    MediaDescr *mdescr = (MediaDescr *)element;
-    GString *descr = (GString *)user_data;
-
-    g_string_append_printf(descr, " %u",
-                           m_descr_rtp_pt(mdescr));
-}
-
-/**
- * @brief Append the description for a given media to an SDP
+ * @brief Append the description for a given track to an SDP
  *        description.
  *
- * @param element List of MediaDescr instances to fetch the data
- *                     from.
+ * @param element Track instance to get information from
  * @param user_data GString instance to append the description to
  *
- * @internal This function is only to be called by g_ptr_array_foreach().
+ * @internal This function is only to be called by g_list_foreach().
  */
-static void sdp_media_descr(gpointer element, gpointer user_data)
+static void sdp_track_descr(gpointer element, gpointer user_data)
 {
-    MediaDescrList m_descr_list = (MediaDescrList)element;
+    Track *track = (Track *)element;
+    TrackInfo *t_info = track->info;
+    MediaProperties *t_props = track->properties;
     GString *descr = (GString *)user_data;
-    MediaDescr *m_descr = m_descr_list ? (MediaDescr *)m_descr_list->data : NULL;
     char *encoded_media_name;
 
     /* The following variables are used to read the data out of the
-     * m_descr pointer, without calling the same inline function
+     * track pointer, without calling the same inline function
      * twice.
      */
     MediaType type;
     float frame_rate;
-    const char *commons_deed;
-    const char *rdf_page;
-    const char *title;
-    const char *author;
 
     /* Associative-array of media types and their SDP strings.
      *
@@ -168,10 +125,7 @@ static void sdp_media_descr(gpointer element, gpointer user_data)
         [MP_control] = "m=control "
     };
 
-    if (!m_descr)
-        return;
-
-    type = m_descr_type(m_descr);
+    type = t_props->media_type;
 
     /* MP_undef is the only case we don't handle. */
     g_assert(type != MP_undef);
@@ -181,11 +135,12 @@ static void sdp_media_descr(gpointer element, gpointer user_data)
     /// @TODO shawill: probably the transport should not be hard coded,
     /// but obtained in some way
     g_string_append_printf(descr, "%d RTP/AVP",
-                           m_descr_rtp_port(m_descr));
+                           t_info->rtp_port);
 
-    g_list_foreach(m_descr_list,
-                   sdp_mdescr_pt_append,
-                   descr);
+    /* We assume a single payload type, it might not be the correct
+     * handling, but since we currently lack some better structure. */
+    g_string_append_printf(descr, " %u",
+                           t_props->payload_type);
 
     g_string_append(descr, SDP_EL);
 
@@ -194,34 +149,42 @@ static void sdp_media_descr(gpointer element, gpointer user_data)
     // b=*
     // k=*
     // a=*
-    encoded_media_name = g_uri_escape_string(m_descr_name(m_descr), NULL, false);
+    encoded_media_name = g_uri_escape_string(t_info->name, NULL, false);
 
     g_string_append_printf(descr, "a=control:"SDP_TRACK_SEPARATOR"%s"SDP_EL,
                            encoded_media_name);
     g_free(encoded_media_name);
 
-    if ( (frame_rate = m_descr_frame_rate(m_descr))
+    if ( (frame_rate = t_props->frame_rate)
          && type == MP_video)
         g_string_append_printf(descr, "a=framerate:%f"SDP_EL,
                                frame_rate);
 
-    g_list_foreach(m_descr_list,
-                    sdp_mdescr_private_list_append,
-                    descr);
+    /* We assume a single private list, it might not be the correct
+     * handling, but since we currently lack some better structure. */
+    {
+        sdp_mdescr_append_pair pair = {
+            .descr = descr,
+            .track = track
+        };
+        g_list_foreach(t_props->sdp_private,
+                       sdp_track_private_append,
+                       &pair);
+    }
 
     // CC licenses *
-    if ( (commons_deed = m_descr_commons_deed(m_descr)) )
+    if ( t_info->commons_deed[0] )
         g_string_append_printf(descr, "a=uriLicense:%s"SDP_EL,
-                               commons_deed);
-    if ( (rdf_page = m_descr_rdf_page(m_descr)) )
+                               t_info->commons_deed);
+    if ( t_info->rdf_page[0] )
         g_string_append_printf(descr, "a=uriMetadata:%s"SDP_EL,
-                               rdf_page);
-    if ( (title = m_descr_title(m_descr)) )
+                               t_info->rdf_page);
+    if ( t_info->title[0] )
         g_string_append_printf(descr, "a=title:%s"SDP_EL,
-                               title);
-    if ( (author = m_descr_author(m_descr)) )
+                               t_info->title);
+    if ( t_info->author[0] )
         g_string_append_printf(descr, "a=author:%s"SDP_EL,
-                               author);
+                               t_info->author);
 }
 
 /**
@@ -261,27 +224,32 @@ static void sdp_rdescr_private_append(gpointer element, gpointer user_data)
 GString *sdp_session_descr(struct feng *srv, const Url *url)
 {
     GString *descr = NULL;
-    ResourceDescr *r_descr;
     double duration;
 
     const char *resname;
     time_t restime;
     float currtime_float, restime_float;
 
+    Resource *resource;
+    ResourceInfo *res_info;
+
     fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s", url->path);
-    if ( !(r_descr=r_descr_get(srv, url->path)) ) {
+    if ( !(resource = r_open(srv, url->path)) ) {
         fnc_log(FNC_LOG_ERR, "[SDP] %s not found", url->path);
         return NULL;
     }
+
+    res_info = resource->info;
+    g_assert(res_info != NULL);
 
     descr = g_string_new("v=0"SDP_EL);
 
     /* Near enough approximation to run it now */
     currtime_float = NTP_time(time(NULL));
-    restime = r_descr_last_change(r_descr);
+    restime = mrl_mtime(res_info->mrl);
     restime_float = restime ? NTP_time(restime) : currtime_float;
 
-    if ( (resname = r_descr_name(r_descr)) == NULL )
+    if ( (resname = res_info->description) == NULL )
         resname = "RTSP Session";
 
     /* Network type: Internet; Address type: IP4. */
@@ -291,30 +259,30 @@ GString *sdp_session_descr(struct feng *srv, const Url *url)
     g_string_append_printf(descr, "s=%s"SDP_EL,
                            resname);
     // u=
-    if (r_descr_descrURI(r_descr))
+    if (res_info->descrURI)
         g_string_append_printf(descr, "u=%s"SDP_EL,
-                               r_descr_descrURI(r_descr));
+                               res_info->descrURI);
 
     // e=
-    if (r_descr_email(r_descr))
+    if (res_info->email)
         g_string_append_printf(descr, "e=%s"SDP_EL,
-                               r_descr_email(r_descr));
+                               res_info->email);
     // p=
-    if (r_descr_phone(r_descr))
+    if (res_info->phone)
         g_string_append_printf(descr, "p=%s"SDP_EL,
-                               r_descr_phone(r_descr));
+                               res_info->phone);
 
     // c=
     /* Network type: Internet. */
     /* Address type: IP4. */
     g_string_append(descr, "c=IN IP4 ");
 
-    if(r_descr_multicast(r_descr)) {
+    if(res_info->multicast[0]) {
         g_string_append_printf(descr, "%s/",
-                               r_descr_multicast(r_descr));
-        if (r_descr_ttl(r_descr))
+                               res_info->multicast);
+        if (res_info->ttl[0])
             g_string_append_printf(descr, "%s"SDP_EL,
-                                   r_descr_ttl(r_descr));
+                                   res_info->ttl);
         else
             /* @TODO the possibility to change ttl.
              * See multicast.h, RTSP_setup.c, send_setup_reply.c*/
@@ -339,18 +307,20 @@ GString *sdp_session_descr(struct feng *srv, const Url *url)
     // control attribute. We should look if aggregate metod is supported?
     g_string_append(descr, "a=control:*"SDP_EL);
 
-    if ((duration = r_descr_time(r_descr)) > 0 &&
+    if ((duration = res_info->duration) > 0 &&
         duration != HUGE_VAL)
         g_string_append_printf(descr, "a=range:npt=0-%f"SDP_EL, duration);
 
     // other private data
-    g_list_foreach(r_descr_sdp_private(r_descr),
+    g_list_foreach(res_info->sdp_private,
                    sdp_rdescr_private_append,
                    descr);
 
-    g_ptr_array_foreach(r_descr_get_media(r_descr),
-                        sdp_media_descr,
-                        descr);
+    g_list_foreach(resource->tracks,
+                   sdp_track_descr,
+                   descr);
+
+    r_close(resource);
 
     fnc_log(FNC_LOG_INFO, "[SDP] description:\n%s", descr->str);
 

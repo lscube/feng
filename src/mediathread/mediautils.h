@@ -25,14 +25,6 @@
 
 #include <glib.h>
 
-void *MObject_alloc(size_t size, void (*destructor)(void *));
-#define MObject_new(type, destructor) (type *)MObject_alloc(sizeof(type), destructor)
-
-void *MObject_dup(void *obj_gen);
-
-void MObject_ref(void *obj_gen);
-void MObject_unref(void *obj_gen);
-
 gchar *extradata2config(const guint8 *extradata, gint extradata_size);
 
 #endif // FN_MEDIAUTILS_H

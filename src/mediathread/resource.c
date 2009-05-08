@@ -65,7 +65,10 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
     if (resource->lock)
         g_mutex_free(resource->lock);
     istream_close(resource->i_stream);
-    MObject_unref(resource->info);
+
+    g_free(resource->info->mrl);
+    g_slice_free(ResourceInfo, resource->info);
+
     resource->info = NULL;
     resource->demuxer->uninit(resource);
 
@@ -152,7 +155,7 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 
     r = g_slice_new0(Resource);
 
-    r->info = resinfo_new();
+    r->info = g_slice_new0(ResourceInfo);
 
     r->info->mrl = mrl;
     r->info->name = g_path_get_basename(inner_path);
@@ -175,7 +178,6 @@ Resource *r_open(struct feng *srv, const char *inner_path)
     /* Create the new resource pool for the read requests */
     r->read_pool = g_thread_pool_new(r_read_cb, r,
                                      -1, false, NULL);
-    r_descr_cache_update(r);
 
 #ifdef HAVE_METADATA
     cpd_find_request(srv, r, filename);

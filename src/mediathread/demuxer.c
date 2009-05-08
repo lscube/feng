@@ -27,7 +27,6 @@
 
 #include "feng.h"
 #include "demuxer.h"
-#include "description.h"
 #include "fnc_log.h"
 
 // global demuxer modules:
@@ -45,51 +44,6 @@ static Demuxer *const demuxers[] = {
     NULL
 };
 
-/**
- * @brief The resource description cache.
- *
- * This list holds the cache of resource descriptions. This way the
- * mediathread can provide the description buffer without opening the
- * resource every time.  This will result in a better performance for
- * RTSP DESCRIBE metod response.  Descriptions are ordered for access
- * time, so that the last is the less recently addressed media
- * description and will be chosen for removal if cache reaches the
- * limit.
- */
-static GList *descr_cache;
-
-//! cache size of descriptions (maybe we need to take it from fenice configuration file?)
-#define MAX_DESCR_CACHE_SIZE 10
-
-/**
- * @brief Comparison function used to compare a ResourceDescr to a MRL
- *
- * @param a ResourceDescr pointer of the element in the list
- * @param b String with the MRL to compare to
- *
- * @return The strcmp() result between the correspondent ResourceInfo
- *         MRL and the given MRL.
- *
- * @internal This function should _only_ be used by @ref r_descr_find.
- */
-static gint r_descr_find_cmp_mrl(gconstpointer a, gconstpointer b)
-{
-    return strcmp( ((ResourceDescr *)a)->info->mrl, (const char *)b );
-}
-
-/**
- * @brief Find a given ResourceDecr in the cache, from its MRL
- *
- * @param mrl The MRL to look for
- *
- * @return A GList pointer to the requested resource description.
- *
- * @see r_descr_find_cmp_mrl
- */
-static GList *r_descr_find(const char *mrl)
-{
-    return g_list_find_custom(descr_cache, mrl, r_descr_find_cmp_mrl);
-}
 
 // private functions for specific demuxer
 
@@ -150,164 +104,6 @@ Demuxer *find_demuxer(InputStream *i_stream)
     return NULL;
 }
 
-/**
- * @brief Create new media descriptions
- *
- * @param element The track to create a media description for
- * @param user_data The new resource descriptions to add the
- *                  descriptions to
- *
- * @internal This function should only be called through
- *           g_list_foreach().
- */
-static void r_descr_new_mdescr(gpointer element, gpointer user_data)
-{
-    ResourceDescr *new_descr = (ResourceDescr *)user_data;
-    Track *track = (Track*)element;
-
-    MediaDescr *new_mdescr = g_new(MediaDescr, 1);
-    new_mdescr->info = track->info;
-    MObject_ref(track->info);
-    new_mdescr->properties = track->properties;
-    MObject_ref(track->properties);
-    new_mdescr->last_change = mrl_mtime(track->info->mrl);
-    new_descr->media = g_list_append(new_descr->media, new_mdescr);
-}
-
-static ResourceDescr *r_descr_new(Resource *r)
-{
-    ResourceDescr *new_descr = g_new(ResourceDescr, 1);
-    new_descr->media = NULL;
-
-    new_descr->info=r->info;
-    MObject_ref(r->info);
-    new_descr->last_change=mrl_mtime(r->info->mrl);
-
-    g_list_foreach(r->tracks, r_descr_new_mdescr, new_descr);
-
-    return new_descr;
-}
-
-/**
- * @brief Unreference a list of media descriptions
- *
- * @param element The media description to unreference
- * @param user_data Unused
- *
- * @internal This function should only be called through
- *           g_list_foreach().
- */
-static void r_descr_free_media(gpointer element, gpointer user_data)
-{
-    MediaDescr *m_descr = (MediaDescr *)element;
-
-    MObject_unref( m_descr->info );
-    MObject_unref( m_descr->properties );
-}
-
-static void r_descr_free(ResourceDescr *descr)
-{
-    if (!descr)
-        return;
-
-    g_list_foreach(descr->media, r_descr_free_media, NULL);
-    g_list_free(descr->media);
-
-    MObject_unref( descr->info );
-    g_free(descr);
-}
-
-/**
- * @brief Check if a given resource has changed on disk
- *
- * @param descr The description of the resource to change
- *
- * @retval true The resource has changed on disk since last time
- * @retval false The resource hasn't changed on disk
- *
- * @see ResourceDescr::last_change
- */
-static gboolean r_changed(ResourceDescr *descr)
-{
-    GList *m_descr_it;
-
-    if ( mrl_changed(descr->info->mrl, &descr->last_change) )
-        return true;
-
-    for (m_descr_it = g_list_first(descr->media);
-         m_descr_it;
-         m_descr_it = g_list_next(m_descr_it) )
-    {
-        MediaDescr *m_descr = (MediaDescr *)m_descr_it->data;
-
-        /* Why is it possible that this hits? No clue! */
-        if (m_descr->info->mrl == NULL)
-            break;
-
-        if (mrl_changed(m_descr->info->mrl,
-                        &(m_descr->last_change)))
-            return true;
-    }
-
-    return false;
-}
-
-void r_descr_cache_update(Resource *r)
-{
-    GList *cache_el;
-    ResourceDescr *r_descr=NULL;
-
-    if ( ( cache_el = r_descr_find(r->info->mrl) ) ) {
-        r_descr = cache_el->data;
-        // TODO free ResourceDescr
-        descr_cache = g_list_remove_link(descr_cache, cache_el);
-        if (r_changed(r_descr)) {
-            r_descr_free(r_descr);
-            r_descr=NULL;
-        }
-    }
-    if (!r_descr)
-        r_descr = r_descr_new(r);
-
-    descr_cache=g_list_prepend(descr_cache, r_descr);
-
-    if (g_list_length(descr_cache)>MAX_DESCR_CACHE_SIZE) {
-        cache_el = g_list_last(descr_cache);
-        r_descr_free(cache_el->data);
-        descr_cache = g_list_delete_link(descr_cache, cache_el);
-    }
-}
-
-/**
- * @brief Free a @ref ResourceInfo object
- */
-static void resinfo_free(void *resinfo)
-{
-    if (!resinfo)
-        return;
-
-    g_free(((ResourceInfo *)resinfo)->mrl);
-}
-
-/**
- * @brief Creates a new @ref ResourceInfo object
- */
-ResourceInfo *resinfo_new() {
-    ResourceInfo *rinfo;
-
-    rinfo = MObject_new(ResourceInfo, resinfo_free);
-
-    return rinfo;
-}
-
-static void trackinfo_free(void *trackinfo)
-{
-    if (!trackinfo)
-        return;
-
-    g_free(((TrackInfo *)trackinfo)->mrl);
-}
-
 static void free_sdp_field(sdp_field *sdp, void *unused)
 {
     if (!sdp)
@@ -351,8 +147,11 @@ void free_track(gpointer element, gpointer user_data)
         bq_producer_unref(track->producer);
     }
 
-    MObject_unref(track->info);
-    MObject_unref(track->properties);
+    g_free(track->info->mrl);
+    g_slice_free(TrackInfo, track->info);
+
+    g_slice_free(MediaProperties, track->properties);
+
     mparser_unreg(track->parser, track->private_data);
     istream_close(track->i_stream);
 
@@ -385,10 +184,10 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 
     t->lock = g_mutex_new();
 
-    t->info = MObject_new(TrackInfo, trackinfo_free);
+    t->info = g_slice_new0(TrackInfo);
     memcpy(t->info, &info, sizeof(TrackInfo));
 
-    t->properties = MObject_new(MediaProperties, properties_free);
+    t->properties = g_slice_new0(MediaProperties);
     memcpy(t->properties, &prop_hints, sizeof(MediaProperties));
 
     switch (t->properties->media_source) {
@@ -432,88 +231,3 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     return NULL;
 }
 #undef ADD_TRACK_ERROR
-
-ResourceDescr *r_descr_get(struct feng *srv, const char *inner_path)
-{
-    GList *cache_el;
-    gchar *mrl = g_strjoin ("/",
-                            srv->config_storage[0]->document_root->ptr,
-                            inner_path,
-                            NULL);
-
-    if ( !(cache_el=r_descr_find(mrl)) ) {
-        Resource *r;
-        if ( !(r = r_open(srv, inner_path)) )
-            return NULL;
-        cache_el = r_descr_find(mrl);
-        r_close(r);
-    }
-
-    g_free(mrl);
-
-    return cache_el->data;
-}
-
-/**
- * @brief Iteration function to find all the media of a given type
- *        with the given name.
- *
- * @param element The current media_description to test
- * @param user_data The array of lists
- *
- * @internal This function should only be called by g_list_foreach().
- */
-static void r_descr_find_media(gpointer element, gpointer user_data) {
-    MediaDescr *m_descr = (MediaDescr *)element;
-    MediaDescrListArray new_m_descrs = (MediaDescrListArray)user_data;
-
-    gboolean found = 0;
-    guint i;
-
-    for (i = 0; i < new_m_descrs->len; ++i) {
-        MediaDescrList m_descr_list_it = g_ptr_array_index(new_m_descrs, i);
-        MediaDescr *m_descr_list = (MediaDescr *)m_descr_list_it->data;
-
-        if ( m_descr_list == NULL )
-            continue;
-
-        if ( (m_descr_type(m_descr) ==
-              m_descr_type(m_descr_list)) &&
-             !strcmp(m_descr_name(m_descr),
-                     m_descr_name(m_descr_list)) ) {
-            found = true;
-            break;
-        }
-    }
-
-    if (found) {
-        MediaDescrList found_list = g_ptr_array_index(new_m_descrs, i);
-        found_list = g_list_append(found_list, m_descr);
-        new_m_descrs->pdata[i] = found_list;
-    } else {
-        MediaDescrList new_list = g_list_append(NULL, m_descr);
-        g_ptr_array_add(new_m_descrs, new_list);
-    }
-}
-
-/**
- * @brief Creates an array of MediaDescrList containing media
- *        descriptions.
- *
- * @return An array, each element of which is a MediaDescrList
- *         containing all the media of the same type with the same
- *         name. All the elements in each list can be included
- *         together in the sdp description, in a single 'm=' block.
- *
- * @param r_descr Resource description containing all the media.
- */
-MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr)
-{
-    MediaDescrListArray new_m_descrs =
-        g_ptr_array_sized_new(g_list_position(r_descr->media,
-                                              g_list_last(r_descr->media))+1);
-
-    g_list_foreach(r_descr->media, r_descr_find_media, new_m_descrs);
-
-    return new_m_descrs;
-}
