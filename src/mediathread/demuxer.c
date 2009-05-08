@@ -184,6 +184,8 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 
     t->lock = g_mutex_new();
 
+    t->parent = r;
+
     t->info = g_slice_new0(TrackInfo);
     memcpy(t->info, info, sizeof(TrackInfo));
 
@@ -220,7 +222,6 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
         break;
     }
 
-    t->parent = r;
     r->tracks = g_list_append(r->tracks, t);
     r->num_tracks++;
 
