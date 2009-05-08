@@ -35,6 +35,29 @@
 
 #include "mediathread/mediaparser.h"
 
+/**
+ * @brief Uninitialisation function for the demuxer_sd fake parser
+ *
+ * This function simply frees the slice in Track::private_data as a
+ * mqd_t object.
+ */
+static void demuxer_sd_fake_mediaparser_uninit(void *private_data) {
+    g_slice_free(mqd_t, private_data);
+}
+
+/**
+ * @brief Fake parser description for demuxer_sd tracks
+ *
+ * This object is used to free the slice in Track::private_data as a
+ * mqd_t object.
+ */
+static const MediaParser demuxer_sd_fake_mediaparser = {
+    .info = NULL,
+    .init = NULL,
+    .parse = NULL,
+    .uninit = demuxer_sd_fake_mediaparser_uninit
+};
+
 /*
  * Struct for automatic probing of live media sources
  */
@@ -345,6 +368,10 @@ static int sd_init(Resource * r)
         if (!(track = add_track(r, &trackinfo, &props_hints)))
             return ERR_ALLOC;
 
+        track->parser = &demuxer_sd_fake_mediaparser;
+        track->private_data = g_slice_new0(mqd_t);
+        *((mqd_t*)(track->private_data)) = -1;
+
         if (sdp_private)
             track->properties->sdp_private =
                 g_list_prepend(track->properties->sdp_private, sdp_private);
@@ -383,6 +410,90 @@ static int sd_init(Resource * r)
 #define FNC_LIVE_PROTOCOL "mq://"
 #define FNC_LIVE_PROTOCOL_LEN 5
 
+static int sd_read_packet_track(Resource *res, Track *tr) {
+    double package_start_dts;
+    uint32_t package_timestamp;
+    double timestamp;
+    double delivery;
+    double delta;
+
+    struct mq_attr attr;
+    mqd_t *mpd = tr->private_data;
+
+    uint8_t *msg_buffer;
+    uint8_t *packet;
+    ssize_t msg_len;
+    int marker;
+
+    if ( *mpd < 0 &&
+         (*mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN,
+                         O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) < 0) {
+        fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
+                tr->info->mrl, strerror(errno));
+        return RESOURCE_EOF;
+    }
+
+    mq_getattr(*mpd, &attr);
+
+    /* Check if there are available packets */
+    if (!attr.mq_curmsgs)
+        return RESOURCE_OK;
+
+    msg_buffer = g_malloc(attr.mq_msgsize);
+
+    do {
+        unsigned int package_start_ts;
+
+        if ( (msg_len = mq_receive(*mpd, (char*)msg_buffer,
+                                   attr.mq_msgsize, NULL)) < 0 ) {
+            fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
+                    tr->info->mrl, strerror(errno));
+            g_free(msg_buffer);
+
+            mq_close(*mpd);
+            *mpd = -1;
+
+            return RESOURCE_OK;
+        }
+
+        package_start_dts = *((double*)msg_buffer);
+        package_start_ts = *((unsigned int*)(msg_buffer+sizeof(double)*2));
+
+        packet = msg_buffer+sizeof(double)*2+sizeof(unsigned int);
+        msg_len -= (sizeof(double)*2+sizeof(unsigned int));
+
+        package_timestamp = ntohl(*(uint32_t*)(packet+4));
+        delivery = (package_timestamp - package_start_ts)/((double)tr->properties->clock_rate);
+        delta = ev_time() - (package_start_dts + delivery);
+
+#if 0
+        fprintf(stderr, "[%s] read %5.4f\n", tr->info->mrl, delta);
+#endif
+    } while(delta > 1.0f);
+
+    timestamp = package_timestamp/((double)tr->properties->clock_rate);
+    marker = (packet[1]>>7);
+
+#if 0
+    fprintf(stderr, "[%s] packet TS: %5.4f DELIVERY: %5.4f : %5.4f -> %5.4f\n",
+            tr->info->mrl,
+            timestamp,
+            delivery,
+            ev_time() - (package_start_dts + delivery),
+            package_start_dts + delivery);
+#endif
+
+    mparser_buffer_write(tr,
+                         timestamp,
+                         package_start_dts + delivery,
+                         0.0,
+                         marker,
+                         packet+12, msg_len-12);
+
+    g_free(msg_buffer);
+    return RESOURCE_OK;
+}
+
 static int sd_read_packet(Resource * r)
 {
     TrackList tr_it;
@@ -391,88 +502,10 @@ static int sd_read_packet(Resource * r)
         return RESOURCE_NOT_PARSEABLE;
 
     for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {
-        Track *tr = (Track*)tr_it->data;
+        int ret;
 
-        double package_start_dts;
-        uint32_t package_timestamp;
-        double timestamp;
-        double delivery;
-        double delta;
-
-        struct mq_attr attr;
-        mqd_t mpd;
-
-        uint8_t *msg_buffer;
-        uint8_t *packet;
-        ssize_t msg_len;
-        int marker;
-
-        if ((mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN,
-                           O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) < 0) {
-            fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
-                                 tr->info->mrl, strerror(errno));
-            return RESOURCE_EOF;
-        }
-
-        mq_getattr(mpd, &attr);
-
-        /* Check if there are available packets */
-        if (!attr.mq_curmsgs) {
-            mq_close(mpd);
-            continue;
-        }
-
-        msg_buffer = g_malloc(attr.mq_msgsize);
-        do {
-            unsigned int package_start_ts;
-
-            msg_len = mq_receive(mpd, (char*)msg_buffer, attr.mq_msgsize, NULL);
-            if (msg_len < 0)
-                break;
-
-            package_start_dts = *((double*)msg_buffer);
-            package_start_ts = *((unsigned int*)(msg_buffer+sizeof(double)*2));
-
-            packet = msg_buffer+sizeof(double)*2+sizeof(unsigned int);
-            msg_len -= (sizeof(double)*2+sizeof(unsigned int));
-
-            package_timestamp = ntohl(*(uint32_t*)(packet+4));
-            delivery = (package_timestamp - package_start_ts)/((double)tr->properties->clock_rate);
-            delta = ev_time() - (package_start_dts + delivery);
-
-#if 0
-            fprintf(stderr, "[%s] read %5.4f\n", tr->info->mrl, delta);
-#endif
-        } while(delta > 1.0f);
-        mq_close(mpd);
-
-        if (msg_len < 0) {
-            fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
-                             tr->info->mrl, strerror(errno));
-            g_free(msg_buffer);
-            continue;
-        }
-
-        timestamp = package_timestamp/((double)tr->properties->clock_rate);
-        marker = (packet[1]>>7);
-
-#if 0
-        fprintf(stderr, "[%s] packet TS: %5.4f DELIVERY: %5.4f : %5.4f -> %5.4f\n",
-            tr->info->mrl,
-            timestamp,
-            delivery,
-            ev_time() - (package_start_dts + delivery),
-            package_start_dts + delivery);
-#endif
-
-        mparser_buffer_write(tr,
-                             timestamp,
-                             package_start_dts + delivery,
-                             0.0,
-                             marker,
-                             packet+12, msg_len-12);
-
-        g_free(msg_buffer);
+        if ( (ret = sd_read_packet_track(r, tr_it->data)) != RESOURCE_OK )
+            return ret;
     }
 
     return RESOURCE_OK;
