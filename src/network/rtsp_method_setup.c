@@ -34,7 +34,6 @@
 #include "feng.h"
 #include "rtp.h"
 #include "rtsp.h"
-#include "sdp.h"
 #include "ragel_parsers.h"
 #include "fnc_log.h"
 #include "mediathread/demuxer.h"

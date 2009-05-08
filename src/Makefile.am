@@ -30,7 +30,6 @@ dist_feng_SOURCES = \
 	network/rtsp_response.c \
 	network/rtsp_state_machine.c \
 	network/rtsp_utils.c \
-	network/sdp.h \
 	\
 	bufferqueue.c bufferqueue.h \
 	fnc_log.c fnc_log.h \
