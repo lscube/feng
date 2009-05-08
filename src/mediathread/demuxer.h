@@ -45,9 +45,7 @@ struct feng;
 
 //! typedefs that give convenient names to GLists used
 typedef GList *TrackList;
-typedef GList *MediaDescrList;
 typedef GList *SelList;
-typedef GPtrArray *MediaDescrListArray;
 
 typedef struct ResourceInfo_s {
     char *mrl;
@@ -153,17 +151,6 @@ typedef struct Demuxer {
     //...
 } Demuxer;
 
-typedef struct {
-    time_t last_change;
-    ResourceInfo *info;
-    MediaDescrList media; // GList of MediaDescr elements
-} ResourceDescr;
-
-typedef struct {
-    time_t last_change;
-    TrackInfo *info;
-    MediaProperties *properties;
-} MediaDescr;
 
 // --- functions --- //
 
@@ -181,11 +168,5 @@ Track *r_find_track(Resource *, const char *);
 // Tracks
 Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 void free_track(gpointer element, gpointer user_data);
-
-// Resources and Media descriptions
-
-void r_descr_cache_update(Resource *r);
-ResourceDescr *r_descr_get(struct feng *srv, const char *inner_path);
-MediaDescrListArray r_descr_get_media(ResourceDescr *r_descr);
 
 #endif // FN_DEMUXER_H
