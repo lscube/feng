@@ -301,17 +301,22 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
     /* Check whether we have enough extra frames to send. If we have
      * no extra frames we have a problem, since we're going to send
      * one packet at least.
-     *
-     * We add one to the number of missing frames so that the value is
-     * _never_ zero, otherwise the GThreadPool internal implementation
-     * bails out.
      */
     /** @todo It's not really correct to assume one frame per packet,
      *        it's actually quite wrong, in both senses.
      */
     if ( (extra_cached_frames = bq_consumer_unseen(session->consumer)
-          - session->srv->srvconf.buffered_frames) <= 0 )
-        r_read(session->track->parent, abs(extra_cached_frames)+1);
+          - session->srv->srvconf.buffered_frames) <= 0 ) {
+        extra_cached_frames = abs(extra_cached_frames);
+
+        /* We can't leave this to zero otherwise the internal
+         * GThreadPool implementation will bail out thinking that we
+         * have a NULL pointer. */
+        if ( extra_cached_frames == 0 )
+            extra_cached_frames = 1;
+
+        r_read(session->track->parent, extra_cached_frames);
+    }
 
     /* Get the current buffer, if there is enough data */
     if ( !(buffer = bq_consumer_get(session->consumer)) ) {
