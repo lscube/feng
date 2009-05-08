@@ -233,11 +233,15 @@ GString *sdp_session_descr(struct feng *srv, const Url *url)
     Resource *resource;
     ResourceInfo *res_info;
 
-    fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s", url->path);
-    if ( !(resource = r_open(srv, url->path)) ) {
-        fnc_log(FNC_LOG_ERR, "[SDP] %s not found", url->path);
+    char *path = g_uri_unescape_string(url->path, "/");
+
+    fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s", path);
+    if ( !(resource = r_open(srv, path)) ) {
+        fnc_log(FNC_LOG_ERR, "[SDP] %s not found", path);
+        g_free(path);
         return NULL;
     }
+    g_free(path);
 
     res_info = resource->info;
     g_assert(res_info != NULL);
