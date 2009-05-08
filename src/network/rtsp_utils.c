@@ -36,6 +36,7 @@
 #include "feng.h"
 #include "rtsp.h"
 #include "rtp.h"
+#include "mediathread/demuxer.h"
 
 /**
  * @defgroup rtsp_utils Utility functions
