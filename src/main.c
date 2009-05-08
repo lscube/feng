@@ -38,6 +38,7 @@
 #include "conf/configfile.h"
 
 #include "feng.h"
+#include "bufferqueue.h"
 #include "fnc_log.h"
 #include "incoming.h"
 #include "network/rtp.h"
@@ -237,8 +238,8 @@ static feng *feng_alloc(void)
     CLEAN(config_touched);
     CLEAN(srvconf.modules);
 #undef CLEAN
-    srv->lock = g_mutex_new();
-    srv->live_mq = g_hash_table_new(g_str_hash, g_str_equal);
+
+    bq_init();
 
     return srv;
 }

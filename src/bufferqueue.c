@@ -189,6 +189,13 @@ struct BufferQueue_Producer {
      * @note gint is used to be able to use g_atomic_int_get function.
      */
     gint reset_queue;
+
+    /**
+     * @brief Unique id for shared producer
+     *
+     * @todo switch to a numeric hash
+     */
+    gchar *key;
 };
 
 /**
@@ -237,25 +244,59 @@ struct BufferQueue_Consumer {
     BufferQueue_Element *current_element_object;
 };
 
+static GMutex *bq_global_lock;
+static GHashTable *bq_live_mq;
+
 /**
- * @brief Create a new producer for the bufferqueue
+ *  @brief Initialize bufferque global data
+ */
+
+void bq_init()
+{
+    bq_global_lock = g_mutex_new();
+    bq_live_mq = g_hash_table_new(g_str_hash, g_str_equal);
+}
+
+/**
+ * @brief Create a new producer for the bufferqueue or return one previously
+ *        allocated with the same key
  *
  * @param free_function Function to call when removing buffers from
  *                      the queue.
+ * @param key producer's unique id, NULL if not shared.
  *
  * @return A new BufferQueue_Producer object that needs to be freed
  *         with @ref bq_producer_unref.
  */
-BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function) {
-    BufferQueue_Producer *ret = g_slice_new(BufferQueue_Producer);
+BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function,
+                                      gchar *key)
+{
+    BufferQueue_Producer *ret = NULL;
 
-    ret->lock = g_mutex_new();
-    ret->queue = NULL;
-    ret->free_function = free_function;
-    ret->consumers = 0;
-    ret->last_consumer = g_cond_new();
-    ret->stopped = 0;
-    ret->reset_queue = 1;
+    if (key) {
+        g_mutex_lock(bq_global_lock);
+        ret = g_hash_table_lookup(bq_live_mq, key);
+    }
+
+    if (!ret) {
+        ret = g_slice_new(BufferQueue_Producer);
+
+        ret->lock = g_mutex_new();
+        ret->queue = NULL;
+        ret->free_function = free_function;
+        ret->consumers = 0;
+        ret->last_consumer = g_cond_new();
+        ret->stopped = 0;
+        ret->reset_queue = 1;
+        ret->key = NULL;
+        if (key) {
+            ret->key = g_strdup(key);
+            g_hash_table_insert(bq_live_mq, key, ret);
+        }
+    }
+
+    if (key)
+        g_mutex_unlock(bq_global_lock);
 
     return ret;
 }
@@ -295,6 +336,9 @@ static void bq_producer_free_internal(BufferQueue_Producer *producer) {
     g_mutex_unlock(producer->lock);
     g_mutex_free(producer->lock);
 
+    if ( producer->key )
+        g_free(producer->key);
+
     if ( producer->queue ) {
         /* Destroy elements and the queue */
         g_queue_foreach(producer->queue,
@@ -317,31 +361,27 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
     if ( producer == NULL )
         return;
 
+    g_mutex_lock(producer->lock);
+
+    if (producer->consumers) {
+        g_mutex_unlock(producer->lock);
+        return;
+    }
+
+    if(producer->key) {
+        g_mutex_lock(bq_global_lock);
+        g_hash_table_remove(bq_live_mq, producer->key);
+        g_mutex_unlock(bq_global_lock);
+    }
+
     g_assert(g_atomic_int_get(&producer->stopped) == 0);
 
     g_atomic_int_set(&producer->stopped, 1);
 
     /* Ensure we have the exclusive access */
-    g_mutex_lock(producer->lock);
 
     bq_producer_free_internal(producer);
 }
-
-/**
- * @brief return the number of attached consumers.
- *
- * @param producer Producer being queried
- *
- * @return the number of attached consumers
- *
- * @see free_track
- */
-
-gulong bq_producer_consumers(BufferQueue_Producer *producer)
-{
-    return producer->consumers;
-}
-
 
 /**
  * @brief Resets a producer's queue

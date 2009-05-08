@@ -393,6 +393,7 @@ static int sd_read_packet(Resource * r)
     for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {
         Track *tr = (Track*)tr_it->data;
 
+        double package_start_dts;
         uint32_t package_timestamp;
         double timestamp;
         double delivery;
@@ -423,7 +424,6 @@ static int sd_read_packet(Resource * r)
 
         msg_buffer = g_malloc(attr.mq_msgsize);
         do {
-            double package_start_dts;
             unsigned int package_start_ts;
 
             msg_len = mq_receive(mpd, (char*)msg_buffer, attr.mq_msgsize, NULL);
@@ -461,13 +461,13 @@ static int sd_read_packet(Resource * r)
             tr->info->mrl,
             timestamp,
             delivery,
-            ev_time() - (tr->start_time + delivery),
-            tr->start_time + delivery);
+            ev_time() - (package_start_dts + delivery),
+            package_start_dts + delivery);
 #endif
 
         mparser_buffer_write(tr,
                              timestamp,
-                             tr->start_time + delivery,
+                             package_start_dts + delivery,
                              0.0,
                              marker,
                              packet+12, msg_len-12);

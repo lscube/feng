@@ -137,15 +137,7 @@ void free_track(gpointer element, gpointer user_data)
     if (!track)
         return;
 
-    if (!bq_producer_consumers(track->producer)) {
-        // track->info->mrl is expected to be set by live only
-        if(track->info->mrl) {
-            g_mutex_lock(track->parent->srv->lock);
-            g_hash_table_remove(track->parent->srv->live_mq, track->info->mrl);
-            g_mutex_unlock(track->parent->srv->lock);
-        }
-        bq_producer_unref(track->producer);
-    }
+    bq_producer_unref(track->producer);
 
     g_free(track->info->mrl);
     g_slice_free(TrackInfo, track->info);
@@ -194,7 +186,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 
     switch (t->properties->media_source) {
     case MS_stored:
-        if( !(t->producer = bq_producer_new(g_free)) )
+        if( !(t->producer = bq_producer_new(g_free, NULL)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
         if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
             ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
@@ -206,15 +198,8 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
         break;
 
     case MS_live:
-        g_mutex_lock(r->srv->lock);
-        if(!(t->producer = g_hash_table_lookup(r->srv->live_mq, t->info->mrl)))
-            if( !(t->producer = bq_producer_new(g_free)) ) {
-                g_mutex_unlock(r->srv->lock);
-                ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
-            } else
-                g_hash_table_insert(r->srv->live_mq,
-                                    t->info->mrl, t->producer);
-        g_mutex_unlock(r->srv->lock);
+        if( !(t->producer = bq_producer_new(g_free, t->info->mrl)) )
+            ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
         break;
 
     default:
