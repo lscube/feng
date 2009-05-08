@@ -244,8 +244,21 @@ struct BufferQueue_Consumer {
     BufferQueue_Element *current_element_object;
 };
 
-static GMutex *bq_global_lock;
-static GHashTable *bq_live_mq;
+/**
+ * @brief Global lock
+ *
+ * It should be held while updating shared producers hash table
+ */
+static GMutex *bq_shared_producers_lock;
+
+/**
+ * @brief Shared Producers HashTable
+ *
+ * It holds the reference to producers that will be shared among different
+ * consumers
+ *
+ */
+static GHashTable *bq_shared_producers;
 
 /**
  *  @brief Initialize bufferque global data
@@ -253,8 +266,8 @@ static GHashTable *bq_live_mq;
 
 void bq_init()
 {
-    bq_global_lock = g_mutex_new();
-    bq_live_mq = g_hash_table_new(g_str_hash, g_str_equal);
+    bq_shared_producers_lock = g_mutex_new();
+    bq_shared_producers = g_hash_table_new(g_str_hash, g_str_equal);
 }
 
 /**
@@ -274,8 +287,8 @@ BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function,
     BufferQueue_Producer *ret = NULL;
 
     if (key) {
-        g_mutex_lock(bq_global_lock);
-        ret = g_hash_table_lookup(bq_live_mq, key);
+        g_mutex_lock(bq_shared_producers_lock);
+        ret = g_hash_table_lookup(bq_shared_producers, key);
     }
 
     if (!ret) {
@@ -291,12 +304,12 @@ BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function,
         ret->key = NULL;
         if (key) {
             ret->key = g_strdup(key);
-            g_hash_table_insert(bq_live_mq, key, ret);
+            g_hash_table_insert(bq_shared_producers, key, ret);
         }
     }
 
     if (key)
-        g_mutex_unlock(bq_global_lock);
+        g_mutex_unlock(bq_shared_producers_lock);
 
     return ret;
 }
@@ -369,9 +382,9 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
     }
 
     if(producer->key) {
-        g_mutex_lock(bq_global_lock);
-        g_hash_table_remove(bq_live_mq, producer->key);
-        g_mutex_unlock(bq_global_lock);
+        g_mutex_lock(bq_shared_producers_lock);
+        g_hash_table_remove(bq_shared_producers, producer->key);
+        g_mutex_unlock(bq_shared_producers_lock);
     }
 
     g_assert(g_atomic_int_get(&producer->stopped) == 0);
