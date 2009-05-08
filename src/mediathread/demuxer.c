@@ -185,10 +185,10 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     t->lock = g_mutex_new();
 
     t->info = g_slice_new0(TrackInfo);
-    memcpy(t->info, &info, sizeof(TrackInfo));
+    memcpy(t->info, info, sizeof(TrackInfo));
 
     t->properties = g_slice_new0(MediaProperties);
-    memcpy(t->properties, &prop_hints, sizeof(MediaProperties));
+    memcpy(t->properties, prop_hints, sizeof(MediaProperties));
 
     switch (t->properties->media_source) {
     case MS_stored:
