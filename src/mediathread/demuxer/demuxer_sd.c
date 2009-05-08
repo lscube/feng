@@ -208,6 +208,8 @@ static int sd_init(Resource * r)
     MediaProperties props_hints;
     TrackInfo trackinfo;
 
+    memset(&props_hints, 0, sizeof(MediaProperties));
+    memset(&trackinfo, 0, sizeof(TrackInfo));
 
     fnc_log(FNC_LOG_DEBUG, "[sd] SD init function");
     fd = fdopen(r->i_stream->fd, "r");
@@ -228,9 +230,6 @@ static int sd_init(Resource * r)
     do {
         int payload_type_forced = 0;
         int clock_rate_forced = 0;
-
-        memset(&props_hints, 0, sizeof(MediaProperties));
-        memset(&trackinfo, 0, sizeof(TrackInfo));
 
         props_hints.media_source = MS_live;
 
