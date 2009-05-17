@@ -49,7 +49,7 @@ AC_ARG_ENABLE(libavformat,
         enable_ffmpeg="yes")
 
 AC_CHECK_HEADERS([ev.h])
-AC_SEARCH_LIBS([ev_io_start], [ev],,
+AC_CHECK_LIB([ev], [ev_io_start],,
     [AC_MSG_ERROR([libev not found, feng requires libev])])
 
 AC_ARG_ENABLE(trace,
