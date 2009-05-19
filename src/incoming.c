@@ -106,8 +106,8 @@ static void CLEANUP_DESTRUCTOR feng_ports_cleanup()
  * @retval true Binding complete
  * @retval false Error during binding
  */
-static int feng_bind_port(feng *srv, const char *host, const char *port,
-                          specific_config *s, ev_io *listener)
+static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
+                               specific_config *s, ev_io *listener)
 {
     gboolean is_sctp = !!s->is_sctp;
     Sock *sock;
@@ -151,7 +151,6 @@ static int feng_bind_port(feng *srv, const char *host, const char *port,
 gboolean feng_bind_ports(feng *srv)
 {
     size_t i;
-    int err = 0;
     char *host = srv->srvconf.bindhost->ptr;
     char port[6] = { 0, };
 #ifndef CLEANUP_DESTRUCTORS
@@ -167,10 +166,10 @@ gboolean feng_bind_ports(feng *srv)
     listening_sockets = g_ptr_array_sized_new(srv->config_context->used);
 #endif
 
-    if ((err = feng_bind_port(srv, host, port,
+    if (!feng_bind_port(srv, host, port,
                               srv->config_storage[0],
-                              &listeners[0])))
-        return err;
+                              &listeners[0]))
+        return false;
 
    /* check for $SERVER["socket"] */
     for (i = 1; i < srv->config_context->used; i++) {
