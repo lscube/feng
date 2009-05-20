@@ -678,8 +678,10 @@ gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
     serial = producer->next_serial;
 
     if ( consumer->last_queue == producer->queue
-         && consumer->current_element_object != NULL )
+         && consumer->current_element_object != NULL ) {
+        g_assert_cmpint(serial, >, consumer->current_element_object->serial);
         serial -= consumer->current_element_object->serial;
+    }
 
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
