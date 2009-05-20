@@ -51,7 +51,7 @@ AC_ARG_ENABLE(libavformat,
 AC_CHECK_HEADERS([ev.h], [
   AC_CHECK_LIB([ev], [ev_io_start],, [have_libev=no])], [have_libev=no])
 
-AS_IF([test "x$have_libev" = "no"],
+AS_IF([test "x$have_libev" = "xno"],
       [AC_MSG_ERROR([libev not found, feng requires libev])])
 
 AC_ARG_ENABLE(trace,
