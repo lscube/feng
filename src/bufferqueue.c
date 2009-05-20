@@ -436,12 +436,6 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     /* Make sure the producer is not stopped */
     g_assert(g_atomic_int_get(&producer->stopped) == 0);
 
-    elem = g_slice_new(BufferQueue_Element);
-    elem->payload = payload;
-    elem->seen = 0;
-    elem->serial = producer->next_serial++;
-
-
     /* Check whether we have to reset the queue */
     if ( producer->reset_queue ) {
         /** @todo we should make sure that the old queue is reaped
@@ -451,6 +445,11 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
         producer->reset_queue = 0;
         producer->next_serial = 0;
     }
+
+    elem = g_slice_new(BufferQueue_Element);
+    elem->payload = payload;
+    elem->seen = 0;
+    elem->serial = producer->next_serial++;
 
     g_queue_push_tail(producer->queue, elem);
 
