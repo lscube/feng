@@ -69,11 +69,11 @@ gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
 
         TCPParams = ( Interleaved | TransportParam)+;
 
-        Streams = ";streams" .
+        Streams = ";streams=" .
             Channel%{transport.parameters.SCTP.ch_rtp = chanval;} .
             ( "-" . Channel%{transport.parameters.SCTP.ch_rtcp = chanval;} );
 
-        SCTPParams = TransportParam+;
+        SCTPParams = ( Streams | TransportParam)+;
 
         TransportUDP = ("/UDP")? %{transport.protocol = TransportUDP; }
             . UDPParams;
