@@ -49,9 +49,9 @@ AC_ARG_ENABLE(libavformat,
         enable_ffmpeg="yes")
 
 AC_CHECK_HEADERS([ev.h], [
-  AC_CHECK_LIB([ev], [ev_io_start], [have_libev=yes])])
+  AC_CHECK_LIB([ev], [ev_io_start],, [have_libev=no])], [have_libev=no])
 
-AS_IF([test "x$have_libev" != "xyes"],
+AS_IF([test "x$have_libev" = "no"],
       [AC_MSG_ERROR([libev not found, feng requires libev])])
 
 AC_ARG_ENABLE(trace,
