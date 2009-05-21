@@ -80,7 +80,7 @@ ResourceInfo *resinfo_new();
 
 typedef struct Resource {
     GMutex *lock;
-    GThreadPool *read_pool;
+    GThreadPool *fill_pool;
     InputStream *i_stream;
     struct Demuxer *demuxer;
     ResourceInfo *info;
@@ -158,7 +158,7 @@ Demuxer *find_demuxer(InputStream *i_stream);
 
 Resource *r_open(struct feng *srv, const char *inner_path);
 
-void r_read(Resource *resource, gint count);
+void r_fill(Resource *resource, BufferQueue_Consumer *consumer);
 int r_seek(Resource *resource, double time);
 
 void r_close(Resource *resource);
