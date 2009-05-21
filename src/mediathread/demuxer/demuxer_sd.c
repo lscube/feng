@@ -411,7 +411,7 @@ static int sd_init(Resource * r)
 #define FNC_LIVE_PROTOCOL_LEN 5
 
 static int sd_read_packet_track(Resource *res, Track *tr) {
-    double package_start_dts;
+    double package_start_time;
     uint32_t package_timestamp;
     double timestamp;
     double delivery;
@@ -442,7 +442,8 @@ static int sd_read_packet_track(Resource *res, Track *tr) {
     msg_buffer = g_malloc(attr.mq_msgsize);
 
     do {
-        unsigned int package_start_ts;
+        unsigned int package_start_dts;
+        unsigned int package_dts;
 
         if ( (msg_len = mq_receive(*mpd, (char*)msg_buffer,
                                    attr.mq_msgsize, NULL)) < 0 ) {
@@ -456,18 +457,20 @@ static int sd_read_packet_track(Resource *res, Track *tr) {
             return RESOURCE_OK;
         }
 
-        package_start_dts = *((double*)msg_buffer);
-        package_start_ts = *((unsigned int*)(msg_buffer+sizeof(double)*2));
+        package_start_time = *((double*)msg_buffer);
+        package_dts = *((unsigned int*)(msg_buffer+sizeof(double)));
+        package_start_dts = *((unsigned int*)(msg_buffer+sizeof(double)+sizeof(unsigned int)));
 
-        packet = msg_buffer+sizeof(double)*2+sizeof(unsigned int);
-        msg_len -= (sizeof(double)*2+sizeof(unsigned int));
+        packet = msg_buffer+sizeof(double)+sizeof(unsigned int)*2;
+        msg_len -= (sizeof(double)+sizeof(unsigned int)*2);
 
         package_timestamp = ntohl(*(uint32_t*)(packet+4));
-        delivery = (package_timestamp - package_start_ts)/((double)tr->properties->clock_rate);
-        delta = ev_time() - (package_start_dts + delivery);
+        delivery = (package_dts - package_start_dts)/((double)tr->properties->clock_rate);
+        delta = ev_time() - (package_start_time + delivery);
 
 #if 0
-        fprintf(stderr, "[%s] read %5.4f\n", tr->info->mrl, delta);
+        fprintf(stderr, "[%s] read (%5.4f) BEGIN:%5.4f START_DTS:%u DTS:%u\n",
+                tr->info->mrl, delta, package_start_time, package_start_dts, package_dts);
 #endif
     } while(delta > 1.0f);
 
@@ -475,17 +478,17 @@ static int sd_read_packet_track(Resource *res, Track *tr) {
     marker = (packet[1]>>7);
 
 #if 0
-    fprintf(stderr, "[%s] packet TS: %5.4f DELIVERY: %5.4f : %5.4f -> %5.4f\n",
+    fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
             tr->info->mrl,
             timestamp,
             delivery,
-            ev_time() - (package_start_dts + delivery),
-            package_start_dts + delivery);
+            package_start_time + delivery,
+            ev_time() - (package_start_time + delivery));
 #endif
 
     mparser_buffer_write(tr,
                          timestamp,
-                         package_start_dts + delivery,
+                         package_start_time + delivery,
                          0.0,
                          marker,
                          packet+12, msg_len-12);
