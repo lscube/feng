@@ -677,12 +677,16 @@ gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
-    serial = producer->next_serial;
+    if ( producer->reset_queue ) {
+        serial = 0;
+    } else {
+        serial = producer->next_serial;
 
-    if ( consumer->last_queue == producer->queue
-         && consumer->current_element_object != NULL ) {
-        g_assert_cmpint(serial, >, consumer->current_element_object->serial);
-        serial -= consumer->current_element_object->serial;
+        if ( consumer->last_queue == producer->queue
+             && consumer->current_element_object != NULL ) {
+            g_assert_cmpint(serial, >, consumer->current_element_object->serial);
+            serial -= consumer->current_element_object->serial;
+        }
     }
 
     /* Leave the exclusive access */
