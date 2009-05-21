@@ -110,7 +110,6 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     RTP_session *session = (RTP_session*)session_gen;
     RTSP_Range *range = (RTSP_Range*)range_gen;
     feng *srv = session->srv;
-    int i;
 
     session->range = range;
     session->start_seq = 1 + session->seq_no;
@@ -124,7 +123,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
 
     /* Prefetch frames */
-    r_read(session->track->parent, srv->srvconf.buffered_frames);
+    r_fill(session->track->parent, session->consumer);
 }
 
 /**
@@ -275,6 +274,7 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
 static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
 {
     RTP_session *session = w->data;
+    Resource *resource = session->track->parent;
     MParserBuffer *buffer = NULL;
     ev_tstamp next_time = w->offset;
     glong extra_cached_frames;
@@ -283,6 +283,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
     if (session->metadata)
         cpd_send(session, now);
 #endif
+    fprintf(stderr,"[%s] inside\n", session->track->properties->encoding_name);
 
     /* If there is no buffer, it means that either the producer
      * has been stopped (as we reached the end of stream) or that
@@ -302,27 +303,23 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
      * no extra frames we have a problem, since we're going to send
      * one packet at least.
      */
-    /** @todo It's not really correct to assume one frame per packet,
-     *        it's actually quite wrong, in both senses.
-     */
-    if ( (extra_cached_frames = bq_consumer_unseen(session->consumer)
-          - session->srv->srvconf.buffered_frames) <= 0 ) {
-        extra_cached_frames = abs(extra_cached_frames);
-
-        /* We can't leave this to zero otherwise the internal
-         * GThreadPool implementation will bail out thinking that we
-         * have a NULL pointer. */
-        if ( extra_cached_frames == 0 )
-            extra_cached_frames = 1;
-
-        r_read(session->track->parent, extra_cached_frames);
-    }
+    if (resource->eor)
+        fprintf(stderr,"[%s] end of resource %d packets to be fetched\n",
+            session->track->properties->encoding_name,
+            bq_consumer_unseen(session->consumer));
+    else
+        r_fill(session->track->parent, session->consumer);
 
     /* Get the current buffer, if there is enough data */
     if ( !(buffer = bq_consumer_get(session->consumer)) ) {
         /* We wait a bit of time to get the data but before it is
          * expired.
          */
+        if (resource->eor) {
+            fnc_log(FNC_LOG_INFO, "[rtp] Stream Finished");
+            rtcp_send_sr(session, BYE);
+            return;
+        }
         next_time += 0.01; // assumed to be enough
     } else {
         MParserBuffer *next;
