@@ -108,9 +108,12 @@ static void r_read_cb(gpointer count_p, gpointer user_data)
     case RESOURCE_OK:
         break;
     case RESOURCE_EOF:
-        fnc_log(FNC_LOG_INFO,
-                "r_read_cb: %s read_packet() end of file.",
-                resource->info->mrl);
+        if (!resource->eor) {
+            fnc_log(FNC_LOG_INFO,
+                    "r_read_cb: %s read_packet() end of file.",
+                    resource->info->mrl);
+            resource->eor = true;
+        }
         break;
     default:
         fnc_log(FNC_LOG_FATAL,

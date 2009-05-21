@@ -97,6 +97,7 @@ typedef struct Resource {
     /* Multiformat related things */
     TrackList tracks;
     int num_tracks;
+    gboolean eor;
     void *private_data; /* Demuxer private data */
     struct feng *srv;
 } Resource;
