@@ -435,9 +435,12 @@ static int sd_read_packet_track(Resource *res, Track *tr) {
 
     mq_getattr(*mpd, &attr);
 
-    /* Check if there are available packets */
-    if (!attr.mq_curmsgs)
+    /* Check if there are available packets, if it is empty flux might have recreated it */
+    if (!attr.mq_curmsgs) {
+        mq_close(*mpd);
+        *mpd = -1;
         return RESOURCE_OK;
+    }
 
     msg_buffer = g_malloc(attr.mq_msgsize);
 
