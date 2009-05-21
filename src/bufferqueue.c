@@ -635,9 +635,6 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
         expected_next = consumer->current_element_pointer->next;
     }
 
-    if ( expected_next == NULL )
-        return false;
-
     /* If there is any element at all saved, we take care of marking
      * it as seen. We don't have to check if it's non-NULL since the
      * function takes care of that. We _have_ to do this after we
@@ -648,7 +645,13 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     /* Now we have a new "next" element and we can set it properly */
     consumer->last_queue = producer->queue;
     consumer->current_element_pointer = expected_next;
-    consumer->current_element_object = (BufferQueue_Element *)consumer->current_element_pointer->data;
+    if ( expected_next == NULL ) {
+        consumer->current_element_object = NULL;
+        return false;
+    }
+
+    consumer->current_element_object =
+        (BufferQueue_Element *)consumer->current_element_pointer->data;
 
     return true;
 }
@@ -757,7 +760,8 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
         goto end;
 
     /* Get the payload of the element */
-    ret = consumer->current_element_object->payload;
+    if (consumer->current_element_object)
+        ret = consumer->current_element_object->payload;
 
  end:
     /* Leave the exclusive access */
