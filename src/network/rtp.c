@@ -337,7 +337,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
             next = bq_consumer_get(session->consumer);
             if(delivery != next->delivery) {
                 if (session->track->properties->media_source == MS_live)
-                    next_time = next->delivery + 0.5;
+                    next_time = next->delivery + (ev_now(loop) - delivery);
                 else
                     next_time = session->range->playback_time -
                                 session->range->begin_time +
