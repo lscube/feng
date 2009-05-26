@@ -63,7 +63,7 @@ AC_ARG_ENABLE(metadata,
     enable_metadata="no")
 
 dnl Checks used by feng itself
-AC_FUNC_MMAP dnl also by conf/*
+AC_CHECK_FUNCS([mmap])
 AC_CHECK_HEADERS([syslog.h])
 
 AC_SEARCH_LIBS([clock_gettime], [rt],
