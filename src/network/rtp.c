@@ -123,7 +123,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
 
     /* Prefetch frames */
-    r_fill(session->track->parent, session->consumer);
+    r_read(session->track->parent, srv->srvconf.buffered_frames);
 }
 
 /**
@@ -303,12 +303,23 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
      * no extra frames we have a problem, since we're going to send
      * one packet at least.
      */
+    /** @todo It's not really correct to assume one frame per packet,
+     *        it's actually quite wrong, in both senses.
+     */
     if (resource->eor)
         fprintf(stderr,"[%s] end of resource %d packets to be fetched\n",
             session->track->properties->encoding_name,
             bq_consumer_unseen(session->consumer));
-    else
-        r_fill(session->track->parent, session->consumer);
+
+
+    if (!resource->eor && (extra_cached_frames =
+            session->srv->srvconf.buffered_frames -
+            bq_consumer_unseen(session->consumer)) > 0 ) {
+        fprintf(stderr,"[%s] %d packets to be fetched\n",
+                session->track->properties->encoding_name,
+                extra_cached_frames);
+        r_read(resource, extra_cached_frames);
+    }
 
     /* Get the current buffer, if there is enough data */
     if ( !(buffer = bq_consumer_get(session->consumer)) ) {

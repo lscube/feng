@@ -59,8 +59,8 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
 
     /* Call this first, so that all the reading threads will stop
        before continuing to free resources */
-    if (resource->fill_pool)
-        g_thread_pool_free(resource->fill_pool, true, true);
+    if (resource->read_pool)
+        g_thread_pool_free(resource->read_pool, true, true);
 
     if (resource->lock)
         g_mutex_free(resource->lock);
@@ -80,55 +80,47 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
 }
 
 /**
- * @brief Callback function to fill a track from a resource
+ * @brief Callback function to read from a resource
  *
- * @param consumer_p The consumer to fill with data
+ * @param count_p The number of iterations to execute for reading
  * @param user_data The resource to read data from
  *
  * This function is used to read more data from the resource into the
- * track's buffer, to make sure there is enough data to send to the
+ * buffers, to make sure that there is enough data to send to the
  * clients.
  *
  * @internal This function is used to initialise @ref
  *           Resource::read_pool
  */
-static void r_fill_cb(gpointer consumer_p, gpointer user_data)
+static void r_read_cb(gpointer count_p, gpointer user_data)
 {
     Resource *resource = (Resource*)user_data;
-    BufferQueue_Consumer *consumer = (BufferQueue_Consumer*)consumer_p;
+    gint count = GPOINTER_TO_INT(count_p);
+    int result;
 
     g_mutex_lock(resource->lock);
 
-    while ( (bq_consumer_unseen(consumer) < resource->srv->srvconf.buffered_frames) ) {
-        fprintf(stderr, "calling read_packet for %p[%s] (%u/%d) -> ",
-                resource, resource->info->mrl,
-                bq_consumer_unseen(consumer),
-                resource->srv->srvconf.buffered_frames);
+    while (
+        (result = resource->demuxer->read_packet(resource)) == RESOURCE_OK &&
+            --count > 0 );
 
-        switch(resource->demuxer->read_packet(resource)) {
-        case RESOURCE_OK:
-            break;
-        case RESOURCE_EOF:
-            if (!resource->eor) {
-                fnc_log(FNC_LOG_INFO,
-                        "r_read_cb: %s read_packet() end of file.",
-                        resource->info->mrl);
-                resource->eor = true;
-            }
-            break;
-        default:
-            fnc_log(FNC_LOG_FATAL,
-                    "r_fill_cb: %s read_packet() error.",
+    switch ( result ) {
+    case RESOURCE_OK:
+        break;
+    case RESOURCE_EOF:
+        if (!resource->eor) {
+            fnc_log(FNC_LOG_INFO,
+                    "r_read_cb: %s read_packet() end of file.",
                     resource->info->mrl);
-            goto stop;
+            resource->eor = true;
         }
-
-        fprintf(stderr, "(%u/%d)\n",
-                bq_consumer_unseen(consumer),
-                resource->srv->srvconf.buffered_frames);
+        break;
+    default:
+        fnc_log(FNC_LOG_FATAL,
+                "r_read_cb: %s read_packet() error.",
+                resource->info->mrl);
     }
 
- stop:
     g_mutex_unlock(resource->lock);
 }
 
@@ -187,8 +179,8 @@ Resource *r_open(struct feng *srv, const char *inner_path)
     r->lock = g_mutex_new();
 
     /* Create the new resource pool for the read requests */
-    r->fill_pool = g_thread_pool_new(r_fill_cb, r,
-                                     1, false, NULL);
+    r->read_pool = g_thread_pool_new(r_read_cb, r,
+                                     -1, false, NULL);
 
 #ifdef HAVE_METADATA
     cpd_find_request(srv, r, filename);
@@ -198,24 +190,23 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 }
 
 /**
- * @brief Request filling the resource with data
+ * @brief Request reading data from a resource
  *
  * @param resource The resource to read from
- * @param consumer The consumer to fill with data
+ * @param count The number of iteration to read
  *
- * This function pushes read requests on the threadpool, they will
- * take care of filling the track with data, asynchronously.
+ * This function only pushes a read request on the threadpool of the
+ * resource; the actual read will happen asynchronously.
  *
- * @see r_fill_cb
+ * @see r_read_cb
  */
-void r_fill(Resource *resource, BufferQueue_Consumer *consumer)
+void r_read(Resource *resource, gint count)
 {
     g_mutex_lock(resource->lock);
 
-    if ( !resource->eor )
-        g_thread_pool_push(resource->fill_pool,
-                           consumer,
-                           NULL);
+    g_thread_pool_push(resource->read_pool,
+                       GINT_TO_POINTER(count),
+                       NULL);
 
     g_mutex_unlock(resource->lock);
 }
