@@ -261,6 +261,7 @@ static feng *feng_alloc(void)
 static void feng_free(feng* srv)
 {
 #ifndef NDEBUG
+    unsigned int i;
 
 #define CLEAN(x) \
     buffer_free(srv->srvconf.x)
@@ -270,6 +271,21 @@ static void feng_free(feng* srv)
     CLEAN(groupname);
 #undef CLEAN
 
+    for(i = 0; i < srv->config_context->used; i++) {
+        buffer_free(srv->config_storage[i].document_root);
+        buffer_free(srv->config_storage[i].server_name);
+        buffer_free(srv->config_storage[i].ssl_pemfile);
+        buffer_free(srv->config_storage[i].ssl_ca_file);
+        buffer_free(srv->config_storage[i].ssl_cipher_list);
+
+#ifdef HAVE_METADATA
+        buffer_free(srv->config_storage[i].cpd_port);
+        buffer_free(srv->config_storage[i].cpd_db_host);
+        buffer_free(srv->config_storage[i].cpd_db_user);
+        buffer_free(srv->config_storage[i].cpd_db_password);
+        buffer_free(srv->config_storage[i].cpd_db_name);
+#endif
+    }
     free(srv->config_storage);
 
 #define CLEAN(x) \
