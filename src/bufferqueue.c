@@ -443,6 +443,9 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
         /** @todo we should make sure that the old queue is reaped
          * before continuing, but we can do that later */
 
+        if ( producer->queue )
+            g_queue_free(producer->queue);
+
         producer->queue = g_queue_new();
         producer->reset_queue = 0;
         producer->next_serial = 0;

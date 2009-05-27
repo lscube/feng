@@ -67,6 +67,7 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
     istream_close(resource->i_stream);
 
     g_free(resource->info->mrl);
+    g_free(resource->info->name);
     g_slice_free(ResourceInfo, resource->info);
 
     resource->info = NULL;

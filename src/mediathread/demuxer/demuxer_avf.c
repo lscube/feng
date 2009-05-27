@@ -335,7 +335,7 @@ static int avf_uninit(Resource * r)
             priv->avfc = NULL;
         }
         url_fclose(priv->pb);
-        av_freep(priv);
+        av_freep(&priv);
         r->private_data = NULL;
     }
 
