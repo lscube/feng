@@ -100,7 +100,7 @@ RTSP_Response *rtsp_response_new(const RTSP_Request *req, RTSP_ResponseCode code
     g_hash_table_insert(response->headers,
                         g_strdup(eris_hdr_server), g_strdup(server_header));
     g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_date), g_strdup(rtsp_timestamp()));
+                        g_strdup(eris_hdr_date), rtsp_timestamp());
 
     if ( (hdr = g_hash_table_lookup(req->headers, eris_hdr_cseq)) )
         g_hash_table_insert(response->headers,
