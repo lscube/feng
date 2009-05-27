@@ -32,6 +32,28 @@
 static int start_port; //!< initial rtp port
 static int *port_pool; //!< list of allocated ports
 
+#ifdef CLEANUP_DESTRUCTOR
+/**
+ * @brief Cleanup funciton for the @ref port_pool array
+ *
+ * This function is used to free the @ref port_pool array that was
+ * allocated in @ref RTP_port_pool_init; note that this function is
+ * called automatically as a destructor when the compiler supports it,
+ * and debug is not disabled.
+ *
+ * This function is unnecessary on production code, since the memory
+ * would be freed only at the end of execution, when the resources
+ * would be freed anyway.
+ *
+ * @note Part of the cleanup destructors code, not compiled in
+ *       production use.
+ */
+static void CLEANUP_DESTRUCTOR rtp_port_cleanup()
+{
+    g_free(port_pool);
+}
+#endif
+
 /**
  * Initializes the pool of ports and the initial port from the given one
  * @param srv The server instance in use (for ONE_FORK_MAX_CONNECTION)
