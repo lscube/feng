@@ -527,6 +527,12 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     if ( elem == NULL )
         return;
 
+    /* Only deal with the element if it's still the one used by the
+     * producer.
+     */
+    if ( producer->queue != consumer->last_queue )
+        return;
+
     /* If we're the last one to see the element, we need to take care
      * of removing and freeing it. */
     if ( ++elem->seen < producer->consumers )
@@ -536,12 +542,6 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
 
     /* Make sure to lose reference to it */
     consumer->current_element_object = NULL;
-
-    /* Only remove the element from the queue if it's still the
-     * one used by the producer.
-     */
-    if ( producer->queue != consumer->last_queue )
-        return;
 
     /* We can only remove the head of the queue, if we're doing
      * anything else, something is funky.
@@ -643,14 +643,14 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
         expected_next = producer->queue->head;
     } else if ( consumer->current_element_pointer ) {
         expected_next = consumer->current_element_pointer->next;
-    }
 
-    /* If there is any element at all saved, we take care of marking
-     * it as seen. We don't have to check if it's non-NULL since the
-     * function takes care of that. We _have_ to do this after we
-     * found the new "next" pointer.
-     */
-    bq_consumer_elem_unref(consumer);
+        /* If there is any element at all saved, we take care of marking
+         * it as seen. We don't have to check if it's non-NULL since the
+         * function takes care of that. We _have_ to do this after we
+         * found the new "next" pointer.
+         */
+        bq_consumer_elem_unref(consumer);
+    }
 
     /* Now we have a new "next" element and we can set it properly */
     consumer->last_queue = producer->queue;
