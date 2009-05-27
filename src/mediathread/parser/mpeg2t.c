@@ -283,7 +283,7 @@ static int mp2t_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         // dst_len remains unchanged,
         // the return value is either EOF or the size
         ret = mp2t_packetize(dst, &dst_len, data, len, tr->properties,
-                  tr->parser_private);
+                  tr->private_data);
         if (ret >= 0) {
             mparser_buffer_write(tr,
                                  tr->properties->pts,

@@ -194,7 +194,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
             ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
         if ( !(t->parser = mparser_find(t->properties->encoding_name)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
-        if (t->parser->init(t->properties, &t->parser_private))
+        if (t->parser->init(t->properties, &t->private_data))
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
                             t->properties->encoding_name);
         break;

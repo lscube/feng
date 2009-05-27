@@ -196,7 +196,7 @@ static int vorbis_parse(void *track, uint8_t *data, long len, uint8_t *extradata
 {
     //XXX handle the last packet on EOF
     Track *tr = (Track *)track;
-    vorbis_priv *priv = tr->parser_private;
+    vorbis_priv *priv = tr->private_data;
     int frag, off = 0;
     uint32_t mtu = DEFAULT_MTU;  //FIXME get it from SETUP
     uint32_t payload = mtu - XIPH_HEADER_SIZE;

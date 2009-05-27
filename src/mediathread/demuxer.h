@@ -125,8 +125,7 @@ typedef struct Track {
     BufferQueue_Producer *producer;
     MediaProperties *properties; /* track properties */
     Resource *parent;
-    void *private_data;
-    void *parser_private; /* private data of media parser */
+    void *private_data; /* private data of media parser */
 } Track;
 
 typedef struct {
