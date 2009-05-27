@@ -137,6 +137,8 @@ void free_track(gpointer element, gpointer user_data)
     if (!track)
         return;
 
+    g_mutex_free(track->lock);
+
     bq_producer_unref(track->producer);
 
     g_free(track->info->mrl);

@@ -352,6 +352,8 @@ static void bq_producer_free_internal(BufferQueue_Producer *producer) {
     if ( producer->key )
         g_free(producer->key);
 
+    g_cond_free(producer->last_consumer);
+
     if ( producer->queue ) {
         /* Destroy elements and the queue */
         g_queue_foreach(producer->queue,
