@@ -113,17 +113,6 @@ static void free_sdp_field(sdp_field *sdp, void *unused)
     g_free(sdp);
 }
 
-static void properties_free(void *properties)
-{
-    MediaProperties *props = properties;
-
-    if (!props)
-        return;
-
-    g_list_foreach(props->sdp_private, (GFunc)free_sdp_field, NULL);
-}
-
-
 /**
  * @brief Frees the resources of a Track object
  *
@@ -144,7 +133,11 @@ void free_track(gpointer element, gpointer user_data)
     g_free(track->info->mrl);
     g_slice_free(TrackInfo, track->info);
 
-    g_slice_free(MediaProperties, track->properties);
+    if ( track->properties ) {
+        g_list_foreach(track->properties->sdp_private, (GFunc)free_sdp_field, NULL);
+        g_list_free(track->properties->sdp_private);
+        g_slice_free(MediaProperties, track->properties);
+    }
 
     mparser_unreg(track->parser, track->private_data);
     istream_close(track->i_stream);
