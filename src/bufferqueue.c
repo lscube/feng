@@ -443,8 +443,13 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
         /** @todo we should make sure that the old queue is reaped
          * before continuing, but we can do that later */
 
-        if ( producer->queue )
+        if ( producer->queue ) {
+            g_queue_foreach(producer->queue,
+                            bq_element_free_internal,
+                            producer->free_function);
+            g_queue_clear(producer->queue);
             g_queue_free(producer->queue);
+        }
 
         producer->queue = g_queue_new();
         producer->reset_queue = 0;
@@ -764,7 +769,8 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     /* If we don't have a queue yet, like for the first read, “move
      * next” (or rather first).
      */
-    if ( consumer->last_queue == NULL &&
+    if ( ( consumer->last_queue == NULL ||
+           consumer->last_queue != producer->queue ) &&
          !bq_consumer_move_internal(consumer) )
         goto end;
 
