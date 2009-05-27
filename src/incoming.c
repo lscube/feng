@@ -167,14 +167,14 @@ gboolean feng_bind_ports(feng *srv)
 #endif
 
     if (!feng_bind_port(srv, host, port,
-                              srv->config_storage[0],
+                              &srv->config_storage[0],
                               &listeners[0]))
         return false;
 
    /* check for $SERVER["socket"] */
     for (i = 1; i < srv->config_context->used; i++) {
         data_config *dc = (data_config *)srv->config_context->data[i];
-        specific_config *s = srv->config_storage[i];
+        specific_config *s = &srv->config_storage[i];
         char *port, *host;
 
         /* not our stage */

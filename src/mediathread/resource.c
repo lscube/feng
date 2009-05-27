@@ -141,7 +141,7 @@ Resource *r_open(struct feng *srv, const char *inner_path)
     Demuxer *dmx;
     InputStream *i_stream;
     gchar *mrl = g_strjoin ("/",
-                            srv->config_storage[0]->document_root->ptr,
+                            srv->config_storage[0].document_root->ptr,
                             inner_path,
                             NULL);
 

@@ -270,6 +270,8 @@ static void feng_free(feng* srv)
     CLEAN(groupname);
 #undef CLEAN
 
+    free(srv->config_storage);
+
 #define CLEAN(x) \
     array_free(srv->x)
     CLEAN(config_context);

@@ -117,15 +117,13 @@ static int config_insert(server *srv) {
         { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
     };
 
-    srv->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+    srv->config_storage = calloc(srv->config_context->used, sizeof(specific_config));
 
     assert(srv->config_storage);
 
     for (i = 0; i < srv->config_context->used; i++) {
-        specific_config *s;
+        specific_config *s = &srv->config_storage[i];
 
-        s = calloc(1, sizeof(specific_config));
-        assert(s);
         s->document_root = buffer_init();
         s->server_name   = buffer_init();
         s->ssl_pemfile   = buffer_init();
@@ -183,8 +181,6 @@ static int config_insert(server *srv) {
 #endif
 	// Metadata end
 
-        srv->config_storage[i] = s;
-
         if (0 != (ret = config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv))) {
             break;
         }
@@ -198,7 +194,7 @@ static int config_insert(server *srv) {
 #if 0
 #define PATCH(x) con->conf.x = s->x
 int config_setup_connection(server *srv, connection *con) {
-    specific_config *s = srv->config_storage[0];
+    specific_config *s = &srv->config_storage[0];
 
     PATCH(document_root);
 #ifdef HAVE_LSTAT
@@ -228,7 +224,7 @@ int config_patch_connection(server *srv, connection *con, comp_key_t comp) {
     /* skip the first, the global context */
     for (i = 1; i < srv->config_context->used; i++) {
         data_config *dc = (data_config *)srv->config_context->data[i];
-        specific_config *s = srv->config_storage[i];
+        specific_config *s = &srv->config_storage[i];
 
         /* not our stage */
         if (comp != dc->comp) continue;
@@ -1025,7 +1021,7 @@ int config_read(server *srv, const char *fn) {
  */
 
 int config_set_defaults(server *srv) {
-    specific_config *s = srv->config_storage[0];
+    specific_config *s = &srv->config_storage[0];
 #if 0
     size_t i;
     struct stat st1, st2;

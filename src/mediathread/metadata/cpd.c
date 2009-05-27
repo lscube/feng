@@ -51,7 +51,7 @@ G_LOCK_DEFINE_STATIC (g_sending_packet);
 
 void cpd_init(feng *srv) {
 
-    specific_config *s = srv->config_storage[0];
+    specific_config *s = &srv->config_storage[0];
 
     if (s->cpd_port->ptr!=NULL) {
 	port = s->cpd_port->ptr;

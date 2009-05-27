@@ -49,7 +49,7 @@ typedef struct feng {
     array *config_touched;
 
     array *config_context;
-    specific_config **config_storage;
+    specific_config *config_storage;
 
     server_config srvconf;
 
