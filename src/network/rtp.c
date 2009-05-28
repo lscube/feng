@@ -283,8 +283,6 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
     if (session->metadata)
         cpd_send(session, now);
 #endif
-    fprintf(stderr,"[%s] inside\n", session->track->properties->encoding_name);
-
     /* If there is no buffer, it means that either the producer
      * has been stopped (as we reached the end of stream) or that
      * there is no data for the consumer to read. If that's the
@@ -348,7 +346,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
             next = bq_consumer_get(session->consumer);
             if(delivery != next->delivery) {
                 if (session->track->properties->media_source == MS_live)
-                    next_time = next->delivery + (ev_now(loop) - delivery);
+                    next_time += next->delivery - delivery;
                 else
                     next_time = session->range->playback_time -
                                 session->range->begin_time +
@@ -359,7 +357,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
                 next_time += duration;
         }
 
-#if 0
+#if 1
         fprintf(stderr,
             "[%s] Now: %5.4f, cur %5.4f[%5.4f][%5.4f], next %5.4f %s\n",
             session->track->properties->encoding_name,
