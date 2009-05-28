@@ -23,6 +23,7 @@
 #include "bufferqueue.h"
 
 #include <stdbool.h>
+#include <stdio.h>
 
 /**
  * @defgroup bufferqueue Buffer Queue
@@ -123,16 +124,6 @@ struct BufferQueue_Producer {
     GQueue *queue;
 
     /**
-     * @brief Next serial to use for the added elements
-     *
-     * This is the next value for @ref BufferQueue_Element::serial; it
-     * starts from zero and it's reset to zero each time the queue is
-     * reset; each element added to the queue gets this value before
-     * getting incremented; it is used by @ref bq_consumer_unseen().
-     */
-    gulong next_serial;
-
-    /**
      * @brief Function to free elements
      *
      * Since each element in the queue is freed once all the consumers
@@ -144,6 +135,24 @@ struct BufferQueue_Producer {
      * itself.
      */
     GDestroyNotify free_function;
+
+    /**
+     * @brief Next serial to use for the added elements
+     *
+     * This is the next value for @ref BufferQueue_Element::serial; it
+     * starts from zero and it's reset to zero each time the queue is
+     * reset; each element added to the queue gets this value before
+     * getting incremented; it is used by @ref bq_consumer_unseen().
+     */
+    gulong next_serial;
+
+    /**
+     * @brief Serial number for the queue
+     *
+     * This is the serial number of the queue inside the producer,
+     * starts from zero and is increased each time the queue is reset.
+     */
+    gulong queue_serial;
 
     /**
      * @brief Count of registered consumers
@@ -180,17 +189,6 @@ struct BufferQueue_Producer {
     gint stopped;
 
     /**
-     * @brief Reset Queue flag
-     *
-     * When this value is set to 1, the producer will change the queue
-     * at the first time a new buffer is supposed to be added. This
-     * allows for an atomic switch of the queue.
-     *
-     * @note gint is used to be able to use g_atomic_int_get function.
-     */
-    gint reset_queue;
-
-    /**
      * @brief Unique id for shared producer
      *
      * @todo switch to a numeric hash
@@ -213,16 +211,18 @@ struct BufferQueue_Consumer {
      */
     BufferQueue_Producer *producer;
 
+
     /**
-     * @brief Last used producer queue
+     * @brief Serial number of the queue
      *
-     * Each producer can drop its queue and create a new one, for
-     * instance if there is a discontinuity of any kind in the
-     * produced stream. For this reason, the consumer needs to track
-     * whether its references are still valid or not, by checking the
-     * last used queue and the current one.
+     * This value is the “serial number” of the producer's queue,
+     * which increases each time the producer generates a new queue.
+     *
+     * This is taken, at each move, from @ref
+     * BufferQueue_Producer::queue_serial, and is used by the
+     * consumer's function to ensure no old data is used.
      */
-    GQueue *last_queue;
+    gulong queue_serial;
 
     /**
      * @brief Pointer to the current element in the list
@@ -292,20 +292,18 @@ BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function,
     }
 
     if (!ret) {
-        ret = g_slice_new(BufferQueue_Producer);
+        ret = g_slice_new0(BufferQueue_Producer);
 
         ret->lock = g_mutex_new();
-        ret->queue = NULL;
         ret->free_function = free_function;
-        ret->consumers = 0;
         ret->last_consumer = g_cond_new();
-        ret->stopped = 0;
-        ret->reset_queue = 1;
-        ret->key = NULL;
+
         if (key) {
             ret->key = g_strdup(key);
             g_hash_table_insert(bq_shared_producers, key, ret);
         }
+
+        bq_producer_reset_queue(ret);
     }
 
     if (key)
@@ -411,8 +409,25 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
  * worry about getting old buffers.
  */
 void bq_producer_reset_queue(BufferQueue_Producer *producer) {
+    /* Ensure we have the exclusive access */
+    g_mutex_lock(producer->lock);
+
     g_assert(!producer->stopped);
-    g_atomic_int_set(&producer->reset_queue, 1);
+
+    if ( producer->queue ) {
+        g_queue_foreach(producer->queue,
+                        bq_element_free_internal,
+                        producer->free_function);
+        g_queue_clear(producer->queue);
+        g_queue_free(producer->queue);
+    }
+
+    producer->queue = g_queue_new();
+    producer->queue_serial++;
+    producer->next_serial = 0;
+
+    /* Leave the exclusive access */
+    g_mutex_unlock(producer->lock);
 }
 
 /**
@@ -432,34 +447,21 @@ void bq_producer_reset_queue(BufferQueue_Producer *producer) {
  */
 void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     BufferQueue_Element *elem;
+
+    g_assert(payload != NULL);
+
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
     /* Make sure the producer is not stopped */
     g_assert(g_atomic_int_get(&producer->stopped) == 0);
 
-    /* Check whether we have to reset the queue */
-    if ( producer->reset_queue ) {
-        /** @todo we should make sure that the old queue is reaped
-         * before continuing, but we can do that later */
-
-        if ( producer->queue ) {
-            g_queue_foreach(producer->queue,
-                            bq_element_free_internal,
-                            producer->free_function);
-            g_queue_clear(producer->queue);
-            g_queue_free(producer->queue);
-        }
-
-        producer->queue = g_queue_new();
-        producer->reset_queue = 0;
-        producer->next_serial = 0;
-    }
-
     elem = g_slice_new(BufferQueue_Element);
     elem->payload = payload;
     elem->seen = 0;
     elem->serial = producer->next_serial++;
+
+    g_assert_cmpint(producer->next_serial, !=, 0);
 
     g_queue_push_tail(producer->queue, elem);
 
@@ -489,7 +491,7 @@ BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
-    ret = g_slice_new(BufferQueue_Consumer);
+    ret = g_slice_new0(BufferQueue_Consumer);
 
     /* Make sure we don't overflow the consumers count; while this
      * case is most likely just hypothetical, it doesn't hurt to be
@@ -500,9 +502,6 @@ BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
     producer->consumers++;
 
     ret->producer = producer;
-    ret->last_queue = NULL;
-    ret->current_element_pointer = NULL;
-    ret->current_element_object = NULL;
 
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
@@ -530,7 +529,7 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     /* Only deal with the element if it's still the one used by the
      * producer.
      */
-    if ( producer->queue != consumer->last_queue )
+    if ( producer->queue_serial != consumer->queue_serial )
         return;
 
     /* If we're the last one to see the element, we need to take care
@@ -632,13 +631,14 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     GList *expected_next = NULL;
 
-    if ( consumer->last_queue != producer->queue ) {
+    if ( producer->queue_serial != consumer->queue_serial ) {
         /* If the last used queue does not correspond to the current
          * producer's queue, we have to take the head of the new
          * queue.
          *
-         * This also hits at the first request, since the last_queue
-         * will be NULL.
+         * This also hits at the first request, since the local
+         * queue_serial will be zero (while the first queue gets
+         * serial 1).
          */
         expected_next = producer->queue->head;
     } else if ( consumer->current_element_pointer ) {
@@ -653,7 +653,7 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     }
 
     /* Now we have a new "next" element and we can set it properly */
-    consumer->last_queue = producer->queue;
+    consumer->queue_serial = producer->queue_serial;
     consumer->current_element_pointer = expected_next;
     if ( expected_next == NULL ) {
         consumer->current_element_object = NULL;
@@ -679,7 +679,7 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
  */
 gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
-    gulong serial;
+    gulong unseen;
 
     if ( g_atomic_int_get(&producer->stopped) )
         return 0;
@@ -687,22 +687,21 @@ gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
-    if ( producer->reset_queue ) {
-        serial = 0;
+    if ( consumer->queue_serial != producer->queue_serial ) {
+        unseen = producer->next_serial;
     } else {
-        serial = producer->next_serial;
+        unseen = producer->next_serial;
 
-        if ( consumer->last_queue == producer->queue
-             && consumer->current_element_object != NULL ) {
-            g_assert_cmpint(serial, >, consumer->current_element_object->serial);
-            serial -= consumer->current_element_object->serial;
+        if ( consumer->current_element_object != NULL ) {
+            g_assert_cmpint(unseen, >, consumer->current_element_object->serial);
+            unseen -= consumer->current_element_object->serial;
         }
     }
 
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
 
-    return serial;
+    return unseen;
 }
 
 /**
@@ -769,10 +768,12 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     /* If we don't have a queue yet, like for the first read, “move
      * next” (or rather first).
      */
-    if ( ( consumer->last_queue == NULL ||
-           consumer->last_queue != producer->queue ) &&
-         !bq_consumer_move_internal(consumer) )
-        goto end;
+    if ( consumer->queue_serial != producer->queue_serial ||
+         consumer->current_element_object == NULL ) {
+        if ( !bq_consumer_move_internal(consumer) ) {
+            goto end;
+        }
+    }
 
     /* Get the payload of the element */
     if (consumer->current_element_object)

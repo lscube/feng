@@ -284,7 +284,11 @@ static void r_track_producer_reset_queue(gpointer element, gpointer user_data) {
 int r_seek(Resource *resource, double time) {
     int res;
 
+    while ( g_thread_pool_unprocessed(resource->read_pool) > 0 )
+        g_thread_yield();
+
     g_mutex_lock(resource->lock);
+
     res = resource->demuxer->seek(resource, time);
 
     g_list_foreach(resource->tracks, r_track_producer_reset_queue, NULL);
