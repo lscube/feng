@@ -223,8 +223,10 @@ static void rtp_session_pause(gpointer session_gen, gpointer user_data) {
 
     /* We should assert its presence, we cannot pause a non-running
      * session! */
-    if (session->fill_pool)
+    if (session->fill_pool) {
         g_thread_pool_free(session->fill_pool, true, true);
+        session->fill_pool = NULL;
+    }
 
     ev_periodic_stop(session->srv->loop, &session->transport.rtp_writer);
 }
