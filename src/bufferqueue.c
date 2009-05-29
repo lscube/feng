@@ -631,7 +631,8 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     GList *expected_next = NULL;
 
-    if ( producer->queue_serial != consumer->queue_serial ) {
+    if ( (producer->queue_serial != consumer->queue_serial) ||
+         (!consumer->current_element_pointer)  ) {
         /* If the last used queue does not correspond to the current
          * producer's queue, we have to take the head of the new
          * queue.
@@ -695,6 +696,8 @@ gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
         if ( consumer->current_element_object != NULL ) {
             g_assert_cmpint(unseen, >, consumer->current_element_object->serial);
             unseen -= consumer->current_element_object->serial;
+        } else {
+            unseen = 0;
         }
     }
 
