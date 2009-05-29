@@ -57,11 +57,6 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
     if (!resource)
         return;
 
-    /* Call this first, so that all the reading threads will stop
-       before continuing to free resources */
-    if (resource->fill_pool)
-        g_thread_pool_free(resource->fill_pool, true, true);
-
     if (resource->lock)
         g_mutex_free(resource->lock);
     istream_close(resource->i_stream);
@@ -78,59 +73,6 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
         g_list_free(resource->tracks);
     }
     g_slice_free(Resource, resource);
-}
-
-/**
- * @brief Callback function to fill a track from a resource
- *
- * @param consumer_p The consumer to fill with data
- * @param user_data The resource to read data from
- *
- * This function is used to read more data from the resource into the
- * track's buffer, to make sure there is enough data to send to the
- * clients.
- *
- * @internal This function is used to initialise @ref
- *           Resource::read_pool
- */
-static void r_fill_cb(gpointer consumer_p, gpointer user_data)
-{
-    Resource *resource = (Resource*)user_data;
-    BufferQueue_Consumer *consumer = (BufferQueue_Consumer*)consumer_p;
-
-    g_mutex_lock(resource->lock);
-
-    while ( (bq_consumer_unseen(consumer) < resource->srv->srvconf.buffered_frames) ) {
-        fprintf(stderr, "calling read_packet for %p[%s] (%u/%d) -> ",
-                resource, resource->info->mrl,
-                bq_consumer_unseen(consumer),
-                resource->srv->srvconf.buffered_frames);
-
-        switch(resource->demuxer->read_packet(resource)) {
-        case RESOURCE_OK:
-            break;
-        case RESOURCE_EOF:
-            if (!resource->eor) {
-                fnc_log(FNC_LOG_INFO,
-                        "r_read_cb: %s read_packet() end of file.",
-                        resource->info->mrl);
-                resource->eor = true;
-            }
-            break;
-        default:
-            fnc_log(FNC_LOG_FATAL,
-                    "r_fill_cb: %s read_packet() error.",
-                    resource->info->mrl);
-            goto stop;
-        }
-
-        fprintf(stderr, "(%u/%d)\n",
-                bq_consumer_unseen(consumer),
-                resource->srv->srvconf.buffered_frames);
-    }
-
- stop:
-    g_mutex_unlock(resource->lock);
 }
 
 /**
@@ -187,38 +129,11 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 
     r->lock = g_mutex_new();
 
-    /* Create the new resource pool for the read requests */
-    r->fill_pool = g_thread_pool_new(r_fill_cb, r,
-                                     1, false, NULL);
-
 #ifdef HAVE_METADATA
     cpd_find_request(srv, r, filename);
 #endif
 
     return r;
-}
-
-/**
- * @brief Request filling the resource with data
- *
- * @param resource The resource to read from
- * @param consumer The consumer to fill with data
- *
- * This function pushes read requests on the threadpool, they will
- * take care of filling the track with data, asynchronously.
- *
- * @see r_fill_cb
- */
-void r_fill(Resource *resource, BufferQueue_Consumer *consumer)
-{
-    g_mutex_lock(resource->lock);
-
-    if ( !resource->eor )
-        g_thread_pool_push(resource->fill_pool,
-                           consumer,
-                           NULL);
-
-    g_mutex_unlock(resource->lock);
 }
 
 /**
@@ -293,9 +208,6 @@ static void r_track_producer_reset_queue(gpointer element, gpointer user_data) {
 int r_seek(Resource *resource, double time) {
     int res;
 
-    while ( g_thread_pool_unprocessed(resource->read_pool) > 0 )
-        g_thread_yield();
-
     g_mutex_lock(resource->lock);
 
     res = resource->demuxer->seek(resource, time);
@@ -305,6 +217,42 @@ int r_seek(Resource *resource, double time) {
     g_mutex_unlock(resource->lock);
 
     return res;
+}
+
+/**
+ * @brief Read data from a resource (unlocked)
+ *
+ * @param resouce The resource to read from
+ *
+ * @return The same return value as read_packet
+ */
+int r_read(Resource *resource)
+{
+    int ret;
+
+    g_mutex_lock(resource->lock);
+
+    switch( (ret = resource->demuxer->read_packet(resource)) ) {
+    case RESOURCE_OK:
+        break;
+    case RESOURCE_EOF:
+        if (!resource->eor) {
+            fnc_log(FNC_LOG_INFO,
+                    "r_read_unlocked: %s read_packet() end of file.",
+                    resource->info->mrl);
+            resource->eor = true;
+        }
+        break;
+    default:
+        fnc_log(FNC_LOG_FATAL,
+                "r_read_unlocked: %s read_packet() error.",
+                resource->info->mrl);
+        break;
+    }
+
+    g_mutex_unlock(resource->lock);
+
+    return ret;
 }
 
 /**

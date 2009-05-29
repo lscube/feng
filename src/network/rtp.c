@@ -65,6 +65,14 @@ static void rtp_session_free(gpointer session_gen, gpointer unused)
 {
     RTP_session *session = (RTP_session*)session_gen;
 
+    /* Call this first, so that all the reading thread will stop
+     * before continuing to free resources; another way should be to
+     * ensure that we're paused before doing this but doesn't matter
+     * now.
+     */
+    if (session->fill_pool)
+        g_thread_pool_free(session->fill_pool, true, true);
+
     rtp_transport_close(session);
 
     /* Remove the consumer */
@@ -86,6 +94,60 @@ static void rtp_session_free(gpointer session_gen, gpointer unused)
 void rtp_session_gslist_free(GSList *sessions_list) {
     g_slist_foreach(sessions_list, rtp_session_free, NULL);
 }
+
+/**
+ * @brief Do the work of filling an RTP session with data
+ *
+ * @param unued_data Unused
+ * @param session_p The session parameter from rtp_session_fill
+ *
+ *
+ * @internal This function is used to initialize @ref
+ *           RTP_session::fill_pool.
+ */
+static void rtp_session_fill_cb(gpointer unused_data, gpointer session_p)
+{
+    RTP_session *session = (RTP_session*)session_p;
+    Resource *resource = session->track->parent;
+    BufferQueue_Consumer *consumer = session->consumer;
+    gulong unseen;
+    const gulong buffered_frames = resource->srv->srvconf.buffered_frames;
+
+    while ( (unseen = bq_consumer_unseen(consumer)) < buffered_frames ) {
+        fprintf(stderr, "calling read_packet from %p for %p[%s] (%u/%d)\n",
+                session,
+                resource, resource->info->mrl,
+                unseen, buffered_frames);
+
+        if ( r_read(resource) != RESOURCE_OK )
+            break;
+    }
+}
+
+/**
+ * @brief Request filling an RTP session with data
+ *
+ * @param session The session to fill with data
+ *
+ * This function takes care of filling with data the bufferqueue of
+ * the session, by asking to the resource to read more.
+ *
+ * Previously this was implemented mostly on the Resource side, but
+ * given we need more information from the session than the resource
+ * it was moved here.
+ *
+ * This function should be called while holding locks to the session,
+ * but not to the resource.
+ *
+ * @see rtp_session_fill_cb
+ */
+static void rtp_session_fill(RTP_session *session)
+{
+    if ( !session->track->parent->eor )
+        g_thread_pool_push(session->fill_pool,
+                           GINT_TO_POINTER(-1), NULL);
+}
+
 
 /**
  * @brief Resume (or start) an RTP session
@@ -111,19 +173,25 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     RTSP_Range *range = (RTSP_Range*)range_gen;
     feng *srv = session->srv;
 
+    fprintf(stderr, "Resuming session %p\n", session);
+
     session->range = range;
     session->start_seq = 1 + session->seq_no;
     session->start_rtptime = g_random_int();
     session->send_time = 0.0;
     session->last_packet_send_time = time(NULL);
 
+    /* Create the new thread pool for the read requests */
+    session->fill_pool = g_thread_pool_new(rtp_session_fill_cb, session,
+                                           1, true, NULL);
+
+    /* Prefetch frames */
+    rtp_session_fill(session);
+
     ev_periodic_set(&session->transport.rtp_writer,
                     range->playback_time - 0.05,
                     0, NULL);
     ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
-
-    /* Prefetch frames */
-    r_fill(session->track->parent, session->consumer);
 }
 
 /**
@@ -152,6 +220,11 @@ void rtp_session_gslist_resume(GSList *sessions_list, RTSP_Range *range) {
  */
 static void rtp_session_pause(gpointer session_gen, gpointer user_data) {
     RTP_session *session = (RTP_session *)session_gen;
+
+    /* We should assert its presence, we cannot pause a non-running
+     * session! */
+    if (session->fill_pool)
+        g_thread_pool_free(session->fill_pool, true, true);
 
     ev_periodic_stop(session->srv->loop, &session->transport.rtp_writer);
 }
@@ -305,8 +378,6 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
         fprintf(stderr,"[%s] end of resource %d packets to be fetched\n",
             session->track->properties->encoding_name,
             bq_consumer_unseen(session->consumer));
-    else
-        r_fill(session->track->parent, session->consumer);
 
     /* Get the current buffer, if there is enough data */
     if ( !(buffer = bq_consumer_get(session->consumer)) ) {
@@ -361,6 +432,8 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
     }
     ev_periodic_set(w, next_time, 0, NULL);
     ev_periodic_again(loop, w);
+
+    rtp_session_fill(session);
 }
 
 /**
