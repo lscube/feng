@@ -696,7 +696,7 @@ gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
         if ( consumer->current_element_object != NULL ) {
             g_assert_cmpint(unseen, >, consumer->current_element_object->serial);
             unseen -= consumer->current_element_object->serial;
-        } else {
+        } else if (!producer->queue->head){
             unseen = 0;
         }
     }

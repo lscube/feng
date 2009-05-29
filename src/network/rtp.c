@@ -114,10 +114,12 @@ static void rtp_session_fill_cb(gpointer unused_data, gpointer session_p)
     const gulong buffered_frames = resource->srv->srvconf.buffered_frames;
 
     while ( (unseen = bq_consumer_unseen(consumer)) < buffered_frames ) {
+#if 0
         fprintf(stderr, "calling read_packet from %p for %p[%s] (%u/%d)\n",
                 session,
                 resource, resource->info->mrl,
                 unseen, buffered_frames);
+#endif
 
         if ( r_read(resource) != RESOURCE_OK )
             break;
