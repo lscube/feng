@@ -52,6 +52,22 @@ static void rtp_transport_close(RTP_session * session)
     Sock_close(session->transport.rtcp_sock);
 }
 
+
+/*
+ * Make sure all the threads get collected
+ *
+ * @param session rtp session to be cleaned
+ */
+
+static void rtp_fill_pool_free(RTP_session *session)
+{
+    Resource *resource = session->track->parent;
+    g_mutex_lock(resource->lock);
+    g_thread_pool_free(session->fill_pool, true, false);
+    g_mutex_unlock(resource->lock);
+    session->fill_pool = NULL;
+}
+
 /**
  * Deallocates an RTP session, closing its tracks and transports
  *
@@ -71,7 +87,7 @@ static void rtp_session_free(gpointer session_gen, gpointer unused)
      * now.
      */
     if (session->fill_pool)
-        g_thread_pool_free(session->fill_pool, true, true);
+        rtp_fill_pool_free(session);
 
     rtp_transport_close(session);
 
@@ -225,10 +241,8 @@ static void rtp_session_pause(gpointer session_gen, gpointer user_data) {
 
     /* We should assert its presence, we cannot pause a non-running
      * session! */
-    if (session->fill_pool) {
-        g_thread_pool_free(session->fill_pool, true, true);
-        session->fill_pool = NULL;
-    }
+    if (session->fill_pool)
+        rtp_fill_pool_free(session);
 
     ev_periodic_stop(session->srv->loop, &session->transport.rtp_writer);
 }
