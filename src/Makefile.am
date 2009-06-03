@@ -1,4 +1,4 @@
-SUBDIRS = mediathread conf .
+SUBDIRS = conf .
 
 feniceincludedir = $(top_srcdir)/include
 
@@ -10,9 +10,17 @@ BUILT_SOURCES = \
 	network/ragel_range.c \
 	liberis/headers_parser.c
 
-dist_feng_SOURCES = \
+dist_feng_SOURCES = $(BUILT_SOURCES) \
+	bufferqueue.c bufferqueue.h \
+	fnc_log.c fnc_log.h \
+	incoming.c incoming.h \
+	feng.h \
+	feng_utils.h \
+	main.c \
+	\
 	liberis/headers.h \
 	liberis/utils.c liberis/utils.h \
+	\
 	network/ragel_parsers.h \
 	network/rtcp.c \
 	network/rtp.c network/rtp.h \
@@ -31,17 +39,43 @@ dist_feng_SOURCES = \
 	network/rtsp_state_machine.c \
 	network/rtsp_utils.c \
 	\
-	bufferqueue.c bufferqueue.h \
-	fnc_log.c fnc_log.h \
-	incoming.c incoming.h \
-	feng.h \
-	feng_utils.h \
-	main.c \
-	\
-	$(BUILT_SOURCES)
+	media/cache.c \
+	media/demuxer.c \
+	media/demuxer.h demuxer_module.h \
+	media/InputStream.c \
+	media/InputStream.h \
+	media/mediaparser.c \
+	media/mediaparser.h mediaparser_module.h \
+	media/mediautils.c \
+	media/mediautils.h \
+	media/resource.c \
+	media/sdp_grammar.h \
+	media/parser/mpeg12.c \
+	media/parser/mpegaudio.c \
+	media/parser/mpeg2t.c \
+	media/demuxer/demuxer_ds.c
+
+if FENG_CPD
+dist_feng_SOURCES += media/metadata/cpd.c media/metadata/cpd.h
+endif
+
+if FENICE_FFMPEG
+dist_feng_SOURCES += media/parser/h264.c \
+		     media/parser/vorbis.c \
+		     media/parser/theora.c \
+		     media/parser/aac.c \
+		     media/parser/mp4ves.c \
+		     media/parser/speex.c \
+		     media/parser/h263.c \
+		     media/parser/amr.c \
+		     media/demuxer/demuxer_avf.c
+endif
+
+if LIVE_STREAMING
+dist_feng_SOURCES += media/demuxer/demuxer_sd.c
+endif
 
 feng_LDADD = \
-		mediathread/libmediath.a \
 		conf/liblight.a
 
 INCLUDES = -I$(feniceincludedir) -I.. -I$(srcdir)/nework

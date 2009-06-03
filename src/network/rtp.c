@@ -28,7 +28,7 @@
 #include "rtp.h"
 #include "rtsp.h"
 #include "fnc_log.h"
-#include "mediathread/demuxer.h"
+#include "media/demuxer.h"
 
 /**
  * Closes a transport linked to a session

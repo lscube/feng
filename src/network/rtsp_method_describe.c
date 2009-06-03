@@ -30,7 +30,7 @@
 
 #include "fnc_log.h"
 #include "rtsp.h"
-#include "mediathread/demuxer.h"
+#include "media/demuxer.h"
 #include <netembryo/wsocket.h>
 #include <netembryo/url.h>
 

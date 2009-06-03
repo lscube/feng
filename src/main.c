@@ -45,7 +45,7 @@
 #include <glib.h>
 
 #ifdef HAVE_METADATA
-#include "mediathread/metadata/cpd.h"
+#include "media/metadata/cpd.h"
 #endif
 
 #ifdef CLEANUP_DESTRUCTOR

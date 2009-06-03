@@ -20,10 +20,10 @@
  *
  * */
 
-#include "demuxer.h"
 #include "fnc_log.h"
-#include "mediaparser.h"
-#include "mediaparser_module.h"
+#include "media/demuxer.h"
+#include "media/mediaparser.h"
+#include "media/mediaparser_module.h"
 
 static const MediaParserInfo info = {
     "H264",

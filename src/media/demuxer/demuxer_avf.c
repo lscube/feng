@@ -26,7 +26,7 @@
 #include "feng_utils.h"
 #include "fnc_log.h"
 
-#include "demuxer_module.h"
+#include "media/demuxer_module.h"
 
 #include <libavformat/avformat.h>
 

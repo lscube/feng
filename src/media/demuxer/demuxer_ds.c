@@ -29,7 +29,7 @@
 #include "feng_utils.h"
 #include "fnc_log.h"
 
-#include "demuxer_module.h"
+#include "media/demuxer_module.h"
 
 static const DemuxerInfo info = {
     "Dynamic Edit List",

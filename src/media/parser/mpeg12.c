@@ -21,9 +21,9 @@
  * */
 
 #include <string.h>
-#include "demuxer.h"
-#include "mediaparser.h"
-#include "mediaparser_module.h"
+#include "media/demuxer.h"
+#include "media/mediaparser.h"
+#include "media/mediaparser_module.h"
 #include "feng_utils.h"
 
 static const MediaParserInfo info = {

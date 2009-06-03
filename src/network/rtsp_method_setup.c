@@ -36,7 +36,7 @@
 #include "rtsp.h"
 #include "ragel_parsers.h"
 #include "fnc_log.h"
-#include "mediathread/demuxer.h"
+#include "media/demuxer.h"
 
 /**
  * bind&connect the socket

@@ -31,9 +31,8 @@
 #include "feng_utils.h"
 #include "fnc_log.h"
 
-#include "demuxer_module.h"
-
-#include "mediathread/mediaparser.h"
+#include "media/demuxer_module.h"
+#include "media/mediaparser.h"
 
 /**
  * @brief Uninitialisation function for the demuxer_sd fake parser

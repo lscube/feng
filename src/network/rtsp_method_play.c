@@ -36,7 +36,7 @@
 #include "rtp.h"
 #include "fnc_log.h"
 #include "ragel_parsers.h"
-#include "mediathread/demuxer.h"
+#include "media/demuxer.h"
 
 /**
  * Actually starts playing the media using mediathread
