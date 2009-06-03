@@ -4,4 +4,3 @@ To do:
     * update rpm and deb package scripts
     * access permissions
     * increase the bundled documentation
-    * support an arbitrary number of listening sockets
