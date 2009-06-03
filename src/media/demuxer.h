@@ -26,7 +26,6 @@
 #include <glib.h>
 
 #include "mediautils.h"
-#include "InputStream.h"
 #include "mediaparser.h"
 #include "bufferqueue.h"
 #include "sdp_grammar.h"
@@ -79,8 +78,11 @@ typedef struct ResourceInfo_s {
 ResourceInfo *resinfo_new();
 
 typedef struct Resource {
+    int fd;
+    const void *data;
+    size_t size;
+    time_t mtime;
     GMutex *lock;
-    InputStream *i_stream;
     struct Demuxer *demuxer;
     ResourceInfo *info;
     // Metadata begin
@@ -116,7 +118,6 @@ typedef struct Trackinfo_s {
 
 typedef struct Track {
     GMutex *lock;
-    InputStream *i_stream;
     TrackInfo *info;
     double start_time;
     MediaParser *parser;
@@ -142,7 +143,7 @@ typedef struct {
 
 typedef struct Demuxer {
     const DemuxerInfo *info;
-    int (*probe)(InputStream *);
+    int (*probe)(const char *filename, const void *data, size_t size);
     int (*init)(Resource *);
     int (*read_packet)(Resource *);
     int (*seek)(Resource *, double time_sec);
@@ -152,8 +153,6 @@ typedef struct Demuxer {
 
 
 // --- functions --- //
-
-Demuxer *find_demuxer(InputStream *i_stream);
 
 Resource *r_open(struct feng *srv, const char *inner_path);
 

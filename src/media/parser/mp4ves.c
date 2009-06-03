@@ -105,7 +105,7 @@ static int mp4ves_parse(void *track, uint8_t *data, long len, uint8_t *extradata
                                  tr->properties->dts,
                                  tr->properties->frame_duration,
                                  (rem <= mtu),
-                                 data + offset, min(rem, mtu));
+                                 data + offset, MIN(rem, mtu));
             rem -= mtu;
             fnc_log(FNC_LOG_VERBOSE, "[mp4v] frags");
         } while (rem >= 0);

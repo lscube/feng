@@ -64,7 +64,7 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
         do {
             offset = len - rem;
             if (offset & 0xffff0000) return ERR_ALLOC;
-            memcpy (dst + 4, data + offset, min(mtu - 4, rem));
+            memcpy (dst + 4, data + offset, MIN(mtu - 4, rem));
             offset = htonl(offset & 0xffff);
             memcpy (dst, &offset, 4);
 
@@ -73,7 +73,7 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                                  tr->properties->dts,
                                  tr->properties->frame_duration,
                                  0,
-                                 dst, min(mtu, rem + 4));
+                                 dst, MIN(mtu, rem + 4));
             rem -= mtu - 4;
             fnc_log(FNC_LOG_VERBOSE, "[mp3] frags");
         } while (rem >= 0);

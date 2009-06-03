@@ -57,12 +57,9 @@ dist_feng_SOURCES = $(BUILT_SOURCES) \
 	network/rtsp_state_machine.c \
 	network/rtsp_utils.c \
 	\
-	media/cache.c \
 	media/demuxer.c \
 	media/demuxer.h \
 	media/demuxer_module.h \
-	media/InputStream.c \
-	media/InputStream.h \
 	media/mediaparser.c \
 	media/mediaparser.h \
 	media/mediaparser_module.h \

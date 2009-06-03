@@ -71,7 +71,7 @@ static void frag_fu_a(uint8_t *nal, int fragsize, int mtu,
             start = 0;
             buf[1] = fu_header | (1<<7);
         }
-        fraglen = min(mtu-2, fragsize);
+        fraglen = MIN(mtu-2, fragsize);
         if (fraglen == fragsize) {
             buf[1] = fu_header | (1<<6);
         }

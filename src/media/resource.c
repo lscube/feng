@@ -22,10 +22,17 @@
 
 #include <glib.h>
 #include <stdbool.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 
 #include "demuxer.h"
 #include "feng.h"
 #include "fnc_log.h"
+
+// global demuxer modules:
+extern Demuxer fnc_demuxer_sd;
+extern Demuxer fnc_demuxer_ds;
+extern Demuxer fnc_demuxer_avf;
 
 /**
  * @defgroup resources
@@ -59,7 +66,9 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
 
     if (resource->lock)
         g_mutex_free(resource->lock);
-    istream_close(resource->i_stream);
+
+    munmap((void*)resource->data, resource->size);
+    close(resource->fd);
 
     g_free(resource->info->mrl);
     g_free(resource->info->name);
@@ -76,6 +85,65 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
 }
 
 /**
+ * @brief Find the correct demuxer for the given resource.
+ *
+ * @param filename Name of the file (to find the extension)
+ * @param data The memory area to find the data in
+ * @param size The size of the memory data pointed to by @p data
+ *
+ * @return A constant pointer to the working demuxer.
+ *
+ * This function first tries to match the resource extension with one
+ * of those served by the demuxers, that will be probed; if this fails
+ * it tries every demuxer available with direct probe.
+ *
+ * */
+
+static const Demuxer *r_find_demuxer(const char *filename, const void *data,
+                                     size_t size)
+{
+    static const Demuxer *const demuxers[] = {
+        &fnc_demuxer_sd,
+        &fnc_demuxer_ds,
+        &fnc_demuxer_avf,
+        NULL
+    };
+
+    int i;
+    const char *res_ext;
+
+    /* First of all try that with matching extension: we use extension as a
+     * hint of resource type.
+     */
+    if ( (res_ext = strrchr(filename, '.')) && *(res_ext++) ) {
+        for (i=0; demuxers[i]; i++) {
+            char exts[128], *tkn; /* temp string containing extension
+                                   * served by probing demuxer.
+                                   */
+            strncpy(exts, demuxers[i]->info->extensions, sizeof(exts)-1);
+
+            for (tkn=strtok(exts, ","); tkn; tkn=strtok(NULL, ",")) {
+                if (strcmp(tkn, res_ext) == NULL)
+                    continue;
+
+                fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\" "
+                        "matches \"%s\" demuxer\n", res_ext,
+                        demuxers[i]->info->name);
+
+                if (demuxers[i]->probe(filename, data, size) == RESOURCE_OK)
+                    return demuxers[i];
+            }
+        }
+    }
+
+    for (i=0; demuxers[i]; i++)
+        if ((demuxers[i]->probe(filename, data, size) == RESOURCE_OK))
+            return demuxers[i];
+
+    return NULL;
+}
+
+/**
  * @brief Open a new resource and create a new instance
  *
  * @param srv The server object for the vhost requesting the resource
@@ -89,19 +157,56 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 {
     Resource *r;
     Demuxer *dmx;
-    InputStream *i_stream;
     gchar *mrl = g_strjoin ("/",
                             srv->config_storage[0].document_root->ptr,
                             inner_path,
                             NULL);
+    const void *mmap_base;
+	struct stat filestat;
 
-    if( !(i_stream = istream_open(mrl)) )
-        return NULL;
+    int fd = open(mrl, O_RDONLY|O_NDELAY);
 
-    if ( (dmx = find_demuxer(i_stream)) == NULL ) {
-        fnc_log(FNC_LOG_DEBUG, "[MT] Could not find a valid demuxer"
-                                       " for resource %s\n", mrl);
-        return NULL;
+    if ( fd < 0 ) {
+		switch(errno) {
+        case ENOENT:
+            fnc_log(FNC_LOG_ERR,"%s: file not found\n", mrl);
+            break;
+        default:
+            fnc_log(FNC_LOG_ERR,"Cannot open file %s\n", mrl);
+            break;
+		}
+        goto error0;
+	}
+
+	if (fstat(fd, &filestat) == -1 ) {
+		switch(errno) {
+        case ENOENT:
+            fnc_log(FNC_LOG_ERR,"%s: file not found\n", mrl);
+            break;
+        default:
+            fnc_log(FNC_LOG_ERR,"Cannot stat file %s\n", mrl);
+            break;
+		}
+        goto error1;
+	}
+
+	if ( S_ISFIFO(filestat.st_mode) ) {
+		fnc_log(FNC_LOG_ERR, "%s: not a file\n");
+        goto error1;
+    }
+
+    if ( (mmap_base = mmap(NULL, filestat.st_size, PROT_READ,
+                           MAP_SHARED, fd, 0))
+         == MAP_FAILED ) {
+		fnc_log(FNC_LOG_ERR, "%s: unable to map in memory\n");
+        goto error1;
+    }
+
+    if ( (dmx = r_find_demuxer(mrl, mmap_base, filestat.st_size)) == NULL ) {
+        fnc_log(FNC_LOG_DEBUG,
+                "[MT] Could not find a valid demuxer for resource %s\n",
+                mrl);
+        goto error2;
     }
 
     fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource"
@@ -109,13 +214,17 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 
     r = g_slice_new0(Resource);
 
+    r->fd = fd;
+    r->data = mmap_base;
+    r->size = filestat.st_size;
+    r->mtime = filestat.st_mtime;
+
     r->info = g_slice_new0(ResourceInfo);
 
     r->info->mrl = mrl;
     r->info->name = g_path_get_basename(inner_path);
     r->info->seekable = (dmx->seek != NULL);
 
-    r->i_stream = i_stream;
     r->demuxer = dmx;
     r->srv = srv;
 
@@ -134,6 +243,13 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 #endif
 
     return r;
+
+ error2:
+    munmap((void*)mmap_base, filestat.st_size);
+ error1:
+    close(fd);
+ error0:
+    return NULL;
 }
 
 /**

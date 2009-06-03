@@ -92,13 +92,13 @@ static int h263_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 
     while (len - cur > 0) {
         if (cur == 0 && found_gob) {
-            payload = min(mtu, len);
+            payload = MIN(mtu, len);
             memcpy(dst, data, payload);
             memset(header, 0, 2);
             header->p = 1;
             header_len = 0;
         } else {
-            payload = min(mtu - 2, len - cur);
+            payload = MIN(mtu - 2, len - cur);
             memcpy(dst + 2, data + cur, payload);
             memset(header, 0, 2);
             header_len = 2;

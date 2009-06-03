@@ -29,80 +29,6 @@
 #include "demuxer.h"
 #include "fnc_log.h"
 
-// global demuxer modules:
-extern Demuxer fnc_demuxer_sd;
-extern Demuxer fnc_demuxer_ds;
-extern Demuxer fnc_demuxer_avf;
-
-/**
- * @brief Array of available built-in demuxers
- */
-static Demuxer *const demuxers[] = {
-    &fnc_demuxer_sd,
-    &fnc_demuxer_ds,
-    &fnc_demuxer_avf,
-    NULL
-};
-
-
-// private functions for specific demuxer
-
-/**
- * Find the correct demuxer for the given resource.
- * First of all, it tries to match the resource extension with one of those
- * served by the demuxers and, if found, probes that demuxer.
- * If no demuxer can be found this way, then it tries every demuxer available.
- * @param i_stream the resource.
- * @return the index of the valid demuxer in the list or -1 if it could not be
- * found.
- * */
-
-Demuxer *find_demuxer(InputStream *i_stream)
-{
-    // this int will contain the index of the demuxer already probed second
-    // the extension suggestion, in order to not probe twice the same
-    // demuxer that was proved to be not usable.
-    int probed = -1;
-    int i; // index
-    char exts[128], *res_ext, *tkn; /* temp string containing extension
-                                     * served by probing demuxer.
-                                     */
-
-    // First of all try that with matching extension: we use extension as a
-    // hint of resource type.
-    if ( (res_ext=strrchr(i_stream->name, '.')) && (res_ext++) ) {
-        // extension present
-        for (i=0; demuxers[i]; i++) {
-            strncpy(exts, demuxers[i]->info->extensions, sizeof(exts));
-
-            for (tkn=strtok(exts, ","); tkn; tkn=strtok(NULL, ",")) {
-                if (!strcmp(tkn, res_ext)) {
-                    fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\" "
-                                "matches \"%s\" demuxer\n", res_ext,
-                                demuxers[i]->info->name);
-                    if (demuxers[i]->probe(i_stream) == RESOURCE_OK) {
-                        fnc_log(FNC_LOG_DEBUG,
-                                "[MT] probing demuxer: \"%s\" demuxer found\n",
-                                demuxers[i]->info->name);
-                        return demuxers[i];
-                    }
-                }
-            }
-        }
-    }
-
-    for (i=0; demuxers[i]; i++) {
-        if ((i!=probed) && (demuxers[i]->probe(i_stream) == RESOURCE_OK))
-            {
-                fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\""
-                        "demuxer found\n",
-                        demuxers[i]->info->name);
-                return demuxers[i];
-            }
-    }
-
-    return NULL;
-}
 
 static void free_sdp_field(sdp_field *sdp, void *unused)
 {
@@ -140,7 +66,6 @@ void free_track(gpointer element, gpointer user_data)
     }
 
     mparser_unreg(track->parser, track->private_data);
-    istream_close(track->i_stream);
 
     g_slice_free(Track, track);
 }
@@ -183,8 +108,6 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     case MS_stored:
         if( !(t->producer = bq_producer_new(g_free, NULL)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
-        if ( t->info->mrl && !(t->i_stream = istream_open(t->info->mrl)) )
-            ADD_TRACK_ERROR(FNC_LOG_ERR, "Could not open %s\n", t->info->mrl);
         if ( !(t->parser = mparser_find(t->properties->encoding_name)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
         if (t->parser->init(t->properties, &t->private_data))

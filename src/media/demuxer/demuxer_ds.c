@@ -55,32 +55,21 @@ typedef struct {
     int move_to_next;
 } edl_priv_data;
 
-static int ds_probe(InputStream * i_stream)
+static int ds_probe(const char *filename, const void *data, size_t size)
 {
-    char *ext;
-    char buffer[80], string[80];
-    int version, n;
+    static const char magic_string[] = "Version1";
 
-    // Check filename extension
-    if (!((ext = strrchr(i_stream->name, '.')) && (!strcmp(ext, ".ds")))) {
+    char *ext;
+
+    if ( size <= magic_string )
         return RESOURCE_DAMAGED;
-    }
-    // Read begin of file
-    if (istream_read(i_stream, (uint8_t *) buffer, 79) <= 0) {
+
+    if (!((ext = strrchr(filename, '.')) && (!strcmp(ext, ".ds"))))
         return RESOURCE_DAMAGED;
-    }
-    buffer[79] = '\0';
-    // Check for "# Version 1"
-    if ((n = sscanf(buffer, "#%s%d", string, &version)) != 2) {
-        fnc_log(FNC_LOG_DEBUG, "[ds] Broken Version string (%d): %s", n, buffer);
+
+    if ( memcmp(data, magic_string, sizeof(magic_string)) != 0 )
         return RESOURCE_DAMAGED;
-    }
-    if (strcmp(string, "Version") || version != 1) {
-        fnc_log(FNC_LOG_DEBUG, "[ds] Broken string, token=%s, version=%d", string, version);
-        return RESOURCE_DAMAGED;
-    }
-    // Move file descriptor to begin
-    istream_reset(i_stream);
+
     return RESOURCE_OK;
 }
 
@@ -128,7 +117,7 @@ static int ds_init(Resource * r)
     feng *srv = r->srv;
 
     fnc_log(FNC_LOG_DEBUG, "[ds] EDL init function");
-    fd = fdopen(r->i_stream->fd, "r");
+    fd = fdopen(r->fd, "r");
 
     do {
         begin = 0.0;

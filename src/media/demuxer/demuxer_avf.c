@@ -94,24 +94,20 @@ static int pt_from_id(int id)
 
 #define PROBE_BUF_SIZE 2048
 
-static int avf_probe(InputStream * i_stream)
+static int avf_probe(const char *filename, const void *data, size_t size)
 {
-    AVProbeData avpd;
-    uint8_t buf[PROBE_BUF_SIZE];
+    AVProbeData avpd = {
+        .filename = filename,
+        .buf = data,
+    };
     AVInputFormat *avif;
+
+    avpd.buf_size = MIN(PROBE_BUF_SIZE, size);
 
     av_register_all();
 
-    if (istream_read(i_stream, buf, PROBE_BUF_SIZE) != PROBE_BUF_SIZE)
-	return RESOURCE_DAMAGED;
-
-    avpd.filename= i_stream->name;
-    avpd.buf= buf;
-    avpd.buf_size= PROBE_BUF_SIZE;
-    avif = av_probe_input_format(&avpd, 1);
-    if(avif == NULL){
+    if ( (avif = av_probe_input_format(&avpd, 1)) == NULL )
         return RESOURCE_DAMAGED;
-    }
 
     return RESOURCE_OK;
 }
@@ -149,7 +145,7 @@ static int avf_init(Resource * r)
 
     if(av_find_stream_info(avfc) < 0){
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot find streams in file %s",
-                r->i_stream->name);
+                r->info->mrl);
         goto err_alloc;
     }
 

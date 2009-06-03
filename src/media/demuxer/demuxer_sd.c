@@ -195,14 +195,14 @@ static const RTP_static_payload * probe_stream_info(char const *codec_name)
     return NULL;
 }
 
-static int sd_probe(InputStream * i_stream)
+static int sd_probe(const char *filename, const void *data, size_t size)
 {
     char *ext;
 
-    if ((ext = strrchr(i_stream->name, '.')) && (!strcmp(ext, ".sd"))) {
-        return RESOURCE_OK;
-    }
-    return RESOURCE_DAMAGED;
+    if (!((ext = strrchr(filename, '.')) && (!strcmp(ext, ".sd"))))
+        return RESOURCE_DAMAGED;
+
+    return RESOURCE_OK;
 }
 
 //Sets payload type and probes media type from payload type
@@ -235,15 +235,15 @@ static int sd_init(Resource * r)
     memset(&trackinfo, 0, sizeof(TrackInfo));
 
     fnc_log(FNC_LOG_DEBUG, "[sd] SD init function");
-    fd = fdopen(r->i_stream->fd, "r");
+    fd = fdopen(r->fd, "r");
 
-    if ((separator = strrchr(r->i_stream->name, G_DIR_SEPARATOR))) {
-        int len = separator - r->i_stream->name + 1;
+    if ((separator = strrchr(r->info->mrl, G_DIR_SEPARATOR))) {
+        size_t len = separator - r->info->mrl + 1;
         if (len >= sizeof(content_base)) {
             fnc_log(FNC_LOG_ERR, "[sd] content base string too long\n");
             return ERR_GENERIC;
         } else {
-            strncpy(content_base, r->i_stream->name, len);
+            strncpy(content_base, r->info->mrl, len);
             fnc_log(FNC_LOG_DEBUG, "[sd] content base: %s\n", content_base);
         }
     }
@@ -275,7 +275,7 @@ static int sd_init(Resource * r)
                 // SD_FILENAME
                 sscanf(line, "%*s%255s", track_file);
 
-                separator = strstr(track_file, FNC_PROTO_SEPARATOR);
+                separator = strstr(track_file, "://");
                 if (separator == NULL) {
                     fnc_log(FNC_LOG_ERR, "[sd] missing valid protocol in %s entry\n", SD_FILENAME);
                     trackinfo.mrl = NULL;
