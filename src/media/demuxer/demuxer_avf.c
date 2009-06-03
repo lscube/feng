@@ -94,15 +94,24 @@ static int pt_from_id(int id)
 
 #define PROBE_BUF_SIZE 2048
 
-static int avf_probe(const char *filename, const void *data, size_t size)
+static int avf_probe(const char *filename)
 {
     AVProbeData avpd = {
-        .filename = filename,
-        .buf = data,
+        .filename = filename
     };
     AVInputFormat *avif;
+    char buffer[PROBE_BUF_SIZE];
+    size_t rsize;
 
-    avpd.buf_size = MIN(PROBE_BUF_SIZE, size);
+    FILE *fp = fopen(filename, "r");
+    if ( !fp )
+        return RESOURCE_DAMAGED;
+
+    rsize = fread(&buffer, 1, sizeof(buffer), fp);
+    fclose(fp);
+
+    avpd.buf = &buffer;
+    avpd.buf_size = rsize;
 
     av_register_all();
 

@@ -55,7 +55,7 @@ typedef struct {
 #define TIME_ADJUSTMENT_FACTOR 0.8
 #define MAX_PLAYOUT_BUFFER_DURATION 0.1
 
-static int mpegts_probe(InputStream * i_stream)
+static int mpegts_probe(const char *filename)
 {
     return RESOURCE_NOT_FOUND;
 }

@@ -195,7 +195,7 @@ static const RTP_static_payload * probe_stream_info(char const *codec_name)
     return NULL;
 }
 
-static int sd_probe(const char *filename, const void *data, size_t size)
+static int sd_probe(const char *filename)
 {
     char *ext;
 
@@ -235,7 +235,7 @@ static int sd_init(Resource * r)
     memset(&trackinfo, 0, sizeof(TrackInfo));
 
     fnc_log(FNC_LOG_DEBUG, "[sd] SD init function");
-    fd = fdopen(r->fd, "r");
+    fd = fopen(r->info->mrl, "r");
 
     if ((separator = strrchr(r->info->mrl, G_DIR_SEPARATOR))) {
         size_t len = separator - r->info->mrl + 1;

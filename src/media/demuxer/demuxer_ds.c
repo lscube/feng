@@ -55,19 +55,28 @@ typedef struct {
     int move_to_next;
 } edl_priv_data;
 
-static int ds_probe(const char *filename, const void *data, size_t size)
+static int ds_probe(const char *filename)
 {
     static const char magic_string[] = "Version1";
-
+    char buffer[sizeof(magic_string)-1];
     char *ext;
-
-    if ( size <= magic_string )
-        return RESOURCE_DAMAGED;
+    FILE *fp;
+    size_t rsize;
 
     if (!((ext = strrchr(filename, '.')) && (!strcmp(ext, ".ds"))))
         return RESOURCE_DAMAGED;
 
-    if ( memcmp(data, magic_string, sizeof(magic_string)) != 0 )
+    fp = fopen(filename, "r");
+    if ( !fp )
+        return RESOURCE_DAMAGED;
+
+    rsize = fread(&buffer, 1, sizeof(buffer), fp);
+    fclose(fp);
+
+    if ( rsize <= sizeof(magic_string) )
+        return RESOURCE_DAMAGED;
+
+    if ( memcmp(buffer, magic_string, sizeof(buffer)) != 0 )
         return RESOURCE_DAMAGED;
 
     return RESOURCE_OK;
@@ -117,7 +126,7 @@ static int ds_init(Resource * r)
     feng *srv = r->srv;
 
     fnc_log(FNC_LOG_DEBUG, "[ds] EDL init function");
-    fd = fdopen(r->fd, "r");
+    fd = fopen(r->info->mrl, "r");
 
     do {
         begin = 0.0;

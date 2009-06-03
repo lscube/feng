@@ -53,6 +53,7 @@ typedef struct ResourceInfo_s {
     char *descrURI;
     char *email;
     char *phone;
+    time_t mtime;
     sdp_field_list sdp_private;
     double duration;
     MediaSource media_source;
@@ -78,10 +79,6 @@ typedef struct ResourceInfo_s {
 ResourceInfo *resinfo_new();
 
 typedef struct Resource {
-    int fd;
-    const void *data;
-    size_t size;
-    time_t mtime;
     GMutex *lock;
     struct Demuxer *demuxer;
     ResourceInfo *info;
@@ -143,7 +140,7 @@ typedef struct {
 
 typedef struct Demuxer {
     const DemuxerInfo *info;
-    int (*probe)(const char *filename, const void *data, size_t size);
+    int (*probe)(const char *filename);
     int (*init)(Resource *);
     int (*read_packet)(Resource *);
     int (*seek)(Resource *, double time_sec);

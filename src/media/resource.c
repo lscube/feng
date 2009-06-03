@@ -22,8 +22,6 @@
 
 #include <glib.h>
 #include <stdbool.h>
-#include <fcntl.h>
-#include <sys/mman.h>
 
 #include "demuxer.h"
 #include "feng.h"
@@ -67,9 +65,6 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
     if (resource->lock)
         g_mutex_free(resource->lock);
 
-    munmap((void*)resource->data, resource->size);
-    close(resource->fd);
-
     g_free(resource->info->mrl);
     g_free(resource->info->name);
     g_slice_free(ResourceInfo, resource->info);
@@ -88,8 +83,6 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
  * @brief Find the correct demuxer for the given resource.
  *
  * @param filename Name of the file (to find the extension)
- * @param data The memory area to find the data in
- * @param size The size of the memory data pointed to by @p data
  *
  * @return A constant pointer to the working demuxer.
  *
@@ -99,8 +92,7 @@ static void r_free_cb(gpointer resource_p, gpointer user_data)
  *
  * */
 
-static const Demuxer *r_find_demuxer(const char *filename, const void *data,
-                                     size_t size)
+static const Demuxer *r_find_demuxer(const char *filename)
 {
     static const Demuxer *const demuxers[] = {
         &fnc_demuxer_sd,
@@ -130,14 +122,14 @@ static const Demuxer *r_find_demuxer(const char *filename, const void *data,
                         "matches \"%s\" demuxer\n", res_ext,
                         demuxers[i]->info->name);
 
-                if (demuxers[i]->probe(filename, data, size) == RESOURCE_OK)
+                if (demuxers[i]->probe(filename) == RESOURCE_OK)
                     return demuxers[i];
             }
         }
     }
 
     for (i=0; demuxers[i]; i++)
-        if ((demuxers[i]->probe(filename, data, size) == RESOURCE_OK))
+        if ((demuxers[i]->probe(filename) == RESOURCE_OK))
             return demuxers[i];
 
     return NULL;
@@ -161,24 +153,9 @@ Resource *r_open(struct feng *srv, const char *inner_path)
                             srv->config_storage[0].document_root->ptr,
                             inner_path,
                             NULL);
-    const void *mmap_base;
 	struct stat filestat;
 
-    int fd = open(mrl, O_RDONLY|O_NDELAY);
-
-    if ( fd < 0 ) {
-		switch(errno) {
-        case ENOENT:
-            fnc_log(FNC_LOG_ERR,"%s: file not found\n", mrl);
-            break;
-        default:
-            fnc_log(FNC_LOG_ERR,"Cannot open file %s\n", mrl);
-            break;
-		}
-        goto error0;
-	}
-
-	if (fstat(fd, &filestat) == -1 ) {
+	if (stat(mrl, &filestat) == -1 ) {
 		switch(errno) {
         case ENOENT:
             fnc_log(FNC_LOG_ERR,"%s: file not found\n", mrl);
@@ -187,26 +164,19 @@ Resource *r_open(struct feng *srv, const char *inner_path)
             fnc_log(FNC_LOG_ERR,"Cannot stat file %s\n", mrl);
             break;
 		}
-        goto error1;
+        goto error;
 	}
 
 	if ( S_ISFIFO(filestat.st_mode) ) {
 		fnc_log(FNC_LOG_ERR, "%s: not a file\n");
-        goto error1;
+        goto error;
     }
 
-    if ( (mmap_base = mmap(NULL, filestat.st_size, PROT_READ,
-                           MAP_SHARED, fd, 0))
-         == MAP_FAILED ) {
-		fnc_log(FNC_LOG_ERR, "%s: unable to map in memory\n");
-        goto error1;
-    }
-
-    if ( (dmx = r_find_demuxer(mrl, mmap_base, filestat.st_size)) == NULL ) {
+    if ( (dmx = r_find_demuxer(mrl)) == NULL ) {
         fnc_log(FNC_LOG_DEBUG,
                 "[MT] Could not find a valid demuxer for resource %s\n",
                 mrl);
-        goto error2;
+        goto error;
     }
 
     fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource"
@@ -214,14 +184,10 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 
     r = g_slice_new0(Resource);
 
-    r->fd = fd;
-    r->data = mmap_base;
-    r->size = filestat.st_size;
-    r->mtime = filestat.st_mtime;
-
     r->info = g_slice_new0(ResourceInfo);
 
     r->info->mrl = mrl;
+    r->info->mtime = filestat.st_mtime;
     r->info->name = g_path_get_basename(inner_path);
     r->info->seekable = (dmx->seek != NULL);
 
@@ -243,12 +209,8 @@ Resource *r_open(struct feng *srv, const char *inner_path)
 #endif
 
     return r;
-
- error2:
-    munmap((void*)mmap_base, filestat.st_size);
- error1:
-    close(fd);
- error0:
+ error:
+    g_free(mrl);
     return NULL;
 }
 

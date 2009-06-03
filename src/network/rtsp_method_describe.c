@@ -246,7 +246,7 @@ static GString *sdp_session_descr(struct feng *srv, const Url *url)
 
     /* Near enough approximation to run it now */
     currtime_float = NTP_time(time(NULL));
-    restime_float = resource->mtime ? NTP_time(resource->mtime) : currtime_float;
+    restime_float = res_info->mtime ? NTP_time(res_info->mtime) : currtime_float;
 
     if ( (resname = res_info->description) == NULL )
         resname = "RTSP Session";
