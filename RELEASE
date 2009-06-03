@@ -1,9 +1,17 @@
 
-    Release notes for feng 0.1.99
+    Release notes for feng 2.1rc1
 
-Most of the invasive changes got already merged and are apparently stable
-enough to grant a release. The most visible change is in the configuration,
-that has been rewritten using lighttpd lemon based parser, the server now can
-listen on an arbitrary number of sockets, the connection limits is really
-configurable and some stale code got removed.
+This release enjoys almost a full rewrite of the network layer including a more
+compliant (and strict) rtsp parser, a new state machine and an eventloop driven core. The media parser layer is now using the glib threading facility to offload the io intensive task of parsing to worker threads spawned ad hoc.
+The old bufferpool got replaced with a more robust implementation of shared
+queues called bufferqueue, as result the shared memory access system got
+replaced by a simpler system using the posix message queues. Since this feature
+isn't available in certain systems (namely macosx) we are more than willing to
+accept a more portable implementation using unix sockets maintaining the same
+semantics.
+The better structure layout made feng consume less memory per request and
+overall it should work better in constrained environments than before.
+Some less tested features like sctp got fixed thanks to our user feedback and
+support. Now it should be considered a first class citizen along the other
+transports (pending somebody willing to help us standardize it's usage).
 
