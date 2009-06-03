@@ -19,6 +19,7 @@ dist_feng_SOURCES = $(BUILT_SOURCES) \
 	conf/array.h \
 	conf/buffer.c \
 	conf/buffer.h \
+	conf/conf.h \
 	conf/stream.c \
 	conf/stream.h \
 	conf/configparser.c \
