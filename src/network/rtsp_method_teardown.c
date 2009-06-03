@@ -30,7 +30,6 @@
  * RTSP TEARDOWN method handler
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
- * @return ERR_NOERROR
  * @todo trigger the release of rtp resources here
  */
 void RTSP_teardown(RTSP_Client * rtsp, RTSP_Request *req)
