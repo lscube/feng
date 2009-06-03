@@ -191,7 +191,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     RTSP_Range *range = (RTSP_Range*)range_gen;
     feng *srv = session->srv;
 
-    fprintf(stderr, "Resuming session %p\n", session);
+    fnc_log(FNC_LOG_VERBOSE, "Resuming session %p\n", session);
 
     session->range = range;
     session->start_seq = 1 + session->seq_no;
@@ -393,7 +393,8 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
      * one packet at least.
      */
     if (resource->eor)
-        fprintf(stderr,"[%s] end of resource %d packets to be fetched\n",
+        fnc_log(FNC_LOG_INFO,
+            "[%s] end of resource %d packets to be fetched",
             session->track->properties->encoding_name,
             bq_consumer_unseen(session->consumer));
 
@@ -435,8 +436,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
                 next_time += duration;
         }
 
-#if 1
-        fprintf(stderr,
+        fnc_log(FNC_LOG_VERBOSE,
             "[%s] Now: %5.4f, cur %5.4f[%5.4f][%5.4f], next %5.4f %s\n",
             session->track->properties->encoding_name,
             ev_now(loop) - session->range->playback_time,
@@ -445,8 +445,6 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
             duration,
             next_time - session->range->playback_time,
             marker? "M" : " ");
-#endif
-
     }
     ev_periodic_set(w, next_time, 0, NULL);
     ev_periodic_again(loop, w);
