@@ -119,16 +119,19 @@ static void interleaved_read_sctp_cb(struct ev_loop *loop, ev_io *w, int revents
         fnc_log(FNC_LOG_ERR, "Error reading from local socket\n");
         return;
     }
+    memset(&sctp_info, 0, sizeof(sctp_info));
 
     sctp_info.sinfo_stream = intlvd->channel;
     Sock_write(rtsp->sock, buffer, n, &sctp_info, MSG_DONTWAIT | MSG_EOR);
 }
 #endif
 
-static void interleaved_setup_callbacks(RTSP_Client *rtsp, RTSP_interleaved *intlvd)
+static void
+interleaved_setup_callbacks(RTSP_Client *rtsp, RTSP_interleaved *intlvd)
 {
     void (*cb)(EV_P_ struct ev_io *w, int revents);
-    int i;
+
+    ev_io *io;
 
     switch (Sock_type(rtsp->sock)) {
         case TCP:
@@ -145,14 +148,17 @@ static void interleaved_setup_callbacks(RTSP_Client *rtsp, RTSP_interleaved *int
     }
 
     intlvd->rtp.local->data = rtsp;
-    intlvd->rtp.ev_io_listen.data = &intlvd->rtp;
-    ev_io_init(&intlvd->rtp.ev_io_listen, cb, Sock_fd(intlvd->rtp.local), EV_READ);
-    ev_io_start(rtsp->srv->loop, &intlvd->rtp.ev_io_listen);
+
+    io = &intlvd->rtp.ev_io_listen;
+    io->data = &intlvd->rtp;
+    ev_io_init(io, cb, Sock_fd(intlvd->rtp.local), EV_READ);
+    ev_io_start(rtsp->srv->loop, io);
 
     intlvd->rtcp.local->data = rtsp;
-    intlvd->rtcp.ev_io_listen.data = &intlvd->rtcp;
-    ev_io_init(&intlvd->rtcp.ev_io_listen, cb, Sock_fd(intlvd->rtcp.local), EV_READ);
-    ev_io_start(rtsp->srv->loop, &intlvd->rtcp.ev_io_listen);
+    io = &intlvd->rtcp.ev_io_listen;
+    io->data = &intlvd->rtcp;
+    ev_io_init(io, cb, Sock_fd(intlvd->rtcp.local), EV_READ);
+    ev_io_start(rtsp->srv->loop, io);
 }
 
 gboolean interleaved_setup_transport(RTSP_Client *rtsp, RTP_transport *transport,
