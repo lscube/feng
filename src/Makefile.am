@@ -58,11 +58,13 @@ dist_feng_SOURCES = $(BUILT_SOURCES) \
 	\
 	media/cache.c \
 	media/demuxer.c \
-	media/demuxer.h media/demuxer_module.h \
+	media/demuxer.h \
+	media/demuxer_module.h \
 	media/InputStream.c \
 	media/InputStream.h \
 	media/mediaparser.c \
-	media/mediaparser.h mediaparser_module.h \
+	media/mediaparser.h \
+	media/mediaparser_module.h \
 	media/mediautils.c \
 	media/mediautils.h \
 	media/resource.c \
