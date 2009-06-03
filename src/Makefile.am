@@ -1,5 +1,3 @@
-SUBDIRS = conf .
-
 feniceincludedir = $(top_srcdir)/include
 
 bin_PROGRAMS = feng
@@ -17,6 +15,25 @@ dist_feng_SOURCES = $(BUILT_SOURCES) \
 	feng.h \
 	feng_utils.h \
 	main.c \
+	conf/array.c \
+	conf/array.h \
+	conf/buffer.c \
+	conf/buffer.h \
+	conf/stream.c \
+	conf/stream.h \
+	conf/configparser.c \
+	conf/configparser.h \
+	conf/proc_open.c \
+	conf/proc_open.h \
+	conf/configfile-glue.c \
+	conf/configfile.c \
+	conf/configfile.h \
+	conf/data_array.c \
+	conf/data_count.c \
+	conf/data_integer.c \
+	conf/data_config.c \
+	conf/data_string.c \
+	conf/settings.h \
 	\
 	liberis/headers.h \
 	liberis/utils.c liberis/utils.h \
@@ -74,9 +91,6 @@ endif
 if LIVE_STREAMING
 dist_feng_SOURCES += media/demuxer/demuxer_sd.c
 endif
-
-feng_LDADD = \
-		conf/liblight.a
 
 INCLUDES = -I$(feniceincludedir) -I.. -I$(srcdir)/nework
 
