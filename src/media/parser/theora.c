@@ -258,10 +258,6 @@ tr->properties->dts,
 
     g_free(packet);
     return ERR_NOERROR;
-
-    err_alloc:
-    g_free(packet);
-    return ERR_ALLOC;
 }
 
 

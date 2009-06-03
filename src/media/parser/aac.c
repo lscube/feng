@@ -146,10 +146,6 @@ static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
 
     g_free(packet);
     return ERR_NOERROR;
-
-    err_alloc:
-    g_free(packet);
-    return ERR_ALLOC;
 }
 
 

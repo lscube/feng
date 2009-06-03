@@ -199,9 +199,6 @@ static int amr_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
                          1,
                          packet, len + body_num);
     return ERR_NOERROR;
-
- err_alloc:
-    return ERR_ALLOC;
 }
 
 

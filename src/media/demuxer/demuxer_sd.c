@@ -40,8 +40,9 @@
  * This function simply frees the slice in Track::private_data as a
  * mqd_t object.
  */
-static void demuxer_sd_fake_mediaparser_uninit(void *private_data) {
+static int demuxer_sd_fake_mediaparser_uninit(void *private_data) {
     g_slice_free(mqd_t, private_data);
+    return 0;
 }
 
 /**
@@ -50,7 +51,7 @@ static void demuxer_sd_fake_mediaparser_uninit(void *private_data) {
  * This object is used to free the slice in Track::private_data as a
  * mqd_t object.
  */
-static const MediaParser demuxer_sd_fake_mediaparser = {
+static MediaParser demuxer_sd_fake_mediaparser = {
     .info = NULL,
     .init = NULL,
     .parse = NULL,

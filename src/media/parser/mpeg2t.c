@@ -42,7 +42,6 @@ typedef struct {
 
 typedef struct {
     int ncopied;
-    GHashTable* pid_status_table;
     double pkt_duration_estimate;
     int ts_pkt_count;
     double timestamp;
@@ -69,31 +68,9 @@ static void mp2t_pid_status_init(mp2t_pid_status* pid_status, double clock,
 
 #endif
 
-static void value_destroy(gpointer data)
-{
-    g_free(data);
-}
-
-static guint pid_hash(gconstpointer pid)
-{
-    return (guint)pid;
-}
-
-static gboolean pid_equal(gconstpointer v1, gconstpointer v2)
-{
-    return v1 == v2;
-}
-
-
 static int mp2t_init(MediaProperties *properties, void **private_data)
 {
-    mp2t_priv* priv;
     *private_data = g_new0(mp2t_priv, 1);
-
-    priv = (mp2t_priv*)*private_data;
-    priv->pid_status_table = g_hash_table_new_full(pid_hash, pid_equal,
-                                                   value_destroy,
-                                                   value_destroy);
 
     INIT_PROPS
     return 0;
@@ -301,7 +278,6 @@ static int mp2t_uninit(void *private_data)
     mp2t_priv* priv = (mp2t_priv*)private_data;
 
     if(priv) {
-        g_hash_table_destroy(priv->pid_status_table);
         g_free(private_data);
     }
     return ERR_NOERROR;
