@@ -36,12 +36,10 @@
 #include "config.h"
 #endif
 
-#ifdef HAVE_MMAP
 #include <sys/mman.h>
 
 #ifndef MAP_FAILED
 #define MAP_FAILED -1
-#endif
 #endif
 
 #ifndef O_BINARY
@@ -50,9 +48,7 @@
 
 int stream_open(stream *f, const char *fn) {
     struct stat st;
-#ifdef HAVE_MMAP
     int fd;
-#endif
 
     f->start = NULL;
 
@@ -62,7 +58,6 @@ int stream_open(stream *f, const char *fn) {
 
     f->size = st.st_size;
 
-#ifdef HAVE_MMAP
     if (-1 == (fd = open(fn, O_RDONLY | O_BINARY))) {
         return -1;
     }
@@ -74,17 +69,13 @@ int stream_open(stream *f, const char *fn) {
     if (MAP_FAILED == f->start) {
         return -1;
     }
-#else
-# error no mmap found
-#endif
 
     return 0;
 }
 
 int stream_close(stream *f) {
-#ifdef HAVE_MMAP
     if (f->start) munmap(f->start, f->size);
-#endif
+
     f->start = NULL;
 
     return 0;
