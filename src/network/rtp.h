@@ -43,6 +43,7 @@ struct RTSP_session;
 
 #define RTP_DEFAULT_PORT 5004
 #define BUFFERED_FRAMES_DEFAULT 16
+#define RTP_DEFAULT_MTU 1500
 
 typedef struct {
     int RTP;
@@ -55,6 +56,7 @@ typedef struct RTP_transport {
     struct sockaddr_storage last_stg;
     int rtp_ch, rtcp_ch;
     ev_periodic rtp_writer;
+    ev_io rtcp_reader;
 } RTP_transport;
 
 typedef struct RTP_session {

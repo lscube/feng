@@ -189,7 +189,6 @@ static void rtp_session_fill(RTP_session *session)
 static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     RTP_session *session = (RTP_session*)session_gen;
     RTSP_Range *range = (RTSP_Range*)range_gen;
-    feng *srv = session->srv;
 
     fnc_log(FNC_LOG_VERBOSE, "Resuming session %p\n", session);
 
@@ -210,6 +209,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
                     range->playback_time - 0.05,
                     0, NULL);
     ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
+    ev_io_start(session->srv->loop, &session->transport.rtcp_reader);
 }
 
 /**
@@ -368,7 +368,6 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
     Resource *resource = session->track->parent;
     MParserBuffer *buffer = NULL;
     ev_tstamp next_time = w->offset;
-    glong extra_cached_frames;
 
 #ifdef HAVE_METADATA
     if (session->metadata)
@@ -452,6 +451,18 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
     rtp_session_fill(session);
 }
 
+
+/**
+ * @brief parse incoming RTCP packets
+ */
+static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+    char buffer[RTP_DEFAULT_MTU*2] = { 0, }; //FIXME just a quick hack...
+    RTP_session *session = w->data;
+    int n = Sock_read(session->transport.rtcp_sock, buffer,
+                      RTP_DEFAULT_MTU*2, NULL, 0);
+    fnc_log(FNC_LOG_INFO, "[RTCP] Read %d byte", n);
+}
 /**
  * @brief Create a new RTP session object.
  *
@@ -471,6 +482,8 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
                              Track *tr) {
     feng *srv = rtsp->srv;
     RTP_session *rtp_s = g_slice_new0(RTP_session);
+    ev_io *io = &rtp_s->transport.rtcp_reader;
+    ev_periodic *periodic = &rtp_s->transport.rtp_writer;
 
     /* Make sure we start paused since we have to wait for parameters
      * given by @ref rtp_session_resume.
@@ -493,9 +506,10 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
 #ifdef HAVE_METADATA
 	rtp_s->metadata = rtsp_s->resource->metadata;
 #endif
-
-    rtp_s->transport.rtp_writer.data = rtp_s;
-    ev_periodic_init(&rtp_s->transport.rtp_writer, rtp_write_cb, 0, 0, NULL);
+    periodic->data = rtp_s;
+    ev_periodic_init(periodic, rtp_write_cb, 0, 0, NULL);
+    io->data = rtp_s;
+    ev_io_init(io, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
 
     // Setup the RTP session
     rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
