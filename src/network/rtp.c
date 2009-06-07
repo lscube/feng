@@ -41,6 +41,7 @@ static void rtp_transport_close(RTP_session * session)
     pair.RTCP = get_local_port(session->transport.rtcp_sock);
 
     ev_periodic_stop(session->srv->loop, &session->transport.rtp_writer);
+    ev_io_stop(session->srv->loop, &session->transport.rtcp_reader);
 
     switch (session->transport.rtp_sock->socktype) {
         case UDP:
