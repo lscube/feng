@@ -174,7 +174,7 @@ typedef struct Track {
 
     void *private_data; /* private data of media parser */
 
-    GList *sdp_fields;
+    GSList *sdp_fields;
 
     MediaProperties properties;
 } Track;

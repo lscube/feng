@@ -163,9 +163,9 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
             .descr = descr,
             .track = track
         };
-        g_list_foreach(track->sdp_fields,
-                       sdp_track_private_append,
-                       &pair);
+        g_slist_foreach(track->sdp_fields,
+                        sdp_track_private_append,
+                        &pair);
     }
 
     // CC licenses *

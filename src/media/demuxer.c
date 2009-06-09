@@ -45,8 +45,8 @@ static void sdp_fields_free(GList *fields)
     if ( fields == NULL )
         return;
 
-    g_list_foreach(fields, (GFunc)free_sdp_field, NULL);
-    g_list_free(fields);
+    g_slist_foreach(fields, (GFunc)free_sdp_field, NULL);
+    g_slist_free(fields);
 }
 
 /**
@@ -158,5 +158,5 @@ void track_add_sdp_field(Track *track, sdp_field_type type, char *value)
     field->type = type;
     field->field = value;
 
-    track->sdp_fields = g_list_prepend(track->sdp_fields, field);
+    track->sdp_fields = g_slist_prepend(track->sdp_fields, field);
 }
