@@ -31,10 +31,7 @@ static const MediaParserInfo info = {
     MP_video
 };
 
-static int mp4ves_uninit(void *private_data)
-{
-    return ERR_NOERROR;
-}
+#define mp4ves_uninit NULL
 
 static int mp4ves_init(MediaProperties *properties, void **private_data)
 {

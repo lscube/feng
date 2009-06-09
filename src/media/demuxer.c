@@ -65,7 +65,8 @@ void free_track(gpointer element, gpointer user_data)
         g_slice_free(MediaProperties, track->properties);
     }
 
-    mparser_unreg(track->parser, track->private_data);
+    if ( track->parser && track->parser->uninit )
+        track->parser->uninit(track->private_data);
 
     g_slice_free(Track, track);
 }

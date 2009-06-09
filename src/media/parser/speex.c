@@ -58,11 +58,7 @@ static int speex_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     return ERR_NOERROR;
 }
 
-
-static int speex_uninit(void *private_data)
-{
-    return ERR_NOERROR;
-}
+#define speex_uninit NULL
 
 FNC_LIB_MEDIAPARSER(speex);
 

@@ -74,11 +74,6 @@ MediaParser *mparser_find(const char *encoding_name)
     return NULL;
 }
 
-void mparser_unreg(MediaParser *p, void *private_data)
-{
-    if (p) p->uninit(private_data);
-}
-
 /**
  *  Insert a rtp packet inside the track buffer queue
  *  @param tr track the packetized frames/samples belongs to

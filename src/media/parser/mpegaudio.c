@@ -82,11 +82,7 @@ static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     return ERR_NOERROR;
 }
 
-
-static int mpa_uninit(void *private_data)
-{
-    return 0;
-}
+#define mpa_uninit NULL
 
 FNC_LIB_MEDIAPARSER(mpa);
 

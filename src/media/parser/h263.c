@@ -115,10 +115,7 @@ static int h263_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
     return ERR_NOERROR;
 }
 
-static int h263_uninit(void *private_data)
-{
-    return ERR_NOERROR;
-}
+#define h263_uninit NULL
 
 FNC_LIB_MEDIAPARSER(h263);
 

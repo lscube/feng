@@ -31,10 +31,7 @@ static const MediaParserInfo info = {
     MP_audio
 };
 
-static int amr_uninit(void *private_data)
-{
-    return ERR_NOERROR;
-}
+#define amr_uninit NULL
 
 static int amr_init(MediaProperties *properties, void **private_data)
 {

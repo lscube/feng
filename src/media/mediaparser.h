@@ -120,7 +120,6 @@ typedef struct {
  * @{
  */
 MediaParser *mparser_find(const char *);
-void mparser_unreg(MediaParser *, void *);
 /**
  * @}
  */

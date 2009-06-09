@@ -31,10 +31,7 @@ static const MediaParserInfo info = {
     MP_audio
 };
 
-static int aac_uninit(void *private_data)
-{
-    return ERR_NOERROR;
-}
+#define aac_uninit NULL
 
 static int aac_init(MediaProperties *properties, void **private_data)
 {
