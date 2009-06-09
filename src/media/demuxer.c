@@ -37,7 +37,7 @@ static void free_sdp_field(sdp_field *sdp,
         return;
 
     g_free(sdp->field);
-    g_free(sdp);
+    g_slice_free(sdp_field, sdp);
 }
 
 static void sdp_fields_free(GList *fields)
