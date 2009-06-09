@@ -64,7 +64,8 @@ static uint8_t *find_start_code(uint8_t *p, uint8_t *end, uint32_t *state)
 }
 #endif
 
-static int mpv_init(MediaProperties *properties, void **private_data)
+static int mpv_init(MediaProperties *properties,
+                    ATTR_UNUSED void **private_data)
 {
     INIT_PROPS
 
@@ -74,8 +75,9 @@ static int mpv_init(MediaProperties *properties, void **private_data)
 /* Source code taken from ff_rtp_send_mpegvideo (ffmpeg libavformat) and
  * modified to be fully rfc 2250 compliant
  */
-static int mpv_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
-          long extradata_len)
+static int mpv_parse(void *track, uint8_t *data, long len,
+                     ATTR_UNUSED uint8_t *extradata,
+                     ATTR_UNUSED long extradata_len)
 {
     Track * tr = track;
     int h, b = 1, e = 0 , ffc = 0, ffv = 0, fbv = 0, bfc = 0, mtu = DEFAULT_MTU;

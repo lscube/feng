@@ -410,7 +410,7 @@ static int sd_init(Resource * r)
 #define FNC_LIVE_PROTOCOL "mq://"
 #define FNC_LIVE_PROTOCOL_LEN 5
 
-static int sd_read_packet_track(Resource *res, Track *tr) {
+static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     double package_start_time;
     uint32_t package_timestamp;
     double timestamp;
@@ -523,7 +523,7 @@ static int sd_read_packet(Resource * r)
  */
 #define sd_seek NULL
 
-static int sd_uninit(Resource * r)
+static int sd_uninit(ATTR_UNUSED Resource * r)
 {
     return RESOURCE_OK;
 }

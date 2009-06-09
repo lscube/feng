@@ -66,7 +66,8 @@ static GPtrArray *listening_sockets;
  * @note Part of the cleanup destructors code, not compiled in
  *       production use.
  */
-static void feng_bound_socket_close(gpointer element, gpointer user_data)
+static void feng_bound_socket_close(gpointer element,
+                                    ATTR_UNUSED gpointer user_data)
 {
     Sock_close((Sock*)element);
 }

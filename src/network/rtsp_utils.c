@@ -68,7 +68,8 @@ void rtsp_session_editlist_append(RTSP_session *session, RTSP_Range *range)
  * @internal This should only be called through g_list_foreach by @ref
  *           rtsp_session_editlist_free.
  */
-static void rtsp_range_free(gpointer element, gpointer user_data)
+static void rtsp_range_free(gpointer element,
+                            ATTR_UNUSED gpointer user_data)
 {
     g_slice_free(RTSP_Range, element);
 }

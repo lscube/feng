@@ -87,7 +87,8 @@ static inline edl_item_elem *edl_active_res (void *private_data) {
     return (edl_item_elem *) g_list_nth_data(data->head, data->active);
 }
 
-static void destroy_list_data(gpointer elem, gpointer unused) {
+static void destroy_list_data(gpointer elem,
+                              ATTR_UNUSED gpointer unused) {
     edl_item_elem *item = (edl_item_elem *) elem;
     if (item)
         r_close(item->r);

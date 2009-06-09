@@ -191,8 +191,9 @@ static int vorbis_init(MediaProperties *properties, void **private_data)
 }
 
 #define XIPH_HEADER_SIZE 6
-static int vorbis_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
-                 long extradata_len)
+static int vorbis_parse(void *track, uint8_t *data, long len,
+                        ATTR_UNUSED uint8_t *extradata,
+                        ATTR_UNUSED long extradata_len)
 {
     //XXX handle the last packet on EOF
     Track *tr = (Track *)track;

@@ -30,7 +30,8 @@
 #include "fnc_log.h"
 
 
-static void free_sdp_field(sdp_field *sdp, void *unused)
+static void free_sdp_field(sdp_field *sdp,
+                           ATTR_UNUSED void *unused)
 {
     if (!sdp)
         return;
@@ -45,7 +46,8 @@ static void free_sdp_field(sdp_field *sdp, void *unused)
  * @param element Track to free
  * @param user_data Unused, for compatibility with g_list_foreach().
  */
-void free_track(gpointer element, gpointer user_data)
+void free_track(gpointer element,
+                ATTR_UNUSED gpointer user_data)
 {
     Track *track = (Track*)element;
 

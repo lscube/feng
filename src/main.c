@@ -63,7 +63,9 @@ static void CLEANUP_DESTRUCTOR main_cleanup()
 /**
  *  Handler to cleanly shut down feng
  */
-static void sigint_cb (struct ev_loop *loop, ev_signal *w, int revents)
+static void sigint_cb (struct ev_loop *loop,
+                       ATTR_UNUSED ev_signal * w,
+                       ATTR_UNUSED int revents)
 {
     ev_unloop (loop, EVUNLOOP_ALL);
 }
@@ -136,8 +138,10 @@ static void fncheader()
             VERSION);
 }
 
-static gboolean show_version(const gchar *option_name, const gchar *value,
-			     gpointer data, GError **error)
+static gboolean show_version(ATTR_UNUSED const gchar *option_name,
+                             ATTR_UNUSED const gchar *value,
+                             ATTR_UNUSED gpointer data,
+                             ATTR_UNUSED GError **error)
 {
   fncheader();
   exit(0);

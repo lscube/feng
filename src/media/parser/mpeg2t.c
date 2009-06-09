@@ -214,7 +214,8 @@ static int mp2t_get_frame2(uint8_t *dst, uint32_t dst_nbytes,
 #endif
 
 static int mp2t_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src,
-                          uint32_t src_nbytes, MediaProperties *properties,
+                          uint32_t src_nbytes,
+                          ATTR_UNUSED MediaProperties *properties,
                           void *private_data)
 {
     int to_copy = 0, i;
@@ -248,8 +249,9 @@ static int mp2t_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src,
     }
 }
 
-static int mp2t_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
-                      long extradata_len)
+static int mp2t_parse(void *track, uint8_t *data, long len,
+                      ATTR_UNUSED uint8_t *extradata,
+                      ATTR_UNUSED long extradata_len)
 {
     Track *tr = (Track *)track;
     int ret;

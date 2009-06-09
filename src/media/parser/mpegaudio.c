@@ -34,15 +34,17 @@ static const MediaParserInfo info = {
     MP_audio
 };
 
-static int mpa_init(MediaProperties *properties, void **private_data)
+static int mpa_init(MediaProperties *properties,
+                    ATTR_UNUSED void **private_data)
 {
     INIT_PROPS
 
     return 0;
 }
 
-static int mpa_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
-          long extradata_len)
+static int mpa_parse(void *track, uint8_t *data, long len,
+                     ATTR_UNUSED uint8_t *extradata,
+                     ATTR_UNUSED long extradata_len)
 {
     Track *tr = (Track *)track;
     uint32_t mtu = DEFAULT_MTU; //FIXME get it from SETUP

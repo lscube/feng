@@ -121,7 +121,7 @@ static int avf_probe(const char *filename)
     return RESOURCE_OK;
 }
 
-static double avf_timescaler (Resource *r, double res_time) {
+static double avf_timescaler (ATTR_UNUSED Resource *r, double res_time) {
     return res_time;
 }
 

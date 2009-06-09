@@ -97,8 +97,9 @@ static int aac_init(MediaProperties *properties, void **private_data)
 
 //XXX implement aggregation
 //#define AAC_EXTRA 7
-static int aac_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
-                 long extradata_len)
+static int aac_parse(void *track, uint8_t *data, long len,
+                     ATTR_UNUSED uint8_t *extradata,
+                     ATTR_UNUSED long extradata_len)
 {
     //XXX handle the last packet on EOF
     Track *tr = (Track *)track;

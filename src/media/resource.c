@@ -56,7 +56,8 @@ extern Demuxer fnc_demuxer_avf;
  * @note This function uses two parameters because it's used as
  *       interface for the closing thread pool.
  */
-static void r_free_cb(gpointer resource_p, gpointer user_data)
+static void r_free_cb(gpointer resource_p,
+                      ATTR_UNUSED gpointer user_data)
 {
     Resource *resource = (Resource *)resource_p;
     if (!resource)
@@ -267,7 +268,8 @@ Track *r_find_track(Resource *resource, const char *track_name) {
  *
  * @see bq_producer_reset_queue
  */
-static void r_track_producer_reset_queue(gpointer element, gpointer user_data) {
+static void r_track_producer_reset_queue(gpointer element,
+                                         ATTR_UNUSED gpointer user_data) {
     Track *t = (Track*)element;
 
     bq_producer_reset_queue(t->producer);

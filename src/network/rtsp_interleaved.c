@@ -77,7 +77,8 @@ typedef struct {
  * @brief Interleaved (TCP and SCTP) support
  */
 
-static void interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
+static void interleaved_read_tcp_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
+                                    ATTR_UNUSED int revents)
 {
     GByteArray *pkt;
     uint16_t ne_n;
@@ -106,7 +107,8 @@ static void interleaved_read_tcp_cb(struct ev_loop *loop, ev_io *w, int revents)
 }
 
 #ifdef HAVE_SCTP
-static void interleaved_read_sctp_cb(struct ev_loop *loop, ev_io *w, int revents)
+static void interleaved_read_sctp_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
+                                     ATTR_UNUSED int revents)
 {
     char buffer[RTSP_BUFFERSIZE + 1];
     RTSP_interleaved_channel *intlvd = w->data;

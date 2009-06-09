@@ -33,7 +33,8 @@ static const MediaParserInfo info = {
 
 #define amr_uninit NULL
 
-static int amr_init(MediaProperties *properties, void **private_data)
+static int amr_init(MediaProperties *properties,
+                    ATTR_UNUSED void **private_data)
 {
     sdp_field *sdp_private;
     char* config = NULL;
@@ -122,8 +123,9 @@ typedef struct
 #endif
 } amr_header;
 
-static int amr_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
-                 long extradata_len)
+static int amr_parse(void *track, uint8_t *data, long len,
+                     ATTR_UNUSED uint8_t *extradata,
+                     ATTR_UNUSED long extradata_len)
 {
     Track *tr = (Track *)track;
     uint32_t header_len, off = 1, payload, i, body_len, body_num = 0;

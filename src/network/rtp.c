@@ -78,7 +78,8 @@ static void rtp_fill_pool_free(RTP_session *session)
  *
  * @internal This function should only be called from g_slist_foreach.
  */
-static void rtp_session_free(gpointer session_gen, gpointer unused)
+static void rtp_session_free(gpointer session_gen,
+                             ATTR_UNUSED gpointer unused)
 {
     RTP_session *session = (RTP_session*)session_gen;
 
@@ -122,7 +123,8 @@ void rtp_session_gslist_free(GSList *sessions_list) {
  * @internal This function is used to initialize @ref
  *           RTP_session::fill_pool.
  */
-static void rtp_session_fill_cb(gpointer unused_data, gpointer session_p)
+static void rtp_session_fill_cb(ATTR_UNUSED gpointer unused_data,
+                                gpointer session_p)
 {
     RTP_session *session = (RTP_session*)session_p;
     Resource *resource = session->track->parent;
@@ -237,7 +239,8 @@ void rtp_session_gslist_resume(GSList *sessions_list, RTSP_Range *range) {
  *
  * @internal This function should only be called from g_slist_foreach
  */
-static void rtp_session_pause(gpointer session_gen, gpointer user_data) {
+static void rtp_session_pause(gpointer session_gen,
+                              ATTR_UNUSED gpointer user_data) {
     RTP_session *session = (RTP_session *)session_gen;
 
     /* We should assert its presence, we cannot pause a non-running
@@ -363,7 +366,8 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
  * @param w contains the session the RTP session for which to send the packets
  * @todo implement a saner ratecontrol
  */
-static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
+static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
+                         ATTR_UNUSED int revents)
 {
     RTP_session *session = w->data;
     Resource *resource = session->track->parent;
@@ -456,7 +460,9 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w, int revents)
 /**
  * @brief parse incoming RTCP packets
  */
-static void rtcp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
+static void rtcp_read_cb(ATTR_UNUSED struct ev_loop *loop,
+                         ev_io *w,
+                         ATTR_UNUSED int revents)
 {
     char buffer[RTP_DEFAULT_MTU*2] = { 0, }; //FIXME just a quick hack...
     RTP_session *session = w->data;

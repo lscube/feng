@@ -45,7 +45,9 @@
  * disconnected. It stops the other events from running, and frees all
  * the remaining resources for the client itself.
  */
-static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int revents)
+static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
+                                         ev_async *w,
+                                         ATTR_UNUSED int revents)
 {
     RTSP_Client *rtsp = (RTSP_Client*)w->data;
     GString *outbuf = NULL;
@@ -76,7 +78,8 @@ static void client_ev_disconnect_handler(struct ev_loop *loop, ev_async *w, int 
     fnc_log(FNC_LOG_INFO, "[client] Client removed");
 }
 
-static void check_if_any_rtp_session_timedout(gpointer element, gpointer user_data)
+static void check_if_any_rtp_session_timedout(gpointer element,
+                                              ATTR_UNUSED gpointer user_data)
 {
     RTP_session *session = (RTP_session *)element;
     time_t now = time(NULL);
@@ -100,7 +103,8 @@ static void check_if_any_rtp_session_timedout(gpointer element, gpointer user_da
     }
 }
 
-static void client_ev_timeout(struct ev_loop *loop, ev_timer *w, int revents)
+static void client_ev_timeout(struct ev_loop *loop, ev_timer *w,
+                              ATTR_UNUSED int revents)
 {
     RTSP_Client *rtsp = w->data;
     if(rtsp->session->rtp_sessions)
@@ -132,7 +136,8 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w, int revents)
  * @internal This function should be used as callback for an ev_io
  *           listener.
  */
-void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents)
+void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
+                             ATTR_UNUSED int revents)
 {
     Sock *sock = w->data;
     feng *srv = sock->data;

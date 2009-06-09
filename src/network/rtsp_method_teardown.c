@@ -32,7 +32,8 @@
  * @param req The client request for the method
  * @todo trigger the release of rtp resources here
  */
-void RTSP_teardown(RTSP_Client * rtsp, RTSP_Request *req)
+void RTSP_teardown(ATTR_UNUSED RTSP_Client *rtsp,
+                   RTSP_Request *req)
 {
     if ( !rtsp_request_check_url(req) )
         return;

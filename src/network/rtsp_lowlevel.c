@@ -65,7 +65,8 @@ static int rtsp_sock_read(RTSP_Client *rtsp, int *stream, char *buffer, int size
     return n;
 }
 
-void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
+void rtsp_read_cb(struct ev_loop *loop, ev_io *w,
+                  ATTR_UNUSED int revents)
 {
     char buffer[RTSP_BUFFERSIZE + 1] = { 0, };    /* +1 to control the final '\0' */
     int read_size;
@@ -114,7 +115,8 @@ void rtsp_read_cb(struct ev_loop *loop, ev_io *w, int revents)
     ev_async_send(loop, &rtsp->ev_sig_disconnect);
 }
 
-void rtsp_write_cb(struct ev_loop *loop, ev_io *w, int revents)
+void rtsp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
+                   ATTR_UNUSED int revents)
 {
     RTSP_Client *rtsp = w->data;
     GByteArray *outpkt = (GByteArray *)g_queue_pop_tail(rtsp->out_queue);

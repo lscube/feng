@@ -60,7 +60,8 @@ typedef struct
 #endif
 } h263_header;
 
-static int h263_init(MediaProperties *properties, void **private_data)
+static int h263_init(MediaProperties *properties,
+                     ATTR_UNUSED void **private_data)
 {
     sdp_field *sdp_private;
 
@@ -77,8 +78,9 @@ static int h263_init(MediaProperties *properties, void **private_data)
     return ERR_NOERROR;
 }
 
-static int h263_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
-                 long extradata_len)
+static int h263_parse(void *track, uint8_t *data, long len,
+                      ATTR_UNUSED uint8_t *extradata,
+                      ATTR_UNUSED long extradata_len)
 {
     Track *tr = (Track *)track;
     int mtu = DEFAULT_MTU, cur = 0, payload, header_len, found_gob = 0;

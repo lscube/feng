@@ -261,8 +261,9 @@ static int h264_init(MediaProperties *properties, void **private_data)
 //  - fragmenting
 //  - feed a single NAL as is.
 
-static int h264_parse(void *track, uint8_t *data, long len, uint8_t *extradata,
-                 long extradata_len)
+static int h264_parse(void *track, uint8_t *data, long len,
+                      ATTR_UNUSED uint8_t *extradata,
+                      ATTR_UNUSED long extradata_len)
 {
     Track *tr = (Track *)track;
     h264_priv *priv = tr->private_data;
