@@ -275,15 +275,6 @@ static int mp2t_parse(void *track, uint8_t *data, long len,
     return ERR_NOERROR;
 }
 
-static int mp2t_uninit(void *private_data)
-{
-    mp2t_priv* priv = (mp2t_priv*)private_data;
-
-    if(priv) {
-        g_free(private_data);
-    }
-    return ERR_NOERROR;
-}
-
+#define mp2t_uninit g_free
 
 FNC_LIB_MEDIAPARSER(mp2t);

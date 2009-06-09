@@ -186,12 +186,6 @@ static int mpv_parse(void *track, uint8_t *data, long len,
     return ERR_NOERROR;
 }
 
-
-static int mpv_uninit(void *private_data)
-{
-    if (private_data)
-        g_free(private_data);
-    return ERR_NOERROR;
-}
+#define mpv_uninit g_free
 
 FNC_LIB_MEDIAPARSER(mpv);

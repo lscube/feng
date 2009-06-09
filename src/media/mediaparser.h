@@ -106,12 +106,9 @@ typedef struct {
  * */
     int (*parse)(void *track, uint8_t *data, long len, uint8_t *extradata,
                  long extradata_len);
-/*! uninit: free the media parser structures.
- *
- *  @param private_data: pointer to parser specific private data.
- *  @return: 0 on success, non zero otherwise
- * */
-    int (*uninit)(void *private_data);
+
+    /** Uninit function to free the private data */
+    GDestroyNotify uninit;
 } MediaParser;
 
 /**

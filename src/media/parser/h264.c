@@ -360,12 +360,7 @@ static int h264_parse(void *track, uint8_t *data, long len,
     return ERR_NOERROR;
 }
 
-static int h264_uninit(void *private_data)
-{
-    //that's all?
-    if (private_data) g_free(private_data);
-    return ERR_NOERROR;
-}
+#define h264_uninit g_free
 
 FNC_LIB_MEDIAPARSER(h264);
 

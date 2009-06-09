@@ -142,15 +142,15 @@ static int encode_header(uint8_t *data, int len, theora_priv *priv)
     return 0;
 }
 
-static int theora_uninit(void *private_data)
+static void theora_uninit(void *private_data)
 {
     theora_priv *priv = private_data;
-    if (priv) {
-        if (priv->conf_len) g_free(priv->conf);
-        if (priv->len) g_free(priv->packet);
-        g_free(private_data);
-    }
-    return ERR_NOERROR;
+    if (!priv)
+        return;
+
+    g_free(priv->conf);
+    g_free(priv->packet);
+    g_free(private_data);
 }
 
 static int theora_init(MediaProperties *properties, void **private_data)
