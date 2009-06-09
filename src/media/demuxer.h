@@ -96,8 +96,6 @@ typedef struct ResourceInfo_s {
     gboolean seekable;
 } ResourceInfo;
 
-ResourceInfo *resinfo_new();
-
 typedef struct Resource {
     GMutex *lock;
     struct Demuxer *demuxer;
