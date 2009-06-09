@@ -148,9 +148,6 @@ if test "$enable_duma" = "yes"; then
     LIBS="$LIBS -lduma"
 fi
 
-CC_ATTRIBUTE_MALLOC(
-  [AC_DEFINE([ATTR_MALLOC], [__attribute__((__malloc__))], [Define this if ATTR_MALLOC is supported])],
-  [AC_DEFINE([ATTR_MALLOC], [], [Define this if ATTR_MALLOC is not supported])])
 CC_ATTRIBUTE_UNUSED(
   [AC_DEFINE([ATTR_UNUSED], [__attribute__((__unused__))], [Define this if ATTR_UNUSED is supported])],
   [AC_DEFINE([ATTR_UNUSED], [], [Define this if ATTR_UNUSED is not supported])])
