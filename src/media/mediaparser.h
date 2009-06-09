@@ -26,7 +26,6 @@
 #include <stdint.h>
 
 #include "feng_utils.h"
-#include "mediautils.h"
 #include "sdp_grammar.h"
 
 struct Track;
@@ -76,7 +75,7 @@ typedef struct MediaProperties {
     uint8_t *ColorSpace;
     float GammaValue;
     uint8_t *extradata;
-    long extradata_len;
+    size_t extradata_len;
     sdp_field_list sdp_private;
 } MediaProperties;
 
@@ -108,15 +107,9 @@ typedef struct {
     GDestroyNotify uninit;
 } MediaParser;
 
-/**
- * MediaParser Interface, pending overhaul
- * @defgroup MediaParser MediaParser Interface
- * @{
- */
 MediaParser *mparser_find(const char *);
-/**
- * @}
- */
+
+char *extradata2config(MediaProperties *properties);
 
 /**
  * @brief Buffer passed between parsers and RTP sessions

@@ -45,19 +45,13 @@ static int amr_init(MediaProperties *properties,
     /*get config content if has*/
     if(properties->extradata_len)
     {
-        config = extradata2config(properties->extradata,
-                                 properties->extradata_len);
+        config = extradata2config(properties);
         if (!config) return ERR_PARSE;
-    }
 
-    if(!config)
-    {
-        sdp_private->field =  g_strdup_printf("octet-align=1");
-    }
-    else
-    {
         sdp_private->field =  g_strdup_printf("octet-align=1; config=%s", config);
         g_free(config);
+    } else {
+        sdp_private->field =  g_strdup_printf("octet-align=1");
     }
 
     properties->sdp_private =

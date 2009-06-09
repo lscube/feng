@@ -23,7 +23,6 @@
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"
-#include "media/mediautils.h"
 #include "fnc_log.h"
 
 static const MediaParserInfo info = {
@@ -47,8 +46,7 @@ static int aac_init(MediaProperties *properties, void **private_data)
     sdp_private = g_new(sdp_field, 1);
     sdp_private->type = fmtp;
 
-    config = extradata2config(properties->extradata,
-                              properties->extradata_len);
+    config = extradata2config(properties);
     if (!config) return ERR_PARSE;
 
     sdp_private->field =

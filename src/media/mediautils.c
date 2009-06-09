@@ -25,11 +25,11 @@
 #include <glib.h>
 #include <stdio.h>
 
-#include "mediautils.h"
+#include "mediaparser.h"
 
 // Ripped from ffmpeg, see sdp.c
 
-static void digit_to_char(gchar *dst, guint8 src)
+static void digit_to_char(char *dst, uint8_t src)
 {
     if (src < 10) {
         *dst = '0' + src;
@@ -38,29 +38,21 @@ static void digit_to_char(gchar *dst, guint8 src)
     }
 }
 
-static gchar *data_to_hex(gchar *buff, const guint8 *src, gint s)
+char *extradata2config(MediaProperties *properties)
 {
-    gint i;
+    const size_t config_len = properties->extradata_len * 2 + 1;
+    char *config = g_malloc(config_len);
+    size_t i;
 
-    for(i = 0; i < s; i++) {
-        digit_to_char(buff + 2 * i, src[i] >> 4);
-        digit_to_char(buff + 2 * i + 1, src[i] & 0xF);
-    }
-
-    return buff;
-}
-
-gchar *extradata2config(const guint8 *extradata, gint extradata_size)
-{
-    gchar *config = g_malloc(extradata_size * 2 + 1);
-
-    if (config == NULL) {
+    if (config == NULL)
         return NULL;
+
+    for(i = 0; i < properties->extradata_len; i++) {
+        digit_to_char(config + 2 * i, properties->extradata[i] >> 4);
+        digit_to_char(config + 2 * i + 1, properties->extradata[i] & 0xF);
     }
 
-    data_to_hex(config, extradata, extradata_size);
-
-    config[extradata_size * 2] = '\0';
+    config[config_len-1] = '\0';
 
     return config;
 }

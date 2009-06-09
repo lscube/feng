@@ -25,7 +25,6 @@
 
 #include <glib.h>
 
-#include "mediautils.h"
 #include "mediaparser.h"
 #include "bufferqueue.h"
 #include "sdp_grammar.h"
