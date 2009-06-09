@@ -24,10 +24,9 @@
 #define FN_DEMUXER_H
 
 #include <glib.h>
+#include <stdint.h>
 
-#include "mediaparser.h"
 #include "bufferqueue.h"
-#include "sdp_grammar.h"
 
 struct feng;
 
@@ -41,9 +40,32 @@ struct feng;
 #define MAX_TRACKS 20
 #define MAX_SEL_TRACKS 5
 
+typedef enum {
+    MP_undef = -1,
+    MP_audio,
+    MP_video,
+    MP_application,
+    MP_data,
+    MP_control
+} MediaType;
+
+typedef enum {
+    MS_stored=0,
+    MS_live
+} MediaSource;
+
 //! typedefs that give convenient names to GLists used
 typedef GList *TrackList;
 typedef GList *SelList;
+
+struct MediaParser;
+
+typedef enum {empty_field, fmtp, rtpmap} sdp_field_type;
+
+typedef struct {
+	sdp_field_type type;
+	char *field;
+} sdp_field;
 
 typedef struct ResourceInfo_s {
     char *mrl;
@@ -53,7 +75,7 @@ typedef struct ResourceInfo_s {
     char *email;
     char *phone;
     time_t mtime;
-    sdp_field_list sdp_private;
+    GList *sdp_private;
     double duration;
     MediaSource media_source;
     char twin[256];
@@ -112,16 +134,50 @@ typedef struct Trackinfo_s {
     //end CC
 } TrackInfo;
 
+typedef struct MediaProperties {
+    int bit_rate; /*!< average if VBR or -1 is not useful*/
+    int payload_type;
+    unsigned int clock_rate;
+    char encoding_name[11];
+    MediaType media_type;
+    MediaSource media_source;
+    int codec_id; /*!< Codec ID as defined by ffmpeg */
+    int codec_sub_id; /*!< Subcodec ID as defined by ffmpeg */
+    double pts;             //time is in seconds
+    double dts;             //time is in seconds
+    double frame_duration;  //time is in seconds
+    float sample_rate;/*!< SamplingFrequency*/
+    float OutputSamplingFrequency;
+    int audio_channels;
+    int bit_per_sample;/*!< BitDepth*/
+    float frame_rate;
+    int FlagInterlaced;
+    unsigned int PixelWidth;
+    unsigned int PixelHeight;
+    unsigned int DisplayWidth;
+    unsigned int DisplayHeight;
+    unsigned int DisplayUnit;
+    unsigned int AspectRatio;
+    uint8_t *ColorSpace;
+    float GammaValue;
+    uint8_t *extradata;
+    size_t extradata_len;
+} MediaProperties;
+
 typedef struct Track {
     GMutex *lock;
     TrackInfo *info;
     double start_time;
-    MediaParser *parser;
+    struct MediaParser *parser;
     /*feng*/
     BufferQueue_Producer *producer;
-    MediaProperties *properties; /* track properties */
     Resource *parent;
+
     void *private_data; /* private data of media parser */
+
+    GList *sdp_fields;
+
+    MediaProperties properties;
 } Track;
 
 typedef struct {
@@ -162,5 +218,7 @@ Track *r_find_track(Resource *, const char *);
 // Tracks
 Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 void free_track(gpointer element, gpointer user_data);
+
+void track_add_sdp_field(Track *track, sdp_field_type type, char *value);
 
 #endif // FN_DEMUXER_H

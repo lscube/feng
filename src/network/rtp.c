@@ -29,6 +29,7 @@
 #include "rtsp.h"
 #include "fnc_log.h"
 #include "media/demuxer.h"
+#include "media/mediaparser.h"
 
 /**
  * Closes a transport linked to a session
@@ -328,7 +329,7 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     RTP_packet *packet = g_malloc0(packet_size);
     Track *tr = session->track;
     const uint32_t timestamp = RTP_calc_rtptime(session,
-                                                tr->properties->clock_rate,
+                                                tr->properties.clock_rate,
                                                 buffer);
 
     packet->version = 2;
@@ -336,7 +337,7 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     packet->extension = 0;
     packet->csrc_len = 0;
     packet->marker = buffer->marker & 0x1;
-    packet->payload = tr->properties->payload_type & 0x7f;
+    packet->payload = tr->properties.payload_type & 0x7f;
     packet->seq_no = htons(++session->seq_no);
     packet->timestamp = htonl(timestamp);
     packet->ssrc = htonl(session->ssrc);
@@ -399,7 +400,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
     if (resource->eor)
         fnc_log(FNC_LOG_INFO,
             "[%s] end of resource %d packets to be fetched",
-            session->track->properties->encoding_name,
+            session->track->properties.encoding_name,
             bq_consumer_unseen(session->consumer));
 
     /* Get the current buffer, if there is enough data */
@@ -428,7 +429,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
         if (bq_consumer_move(session->consumer)) {
             next = bq_consumer_get(session->consumer);
             if(delivery != next->delivery) {
-                if (session->track->properties->media_source == MS_live)
+                if (session->track->properties.media_source == MS_live)
                     next_time += next->delivery - delivery;
                 else
                     next_time = session->range->playback_time -
@@ -442,7 +443,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
 
         fnc_log(FNC_LOG_VERBOSE,
             "[%s] Now: %5.4f, cur %5.4f[%5.4f][%5.4f], next %5.4f %s\n",
-            session->track->properties->encoding_name,
+            session->track->properties.encoding_name,
             ev_now(loop) - session->range->playback_time,
             delivery,
             timestamp,

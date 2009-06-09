@@ -268,42 +268,42 @@ static int avf_read_packet(Resource * r)
             fnc_log(FNC_LOG_VERBOSE, "[avf] Parsing track %s",
                     tr->info->name);
             if(pkt.dts != AV_NOPTS_VALUE) {
-                tr->properties->dts = r->timescaler (r,
+                tr->properties.dts = r->timescaler (r,
                     pkt.dts * av_q2d(stream->time_base));
                 fnc_log(FNC_LOG_VERBOSE,
                         "[avf] delivery timestamp %f",
-                        tr->properties->dts);
+                        tr->properties.dts);
             } else {
                 fnc_log(FNC_LOG_VERBOSE,
                         "[avf] missing delivery timestamp");
             }
 
             if(pkt.pts != AV_NOPTS_VALUE) {
-                tr->properties->pts = r->timescaler (r,
+                tr->properties.pts = r->timescaler (r,
                     pkt.pts * av_q2d(stream->time_base));
                 fnc_log(FNC_LOG_VERBOSE,
                         "[avf] presentation timestamp %f",
-                        tr->properties->pts);
+                        tr->properties.pts);
             } else {
                 fnc_log(FNC_LOG_VERBOSE, "[avf] missing presentation timestamp");
             }
 
             if (pkt.duration) {
-                tr->properties->frame_duration = pkt.duration *
+                tr->properties.frame_duration = pkt.duration *
                     av_q2d(stream->time_base);
             } else { // welcome to the wonderland ehm, hackland...
                 switch (stream->codec->codec_id) {
                     case CODEC_ID_MP2:
                     case CODEC_ID_MP3:
-                        tr->properties->frame_duration = 1152.0/
-                                tr->properties->sample_rate;
+                        tr->properties.frame_duration = 1152.0/
+                                tr->properties.sample_rate;
                         break;
                     default: break;
                 }
             }
 
             fnc_log(FNC_LOG_VERBOSE, "[avf] packet duration %f",
-                tr->properties->frame_duration);
+                tr->properties.frame_duration);
 
             ret = tr->parser->parse(tr, pkt.data, pkt.size);
             break;

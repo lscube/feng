@@ -32,40 +32,24 @@ static const MediaParserInfo info = {
 
 #define aac_uninit NULL
 
-static int aac_init(MediaProperties *properties,
-                    ATTR_UNUSED void **private_data)
+static int aac_init(Track *track)
 {
-    sdp_field *sdp_private;
     char *config;
+    char *sdp_value;
 
+    if ( (config = extradata2config(&track->properties)) == NULL )
+        return ERR_PARSE;
 
-    if(!properties->extradata_len) {
-        fnc_log(FNC_LOG_ERR, "No extradata!");
-        return ERR_ALLOC;
-    }
-
-    sdp_private = g_new(sdp_field, 1);
-    sdp_private->type = fmtp;
-
-    config = extradata2config(properties);
-    if (!config) return ERR_PARSE;
-
-    sdp_private->field =
-        g_strdup_printf("streamtype=5;profile-level-id=1;"
-                        "mode=AAC-hbr;sizeLength=13;indexLength=3;"
-                        "indexDeltaLength=3; config=%s;", config);
+    sdp_value = g_strdup_printf("streamtype=5;profile-level-id=1;"
+                                "mode=AAC-hbr;sizeLength=13;indexLength=3;"
+                                "indexDeltaLength=3; config=%s;", config);
     g_free(config);
 
-    properties->sdp_private =
-        g_list_prepend(properties->sdp_private, sdp_private);
+    track_add_sdp_field(track, fmtp, sdp_value);
 
-    sdp_private = g_new(sdp_field, 1);
-    sdp_private->type = rtpmap;
-    sdp_private->field = g_strdup_printf ("mpeg4-generic/%d",
-                                            properties->clock_rate);
-
-    properties->sdp_private =
-        g_list_prepend(properties->sdp_private, sdp_private);
+    sdp_value = g_strdup_printf ("mpeg4-generic/%d",
+                                 track->properties.clock_rate);
+    track_add_sdp_field(track, rtpmap, sdp_value);
 
     INIT_PROPS
 
@@ -96,10 +80,9 @@ static int aac_init(MediaProperties *properties,
 
 //XXX implement aggregation
 //#define AAC_EXTRA 7
-static int aac_parse(void *track, uint8_t *data, long len)
+static int aac_parse(Track *tr, uint8_t *data, long len)
 {
     //XXX handle the last packet on EOF
-    Track *tr = (Track *)track;
     int off = 0;
     uint32_t mtu = DEFAULT_MTU;  //FIXME get it from SETUP
     uint32_t payload = mtu - AU_HEADER_SIZE;
@@ -120,9 +103,9 @@ static int aac_parse(void *track, uint8_t *data, long len)
         while (len > payload) {
             memcpy(packet + AU_HEADER_SIZE, data + off, payload);
             mparser_buffer_write(tr,
-                                 tr->properties->pts,
-                                 tr->properties->dts,
-                                 tr->properties->frame_duration,
+                                 tr->properties.pts,
+                                 tr->properties.dts,
+                                 tr->properties.frame_duration,
                                  0,
                                  packet, mtu);
 
@@ -133,9 +116,9 @@ static int aac_parse(void *track, uint8_t *data, long len)
 
     memcpy(packet + AU_HEADER_SIZE, data + off, len);
     mparser_buffer_write(tr,
-                         tr->properties->pts,
-                         tr->properties->dts,
-                         tr->properties->frame_duration,
+                         tr->properties.pts,
+                         tr->properties.dts,
+                         tr->properties.frame_duration,
                          1,
                          packet, len + AU_HEADER_SIZE);
 

@@ -32,26 +32,24 @@ static const MediaParserInfo info = {
     MP_audio
 };
 
-static int speex_init(MediaProperties *properties,
-                      ATTR_UNUSED void **private_data)
+static int speex_init(Track *track)
 {
     INIT_PROPS
 
     return ERR_NOERROR;
 }
 
-static int speex_parse(void *track, uint8_t *data, long len)
+static int speex_parse(Track *tr, uint8_t *data, long len)
 {
-    Track *tr = (Track *)track;
     int mtu = DEFAULT_MTU;
 
     if (len > mtu)
         return ERR_ALLOC;
 
     mparser_buffer_write(tr,
-                         tr->properties->pts,
-                         tr->properties->dts,
-                         tr->properties->frame_duration,
+                         tr->properties.pts,
+                         tr->properties.dts,
+                         tr->properties.frame_duration,
                          1,
                          data, len);
 

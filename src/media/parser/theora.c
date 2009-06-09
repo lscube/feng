@@ -142,55 +142,45 @@ static int encode_header(uint8_t *data, int len, theora_priv *priv)
     return 0;
 }
 
-static void theora_uninit(void *private_data)
+static void theora_uninit(Track *track)
 {
-    theora_priv *priv = private_data;
+    theora_priv *priv = track->private_data;
     if (!priv)
         return;
 
     g_free(priv->conf);
     g_free(priv->packet);
-    g_free(private_data);
+    g_slice_free(theora_priv, priv);
 }
 
-static int theora_init(MediaProperties *properties, void **private_data)
+static int theora_init(Track *track)
 {
     sdp_field *sdp_private;
-    theora_priv *priv = g_new0(theora_priv, 1);
-    int err;
+    theora_priv *priv;
     char *buf;
 
-    if (!priv) return ERR_ALLOC;
+    if(track->properties.extradata_len == 0)
+        return ERR_ALLOC;
 
-    if(!properties->extradata_len)
-	goto err_alloc;
+    priv = g_slice_new(theora_priv);
 
-    err = encode_header(properties->extradata,
-                          properties->extradata_len, priv);
+    if ( encode_header(track->properties.extradata,
+                       track->properties.extradata_len, priv) ||
+         (buf = g_base64_encode(priv->conf, priv->conf_len)) == NULL )
+        goto err_alloc;
 
-    if (err) goto err_alloc;
+    track_add_sdp_field(track, fmtp,
+                        g_strdup_printf("delivery-method=in_band; configuration=%s;",
+                                        buf));
+    g_free(buf);
 
-    buf = g_base64_encode(priv->conf, priv->conf_len);
-    if (!buf) goto err_alloc;
-
-    sdp_private = g_new(sdp_field, 1);
-    sdp_private->type = fmtp;
-    sdp_private->field =
-        g_strdup_printf("delivery-method=in_band; configuration=%s;", buf);
-    properties->sdp_private =
-        g_list_prepend(properties->sdp_private, sdp_private);
-
-    sdp_private = g_new(sdp_field, 1);
-    sdp_private->type = rtpmap;
-    sdp_private->field = g_strdup_printf ("theora/%d",
-                                            properties->clock_rate);
-
-    properties->sdp_private =
-        g_list_prepend(properties->sdp_private, sdp_private);
+    track_add_sdp_field(track, rtpmap,
+                        g_strdup_printf ("theora/%d",
+                                         track->properties.clock_rate));
 
     INIT_PROPS
 
-    *private_data = priv;
+    track->private_data = priv;
 
     return ERR_NOERROR;
 
@@ -228,10 +218,9 @@ static int theora_parse(void *track, uint8_t *data, long len)
 //            packet[3] |= 0 << 4; //data type
             memcpy(packet + XIPH_HEADER_SIZE, data + off, payload);
             mparser_buffer_write(tr,
-tr->properties->pts,
-tr->properties->dts,
-
-                                 tr->properties->frame_duration,
+                                 tr->properties.pts,
+                                 tr->properties.dts,
+                                 tr->properties.frame_duration,
                                  0,
                                  packet, mtu);
 
@@ -249,9 +238,9 @@ tr->properties->dts,
     packet[5] = len&0xff;
     memcpy(packet + XIPH_HEADER_SIZE, data + off, len);
     mparser_buffer_write(tr,
-                         tr->properties->pts,
-                         tr->properties->dts,
-                         tr->properties->frame_duration,
+                         tr->properties.pts,
+                         tr->properties.dts,
+                         tr->properties.frame_duration,
                          1,
                          packet, len + XIPH_HEADER_SIZE);
 

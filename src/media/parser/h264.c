@@ -32,8 +32,6 @@ static const MediaParserInfo info = {
 
 typedef struct {
     int is_avc;
-    uint8_t *packet; //holds the incomplete packet
-    unsigned int len; // incomplete packet length
     unsigned int nal_length_size; // used in avc
 } h264_priv;
 
@@ -78,9 +76,9 @@ static void frag_fu_a(uint8_t *nal, int fragsize, int mtu,
         memcpy(buf + 2, nal, fraglen);
         fnc_log(FNC_LOG_VERBOSE, "[h264] Frag %d %d",buf[0], buf[1]);
         mparser_buffer_write(tr,
-                             tr->properties->pts,
-                             tr->properties->dts,
-                             tr->properties->frame_duration,
+                             tr->properties.pts,
+                             tr->properties.dts,
+                             tr->properties.frame_duration,
                              (fragsize<=fraglen),
                              buf, fraglen + 2);
         fragsize -= fraglen;
@@ -204,55 +202,46 @@ static char *encode_header(uint8_t *p, unsigned int len, int packet_mode)
 
 #define FU_A 1
 
-static int h264_init(MediaProperties *properties, void **private_data)
+static int h264_init(Track *track)
 {
     sdp_field *sdp_private;
-    h264_priv *priv = g_new0(h264_priv, 1);
+    h264_priv *priv;
     char *sprop = NULL;
     int err = ERR_ALLOC;
 
-    if (!priv) return ERR_ALLOC;
-
-    if (properties->extradata) {
-        if(properties->extradata[0] == 1) {
-        	if (properties->extradata_len < 7) goto err_alloc;
-        	priv->nal_length_size = (properties->extradata[4]&0x03)+1;
-            priv->is_avc = 1;
-            sprop = encode_avc1_header(properties->extradata,
-                                       properties->extradata_len, FU_A);
-            if (sprop == NULL) goto err_alloc;
-        } else {
-            sprop = encode_header(properties->extradata,
-                                  properties->extradata_len, FU_A);
-            if (sprop == NULL) goto err_alloc;
-        }
-
-        sdp_private = g_new(sdp_field, 1);
-        sdp_private->type = fmtp;
-        sdp_private->field = sprop;
-        properties->sdp_private =
-            g_list_prepend(properties->sdp_private, sdp_private);
-    } else {
+    if (track->properties.extradata_len == 0) {
         fnc_log(FNC_LOG_WARN, "[h264] No Extradata, unsupported\n");
-        err = ERR_UNSUPPORTED_PT;
-        goto err_alloc;
+        return ERR_UNSUPPORTED_PT;
     }
 
-    sdp_private = g_new(sdp_field, 1);
-    sdp_private->type = rtpmap;
-    sdp_private->field = g_strdup_printf ("H264/%d",properties->clock_rate);
+    priv = g_slice_new(h264_priv);
 
-    properties->sdp_private =
-        g_list_prepend(properties->sdp_private, sdp_private);
+    if(track->properties.extradata[0] == 1) {
+        if (track->properties.extradata_len < 7) goto err_alloc;
+        priv->nal_length_size = (track->properties.extradata[4]&0x03)+1;
+        priv->is_avc = 1;
+        sprop = encode_avc1_header(track->properties.extradata,
+                                   track->properties.extradata_len, FU_A);
+        if (sprop == NULL) goto err_alloc;
+    } else {
+        sprop = encode_header(track->properties.extradata,
+                              track->properties.extradata_len, FU_A);
+        if (sprop == NULL) goto err_alloc;
+    }
+
+    track_add_sdp_field(track, fmtp, sprop);
+
+    track_add_sdp_field(track, rtpmap,
+                        g_strdup_printf ("H264/%d",track->properties.clock_rate));
 
     INIT_PROPS
 
-    *private_data = priv;
+    track->private_data = priv;
 
     return ERR_NOERROR;
 
-    err_alloc:
-        g_free(priv);
+ err_alloc:
+    g_slice_free(h264_priv, priv);
     return err;
 }
 
@@ -261,9 +250,8 @@ static int h264_init(MediaProperties *properties, void **private_data)
 //  - fragmenting
 //  - feed a single NAL as is.
 
-static int h264_parse(void *track, uint8_t *data, long len)
+static int h264_parse(Track *tr, uint8_t *data, long len)
 {
-    Track *tr = (Track *)track;
     h264_priv *priv = tr->private_data;
     uint32_t mtu = DEFAULT_MTU; //FIXME get it from SETUP
 //    double nal_time; // see page 9 and 7.4.1.2
@@ -288,9 +276,9 @@ static int h264_parse(void *track, uint8_t *data, long len)
             }
             if (mtu >= nalsize) {
                 mparser_buffer_write(tr,
-                                     tr->properties->pts,
-                                     tr->properties->dts,
-                                     tr->properties->frame_duration,
+                                     tr->properties.pts,
+                                     tr->properties.dts,
+                                     tr->properties.frame_duration,
                                      1,
                                      data + index, nalsize);
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
@@ -322,9 +310,9 @@ static int h264_parse(void *track, uint8_t *data, long len)
             if (mtu >= q - p) {
                 fnc_log(FNC_LOG_VERBOSE, "[h264] Sending NAL %d",p[0]&0x1f);
                 mparser_buffer_write(tr,
-                                     tr->properties->pts,
-                                     tr->properties->dts,
-                                     tr->properties->frame_duration,
+                                     tr->properties.pts,
+                                     tr->properties.dts,
+                                     tr->properties.frame_duration,
                                      1,
                                      p, q - p);
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
@@ -342,9 +330,9 @@ static int h264_parse(void *track, uint8_t *data, long len)
         if (mtu >= len - (p - data)) {
             fnc_log(FNC_LOG_VERBOSE, "[h264] no frags");
             mparser_buffer_write(tr,
-                                 tr->properties->pts,
-                                 tr->properties->dts,
-                                 tr->properties->frame_duration,
+                                 tr->properties.pts,
+                                 tr->properties.dts,
+                                 tr->properties.frame_duration,
                                  1,
                                  p, len - (p - data));
         } else {
@@ -358,7 +346,10 @@ static int h264_parse(void *track, uint8_t *data, long len)
     return ERR_NOERROR;
 }
 
-#define h264_uninit g_free
+static void h264_uninit(Track *tr)
+{
+    g_slice_free(h264_priv, tr->private_data);
+}
 
 FNC_LIB_MEDIAPARSER(h264);
 

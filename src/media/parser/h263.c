@@ -60,27 +60,19 @@ typedef struct
 #endif
 } h263_header;
 
-static int h263_init(MediaProperties *properties,
-                     ATTR_UNUSED void **private_data)
+static int h263_init(Track *track)
 {
-    sdp_field *sdp_private;
-
-    sdp_private = g_new(sdp_field, 1);
-    sdp_private->type = rtpmap;
-    sdp_private->field = g_strdup_printf ("H263-1998/%d",
-                                            properties->clock_rate);
-
-    properties->sdp_private =
-        g_list_prepend(properties->sdp_private, sdp_private);
+    track_add_sdp_field(track, rtpmap,
+                        g_strdup_printf ("H263-1998/%d",
+                                         track->properties.clock_rate));
 
     INIT_PROPS
 
     return ERR_NOERROR;
 }
 
-static int h263_parse(void *track, uint8_t *data, long len)
+static int h263_parse(Track *tr, uint8_t *data, long len)
 {
-    Track *tr = (Track *)track;
     int mtu = DEFAULT_MTU, cur = 0, payload, header_len, found_gob = 0;
     uint8_t dst[mtu];
     h263_header *header = (h263_header *) dst;
@@ -104,9 +96,9 @@ static int h263_parse(void *track, uint8_t *data, long len)
             header_len = 2;
         }
         mparser_buffer_write(tr,
-                             tr->properties->pts,
-                             tr->properties->dts,
-                             tr->properties->frame_duration,
+                             tr->properties.pts,
+                             tr->properties.dts,
+                             tr->properties.frame_duration,
                              cur + payload >= len,
                              dst, payload + header_len);
         cur += payload;

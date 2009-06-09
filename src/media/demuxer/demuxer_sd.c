@@ -223,7 +223,7 @@ static int sd_init(Resource * r)
     char keyword[80], line[1024], sparam[256];
     Track *track;
     char content_base[256] = "", *separator, track_file[256];
-    sdp_field *sdp_private = NULL;
+    char *fmtp_val;
 
     FILE *fd;
 
@@ -322,9 +322,7 @@ static int sd_init(Resource * r)
                 while (tolower(*p++) != SD_FMTP[0]);
                 p += strlen(SD_FMTP);
 
-                sdp_private = g_new(sdp_field, 1);
-                sdp_private->type = fmtp;
-                sdp_private->field = g_strdup(p);
+                fmtp_val = g_strdup(p);
             } else if (!g_ascii_strcasecmp(keyword, SD_LICENSE)) {
 
                 /*******START CC********/
@@ -371,34 +369,30 @@ static int sd_init(Resource * r)
         track->private_data = g_slice_new0(mqd_t);
         *((mqd_t*)(track->private_data)) = -1;
 
-        if (sdp_private)
-            track->properties->sdp_private =
-                g_list_prepend(track->properties->sdp_private, sdp_private);
+        track_add_sdp_field(track, fmtp, fmtp_val);
+        fmtp_val = NULL;
 
         if (props_hints.payload_type >= 96)
         {
-            sdp_private = g_new(sdp_field, 1);
-            sdp_private->type = rtpmap;
+            char *sdp_value;
             switch (props_hints.media_type) {
                 case MP_audio:
-                    sdp_private->field = g_strdup_printf ("%s/%d/%d",
-                                        props_hints.encoding_name,
-                                        props_hints.clock_rate,
-                                        props_hints.audio_channels);
+                    sdp_value = g_strdup_printf ("%s/%d/%d",
+                                                 props_hints.encoding_name,
+                                                 props_hints.clock_rate,
+                                                 props_hints.audio_channels);
                     break;
                 case MP_video:
-                    sdp_private->field = g_strdup_printf ("%s/%d",
-                                        props_hints.encoding_name,
-                                        props_hints.clock_rate);
+                    sdp_value = g_strdup_printf ("%s/%d",
+                                                 props_hints.encoding_name,
+                                                 props_hints.clock_rate);
                     break;
                 default:
                     break;
             }
-            track->properties->sdp_private =
-                g_list_prepend(track->properties->sdp_private, sdp_private);
+            track_add_sdp_field(track, rtpmap, sdp_value);
         }
 
-        sdp_private = NULL;
         r->info->media_source = props_hints.media_source;
 
     } while (!feof(fd));
@@ -467,7 +461,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
         msg_len -= (sizeof(double)+sizeof(unsigned int)*2);
 
         package_timestamp = ntohl(*(uint32_t*)(packet+4));
-        delivery = (package_dts - package_start_dts)/((double)tr->properties->clock_rate);
+        delivery = (package_dts - package_start_dts)/((double)tr->properties.clock_rate);
         delta = ev_time() - (package_start_time + delivery);
 
 #if 0
@@ -476,7 +470,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
 #endif
     } while(delta > 1.0f);
 
-    timestamp = package_timestamp/((double)tr->properties->clock_rate);
+    timestamp = package_timestamp/((double)tr->properties.clock_rate);
     marker = (packet[1]>>7);
 
 #if 0

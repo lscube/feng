@@ -86,7 +86,7 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
                          p->uri,
                          p->start_seq);
 
-  if (t->properties->media_source != MS_live)
+  if (t->properties.media_source != MS_live)
     g_string_append_printf(str,
 			   ";rtptime=%u", p->start_rtptime);
 

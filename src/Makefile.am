@@ -65,7 +65,6 @@ dist_feng_SOURCES = $(BUILT_SOURCES) \
 	media/mediaparser_module.h \
 	media/mediautils.c \
 	media/resource.c \
-	media/sdp_grammar.h \
 	media/parser/mpeg12.c \
 	media/parser/mpegaudio.c \
 	media/parser/mpeg2t.c \

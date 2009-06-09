@@ -40,9 +40,15 @@ static void digit_to_char(char *dst, uint8_t src)
 
 char *extradata2config(MediaProperties *properties)
 {
-    const size_t config_len = properties->extradata_len * 2 + 1;
-    char *config = g_malloc(config_len);
+    size_t config_len;
+    char *config;
     size_t i;
+
+    if ( properties->extradata_len == 0 )
+        return NULL;
+
+    config_len = properties->extradata_len * 2 + 1;
+    config = g_malloc(config_len);
 
     if (config == NULL)
         return NULL;

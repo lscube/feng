@@ -72,12 +72,12 @@ static void sdp_track_private_append(gpointer element, gpointer user_data)
         break;
     case fmtp:
         g_string_append_printf(pair->descr, "a=fmtp:%u %s"SDP_EL,
-                               pair->track->properties->payload_type,
+                               pair->track->properties.payload_type,
                                private->field);
         break;
     case rtpmap:
         g_string_append_printf(pair->descr, "a=rtpmap:%u %s"SDP_EL,
-                               pair->track->properties->payload_type,
+                               pair->track->properties.payload_type,
                                private->field);
         break;
     default: /* Ignore other private fields */
@@ -98,7 +98,6 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
 {
     Track *track = (Track *)element;
     TrackInfo *t_info = track->info;
-    MediaProperties *t_props = track->properties;
     GString *descr = (GString *)user_data;
     char *encoded_media_name;
 
@@ -122,7 +121,7 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
         [MP_control] = "m=control "
     };
 
-    type = t_props->media_type;
+    type = track->properties.media_type;
 
     /* MP_undef is the only case we don't handle. */
     g_assert(type != MP_undef);
@@ -137,7 +136,7 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
     /* We assume a single payload type, it might not be the correct
      * handling, but since we currently lack some better structure. */
     g_string_append_printf(descr, " %u",
-                           t_props->payload_type);
+                           track->properties.payload_type);
 
     g_string_append(descr, SDP_EL);
 
@@ -152,7 +151,7 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
                            encoded_media_name);
     g_free(encoded_media_name);
 
-    if ( (frame_rate = t_props->frame_rate)
+    if ( (frame_rate = track->properties.frame_rate)
          && type == MP_video)
         g_string_append_printf(descr, "a=framerate:%f"SDP_EL,
                                frame_rate);
@@ -164,7 +163,7 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
             .descr = descr,
             .track = track
         };
-        g_list_foreach(t_props->sdp_private,
+        g_list_foreach(track->sdp_fields,
                        sdp_track_private_append,
                        &pair);
     }

@@ -33,38 +33,30 @@ static const MediaParserInfo info = {
 
 #define amr_uninit NULL
 
-static int amr_init(MediaProperties *properties,
-                    ATTR_UNUSED void **private_data)
+static int amr_init(Track *track)
 {
-    sdp_field *sdp_private;
-    char* config = NULL;
-
-    sdp_private = g_new(sdp_field, 1);
-    sdp_private->type = fmtp;
+    char *config = NULL;
+    char *sdp_value;
 
     /*get config content if has*/
-    if(properties->extradata_len)
+    if(track->properties.extradata_len)
     {
-        config = extradata2config(properties);
-        if (!config) return ERR_PARSE;
+        config = extradata2config(&track->properties);
+        if (!config)
+            return ERR_PARSE;
 
-        sdp_private->field =  g_strdup_printf("octet-align=1; config=%s", config);
+        sdp_value = g_strdup_printf("octet-align=1; config=%s", config);
         g_free(config);
     } else {
-        sdp_private->field =  g_strdup_printf("octet-align=1");
+        sdp_value =  g_strdup_printf("octet-align=1");
     }
 
-    properties->sdp_private =
-        g_list_prepend(properties->sdp_private, sdp_private);
+    track_add_sdp_field(track, fmtp, sdp_value);
 
-    sdp_private = g_new(sdp_field, 1);
-    sdp_private->type = rtpmap;
-    properties->clock_rate = 8000;
-    sdp_private->field = g_strdup_printf ("AMR/%d",
-                                            properties->clock_rate);
-
-    properties->sdp_private =
-        g_list_prepend(properties->sdp_private, sdp_private);
+    track->properties.clock_rate = 8000;
+    track_add_sdp_field(track, rtpmap,
+                        g_strdup_printf ("AMR/%d",
+                                         track->properties.clock_rate));
 
     INIT_PROPS
 
@@ -117,9 +109,8 @@ typedef struct
 #endif
 } amr_header;
 
-static int amr_parse(void *track, uint8_t *data, long len)
+static int amr_parse(Track *tr, uint8_t *data, long len)
 {
-    Track *tr = (Track *)track;
     uint32_t header_len, off = 1, payload, i, body_len, body_num = 0;
     uint8_t packet[DEFAULT_MTU] = {0};
     amr_header *header = (amr_header *) packet;
@@ -158,9 +149,9 @@ static int amr_parse(void *track, uint8_t *data, long len)
         while (len > payload) {
             memcpy(packet + header_len, data + off, payload);
             mparser_buffer_write(tr,
-                                 tr->properties->pts,
-                                 tr->properties->dts,
-                                 tr->properties->frame_duration,
+                                 tr->properties.pts,
+                                 tr->properties.dts,
+                                 tr->properties.frame_duration,
                                  0,
                                  packet, header_len + payload);
 
@@ -184,9 +175,9 @@ static int amr_parse(void *track, uint8_t *data, long len)
     /*fill the frame content*/
     memcpy(packet + header_len, data + off, len);
     mparser_buffer_write(tr,
-                         tr->properties->pts,
-                         tr->properties->dts,
-                         tr->properties->frame_duration,
+                         tr->properties.pts,
+                         tr->properties.dts,
+                         tr->properties.frame_duration,
                          1,
                          packet, len + body_num);
     return ERR_NOERROR;

@@ -27,8 +27,8 @@
 
 #include "feng.h"
 #include "demuxer.h"
+#include "mediaparser.h"
 #include "fnc_log.h"
-
 
 static void free_sdp_field(sdp_field *sdp,
                            ATTR_UNUSED void *unused)
@@ -38,6 +38,15 @@ static void free_sdp_field(sdp_field *sdp,
 
     g_free(sdp->field);
     g_free(sdp);
+}
+
+static void sdp_fields_free(GList *fields)
+{
+    if ( fields == NULL )
+        return;
+
+    g_list_foreach(fields, (GFunc)free_sdp_field, NULL);
+    g_list_free(fields);
 }
 
 /**
@@ -61,11 +70,7 @@ void free_track(gpointer element,
     g_free(track->info->mrl);
     g_slice_free(TrackInfo, track->info);
 
-    if ( track->properties ) {
-        g_list_foreach(track->properties->sdp_private, (GFunc)free_sdp_field, NULL);
-        g_list_free(track->properties->sdp_private);
-        g_slice_free(MediaProperties, track->properties);
-    }
+    sdp_fields_free(track->sdp_fields);
 
     if ( track->parser && track->parser->uninit )
         track->parser->uninit(track->private_data);
@@ -104,18 +109,17 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     t->info = g_slice_new0(TrackInfo);
     memcpy(t->info, info, sizeof(TrackInfo));
 
-    t->properties = g_slice_new0(MediaProperties);
-    memcpy(t->properties, prop_hints, sizeof(MediaProperties));
+    memcpy(&t->properties, prop_hints, sizeof(MediaProperties));
 
-    switch (t->properties->media_source) {
+    switch (t->properties.media_source) {
     case MS_stored:
         if( !(t->producer = bq_producer_new(g_free, NULL)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
-        if ( !(t->parser = mparser_find(t->properties->encoding_name)) )
+        if ( !(t->parser = mparser_find(t->properties.encoding_name)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
-        if (t->parser->init(t->properties, &t->private_data))
+        if (t->parser->init(t))
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
-                            t->properties->encoding_name);
+                            t->properties.encoding_name);
         break;
 
     case MS_live:
@@ -138,3 +142,19 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     return NULL;
 }
 #undef ADD_TRACK_ERROR
+
+/**
+ * @brief Append an SDP field to the track
+ *
+ * @param track The track to add the fields to
+ * @param type The type of the field to add
+ * @param value The value of the field to add (already duped)
+ */
+void track_add_sdp_field(Track *track, sdp_field_type type, char *value)
+{
+    sdp_field *field = g_slice_new(sdp_field);
+    field->type = type;
+    field->field = value;
+
+    track->sdp_fields = g_list_prepend(track->sdp_fields, field);
+}

@@ -22,6 +22,7 @@
 
 #include <glib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "demuxer.h"
 #include "feng.h"

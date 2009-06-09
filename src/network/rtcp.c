@@ -183,7 +183,7 @@ static void rtcp_set_sr(RTP_session *session, RTCP_SR_Compound *outpkt)
         htonl((((uint64_t) ntp_time.tv_nsec) << 32) / 1000000000u);
     outpkt->sr_pkt.rtp_timestamp =
         htonl((unsigned int) ((now - session->range->playback_time) *
-                              session->track->properties->clock_rate)
+                              session->track->properties.clock_rate)
               + session->start_rtptime);
 
     outpkt->sr_pkt.pkt_count = htonl(session->pkt_count);

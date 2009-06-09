@@ -68,12 +68,12 @@ static void mp2t_pid_status_init(mp2t_pid_status* pid_status, double clock,
 
 #endif
 
-static int mp2t_init(MediaProperties *properties, void **private_data)
+static int mp2t_init(Track *track)
 {
-    *private_data = g_new0(mp2t_priv, 1);
+    track->private_data = g_slice_new(mp2t_priv);
 
     INIT_PROPS
-    return 0;
+    return ERR_NOERROR;
 }
 #if 0
 static void update_ts_pkt_duration(mp2t_priv* priv, uint8_t* pkt, double now)
@@ -249,9 +249,8 @@ static int mp2t_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src,
     }
 }
 
-static int mp2t_parse(void *track, uint8_t *data, long len)
+static int mp2t_parse(Track *tr, uint8_t *data, long len)
 {
-    Track *tr = (Track *)track;
     int ret;
     uint32_t dst_len = len;
     uint8_t dst[dst_len];
@@ -259,13 +258,13 @@ static int mp2t_parse(void *track, uint8_t *data, long len)
     do {
         // dst_len remains unchanged,
         // the return value is either EOF or the size
-        ret = mp2t_packetize(dst, &dst_len, data, len, tr->properties,
-                  tr->private_data);
+        ret = mp2t_packetize(dst, &dst_len, data, len, &tr->properties,
+                             tr->private_data);
         if (ret >= 0) {
             mparser_buffer_write(tr,
-                                 tr->properties->pts,
-                                 tr->properties->dts,
-                                 tr->properties->frame_duration,
+                                 tr->properties.pts,
+                                 tr->properties.dts,
+                                 tr->properties.frame_duration,
                                  1, dst, dst_len);
             dst_len = len;
         }
@@ -273,6 +272,9 @@ static int mp2t_parse(void *track, uint8_t *data, long len)
     return ERR_NOERROR;
 }
 
-#define mp2t_uninit g_free
+static void mp2t_uninit(Track *track)
+{
+    g_slice_free(mp2t_priv, track->private_data);
+}
 
 FNC_LIB_MEDIAPARSER(mp2t);

@@ -20,10 +20,11 @@
  *
  * */
 
-#include "demuxer.h"
-
 #ifndef FN_DEMUXER_MODULE_H
 #define FN_DEMUXER_MODULE_H
+
+#include "demuxer.h"
+#include "mediaparser.h"
 
 #define FNC_LIB_DEMUXER(x) const Demuxer fnc_demuxer_##x =\
 {\

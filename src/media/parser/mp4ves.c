@@ -32,46 +32,31 @@ static const MediaParserInfo info = {
 
 #define mp4ves_uninit NULL
 
-static int mp4ves_init(MediaProperties *properties,
-                       ATTR_UNUSED void **private_data)
+static int mp4ves_init(Track *track)
 {
-    sdp_field *sdp_private;
     char *config;
+    char *sdp_value;
 
+    if ( (config = extradata2config(&track->properties)) == NULL )
+        return ERR_PARSE;
 
-    if(!properties->extradata_len) {
-        fnc_log(FNC_LOG_ERR, "No extradata!");
-        return ERR_ALLOC;
-    }
+    track_add_sdp_field(track, fmtp,
+                        g_strdup_printf("profile-level-id=1;config=%s;",
+                                        config));
 
-    sdp_private = g_new(sdp_field, 1);
-    sdp_private->type = fmtp;
+    track_add_sdp_field(track, rtpmap,
+                        g_strdup_printf ("MP4V-ES/%d",
+                                         track->properties.clock_rate));
 
-    config = extradata2config(properties);
-    if (!config) return ERR_PARSE;
-
-    sdp_private->field =
-        g_strdup_printf("profile-level-id=1;config=%s;", config);
     g_free(config);
-
-    properties->sdp_private =
-        g_list_prepend(properties->sdp_private, sdp_private);
-
-    sdp_private = g_new(sdp_field, 1);
-    sdp_private->type = rtpmap;
-    sdp_private->field = g_strdup_printf ("MP4V-ES/%d", properties->clock_rate);
-
-    properties->sdp_private =
-        g_list_prepend(properties->sdp_private, sdp_private);
 
     INIT_PROPS
 
     return ERR_NOERROR;
 }
 
-static int mp4ves_parse(void *track, uint8_t *data, long len)
+static int mp4ves_parse(Track *tr, uint8_t *data, long len)
 {
-    Track *tr = (Track *)track;
     uint32_t mtu = DEFAULT_MTU;
     int32_t offset, rem = len;
 
@@ -86,9 +71,9 @@ static int mp4ves_parse(void *track, uint8_t *data, long len)
 
     if (mtu >= len) {
         mparser_buffer_write(tr,
-                             tr->properties->pts,
-                             tr->properties->dts,
-                             tr->properties->frame_duration,
+                             tr->properties.pts,
+                             tr->properties.dts,
+                             tr->properties.frame_duration,
                              1,
                              data, len);
         fnc_log(FNC_LOG_VERBOSE, "[mp4v] no frags");
@@ -96,9 +81,9 @@ static int mp4ves_parse(void *track, uint8_t *data, long len)
         do {
             offset = len - rem;
             mparser_buffer_write(tr,
-                                 tr->properties->pts,
-                                 tr->properties->dts,
-                                 tr->properties->frame_duration,
+                                 tr->properties.pts,
+                                 tr->properties.dts,
+                                 tr->properties.frame_duration,
                                  (rem <= mtu),
                                  data + offset, MIN(rem, mtu));
             rem -= mtu;

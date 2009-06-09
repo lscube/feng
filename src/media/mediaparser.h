@@ -25,8 +25,8 @@
 #include <glib.h>
 #include <stdint.h>
 
+#include "demuxer.h"
 #include "feng_utils.h"
-#include "sdp_grammar.h"
 
 struct Track;
 
@@ -34,57 +34,12 @@ struct Track;
 #define MP_PKT_TOO_SMALL -101
 #define MP_NOT_FULL_FRAME -102
 
-typedef enum {
-    MP_undef = -1,
-    MP_audio,
-    MP_video,
-    MP_application,
-    MP_data,
-    MP_control
-} MediaType;
-
-typedef enum {
-    MS_stored=0,
-    MS_live
-} MediaSource;
-
-typedef struct MediaProperties {
-    int bit_rate; /*!< average if VBR or -1 is not useful*/
-    int payload_type;
-    unsigned int clock_rate;
-    char encoding_name[11];
-    MediaType media_type;
-    MediaSource media_source;
-    int codec_id; /*!< Codec ID as defined by ffmpeg */
-    int codec_sub_id; /*!< Subcodec ID as defined by ffmpeg */
-    double pts;             //time is in seconds
-    double dts;             //time is in seconds
-    double frame_duration;  //time is in seconds
-    float sample_rate;/*!< SamplingFrequency*/
-    float OutputSamplingFrequency;
-    int audio_channels;
-    int bit_per_sample;/*!< BitDepth*/
-    float frame_rate;
-    int FlagInterlaced;
-    unsigned int PixelWidth;
-    unsigned int PixelHeight;
-    unsigned int DisplayWidth;
-    unsigned int DisplayHeight;
-    unsigned int DisplayUnit;
-    unsigned int AspectRatio;
-    uint8_t *ColorSpace;
-    float GammaValue;
-    uint8_t *extradata;
-    size_t extradata_len;
-    sdp_field_list sdp_private;
-} MediaProperties;
-
 typedef struct {
     const char *encoding_name; /*i.e. MPV, MPA ...*/
     const MediaType media_type;
 } MediaParserInfo;
 
-typedef struct {
+typedef struct MediaParser {
     const MediaParserInfo *info;
 /*! init: inizialize the module
  *
@@ -92,7 +47,7 @@ typedef struct {
  *  @param private_data: private data of parser will be, if needed, linked to this pointer (double)
  *  @return: 0 on success, non-zero otherwise.
  * */
-    int (*init)(MediaProperties *properties, void **private_data);
+    int (*init)(Track *track);
 
 /*! parse: take a single elementary unit of the codec stream and prepare the rtp payload out of it.
  *
@@ -101,10 +56,10 @@ typedef struct {
  *  @param len: packet length,
  *  @return: 0 on success, non zero otherwise.
  * */
-    int (*parse)(void *track, uint8_t *data, long len);
+    int (*parse)(Track *track, uint8_t *data, size_t len);
 
     /** Uninit function to free the private data */
-    GDestroyNotify uninit;
+    void (*uninit)(Track *track);
 } MediaParser;
 
 MediaParser *mparser_find(const char *);
