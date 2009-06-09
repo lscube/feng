@@ -32,7 +32,8 @@ static const MediaParserInfo info = {
 
 #define aac_uninit NULL
 
-static int aac_init(MediaProperties *properties, void **private_data)
+static int aac_init(MediaProperties *properties,
+                    ATTR_UNUSED void **private_data)
 {
     sdp_field *sdp_private;
     char *config;
