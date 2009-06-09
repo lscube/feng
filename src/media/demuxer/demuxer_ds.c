@@ -248,7 +248,7 @@ static int ds_read_packet(Resource * r)
  */
 #define ds_seek NULL
 
-static int ds_uninit(Resource * r)
+static void ds_uninit(Resource * r)
 {
     GList *edl_head = NULL;
     if (r->private_data)
@@ -260,7 +260,6 @@ static int ds_uninit(Resource * r)
         r->private_data = NULL;
     }
     r->tracks = NULL; //Unlink local copy of first resource tracks
-    return RESOURCE_OK;
 }
 
 FNC_LIB_DEMUXER(ds);

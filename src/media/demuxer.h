@@ -144,7 +144,7 @@ typedef struct Demuxer {
     int (*init)(Resource *);
     int (*read_packet)(Resource *);
     int (*seek)(Resource *, double time_sec);
-    int (*uninit)(Resource *);
+    GDestroyNotify uninit;
     //...
 } Demuxer;
 

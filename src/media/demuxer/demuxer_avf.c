@@ -327,7 +327,7 @@ static int avf_seek(Resource * r, double time_sec)
     return av_seek_frame(fc, -1, time_msec, flags);
 }
 
-static int avf_uninit(Resource * r)
+static void avf_uninit(Resource * r)
 {
     lavf_priv_t* priv = r->private_data;
 
@@ -341,8 +341,6 @@ static int avf_uninit(Resource * r)
         av_freep(&priv);
         r->private_data = NULL;
     }
-
-    return RESOURCE_OK;
 }
 
 FNC_LIB_DEMUXER(avf);

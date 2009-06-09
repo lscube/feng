@@ -215,7 +215,7 @@ static int mpegts_read_packet(Resource * r)
  */
 #define mpegts_seek NULL
 
-static int mpegts_uninit(Resource * r)
+static void mpegts_uninit(Resource * r)
 {
     mp2t_priv* priv = r->priv;
 
@@ -223,8 +223,6 @@ static int mpegts_uninit(Resource * r)
         g_hash_table_destroy(priv->pid_status_table);
         g_free(priv);
     }
-
-    return RESOURCE_OK;
 }
 
 FNC_LIB_DEMUXER(mpegts);

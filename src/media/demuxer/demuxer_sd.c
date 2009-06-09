@@ -40,9 +40,8 @@
  * This function simply frees the slice in Track::private_data as a
  * mqd_t object.
  */
-static int demuxer_sd_fake_mediaparser_uninit(void *private_data) {
+static void demuxer_sd_fake_mediaparser_uninit(void *private_data) {
     g_slice_free(mqd_t, private_data);
-    return 0;
 }
 
 /**
@@ -523,9 +522,9 @@ static int sd_read_packet(Resource * r)
  */
 #define sd_seek NULL
 
-static int sd_uninit(ATTR_UNUSED Resource * r)
+static void sd_uninit(ATTR_UNUSED Resource * r)
 {
-    return RESOURCE_OK;
+    return;
 }
 
 FNC_LIB_DEMUXER(sd);
