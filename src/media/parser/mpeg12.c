@@ -75,9 +75,7 @@ static int mpv_init(MediaProperties *properties,
 /* Source code taken from ff_rtp_send_mpegvideo (ffmpeg libavformat) and
  * modified to be fully rfc 2250 compliant
  */
-static int mpv_parse(void *track, uint8_t *data, long len,
-                     ATTR_UNUSED uint8_t *extradata,
-                     ATTR_UNUSED long extradata_len)
+static int mpv_parse(void *track, uint8_t *data, long len)
 {
     Track * tr = track;
     int h, b = 1, e = 0 , ffc = 0, ffv = 0, fbv = 0, bfc = 0, mtu = DEFAULT_MTU;

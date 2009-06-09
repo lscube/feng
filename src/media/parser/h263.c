@@ -78,9 +78,7 @@ static int h263_init(MediaProperties *properties,
     return ERR_NOERROR;
 }
 
-static int h263_parse(void *track, uint8_t *data, long len,
-                      ATTR_UNUSED uint8_t *extradata,
-                      ATTR_UNUSED long extradata_len)
+static int h263_parse(void *track, uint8_t *data, long len)
 {
     Track *tr = (Track *)track;
     int mtu = DEFAULT_MTU, cur = 0, payload, header_len, found_gob = 0;

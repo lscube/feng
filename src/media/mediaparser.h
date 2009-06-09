@@ -100,12 +100,9 @@ typedef struct {
  *  @param track: track whose feng should be filled,
  *  @param data: packet from the demuxer layer,
  *  @param len: packet length,
- *  @param extradata: codec configuration data,
- *  @param extradata_len: extradata length.
  *  @return: 0 on success, non zero otherwise.
  * */
-    int (*parse)(void *track, uint8_t *data, long len, uint8_t *extradata,
-                 long extradata_len);
+    int (*parse)(void *track, uint8_t *data, long len);
 
     /** Uninit function to free the private data */
     GDestroyNotify uninit;

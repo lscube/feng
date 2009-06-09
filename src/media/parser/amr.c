@@ -123,9 +123,7 @@ typedef struct
 #endif
 } amr_header;
 
-static int amr_parse(void *track, uint8_t *data, long len,
-                     ATTR_UNUSED uint8_t *extradata,
-                     ATTR_UNUSED long extradata_len)
+static int amr_parse(void *track, uint8_t *data, long len)
 {
     Track *tr = (Track *)track;
     uint32_t header_len, off = 1, payload, i, body_len, body_num = 0;

@@ -40,9 +40,7 @@ static int speex_init(MediaProperties *properties,
     return ERR_NOERROR;
 }
 
-static int speex_parse(void *track, uint8_t *data, long len,
-                       ATTR_UNUSED uint8_t *extradata,
-                       ATTR_UNUSED long extradata_len)
+static int speex_parse(void *track, uint8_t *data, long len)
 {
     Track *tr = (Track *)track;
     int mtu = DEFAULT_MTU;

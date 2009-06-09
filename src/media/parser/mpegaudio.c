@@ -42,9 +42,7 @@ static int mpa_init(MediaProperties *properties,
     return 0;
 }
 
-static int mpa_parse(void *track, uint8_t *data, long len,
-                     ATTR_UNUSED uint8_t *extradata,
-                     ATTR_UNUSED long extradata_len)
+static int mpa_parse(void *track, uint8_t *data, long len)
 {
     Track *tr = (Track *)track;
     uint32_t mtu = DEFAULT_MTU; //FIXME get it from SETUP

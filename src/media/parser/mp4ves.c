@@ -71,9 +71,7 @@ static int mp4ves_init(MediaProperties *properties,
     return ERR_NOERROR;
 }
 
-static int mp4ves_parse(void *track, uint8_t *data, long len,
-                        ATTR_UNUSED uint8_t *extradata,
-                        ATTR_UNUSED long extradata_len)
+static int mp4ves_parse(void *track, uint8_t *data, long len)
 {
     Track *tr = (Track *)track;
     uint32_t mtu = DEFAULT_MTU;

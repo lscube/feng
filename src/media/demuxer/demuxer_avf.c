@@ -305,9 +305,7 @@ static int avf_read_packet(Resource * r)
             fnc_log(FNC_LOG_VERBOSE, "[avf] packet duration %f",
                 tr->properties->frame_duration);
 
-            ret = tr->parser->parse(tr, pkt.data, pkt.size,
-                                    stream->codec->extradata,
-                                    stream->codec->extradata_size);
+            ret = tr->parser->parse(tr, pkt.data, pkt.size);
             break;
         }
     }

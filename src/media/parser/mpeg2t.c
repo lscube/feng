@@ -249,9 +249,7 @@ static int mp2t_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src,
     }
 }
 
-static int mp2t_parse(void *track, uint8_t *data, long len,
-                      ATTR_UNUSED uint8_t *extradata,
-                      ATTR_UNUSED long extradata_len)
+static int mp2t_parse(void *track, uint8_t *data, long len)
 {
     Track *tr = (Track *)track;
     int ret;
