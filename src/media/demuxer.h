@@ -75,7 +75,6 @@ typedef struct ResourceInfo_s {
     char *email;
     char *phone;
     time_t mtime;
-    GList *sdp_private;
     double duration;
     MediaSource media_source;
     char twin[256];

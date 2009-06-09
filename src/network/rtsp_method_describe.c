@@ -184,30 +184,6 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
 }
 
 /**
- * @brief Append resource private field information to an SDP string
- *
- * @param element An sdp_field object in the list
- * @param user_data The GString object to append the data to
- *
- * @internal This function is only to be called by g_list_foreach().
- */
-static void sdp_rdescr_private_append(gpointer element, gpointer user_data)
-{
-    sdp_field *private = (sdp_field *)element;
-    GString *descr = (GString *)user_data;
-
-    switch (private->type) {
-    case empty_field:
-        g_string_append_printf(descr, "%s"SDP_EL,
-                               private->field);
-        break;
-
-    default: /* Ignore other private fields */
-        break;
-    }
-}
-
-/**
  * @brief Create description for an SDP session
  *
  * @param srv Pointer to the server-specific data instance.
@@ -308,11 +284,6 @@ static GString *sdp_session_descr(struct feng *srv, const Url *url)
     if ((duration = res_info->duration) > 0 &&
         duration != HUGE_VAL)
         g_string_append_printf(descr, "a=range:npt=0-%f"SDP_EL, duration);
-
-    // other private data
-    g_list_foreach(res_info->sdp_private,
-                   sdp_rdescr_private_append,
-                   descr);
 
     g_list_foreach(resource->tracks,
                    sdp_track_descr,
