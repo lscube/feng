@@ -51,8 +51,6 @@ static int aac_init(Track *track)
                                  track->properties.clock_rate);
     track_add_sdp_field(track, rtpmap, sdp_value);
 
-    INIT_PROPS
-
     return ERR_NOERROR;
 }
 

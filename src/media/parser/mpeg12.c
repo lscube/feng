@@ -66,8 +66,6 @@ static uint8_t *find_start_code(uint8_t *p, uint8_t *end, uint32_t *state)
 
 static int mpv_init(Track *track)
 {
-    INIT_PROPS
-
     return ERR_NOERROR;
 }
 

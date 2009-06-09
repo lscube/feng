@@ -72,7 +72,6 @@ static int mp2t_init(Track *track)
 {
     track->private_data = g_slice_new(mp2t_priv);
 
-    INIT_PROPS
     return ERR_NOERROR;
 }
 #if 0

@@ -34,8 +34,6 @@ static const MediaParserInfo info = {
 
 static int speex_init(Track *track)
 {
-    INIT_PROPS
-
     return ERR_NOERROR;
 }
 

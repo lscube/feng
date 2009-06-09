@@ -178,8 +178,6 @@ static int theora_init(Track *track)
                         g_strdup_printf ("theora/%d",
                                          track->properties.clock_rate));
 
-    INIT_PROPS
-
     track->private_data = priv;
 
     return ERR_NOERROR;

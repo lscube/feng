@@ -36,8 +36,6 @@ static const MediaParserInfo info = {
 
 static int mpa_init(Track *track)
 {
-    INIT_PROPS
-
     return 0;
 }
 

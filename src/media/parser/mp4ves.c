@@ -50,8 +50,6 @@ static int mp4ves_init(Track *track)
 
     g_free(config);
 
-    INIT_PROPS
-
     return ERR_NOERROR;
 }
 

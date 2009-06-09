@@ -58,8 +58,6 @@ static int amr_init(Track *track)
                         g_strdup_printf ("AMR/%d",
                                          track->properties.clock_rate));
 
-    INIT_PROPS
-
     return ERR_NOERROR;
 }
 

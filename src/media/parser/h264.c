@@ -234,8 +234,6 @@ static int h264_init(Track *track)
     track_add_sdp_field(track, rtpmap,
                         g_strdup_printf ("H264/%d",track->properties.clock_rate));
 
-    INIT_PROPS
-
     track->private_data = priv;
 
     return ERR_NOERROR;

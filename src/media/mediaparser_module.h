@@ -25,8 +25,6 @@
 
 #include "mediaparser.h"
 
-#define INIT_PROPS track->properties.media_type = info.media_type;
-
 #define FNC_LIB_MEDIAPARSER(x) const MediaParser fnc_mediaparser_##x =\
 {\
 	&info, \

@@ -170,8 +170,6 @@ static int vorbis_init(Track *track)
                                          track->properties.clock_rate,
                                          track->properties.audio_channels));
 
-    INIT_PROPS
-
     track->private_data = priv;
 
     return ERR_NOERROR;
