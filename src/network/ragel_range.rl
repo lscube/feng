@@ -21,11 +21,11 @@ gboolean ragel_parse_range_header(const char *header,
     double seconds = 0;
 
     /* Integer part of seconds, minutes and hours */
-    double integer;
+    double integer = 0;
 
     /* fractional part of seconds, denominator and numerator */
-    double seconds_secfrac_num;
-    double seconds_secfrac_den;
+    double seconds_secfrac_num = 0;
+    double seconds_secfrac_den = 0;
 
     struct tm utctime;
 
@@ -154,10 +154,12 @@ gboolean ragel_parse_range_header(const char *header,
         main := RangeHeader + 0;
 
 
-        write data;
+        write data nofinal noerror;
         write init;
         write exec;
     }%%
+
+    cs = ragel_range_header_en_main;
 
     return range_supported;
 }

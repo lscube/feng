@@ -301,7 +301,7 @@ static GByteArray *rtcp_pkt_sr_bye(RTP_session *session)
  */
 gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type)
 {
-    GByteArray *outpkt;
+    GByteArray *outpkt = NULL;
     gboolean ret;
 
     switch(type) {

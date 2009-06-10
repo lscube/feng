@@ -119,10 +119,12 @@ static ev_signal signal_watcher_term;
 static void feng_handle_signals(feng *srv)
 {
     sigset_t block_set;
-    ev_signal_init (&signal_watcher_int, sigint_cb, SIGINT);
-    ev_signal_start (srv->loop, &signal_watcher_int);
-    ev_signal_init (&signal_watcher_term, sigint_cb, SIGTERM);
-    ev_signal_start (srv->loop, &signal_watcher_term);
+    ev_signal *sig = &signal_watcher_int;
+    ev_signal_init (sig, sigint_cb, SIGINT);
+    ev_signal_start (srv->loop, sig);
+    sig = &signal_watcher_term;
+    ev_signal_init (sig, sigint_cb, SIGTERM);
+    ev_signal_start (srv->loop, sig);
 
     /* block PIPE signal */
     sigemptyset(&block_set);

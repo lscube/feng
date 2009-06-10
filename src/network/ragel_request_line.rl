@@ -27,7 +27,7 @@
 
 size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Request *req) {
     int cs;
-    const char *p = msg, *pe = p + length + 1, *s, *eof;
+    const char *p = msg, *pe = p + length + 1, *s = NULL, *eof = pe;
 
     /* We want to express clearly which versions we support, so that we
      * can return right away if an unsupported one is found.
@@ -78,13 +78,15 @@ size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Reque
 
         main := Request_Line % stop_parser . /.*/;
 
-        write data;
+        write data noerror;
         write init;
         write exec;
     }%%
 
     if ( cs < rtsp_request_line_first_final )
         return 0;
+
+    cs = rtsp_request_line_en_main; // Kill a warning
 
     return p-msg;
 }

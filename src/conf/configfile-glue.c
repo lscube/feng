@@ -123,9 +123,9 @@ static int config_insert_values_internal(server *srv, array *ca,
                 break;
             }
             case TYPE_STRING: {
-                data_string *ds = (data_string *)du;
+                //data_string *ds = (data_string *)du;
 
-                log_error_write(srv, __FILE__, __LINE__, "ssb", "got a string but expected a short:", cv[i].key, ds->value);
+                //log_error_write(srv, __FILE__, __LINE__, "ssb", "got a string but expected a short:", cv[i].key, ds->value);
 
                 return -1;
             }

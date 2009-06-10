@@ -139,7 +139,7 @@ static int avf_init(Resource * r)
     memset(&ap, 0, sizeof(AVFormatParameters));
     memset(&trackinfo, 0, sizeof(TrackInfo));
 
-    avfc = av_alloc_format_context();
+    avfc = avformat_alloc_context();
     ap.prealloced_context = 1;
 
     avfc->flags |= AVFMT_FLAG_GENPTS;

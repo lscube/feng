@@ -1103,7 +1103,7 @@ static void yy_reduce(
 
   assert(cur && ctx->current);
 
-  yygotominor.yy0 = cur;
+  yygotominor.yy78 = cur;
 }
 #line 1108 "configparser.c"
         /* No destructor defined for globalstart */

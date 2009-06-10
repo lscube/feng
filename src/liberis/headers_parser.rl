@@ -85,17 +85,17 @@
  */
 size_t eris_parse_headers(const char *hdrs_string, size_t len, GHashTable **table)
 {
-  const char *p = hdrs_string, *pe = p + len, *eof, *mark;
+  const char *p = hdrs_string, *pe = p + len, *eof = pe;
 
   int cs, line;
 
-  const char *hdr, *hdr_val;
-  size_t hdr_size, hdr_val_size;
+  const char *hdr = NULL, *hdr_val = NULL;
+  size_t hdr_size = 0, hdr_val_size = 0;
 
   /* Create the new hash table */
   *table = _eris_hdr_table_new();
 
-  %% write data;
+  %% write data noerror;
   %% write init;
   %% write exec;
 
@@ -103,6 +103,8 @@ size_t eris_parse_headers(const char *hdrs_string, size_t len, GHashTable **tabl
     g_hash_table_destroy(*table);
     return 0;
   }
+
+  cs = headers_parser_en_main;
 
   return p-hdrs_string;
 }

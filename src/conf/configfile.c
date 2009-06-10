@@ -83,7 +83,7 @@ static int config_insert(server *srv) {
         { "server.follow-symlink",       NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 12 */
 #else
         { "server.follow-symlink",
-          "Unsupported for now",
+          (void *)"Unsupported for now",
           T_CONFIG_UNSUPPORTED, T_CONFIG_SCOPE_UNSET }, /* 10 */
 #endif
 //        { "server.kbytes-per-second",    NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 25 */

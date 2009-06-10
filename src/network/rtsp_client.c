@@ -142,6 +142,9 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     Sock *sock = w->data;
     feng *srv = sock->data;
     Sock *client_sock = NULL;
+    ev_io *io;
+    ev_async *async;
+    ev_timer *timer;
     RTSP_Client *rtsp;
 
     if ( (client_sock = Sock_accept(sock, NULL)) == NULL )
@@ -161,23 +164,27 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     srv->connection_count++;
     client_sock->data = srv;
 
-    rtsp->ev_io_read.data = rtsp;
-    ev_io_init(&rtsp->ev_io_read, rtsp_read_cb, Sock_fd(client_sock), EV_READ);
-    ev_io_start(srv->loop, &rtsp->ev_io_read);
+    io = &rtsp->ev_io_read;
+    io->data = rtsp;
+    ev_io_init(io, rtsp_read_cb, Sock_fd(client_sock), EV_READ);
+    ev_io_start(srv->loop, io);
 
     /* to be started/stopped when necessary */
-    rtsp->ev_io_write.data = rtsp;
-    ev_io_init(&rtsp->ev_io_write, rtsp_write_cb, Sock_fd(client_sock), EV_WRITE);
+    io = &rtsp->ev_io_write;
+    io->data = rtsp;
+    ev_io_init(io, rtsp_write_cb, Sock_fd(client_sock), EV_WRITE);
     fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
             Sock_fd(client_sock));
 
-    rtsp->ev_sig_disconnect.data = rtsp;
-    ev_async_init(&rtsp->ev_sig_disconnect, client_ev_disconnect_handler);
-    ev_async_start(srv->loop, &rtsp->ev_sig_disconnect);
+    async = &rtsp->ev_sig_disconnect;
+    async->data = rtsp;
+    ev_async_init(async, client_ev_disconnect_handler);
+    ev_async_start(srv->loop, async);
 
-    rtsp->ev_timeout.data = rtsp;
-    ev_init(&rtsp->ev_timeout, client_ev_timeout);
-    rtsp->ev_timeout.repeat = STREAM_TIMEOUT;
+    timer = &rtsp->ev_timeout;
+    timer->data = rtsp;
+    ev_init(timer, client_ev_timeout);
+    timer->repeat = STREAM_TIMEOUT;
 
     fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
 }

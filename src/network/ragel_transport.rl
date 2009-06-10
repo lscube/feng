@@ -14,7 +14,7 @@ gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
     struct ParsedTransport transport;
     int cs;
     const char *p = header, *pe = p + strlen(p) +1;
-    uint32_t portval; uint16_t chanval;
+    uint32_t portval = 0; uint16_t chanval = 0;
 
     %%{
         action start_port {
@@ -94,10 +94,12 @@ gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
 
         main := TransportSpec . ( ',' . TransportSpec )* . 0;
 
-        write data;
+        write data nofinal noerror;
         write init;
         write exec;
     }%%
+
+    cs = ragel_transport_header_en_main;
 
     return false;
 }
