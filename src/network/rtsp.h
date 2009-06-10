@@ -261,7 +261,7 @@ typedef struct {
      *
      * Used to log the request/response in access.log
      */
-    RTSP_Request *request;
+    const RTSP_Request *request;
 
     /**
      * @brief The status code of the response.
