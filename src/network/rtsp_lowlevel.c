@@ -123,7 +123,7 @@ void rtsp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 
     if (outpkt == NULL) {
         ev_io_stop(rtsp->srv->loop, &rtsp->ev_io_write);
-        return 0;
+        return;
     }
 
     if ( Sock_write(rtsp->sock, outpkt->data, outpkt->len,
@@ -134,8 +134,7 @@ void rtsp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
                 break;
             case EAGAIN:
                 fnc_log(FNC_LOG_ERR, "EAGAIN error");
-                return 0; // Don't close socket if tx buffer is full!
-                break;
+                return; // Don't close socket if tx buffer is full!
             case EBADF:
                 fnc_log(FNC_LOG_ERR, "EBADF error");
                 break;
