@@ -180,6 +180,6 @@ static int mpv_parse(Track *tr, uint8_t *data, long len)
     return ERR_NOERROR;
 }
 
-#define mpv_uninit g_free
+#define mpv_uninit NULL
 
 FNC_LIB_MEDIAPARSER(mpv);
