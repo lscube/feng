@@ -264,7 +264,7 @@ void rtsp_bwrite(RTSP_Client *rtsp, GString *buffer)
        data pointer.
      */
     GByteArray *outpkt = g_byte_array_new();
-    outpkt->data = buffer->str;
+    outpkt->data = (guint8*)buffer->str;
     outpkt->len = buffer->len;
 
     /* make sure you don't free the actual data pointer! */

@@ -95,7 +95,7 @@ void rtsp_read_cb(struct ev_loop *loop, ev_io *w,
         goto server_close;
     }
 
-    g_byte_array_append(rtsp->input, buffer, read_size);
+    g_byte_array_append(rtsp->input, (guint8*)buffer, read_size);
     if (RTSP_handler(rtsp) == ERR_GENERIC) {
         fnc_log(FNC_LOG_ERR, "Invalid input message.\n");
         goto server_close;

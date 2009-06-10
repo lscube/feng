@@ -69,10 +69,11 @@ static int h263_init(Track *track)
     return ERR_NOERROR;
 }
 
-static int h263_parse(Track *tr, uint8_t *data, long len)
+static int h263_parse(Track *tr, uint8_t *data, size_t len)
 {
-    int mtu = DEFAULT_MTU, cur = 0, payload, header_len, found_gob = 0;
-    uint8_t dst[mtu];
+    size_t cur = 0, payload, header_len;
+    int found_gob = 0;
+    uint8_t dst[DEFAULT_MTU];
     h263_header *header = (h263_header *) dst;
 
     if (len >= 3 && *data == '\0' && *(data + 1) == '\0'
@@ -82,13 +83,13 @@ static int h263_parse(Track *tr, uint8_t *data, long len)
 
     while (len - cur > 0) {
         if (cur == 0 && found_gob) {
-            payload = MIN(mtu, len);
+            payload = MIN(DEFAULT_MTU, len);
             memcpy(dst, data, payload);
             memset(header, 0, 2);
             header->p = 1;
             header_len = 0;
         } else {
-            payload = MIN(mtu - 2, len - cur);
+            payload = MIN(DEFAULT_MTU - 2, len - cur);
             memcpy(dst + 2, data + cur, payload);
             memset(header, 0, 2);
             header_len = 2;

@@ -41,7 +41,7 @@ typedef struct {
 } mp2t_pid_status;
 
 typedef struct {
-    int ncopied;
+    size_t ncopied;
     double pkt_duration_estimate;
     int ts_pkt_count;
     double timestamp;
@@ -212,13 +212,11 @@ static int mp2t_get_frame2(uint8_t *dst, uint32_t dst_nbytes,
 }
 #endif
 
-static int mp2t_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src,
-                          uint32_t src_nbytes,
-                          ATTR_UNUSED MediaProperties *properties,
-                          void *private_data)
+static int mp2t_packetize(uint8_t *dst, size_t *dst_nbytes, uint8_t *src,
+                          size_t src_nbytes, Track *tr)
 {
-    int to_copy = 0, i;
-    mp2t_priv* priv = (mp2t_priv*)private_data;
+    size_t to_copy = 0; ssize_t i;
+    mp2t_priv* priv = tr->private_data;
 
     for(i=TARGET_TS_PKT_COUNT; i>=0; i--) {
         if(src_nbytes - priv->ncopied
@@ -241,24 +239,19 @@ static int mp2t_packetize(uint8_t *dst, uint32_t *dst_nbytes, uint8_t *src,
     *dst_nbytes = to_copy;
     priv->ncopied += to_copy;
 
-    if(priv->ncopied >= src_nbytes) {
-        return 0;
-    } else {
-        return 1;
-    }
+    return !(priv->ncopied >= src_nbytes);
 }
 
-static int mp2t_parse(Track *tr, uint8_t *data, long len)
+static int mp2t_parse(Track *tr, uint8_t *data, size_t len)
 {
     int ret;
-    uint32_t dst_len = len;
+    size_t dst_len = len;
     uint8_t dst[dst_len];
 
     do {
         // dst_len remains unchanged,
         // the return value is either EOF or the size
-        ret = mp2t_packetize(dst, &dst_len, data, len, &tr->properties,
-                             tr->private_data);
+        ret = mp2t_packetize(dst, &dst_len, data, len, tr);
         if (ret >= 0) {
             mparser_buffer_write(tr,
                                  tr->properties.pts,

@@ -248,8 +248,9 @@ static int ds_read_packet(Resource * r)
  */
 #define ds_seek NULL
 
-static void ds_uninit(Resource * r)
+static void ds_uninit(gpointer rgen)
 {
+    Resource *r = rgen;
     GList *edl_head = NULL;
     if (r->private_data)
         edl_head = ((edl_priv_data *) r->private_data)->head;

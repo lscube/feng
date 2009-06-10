@@ -25,6 +25,7 @@
  */
 
 #include <stdbool.h>
+#include <inttypes.h>
 
 #include <liberis/headers.h>
 
@@ -172,13 +173,14 @@ static gboolean check_session(RTSP_Request *req)
 static RTSP_Request *rtsp_parse_request(RTSP_Client *rtsp)
 {
     RTSP_Request *req = g_slice_new0(RTSP_Request);
-    size_t message_length = strlen(rtsp->input->data),
+    const char *message_data = (char*)rtsp->input->data;
+    size_t message_length = strlen(message_data),
         request_line_length, headers_length;
 
     req->client = rtsp;
     req->method_id = RTSP_ID_ERROR;
 
-    request_line_length = ragel_parse_request_line(rtsp->input->data, message_length, req);
+    request_line_length = ragel_parse_request_line(message_data, message_length, req);
 
     /* If the parser returns zero, it means that the request line
      * couldn't be parsed. Since a request line that cannot be parsed
@@ -210,7 +212,7 @@ static RTSP_Request *rtsp_parse_request(RTSP_Client *rtsp)
      * want this done here is that once we know the protocol is the
      * one we support, all the requests need to be responded with the
      * right rules, which include repeating of some headers. */
-    headers_length = eris_parse_headers(rtsp->input->data + request_line_length,
+    headers_length = eris_parse_headers(message_data + request_line_length,
                                         message_length - request_line_length,
                                         &req->headers);
 
@@ -270,17 +272,16 @@ typedef enum {
  *         is present.
  */
 static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_Client * rtsp,
-                                           int *hdr_len, int *body_len)
+                                           int *hdr_len, uint16_t *body_len)
 {
     int eomh;          /*! end of message header found */
     int mb;            /*! message body exists */
     int tc;            /*! terminator count */
     int ws;            /*! white space */
     unsigned int ml;   /*! total message length including any message body */
-    int bl;            /*! message body length */
+    uint16_t bl;       /*! message body length */
     char c;            /*! character */
     int control;
-    char *p;
 
     // is there an interleaved RTP/RTCP packet?
     if (rtsp->input->data[0] == '$') {
@@ -302,7 +303,7 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_Client * rtsp,
     eomh = mb = ml = bl = 0;
     while (ml <= rtsp->input->len) {
         /* look for eol. */
-        control = strcspn(rtsp->input->data + ml, RTSP_EL);
+        control = strcspn((char*)rtsp->input->data + ml, RTSP_EL);
         if (control > 0) {
             ml += control;
         } else {
@@ -352,7 +353,7 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_Client * rtsp,
          * a message body.
          */
         if (!mb) {    /* content length token not yet encountered. */
-            if (!g_ascii_strncasecmp (rtsp->input->data + ml, eris_hdr_content_length,
+            if (!g_ascii_strncasecmp ((char*)rtsp->input->data + ml, eris_hdr_content_length,
                  RTSP_BUFFERSIZE - ml)) {
                 mb = 1;    /* there is a message body. */
                 ml += strlen(eris_hdr_content_length);
@@ -364,7 +365,7 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_Client * rtsp,
                         break;
                 }
 
-                if (sscanf(rtsp->input->data + ml, "%d", &bl) != 1) {
+                if (sscanf((char*)rtsp->input->data + ml, "%"SCNd16, &bl) != 1) {
                     fnc_log(FNC_LOG_ERR,
                         "RTSP_full_msg_rcvd(): Invalid ContentLength.");
                     return ERR_GENERIC;
@@ -377,6 +378,7 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_Client * rtsp,
         *hdr_len = ml - bl;
 
     if (body_len) {
+        guint8 *p;
         /*
          * go through any trailing nulls.  Some servers send null terminated strings
          * following the body part of the message.  It is probably not strictly
@@ -431,7 +433,7 @@ static void rtsp_handle_request(RTSP_Client *rtsp)
 int RTSP_handler(RTSP_Client * rtsp)
 {
     while (rtsp->input->len) {
-        int hlen, blen;
+        int hlen; uint16_t blen;
         rtsp_rcvd_status full_msg = RTSP_full_msg_rcvd(rtsp, &hlen, &blen);
 
         switch (full_msg) {

@@ -40,8 +40,8 @@
  * This function simply frees the slice in Track::private_data as a
  * mqd_t object.
  */
-static void demuxer_sd_fake_mediaparser_uninit(void *private_data) {
-    g_slice_free(mqd_t, private_data);
+static void demuxer_sd_fake_mediaparser_uninit(Track *tr) {
+    g_slice_free(mqd_t, tr->private_data);
 }
 
 /**
@@ -223,7 +223,7 @@ static int sd_init(Resource * r)
     char keyword[80], line[1024], sparam[256];
     Track *track;
     char content_base[256] = "", *separator, track_file[256];
-    char *fmtp_val;
+    char *fmtp_val = NULL;
 
     FILE *fd;
 
@@ -369,12 +369,14 @@ static int sd_init(Resource * r)
         track->private_data = g_slice_new0(mqd_t);
         *((mqd_t*)(track->private_data)) = -1;
 
-        track_add_sdp_field(track, fmtp, fmtp_val);
-        fmtp_val = NULL;
+        if ( fmtp_val ) {
+            track_add_sdp_field(track, fmtp, fmtp_val);
+            fmtp_val = NULL;
+        }
 
         if (props_hints.payload_type >= 96)
         {
-            char *sdp_value;
+            char *sdp_value = NULL;
             switch (props_hints.media_type) {
                 case MP_audio:
                     sdp_value = g_strdup_printf ("%s/%d/%d",
@@ -388,8 +390,10 @@ static int sd_init(Resource * r)
                                                  props_hints.clock_rate);
                     break;
                 default:
+                    g_assert_not_reached();
                     break;
             }
+
             track_add_sdp_field(track, rtpmap, sdp_value);
         }
 
@@ -516,7 +520,7 @@ static int sd_read_packet(Resource * r)
  */
 #define sd_seek NULL
 
-static void sd_uninit(ATTR_UNUSED Resource * r)
+static void sd_uninit(ATTR_UNUSED gpointer ptr)
 {
     return;
 }

@@ -78,13 +78,12 @@ static int aac_init(Track *track)
 
 //XXX implement aggregation
 //#define AAC_EXTRA 7
-static int aac_parse(Track *tr, uint8_t *data, long len)
+static int aac_parse(Track *tr, uint8_t *data, size_t len)
 {
     //XXX handle the last packet on EOF
     int off = 0;
-    uint32_t mtu = DEFAULT_MTU;  //FIXME get it from SETUP
-    uint32_t payload = mtu - AU_HEADER_SIZE;
-    uint8_t *packet = g_malloc0(mtu);
+    uint32_t payload = DEFAULT_MTU - AU_HEADER_SIZE;
+    uint8_t *packet = g_malloc0(DEFAULT_MTU);
 
     if(!packet) return ERR_ALLOC;
 
@@ -105,7 +104,7 @@ static int aac_parse(Track *tr, uint8_t *data, long len)
                                  tr->properties.dts,
                                  tr->properties.frame_duration,
                                  0,
-                                 packet, mtu);
+                                 packet, DEFAULT_MTU);
 
             len -= payload;
             off += payload;

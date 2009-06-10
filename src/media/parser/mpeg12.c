@@ -64,7 +64,7 @@ static uint8_t *find_start_code(uint8_t *p, uint8_t *end, uint32_t *state)
 }
 #endif
 
-static int mpv_init(Track *track)
+static int mpv_init(ATTR_UNUSED Track *track)
 {
     return ERR_NOERROR;
 }
@@ -72,12 +72,12 @@ static int mpv_init(Track *track)
 /* Source code taken from ff_rtp_send_mpegvideo (ffmpeg libavformat) and
  * modified to be fully rfc 2250 compliant
  */
-static int mpv_parse(Track *tr, uint8_t *data, long len)
+static int mpv_parse(Track *tr, uint8_t *data, size_t len)
 {
-    int h, b = 1, e = 0 , ffc = 0, ffv = 0, fbv = 0, bfc = 0, mtu = DEFAULT_MTU;
+    int h, b = 1, e = 0 , ffc = 0, ffv = 0, fbv = 0, bfc = 0;
     int frame_type = 0, temporal_reference = 0, begin_of_sequence = 0;
     long rem = len, payload;
-    uint8_t dst[mtu];
+    uint8_t dst[DEFAULT_MTU];
     uint8_t *q = dst;
     uint8_t *r, *r1 = data;
     uint8_t *end = data + len;
@@ -110,7 +110,7 @@ static int mpv_parse(Track *tr, uint8_t *data, long len)
     }
 
     while (rem > 0) {
-        payload = mtu - 4;
+        payload = DEFAULT_MTU - 4;
 
         if (payload >= rem) {
             payload = rem;
@@ -132,7 +132,7 @@ static int mpv_parse(Track *tr, uint8_t *data, long len)
                         }
                         r1 = r;
                     } else {
-                        if (r - r1 < mtu) {
+                        if (r - r1 < DEFAULT_MTU) {
                             payload = r1 - data - 4;
                             e = 1;
                         }

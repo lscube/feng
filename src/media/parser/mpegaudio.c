@@ -34,19 +34,18 @@ static const MediaParserInfo info = {
     MP_audio
 };
 
-static int mpa_init(Track *track)
+static int mpa_init(ATTR_UNUSED Track *track)
 {
-    return 0;
+    return ERR_NOERROR;
 }
 
-static int mpa_parse(Track *tr, uint8_t *data, long len)
+static int mpa_parse(Track *tr, uint8_t *data, size_t len)
 {
-    uint32_t mtu = DEFAULT_MTU; //FIXME get it from SETUP
     int32_t offset;
-    uint8_t dst[mtu];
-    long rem = len;
+    uint8_t dst[DEFAULT_MTU];
+    ssize_t rem = len;
 
-    if (mtu >= len + 4) {
+    if (DEFAULT_MTU >= len + 4) {
         memset (dst, 0, 4);
         memcpy (dst + 4, data, len);
         mparser_buffer_write(tr,
@@ -60,7 +59,7 @@ static int mpa_parse(Track *tr, uint8_t *data, long len)
         do {
             offset = len - rem;
             if (offset & 0xffff0000) return ERR_ALLOC;
-            memcpy (dst + 4, data + offset, MIN(mtu - 4, rem));
+            memcpy (dst + 4, data + offset, MIN(DEFAULT_MTU - 4, rem));
             offset = htonl(offset & 0xffff);
             memcpy (dst, &offset, 4);
 
@@ -69,8 +68,8 @@ static int mpa_parse(Track *tr, uint8_t *data, long len)
                                  tr->properties.dts,
                                  tr->properties.frame_duration,
                                  0,
-                                 dst, MIN(mtu, rem + 4));
-            rem -= mtu - 4;
+                                 dst, MIN(DEFAULT_MTU, rem + 4));
+            rem -= DEFAULT_MTU - 4;
             fnc_log(FNC_LOG_VERBOSE, "[mp3] frags");
         } while (rem >= 0);
     }

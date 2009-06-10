@@ -117,7 +117,7 @@ static const Demuxer *r_find_demuxer(const char *filename)
             strncpy(exts, demuxers[i]->info->extensions, sizeof(exts)-1);
 
             for (tkn=strtok(exts, ","); tkn; tkn=strtok(NULL, ",")) {
-                if (strcmp(tkn, res_ext) == NULL)
+                if (strcmp(tkn, res_ext) == 0)
                     continue;
 
                 fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\" "
@@ -150,7 +150,7 @@ static const Demuxer *r_find_demuxer(const char *filename)
 Resource *r_open(struct feng *srv, const char *inner_path)
 {
     Resource *r;
-    Demuxer *dmx;
+    const Demuxer *dmx;
     gchar *mrl = g_strjoin ("/",
                             srv->config_storage[0].document_root->ptr,
                             inner_path,

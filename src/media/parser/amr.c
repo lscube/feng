@@ -107,7 +107,7 @@ typedef struct
 #endif
 } amr_header;
 
-static int amr_parse(Track *tr, uint8_t *data, long len)
+static int amr_parse(Track *tr, uint8_t *data, size_t len)
 {
     uint32_t header_len, off = 1, payload, i, body_len, body_num = 0;
     uint8_t packet[DEFAULT_MTU] = {0};

@@ -146,7 +146,6 @@ static void vorbis_uninit(Track *track)
 
 static int vorbis_init(Track *track)
 {
-    sdp_field *sdp_private;
     vorbis_priv *priv;
     char *buf;
 
@@ -174,21 +173,21 @@ static int vorbis_init(Track *track)
 
     return ERR_NOERROR;
 
-    err_alloc:
-        vorbis_uninit(priv);
+ err_alloc:
+    g_free(priv->conf);
+    g_free(priv->packet);
+    g_slice_free(vorbis_priv, priv);
     return ERR_ALLOC;
 }
 
 #define XIPH_HEADER_SIZE 6
-static int vorbis_parse(void *track, uint8_t *data, long len)
+static int vorbis_parse(Track *tr, uint8_t *data, size_t len)
 {
     //XXX handle the last packet on EOF
-    Track *tr = (Track *)track;
     vorbis_priv *priv = tr->private_data;
     int frag, off = 0;
-    uint32_t mtu = DEFAULT_MTU;  //FIXME get it from SETUP
-    uint32_t payload = mtu - XIPH_HEADER_SIZE;
-    uint8_t *packet = g_malloc0(mtu);
+    uint32_t payload = DEFAULT_MTU - XIPH_HEADER_SIZE;
+    uint8_t *packet = g_malloc0(DEFAULT_MTU);
 
     if(!packet) return ERR_ALLOC;
 
@@ -212,7 +211,7 @@ static int vorbis_parse(void *track, uint8_t *data, long len)
                                  tr->properties.dts,
                                  tr->properties.frame_duration,
                                  0,
-                                 packet, mtu);
+                                 packet, DEFAULT_MTU);
 
             len -= payload;
             off += payload;

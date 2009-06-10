@@ -204,7 +204,6 @@ static char *encode_header(uint8_t *p, unsigned int len, int packet_mode)
 
 static int h264_init(Track *track)
 {
-    sdp_field *sdp_private;
     h264_priv *priv;
     char *sprop = NULL;
     int err = ERR_ALLOC;
@@ -248,16 +247,16 @@ static int h264_init(Track *track)
 //  - fragmenting
 //  - feed a single NAL as is.
 
-static int h264_parse(Track *tr, uint8_t *data, long len)
+static int h264_parse(Track *tr, uint8_t *data, size_t len)
 {
     h264_priv *priv = tr->private_data;
-    uint32_t mtu = DEFAULT_MTU; //FIXME get it from SETUP
 //    double nal_time; // see page 9 and 7.4.1.2
-    int i, nalsize = 0, index = 0;
+    size_t nalsize = 0, index = 0;
     uint8_t *p, *q;
 
     if (priv->is_avc) {
         while (1) {
+            unsigned int i;
             if(index >= len) break;
             //get the nal size
             nalsize = 0;
@@ -272,7 +271,7 @@ static int h264_parse(Track *tr, uint8_t *data, long len)
                     break;
                 }
             }
-            if (mtu >= nalsize) {
+            if (DEFAULT_MTU >= nalsize) {
                 mparser_buffer_write(tr,
                                      tr->properties.pts,
                                      tr->properties.dts,
@@ -282,7 +281,7 @@ static int h264_parse(Track *tr, uint8_t *data, long len)
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
             // single NAL, to be fragmented, FU-A;
-                frag_fu_a(data + index, nalsize, mtu, tr);
+                frag_fu_a(data + index, nalsize, DEFAULT_MTU, tr);
             }
             index += nalsize;
         }
@@ -305,7 +304,7 @@ static int h264_parse(Track *tr, uint8_t *data, long len)
 
             if (q >= data + len) break;
 
-            if (mtu >= q - p) {
+            if (DEFAULT_MTU >= q - p) {
                 fnc_log(FNC_LOG_VERBOSE, "[h264] Sending NAL %d",p[0]&0x1f);
                 mparser_buffer_write(tr,
                                      tr->properties.pts,
@@ -317,7 +316,7 @@ static int h264_parse(Track *tr, uint8_t *data, long len)
             } else {
                 //FU-A
                 fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
-                frag_fu_a(p, q - p, mtu, tr);
+                frag_fu_a(p, q - p, DEFAULT_MTU, tr);
             }
 
             p = q;
@@ -325,7 +324,7 @@ static int h264_parse(Track *tr, uint8_t *data, long len)
         }
         // last NAL
         fnc_log(FNC_LOG_VERBOSE, "[h264] last NAL %d",p[0]&0x1f);
-        if (mtu >= len - (p - data)) {
+        if (DEFAULT_MTU >= len - (p - data)) {
             fnc_log(FNC_LOG_VERBOSE, "[h264] no frags");
             mparser_buffer_write(tr,
                                  tr->properties.pts,
@@ -336,7 +335,7 @@ static int h264_parse(Track *tr, uint8_t *data, long len)
         } else {
             //FU-A
             fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
-            frag_fu_a(p, len - (p - data), mtu, tr);
+            frag_fu_a(p, len - (p - data), DEFAULT_MTU, tr);
         }
     }
 

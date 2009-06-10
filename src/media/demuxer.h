@@ -98,7 +98,7 @@ typedef struct ResourceInfo_s {
 
 typedef struct Resource {
     GMutex *lock;
-    struct Demuxer *demuxer;
+    const struct Demuxer *demuxer;
     ResourceInfo *info;
     // Metadata begin
 #ifdef HAVE_METADATA

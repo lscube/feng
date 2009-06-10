@@ -35,7 +35,6 @@ static const MediaParserInfo info = {
 static int mp4ves_init(Track *track)
 {
     char *config;
-    char *sdp_value;
 
     if ( (config = extradata2config(&track->properties)) == NULL )
         return ERR_PARSE;
@@ -53,9 +52,8 @@ static int mp4ves_init(Track *track)
     return ERR_NOERROR;
 }
 
-static int mp4ves_parse(Track *tr, uint8_t *data, long len)
+static int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
 {
-    uint32_t mtu = DEFAULT_MTU;
     int32_t offset, rem = len;
 
 #if 0
@@ -67,7 +65,7 @@ static int mp4ves_parse(Track *tr, uint8_t *data, long len)
     fnc_log(FNC_LOG_DEBUG, "[mp4v]no more start codes");
 #endif
 
-    if (mtu >= len) {
+    if (DEFAULT_MTU >= len) {
         mparser_buffer_write(tr,
                              tr->properties.pts,
                              tr->properties.dts,
@@ -82,9 +80,9 @@ static int mp4ves_parse(Track *tr, uint8_t *data, long len)
                                  tr->properties.pts,
                                  tr->properties.dts,
                                  tr->properties.frame_duration,
-                                 (rem <= mtu),
-                                 data + offset, MIN(rem, mtu));
-            rem -= mtu;
+                                 (rem <= DEFAULT_MTU),
+                                 data + offset, MIN(rem, DEFAULT_MTU));
+            rem -= DEFAULT_MTU;
             fnc_log(FNC_LOG_VERBOSE, "[mp4v] frags");
         } while (rem >= 0);
     }

@@ -100,7 +100,7 @@ static int avf_probe(const char *filename)
         .filename = filename
     };
     AVInputFormat *avif;
-    char buffer[PROBE_BUF_SIZE];
+    uint8_t buffer[PROBE_BUF_SIZE];
     size_t rsize;
 
     FILE *fp = fopen(filename, "r");
@@ -110,7 +110,7 @@ static int avf_probe(const char *filename)
     rsize = fread(&buffer, 1, sizeof(buffer), fp);
     fclose(fp);
 
-    avpd.buf = &buffer;
+    avpd.buf = &buffer[0];
     avpd.buf_size = rsize;
 
     av_register_all();
@@ -133,7 +133,8 @@ static int avf_init(Resource * r)
     MediaProperties props;
     Track *track = NULL;
     TrackInfo trackinfo;
-    int i, pt = 96;
+    int pt = 96;
+    unsigned int i;
 
     memset(&ap, 0, sizeof(AVFormatParameters));
     memset(&trackinfo, 0, sizeof(TrackInfo));
@@ -327,8 +328,9 @@ static int avf_seek(Resource * r, double time_sec)
     return av_seek_frame(fc, -1, time_msec, flags);
 }
 
-static void avf_uninit(Resource * r)
+static void avf_uninit(gpointer rgen)
 {
+    Resource *r = rgen;
     lavf_priv_t* priv = r->private_data;
 
 // avf stuff
