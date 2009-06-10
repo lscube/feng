@@ -73,7 +73,7 @@ void free_track(gpointer element,
     sdp_fields_free(track->sdp_fields);
 
     if ( track->parser && track->parser->uninit )
-        track->parser->uninit(track->private_data);
+        track->parser->uninit(track);
 
     g_slice_free(Track, track);
 }
