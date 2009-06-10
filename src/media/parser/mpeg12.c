@@ -80,11 +80,12 @@ static int mpv_parse(Track *tr, uint8_t *data, long len)
     uint8_t dst[mtu];
     uint8_t *q = dst;
     uint8_t *r, *r1 = data;
+    uint8_t *end = data + len;
     uint32_t start_code;
 
     while (1) {
         start_code = -1;
-        r = find_start_code(r1, data + len, &start_code);
+        r = find_start_code(r1, end, &start_code);
         if ((start_code & 0xffffff00) == 0x100) {
             /* New start code found */
             if (start_code == 0x100) {
@@ -118,7 +119,7 @@ static int mpv_parse(Track *tr, uint8_t *data, long len)
             r1 = data;
             while (1) {
                 start_code = -1;
-                r = find_start_code(r1, data + len, &start_code);
+                r = find_start_code(r1, end, &start_code);
                 if ((start_code & 0xffffff00) == 0x100) {
                     /* New start code found */
                     if (r - data < payload) {
