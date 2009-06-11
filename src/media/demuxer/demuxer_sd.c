@@ -220,6 +220,7 @@ static void set_payload_type(MediaProperties *mprops, int payload_type)
 
 static int sd_init(Resource * r)
 {
+    int err = RESOURCE_OK;
     char keyword[80], line[1024], sparam[256];
     Track *track;
     char content_base[256] = "", *separator, track_file[256];
@@ -240,6 +241,7 @@ static int sd_init(Resource * r)
         size_t len = separator - r->info->mrl + 1;
         if (len >= sizeof(content_base)) {
             fnc_log(FNC_LOG_ERR, "[sd] content base string too long\n");
+            fclose(fd);
             return ERR_GENERIC;
         } else {
             strncpy(content_base, r->info->mrl, len);
@@ -261,7 +263,7 @@ static int sd_init(Resource * r)
             sscanf(line, "%79s", keyword);
         }
         if (feof(fd))
-            return RESOURCE_OK;
+            break;
 
         /* Allocate and cast TRACK PRIVATE DATA foreach track.
          * (in this case track = elementary stream media file)
@@ -362,8 +364,10 @@ static int sd_init(Resource * r)
         if (!trackinfo.mrl)
             continue;
 
-        if (!(track = add_track(r, &trackinfo, &props_hints)))
-            return ERR_ALLOC;
+        if (!(track = add_track(r, &trackinfo, &props_hints))) {
+            err = ERR_ALLOC;
+            break;
+        }
 
         track->parser = &demuxer_sd_fake_mediaparser;
         track->private_data = g_slice_new0(mqd_t);
@@ -401,7 +405,8 @@ static int sd_init(Resource * r)
 
     } while (!feof(fd));
 
-    return RESOURCE_OK;
+    fclose(fd);
+    return err;
 }
 
 #define FNC_LIVE_PROTOCOL "mq://"
