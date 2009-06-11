@@ -30,6 +30,7 @@
 #include <liberis/headers.h>
 
 #include "rtsp.h"
+#include "rtp.h"
 #include "fnc_log.h"
 
 /**
@@ -441,10 +442,10 @@ int RTSP_handler(RTSP_Client * rtsp)
             rtsp_handle_request(rtsp);
             break;
         case RTSP_interlvd_rcvd:
-            interleaved_rtcp_send(rtsp,
-                                  rtsp->input->data[1],
-                                  &rtsp->input->data[hlen],
-                                  blen);
+            rtsp_interleaved(rtsp,
+                             rtsp->input->data[1],
+                             &rtsp->input->data[hlen],
+                             blen);
             break;
         default:
             return full_msg;
@@ -453,4 +454,22 @@ int RTSP_handler(RTSP_Client * rtsp)
         g_byte_array_remove_range(rtsp->input, 0, hlen+blen);
     }
     return ERR_NOERROR;
+}
+
+/**
+ * @brief Re-route interleaved or sctp data for an RTSP client
+ */
+void rtsp_interleaved(RTSP_Client *rtsp, int channel, uint8_t *data, size_t len)
+{
+    RTP_session *rtp = g_hash_table_lookup(rtsp->channels, GINT_TO_POINTER(channel));
+
+    if ( rtp == NULL ) {
+        fnc_log(FNC_LOG_INFO, "Received interleaved message for unknown channel %d", channel);
+        return;
+    }
+
+    if ( channel == rtp->transport.rtcp_ch )
+        rtcp_handle(rtp, data, len);
+    else
+        g_assert_not_reached();
 }

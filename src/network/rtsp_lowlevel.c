@@ -85,7 +85,7 @@ void rtsp_read_cb(struct ev_loop *loop, ev_io *w,
      * protocol; right now this only means SCTP.
     */
     if ( channel != 0 ) {
-        interleaved_rtcp_send(rtsp, channel, buffer, read_size);
+        rtsp_interleaved(rtsp, channel, buffer, read_size);
         return;
     }
 

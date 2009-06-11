@@ -24,36 +24,17 @@
 
 #include <stdbool.h>
 
+#ifdef HAVE_SCTP
+# include <netinet/in.h>
+# include <netinet/sctp.h>
+#endif
+
 #include "feng.h"
 #include "rtp.h"
 #include "rtsp.h"
 #include "fnc_log.h"
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-
-/**
- * Closes a transport linked to a session
- * @param session the RTP session for which to close the transport
- */
-static void rtp_transport_close(RTP_session * session)
-{
-    port_pair pair;
-    pair.RTP = get_local_port(session->transport.rtp_sock);
-    pair.RTCP = get_local_port(session->transport.rtcp_sock);
-
-    ev_periodic_stop(session->srv->loop, &session->transport.rtp_writer);
-    ev_io_stop(session->srv->loop, &session->transport.rtcp_reader);
-
-    switch (session->transport.rtp_sock->socktype) {
-        case UDP:
-            RTP_release_port_pair(session->srv, &pair);
-        default:
-            break;
-    }
-    Sock_close(session->transport.rtp_sock);
-    Sock_close(session->transport.rtcp_sock);
-}
-
 
 /*
  * Make sure all the threads get collected
@@ -92,7 +73,30 @@ static void rtp_session_free(gpointer session_gen,
     if (session->fill_pool)
         rtp_fill_pool_free(session);
 
-    rtp_transport_close(session);
+    ev_periodic_stop(session->srv->loop, &session->transport.rtp_writer);
+
+    switch (session->transport.protocol) {
+    case RTP_UDP:
+        {
+            port_pair pair;
+            pair.RTP = get_local_port(session->transport.rtp_sock);
+            pair.RTCP = get_local_port(session->transport.rtcp_sock);
+
+            ev_io_stop(session->srv->loop, &session->transport.rtcp_reader);
+            RTP_release_port_pair(session->srv, &pair);
+
+            Sock_close(session->transport.rtp_sock);
+            Sock_close(session->transport.rtcp_sock);
+        }
+        break;
+    case RTP_TCP:
+    case RTP_SCTP:
+        break;
+
+    default:
+        g_assert_not_reached();
+        break;
+    }
 
     /* Remove the consumer */
     bq_consumer_free(session->consumer);
@@ -314,6 +318,48 @@ typedef struct {
     uint8_t data[]; /**< Variable-sized data payload */
 } RTP_packet;
 
+static gboolean rtp_packet_send_direct(RTP_session *session, RTP_packet *packet,
+                                       size_t packet_size)
+{
+    return Sock_write(session->transport.rtp_sock, packet,
+                      packet_size, NULL, MSG_DONTWAIT
+                      | MSG_EOR) < 0;
+}
+
+static gboolean rtp_packet_send_interleaved(RTP_session *session, RTP_packet *packet,
+                                            size_t packet_size)
+{
+    RTSP_Client *rtsp = session->client;
+    uint16_t ne_n = htons((uint16_t)packet_size);
+
+    GByteArray *outpkt = g_byte_array_sized_new(packet_size + 4);
+    g_byte_array_set_size(outpkt, packet_size + 4);
+
+    outpkt->data[0] = '$';
+    outpkt->data[1] = session->transport.rtp_ch;
+
+    memcpy(&outpkt->data[2], &ne_n, sizeof(uint16_t));
+    memcpy(&outpkt->data[4], packet, packet_size);
+
+    g_queue_push_head(rtsp->out_queue, outpkt);
+    ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
+
+    return true;
+}
+
+#ifdef HAVE_SCTP
+static gboolean rtp_packet_send_sctp(RTP_session *session, RTP_packet *packet,
+                                     size_t packet_size)
+{
+    struct sctp_sndrcvinfo sctp_info = {
+        .sinfo_stream = session->transport.rtp_ch
+    };
+
+    return Sock_write(session->client->sock, packet, packet_size,
+                      &sctp_info, MSG_DONTWAIT | MSG_EOR) < 0;
+}
+#endif
+
 /**
  * @brief Send the actual buffer as an RTP packet to the client
  *
@@ -331,6 +377,7 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     const uint32_t timestamp = RTP_calc_rtptime(session,
                                                 tr->properties.clock_rate,
                                                 buffer);
+    gboolean sent = false;
 
     packet->version = 2;
     packet->padding = 0;
@@ -346,9 +393,23 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
 
     memcpy(packet->data, buffer->data, buffer->data_size);
 
-    if (Sock_write(session->transport.rtp_sock, packet,
-                   packet_size, NULL, MSG_DONTWAIT
-                   | MSG_EOR) < 0) {
+    switch ( session->transport.protocol ) {
+    case RTP_UDP:
+        sent = rtp_packet_send_direct(session, packet, packet_size);
+        break;
+    case RTP_TCP:
+        sent = rtp_packet_send_interleaved(session, packet, packet_size);
+        break;
+#ifdef HAVE_SCTP
+    case RTP_SCTP:
+        sent = rtp_packet_send_sctp(session, packet, packet_size);
+        break;
+#endif
+    default:
+        g_assert_not_reached();
+    }
+
+    if (!sent) {
         fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
     } else {
         session->last_timestamp = buffer->timestamp;
@@ -457,20 +518,20 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
     rtp_session_fill(session);
 }
 
-
 /**
- * @brief parse incoming RTCP packets
+ * @brief Read incoming RTCP packets from the socket
  */
 static void rtcp_read_cb(ATTR_UNUSED struct ev_loop *loop,
                          ev_io *w,
                          ATTR_UNUSED int revents)
 {
-    char buffer[RTP_DEFAULT_MTU*2] = { 0, }; //FIXME just a quick hack...
+    uint8_t buffer[RTP_DEFAULT_MTU*2] = { 0, }; //FIXME just a quick hack...
     RTP_session *session = w->data;
     int n = Sock_read(session->transport.rtcp_sock, buffer,
                       RTP_DEFAULT_MTU*2, NULL, 0);
-    fnc_log(FNC_LOG_INFO, "[RTCP] Read %d byte", n);
+    rtcp_handle(session, buffer, n);
 }
+
 /**
  * @brief Create a new RTP session object.
  *
@@ -490,7 +551,6 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
                              Track *tr) {
     feng *srv = rtsp->srv;
     RTP_session *rtp_s = g_slice_new0(RTP_session);
-    ev_io *io = &rtp_s->transport.rtcp_reader;
     ev_periodic *periodic = &rtp_s->transport.rtp_writer;
 
     /* Make sure we start paused since we have to wait for parameters
@@ -516,8 +576,29 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
 #endif
     periodic->data = rtp_s;
     ev_periodic_init(periodic, rtp_write_cb, 0, 0, NULL);
-    io->data = rtp_s;
-    ev_io_init(io, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
+
+    /* Only when there is a socket, otherwise it's going to use the channels below! */
+    if ( rtp_s->transport.rtcp_sock ) {
+        ev_io *io = &rtp_s->transport.rtcp_reader;
+        io->data = rtp_s;
+        ev_io_init(io, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
+    } else {
+        if ( rtsp->channels == NULL )
+            rtsp->channels = g_hash_table_new_full(g_direct_hash, g_direct_equal,
+                                                   NULL, NULL);
+
+        g_hash_table_insert(rtsp->channels, GINT_TO_POINTER(transport->rtcp_ch),
+                            rtp_s);
+
+        /* Keep the following commented out until we actually need to
+         * _read_ rtp data
+         */
+#if 0
+        g_hash_table_insert(rtsp->channels, GINT_TO_POINTER(transport->rtp_ch),
+                            rtp_s);
+
+#endif
+    }
 
     // Setup the RTP session
     rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);

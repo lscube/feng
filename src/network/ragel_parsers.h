@@ -30,8 +30,9 @@
 
 #include <glib.h>
 
+#include "rtp.h"
+
 struct RTSP_Client;
-struct RTP_transport;
 
 /**
  * @defgroup ragel Ragel parsing
@@ -59,7 +60,7 @@ struct RTP_transport;
  * @internal
  */
 struct ParsedTransport {
-    enum { TransportUDP, TransportTCP, TransportSCTP } protocol;
+    RTP_Protocol protocol;
     //! Mode for UDP transmission, here is easier to access
     enum { TransportUnicast, TransportMulticast } mode;
     union {

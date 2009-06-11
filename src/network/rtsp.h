@@ -139,17 +139,14 @@ typedef struct RTSP_Client {
 
     GQueue *out_queue;
 
+    /**
+     * @brief Hash table for interleaved and SCTP channels
+     */
+    GHashTable *channels;
+
     // Run-Time
     RTSP_session *session;
     struct feng *srv;
-
-    /**
-     * @brief Interleaved setup data
-     *
-     * Singly-linked list of @ref RTSP_interleaved instances, one per
-     * RTP session linked to the RTSP session.
-     */
-    GSList *interleaved;
 
     //Events
     ev_async ev_sig_disconnect;
@@ -310,17 +307,13 @@ void rtsp_read_cb(struct ev_loop *, ev_io *, int);
 gboolean rtsp_request_get_url(RTSP_Request *req, Url *url);
 gboolean rtsp_request_check_url(RTSP_Request *req);
 
+void rtsp_interleaved(RTSP_Client *rtsp, int channel, uint8_t *data, size_t len);
 void rtsp_bwrite(RTSP_Client *rtsp, GString *buffer);
 
 RTSP_session *rtsp_session_new(RTSP_Client *rtsp);
 void rtsp_session_free(RTSP_session *session);
 void rtsp_session_editlist_append(RTSP_session *session, RTSP_Range *range);
 void rtsp_session_editlist_free(RTSP_session *session);
-
-gboolean interleaved_setup_transport(RTSP_Client *, struct RTP_transport *,
-                                     int, int);
-void interleaved_rtcp_send(RTSP_Client *, int, void *, size_t);
-void interleaved_free_list(RTSP_Client *);
 
 void rtsp_do_pause(RTSP_Client *rtsp);
 

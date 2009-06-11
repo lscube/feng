@@ -45,7 +45,6 @@ dist_feng_SOURCES = $(BUILT_SOURCES) \
 	network/rtp_port.c \
 	network/rtsp.h \
 	network/rtsp_client.c \
-	network/rtsp_interleaved.c \
 	network/rtsp_lowlevel.c \
 	network/rtsp_method_describe.c \
 	network/rtsp_method_options.c \
