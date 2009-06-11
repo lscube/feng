@@ -132,7 +132,8 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
         break;
     }
 
-    t->properties.media_type = t->parser->info->media_type;
+    if ( t->parser->info )
+        t->properties.media_type = t->parser->info->media_type;
 
     r->tracks = g_list_append(r->tracks, t);
     r->num_tracks++;
