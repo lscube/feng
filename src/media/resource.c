@@ -309,27 +309,25 @@ int r_seek(Resource *resource, double time) {
  */
 int r_read(Resource *resource)
 {
-    int ret;
+    int ret = RESOURCE_EOF;
 
     g_mutex_lock(resource->lock);
-
-    switch( (ret = resource->demuxer->read_packet(resource)) ) {
-    case RESOURCE_OK:
-        break;
-    case RESOURCE_EOF:
-        if (!resource->eor) {
+    if (!resource->eor)
+        switch( (ret = resource->demuxer->read_packet(resource)) ) {
+        case RESOURCE_OK:
+            break;
+        case RESOURCE_EOF:
             fnc_log(FNC_LOG_INFO,
                     "r_read_unlocked: %s read_packet() end of file.",
                     resource->info->mrl);
             resource->eor = true;
+            break;
+        default:
+            fnc_log(FNC_LOG_FATAL,
+                    "r_read_unlocked: %s read_packet() error.",
+                    resource->info->mrl);
+            break;
         }
-        break;
-    default:
-        fnc_log(FNC_LOG_FATAL,
-                "r_read_unlocked: %s read_packet() error.",
-                resource->info->mrl);
-        break;
-    }
 
     g_mutex_unlock(resource->lock);
 
