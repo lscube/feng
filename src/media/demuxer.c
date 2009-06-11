@@ -120,6 +120,8 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
         if (t->parser->init(t))
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
                             t->properties.encoding_name);
+
+        t->properties.media_type = t->parser->info->media_type;
         break;
 
     case MS_live:
@@ -131,9 +133,6 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
         ADD_TRACK_ERROR(FNC_LOG_FATAL, "Media source not supported!");
         break;
     }
-
-    if ( t->parser->info )
-        t->properties.media_type = t->parser->info->media_type;
 
     r->tracks = g_list_append(r->tracks, t);
     r->num_tracks++;
