@@ -237,6 +237,17 @@ AC_DEFINE_UNQUOTED(FENIC_STATE_DIR_STR,
                     "$fenice_state_dir",
                     [Define default string dir for Certificate (pem format)])
 
+AC_MSG_CHECKING([whether we need git to generate ChangeLog])
+AS_IF([test -f "$srcdir/ChangeLog"],
+  [AC_MSG_RESULT([no, we're good])],
+  [AC_MSG_RESULT([yes])
+   AC_CHECK_PROG([GIT], [git], [yes], [no])
+   AS_IF([test "x$GIT" = "xno"],
+     [AC_MSG_ERROR([You need git to use a git snapshot!])])
+  ])
+
+AM_CONDITIONAL([CHANGELOG_REGEN], [test "x$GIT" = "xyes"])
+
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_FILES([Makefile])
