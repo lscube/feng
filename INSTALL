@@ -7,7 +7,7 @@ In order to build feng you need:
 - a full Posix compatible system (suggested any linux distribution)
 - gnu toolchain (gcc >= 3.4 , make >= 3.80, libtool >= 1.5.20) [1]
 - glib-2 >= 2.10 [2]
-- ffmpeg svn HEAD or any recent snapshot [3].
+- ffmpeg >= 0.5 [3]
 - netembryo >= 0.1.0 [4]
 - libev >= 3.48 [5]
 

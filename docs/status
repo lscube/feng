@@ -7,9 +7,9 @@ Codecs
 -   mpeg4 video Working         3016
 -   mp3         To Be Updated   3119        The former draft is supported
 -   aac         Working         3640
--   vorbis      Working         draft       Interoperable with gstreamer
+-   vorbis      Working         5215        Interoperable with gstreamer
 -   theora      Working         draft       Interoperable with gstreamer
--   amr         Inexistent      3267
+-   amr         Working         3267
 
 Containers
     Name        Status          Reference

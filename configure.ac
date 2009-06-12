@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.61)
-AC_INIT([feng], [2.0.99])
+AC_INIT([feng], [2.1.0_rc1])
 AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip foreign subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])

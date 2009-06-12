@@ -1,6 +1,8 @@
 To do:
     * ipc/rpc systems
-    * support more formats (dirac, snow, wavpack)
-    * update rpm and deb package scripts
+    * support more formats (dirac, snow, wavpack, vc1)
+    * create rpm and deb package scripts
     * access permissions
     * increase the bundled documentation
+    * rtsp-http a la Apple
+    * rtsp-wmp compatibility
