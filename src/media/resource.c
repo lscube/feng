@@ -29,7 +29,9 @@
 #include "fnc_log.h"
 
 // global demuxer modules:
+#ifdef LIVE_STREAMING
 extern Demuxer fnc_demuxer_sd;
+#endif
 extern Demuxer fnc_demuxer_ds;
 extern Demuxer fnc_demuxer_avf;
 
@@ -97,7 +99,9 @@ static void r_free_cb(gpointer resource_p,
 static const Demuxer *r_find_demuxer(const char *filename)
 {
     static const Demuxer *const demuxers[] = {
+#ifdef LIVE_STREAMING
         &fnc_demuxer_sd,
+#endif
         &fnc_demuxer_ds,
         &fnc_demuxer_avf,
         NULL

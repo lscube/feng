@@ -105,7 +105,10 @@ LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 dnl Check for prerequisites to enable live streaming with flux.
 live_streaming=yes
 
-AC_SEARCH_LIBS([mq_open], [rt], [], [live_streaming=no])
+AC_SEARCH_LIBS([mq_open], [rt],
+               [AC_DEFINE(LIVE_STREAMING, [1],
+                          [Define this if live streaming is supported])],
+               [live_streaming=no])
 
 AM_CONDITIONAL([LIVE_STREAMING], [test "x$live_streaming" = "xyes"])
 
