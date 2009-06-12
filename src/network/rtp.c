@@ -69,6 +69,7 @@ static void rtp_fill_pool_free(RTP_session *session)
     g_mutex_unlock(resource->lock);
     g_thread_pool_free(session->fill_pool, true, true);
     session->fill_pool = NULL;
+    resource->eor = false;
 }
 
 /**
