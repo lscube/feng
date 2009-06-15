@@ -325,7 +325,7 @@ static gboolean rtp_packet_send_direct(RTP_session *session, RTP_packet *packet,
 {
     return Sock_write(session->transport.rtp_sock, packet,
                       packet_size, NULL, MSG_DONTWAIT
-                      | MSG_EOR) < 0;
+                      | MSG_EOR) == packet_size;
 }
 
 static gboolean rtp_packet_send_interleaved(RTP_session *session, RTP_packet *packet,
@@ -358,7 +358,7 @@ static gboolean rtp_packet_send_sctp(RTP_session *session, RTP_packet *packet,
     };
 
     return Sock_write(session->client->sock, packet, packet_size,
-                      &sctp_info, MSG_DONTWAIT | MSG_EOR) < 0;
+                      &sctp_info, MSG_DONTWAIT | MSG_EOR) == packet_size;
 }
 #endif
 
