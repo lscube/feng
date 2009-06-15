@@ -22,7 +22,7 @@ MAINTAINERCLEANFILES = ChangeLog
 
 if CHANGELOG_REGEN
 ChangeLog:
-	GIT_DIR="${srcdir}/.git" git log --pretty > $@
+	$(AM_V_GEN)GIT_DIR="${srcdir}/.git" git log --pretty > $@
 
 # Always regenerate!
 .PHONY: ChangeLog
