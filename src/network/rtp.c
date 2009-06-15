@@ -553,6 +553,7 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
                              Track *tr) {
     feng *srv = rtsp->srv;
     RTP_session *rtp_s = g_slice_new0(RTP_session);
+    ev_io *io = &rtp_s->transport.rtcp_reader;
     ev_periodic *periodic = &rtp_s->transport.rtp_writer;
 
     /* Make sure we start paused since we have to wait for parameters
@@ -581,8 +582,8 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
 
     switch (rtp_s->transport.protocol) {
     case RTP_UDP:
-        rtp_s->transport.rtcp_reader.data = rtp_s;
-        ev_io_init(&rtp_s->transport.rtcp_reader, rtcp_read_cb,
+        io->data = rtp_s;
+        ev_io_init(io, rtcp_read_cb,
                    Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
         break;
     case RTP_TCP:
