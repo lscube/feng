@@ -579,12 +579,14 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
     periodic->data = rtp_s;
     ev_periodic_init(periodic, rtp_write_cb, 0, 0, NULL);
 
-    /* Only when there is a socket, otherwise it's going to use the channels below! */
-    if ( rtp_s->transport.rtcp_sock ) {
-        ev_io *io = &rtp_s->transport.rtcp_reader;
-        io->data = rtp_s;
-        ev_io_init(io, rtcp_read_cb, Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
-    } else {
+    switch (rtp_s->transport.protocol) {
+    case RTP_UDP:
+        rtp_s->transport.rtcp_reader.data = rtp_s;
+        ev_io_init(&rtp_s->transport.rtcp_reader, rtcp_read_cb,
+                   Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
+        break;
+    case RTP_TCP:
+    case RTP_SCTP:
         if ( rtsp->channels == NULL )
             rtsp->channels = g_hash_table_new_full(g_direct_hash, g_direct_equal,
                                                    NULL, NULL);
@@ -600,6 +602,11 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
                             rtp_s);
 
 #endif
+        break;
+
+    default:
+        g_assert_not_reached();
+        break;
     }
 
     // Setup the RTP session
