@@ -93,6 +93,12 @@ LSC_CHECK_IPV6
 LSC_CHECK_SCTP
 LIBS="$LIBS $SCTP_LIBS"
 
+dnl Set the comment marker when sctp is not enabled, this allows for
+dnl the -uninstalled variant of feng.conf to use sctp if enabled.
+AS_IF([test "x$have_sctp" = "xyes"],
+  [AC_SUBST([ENABLE_SCTP], [""])],
+  [AC_SUBST([ENABLE_SCTP], ["#"])])
+
 AS_IF([test "x$have_sctp" = "xyes"],
   [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.1.0"],
   [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.1.0"])
