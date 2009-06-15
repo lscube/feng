@@ -46,9 +46,11 @@ static void rtp_fill_pool_free(RTP_session *session)
 {
     Resource *resource = session->track->parent;
     g_mutex_lock(resource->lock);
-    g_thread_pool_free(session->fill_pool, true, false);
+    resource->eor = true;
     g_mutex_unlock(resource->lock);
+    g_thread_pool_free(session->fill_pool, true, true);
     session->fill_pool = NULL;
+    resource->eor = false;
 }
 
 /**
@@ -70,10 +72,10 @@ static void rtp_session_free(gpointer session_gen,
      * ensure that we're paused before doing this but doesn't matter
      * now.
      */
+    rtp_transport_close(session);
+
     if (session->fill_pool)
         rtp_fill_pool_free(session);
-
-    ev_periodic_stop(session->srv->loop, &session->transport.rtp_writer);
 
     switch (session->transport.protocol) {
     case RTP_UDP:

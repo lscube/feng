@@ -29,7 +29,9 @@
 #include "fnc_log.h"
 
 // global demuxer modules:
+#ifdef LIVE_STREAMING
 extern Demuxer fnc_demuxer_sd;
+#endif
 extern Demuxer fnc_demuxer_ds;
 extern Demuxer fnc_demuxer_avf;
 
@@ -97,7 +99,9 @@ static void r_free_cb(gpointer resource_p,
 static const Demuxer *r_find_demuxer(const char *filename)
 {
     static const Demuxer *const demuxers[] = {
+#ifdef LIVE_STREAMING
         &fnc_demuxer_sd,
+#endif
         &fnc_demuxer_ds,
         &fnc_demuxer_avf,
         NULL
@@ -309,27 +313,25 @@ int r_seek(Resource *resource, double time) {
  */
 int r_read(Resource *resource)
 {
-    int ret;
+    int ret = RESOURCE_EOF;
 
     g_mutex_lock(resource->lock);
-
-    switch( (ret = resource->demuxer->read_packet(resource)) ) {
-    case RESOURCE_OK:
-        break;
-    case RESOURCE_EOF:
-        if (!resource->eor) {
+    if (!resource->eor)
+        switch( (ret = resource->demuxer->read_packet(resource)) ) {
+        case RESOURCE_OK:
+            break;
+        case RESOURCE_EOF:
             fnc_log(FNC_LOG_INFO,
                     "r_read_unlocked: %s read_packet() end of file.",
                     resource->info->mrl);
             resource->eor = true;
+            break;
+        default:
+            fnc_log(FNC_LOG_FATAL,
+                    "r_read_unlocked: %s read_packet() error.",
+                    resource->info->mrl);
+            break;
         }
-        break;
-    default:
-        fnc_log(FNC_LOG_FATAL,
-                "r_read_unlocked: %s read_packet() error.",
-                resource->info->mrl);
-        break;
-    }
 
     g_mutex_unlock(resource->lock);
 

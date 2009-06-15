@@ -1,10 +1,11 @@
 Core team
 
 Current
-        - Alessandro Molina     <amol.wrk@gmail.com>
-        - Dario Gallucci        <dario.gallucci@polito.it>
+        - Alessandro Molina     <alessando.molina@gmail.com>
         - Luca Barbato          <lu_zero@gentoo.org>
+        - Diego E. Pettenò      <flameeyes@gmail.com>
 Past
+        - Dario Gallucci        <dario.gallucci@polito.it>
 	- Giampaolo Mancini     <giampaolo.mancini@polito.it>
 	- Francesco Varano      <francesco.varano@polito.it>
 	- Marco Penno           <marco.penno@polito.it>
@@ -16,5 +17,6 @@ Past
 
 Contributions
 
-mediathread/
+media/parser
         mpeg2t.c : Austin Foxley    <austinf@cetoncorp.com>
+        amr.c    : Jabin Yan        <jyan@netspectrum.com>
