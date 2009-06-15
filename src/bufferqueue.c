@@ -344,9 +344,6 @@ static void bq_element_free_internal(gpointer elem_generic,
 static void bq_producer_free_internal(BufferQueue_Producer *producer) {
     g_assert_cmpuint(producer->consumers, ==, 0);
 
-    g_mutex_unlock(producer->lock);
-    g_mutex_free(producer->lock);
-
     if ( producer->key )
         g_free(producer->key);
 
@@ -359,6 +356,9 @@ static void bq_producer_free_internal(BufferQueue_Producer *producer) {
                         producer->free_function);
         g_queue_free(producer->queue);
     }
+
+    g_mutex_unlock(producer->lock);
+    g_mutex_free(producer->lock);
 
     g_slice_free(BufferQueue_Producer, producer);
 }
@@ -376,15 +376,17 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
 
     g_mutex_lock(producer->lock);
 
-    if (producer->consumers) {
-        g_mutex_unlock(producer->lock);
-        return;
-    }
-
     if(producer->key) {
         g_mutex_lock(bq_shared_producers_lock);
-        g_hash_table_remove(bq_shared_producers, producer->key);
-        g_mutex_unlock(bq_shared_producers_lock);
+
+        if (producer->consumers) {
+            g_mutex_unlock(bq_shared_producers_lock);
+            g_mutex_unlock(producer->lock);
+            return;
+        } else {
+            g_hash_table_remove(bq_shared_producers, producer->key);
+            g_mutex_unlock(bq_shared_producers_lock);
+        }
     }
 
     g_assert(g_atomic_int_get(&producer->stopped) == 0);
@@ -682,7 +684,7 @@ gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     gulong unseen;
 
-    if ( g_atomic_int_get(&producer->stopped) )
+    if (producer || g_atomic_int_get(&producer->stopped) )
         return 0;
 
     /* Ensure we have the exclusive access */
