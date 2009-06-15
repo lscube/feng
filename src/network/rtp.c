@@ -67,15 +67,12 @@ static void rtp_session_free(gpointer session_gen,
 {
     RTP_session *session = (RTP_session*)session_gen;
 
-    /* Call this first, so that all the reading thread will stop
-     * before continuing to free resources; another way should be to
-     * ensure that we're paused before doing this but doesn't matter
-     * now.
+    /* Close the transport first, so that all the reading thread will
+     * stop before continuing to free resources; another way should be
+     * to ensure that we're paused before doing this but doesn't
+     * matter now.
      */
-    rtp_transport_close(session);
-
-    if (session->fill_pool)
-        rtp_fill_pool_free(session);
+    ev_periodic_stop(session->srv->loop, &session->transport.rtp_writer);
 
     switch (session->transport.protocol) {
     case RTP_UDP:
@@ -99,6 +96,9 @@ static void rtp_session_free(gpointer session_gen,
         g_assert_not_reached();
         break;
     }
+
+    if (session->fill_pool)
+        rtp_fill_pool_free(session);
 
     /* Remove the consumer */
     bq_consumer_free(session->consumer);
