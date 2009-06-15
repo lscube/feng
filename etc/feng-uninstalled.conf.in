@@ -16,10 +16,10 @@ server.port         = 8554
 # server.bind         = "live.host.tld"
 
 # use sctp instead of tcp
-# $SERVER["socket"] == "localhost:5554" {
-#   sctp.protocol       = "enable"
-#   sctp.max_streams    = 16
-# }
+@ENABLE_SCTP@$SERVER["socket"] == "localhost:8554" {
+@ENABLE_SCTP@   sctp.protocol       = "enable"
+@ENABLE_SCTP@   sctp.max_streams    = 16
+@ENABLE_SCTP@ }
 
 server.username      = "feng"
 server.groupname     = "feng"
