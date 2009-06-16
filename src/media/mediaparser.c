@@ -94,7 +94,14 @@ void mparser_buffer_write(Track *tr,
                           gboolean marker,
                           uint8_t *data, size_t data_size)
 {
-    MParserBuffer *buffer = g_malloc(sizeof(MParserBuffer) + data_size);
+    MParserBuffer *buffer;
+
+    if ( tr->producer == NULL )
+        tr->producer = bq_producer_new(g_free,
+                                       (tr->properties.media_source == MS_live ?
+                                        tr->info->mrl : NULL));
+
+    buffer = g_malloc(sizeof(MParserBuffer) + data_size);
 
     buffer->timestamp = presentation;
     buffer->delivery = delivery;

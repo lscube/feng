@@ -65,7 +65,8 @@ void free_track(gpointer element,
 
     g_mutex_free(track->lock);
 
-    bq_producer_unref(track->producer);
+    if ( track-> producer )
+        bq_producer_unref(track->producer);
 
     g_free(track->info->mrl);
     g_slice_free(TrackInfo, track->info);
@@ -113,8 +114,6 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
 
     switch (t->properties.media_source) {
     case MS_stored:
-        if( !(t->producer = bq_producer_new(g_free, NULL)) )
-            ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
         if ( !(t->parser = mparser_find(t->properties.encoding_name)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
         if (t->parser->init(t))
@@ -125,12 +124,10 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
         break;
 
     case MS_live:
-        if( !(t->producer = bq_producer_new(g_free, t->info->mrl)) )
-            ADD_TRACK_ERROR(FNC_LOG_FATAL, "Memory allocation problems\n");
         break;
 
     default:
-        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Media source not supported!");
+        g_assert_not_reached();
         break;
     }
 

@@ -491,9 +491,19 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
                              RTP_transport *transport, const char *uri,
                              Track *tr) {
     feng *srv = rtsp->srv;
-    RTP_session *rtp_s = g_slice_new0(RTP_session);
-    ev_io *io = &rtp_s->transport.rtcp_reader;
-    ev_periodic *periodic = &rtp_s->transport.rtp_writer;
+    RTP_session *rtp_s;
+    ev_io *io;
+    ev_periodic *periodic;
+
+    /* Before doing anything, make sure the resource can be
+     * read, if not we want to abort right away.
+    */
+    if ( r_read(tr->parent) != RESOURCE_OK )
+        return NULL;
+
+    rtp_s = g_slice_new0(RTP_session);
+    io = &rtp_s->transport.rtcp_reader;
+    periodic = &rtp_s->transport.rtp_writer;
 
     /* Make sure we start paused since we have to wait for parameters
      * given by @ref rtp_session_resume.
@@ -506,6 +516,7 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
     rtp_s->seq_no = rtp_s->start_seq - 1;
 
     /* Set up the track selector and get a consumer for the track */
+
     rtp_s->track = tr;
     rtp_s->consumer = bq_consumer_new(tr->producer);
 

@@ -363,7 +363,10 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
     if ( (req_track = select_requested_track(req, rtsp_s)) == NULL )
         return;
 
-    rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, req->object, req_track);
+    if ( !(rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, req->object, req_track)) ) {
+        rtsp_quick_response(req, RTSP_InternalServerError);
+        return;
+    }
 
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
 
