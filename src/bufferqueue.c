@@ -374,6 +374,7 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
     if ( producer == NULL )
         return;
 
+    /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
     if(producer->key) {
@@ -392,8 +393,6 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
     g_assert(g_atomic_int_get(&producer->stopped) == 0);
 
     g_atomic_int_set(&producer->stopped, 1);
-
-    /* Ensure we have the exclusive access */
 
     bq_producer_free_internal(producer);
 }
