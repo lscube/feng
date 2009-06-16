@@ -218,4 +218,6 @@ void free_track(gpointer element, gpointer user_data);
 
 void track_add_sdp_field(Track *track, sdp_field_type type, char *value);
 
+BufferQueue_Producer *track_get_producer(Track *tr);
+
 #endif // FN_DEMUXER_H

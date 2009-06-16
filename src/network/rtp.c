@@ -518,7 +518,7 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
     /* Set up the track selector and get a consumer for the track */
 
     rtp_s->track = tr;
-    rtp_s->consumer = bq_consumer_new(tr->producer);
+    rtp_s->consumer = bq_consumer_new(track_get_producer(tr));
 
     rtp_s->srv = srv;
     rtp_s->ssrc = g_random_int();

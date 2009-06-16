@@ -157,3 +157,18 @@ void track_add_sdp_field(Track *track, sdp_field_type type, char *value)
 
     track->sdp_fields = g_slist_prepend(track->sdp_fields, field);
 }
+
+/**
+ * @brief Get the producer for the track
+ *
+ * @param track The track to get the producer for
+ */
+BufferQueue_Producer *track_get_producer(Track *tr)
+{
+    if ( tr->producer == NULL )
+        tr->producer = bq_producer_new(g_free,
+                                       (tr->properties.media_source == MS_live ?
+                                        tr->info->mrl : NULL));
+
+    return tr->producer;
+}
