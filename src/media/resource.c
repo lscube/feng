@@ -159,22 +159,22 @@ Resource *r_open(struct feng *srv, const char *inner_path)
                             srv->config_storage[0].document_root->ptr,
                             inner_path,
                             NULL);
-	struct stat filestat;
+    struct stat filestat;
 
-	if (stat(mrl, &filestat) == -1 ) {
-		switch(errno) {
+    if (stat(mrl, &filestat) == -1 ) {
+        switch(errno) {
         case ENOENT:
             fnc_log(FNC_LOG_ERR,"%s: file not found\n", mrl);
             break;
         default:
             fnc_log(FNC_LOG_ERR,"Cannot stat file %s\n", mrl);
             break;
-		}
+        }
         goto error;
-	}
+    }
 
-	if ( S_ISFIFO(filestat.st_mode) ) {
-		fnc_log(FNC_LOG_ERR, "%s: not a file\n");
+    if ( S_ISFIFO(filestat.st_mode) ) {
+        fnc_log(FNC_LOG_ERR, "%s: not a file\n");
         goto error;
     }
 
