@@ -271,6 +271,75 @@ void bq_init()
 }
 
 /**
+ * @brief Destroy one by one the elements in
+ *        BufferQueue_Producer::queue.
+ *
+ * @param elem_generic Element to destroy
+ * @param free_func_generic Function to use for destroying the
+ *                          elements' payload.
+ */
+static void bq_element_free_internal(gpointer elem_generic,
+                                     gpointer free_func_generic) {
+    BufferQueue_Element *const element = (BufferQueue_Element*)elem_generic;
+    const GDestroyNotify free_function = (GDestroyNotify)free_func_generic;
+
+    free_function(element->payload);
+    g_slice_free(BufferQueue_Element, element);
+}
+
+/**
+ * @brief Resets a producer's queue (unlocked version)
+ *
+ * @param producer Producer to reset the queue of
+ *
+ * @internal This function does not lock the producer and should only
+ *           be used by @ref bq_producer_new !
+ * @note This function will require exclusive access to the producer,
+ *       and will thus lock its mutex.
+ *
+ * This function will change the currently-used queue for the
+ * producer, so that a discontinuity will allow the consumers not to
+ * worry about getting old buffers.
+ */
+static void bq_producer_reset_queue_internal(BufferQueue_Producer *producer) {
+    if ( producer->queue ) {
+        g_queue_foreach(producer->queue,
+                        bq_element_free_internal,
+                        producer->free_function);
+        g_queue_clear(producer->queue);
+        g_queue_free(producer->queue);
+    }
+
+    producer->queue = g_queue_new();
+    producer->queue_serial++;
+    producer->next_serial = 0;
+}
+
+/**
+ * @brief Resets a producer's queue
+ *
+ * @param producer Producer to reset the queue of
+ *
+ * @note This function will require exclusive access to the producer,
+ *       and will thus lock its mutex.
+ *
+ * This function will change the currently-used queue for the
+ * producer, so that a discontinuity will allow the consumers not to
+ * worry about getting old buffers.
+ */
+void bq_producer_reset_queue(BufferQueue_Producer *producer) {
+    /* Ensure we have the exclusive access */
+    g_mutex_lock(producer->lock);
+
+    g_assert(!producer->stopped);
+
+    bq_producer_reset_queue_internal(producer);
+
+    /* Leave the exclusive access */
+    g_mutex_unlock(producer->lock);
+}
+
+/**
  * @brief Create a new producer for the bufferqueue or return one previously
  *        allocated with the same key
  *
@@ -303,30 +372,13 @@ BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function,
             g_hash_table_insert(bq_shared_producers, key, ret);
         }
 
-        bq_producer_reset_queue(ret);
+        bq_producer_reset_queue_internal(ret);
     }
 
     if (key)
         g_mutex_unlock(bq_shared_producers_lock);
 
     return ret;
-}
-
-/**
- * @brief Destroy one by one the elements in
- *        BufferQueue_Producer::queue.
- *
- * @param elem_generic Element to destroy
- * @param free_func_generic Function to use for destroying the
- *                          elements' payload.
- */
-static void bq_element_free_internal(gpointer elem_generic,
-                                     gpointer free_func_generic) {
-    BufferQueue_Element *const element = (BufferQueue_Element*)elem_generic;
-    const GDestroyNotify free_function = (GDestroyNotify)free_func_generic;
-
-    free_function(element->payload);
-    g_slice_free(BufferQueue_Element, element);
 }
 
 /**
@@ -395,40 +447,6 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
     g_atomic_int_set(&producer->stopped, 1);
 
     bq_producer_free_internal(producer);
-}
-
-/**
- * @brief Resets a producer's queue
- *
- * @param producer Producer to reset the queue of
- *
- * @note This function will require exclusive access to the producer,
- *       and will thus lock its mutex.
- *
- * This function will change the currently-used queue for the
- * producer, so that a discontinuity will allow the consumers not to
- * worry about getting old buffers.
- */
-void bq_producer_reset_queue(BufferQueue_Producer *producer) {
-    /* Ensure we have the exclusive access */
-    g_mutex_lock(producer->lock);
-
-    g_assert(!producer->stopped);
-
-    if ( producer->queue ) {
-        g_queue_foreach(producer->queue,
-                        bq_element_free_internal,
-                        producer->free_function);
-        g_queue_clear(producer->queue);
-        g_queue_free(producer->queue);
-    }
-
-    producer->queue = g_queue_new();
-    producer->queue_serial++;
-    producer->next_serial = 0;
-
-    /* Leave the exclusive access */
-    g_mutex_unlock(producer->lock);
 }
 
 /**
