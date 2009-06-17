@@ -538,11 +538,6 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     if ( ++elem->seen < producer->consumers )
         return;
 
-    bq_element_free_internal(elem, producer->free_function);
-
-    /* Make sure to lose reference to it */
-    consumer->current_element_object = NULL;
-
     /* We can only remove the head of the queue, if we're doing
      * anything else, something is funky.
      */
@@ -550,6 +545,12 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
 
     /* Remove the element from the queue */
     g_queue_pop_head(producer->queue);
+
+    bq_element_free_internal(elem, producer->free_function);
+
+    /* Make sure to lose references to it */
+    consumer->current_element_object = NULL;
+    consumer->current_element_pointer = NULL;
 }
 
 /**
