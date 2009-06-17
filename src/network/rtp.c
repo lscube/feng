@@ -63,8 +63,9 @@ static void rtp_transport_close(RTP_session * session)
 
 static void rtp_fill_pool_free(RTP_session *session)
 {
-    g_thread_pool_free(session->fill_pool, true, true);
+    GThreadPool *pool = session->fill_pool;
     session->fill_pool = NULL;
+    g_thread_pool_free(pool, true, true);
 }
 
 /**
@@ -130,7 +131,8 @@ static void rtp_session_fill_cb(ATTR_UNUSED gpointer unused_data,
     gulong unseen;
     const gulong buffered_frames = resource->srv->srvconf.buffered_frames;
 
-    while ( (unseen = bq_consumer_unseen(consumer)) < buffered_frames ) {
+    while ( (unseen = bq_consumer_unseen(consumer)) < buffered_frames &&
+            session->fill_pool != NULL ) {
 #if 0
         fprintf(stderr, "calling read_packet from %p for %p[%s] (%u/%d)\n",
                 session,
