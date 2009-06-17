@@ -162,7 +162,7 @@ static void rtp_session_fill_cb(ATTR_UNUSED gpointer unused_data,
  */
 static void rtp_session_fill(RTP_session *session)
 {
-    if ( !session->track->parent->eor )
+    if ( g_atomic_int_get(&session->track->parent->eor) == 0 )
         g_thread_pool_push(session->fill_pool,
                            GINT_TO_POINTER(-1), NULL);
 }
@@ -394,7 +394,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
      * no extra frames we have a problem, since we're going to send
      * one packet at least.
      */
-    if (resource->eor)
+    if (g_atomic_int_get(&resource->eor))
         fnc_log(FNC_LOG_INFO,
             "[%s] end of resource %d packets to be fetched",
             session->track->properties.encoding_name,
