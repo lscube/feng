@@ -63,13 +63,8 @@ static void rtp_transport_close(RTP_session * session)
 
 static void rtp_fill_pool_free(RTP_session *session)
 {
-    Resource *resource = session->track->parent;
-    g_mutex_lock(resource->lock);
-    resource->eor = true;
-    g_mutex_unlock(resource->lock);
     g_thread_pool_free(session->fill_pool, true, true);
     session->fill_pool = NULL;
-    resource->eor = false;
 }
 
 /**
