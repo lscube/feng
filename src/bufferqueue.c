@@ -449,7 +449,7 @@ void bq_producer_reset_queue(BufferQueue_Producer *producer) {
 void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     BufferQueue_Element *elem;
 
-    g_assert(payload != NULL);
+    g_assert(payload != NULL && payload != GINT_TO_POINTER(-1));
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
