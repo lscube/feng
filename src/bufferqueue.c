@@ -245,32 +245,6 @@ struct BufferQueue_Consumer {
 };
 
 /**
- * @brief Global lock
- *
- * It should be held while updating shared producers hash table
- */
-static GMutex *bq_shared_producers_lock;
-
-/**
- * @brief Shared Producers HashTable
- *
- * It holds the reference to producers that will be shared among different
- * consumers
- *
- */
-static GHashTable *bq_shared_producers;
-
-/**
- *  @brief Initialize bufferque global data
- */
-
-void bq_init()
-{
-    bq_shared_producers_lock = g_mutex_new();
-    bq_shared_producers = g_hash_table_new(g_str_hash, g_str_equal);
-}
-
-/**
  * @brief Destroy one by one the elements in
  *        BufferQueue_Producer::queue.
  *
@@ -353,30 +327,16 @@ void bq_producer_reset_queue(BufferQueue_Producer *producer) {
 BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function,
                                       gchar *key)
 {
+
     BufferQueue_Producer *ret = NULL;
 
-    if (key) {
-        g_mutex_lock(bq_shared_producers_lock);
-        ret = g_hash_table_lookup(bq_shared_producers, key);
-    }
-
-    if (!ret) {
         ret = g_slice_new0(BufferQueue_Producer);
 
         ret->lock = g_mutex_new();
         ret->free_function = free_function;
         ret->last_consumer = g_cond_new();
 
-        if (key) {
-            ret->key = g_strdup(key);
-            g_hash_table_insert(bq_shared_producers, key, ret);
-        }
-
         bq_producer_reset_queue_internal(ret);
-    }
-
-    if (key)
-        g_mutex_unlock(bq_shared_producers_lock);
 
     return ret;
 }
@@ -395,9 +355,6 @@ BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function,
  */
 static void bq_producer_free_internal(BufferQueue_Producer *producer) {
     g_assert_cmpuint(producer->consumers, ==, 0);
-
-    if ( producer->key )
-        g_free(producer->key);
 
     g_cond_free(producer->last_consumer);
 
@@ -422,25 +379,13 @@ static void bq_producer_free_internal(BufferQueue_Producer *producer) {
  *
  */
 void bq_producer_unref(BufferQueue_Producer *producer) {
+
     /* Compatibility with free(3) */
     if ( producer == NULL )
         return;
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
-
-    if(producer->key) {
-        g_mutex_lock(bq_shared_producers_lock);
-
-        if (producer->consumers) {
-            g_mutex_unlock(bq_shared_producers_lock);
-            g_mutex_unlock(producer->lock);
-            return;
-        } else {
-            g_hash_table_remove(bq_shared_producers, producer->key);
-            g_mutex_unlock(bq_shared_producers_lock);
-        }
-    }
 
     g_assert(g_atomic_int_get(&producer->stopped) == 0);
 
@@ -503,7 +448,6 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
  */
 BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
     BufferQueue_Consumer *ret;
-
     if ( g_atomic_int_get(&producer->stopped) == 1 )
         return NULL;
 
@@ -805,7 +749,6 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
  end:
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
-
     return ret;
 }
 

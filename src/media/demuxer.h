@@ -33,6 +33,7 @@ struct feng;
 #define RESOURCE_OK 0
 #define RESOURCE_NOT_FOUND -1
 #define RESOURCE_DAMAGED -2
+#define RESOURCE_AGAIN -3
 #define RESOURCE_TRACK_NOT_FOUND -4
 #define RESOURCE_NOT_PARSEABLE -5
 #define RESOURCE_EOF -6
@@ -50,8 +51,8 @@ typedef enum {
 } MediaType;
 
 typedef enum {
-    MS_stored=0,
-    MS_live
+    STORED_SOURCE=0,
+    LIVE_SOURCE
 } MediaSource;
 
 //! typedefs that give convenient names to GLists used
@@ -86,7 +87,7 @@ typedef struct ResourceInfo_s {
      * @brief Seekable resource flag
      *
      * Right now this is only false when the resource is a live
-     * resource (@ref ResourceInfo::media_source set to @ref MS_live)
+     * resource (@ref ResourceInfo::media_source set to @ref LIVE_SOURCE)
      * or when the demuxer provides no @ref Demuxer::seek function.
      *
      * In the future this can be extended to be set to false if the
@@ -98,6 +99,7 @@ typedef struct ResourceInfo_s {
 
 typedef struct Resource {
     GMutex *lock;
+    guint count;
     const struct Demuxer *demuxer;
     ResourceInfo *info;
     // Metadata begin
@@ -178,16 +180,18 @@ typedef struct Track {
 } Track;
 
 typedef struct {
-    /*name of demuxer module*/
+    /** name of demuxer module*/
     const char *name;
-    /* short name (for config strings) (e.g.:"sd") */
+    /** short name (for config strings) (e.g.:"sd") */
     const char *short_name;
-    /* author ("Author name & surname <mail>") */
+    /** author ("Author name & surname <mail>") */
     const char *author;
-    /* any additional comments */
+    /** any additional comments */
     const char *comment;
-    /* served file extensions */
+    /** served file extensions */
     const char *extensions; // coma separated list of extensions (w/o '.')
+    /** demuxer source type */
+    MediaSource source;
 } DemuxerInfo;
 
 typedef struct Demuxer {
@@ -197,7 +201,6 @@ typedef struct Demuxer {
     int (*read_packet)(Resource *);
     int (*seek)(Resource *, double time_sec);
     GDestroyNotify uninit;
-    //...
 } Demuxer;
 
 

@@ -27,7 +27,8 @@ static const DemuxerInfo info = {
     "skel",
     "LScube Team",
     "",
-    "skl"
+    "skl",
+    STORED_SOURCE
 };
 
 

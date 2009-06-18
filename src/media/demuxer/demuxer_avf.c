@@ -35,7 +35,8 @@ static const DemuxerInfo info = {
 	"avf",
 	"LScube Team",
 	"",
-	"mov, nut, mkv, mxf"
+	"mov, nut, mkv, mxf",
+        STORED_SOURCE
 };
 
 typedef struct id_tag {

@@ -36,7 +36,8 @@ static const DemuxerInfo info = {
     "sd",
     "BPP Team",
     "",
-    "sd"
+    "sd",
+    STORED_SOURCE
 };
 
 

@@ -113,7 +113,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     memcpy(&t->properties, prop_hints, sizeof(MediaProperties));
 
     switch (t->properties.media_source) {
-    case MS_stored:
+    case STORED_SOURCE:
         if ( !(t->parser = mparser_find(t->properties.encoding_name)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
         if (t->parser->init(t))
@@ -123,7 +123,7 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
         t->properties.media_type = t->parser->info->media_type;
         break;
 
-    case MS_live:
+    case LIVE_SOURCE:
         break;
 
     default:
@@ -167,7 +167,7 @@ BufferQueue_Producer *track_get_producer(Track *tr)
 {
     if ( tr->producer == NULL )
         tr->producer = bq_producer_new(g_free,
-                                       (tr->properties.media_source == MS_live ?
+                                       (tr->properties.media_source == LIVE_SOURCE ?
                                         tr->info->mrl : NULL));
 
     return tr->producer;

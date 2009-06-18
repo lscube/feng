@@ -412,7 +412,9 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
             rtcp_send_sr(session, BYE);
             return;
         }
-        next_time += 0.01; // assumed to be enough
+        next_time += 0.03; // assumed to be enough
+        fprintf(stderr, "[%s]nothing to read\n",
+                session->track->properties.encoding_name);
     } else {
         MParserBuffer *next;
         double delivery  = buffer->delivery;
@@ -428,7 +430,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
         if (bq_consumer_move(session->consumer)) {
             next = bq_consumer_get(session->consumer);
             if(delivery != next->delivery) {
-                if (session->track->properties.media_source == MS_live)
+                if (session->track->properties.media_source == LIVE_SOURCE)
                     next_time += next->delivery - delivery;
                 else
                     next_time = session->range->playback_time -
@@ -491,12 +493,6 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
     RTP_session *rtp_s;
     ev_io *io;
     ev_periodic *periodic;
-
-    /* Before doing anything, make sure the resource can be
-     * read, if not we want to abort right away.
-    */
-    if ( r_read(tr->parent) != RESOURCE_OK )
-        return NULL;
 
     rtp_s = g_slice_new0(RTP_session);
     io = &rtp_s->transport.rtcp_reader;

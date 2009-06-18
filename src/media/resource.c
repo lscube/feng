@@ -31,9 +31,36 @@
 // global demuxer modules:
 #ifdef LIVE_STREAMING
 extern Demuxer fnc_demuxer_sd;
+
+/**
+ * @brief Global lock
+ *
+ * It should be held while updating shared tracks hash table
+ */
+static GMutex *shared_resources_lock;
+
+/**
+ * @brief Shared Tracks HashTable
+ *
+ * It holds the reference to tracks that will be shared among different
+ * resources
+ *
+ */
+static GHashTable *shared_resources;
+
+void r_init()
+{
+    shared_resources_lock = g_mutex_new();
+    shared_resources = g_hash_table_new(g_str_hash, g_str_equal);
+}
+
 #endif
+
 extern Demuxer fnc_demuxer_ds;
 extern Demuxer fnc_demuxer_avf;
+
+
+
 
 /**
  * @defgroup resources
@@ -65,6 +92,16 @@ static void r_free_cb(gpointer resource_p,
     Resource *resource = (Resource *)resource_p;
     if (!resource)
         return;
+
+#ifdef LIVE_STREAMING
+    if (resource->demuxer->info->source == LIVE_SOURCE) {
+        g_mutex_lock(shared_resources_lock);
+        if (!--resource->count)
+            g_hash_table_remove(shared_resources, resource->info->mrl);
+        g_mutex_unlock(shared_resources_lock);
+        if (resource->count) return;
+    }
+#endif
 
     if (resource->lock)
         g_mutex_free(resource->lock);
@@ -141,6 +178,77 @@ static const Demuxer *r_find_demuxer(const char *filename)
     return NULL;
 }
 
+
+static Resource*
+r_open_direct(struct feng *srv, gchar *mrl, const Demuxer *dmx)
+{
+    Resource *r;
+    struct stat filestat;
+
+    if (stat(mrl, &filestat) == -1 ) {
+        switch(errno) {
+        case ENOENT:
+            fnc_log(FNC_LOG_ERR,"%s: file not found\n", mrl);
+            break;
+        default:
+            fnc_log(FNC_LOG_ERR,"Cannot stat file %s\n", mrl);
+            break;
+        }
+        return NULL;
+    }
+
+    if ( S_ISFIFO(filestat.st_mode) ) {
+        fnc_log(FNC_LOG_ERR, "%s: not a file\n");
+        return NULL;
+    }
+
+    r = g_slice_new0(Resource);
+
+    r->info = g_slice_new0(ResourceInfo);
+
+    r->info->mrl = mrl;
+    r->info->mtime = filestat.st_mtime;
+    r->info->name = g_path_get_basename(mrl);
+    r->info->seekable = (dmx->seek != NULL);
+
+    r->demuxer = dmx;
+    r->srv = srv;
+
+    if (r->demuxer->init(r)) {
+        r_free_cb(r, NULL);
+        return NULL;
+    }
+    /* Now that we have opened the actual resource we can proceed with
+     * the extras */
+
+    r->lock = g_mutex_new();
+
+#ifdef HAVE_METADATA
+    cpd_find_request(srv, r, mrl);
+#endif
+
+    return r;
+}
+#ifdef LIVE_STREAMING
+static Resource*
+r_open_hashed(struct feng *srv, gchar *mrl, const Demuxer *dmx)
+{
+    Resource *r;
+
+    g_mutex_lock(shared_resources_lock);
+    r = g_hash_table_lookup(shared_resources, mrl);
+
+    if (!r) {
+        r = r_open_direct(srv, mrl, dmx);
+        g_hash_table_insert(shared_resources, mrl, r);
+    }
+    r->count++;
+    g_mutex_unlock(shared_resources_lock);
+
+    return r;
+}
+#endif
+
 /**
  * @brief Open a new resource and create a new instance
  *
@@ -159,24 +267,6 @@ Resource *r_open(struct feng *srv, const char *inner_path)
                             srv->config_storage[0].document_root->ptr,
                             inner_path,
                             NULL);
-    struct stat filestat;
-
-    if (stat(mrl, &filestat) == -1 ) {
-        switch(errno) {
-        case ENOENT:
-            fnc_log(FNC_LOG_ERR,"%s: file not found\n", mrl);
-            break;
-        default:
-            fnc_log(FNC_LOG_ERR,"Cannot stat file %s\n", mrl);
-            break;
-        }
-        goto error;
-    }
-
-    if ( S_ISFIFO(filestat.st_mode) ) {
-        fnc_log(FNC_LOG_ERR, "%s: not a file\n");
-        goto error;
-    }
 
     if ( (dmx = r_find_demuxer(mrl)) == NULL ) {
         fnc_log(FNC_LOG_DEBUG,
@@ -188,33 +278,22 @@ Resource *r_open(struct feng *srv, const char *inner_path)
     fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource"
                                "\"%s\"\n", dmx->info->name, mrl);
 
-    r = g_slice_new0(Resource);
-
-    r->info = g_slice_new0(ResourceInfo);
-
-    r->info->mrl = mrl;
-    r->info->mtime = filestat.st_mtime;
-    r->info->name = g_path_get_basename(inner_path);
-    r->info->seekable = (dmx->seek != NULL);
-
-    r->demuxer = dmx;
-    r->srv = srv;
-
-    if (r->demuxer->init(r)) {
-        r_free_cb(r, NULL);
-        return NULL;
+    switch(dmx->info->source) {
+#ifdef LIVE_STREAMING
+        case LIVE_SOURCE:
+            r = r_open_hashed(srv, mrl, dmx);
+            break;
+#endif
+        case STORED_SOURCE:
+            r = r_open_direct(srv, mrl, dmx);
+            break;
+        default:
+            g_assert_not_reached();
+            break;
     }
 
-    /* Now that we have opened the actual resource we can proceed with
-     * the extras */
+    if(r) return r;
 
-    r->lock = g_mutex_new();
-
-#ifdef HAVE_METADATA
-    cpd_find_request(srv, r, filename);
-#endif
-
-    return r;
  error:
     g_free(mrl);
     return NULL;
@@ -319,6 +398,7 @@ int r_read(Resource *resource)
     if (!resource->eor)
         switch( (ret = resource->demuxer->read_packet(resource)) ) {
         case RESOURCE_OK:
+        case RESOURCE_AGAIN:
             break;
         case RESOURCE_EOF:
             fnc_log(FNC_LOG_INFO,

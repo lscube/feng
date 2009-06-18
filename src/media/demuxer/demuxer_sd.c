@@ -179,7 +179,8 @@ static const DemuxerInfo info = {
     "sd",
     "LScube Team",
     "",
-    "sd"
+    "sd",
+    LIVE_SOURCE
 };
 
 //Probe informations from RTPPTDEFS table form codec_name
@@ -255,7 +256,7 @@ static int sd_init(Resource * r)
         int payload_type_forced = 0;
         int clock_rate_forced = 0;
 
-        props_hints.media_source = MS_live;
+        props_hints.media_source = LIVE_SOURCE;
 
         *keyword = '\0';
         while (g_ascii_strcasecmp(keyword, SD_STREAM) && !feof(fd)) {
@@ -506,7 +507,7 @@ static int sd_read_packet(Resource * r)
 {
     TrackList tr_it;
 
-    if (r->info->media_source != MS_live)
+    if (r->info->media_source != LIVE_SOURCE)
         return RESOURCE_NOT_PARSEABLE;
 
     for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {
