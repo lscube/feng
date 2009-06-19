@@ -81,7 +81,7 @@ for (i = 0; i< size; i++) {
                 fprintf(stderr, "next %p\n", bq_consumer_get(cons[i]));
             g_thread_pool_push (pool, cons[i], NULL);
         }
-        if (!cons[i]) {
+        if (i < size && !cons[i]) {
             fprintf(stderr,"---- Allocating consumer %d ", i);
             cons[i] = bq_consumer_new(prod);
             fprintf(stderr,"%p\n", cons[i]);
