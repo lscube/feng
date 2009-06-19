@@ -15,11 +15,11 @@ int stop_fill = 0;
 
 GMutex *mux;
 
-static void fill_cb(gpointer prod_p, gpointer cons_p)
+static void fill_cb(gpointer cons_p, gpointer prod_p)
 {
     g_mutex_lock(mux);
-    BufferQueue_Consumer *consumer = prod_p;
-    BufferQueue_Producer *producer = cons_p;
+    BufferQueue_Consumer *consumer = cons_p;
+    BufferQueue_Producer *producer = prod_p;
     Stuff *buffer = g_malloc0(sizeof(Stuff) + 2000);
 
     while (bq_consumer_unseen(consumer) < 16) {
