@@ -13,11 +13,8 @@ typedef struct {
 int awake = 0;
 int stop_fill = 0;
 
-GMutex *mux;
-
 static void fill_cb(gpointer cons_p, gpointer prod_p)
 {
-    g_mutex_lock(mux);
     BufferQueue_Consumer *consumer = cons_p;
     BufferQueue_Producer *producer = prod_p;
     Stuff *buffer = g_malloc0(sizeof(Stuff) + 2000);
@@ -37,7 +34,6 @@ static void fill_cb(gpointer cons_p, gpointer prod_p)
     }
     exit:
     g_free(buffer);
-    g_mutex_unlock(mux);
 }
 
 
@@ -52,7 +48,6 @@ int main(void)
     BufferQueue_Consumer *cons[size];
     BufferQueue_Producer *prod = bq_producer_new(g_free, NULL);
     GThreadPool *pool = g_thread_pool_new(fill_cb, prod, 1, FALSE, NULL);
-    mux = g_mutex_new();
 
 //init
     for (i = 0; i< size; i++) {
@@ -95,7 +90,6 @@ int main(void)
     for (i = 0; i < size; i++)
         bq_consumer_free(cons[i]);
     bq_producer_unref(prod);
-    g_mutex_free(mux);
     g_free(buffer);
     return 0;
 }
