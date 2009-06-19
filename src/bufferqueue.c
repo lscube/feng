@@ -257,7 +257,9 @@ static void bq_element_free_internal(gpointer elem_generic,
     BufferQueue_Element *const element = (BufferQueue_Element*)elem_generic;
     const GDestroyNotify free_function = (GDestroyNotify)free_func_generic;
 
+    fprintf(stderr, "Free %p %lu\n", element->payload, element->seen);
     free_function(element->payload);
+    element->payload=NULL;
     g_slice_free(BufferQueue_Element, element);
 }
 
@@ -504,12 +506,14 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
      * anything else, something is funky.
      */
     g_assert(consumer->current_element_pointer == producer->queue->head);
+    fprintf(stderr, "Current element next %p prev %p\n",
+            consumer->current_element_pointer->next,
+            consumer->current_element_pointer->prev);
 
     /* Remove the element from the queue */
     g_queue_pop_head(producer->queue);
 
     bq_element_free_internal(elem, producer->free_function);
-
     /* Make sure to lose references to it */
     consumer->current_element_object = NULL;
     consumer->current_element_pointer = NULL;
