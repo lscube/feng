@@ -43,26 +43,27 @@ static void fill_cb(gpointer prod_p, gpointer cons_p)
 
 int main(void)
 {
-if (!g_thread_supported ()) g_thread_init (NULL);
+    if (!g_thread_supported ()) g_thread_init (NULL);
 
-int size = 10, i;
-int count = 2000;
-Stuff *buffer = g_malloc0(sizeof(Stuff) + 2000), *ret;
-BufferQueue_Consumer *cons[size];
-BufferQueue_Producer *prod = bq_producer_new(g_free, NULL);
-GThreadPool *pool = g_thread_pool_new(fill_cb, prod, 6, FALSE, NULL);
-mux = g_mutex_new();
+    int size = 10, i;
+    int count = 2000;
+    Stuff *ret;
+    Stuff *buffer = g_malloc0(sizeof(Stuff) + 2000);
+    BufferQueue_Consumer *cons[size];
+    BufferQueue_Producer *prod = bq_producer_new(g_free, NULL);
+    GThreadPool *pool = g_thread_pool_new(fill_cb, prod, 6, FALSE, NULL);
+    mux = g_mutex_new();
+
 //init
-for (i = 0; i< size; i++) {
-    cons[i] = NULL;
-}
-
-//fill stuff
+    for (i = 0; i< size; i++) {
+        cons[i] = NULL;
+    }
 
     buffer->foo = 0;
     buffer->bar = 10;
     buffer->data_size = 2000;
     buffer->data[0] = 'a';
+
     bq_producer_put(prod, g_memdup (buffer, sizeof(Stuff) + 2000));
 //consume stuff
 
@@ -72,13 +73,13 @@ for (i = 0; i< size; i++) {
             if (!cons[i]) break;
             ret = bq_consumer_get(cons[i]);
             if (ret)
-                fprintf(stderr, "Foo: %p %f %f ", ret, ret->bar, ret->foo);
+                fprintf(stderr, "Foo: %d %p %f %f ", i, ret, ret->bar, ret->foo);
             else
-                fprintf(stderr, "Foo: NULL ");
+                fprintf(stderr, "Foo: %d NULL ", i);
             if(!bq_consumer_move(cons[i]))
                 fprintf(stderr, "no next\n");
             else
-                fprintf(stderr, "next %p\n", bq_consumer_get(cons[i]));
+                fprintf(stderr, "next %d %p\n", i, bq_consumer_get(cons[i]));
             g_thread_pool_push (pool, cons[i], NULL);
         }
         if (i < size && !cons[i]) {
