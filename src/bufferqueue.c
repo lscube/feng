@@ -566,7 +566,7 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
          */
 
         GList *it = consumer->current_element_pointer;
-        do {
+        while ( (it = it->prev) != NULL ) {
             BufferQueue_Element *elem = (BufferQueue_Element*)(it->data);
 
             /* If we were the last one to see this we would have
@@ -578,7 +578,7 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
             g_assert_cmpuint(elem->seen, <=, producer->consumers);
 
             elem->seen--;
-        } while ( (it = it->prev) != NULL );
+        }
     }
 
     /* Leave the exclusive access */
