@@ -50,7 +50,7 @@ int main(void)
     Stuff *ret;
     Stuff *buffer = g_malloc0(sizeof(Stuff) + 2000);
     BufferQueue_Consumer *cons[size];
-    BufferQueue_Producer *prod = bq_producer_new(g_free, NULL);
+    BufferQueue_Producer *prod = bq_producer_new(g_free);
     GThreadPool *pool = g_thread_pool_new(fill_cb, prod, 6, FALSE, NULL);
     mux = g_mutex_new();
 

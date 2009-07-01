@@ -166,9 +166,7 @@ void track_add_sdp_field(Track *track, sdp_field_type type, char *value)
 BufferQueue_Producer *track_get_producer(Track *tr)
 {
     if ( tr->producer == NULL )
-        tr->producer = bq_producer_new(g_free,
-                                       (tr->properties.media_source == LIVE_SOURCE ?
-                                        tr->info->mrl : NULL));
+        tr->producer = bq_producer_new(g_free);
 
     return tr->producer;
 }
