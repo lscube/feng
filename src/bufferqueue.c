@@ -760,7 +760,7 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     /* Get the payload of the element */
     if (consumer->current_element_object)
         ret = consumer->current_element_object->payload;
-    fprintf(stderr, "[%s] Consumer %p Element %p Seen %d\n",
+    fprintf(stderr, "[%s] Consumer %p Element %p Seen %lu\n",
             __PRETTY_FUNCTION__,
             consumer,
             ret,
