@@ -245,8 +245,6 @@ static feng *feng_alloc(void)
     CLEAN(srvconf.modules);
 #undef CLEAN
 
-    r_init();
-
     return srv;
 }
 

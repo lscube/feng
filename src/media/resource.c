@@ -47,13 +47,6 @@ static GMutex *shared_resources_lock;
  *
  */
 static GHashTable *shared_resources;
-
-void r_init()
-{
-    shared_resources_lock = g_mutex_new();
-    shared_resources = g_hash_table_new(g_str_hash, g_str_equal);
-}
-
 #endif
 
 extern Demuxer fnc_demuxer_ds;
@@ -234,6 +227,12 @@ static Resource*
 r_open_hashed(struct feng *srv, gchar *mrl, const Demuxer *dmx)
 {
     Resource *r;
+    static gsize created_mutex = false;
+    if ( g_once_init_enter(&created_mutex) ) {
+        shared_resources_lock = g_mutex_new();
+        shared_resources = g_hash_table_new(g_str_hash, g_str_equal);
+        g_once_init_leave(&created_mutex, true);
+    }
 
     g_mutex_lock(shared_resources_lock);
     r = g_hash_table_lookup(shared_resources, mrl);
@@ -261,7 +260,7 @@ r_open_hashed(struct feng *srv, gchar *mrl, const Demuxer *dmx)
  */
 Resource *r_open(struct feng *srv, const char *inner_path)
 {
-    Resource *r;
+    Resource *r = NULL;
     const Demuxer *dmx;
     gchar *mrl = g_strjoin ("/",
                             srv->config_storage[0].document_root->ptr,
