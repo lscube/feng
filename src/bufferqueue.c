@@ -257,7 +257,10 @@ static void bq_element_free_internal(gpointer elem_generic,
     BufferQueue_Element *const element = (BufferQueue_Element*)elem_generic;
     const GDestroyNotify free_function = (GDestroyNotify)free_func_generic;
 
-    fprintf(stderr, "Free %p %lu\n", element->payload, element->seen);
+    fprintf(stderr, "[%s] Free %p %lu\n",
+            __PRETTY_FUNCTION__,
+            element->payload,
+            element->seen);
     free_function(element->payload);
     element->payload=NULL;
     g_slice_free(BufferQueue_Element, element);
@@ -414,6 +417,7 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
 void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     BufferQueue_Element *elem;
 
+    fprintf(stderr, "[%s] Put: %p\n", __PRETTY_FUNCTION__, payload);
     g_assert(payload != NULL && payload != GINT_TO_POINTER(-1));
 
     /* Ensure we have the exclusive access */
@@ -499,6 +503,11 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
 
     /* If we're the last one to see the element, we need to take care
      * of removing and freeing it. */
+    fprintf(stderr, "[%s] payload %p seen %lu consumers %lu \n",
+            __PRETTY_FUNCTION__,
+            elem->payload,
+            elem->seen+1,
+            producer->consumers);
     if ( ++elem->seen < producer->consumers )
         return;
 
@@ -506,7 +515,8 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
      * anything else, something is funky.
      */
     g_assert(consumer->current_element_pointer == producer->queue->head);
-    fprintf(stderr, "Current element next %p prev %p\n",
+    fprintf(stderr, "[%s] Current element next %p prev %p\n",
+            __PRETTY_FUNCTION__,
             consumer->current_element_pointer->next,
             consumer->current_element_pointer->prev);
 
@@ -517,74 +527,6 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     /* Make sure to lose references to it */
     consumer->current_element_object = NULL;
     consumer->current_element_pointer = NULL;
-}
-
-/**
- * @brief Destroy a consumer
- *
- * @param consumer The consumer object to destroy
- *
- * @note This function will require exclusive access to the producer,
- *       and will thus lock its mutex.
- */
-void bq_consumer_free(BufferQueue_Consumer *consumer) {
-    BufferQueue_Producer *producer;
-
-    /* Compatibility with free(3) */
-    if ( consumer == NULL )
-        return;
-
-    producer = consumer->producer;
-
-    /* Ensure we have the exclusive access */
-    g_mutex_lock(producer->lock);
-
-    /* We should never come to this point, since we are expected to
-     * have symmetry between new and free calls, but just to be on the
-     * safe side, make sure this never happens.
-     */
-    g_assert_cmpuint(producer->consumers, >,  0);
-
-    bq_consumer_elem_unref(consumer);
-
-    if ( --producer->consumers == 0 ) {
-        if ( producer->stopped ) {
-            g_cond_signal(producer->last_consumer);
-        } else if ( producer->queue ) {
-            /* Decrement consumers and check, if we're the latest consumer, we
-             * want to clean the queue up entirely!
-             */
-            g_queue_foreach(producer->queue,
-                            bq_element_free_internal,
-                            producer->free_function);
-            g_queue_clear(producer->queue);
-        }
-    } else if ( consumer->current_element_object != NULL ) {
-        /* If we haven't removed the current selected element, it
-         * means that we have to decrease the seen count for all the
-         * elements before it.
-         */
-
-        GList *it = consumer->current_element_pointer;
-        while ( (it = it->prev) != NULL ) {
-            BufferQueue_Element *elem = (BufferQueue_Element*)(it->data);
-
-            /* If we were the last one to see this we would have
-             * deleted it, since we haven't, we expect that there will
-             * be at least another consumer waiting on it.
-             *
-             * But let's be safe and assert this.
-             */
-            g_assert_cmpuint(elem->seen, <=, producer->consumers);
-
-            elem->seen--;
-        }
-    }
-
-    /* Leave the exclusive access */
-    g_mutex_unlock(producer->lock);
-
-    g_slice_free(BufferQueue_Consumer, consumer);
 }
 
 /**
@@ -633,6 +575,75 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
         (BufferQueue_Element *)consumer->current_element_pointer->data;
 
     return true;
+}
+
+/**
+ * @brief Destroy a consumer
+ *
+ * @param consumer The consumer object to destroy
+ *
+ * @note This function will require exclusive access to the producer,
+ *       and will thus lock its mutex.
+ */
+void bq_consumer_free(BufferQueue_Consumer *consumer) {
+    BufferQueue_Producer *producer;
+
+    /* Compatibility with free(3) */
+    if ( consumer == NULL )
+        return;
+
+    producer = consumer->producer;
+
+    /* Ensure we have the exclusive access */
+    g_mutex_lock(producer->lock);
+
+    /* We should never come to this point, since we are expected to
+     * have symmetry between new and free calls, but just to be on the
+     * safe side, make sure this never happens.
+     */
+    g_assert_cmpuint(producer->consumers, >,  0);
+
+    bq_consumer_elem_unref(consumer);
+    // bq_consumer_move_internal(consumer);
+
+    if ( --producer->consumers == 0 ) {
+        if ( producer->stopped ) {
+            g_cond_signal(producer->last_consumer);
+        } else if ( producer->queue ) {
+            /* Decrement consumers and check, if we're the latest consumer, we
+             * want to clean the queue up entirely!
+             */
+            g_queue_foreach(producer->queue,
+                            bq_element_free_internal,
+                            producer->free_function);
+            g_queue_clear(producer->queue);
+        }
+    } else if ( consumer->current_element_object != NULL ) {
+        /* If we haven't removed the current selected element, it
+         * means that we have to decrease the seen count for all the
+         * elements before it.
+         */
+
+        GList *it = consumer->current_element_pointer;
+        while ( (it = it->prev) != NULL ) {
+            BufferQueue_Element *elem = (BufferQueue_Element*)(it->data);
+
+            /* If we were the last one to see this we would have
+             * deleted it, since we haven't, we expect that there will
+             * be at least another consumer waiting on it.
+             *
+             * But let's be safe and assert this.
+             */
+            g_assert_cmpuint(elem->seen, <=, producer->consumers);
+
+            elem->seen--;
+        }
+    }
+
+    /* Leave the exclusive access */
+    g_mutex_unlock(producer->lock);
+
+    g_slice_free(BufferQueue_Consumer, consumer);
 }
 
 /**
@@ -749,7 +760,11 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     /* Get the payload of the element */
     if (consumer->current_element_object)
         ret = consumer->current_element_object->payload;
-
+    fprintf(stderr, "[%s] Consumer %p Element %p Seen %d\n",
+            __PRETTY_FUNCTION__,
+            consumer,
+            ret,
+            consumer->current_element_object->seen);
  end:
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
