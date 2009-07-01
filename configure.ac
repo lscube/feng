@@ -49,6 +49,10 @@ AC_ARG_ENABLE(libavformat,
     AS_HELP_STRING([--enable-libavformat], [enable ffmpeg's libavformat support (default=yes)]),,
         enable_ffmpeg="yes")
 
+AC_ARG_ENABLE(live-streaming,
+    AS_HELP_STRING([--enable-live-streaming], [enable support for live streaming (default=yes)]),,
+        live_streaming="yes")
+
 AC_CHECK_HEADERS([ev.h], [
   AC_CHECK_LIB([ev], [ev_io_start],, [have_libev=no])], [have_libev=no])
 
@@ -109,12 +113,11 @@ CPPFLAGS="$CPPFLAGS $LIBNETEMBRYO_CFLAGS"
 LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 
 dnl Check for prerequisites to enable live streaming with flux.
-live_streaming=yes
-
-AC_SEARCH_LIBS([mq_open], [rt],
+AS_IF([test "x$live_streaming" = "xyes"],
+    [AC_SEARCH_LIBS([mq_open], [rt],
                [AC_DEFINE(LIVE_STREAMING, [1],
                           [Define this if live streaming is supported])],
-               [live_streaming=no])
+               [live_streaming=no])])
 
 AM_CONDITIONAL([LIVE_STREAMING], [test "x$live_streaming" = "xyes"])
 
