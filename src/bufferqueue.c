@@ -232,17 +232,10 @@ struct BufferQueue_Consumer {
      * queue.
      */
     GList *current_element_pointer;
-
-    /**
-     * @brief Pointer to the last seen element
-     *
-     * Since a producer can change queue, the @ref
-     * BufferQueue_Consumer::current_element_pointer might not be
-     * valid any longer; to make sure that the element is not deleted
-     * before time, a copy of it is kept here.
-     */
-    BufferQueue_Element *current_element_object;
 };
+
+#define BQ_OBJECT(consumer) \
+        ((BufferQueue_Element *)consumer->current_element_pointer->data)
 
 /**
  * @brief Destroy one by one the elements in
@@ -257,8 +250,9 @@ static void bq_element_free_internal(gpointer elem_generic,
     BufferQueue_Element *const element = (BufferQueue_Element*)elem_generic;
     const GDestroyNotify free_function = (GDestroyNotify)free_func_generic;
 
-    fprintf(stderr, "[%s] Free %p %lu\n",
+    fprintf(stderr, "[%s] Free object %p payload %p %lu\n",
             __PRETTY_FUNCTION__,
+            element,
             element->payload,
             element->seen);
     free_function(element->payload);
@@ -489,7 +483,7 @@ BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
  */
 static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
-    BufferQueue_Element *elem = consumer->current_element_object;
+    BufferQueue_Element *elem = BQ_OBJECT(consumer);
 
     /* If we had no element selected, just get out of here */
     if ( elem == NULL )
@@ -503,8 +497,9 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
 
     /* If we're the last one to see the element, we need to take care
      * of removing and freeing it. */
-    fprintf(stderr, "[%s] payload %p seen %lu consumers %lu \n",
+    fprintf(stderr, "[%s] object %p payload %p seen %lu consumers %lu \n",
             __PRETTY_FUNCTION__,
+            elem,
             elem->payload,
             elem->seen+1,
             producer->consumers);
@@ -515,8 +510,10 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
      * anything else, something is funky.
      */
     g_assert(consumer->current_element_pointer == producer->queue->head);
-    fprintf(stderr, "[%s] Current element next %p prev %p\n",
+    fprintf(stderr, "[%s] object %p pointer %p next %p prev %p\n",
             __PRETTY_FUNCTION__,
+            BQ_OBJECT(consumer),
+            consumer->current_element_pointer,
             consumer->current_element_pointer->next,
             consumer->current_element_pointer->prev);
 
@@ -525,7 +522,6 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
 
     bq_element_free_internal(elem, producer->free_function);
     /* Make sure to lose references to it */
-    consumer->current_element_object = NULL;
     consumer->current_element_pointer = NULL;
 }
 
@@ -540,6 +536,18 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
 static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     GList *expected_next = NULL;
+
+    if (consumer->current_element_pointer)
+    fprintf(stderr, "[%s] object %p pointer %p next %p prev %p\n",
+            __PRETTY_FUNCTION__,
+            consumer->current_element_pointer->data,
+            consumer->current_element_pointer,
+            consumer->current_element_pointer?
+                consumer->current_element_pointer->next:
+                NULL,
+            consumer->current_element_pointer?
+                consumer->current_element_pointer->prev:
+                NULL);
 
     if ( (producer->queue_serial != consumer->queue_serial) ||
          (!consumer->current_element_pointer)  ) {
@@ -567,12 +575,8 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     consumer->queue_serial = producer->queue_serial;
     consumer->current_element_pointer = expected_next;
     if ( expected_next == NULL ) {
-        consumer->current_element_object = NULL;
         return false;
     }
-
-    consumer->current_element_object =
-        (BufferQueue_Element *)consumer->current_element_pointer->data;
 
     return true;
 }
@@ -603,7 +607,8 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
      */
     g_assert_cmpuint(producer->consumers, >,  0);
 
-    bq_consumer_elem_unref(consumer);
+    if (consumer->current_element_pointer)
+        bq_consumer_elem_unref(consumer);
     // bq_consumer_move_internal(consumer);
 
     if ( --producer->consumers == 0 ) {
@@ -618,7 +623,7 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
                             producer->free_function);
             g_queue_clear(producer->queue);
         }
-    } else if ( consumer->current_element_object != NULL ) {
+    } else if ( consumer->current_element_pointer != NULL ) {
         /* If we haven't removed the current selected element, it
          * means that we have to decrease the seen count for all the
          * elements before it.
@@ -672,9 +677,9 @@ gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
     } else {
         unseen = producer->next_serial;
 
-        if ( consumer->current_element_object != NULL ) {
-            g_assert_cmpint(unseen, >, consumer->current_element_object->serial);
-            unseen -= consumer->current_element_object->serial;
+        if ( consumer->current_element_pointer != NULL ) {
+            g_assert_cmpint(unseen, >, BQ_OBJECT(consumer)->serial);
+            unseen -= BQ_OBJECT(consumer)->serial;
         } else if (!producer->queue->head){
             unseen = 0;
         }
@@ -746,25 +751,29 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
+    fprintf(stderr, "[%s] Consumer %p\n",
+        __PRETTY_FUNCTION__,
+        consumer);
 
     /* If we don't have a queue yet, like for the first read, “move
      * next” (or rather first).
      */
     if ( consumer->queue_serial != producer->queue_serial ||
-         consumer->current_element_object == NULL ) {
+         consumer->current_element_pointer == NULL ) {
         if ( !bq_consumer_move_internal(consumer) ) {
             goto end;
         }
     }
 
     /* Get the payload of the element */
-    if (consumer->current_element_object)
-        ret = consumer->current_element_object->payload;
-    fprintf(stderr, "[%s] Consumer %p Element %p Seen %d\n",
+    if (consumer->current_element_pointer)
+        ret = BQ_OBJECT(consumer)->payload;
+    fprintf(stderr, "[%s] Consumer %p Element %p Object %p Seen %lu\n",
             __PRETTY_FUNCTION__,
             consumer,
             ret,
-            consumer->current_element_object->seen);
+            BQ_OBJECT(consumer),
+            BQ_OBJECT(consumer)->seen);
  end:
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
