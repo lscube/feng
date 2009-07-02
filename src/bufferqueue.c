@@ -187,13 +187,6 @@ struct BufferQueue_Producer {
      * @note gint is used to be able to use g_atomic_int_get function.
      */
     gint stopped;
-
-    /**
-     * @brief Unique id for shared producer
-     *
-     * @todo switch to a numeric hash
-     */
-    gchar *key;
 };
 
 /**
@@ -313,18 +306,15 @@ void bq_producer_reset_queue(BufferQueue_Producer *producer) {
 }
 
 /**
- * @brief Create a new producer for the bufferqueue or return one previously
- *        allocated with the same key
+ * @brief Create a new producer for the bufferqueue
  *
  * @param free_function Function to call when removing buffers from
  *                      the queue.
- * @param key producer's unique id, NULL if not shared.
  *
  * @return A new BufferQueue_Producer object that needs to be freed
  *         with @ref bq_producer_unref.
  */
-BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function,
-                                      gchar *key)
+BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function)
 {
 
     BufferQueue_Producer *ret = NULL;
