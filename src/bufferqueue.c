@@ -268,6 +268,12 @@ static void bq_element_free_internal(gpointer elem_generic,
  * worry about getting old buffers.
  */
 static void bq_producer_reset_queue_internal(BufferQueue_Producer *producer) {
+    fprintf(stderr, "[%s] Producer %p queue %p queue_serial %lu\n",
+            __PRETTY_FUNCTION__,
+            producer,
+            producer->queue,
+            producer->queue_serial);
+
     if ( producer->queue ) {
         g_queue_foreach(producer->queue,
                         bq_element_free_internal,
@@ -294,6 +300,10 @@ static void bq_producer_reset_queue_internal(BufferQueue_Producer *producer) {
  * worry about getting old buffers.
  */
 void bq_producer_reset_queue(BufferQueue_Producer *producer) {
+    fprintf(stderr, "[%s] Producer %p\n",
+            __PRETTY_FUNCTION__,
+            producer);
+
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
@@ -343,6 +353,10 @@ BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function)
  *          function will cause the program to abort.
  */
 static void bq_producer_free_internal(BufferQueue_Producer *producer) {
+    fprintf(stderr, "[%s] Producer %p\n",
+            __PRETTY_FUNCTION__,
+            producer);
+
     g_assert_cmpuint(producer->consumers, ==, 0);
 
     g_cond_free(producer->last_consumer);
@@ -368,6 +382,9 @@ static void bq_producer_free_internal(BufferQueue_Producer *producer) {
  *
  */
 void bq_producer_unref(BufferQueue_Producer *producer) {
+    fprintf(stderr, "[%s] Producer %p\n",
+            __PRETTY_FUNCTION__,
+            producer);
 
     /* Compatibility with free(3) */
     if ( producer == NULL )
@@ -401,7 +418,7 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
 void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     BufferQueue_Element *elem;
 
-    fprintf(stderr, "[%s] Put: %p\n", __PRETTY_FUNCTION__, payload);
+    fprintf(stderr, "[%s] Payload %p\n", __PRETTY_FUNCTION__, payload);
     g_assert(payload != NULL && payload != GINT_TO_POINTER(-1));
 
     /* Ensure we have the exclusive access */
@@ -438,6 +455,11 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
  */
 BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
     BufferQueue_Consumer *ret;
+
+    fprintf(stderr, "[%s] Producer %p\n",
+            __PRETTY_FUNCTION__,
+            producer);
+
     if ( g_atomic_int_get(&producer->stopped) == 1 )
         return NULL;
 
@@ -474,6 +496,10 @@ BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
 static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     BufferQueue_Element *elem = BQ_OBJECT(consumer);
+
+    fprintf(stderr, "[%s] Consumer %p elem %p\n",
+            __PRETTY_FUNCTION__,
+            consumer, elem);
 
     /* If we had no element selected, just get out of here */
     if ( elem == NULL )
@@ -581,6 +607,10 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
  */
 void bq_consumer_free(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer;
+
+    fprintf(stderr, "[%s] Consumer %p\n",
+            __PRETTY_FUNCTION__,
+            consumer);
 
     /* Compatibility with free(3) */
     if ( consumer == NULL )
