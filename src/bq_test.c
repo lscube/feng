@@ -68,8 +68,8 @@ int main(void)
 //consume stuff
 
     while(count--) {
-        BufferQueue_Consumer *c = bq_consumer_new(prod);
-        fprintf(stderr, "cc %p: new consumer\n", c);
+//        BufferQueue_Consumer *c = bq_consumer_new(prod);
+//        fprintf(stderr, "cc %p: new consumer\n", c);
         for (i = 0; i < size; i++) {
             if (!cons[i]) break;
             ret = bq_consumer_get(cons[i]);
@@ -88,13 +88,13 @@ int main(void)
             cons[i] = bq_consumer_new(prod);
             fprintf(stderr,"%p\n", cons[i]);
         }
-        ret = bq_consumer_get(c);
-        if (ret)
-            fprintf(stderr, "cc %p: %p %f %f \n",c, ret, ret->bar, ret->foo);
-        else
-            fprintf(stderr, "cc %p: NULL \n", c);
-        fprintf(stderr, "cc %p: consumer_free\n", c);
-        bq_consumer_free(c);
+//        ret = bq_consumer_get(c);
+//        if (ret)
+//            fprintf(stderr, "cc %p: %p %f %f \n",c, ret, ret->bar, ret->foo);
+//        else
+//            fprintf(stderr, "cc %p: NULL \n", c);
+//        fprintf(stderr, "cc %p: consumer_free\n", c);
+//        bq_consumer_free(c);
 
     }
     stop_fill = 1;
