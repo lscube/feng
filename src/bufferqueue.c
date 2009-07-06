@@ -417,7 +417,6 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
 void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     BufferQueue_Element *elem;
 
-    fprintf(stderr, "[%s] Payload %p\n", __PRETTY_FUNCTION__, payload);
     g_assert(payload != NULL && payload != GINT_TO_POINTER(-1));
 
     /* Ensure we have the exclusive access */
@@ -430,6 +429,8 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     elem->payload = payload;
     elem->seen = 0;
     elem->serial = producer->next_serial++;
+
+    fprintf(stderr, "[%s] Payload %p element %p\n", __PRETTY_FUNCTION__, payload, elem);
 
     g_assert_cmpint(producer->next_serial, !=, 0);
 
