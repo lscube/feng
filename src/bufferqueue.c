@@ -225,7 +225,21 @@ struct BufferQueue_Consumer {
      * queue.
      */
     GList *current_element_pointer;
+
+    /**
+     * @brief Last element serial returned.
+     *
+     * @brief This is updated at _get and makes sure that we can
+     * distinguish between the situations of "all seen" and "none
+     * seen".
+     */
+    gulong last_element_serial;
 };
+
+static inline BufferQueue_Element *GLIST_TO_BQELEM(GList *pointer)
+{
+    return (BufferQueue_Element*)pointer->data;
+}
 
 #define BQ_OBJECT(consumer) \
         ((BufferQueue_Element *)consumer->current_element_pointer->data)
@@ -643,25 +657,35 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
                             producer->free_function);
             g_queue_clear(producer->queue);
         }
-    } else if ( consumer->current_element_pointer != NULL ) {
-        /* If we haven't removed the current selected element, it
-         * means that we have to decrease the seen count for all the
-         * elements before it.
-         */
+    } else if ( consumer->queue_serial == producer->queue_serial &&
+                producer->queue->head != NULL &&
+                GLIST_TO_BQELEM(producer->queue->head)->serial < consumer->last_element_serial ) {
+        GList *it = producer->queue->head;
+        BufferQueue_Element *elem;
 
-        GList *it = consumer->current_element_pointer;
-        while ( (it = it->prev) != NULL ) {
-            BufferQueue_Element *elem = (BufferQueue_Element*)(it->data);
+        g_assert_cmpuint(GLIST_TO_BQELEM(producer->queue->tail)->serial, >=, consumer->last_element_serial);
 
-            /* If we were the last one to see this we would have
-             * deleted it, since we haven't, we expect that there will
-             * be at least another consumer waiting on it.
-             *
-             * But let's be safe and assert this.
-             */
-            g_assert_cmpuint(elem->seen, <=, producer->consumers);
+        /* If we have a NULL current pointer, we're at the end of the
+         * queue waiting for something new (are we sure about it? :|)
+         * so we'll decrease the whole queue! */
+        while ( it != NULL &&
+                (elem = GLIST_TO_BQELEM(it))->serial <= consumer->last_element_serial ) {
+            fprintf(stderr, "Decrementing counter for %p\n", elem);
+
+            /* we've got to have seen it! */
+            g_assert_cmpuint(elem->seen, >, 0);
 
             elem->seen--;
+
+            g_assert_cmpuint(elem->seen, <=, producer->consumers);
+
+            it = it->next;
+
+            if ( elem->seen == producer->consumers ) {
+                fprintf(stderr, "Killing %p\n", elem);
+                bq_element_free_internal(elem, producer->free_function);
+                g_queue_pop_head(producer->queue);
+            }
         }
     }
 
@@ -786,8 +810,10 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     }
 
     /* Get the payload of the element */
-    if (consumer->current_element_pointer)
+    if (consumer->current_element_pointer) {
         ret = BQ_OBJECT(consumer)->payload;
+        consumer->last_element_serial = BQ_OBJECT(consumer)->serial;
+    }
     fprintf(stderr, "[%s] Consumer %p Element %p Object %p Seen %lu\n",
             __PRETTY_FUNCTION__,
             consumer,
