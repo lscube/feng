@@ -249,7 +249,6 @@ static void bq_element_free_internal(gpointer elem_generic,
             element->payload,
             element->seen);
     free_function(element->payload);
-    element->payload=NULL;
     g_slice_free(BufferQueue_Element, element);
 }
 
