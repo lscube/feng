@@ -527,8 +527,9 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
 
     /* If we're the last one to see the element, we need to take care
      * of removing and freeing it. */
-    fprintf(stderr, "[%s] object %p payload %p seen %lu consumers %lu \n",
+    fprintf(stderr, "[%s] pointer %p object %p payload %p seen %lu consumers %lu \n",
             __PRETTY_FUNCTION__,
+            consumer->current_element_pointer,
             elem,
             elem->payload,
             elem->seen+1,
@@ -814,9 +815,10 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
         ret = BQ_OBJECT(consumer)->payload;
         consumer->last_element_serial = BQ_OBJECT(consumer)->serial;
     }
-    fprintf(stderr, "[%s] Consumer %p Element %p Object %p Seen %lu\n",
+    fprintf(stderr, "[%s] Consumer %p Pointer %p, Element %p Object %p Seen %lu\n",
             __PRETTY_FUNCTION__,
             consumer,
+            consumer->current_element_pointer,
             ret,
             BQ_OBJECT(consumer),
             BQ_OBJECT(consumer)->seen);
