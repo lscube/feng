@@ -714,7 +714,7 @@ gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     gulong unseen;
 
-    if (producer || g_atomic_int_get(&producer->stopped) )
+    if (!producer || g_atomic_int_get(&producer->stopped) )
         return 0;
 
     /* Ensure we have the exclusive access */
