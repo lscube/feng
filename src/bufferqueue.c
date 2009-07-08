@@ -564,6 +564,11 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     /* Remove the element from the queue */
     g_queue_pop_head(producer->queue);
 
+    /* If we reached the end of the queue, consider like it was a new
+     * one */
+    if ( g_queue_get_length(producer->queue) == 0 )
+        producer->queue_serial++;
+
     bq_element_free_internal(elem, producer->free_function);
 }
 
