@@ -510,6 +510,7 @@ BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
 static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     BufferQueue_Element *elem = BQ_OBJECT(consumer);
+    GList *pointer = consumer->current_element_pointer;
 
     fprintf(stderr, "[%s] C:%p PQS:%lu CQS:%lu pointer %p object %p\n",
             __PRETTY_FUNCTION__,
@@ -540,27 +541,30 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
             producer->consumers,
             producer->queue->head);
 
+    /* After unref we have to assume that we cannot access the pointer
+     * _at all_, no matter if we actually removed it or not, otherwise
+     * it wouldn't be an unref, would it? */
+    consumer->current_element_pointer = NULL;
+
     if ( ++elem->seen < producer->consumers )
         return;
 
     /* We can only remove the head of the queue, if we're doing
      * anything else, something is funky.
      */
-    g_assert(consumer->current_element_pointer == producer->queue->head);
+    g_assert(pointer == producer->queue->head);
     fprintf(stderr, "[%s] C:%p object %p pointer %p next %p prev %p\n",
             __PRETTY_FUNCTION__,
             consumer,
-            BQ_OBJECT(consumer),
-            consumer->current_element_pointer,
-            consumer->current_element_pointer->next,
-            consumer->current_element_pointer->prev);
+            pointer->data,
+            pointer,
+            pointer->next,
+            pointer->prev);
 
     /* Remove the element from the queue */
     g_queue_pop_head(producer->queue);
 
     bq_element_free_internal(elem, producer->free_function);
-    /* Make sure to lose references to it */
-    consumer->current_element_pointer = NULL;
 }
 
 /**
