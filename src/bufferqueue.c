@@ -511,9 +511,12 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     BufferQueue_Element *elem = BQ_OBJECT(consumer);
 
-    fprintf(stderr, "[%s] C:%p elem %p\n",
+    fprintf(stderr, "[%s] C:%p PQS:%lu CQS:%lu pointer %p object %p\n",
             __PRETTY_FUNCTION__,
-            consumer, elem);
+            consumer,
+            producer->queue_serial,
+            consumer->queue_serial,
+            pointer, elem);
 
     /* If we had no element selected, just get out of here */
     if ( elem == NULL )
@@ -527,14 +530,16 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
 
     /* If we're the last one to see the element, we need to take care
      * of removing and freeing it. */
-    fprintf(stderr, "[%s] C:%p pointer %p object %p payload %p seen %lu consumers %lu \n",
+    fprintf(stderr, "[%s] C:%p pointer %p object %p payload %p seen %lu consumers %lu PQH:%p\n",
             __PRETTY_FUNCTION__,
             consumer,
             consumer->current_element_pointer,
             elem,
             elem->payload,
             elem->seen+1,
-            producer->consumers);
+            producer->consumers,
+            producer->queue->head);
+
     if ( ++elem->seen < producer->consumers )
         return;
 
@@ -571,9 +576,11 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     GList *expected_next = NULL;
 
     if (consumer->current_element_pointer)
-    fprintf(stderr, "[%s] C:%p object %p pointer %p next %p prev %p\n",
+    fprintf(stderr, "[%s] C:%p LES:%lu PQH:%p object %p pointer %p next %p prev %p\n",
             __PRETTY_FUNCTION__,
             consumer,
+            consumer->last_element_serial,
+            producer->queue->head,
             consumer->current_element_pointer->data,
             consumer->current_element_pointer,
             consumer->current_element_pointer?
@@ -803,9 +810,12 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
-    fprintf(stderr, "[%s] C:%p\n",
-        __PRETTY_FUNCTION__,
-        consumer);
+    fprintf(stderr, "[%s] C:%p CQS:%lu PQS:%lu PQH: %p\n",
+            __PRETTY_FUNCTION__,
+            consumer,
+            consumer->queue_serial,
+            producer->queue_serial,
+            producer->queue->head);
 
     /* If we don't have a queue yet, like for the first read, “move
      * next” (or rather first).
