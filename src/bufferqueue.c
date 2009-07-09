@@ -641,8 +641,7 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
                 consumer->current_element_pointer->data,
                 consumer->current_element_pointer->next,
                 consumer->current_element_pointer->prev);
-
-        consumer->current_element_pointer = consumer->current_element_pointer->next;
+        GList *next = consumer->current_element_pointer->next;
 
         /* If there is any element at all saved, we take care of marking
          * it as seen. We don't have to check if it's non-NULL since the
@@ -650,6 +649,8 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
          * found the new "next" pointer.
          */
         bq_consumer_elem_unref(consumer);
+
+        consumer->current_element_pointer = next;
     } else {
         GList *elem = producer->queue->head;
         fprintf(stderr, "[%s] C:%p PQH:%p\n",
