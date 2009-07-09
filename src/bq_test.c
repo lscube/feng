@@ -46,7 +46,7 @@ int main(void)
     if (!g_thread_supported ()) g_thread_init (NULL);
 
     int size = 10, i;
-    int count = 2000;
+    int count = 2;
     Stuff *ret;
     Stuff *buffer = g_malloc0(sizeof(Stuff) + 2000);
     BufferQueue_Consumer *cons[size];
@@ -99,7 +99,11 @@ int main(void)
     stop_fill = 1;
     g_thread_pool_free(pool, TRUE, TRUE);
     for (i = 0; i < size; i++)
-        bq_consumer_free(cons[i]);
+        if (cons[i]) {
+            fprintf(stderr, "---- Deallocating consumer %d %p",
+                          i, cons[i]);
+            bq_consumer_free(cons[i]);
+        }
     bq_producer_unref(prod);
     g_mutex_free(mux);
     g_free(buffer);
