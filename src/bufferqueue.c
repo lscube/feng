@@ -794,6 +794,7 @@ gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
         unseen = producer->next_serial;
     } else {
         unseen = producer->next_serial;
+        bq_consumer_confirm_pointer(consumer);
 
         if ( consumer->current_element_pointer != NULL ) {
             g_assert_cmpint(unseen, >, BQ_OBJECT(consumer)->serial);
