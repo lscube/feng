@@ -28,7 +28,7 @@ static void fill_cb(gpointer cons_p, gpointer prod_p)
         buffer->data_size = 2000;
         memset(buffer->data, 'a', 14);
         bq_producer_put(producer, g_memdup (buffer, sizeof(Stuff) + 2000));
-        if(awake++ > 2) {
+        if(awake++ > 11) {
             sleep(1);
             fprintf(stderr, "Sleeping %p\n", consumer);
             awake = 0;
@@ -46,7 +46,7 @@ int main(void)
     if (!g_thread_supported ()) g_thread_init (NULL);
 
     int size = 10, i;
-    int count = 2;
+    int count = 2000;
     Stuff *ret;
     Stuff *buffer = g_malloc0(sizeof(Stuff) + 2000);
     BufferQueue_Consumer *cons[size];
