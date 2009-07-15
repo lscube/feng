@@ -46,7 +46,7 @@ int main(void)
     if (!g_thread_supported ()) g_thread_init (NULL);
 
     int size = 10, i;
-    int count = 24;
+    int count = 2000;
     Stuff *ret;
     Stuff *buffer = g_malloc0(sizeof(Stuff) + 2000);
     BufferQueue_Consumer *cons[size];
@@ -96,15 +96,9 @@ int main(void)
         fprintf(stderr, "cc %p: consumer_free\n", c);
         bq_consumer_free(c);
     }
-    fprintf(stderr, "---- Filling the queue a last time");
-    awake = 0;
-    g_thread_pool_push (pool, cons[0], NULL);
-    sleep(1);
     fprintf(stderr, "---- Killing _put thread\n");
     stop_fill = 1;
     g_thread_pool_free(pool, TRUE, TRUE);
-    for (i = 0; i < size/2; i++)
-        bq_consumer_get(cons[i]);
     for (i = 0; i < size; i++)
         if (cons[i]) {
             fprintf(stderr, "---- Deallocating consumer %d %p\n",
