@@ -3,13 +3,6 @@
 #include <string.h>
 #include <unistd.h>
 
-typedef struct {
-    double foo;
-    double bar;
-    size_t data_size;
-    guchar data[];
-} Stuff;
-
 int stop_fill = 0;
 
 int main(void)
@@ -18,8 +11,8 @@ int main(void)
 
     int size = 10, i;
     int count = 24;
-    Stuff *ret;
-    Stuff *buffer = g_malloc0(sizeof(Stuff) + 2000);
+    guint64 *ret;
+    guint64 *buffer = g_malloc0(sizeof(guint64));
     BufferQueue_Consumer *cons[size];
     BufferQueue_Producer *prod = bq_producer_new(g_free);
 
@@ -30,13 +23,8 @@ int main(void)
         fprintf(stderr,"%p\n", cons[i]);
     }
 
-    buffer->foo = 0;
-    buffer->bar = 10;
-    buffer->data_size = 2000;
-    buffer->data[0] = 'a';
-
     for (i = 0; i < count; i++)
-        bq_producer_put(prod, g_memdup (buffer, sizeof(Stuff) + 2000));
+        bq_producer_put(prod, g_memdup (buffer, sizeof(guint64)));
 
     fprintf(stderr, "---- Killing _put thread\n");
     stop_fill = 1;
@@ -48,7 +36,7 @@ int main(void)
     }
 
     for (i = 0; i < count; i++)
-        bq_producer_put(prod, g_memdup (buffer, sizeof(Stuff) + 2000));
+        bq_producer_put(prod, g_memdup (buffer, sizeof(guint64)));
 
     for (i = 0; i < size; i++) {
         bq_consumer_get(cons[i]);
@@ -68,7 +56,7 @@ int main(void)
             bq_consumer_free(cons[i]);
         }
 
-    bq_producer_put(prod, g_memdup (buffer, sizeof(Stuff) + 2000));
+    bq_producer_put(prod, g_memdup (buffer, sizeof(guint64)));
 
     bq_producer_unref(prod);
     g_free(buffer);
