@@ -26,8 +26,6 @@ int main(void)
     for (i = 0; i < count; i++)
         bq_producer_put(prod, g_memdup (buffer, sizeof(guint64)));
 
-    fprintf(stderr, "---- Killing _put thread\n");
-    stop_fill = 1;
     for (i = 0; i < size/2; i++)
         bq_consumer_get(cons[i]);
     for (i = size/2; i < size; i++) {

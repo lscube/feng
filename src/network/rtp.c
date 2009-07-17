@@ -413,7 +413,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
             return;
         }
         next_time += 0.03; // assumed to be enough
-        fprintf(stderr, "[%s]nothing to read\n",
+        fprintf(stderr, "[%s] nothing to read\n",
                 session->track->properties.encoding_name);
     } else {
         MParserBuffer *next;
