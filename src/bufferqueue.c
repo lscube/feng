@@ -545,6 +545,31 @@ BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
 }
 
 /**
+ * @brief Destroy the head of the producer queue
+ *
+ * @param producer Producer to destroy the head queue of
+ * @param element element to destroy; this is a safety check
+ */
+static void bq_producer_destroy_head(BufferQueue_Producer *producer, GList *pointer) {
+    BufferQueue_Element *elem = pointer->data;
+
+    /* We can only remove the head of the queue, if we're doing
+     * anything else, something is funky.
+     */
+    g_assert(pointer == producer->queue->head);
+
+    /* Remove the element from the queue */
+    g_queue_pop_head(producer->queue);
+
+    /* If we reached the end of the queue, consider like it was a new
+     * one */
+    if ( g_queue_get_length(producer->queue) == 0 )
+        producer->queue_serial++;
+
+    bq_element_free_internal(elem, producer->free_function);
+}
+
+/**
  * @brief Remove reference from the current element
  *
  * @param consumer The consumer that has seen the element
@@ -555,8 +580,13 @@ BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
  */
 static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
-    BufferQueue_Element *elem = BQ_OBJECT(consumer);
-    GList *pointer = consumer->current_element_pointer;
+    BufferQueue_Element *elem;
+    GList *pointer;
+
+    bq_consumer_confirm_pointer(consumer);
+
+    elem = BQ_OBJECT(consumer);
+    pointer = consumer->current_element_pointer;
 
     fprintf(stderr, "[%s] C:%p PQS:%lu CQS:%lu pointer %p object %p\n",
             __PRETTY_FUNCTION__,
@@ -589,10 +619,6 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     if ( ++elem->seen < producer->consumers )
         return;
 
-    /* We can only remove the head of the queue, if we're doing
-     * anything else, something is funky.
-     */
-    g_assert(pointer == producer->queue->head);
     fprintf(stderr, "[%s] C:%p object %p pointer %p next %p prev %p\n",
             __PRETTY_FUNCTION__,
             consumer,
@@ -601,15 +627,7 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
             pointer->next,
             pointer->prev);
 
-    /* Remove the element from the queue */
-    g_queue_pop_head(producer->queue);
-
-    /* If we reached the end of the queue, consider like it was a new
-     * one */
-    if ( g_queue_get_length(producer->queue) == 0 )
-        producer->queue_serial++;
-
-    bq_element_free_internal(elem, producer->free_function);
+    bq_producer_destroy_head(producer, pointer);
 }
 
 /**
@@ -651,6 +669,8 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
         bq_consumer_elem_unref(consumer);
 
         consumer->current_element_pointer = next;
+    } else if ( consumer->queue_serial != producer->queue_serial ) {
+        consumer->current_element_pointer = producer->queue->head;
     } else {
         GList *elem = producer->queue->head;
         fprintf(stderr, "[%s] C:%p PQH:%p\n",
@@ -759,6 +779,8 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
             elem->seen--;
 
             g_assert_cmpuint(elem->seen, <=, producer->consumers);
+
+            bq_producer_destroy_head(producer, it);
 
             it = it->next;
         }
