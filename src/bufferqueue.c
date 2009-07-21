@@ -257,7 +257,7 @@ static void bq_consumer_confirm_pointer(BufferQueue_Consumer *consumer)
         return;
 
     if ( producer->queue_serial != consumer->queue_serial ) {
-        fprintf(stderr, "[%s] C:%p pointer %p reset PQS:%lu < CQS:%lu",
+        fprintf(stderr, "[%s] C:%p pointer %p reset PQS:%lu < CQS:%lu\n",
                 __PRETTY_FUNCTION__,
                 consumer,
                 consumer->current_element_pointer,
@@ -269,7 +269,7 @@ static void bq_consumer_confirm_pointer(BufferQueue_Consumer *consumer)
 
     if ( producer->queue->head &&
          consumer->last_element_serial < GLIST_TO_BQELEM(producer->queue->head)->serial ) {
-        fprintf(stderr, "[%s] C:%p pointer %p reset LES:%lu < PQHS:%lu",
+        fprintf(stderr, "[%s] C:%p pointer %p reset LES:%lu < PQHS:%lu\n",
                 __PRETTY_FUNCTION__,
                 consumer,
                 consumer->current_element_pointer,
