@@ -744,13 +744,14 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
          * so we'll decrease the whole queue! */
         while ( it != NULL &&
                 (elem = GLIST_TO_BQELEM(it))->serial <= consumer->last_element_serial ) {
-            fprintf(stderr, "[%s] C:%p decrementing counter for pointer %p object %p serial %lu seen %lu\n",
+            fprintf(stderr, "[%s] C:%p decrementing counter for pointer %p object %p serial %lu seen %lu/%lu\n",
                     __PRETTY_FUNCTION__,
                     consumer,
                     it,
                     elem,
                     elem->serial,
-                    elem->seen);
+                    elem->seen,
+                    producer->consumers);
 
             /* we've got to have seen it! */
             g_assert_cmpuint(elem->seen, >, 0);
