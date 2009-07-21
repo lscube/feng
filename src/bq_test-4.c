@@ -29,7 +29,7 @@ int main(void)
 
     while(count--) {
         ret = bq_consumer_get(cons);
-        g_assert(ret == NULL);
+        g_assert(ret != NULL);
         bq_consumer_move(cons);
     }
 
