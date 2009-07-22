@@ -269,11 +269,12 @@ static void bq_consumer_confirm_pointer(BufferQueue_Consumer *consumer)
 
     if ( producer->queue->head &&
          consumer->last_element_serial < GLIST_TO_BQELEM(producer->queue->head)->serial ) {
-        fprintf(stderr, "[%s] C:%p pointer %p reset LES:%lu < PQHS:%lu\n",
+        fprintf(stderr, "[%s] C:%p pointer %p reset LES:%lu:%lu < PQHS:%lu:%lu\n",
                 __PRETTY_FUNCTION__,
                 consumer,
                 consumer->current_element_pointer,
-                consumer->last_element_serial,
+                consumer->queue_serial, consumer->last_element_serial,
+                producer->queue_serial,
                 GLIST_TO_BQELEM(producer->queue->head)->serial);
         consumer->current_element_pointer = NULL;
         return;
@@ -641,10 +642,11 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
 static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
 
-    fprintf(stderr, "[%s] C:%p LES:%lu PQHS:%lu PQH:%p pointer %p\n",
+    fprintf(stderr, "[%s] C:%p LES:%lu:%lu PQHS:%lu:%lu PQH:%p pointer %p\n",
             __PRETTY_FUNCTION__,
             consumer,
-            consumer->last_element_serial,
+            consumer->queue_serial, consumer->last_element_serial,
+            producer->queue_serial,
             producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->serial : 0,
             producer->queue->head,
             consumer->current_element_pointer);
@@ -737,13 +739,12 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
             g_queue_clear(producer->queue);
         }
     } else {
-        fprintf(stderr, "[%s] C:%p LES:%lu CQS:%lu PQS:%lu PQH:%p PQHS:%lu\n",
+        fprintf(stderr, "[%s] C:%p LES:%lu:%lu PQH:%p PQHS:%lu:%lu\n",
                 __PRETTY_FUNCTION__,
                 consumer,
-                consumer->last_element_serial,
-                consumer->queue_serial,
-                producer->queue_serial,
+                consumer->queue_serial, consumer->last_element_serial,
                 producer->queue->head,
+                producer->queue_serial,
                 producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->serial: 0);
         if ( consumer->last_element_serial != 0 &&
                 consumer->queue_serial == producer->queue_serial &&
