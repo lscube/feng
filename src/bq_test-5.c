@@ -40,14 +40,13 @@ static void fill_cb(gpointer cons_p, gpointer prod_p)
     g_mutex_unlock(mux);
 }
 
-
 int main(void)
 {
     if (!g_thread_supported ()) g_thread_init (NULL);
 
-    int size = 10, i;
+    int size = 1, i;
     int count = 2000, count_reset = 0;
-    int reset = 10;
+    int reset = 5;
     Stuff *ret;
     Stuff *buffer = g_malloc0(sizeof(Stuff) + 2000);
     BufferQueue_Consumer *cons[size];
