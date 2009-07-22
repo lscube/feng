@@ -99,7 +99,7 @@ include $(top_srcdir)/ragel.make
 CLEANFILES = $(BUILT_SOURCES)
 endif
 
-check_PROGRAMS = bq_test-1 bq_test-2 bq_test-3 bq_test-4
+check_PROGRAMS = bq_test-1 bq_test-2 bq_test-3 bq_test-4 bq_test-5
 
 bq_test_1_SOURCES = bufferqueue.c \
 		  bq_test-1.c
@@ -109,7 +109,10 @@ bq_test_3_SOURCES = bufferqueue.c \
 		  bq_test-3.c
 bq_test_4_SOURCES = bufferqueue.c \
 		  bq_test-4.c
+bq_test_5_SOURCES = bufferqueue.c \
+		  bq_test-5.c
 
-TESTS = bq_test-1 bq_test-2 bq_test-3 bq_test-4
+
+TESTS = bq_test-1 bq_test-2 bq_test-3 bq_test-4 bq_test-5
 
 DISTCLEANFILES = $(BUILT_SOURCES)
