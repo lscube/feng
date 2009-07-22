@@ -21,6 +21,7 @@
  * */
 
 #include "bufferqueue.h"
+#include "fnc_log.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -257,7 +258,7 @@ static void bq_consumer_confirm_pointer(BufferQueue_Consumer *consumer)
         return;
 
     if ( producer->queue_serial != consumer->queue_serial ) {
-        fprintf(stderr, "[%s] C:%p pointer %p reset PQS:%lu < CQS:%lu\n",
+        fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p pointer %p reset PQS:%lu < CQS:%lu\n",
                 __PRETTY_FUNCTION__,
                 consumer,
                 consumer->current_element_pointer,
@@ -269,7 +270,7 @@ static void bq_consumer_confirm_pointer(BufferQueue_Consumer *consumer)
 
     if ( producer->queue->head &&
          consumer->last_element_serial < GLIST_TO_BQELEM(producer->queue->head)->serial ) {
-        fprintf(stderr, "[%s] C:%p pointer %p reset LES:%lu:%lu < PQHS:%lu:%lu\n",
+        fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p pointer %p reset LES:%lu:%lu < PQHS:%lu:%lu\n",
                 __PRETTY_FUNCTION__,
                 consumer,
                 consumer->current_element_pointer,
@@ -304,7 +305,7 @@ static void bq_element_free_internal(gpointer elem_generic,
     BufferQueue_Element *const element = (BufferQueue_Element*)elem_generic;
     const GDestroyNotify free_function = (GDestroyNotify)free_func_generic;
 
-    fprintf(stderr, "[%s] Free object %p payload %p %lu\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] Free object %p payload %p %lu\n",
             __PRETTY_FUNCTION__,
             element,
             element->payload,
@@ -328,7 +329,7 @@ static void bq_element_free_internal(gpointer elem_generic,
  * worry about getting old buffers.
  */
 static void bq_producer_reset_queue_internal(BufferQueue_Producer *producer) {
-    fprintf(stderr, "[%s] Producer %p queue %p queue_serial %lu\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] Producer %p queue %p queue_serial %lu\n",
             __PRETTY_FUNCTION__,
             producer,
             producer->queue,
@@ -360,7 +361,7 @@ static void bq_producer_reset_queue_internal(BufferQueue_Producer *producer) {
  * worry about getting old buffers.
  */
 void bq_producer_reset_queue(BufferQueue_Producer *producer) {
-    fprintf(stderr, "[%s] Producer %p\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] Producer %p\n",
             __PRETTY_FUNCTION__,
             producer);
 
@@ -413,7 +414,7 @@ BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function)
  *          function will cause the program to abort.
  */
 static void bq_producer_free_internal(BufferQueue_Producer *producer) {
-    fprintf(stderr, "[%s] Producer %p\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] Producer %p\n",
             __PRETTY_FUNCTION__,
             producer);
 
@@ -442,7 +443,7 @@ static void bq_producer_free_internal(BufferQueue_Producer *producer) {
  *
  */
 void bq_producer_unref(BufferQueue_Producer *producer) {
-    fprintf(stderr, "[%s] Producer %p\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] Producer %p\n",
             __PRETTY_FUNCTION__,
             producer);
 
@@ -491,7 +492,7 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     elem->seen = 0;
     elem->serial = producer->next_serial++;
 
-    fprintf(stderr, "[%s] Payload %p element %p\n", __PRETTY_FUNCTION__, payload, elem);
+    fnc_log(FNC_LOG_VERBOSE, "[%s] Payload %p element %p\n", __PRETTY_FUNCTION__, payload, elem);
 
     g_assert_cmpint(producer->next_serial, !=, 0);
 
@@ -517,7 +518,7 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
 BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
     BufferQueue_Consumer *ret;
 
-    fprintf(stderr, "[%s] Producer %p\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] Producer %p\n",
             __PRETTY_FUNCTION__,
             producer);
 
@@ -589,7 +590,7 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     elem = BQ_OBJECT(consumer);
     pointer = consumer->current_element_pointer;
 
-    fprintf(stderr, "[%s] C:%p PQS:%lu CQS:%lu pointer %p object %p\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p PQS:%lu CQS:%lu pointer %p object %p\n",
             __PRETTY_FUNCTION__,
             consumer,
             producer->queue_serial,
@@ -602,7 +603,7 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
 
     /* If we're the last one to see the element, we need to take care
      * of removing and freeing it. */
-    fprintf(stderr, "[%s] C:%p pointer %p object %p payload %p seen %lu consumers %lu PQH:%p\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p pointer %p object %p payload %p seen %lu consumers %lu PQH:%p\n",
             __PRETTY_FUNCTION__,
             consumer,
             consumer->current_element_pointer,
@@ -620,7 +621,7 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     if ( ++elem->seen < producer->consumers )
         return;
 
-    fprintf(stderr, "[%s] C:%p object %p pointer %p next %p prev %p\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p object %p pointer %p next %p prev %p\n",
             __PRETTY_FUNCTION__,
             consumer,
             pointer->data,
@@ -642,7 +643,7 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
 static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
 
-    fprintf(stderr, "[%s] C:%p LES:%lu:%lu PQHS:%lu:%lu PQH:%p pointer %p\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p LES:%lu:%lu PQHS:%lu:%lu PQH:%p pointer %p\n",
             __PRETTY_FUNCTION__,
             consumer,
             consumer->queue_serial, consumer->last_element_serial,
@@ -654,7 +655,7 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     bq_consumer_confirm_pointer(consumer);
 
     if (consumer->current_element_pointer) {
-        fprintf(stderr, "[%s] C:%p pointer %p object %p next %p prev %p\n",
+        fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p pointer %p object %p next %p prev %p\n",
                 __PRETTY_FUNCTION__,
                 consumer,
                 consumer->current_element_pointer,
@@ -675,7 +676,7 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
         consumer->current_element_pointer = producer->queue->head;
     } else {
         GList *elem = producer->queue->head;
-        fprintf(stderr, "[%s] C:%p PQH:%p\n",
+        fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p PQH:%p\n",
                 __PRETTY_FUNCTION__,
                 consumer,
                 producer->queue->head);
@@ -716,7 +717,7 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
-    fprintf(stderr, "[%s] C:%p pointer %p\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p pointer %p\n",
             __PRETTY_FUNCTION__,
             consumer,
             consumer->current_element_pointer);
@@ -742,7 +743,7 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
             g_queue_clear(producer->queue);
         }
     } else {
-        fprintf(stderr, "[%s] C:%p LES:%lu:%lu PQH:%p PQHS:%lu:%lu\n",
+        fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p LES:%lu:%lu PQH:%p PQHS:%lu:%lu\n",
                 __PRETTY_FUNCTION__,
                 consumer,
                 consumer->queue_serial, consumer->last_element_serial,
@@ -758,7 +759,7 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
 
         g_assert_cmpuint(GLIST_TO_BQELEM(producer->queue->tail)->serial, >=, consumer->last_element_serial);
 
-        fprintf(stderr, "[%s] C:%p decrementing elements till serial %lu\n",
+        fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p decrementing elements till serial %lu\n",
                 __PRETTY_FUNCTION__,
                 consumer,
                 consumer->last_element_serial);
@@ -768,7 +769,7 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
          * so we'll decrease the whole queue! */
         while ( it != NULL &&
                 (elem = GLIST_TO_BQELEM(it))->serial <= consumer->last_element_serial ) {
-            fprintf(stderr, "[%s] C:%p decrementing counter for pointer %p object %p serial %lu seen %lu/%lu\n",
+            fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p decrementing counter for pointer %p object %p serial %lu seen %lu/%lu\n",
                     __PRETTY_FUNCTION__,
                     consumer,
                     it,
@@ -855,7 +856,7 @@ gboolean bq_consumer_move(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     gboolean ret;
 
-    fprintf(stderr, "[%s](before) C:%p pointer %p\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s](before) C:%p pointer %p\n",
             __PRETTY_FUNCTION__,
             consumer,
             consumer->current_element_pointer);
@@ -868,7 +869,7 @@ gboolean bq_consumer_move(BufferQueue_Consumer *consumer) {
 
     ret = bq_consumer_move_internal(consumer);
 
-    fprintf(stderr, "[%s](after) C:%p pointer %p\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s](after) C:%p pointer %p\n",
             __PRETTY_FUNCTION__,
             consumer,
             consumer->current_element_pointer);
@@ -907,7 +908,7 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
-    fprintf(stderr, "[%s] C:%p CQS:%lu PQS:%lu PQH: %p pointer %p\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p CQS:%lu PQS:%lu PQH: %p pointer %p\n",
             __PRETTY_FUNCTION__,
             consumer,
             consumer->queue_serial,
@@ -927,7 +928,7 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     element = (BufferQueue_Element*)(consumer->current_element_pointer->data);
     consumer->last_element_serial = element->serial;
 
-    fprintf(stderr, "[%s] C:%p pointer %p object %p payload %p seen %lu/%lu\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%s] C:%p pointer %p object %p payload %p seen %lu/%lu\n",
             __PRETTY_FUNCTION__,
             consumer,
             consumer->current_element_pointer,
