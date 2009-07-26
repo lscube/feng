@@ -899,12 +899,13 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
-    bq_debug("C:%p CQS:%lu PQS:%lu PQH: %p pointer %p",
-            consumer,
-            consumer->queue_serial,
-            producer->queue_serial,
-            producer->queue->head,
-            consumer->current_element_pointer);
+    bq_debug("C:%p LES:%lu:%lu PQHS:%lu:%lu PQH:%p pointer %p",
+             consumer,
+             consumer->queue_serial, consumer->last_element_serial,
+             producer->queue_serial,
+             producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->serial : -1,
+             producer->queue->head,
+             consumer->current_element_pointer);
 
     bq_consumer_confirm_pointer(consumer);
 
