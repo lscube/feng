@@ -101,19 +101,20 @@ endif
 
 check_PROGRAMS = bq_test-1 bq_test-2 bq_test-3 bq_test-4 bq_test-5
 
-bq_test_SOURCES = fnc_log.c bufferqueue.c
+bq_test_1_SOURCES = bufferqueue.c bq_test-1.c
+bq_test_1_CFLAGS = -DFENG_BQ_DEBUG
 
-bq_test_1_SOURCES = $(bq_test_SOURCES) \
-		  bq_test-1.c
-bq_test_2_SOURCES = $(bq_test_SOURCES) \
-		  bq_test-2.c
-bq_test_3_SOURCES = $(bq_test_SOURCES) \
-		  bq_test-3.c
-bq_test_4_SOURCES = $(bq_test_SOURCES) \
-		  bq_test-4.c
-bq_test_5_SOURCES = $(bq_test_SOURCES) \
-		  bq_test-5.c
+bq_test_2_SOURCES = bufferqueue.c bq_test-2.c
+bq_test_2_CFLAGS = -DFENG_BQ_DEBUG
 
+bq_test_3_SOURCES = bufferqueue.c bq_test-3.c
+bq_test_3_CFLAGS = -DFENG_BQ_DEBUG
+
+bq_test_4_SOURCES = bufferqueue.c bq_test-4.c
+bq_test_4_CFLAGS = -DFENG_BQ_DEBUG
+
+bq_test_5_SOURCES = bufferqueue.c bq_test-5.c
+bq_test_5_CFLAGS = -DFENG_BQ_DEBUG
 
 TESTS = bq_test-1 bq_test-2 bq_test-3 bq_test-4 bq_test-5
 
