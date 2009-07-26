@@ -692,8 +692,9 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
 
     /* Now we have a new "next" element and we can set it properly */
     if ( consumer->current_element_pointer ) {
+        if ( consumer->queue_serial != producer->queue_serial )
+            consumer->last_element_serial = 0;
         consumer->queue_serial = producer->queue_serial;
-        consumer->last_element_serial = 0;
     }
 
     return ( consumer->current_element_pointer != NULL );
