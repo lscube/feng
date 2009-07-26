@@ -52,7 +52,7 @@ int main(void)
         for (i = 0; i < size/2; i++) {
             ret = bq_consumer_get(cons[i]);
             if (ret) g_assert_cmpuint(*ret, ==, j);
-            else g_assert_cmpint(j, >, count/2);
+            else g_assert_cmpint(j, >=, count/2);
 
             if (bq_consumer_move(cons[i])) {
                 ret = bq_consumer_get(cons[i]);
