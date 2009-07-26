@@ -30,8 +30,8 @@ int main(void)
     for (j = 0; j < count; j++)
         for (i = 0; i < size/2-1; i++) {
             ret = bq_consumer_get(cons[i]);
-            if (ret) g_assert_cmpuint(*ret, ==, j);
-            else g_assert_cmpint(j, >=, count/2);
+            g_assert(ret != NULL );
+            g_assert_cmpuint(*ret, ==, 0);
         }
 
     for (i = size/2; i < size; i++)
@@ -40,8 +40,8 @@ int main(void)
     for (j = 0; j < count; j++)
         for (i = size/2-1; i < size; i++) {
             ret = bq_consumer_get(cons[i]);
-            if (ret) g_assert_cmpuint(*ret, ==, j);
-            else g_assert_cmpint(j, >=, count/2);
+            g_assert(ret != NULL );
+            g_assert_cmpuint(*ret, ==, 0);
         }
 
     for (i = size/2; i < size; i++) {
