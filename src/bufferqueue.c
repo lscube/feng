@@ -779,11 +779,10 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
             /* we've got to have seen it! */
             g_assert_cmpuint(elem->seen, >, 0);
 
-            elem->seen--;
-
-            g_assert_cmpuint(elem->seen, <=, producer->consumers);
-
-            bq_producer_destroy_head(producer, it);
+            if ( --elem->seen == producer->consumers )
+                bq_producer_destroy_head(producer, it);
+            else
+                g_assert_cmpuint(elem->seen, <, producer->consumers);
 
             it = it->next;
         }
