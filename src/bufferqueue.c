@@ -556,10 +556,17 @@ BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
 static void bq_producer_destroy_head(BufferQueue_Producer *producer, GList *pointer) {
     BufferQueue_Element *elem = pointer->data;
 
+    bq_debug("P:%p PQH:%p pointer %p",
+             producer,
+             producer->queue->head,
+             pointer);
+
     /* We can only remove the head of the queue, if we're doing
-     * anything else, something is funky.
+     * anything else, something is funky. Ibid if it hasn't been seen
+     * yet.
      */
     g_assert(pointer == producer->queue->head);
+    g_assert(elem->seen == producer->consumers);
 
     /* Remove the element from the queue */
     g_queue_pop_head(producer->queue);
