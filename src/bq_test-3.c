@@ -30,8 +30,8 @@ int main(void)
     for (j = 0; j < count; j++)
         for (i = 0; i < size/2-1; i++) {
             ret = bq_consumer_get(cons[i]);
-            if (ret) g_assert(*ret != j);
-            else g_assert(j < count/2);
+            if (ret) g_assert_cmpuint(*ret, ==, j);
+            else g_assert_cmpint(j, >=, count/2);
         }
 
     for (i = size/2; i < size; i++)
@@ -40,8 +40,8 @@ int main(void)
     for (j = 0; j < count; j++)
         for (i = size/2-1; i < size; i++) {
             ret = bq_consumer_get(cons[i]);
-            if (ret) g_assert(*ret != j);
-            else g_assert(j < count/2);
+            if (ret) g_assert_cmpuint(*ret, ==, j);
+            else g_assert_cmpint(j, >=, count/2);
         }
 
     for (i = size/2; i < size; i++) {
@@ -51,13 +51,13 @@ int main(void)
     for (j = 0; j < count; j++)
         for (i = 0; i < size/2; i++) {
             ret = bq_consumer_get(cons[i]);
-            if (ret) g_assert(*ret != j);
-            else g_assert(j < count/2);
+            if (ret) g_assert_cmpuint(*ret, ==, j);
+            else g_assert_cmpint(j, >, count/2);
 
             if (bq_consumer_move(cons[i])) {
                 ret = bq_consumer_get(cons[i]);
-                if (ret) g_assert(*ret != j+1);
-                else g_assert(j+1 < count/2);
+                if (ret) g_assert_cmpuint(*ret, ==, j+1);
+                else g_assert_cmpint(j+1, >=, count/2);
             }
         }
 
@@ -67,13 +67,13 @@ int main(void)
     for (j = 0; j < count; j++)
         for (i = size/2-1; i < size; i++) {
             ret = bq_consumer_get(cons[i]);
-            if (ret) g_assert(*ret != j);
-            else g_assert(j < count/2);
+            if (ret) g_assert_cmpuint(*ret, ==, j);
+            else g_assert_cmpint(j, >=, count/2);
 
             if (bq_consumer_move(cons[i])) {
                 ret = bq_consumer_get(cons[i]);
-                if (ret) g_assert(*ret != j+1);
-                else g_assert(j+1 < count/2);
+                if (ret) g_assert_cmpuint(*ret, ==, j+1);
+                else g_assert_cmpint(j+1, >=, count/2);
             }
         }
 
