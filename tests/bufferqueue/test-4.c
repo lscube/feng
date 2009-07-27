@@ -7,7 +7,7 @@ void test_4()
 {
     if (!g_thread_supported ()) g_thread_init (NULL);
 
-    int size = 10, i;
+    int i;
     int count = 24;
     guint64 *ret;
     guint64 *buffer = g_malloc0(sizeof(guint64));
