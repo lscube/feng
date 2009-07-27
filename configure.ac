@@ -263,7 +263,6 @@ AM_CONDITIONAL([CHANGELOG_REGEN], [test "x$GIT" = "xyes"])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([src/Makefile])
 AC_CONFIG_FILES([etc/feng.conf])
 AC_CONFIG_FILES([etc/feng-uninstalled.conf])
 AC_CONFIG_FILES([Doxyfile])

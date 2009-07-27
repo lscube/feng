@@ -1,5 +1,3 @@
-SUBDIRS = src
-
 ACLOCAL_AMFLAGS = -I m4
 
 FENICE_AVROOT_DIR = $(fenice_avroot_dir)
@@ -18,7 +16,6 @@ dist_feng_conf_DATA = etc/feng.conf
 dist_man_MANS = docs/feng.1
 
 dist_doc_DATA = AUTHORS ChangeLog NEWS README RELEASE TODO
-MAINTAINERCLEANFILES = ChangeLog
 
 if CHANGELOG_REGEN
 ChangeLog:
@@ -27,3 +24,126 @@ ChangeLog:
 # Always regenerate!
 .PHONY: ChangeLog
 endif
+
+bin_PROGRAMS = feng
+
+BUILT_SOURCES = \
+	src/network/ragel_request_line.c \
+	src/network/ragel_transport.c \
+	src/network/ragel_range.c \
+	src/liberis/headers_parser.c
+
+dist_feng_SOURCES = $(BUILT_SOURCES) \
+	src/bufferqueue.c src/bufferqueue.h \
+	src/fnc_log.c src/fnc_log.h \
+	src/incoming.c src/incoming.h \
+	src/feng.h \
+	src/feng_utils.h \
+	src/main.c \
+	src/conf/array.c \
+	src/conf/array.h \
+	src/conf/buffer.c \
+	src/conf/buffer.h \
+	src/conf/conf.h \
+	src/conf/stream.c \
+	src/conf/stream.h \
+	src/conf/configparser.c \
+	src/conf/configparser.h \
+	src/conf/proc_open.c \
+	src/conf/proc_open.h \
+	src/conf/configfile-glue.c \
+	src/conf/configfile.c \
+	src/conf/configfile.h \
+	src/conf/data_array.c \
+	src/conf/data_count.c \
+	src/conf/data_integer.c \
+	src/conf/data_config.c \
+	src/conf/data_string.c \
+	src/conf/settings.h \
+	\
+	src/liberis/headers.h \
+	src/liberis/utils.c src/liberis/utils.h \
+	\
+	src/network/ragel_parsers.h \
+	src/network/rtcp.c \
+	src/network/rtp.c network/rtp.h \
+	src/network/rtp_port.c \
+	src/network/rtsp.h \
+	src/network/rtsp_client.c \
+	src/network/rtsp_interleaved.c \
+	src/network/rtsp_lowlevel.c \
+	src/network/rtsp_method_describe.c \
+	src/network/rtsp_method_options.c \
+	src/network/rtsp_method_pause.c \
+	src/network/rtsp_method_play.c \
+	src/network/rtsp_method_setup.c \
+	src/network/rtsp_method_teardown.c \
+	src/network/rtsp_response.c \
+	src/network/rtsp_state_machine.c \
+	src/network/rtsp_utils.c \
+	\
+	src/media/demuxer.c \
+	src/media/demuxer.h \
+	src/media/demuxer_module.h \
+	src/media/mediaparser.c \
+	src/media/mediaparser.h \
+	src/media/mediaparser_module.h \
+	src/media/mediautils.c \
+	src/media/resource.c \
+	src/media/parser/mpeg12.c \
+	src/media/parser/mpegaudio.c \
+	src/media/parser/mpeg2t.c \
+	src/media/demuxer/demuxer_ds.c
+
+if FENG_CPD
+dist_feng_SOURCES += src/media/metadata/cpd.c src/media/metadata/cpd.h
+endif
+
+if FENICE_FFMPEG
+dist_feng_SOURCES += src/media/parser/h264.c \
+		     src/media/parser/vorbis.c \
+		     src/media/parser/theora.c \
+		     src/media/parser/aac.c \
+		     src/media/parser/mp4ves.c \
+		     src/media/parser/speex.c \
+		     src/media/parser/h263.c \
+		     src/media/parser/amr.c \
+		     src/media/demuxer/demuxer_avf.c
+endif
+
+if LIVE_STREAMING
+dist_feng_SOURCES += src/media/demuxer/demuxer_sd.c
+endif
+
+INCLUDES = -I. -I$(srcdir)/src -I$(srcdir)/src/nework
+
+if HAVE_RAGEL
+include $(top_srcdir)/ragel.make
+
+CLEANFILES = $(BUILT_SOURCES)
+endif
+
+TESTS = tests/bufferqueue/bq_test-1 \
+	tests/bufferqueue/bq_test-2 \
+	tests/bufferqueue/bq_test-3 \
+	tests/bufferqueue/bq_test-4 \
+	tests/bufferqueue/bq_test-5
+check_PROGRAMS = $(TESTS)
+
+tests_bufferqueue_bq_test_1_SOURCES = src/bufferqueue.c tests/bufferqueue/bq_test-1.c
+tests_bufferqueue_bq_test_1_CFLAGS = -DFENG_BQ_DEBUG
+
+tests_bufferqueue_bq_test_2_SOURCES = src/bufferqueue.c tests/bufferqueue/bq_test-2.c
+tests_bufferqueue_bq_test_2_CFLAGS = -DFENG_BQ_DEBUG
+
+tests_bufferqueue_bq_test_3_SOURCES = src/bufferqueue.c tests/bufferqueue/bq_test-3.c
+tests_bufferqueue_bq_test_3_CFLAGS = -DFENG_BQ_DEBUG
+
+tests_bufferqueue_bq_test_4_SOURCES = src/bufferqueue.c tests/bufferqueue/bq_test-4.c
+tests_bufferqueue_bq_test_4_CFLAGS = -DFENG_BQ_DEBUG
+
+tests_bufferqueue_bq_test_5_SOURCES = src/bufferqueue.c tests/bufferqueue/bq_test-5.c
+tests_bufferqueue_bq_test_5_CFLAGS = -DFENG_BQ_DEBUG
+
+DISTCLEANFILES = $(BUILT_SOURCES)
+MAINTAINERCLEANFILES = ChangeLog
