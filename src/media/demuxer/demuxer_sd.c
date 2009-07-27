@@ -433,7 +433,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
                          O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) < 0) {
         fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
                 tr->info->mrl, strerror(errno));
-        return RESOURCE_EOF;
+        return RESOURCE_OK;
     }
 
     mq_getattr(*mpd, &attr);
@@ -442,6 +442,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     if (!attr.mq_curmsgs) {
         mq_close(*mpd);
         *mpd = -1;
+        usleep(30);
         return RESOURCE_OK;
     }
 
