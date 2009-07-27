@@ -20,10 +20,11 @@
  *
  * */
 
-#ifdef HAVE_CONFIG
+#ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
+#include <string.h>
 #include <sys/select.h>
 #include "fnc_log.h"
 #include "cpd.h"
@@ -101,7 +102,7 @@ void cpd_find_request(feng *srv, Resource *res, char *filename) {
     g_hash_table_iter_init (&iter, clients);
     while (g_hash_table_iter_next (&iter, &key, &value)) {
 	CPDMetadata *md = value;
-	if (!strncmp(filename, md->Filename, min(sizeof(filename), sizeof(md->Filename)))) {
+	if (!strncmp(filename, md->Filename, MIN(sizeof(filename), sizeof(md->Filename)))) {
 	    fnc_log(FNC_LOG_INFO, "[CPD] Metadata request found");
 	    res->metadata = md;
 	} else {
@@ -391,7 +392,7 @@ void *cpd_server(void *args) {
 		    // receiving data
 		    fnc_log(FNC_LOG_INFO, "[CPD] Metadata Request received");
 
-		    if (strncmp(buffer, "REQUEST ", min(sizeof(buffer), 8))) {
+		    if (strncmp(buffer, "REQUEST ", MIN(sizeof(buffer), 8))) {
 			// Command not recognized
 			fnc_log(FNC_LOG_INFO, "[CPD] Invalid request");
 			fnc_log(FNC_LOG_INFO, "[CPD] Closing connection on socket : %d\n", Sock_fd(md->Socket));

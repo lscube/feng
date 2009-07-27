@@ -31,6 +31,10 @@
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 
+#ifdef HAVE_METADATA
+# include "media/metadata/cpd.h"
+#endif
+
 /**
  * Closes a transport linked to a session
  * @param session the RTP session for which to close the transport
@@ -377,7 +381,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
 
 #ifdef HAVE_METADATA
     if (session->metadata)
-        cpd_send(session, now);
+        cpd_send(session, ev_now(loop));
 #endif
     /* If there is no buffer, it means that either the producer
      * has been stopped (as we reached the end of stream) or that

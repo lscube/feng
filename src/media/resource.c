@@ -28,6 +28,10 @@
 #include "feng.h"
 #include "fnc_log.h"
 
+#ifdef HAVE_METADATA
+# include "metadata/cpd.h"
+#endif
+
 // global demuxer modules:
 #ifdef LIVE_STREAMING
 extern Demuxer fnc_demuxer_sd;
