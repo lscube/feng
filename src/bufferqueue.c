@@ -906,7 +906,7 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
              consumer,
              consumer->queue_serial, consumer->last_element_serial,
              producer->queue_serial,
-             producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->serial : -1,
+             producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->serial : 0,
              producer->queue->head,
              consumer->current_element_pointer);
 
