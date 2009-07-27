@@ -27,6 +27,8 @@
 #include <string.h>
 #include <sys/select.h>
 #include "fnc_log.h"
+#include "network/rtp.h"
+#include "network/rtsp.h"
 #include "cpd.h"
 
 // it must be the last header to be included
@@ -263,7 +265,8 @@ int cpd_connection_alive (RTP_session *session, Sock *socket) {
 void cpd_send(RTP_session *session, double now) {
 
     //fnc_log(FNC_LOG_INFO,"[CPD] Streaming Metadata: playing time %f", now - session->start_time + session->seek_time);
-    double timestamp = now - session->start_time + session->seek_time;
+    double timestamp = now + session->range->playback_time -
+                       session->range->begin_time;
     CPDMetadata *md = session->metadata;
     GList *i;
 
@@ -285,7 +288,7 @@ void cpd_send(RTP_session *session, double now) {
 		packet->Sent = 1;
 
 		char packetLength[MAX_CHARS];
-		sprintf(packetLength, "%d", strlen(packet->Content));
+		sprintf(packetLength, "%zu", strlen(packet->Content));
 
 		Sock_write(md->Socket, "Packet-length: ", 15, NULL, 0);
 		Sock_write(md->Socket, packetLength, strlen(packetLength), NULL, 0);
