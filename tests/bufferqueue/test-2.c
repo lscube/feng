@@ -10,10 +10,10 @@ typedef struct {
     guchar data[];
 } Stuff;
 
-int awake = 0;
-int stop_fill = 0;
+static int awake = 0;
+static int stop_fill = 0;
 
-GMutex *mux;
+static GMutex *mux;
 
 static void fill_cb(gpointer cons_p, gpointer prod_p)
 {
@@ -41,7 +41,7 @@ static void fill_cb(gpointer cons_p, gpointer prod_p)
 }
 
 
-int main(void)
+void test_2()
 {
     if (!g_thread_supported ()) g_thread_init (NULL);
 
@@ -73,7 +73,7 @@ int main(void)
         else
             fprintf(stderr, "cc %p: NULL \n", c);
         fprintf(stderr, "cc %p: consumer_free\n", c);
-        g_thread_pool_push (pool, cons[i], NULL);
+        // g_thread_pool_push (pool, cons[i], NULL);
         bq_consumer_free(c);
     }
 
@@ -115,5 +115,4 @@ int main(void)
     bq_producer_unref(prod);
     g_mutex_free(mux);
     g_free(buffer);
-    return 0;
 }

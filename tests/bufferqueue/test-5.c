@@ -3,10 +3,10 @@
 #include <string.h>
 #include <unistd.h>
 
-int awake = 0;
-int stop_fill = 0;
+static int awake = 0;
+static int stop_fill = 0;
 
-GMutex *mux;
+static GMutex *mux;
 
 static void fill_cb(gpointer cons_p, gpointer prod_p)
 {
@@ -27,7 +27,7 @@ static void fill_cb(gpointer cons_p, gpointer prod_p)
     g_mutex_unlock(mux);
 }
 
-int main(void)
+void test_5()
 {
     if (!g_thread_supported ()) g_thread_init (NULL);
 
@@ -73,5 +73,4 @@ int main(void)
         bq_producer_unref(prod[i]);
     }
     g_mutex_free(mux);
-    return 0;
 }

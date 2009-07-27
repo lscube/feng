@@ -3,7 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 
-int main(void)
+void test_4()
 {
     if (!g_thread_supported ()) g_thread_init (NULL);
 
@@ -40,5 +40,4 @@ int main(void)
 
     bq_producer_unref(prod);
     g_free(buffer);
-    return 0;
 }

@@ -27,13 +27,15 @@ endif
 
 bin_PROGRAMS = feng
 
-BUILT_SOURCES = \
+RAGEL_SOURCES = \
 	src/network/ragel_request_line.c \
 	src/network/ragel_transport.c \
 	src/network/ragel_range.c \
 	src/liberis/headers_parser.c
 
-dist_feng_SOURCES = $(BUILT_SOURCES) \
+BUILT_SOURCES = $(RAGEL_SOURCES)
+
+dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/bufferqueue.c src/bufferqueue.h \
 	src/fnc_log.c src/fnc_log.h \
 	src/incoming.c src/incoming.h \
@@ -123,27 +125,32 @@ include $(top_srcdir)/ragel.make
 CLEANFILES = $(BUILT_SOURCES)
 endif
 
-TESTS = tests/bufferqueue/bq_test-1 \
-	tests/bufferqueue/bq_test-2 \
-	tests/bufferqueue/bq_test-3 \
-	tests/bufferqueue/bq_test-4 \
-	tests/bufferqueue/bq_test-5
+if BUILD_TESTS
+TESTS = tests/testsuite
+
 check_PROGRAMS = $(TESTS)
 
-tests_bufferqueue_bq_test_1_SOURCES = src/bufferqueue.c tests/bufferqueue/bq_test-1.c
-tests_bufferqueue_bq_test_1_CFLAGS = -DFENG_BQ_DEBUG
+BUILT_SOURCES += tests/gtestmain.c
+endif
 
-tests_bufferqueue_bq_test_2_SOURCES = src/bufferqueue.c tests/bufferqueue/bq_test-2.c
-tests_bufferqueue_bq_test_2_CFLAGS = -DFENG_BQ_DEBUG
+tests_testsuite_SOURCES = \
+	src/bufferqueue.c \
+	tests/bufferqueue/test-1.c \
+	tests/bufferqueue/test-2.c \
+	tests/bufferqueue/test-3.c \
+	tests/bufferqueue/test-4.c \
+	tests/bufferqueue/test-5.c
+tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
 
-tests_bufferqueue_bq_test_3_SOURCES = src/bufferqueue.c tests/bufferqueue/bq_test-3.c
-tests_bufferqueue_bq_test_3_CFLAGS = -DFENG_BQ_DEBUG
+dist_tests_testsuite_SOURCES = tests/gtestmain.c
 
-tests_bufferqueue_bq_test_4_SOURCES = src/bufferqueue.c tests/bufferqueue/bq_test-4.c
-tests_bufferqueue_bq_test_4_CFLAGS = -DFENG_BQ_DEBUG
+tests/gtestmain.c: $(tests_testsuite_SOURCES)
+	$(EXUBERANT_CTAGS) -f - --file-scope=no $^ | \
+		sort -k 2 | $(EGREP) '^test_' | \
+		$(GAWK) -f $(srcdir)/tests/genmain.awk \
+		> $@
 
-tests_bufferqueue_bq_test_5_SOURCES = src/bufferqueue.c tests/bufferqueue/bq_test-5.c
-tests_bufferqueue_bq_test_5_CFLAGS = -DFENG_BQ_DEBUG
+EXTRA_DIST = tests/genmain.awk
 
 DISTCLEANFILES = $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = ChangeLog

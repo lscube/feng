@@ -166,6 +166,7 @@ CC_ATTRIBUTE_UNUSED(
 
 LSC_ERRORS
 LSC_DEBUG
+LSC_TESTS
 
 if test "$enable_trace" = "yes"; then
     AC_DEFINE(TRACE, 1,[Trace enabled])
