@@ -284,7 +284,6 @@ typedef struct {
 
 RTSP_Response *rtsp_response_new(const RTSP_Request *req, RTSP_ResponseCode code);
 void rtsp_response_send(RTSP_Response *response);
-void rtsp_response_free(RTSP_Response *response);
 
 /**
  * @brief Create and send a response in a single function call
