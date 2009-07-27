@@ -117,7 +117,7 @@ if LIVE_STREAMING
 dist_feng_SOURCES += src/media/demuxer/demuxer_sd.c
 endif
 
-INCLUDES = -I. -I$(srcdir)/src -I$(srcdir)/src/network
+INCLUDES = -I. -I$(srcdir)/src
 
 if HAVE_RAGEL
 include $(top_srcdir)/ragel.make
