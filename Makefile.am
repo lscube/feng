@@ -122,7 +122,7 @@ INCLUDES = -I. -I$(srcdir)/src -I$(srcdir)/src/nework
 if HAVE_RAGEL
 include $(top_srcdir)/ragel.make
 
-CLEANFILES = $(BUILT_SOURCES)
+CLEANFILES = $(RAGEL_SOURCES)
 endif
 
 if BUILD_TESTS
@@ -131,6 +131,12 @@ TESTS = tests/testsuite
 check_PROGRAMS = $(TESTS)
 
 BUILT_SOURCES += tests/gtestmain.c
+
+tests/gtestmain.c: $(tests_testsuite_SOURCES)
+	$(EXUBERANT_CTAGS) -f - --file-scope=no $^ | \
+		sort -k 2 | $(EGREP) '^test_' | \
+		$(GAWK) -f $(srcdir)/tests/genmain.awk \
+		> $@
 endif
 
 tests_testsuite_SOURCES = \
@@ -143,12 +149,6 @@ tests_testsuite_SOURCES = \
 tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
 
 dist_tests_testsuite_SOURCES = tests/gtestmain.c
-
-tests/gtestmain.c: $(tests_testsuite_SOURCES)
-	$(EXUBERANT_CTAGS) -f - --file-scope=no $^ | \
-		sort -k 2 | $(EGREP) '^test_' | \
-		$(GAWK) -f $(srcdir)/tests/genmain.awk \
-		> $@
 
 EXTRA_DIST = tests/genmain.awk
 
