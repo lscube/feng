@@ -573,8 +573,10 @@ static void bq_producer_destroy_head(BufferQueue_Producer *producer, GList *poin
 
     /* If we reached the end of the queue, consider like it was a new
      * one */
-    if ( g_queue_get_length(producer->queue) == 0 )
+    if ( g_queue_get_length(producer->queue) == 0 ) {
         producer->queue_serial++;
+        producer->next_serial = 1;
+    }
 
     bq_element_free_internal(elem, producer->free_function);
 }
