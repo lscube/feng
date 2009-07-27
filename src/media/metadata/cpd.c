@@ -288,7 +288,7 @@ void cpd_send(RTP_session *session, double now) {
 		packet->Sent = 1;
 
 		char packetLength[MAX_CHARS];
-		sprintf(packetLength, "%d", strlen(packet->Content));
+		sprintf(packetLength, "%zu", strlen(packet->Content));
 
 		Sock_write(md->Socket, "Packet-length: ", 15, NULL, 0);
 		Sock_write(md->Socket, packetLength, strlen(packetLength), NULL, 0);
