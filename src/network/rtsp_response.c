@@ -122,7 +122,7 @@ RTSP_Response *rtsp_response_new(const RTSP_Request *req, RTSP_ResponseCode code
  *
  * @param response The response to free
  */
-void rtsp_response_free(RTSP_Response *response)
+static void rtsp_response_free(RTSP_Response *response)
 {
     g_hash_table_destroy(response->headers);
     if ( response->body )

@@ -36,6 +36,10 @@
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 
+#ifdef HAVE_METADATA
+# include "media/metadata/cpd.h"
+#endif
+
 /*
  * Make sure all the threads get collected
  *
@@ -44,13 +48,9 @@
 
 static void rtp_fill_pool_free(RTP_session *session)
 {
-    Resource *resource = session->track->parent;
-    g_mutex_lock(resource->lock);
-    resource->eor = true;
-    g_mutex_unlock(resource->lock);
-    g_thread_pool_free(session->fill_pool, true, true);
+    GThreadPool *pool = session->fill_pool;
     session->fill_pool = NULL;
-    resource->eor = false;
+    g_thread_pool_free(pool, true, true);
 }
 
 /**
@@ -139,7 +139,9 @@ static void rtp_session_fill_cb(ATTR_UNUSED gpointer unused_data,
     gulong unseen;
     const gulong buffered_frames = resource->srv->srvconf.buffered_frames;
 
-    while ( (unseen = bq_consumer_unseen(consumer)) < buffered_frames ) {
+    while ( g_atomic_int_get(&resource->eor) == 0 &&
+            (unseen = bq_consumer_unseen(consumer)) < buffered_frames &&
+            session->fill_pool != NULL ) {
 #if 0
         fprintf(stderr, "calling read_packet from %p for %p[%s] (%u/%d)\n",
                 session,
@@ -171,7 +173,7 @@ static void rtp_session_fill_cb(ATTR_UNUSED gpointer unused_data,
  */
 static void rtp_session_fill(RTP_session *session)
 {
-    if ( !session->track->parent->eor )
+    if ( g_atomic_int_get(&session->track->parent->eor) == 0 )
         g_thread_pool_push(session->fill_pool,
                            GINT_TO_POINTER(-1), NULL);
 }
@@ -440,7 +442,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
 
 #ifdef HAVE_METADATA
     if (session->metadata)
-        cpd_send(session, now);
+        cpd_send(session, ev_now(loop));
 #endif
     /* If there is no buffer, it means that either the producer
      * has been stopped (as we reached the end of stream) or that
@@ -460,7 +462,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
      * no extra frames we have a problem, since we're going to send
      * one packet at least.
      */
-    if (resource->eor)
+    if (g_atomic_int_get(&resource->eor))
         fnc_log(FNC_LOG_INFO,
             "[%s] end of resource %d packets to be fetched",
             session->track->properties.encoding_name,
@@ -476,7 +478,9 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
             rtcp_send_sr(session, BYE);
             return;
         }
-        next_time += 0.01; // assumed to be enough
+        next_time += 0.03; // assumed to be enough
+        fnc_log(FNC_LOG_VERBOSE, "[%s] nothing to read\n",
+                session->track->properties.encoding_name);
     } else {
         MParserBuffer *next;
         double delivery  = buffer->delivery;
@@ -492,7 +496,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
         if (bq_consumer_move(session->consumer)) {
             next = bq_consumer_get(session->consumer);
             if(delivery != next->delivery) {
-                if (session->track->properties.media_source == MS_live)
+                if (session->track->properties.media_source == LIVE_SOURCE)
                     next_time += next->delivery - delivery;
                 else
                     next_time = session->range->playback_time -
@@ -552,9 +556,13 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
                              RTP_transport *transport, const char *uri,
                              Track *tr) {
     feng *srv = rtsp->srv;
-    RTP_session *rtp_s = g_slice_new0(RTP_session);
-    ev_io *io = &rtp_s->transport.rtcp_reader;
-    ev_periodic *periodic = &rtp_s->transport.rtp_writer;
+    RTP_session *rtp_s;
+    ev_io *io;
+    ev_periodic *periodic;
+
+    rtp_s = g_slice_new0(RTP_session);
+    io = &rtp_s->transport.rtcp_reader;
+    periodic = &rtp_s->transport.rtp_writer;
 
     /* Make sure we start paused since we have to wait for parameters
      * given by @ref rtp_session_resume.
@@ -567,8 +575,9 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
     rtp_s->seq_no = rtp_s->start_seq - 1;
 
     /* Set up the track selector and get a consumer for the track */
+
     rtp_s->track = tr;
-    rtp_s->consumer = bq_consumer_new(tr->producer);
+    rtp_s->consumer = bq_consumer_new(track_get_producer(tr));
 
     rtp_s->srv = srv;
     rtp_s->ssrc = g_random_int();

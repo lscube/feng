@@ -104,5 +104,5 @@ void mparser_buffer_write(Track *tr,
 
     memcpy(buffer->data, data, data_size);
 
-    bq_producer_put(tr->producer, buffer);
+    bq_producer_put(track_get_producer(tr), buffer);
 }

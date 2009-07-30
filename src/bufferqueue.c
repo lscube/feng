@@ -20,10 +20,19 @@
  *
  * */
 
+#define G_LOG_DOMAIN "bufferqueue"
+
 #include "bufferqueue.h"
 
 #include <stdbool.h>
 #include <stdio.h>
+
+/* We don't enable this with !NDEBUG because it's _massive_! */
+#ifdef FENG_BQ_DEBUG
+# define bq_debug(fmt, ...) g_debug("[%s] " fmt, __PRETTY_FUNCTION__, __VA_ARGS__)
+#else
+# define bq_debug(...)
+#endif
 
 /**
  * @defgroup bufferqueue Buffer Queue
@@ -187,13 +196,6 @@ struct BufferQueue_Producer {
      * @note gint is used to be able to use g_atomic_int_get function.
      */
     gint stopped;
-
-    /**
-     * @brief Unique id for shared producer
-     *
-     * @todo switch to a numeric hash
-     */
-    gchar *key;
 };
 
 /**
@@ -234,82 +236,66 @@ struct BufferQueue_Consumer {
     GList *current_element_pointer;
 
     /**
-     * @brief Pointer to the last seen element
+     * @brief Last element serial returned.
      *
-     * Since a producer can change queue, the @ref
-     * BufferQueue_Consumer::current_element_pointer might not be
-     * valid any longer; to make sure that the element is not deleted
-     * before time, a copy of it is kept here.
+     * @brief This is updated at _get and makes sure that we can
+     * distinguish between the situations of "all seen" and "none
+     * seen".
      */
-    BufferQueue_Element *current_element_object;
+    gulong last_element_serial;
 };
 
-/**
- * @brief Global lock
- *
- * It should be held while updating shared producers hash table
- */
-static GMutex *bq_shared_producers_lock;
-
-/**
- * @brief Shared Producers HashTable
- *
- * It holds the reference to producers that will be shared among different
- * consumers
- *
- */
-static GHashTable *bq_shared_producers;
-
-/**
- *  @brief Initialize bufferque global data
- */
-
-void bq_init()
+static inline BufferQueue_Element *GLIST_TO_BQELEM(GList *pointer)
 {
-    bq_shared_producers_lock = g_mutex_new();
-    bq_shared_producers = g_hash_table_new(g_str_hash, g_str_equal);
+    return (BufferQueue_Element*)pointer->data;
 }
 
 /**
- * @brief Create a new producer for the bufferqueue or return one previously
- *        allocated with the same key
+ * @brief Ensures the validity of the current element pointer for the consume
  *
- * @param free_function Function to call when removing buffers from
- *                      the queue.
- * @param key producer's unique id, NULL if not shared.
+ * @param consumer The consumer to verify the pointer of
  *
- * @return A new BufferQueue_Producer object that needs to be freed
- *         with @ref bq_producer_unref.
+ * Call this function whenever current_element_pointer is going to be
+ * used; if any condition happened that would make it unreliable, set
+ * it to NULL.
  */
-BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function,
-                                      gchar *key)
+static void bq_consumer_confirm_pointer(BufferQueue_Consumer *consumer)
 {
-    BufferQueue_Producer *ret = NULL;
+    BufferQueue_Producer *producer = consumer->producer;
+    if ( consumer->current_element_pointer == NULL )
+        return;
 
-    if (key) {
-        g_mutex_lock(bq_shared_producers_lock);
-        ret = g_hash_table_lookup(bq_shared_producers, key);
+    if ( producer->queue_serial != consumer->queue_serial ) {
+        bq_debug("C:%p pointer %p reset PQS:%lu < CQS:%lu",
+                consumer,
+                consumer->current_element_pointer,
+                producer->queue_serial,
+                consumer->queue_serial);
+        consumer->current_element_pointer = NULL;
+        return;
     }
 
-    if (!ret) {
-        ret = g_slice_new0(BufferQueue_Producer);
-
-        ret->lock = g_mutex_new();
-        ret->free_function = free_function;
-        ret->last_consumer = g_cond_new();
-
-        if (key) {
-            ret->key = g_strdup(key);
-            g_hash_table_insert(bq_shared_producers, key, ret);
-        }
-
-        bq_producer_reset_queue(ret);
+    if ( producer->queue->head &&
+         consumer->last_element_serial < GLIST_TO_BQELEM(producer->queue->head)->serial ) {
+        bq_debug("C:%p pointer %p reset LES:%lu:%lu < PQHS:%lu:%lu",
+                consumer,
+                consumer->current_element_pointer,
+                consumer->queue_serial, consumer->last_element_serial,
+                producer->queue_serial,
+                GLIST_TO_BQELEM(producer->queue->head)->serial);
+        consumer->current_element_pointer = NULL;
+        return;
     }
+}
 
-    if (key)
-        g_mutex_unlock(bq_shared_producers_lock);
+static inline BufferQueue_Element *BQ_OBJECT(BufferQueue_Consumer *consumer)
+{
+    bq_consumer_confirm_pointer(consumer);
 
-    return ret;
+    if ( consumer->current_element_pointer == NULL )
+        return NULL;
+
+    return (BufferQueue_Element *)consumer->current_element_pointer->data;
 }
 
 /**
@@ -325,75 +311,45 @@ static void bq_element_free_internal(gpointer elem_generic,
     BufferQueue_Element *const element = (BufferQueue_Element*)elem_generic;
     const GDestroyNotify free_function = (GDestroyNotify)free_func_generic;
 
+    bq_debug("Free object %p payload %p %lu",
+            element,
+            element->payload,
+            element->seen);
     free_function(element->payload);
     g_slice_free(BufferQueue_Element, element);
 }
 
 /**
- * @brief Destroy a producer
+ * @brief Resets a producer's queue (unlocked version)
  *
- * @param producer Producer to destroy.
+ * @param producer Producer to reset the queue of
  *
- * This function recursively destroys all the elements of the
- * producer, included the producer itself.
+ * @internal This function does not lock the producer and should only
+ *           be used by @ref bq_producer_new !
+ * @note This function will require exclusive access to the producer,
+ *       and will thus lock its mutex.
  *
- * @warning This function should only be called when all consumers
- *          have been unregistered. If that's not the case the
- *          function will cause the program to abort.
+ * This function will change the currently-used queue for the
+ * producer, so that a discontinuity will allow the consumers not to
+ * worry about getting old buffers.
  */
-static void bq_producer_free_internal(BufferQueue_Producer *producer) {
-    g_assert_cmpuint(producer->consumers, ==, 0);
-
-    g_mutex_unlock(producer->lock);
-    g_mutex_free(producer->lock);
-
-    if ( producer->key )
-        g_free(producer->key);
-
-    g_cond_free(producer->last_consumer);
+static void bq_producer_reset_queue_internal(BufferQueue_Producer *producer) {
+    bq_debug("Producer %p queue %p queue_serial %lu",
+            producer,
+            producer->queue,
+            producer->queue_serial);
 
     if ( producer->queue ) {
-        /* Destroy elements and the queue */
         g_queue_foreach(producer->queue,
                         bq_element_free_internal,
                         producer->free_function);
+        g_queue_clear(producer->queue);
         g_queue_free(producer->queue);
     }
 
-    g_slice_free(BufferQueue_Producer, producer);
-}
-
-/**
- * @brief Frees a producer
- *
- * @param producer Producer to be freed
- *
- */
-void bq_producer_unref(BufferQueue_Producer *producer) {
-    /* Compatibility with free(3) */
-    if ( producer == NULL )
-        return;
-
-    g_mutex_lock(producer->lock);
-
-    if (producer->consumers) {
-        g_mutex_unlock(producer->lock);
-        return;
-    }
-
-    if(producer->key) {
-        g_mutex_lock(bq_shared_producers_lock);
-        g_hash_table_remove(bq_shared_producers, producer->key);
-        g_mutex_unlock(bq_shared_producers_lock);
-    }
-
-    g_assert(g_atomic_int_get(&producer->stopped) == 0);
-
-    g_atomic_int_set(&producer->stopped, 1);
-
-    /* Ensure we have the exclusive access */
-
-    bq_producer_free_internal(producer);
+    producer->queue = g_queue_new();
+    producer->queue_serial++;
+    producer->next_serial = 1;
 }
 
 /**
@@ -409,25 +365,101 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
  * worry about getting old buffers.
  */
 void bq_producer_reset_queue(BufferQueue_Producer *producer) {
+    bq_debug("Producer %p",
+            producer);
+
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
     g_assert(!producer->stopped);
 
-    if ( producer->queue ) {
-        g_queue_foreach(producer->queue,
-                        bq_element_free_internal,
-                        producer->free_function);
-        g_queue_clear(producer->queue);
-        g_queue_free(producer->queue);
-    }
-
-    producer->queue = g_queue_new();
-    producer->queue_serial++;
-    producer->next_serial = 0;
+    bq_producer_reset_queue_internal(producer);
 
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
+}
+
+/**
+ * @brief Create a new producer for the bufferqueue
+ *
+ * @param free_function Function to call when removing buffers from
+ *                      the queue.
+ *
+ * @return A new BufferQueue_Producer object that needs to be freed
+ *         with @ref bq_producer_unref.
+ */
+BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function)
+{
+
+    BufferQueue_Producer *ret = NULL;
+
+        ret = g_slice_new0(BufferQueue_Producer);
+
+        ret->lock = g_mutex_new();
+        ret->free_function = free_function;
+        ret->last_consumer = g_cond_new();
+
+        bq_producer_reset_queue_internal(ret);
+
+    return ret;
+}
+
+/**
+ * @brief Destroy a producer
+ *
+ * @param producer Producer to destroy.
+ *
+ * This function recursively destroys all the elements of the
+ * producer, included the producer itself.
+ *
+ * @warning This function should only be called when all consumers
+ *          have been unregistered. If that's not the case the
+ *          function will cause the program to abort.
+ */
+static void bq_producer_free_internal(BufferQueue_Producer *producer) {
+    bq_debug("Producer %p",
+            producer);
+
+    g_assert_cmpuint(producer->consumers, ==, 0);
+
+    g_cond_free(producer->last_consumer);
+
+    if ( producer->queue ) {
+        /* Destroy elements and the queue */
+        g_queue_foreach(producer->queue,
+                        bq_element_free_internal,
+                        producer->free_function);
+        g_queue_free(producer->queue);
+    }
+
+    g_mutex_unlock(producer->lock);
+    g_mutex_free(producer->lock);
+
+    g_slice_free(BufferQueue_Producer, producer);
+}
+
+/**
+ * @brief Frees a producer
+ *
+ * @param producer Producer to be freed
+ *
+ */
+void bq_producer_unref(BufferQueue_Producer *producer) {
+    bq_debug("Producer %p",
+            producer);
+
+    /* Compatibility with free(3) */
+    if ( producer == NULL )
+        return;
+
+    /* Ensure we have the exclusive access */
+    g_mutex_lock(producer->lock);
+
+    g_assert(g_atomic_int_get(&producer->stopped) == 0);
+
+    g_atomic_int_set(&producer->stopped, 1);
+
+    bq_producer_free_internal(producer);
 }
 
 /**
@@ -448,7 +480,7 @@ void bq_producer_reset_queue(BufferQueue_Producer *producer) {
 void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     BufferQueue_Element *elem;
 
-    g_assert(payload != NULL);
+    g_assert(payload != NULL && payload != GINT_TO_POINTER(-1));
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
@@ -460,6 +492,9 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
     elem->payload = payload;
     elem->seen = 0;
     elem->serial = producer->next_serial++;
+
+    bq_debug("Payload %p element %p",
+             payload, elem);
 
     g_assert_cmpint(producer->next_serial, !=, 0);
 
@@ -484,6 +519,9 @@ void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
  */
 BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
     BufferQueue_Consumer *ret;
+
+    bq_debug("Producer %p",
+            producer);
 
     if ( g_atomic_int_get(&producer->stopped) == 1 )
         return NULL;
@@ -510,6 +548,40 @@ BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
 }
 
 /**
+ * @brief Destroy the head of the producer queue
+ *
+ * @param producer Producer to destroy the head queue of
+ * @param element element to destroy; this is a safety check
+ */
+static void bq_producer_destroy_head(BufferQueue_Producer *producer, GList *pointer) {
+    BufferQueue_Element *elem = pointer->data;
+
+    bq_debug("P:%p PQH:%p pointer %p",
+             producer,
+             producer->queue->head,
+             pointer);
+
+    /* We can only remove the head of the queue, if we're doing
+     * anything else, something is funky. Ibid if it hasn't been seen
+     * yet.
+     */
+    g_assert(pointer == producer->queue->head);
+    g_assert(elem->seen == producer->consumers);
+
+    /* Remove the element from the queue */
+    g_queue_pop_head(producer->queue);
+
+    /* If we reached the end of the queue, consider like it was a new
+     * one */
+    if ( g_queue_get_length(producer->queue) == 0 ) {
+        producer->queue_serial++;
+        producer->next_serial = 1;
+    }
+
+    bq_element_free_internal(elem, producer->free_function);
+}
+
+/**
  * @brief Remove reference from the current element
  *
  * @param consumer The consumer that has seen the element
@@ -520,35 +592,114 @@ BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
  */
 static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
-    BufferQueue_Element *elem = consumer->current_element_object;
+    BufferQueue_Element *elem;
+    GList *pointer;
+
+    bq_consumer_confirm_pointer(consumer);
+
+    elem = BQ_OBJECT(consumer);
+    pointer = consumer->current_element_pointer;
+
+    bq_debug("C:%p PQS:%lu CQS:%lu pointer %p object %p",
+            consumer,
+            producer->queue_serial,
+            consumer->queue_serial,
+            pointer, elem);
 
     /* If we had no element selected, just get out of here */
     if ( elem == NULL )
         return;
 
-    /* Only deal with the element if it's still the one used by the
-     * producer.
-     */
-    if ( producer->queue_serial != consumer->queue_serial )
-        return;
-
     /* If we're the last one to see the element, we need to take care
      * of removing and freeing it. */
+    bq_debug("C:%p pointer %p object %p payload %p seen %lu consumers %lu PQH:%p",
+            consumer,
+            consumer->current_element_pointer,
+            elem,
+            elem->payload,
+            elem->seen+1,
+            producer->consumers,
+            producer->queue->head);
+
+    /* After unref we have to assume that we cannot access the pointer
+     * _at all_, no matter if we actually removed it or not, otherwise
+     * it wouldn't be an unref, would it? */
+    consumer->current_element_pointer = NULL;
+
     if ( ++elem->seen < producer->consumers )
         return;
 
-    bq_element_free_internal(elem, producer->free_function);
+    bq_debug("C:%p object %p pointer %p next %p prev %p",
+            consumer,
+            pointer->data,
+            pointer,
+            pointer->next,
+            pointer->prev);
 
-    /* Make sure to lose reference to it */
-    consumer->current_element_object = NULL;
+    bq_producer_destroy_head(producer, pointer);
+}
 
-    /* We can only remove the head of the queue, if we're doing
-     * anything else, something is funky.
-     */
-    g_assert(consumer->current_element_pointer == producer->queue->head);
+/**
+ * @brief Actually move to the next element in a consumer
+ *
+ * @retval true The move was successful
+ * @retval false The move wasn't successful.
+ *
+ * @param consumer The consumer object to move
+ */
+static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
+    BufferQueue_Producer *producer = consumer->producer;
 
-    /* Remove the element from the queue */
-    g_queue_pop_head(producer->queue);
+    bq_debug("C:%p LES:%lu:%lu PQHS:%lu:%lu PQH:%p pointer %p",
+            consumer,
+            consumer->queue_serial, consumer->last_element_serial,
+            producer->queue_serial,
+            producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->serial : 0,
+            producer->queue->head,
+            consumer->current_element_pointer);
+
+    bq_consumer_confirm_pointer(consumer);
+
+    if (consumer->current_element_pointer) {
+        bq_debug("C:%p pointer %p object %p next %p prev %p",
+                consumer,
+                consumer->current_element_pointer,
+                consumer->current_element_pointer->data,
+                consumer->current_element_pointer->next,
+                consumer->current_element_pointer->prev);
+        GList *next = consumer->current_element_pointer->next;
+
+        /* If there is any element at all saved, we take care of marking
+         * it as seen. We don't have to check if it's non-NULL since the
+         * function takes care of that. We _have_ to do this after we
+         * found the new "next" pointer.
+         */
+        bq_consumer_elem_unref(consumer);
+
+        consumer->current_element_pointer = next;
+    } else if ( consumer->queue_serial != producer->queue_serial ) {
+        consumer->current_element_pointer = producer->queue->head;
+    } else {
+        GList *elem = producer->queue->head;
+        bq_debug("C:%p PQH:%p",
+                consumer,
+                producer->queue->head);
+
+        while ( elem != NULL &&
+                GLIST_TO_BQELEM(elem)->serial <= consumer->last_element_serial )
+            elem = elem->next;
+
+        consumer->current_element_pointer = elem;
+    }
+
+    /* Now we have a new "next" element and we can set it properly */
+    if ( consumer->current_element_pointer ) {
+        if ( consumer->queue_serial != producer->queue_serial )
+            consumer->last_element_serial = 0;
+        consumer->queue_serial = producer->queue_serial;
+    }
+
+    return ( consumer->current_element_pointer != NULL );
 }
 
 /**
@@ -571,6 +722,10 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
+    bq_debug("C:%p pointer %p",
+            consumer,
+            consumer->current_element_pointer);
+
     /* We should never come to this point, since we are expected to
      * have symmetry between new and free calls, but just to be on the
      * safe side, make sure this never happens.
@@ -591,80 +746,55 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
                             producer->free_function);
             g_queue_clear(producer->queue);
         }
-    } else if ( consumer->current_element_object != NULL ) {
-        /* If we haven't removed the current selected element, it
-         * means that we have to decrease the seen count for all the
-         * elements before it.
-         */
+    } else {
+        bq_debug("C:%p LES:%lu:%lu PQH:%p PQHS:%lu:%lu",
+                consumer,
+                consumer->queue_serial, consumer->last_element_serial,
+                producer->queue->head,
+                producer->queue_serial,
+                producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->serial: 0);
+        if ( consumer->last_element_serial != 0 &&
+                consumer->queue_serial == producer->queue_serial &&
+                producer->queue->head != NULL &&
+                GLIST_TO_BQELEM(producer->queue->head)->serial <= consumer->last_element_serial ) {
+        GList *it = producer->queue->head;
+        BufferQueue_Element *elem;
 
-        GList *it = consumer->current_element_pointer;
-        do {
-            BufferQueue_Element *elem = (BufferQueue_Element*)(it->data);
+        g_assert_cmpuint(GLIST_TO_BQELEM(producer->queue->tail)->serial, >=, consumer->last_element_serial);
 
-            /* If we were the last one to see this we would have
-             * deleted it, since we haven't, we expect that there will
-             * be at least another consumer waiting on it.
-             *
-             * But let's be safe and assert this.
-             */
-            g_assert_cmpuint(elem->seen, <=, producer->consumers);
+        bq_debug("C:%p decrementing elements till serial %lu",
+                consumer,
+                consumer->last_element_serial);
 
-            elem->seen--;
-        } while ( (it = it->prev) != NULL );
-    }
+        /* If we have a NULL current pointer, we're at the end of the
+         * queue waiting for something new (are we sure about it? :|)
+         * so we'll decrease the whole queue! */
+        while ( it != NULL &&
+                (elem = GLIST_TO_BQELEM(it))->serial <= consumer->last_element_serial ) {
+            bq_debug("C:%p decrementing counter for pointer %p object %p serial %lu seen %lu/%lu",
+                    consumer,
+                    it,
+                    elem,
+                    elem->serial,
+                    elem->seen,
+                    producer->consumers);
+
+            /* we've got to have seen it! */
+            g_assert_cmpuint(elem->seen, >, 0);
+
+            if ( --elem->seen == producer->consumers )
+                bq_producer_destroy_head(producer, it);
+            else
+                g_assert_cmpuint(elem->seen, <, producer->consumers);
+
+            it = it->next;
+        }
+    }}
 
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
 
     g_slice_free(BufferQueue_Consumer, consumer);
-}
-
-/**
- * @brief Actually move to the next element in a consumer
- *
- * @retval true The move was successful
- * @retval false The move wasn't successful.
- *
- * @param consumer The consumer object to move
- */
-static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
-    BufferQueue_Producer *producer = consumer->producer;
-    GList *expected_next = NULL;
-
-    if ( (producer->queue_serial != consumer->queue_serial) ||
-         (!consumer->current_element_pointer)  ) {
-        /* If the last used queue does not correspond to the current
-         * producer's queue, we have to take the head of the new
-         * queue.
-         *
-         * This also hits at the first request, since the local
-         * queue_serial will be zero (while the first queue gets
-         * serial 1).
-         */
-        expected_next = producer->queue->head;
-    } else if ( consumer->current_element_pointer ) {
-        expected_next = consumer->current_element_pointer->next;
-
-        /* If there is any element at all saved, we take care of marking
-         * it as seen. We don't have to check if it's non-NULL since the
-         * function takes care of that. We _have_ to do this after we
-         * found the new "next" pointer.
-         */
-        bq_consumer_elem_unref(consumer);
-    }
-
-    /* Now we have a new "next" element and we can set it properly */
-    consumer->queue_serial = producer->queue_serial;
-    consumer->current_element_pointer = expected_next;
-    if ( expected_next == NULL ) {
-        consumer->current_element_object = NULL;
-        return false;
-    }
-
-    consumer->current_element_object =
-        (BufferQueue_Element *)consumer->current_element_pointer->data;
-
-    return true;
 }
 
 /**
@@ -682,7 +812,7 @@ gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     gulong unseen;
 
-    if ( g_atomic_int_get(&producer->stopped) )
+    if (!producer || g_atomic_int_get(&producer->stopped) )
         return 0;
 
     /* Ensure we have the exclusive access */
@@ -691,13 +821,10 @@ gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
     if ( consumer->queue_serial != producer->queue_serial ) {
         unseen = producer->next_serial;
     } else {
-        unseen = producer->next_serial;
-
-        if ( consumer->current_element_object != NULL ) {
-            g_assert_cmpint(unseen, >, consumer->current_element_object->serial);
-            unseen -= consumer->current_element_object->serial;
-        } else if (!producer->queue->head){
+        if (!producer->queue->head) {
             unseen = 0;
+        } else {
+            unseen = producer->next_serial - consumer->last_element_serial;
         }
     }
 
@@ -725,6 +852,10 @@ gboolean bq_consumer_move(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
     gboolean ret;
 
+    bq_debug("(before) C:%p pointer %p",
+            consumer,
+            consumer->current_element_pointer);
+
     if ( g_atomic_int_get(&producer->stopped) )
         return false;
 
@@ -732,6 +863,10 @@ gboolean bq_consumer_move(BufferQueue_Consumer *consumer) {
     g_mutex_lock(producer->lock);
 
     ret = bq_consumer_move_internal(consumer);
+
+    bq_debug("(after) C:%p pointer %p",
+            consumer,
+            consumer->current_element_pointer);
 
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
@@ -760,33 +895,44 @@ gboolean bq_consumer_move(BufferQueue_Consumer *consumer) {
  */
 gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
-    gpointer ret = NULL;
+    BufferQueue_Element *element = NULL;
 
     if ( g_atomic_int_get(&producer->stopped) )
         return NULL;
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
+    bq_debug("C:%p LES:%lu:%lu PQHS:%lu:%lu PQH:%p pointer %p",
+             consumer,
+             consumer->queue_serial, consumer->last_element_serial,
+             producer->queue_serial,
+             producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->serial : 0,
+             producer->queue->head,
+             consumer->current_element_pointer);
+
+    bq_consumer_confirm_pointer(consumer);
 
     /* If we don't have a queue yet, like for the first read, “move
      * next” (or rather first).
      */
-    if ( consumer->queue_serial != producer->queue_serial ||
-         consumer->current_element_object == NULL ) {
-        if ( !bq_consumer_move_internal(consumer) ) {
+    if ( consumer->current_element_pointer == NULL &&
+         !bq_consumer_move_internal(consumer) )
             goto end;
-        }
-    }
 
-    /* Get the payload of the element */
-    if (consumer->current_element_object)
-        ret = consumer->current_element_object->payload;
+    element = (BufferQueue_Element*)(consumer->current_element_pointer->data);
+    consumer->last_element_serial = element->serial;
 
+    bq_debug("C:%p pointer %p object %p payload %p seen %lu/%lu",
+            consumer,
+            consumer->current_element_pointer,
+            element,
+            element->payload,
+            element->seen,
+            producer->consumers);
  end:
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
-
-    return ret;
+    return element ? element->payload : NULL;
 }
 
 /**

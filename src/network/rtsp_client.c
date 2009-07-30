@@ -89,7 +89,7 @@ static void check_if_any_rtp_session_timedout(gpointer element,
      * this will happen if we are not receiving any more from live producer or
      * if the stored stream ended.
      */
-    if ((session->track->properties.media_source == MS_live) &&
+    if ((session->track->properties.media_source == LIVE_SOURCE) &&
         (now - session->last_packet_send_time) >= LIVE_STREAM_BYE_TIMEOUT) {
         fnc_log(FNC_LOG_INFO, "[client] Soft stream timeout");
         rtcp_send_sr(session, BYE);

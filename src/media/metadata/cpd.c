@@ -20,12 +20,15 @@
  *
  * */
 
-#ifdef HAVE_CONFIG
+#ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
+#include <string.h>
 #include <sys/select.h>
 #include "fnc_log.h"
+#include "network/rtp.h"
+#include "network/rtsp.h"
 #include "cpd.h"
 
 // it must be the last header to be included
@@ -101,7 +104,7 @@ void cpd_find_request(feng *srv, Resource *res, char *filename) {
     g_hash_table_iter_init (&iter, clients);
     while (g_hash_table_iter_next (&iter, &key, &value)) {
 	CPDMetadata *md = value;
-	if (!strncmp(filename, md->Filename, min(sizeof(filename), sizeof(md->Filename)))) {
+	if (!strncmp(filename, md->Filename, MIN(sizeof(filename), sizeof(md->Filename)))) {
 	    fnc_log(FNC_LOG_INFO, "[CPD] Metadata request found");
 	    res->metadata = md;
 	} else {
@@ -262,7 +265,8 @@ int cpd_connection_alive (RTP_session *session, Sock *socket) {
 void cpd_send(RTP_session *session, double now) {
 
     //fnc_log(FNC_LOG_INFO,"[CPD] Streaming Metadata: playing time %f", now - session->start_time + session->seek_time);
-    double timestamp = now - session->start_time + session->seek_time;
+    double timestamp = now + session->range->playback_time -
+                       session->range->begin_time;
     CPDMetadata *md = session->metadata;
     GList *i;
 
@@ -284,7 +288,7 @@ void cpd_send(RTP_session *session, double now) {
 		packet->Sent = 1;
 
 		char packetLength[MAX_CHARS];
-		sprintf(packetLength, "%d", strlen(packet->Content));
+		sprintf(packetLength, "%zu", strlen(packet->Content));
 
 		Sock_write(md->Socket, "Packet-length: ", 15, NULL, 0);
 		Sock_write(md->Socket, packetLength, strlen(packetLength), NULL, 0);
@@ -391,7 +395,7 @@ void *cpd_server(void *args) {
 		    // receiving data
 		    fnc_log(FNC_LOG_INFO, "[CPD] Metadata Request received");
 
-		    if (strncmp(buffer, "REQUEST ", min(sizeof(buffer), 8))) {
+		    if (strncmp(buffer, "REQUEST ", MIN(sizeof(buffer), 8))) {
 			// Command not recognized
 			fnc_log(FNC_LOG_INFO, "[CPD] Invalid request");
 			fnc_log(FNC_LOG_INFO, "[CPD] Closing connection on socket : %d\n", Sock_fd(md->Socket));

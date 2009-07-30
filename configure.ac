@@ -25,7 +25,7 @@ dnl These extensions are needed to have struct ip_mreq for multicast support.
 AC_CANONICAL_HOST
 AS_CASE([$host_os],
 	[darwin*], [CPPFLAGS="${CPPFLAGS} -D_DARWIN_C_SOURCE"],
-	[freebsd7*], [CPPFLAGS="${CPPFLAGS} -D__BSD_VISIBLE=1"])
+	[freebsd[78]*], [CPPFLAGS="${CPPFLAGS} -D__BSD_VISIBLE=1"])
 
 AC_CONFIG_HEADER([config.h])
 
@@ -48,6 +48,10 @@ AC_ARG_WITH(max-session,
 AC_ARG_ENABLE(libavformat,
     AS_HELP_STRING([--enable-libavformat], [enable ffmpeg's libavformat support (default=yes)]),,
         enable_ffmpeg="yes")
+
+AC_ARG_ENABLE(live-streaming,
+    AS_HELP_STRING([--enable-live-streaming], [enable support for live streaming (default=yes)]),,
+        live_streaming="yes")
 
 AC_CHECK_HEADERS([ev.h], [
   AC_CHECK_LIB([ev], [ev_io_start],, [have_libev=no])], [have_libev=no])
@@ -109,12 +113,11 @@ CPPFLAGS="$CPPFLAGS $LIBNETEMBRYO_CFLAGS"
 LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 
 dnl Check for prerequisites to enable live streaming with flux.
-live_streaming=yes
-
-AC_SEARCH_LIBS([mq_open], [rt],
+AS_IF([test "x$live_streaming" = "xyes"],
+    [AC_SEARCH_LIBS([mq_open], [rt],
                [AC_DEFINE(LIVE_STREAMING, [1],
                           [Define this if live streaming is supported])],
-               [live_streaming=no])
+               [live_streaming=no])])
 
 AM_CONDITIONAL([LIVE_STREAMING], [test "x$live_streaming" = "xyes"])
 
@@ -163,6 +166,7 @@ CC_ATTRIBUTE_UNUSED(
 
 LSC_ERRORS
 LSC_DEBUG
+LSC_TESTS
 
 if test "$enable_trace" = "yes"; then
     AC_DEFINE(TRACE, 1,[Trace enabled])
@@ -260,7 +264,6 @@ AM_CONDITIONAL([CHANGELOG_REGEN], [test "x$GIT" = "xyes"])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([src/Makefile])
 AC_CONFIG_FILES([etc/feng.conf])
 AC_CONFIG_FILES([etc/feng-uninstalled.conf])
 AC_CONFIG_FILES([Doxyfile])

@@ -28,7 +28,9 @@
 #define ERROR -1
 #define WARNING 1
 
+#include "media/demuxer.h"
 #include "network/rtp.h"
+#include "feng.h"
 
 typedef struct {
     double Timestamp;
