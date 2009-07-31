@@ -112,6 +112,19 @@ AC_DEFUN([LSC_SYSTEM_EXTENSIONS], [
     [freebsd[[78]]*], [CPPFLAGS="${CPPFLAGS} -D__BSD_VISIBLE=1"])
 ])
 
+AC_DEFUN([LSC_GIT_CHANGELOG], [
+  AC_MSG_CHECKING([whether we need git to generate ChangeLog])
+  AS_IF([test -f "$srcdir/ChangeLog"],
+    [AC_MSG_RESULT([no, we're good])],
+    [AC_MSG_RESULT([yes])
+     AC_CHECK_PROG([GIT], [git], [yes], [no])
+     AS_IF([test "x$GIT" = "xno"],
+       [AC_MSG_ERROR([You need git to use a git snapshot!])])
+    ])
+
+  AM_CONDITIONAL([CHANGELOG_REGEN], [test "x$GIT" = "xyes"])
+])
+
 AC_DEFUN([LSC_INIT], [
   m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
   AM_MAINTAINER_MODE
@@ -128,4 +141,5 @@ AC_DEFUN([LSC_INIT], [
   LSC_ERRORS
   LSC_DEBUG
   LSC_TESTS
+  LSC_GIT_CHANGELOG
 ])
