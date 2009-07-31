@@ -5,8 +5,6 @@ AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip foreign subdir-objects])
 LSC_INIT
 
-AC_PROG_RANLIB
-
 AC_CONFIG_HEADER([config.h])
 
 AC_ARG_WITH(rtsp-port,
