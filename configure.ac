@@ -25,7 +25,7 @@ dnl These extensions are needed to have struct ip_mreq for multicast support.
 AC_CANONICAL_HOST
 AS_CASE([$host_os],
 	[darwin*], [CPPFLAGS="${CPPFLAGS} -D_DARWIN_C_SOURCE"],
-	[freebsd[78]*], [CPPFLAGS="${CPPFLAGS} -D__BSD_VISIBLE=1"])
+	[freebsd[[78]]*], [CPPFLAGS="${CPPFLAGS} -D__BSD_VISIBLE=1"])
 
 AC_CONFIG_HEADER([config.h])
 
