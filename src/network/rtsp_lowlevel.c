@@ -27,7 +27,7 @@
 #include "fnc_log.h"
 #include "feng_utils.h"
 
-#ifdef HAVE_SCTP
+#ifdef ENABLE_SCTP
 # include <netinet/sctp.h>
 #endif
 
@@ -49,7 +49,7 @@ static int rtsp_sock_read(RTSP_Client *rtsp, int *stream, char *buffer, int size
 {
     Sock *sock = rtsp->sock;
     int n;
-#ifdef HAVE_SCTP
+#ifdef ENABLE_SCTP
     struct sctp_sndrcvinfo sctp_info;
     if (Sock_type(sock) == SCTP) {
         memset(&sctp_info, 0, sizeof(sctp_info));
@@ -58,7 +58,7 @@ static int rtsp_sock_read(RTSP_Client *rtsp, int *stream, char *buffer, int size
         fnc_log(FNC_LOG_DEBUG,
             "Sock_read() received %d bytes from sctp stream %d\n", n, stream);
     } else    // RTSP protocol is TCP
-#endif    // HAVE_SCTP
+#endif    // ENABLE_SCTP
 
     n = Sock_read(sock, buffer, size, NULL, 0);
 

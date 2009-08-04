@@ -16,7 +16,7 @@ AC_DEFUN([LSC_CHECK_SCTP], [
         AC_SEARCH_LIBS([sctp_recvmsg], [sctp], [
           SCTP_LIBS="${LIBS%${save_LIBS}}"
 	  have_sctp=yes
-	  AC_DEFINE([HAVE_SCTP], [1], [Define this if you have libsctp])
+	  AC_DEFINE([ENABLE_SCTP], [1], [Define this if you have libsctp])
 	])
 	LIBS="$save_LIBS"
 	],
@@ -32,5 +32,5 @@ AC_DEFUN([LSC_CHECK_SCTP], [
 
   AC_SUBST([SCTP_LIBS])
 
-  AM_CONDITIONAL([HAVE_SCTP], [test "x$have_sctp" = "xyes"])
+  AM_CONDITIONAL([ENABLE_SCTP], [test "x$have_sctp" = "xyes"])
 ])
