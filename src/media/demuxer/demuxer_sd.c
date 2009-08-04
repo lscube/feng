@@ -372,7 +372,7 @@ static int sd_init(Resource * r)
 
         track->parser = &demuxer_sd_fake_mediaparser;
         track->private_data = g_slice_new0(mqd_t);
-        *((mqd_t*)(track->private_data)) = -1;
+        *((mqd_t*)(track->private_data)) = (mqd_t)(-1);
 
         if ( fmtp_val ) {
             track_add_sdp_field(track, fmtp, fmtp_val);
@@ -428,9 +428,9 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     ssize_t msg_len;
     int marker;
 
-    if ( *mpd < 0 &&
+    if ( *mpd == (mqd_t)-1 &&
          (*mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN,
-                         O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) < 0) {
+                         O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) == (mqd_t)-1) {
         fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
                 tr->info->mrl, strerror(errno));
         return RESOURCE_OK;
@@ -441,7 +441,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     /* Check if there are available packets, if it is empty flux might have recreated it */
     if (!attr.mq_curmsgs) {
         mq_close(*mpd);
-        *mpd = -1;
+        *mpd = (mqd_t)-1;
         usleep(30);
         return RESOURCE_OK;
     }
@@ -459,7 +459,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
             g_free(msg_buffer);
 
             mq_close(*mpd);
-            *mpd = -1;
+            *mpd = (mqd_t)-1;
 
             return RESOURCE_OK;
         }
