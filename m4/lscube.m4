@@ -28,11 +28,13 @@ AC_DEFUN([LSC_DEBUG], [
   AC_REQUIRE([LSC_MUDFLAP])
 
   dnl Check for warning flags, always
-  CC_CHECK_CFLAGS_APPEND([-Wall -Wwrite-strings])
+  CC_CHECK_CFLAGS_APPEND([-Wall -Wwrite-strings -fdiagnostics-show-option])
   dnl Only enable the best of the two
   CC_CHECK_CFLAGS_APPEND([-Wformat=2 -Wformat], [break;])
   dnl The new style is likely going to be the only supported one in the future
-  CC_CHECK_CFLAGS_APPEND([-Werror=implicit -Werror-implicit-declaration],
+  CC_CHECK_CFLAGS_APPEND([-Werror=implicit ]dnl
+                         [-Werror=implicit-function-declaration ]dnl
+                         [-Werror-implicit-function-declaration],
                          [break;])
   dnl Make sure that there are no random return values
   CC_CHECK_CFLAGS_APPEND([-Werror=return-type -Wreturn-type], [break;])
@@ -100,8 +102,8 @@ AC_DEFUN([LSC_SYSTEM_EXTENSIONS], [
   AC_REQUIRE([AC_USE_SYSTEM_EXTENSIONS])
   AC_REQUIRE([AC_CANONICAL_HOST])
 
-  dnl Force usage of POSIX.1-2001 (clock_gettime)
-  CPPFLAGS="${CPPFLAGS} -D_POSIX_C_SOURCE=200112L"
+  dnl Force usage of POSIX.1-2001, and X/Open Interfaces
+  CPPFLAGS="${CPPFLAGS} -D_POSIX_C_SOURCE=200112L -D_XOPEN_SOURCE=600"
 
   dnl Enable some further OS-specific extensions that AC_USE_SYSTEM_EXTENSIONS
   dnl does not enable at least up to autoconf 2.64.
