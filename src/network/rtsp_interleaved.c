@@ -27,7 +27,7 @@
 #include "rtp.h"
 #include "fnc_log.h"
 
-#ifdef HAVE_SCTP
+#ifdef ENABLE_SCTP
 # include <netinet/sctp.h>
 #endif
 
@@ -106,7 +106,7 @@ static void interleaved_read_tcp_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
 }
 
-#ifdef HAVE_SCTP
+#ifdef ENABLE_SCTP
 static void interleaved_read_sctp_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
                                      ATTR_UNUSED int revents)
 {
@@ -139,7 +139,7 @@ interleaved_setup_callbacks(RTSP_Client *rtsp, RTSP_interleaved *intlvd)
         case TCP:
             cb = interleaved_read_tcp_cb;
         break;
-#ifdef HAVE_SCTP
+#ifdef ENABLE_SCTP
         case SCTP:
             cb = interleaved_read_sctp_cb;
         break;
