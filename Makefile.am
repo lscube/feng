@@ -33,9 +33,12 @@ RAGEL_SOURCES = \
 	src/network/ragel_range.c \
 	src/liberis/headers_parser.c
 
-BUILT_SOURCES = $(RAGEL_SOURCES)
+BUILT_SOURCES = $(RAGEL_SOURCES) \
+	src/network/rfc822proto.c \
+	src/network/rfc822proto.h
 
 dist_feng_SOURCES = $(RAGEL_SOURCES) \
+	\
 	src/bufferqueue.c src/bufferqueue.h \
 	src/fnc_log.c src/fnc_log.h \
 	src/incoming.c src/incoming.h \
@@ -67,6 +70,8 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/liberis/utils.c src/liberis/utils.h \
 	\
 	src/network/ragel_parsers.h \
+	src/network/rfc822proto.c \
+	src/network/rfc822proto.h \
 	src/network/rtcp.c \
 	src/network/rtp.c network/rtp.h \
 	src/network/rtp_port.c \
@@ -115,6 +120,15 @@ endif
 if LIVE_STREAMING
 dist_feng_SOURCES += src/media/demuxer/demuxer_sd.c
 endif
+
+src/network/rfc822proto.c: src/network/rfc822proto-source.xsl src/network/rfc822proto.xml
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+
+src/network/rfc822proto.h: src/network/rfc822proto-header.xsl src/network/rfc822proto.xml
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+
+src/network/rfc822proto-statemachine.rl: src/network/rfc822proto-statemachine.xsl src/network/rfc822proto.xml
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
 
 INCLUDES = -I. -I$(srcdir)/src
 

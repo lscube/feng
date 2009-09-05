@@ -146,6 +146,14 @@ if test "$enable_trace" = "yes"; then
     AC_DEFINE(TRACE, 1,[Trace enabled])
 fi
 
+AC_ARG_VAR([XSLTPROC], [A libxslt-compatible XSLT processor command])
+AS_IF([test "x$XSLTPROC" = "x"], [
+  AC_CHECK_PROGS([XSLTPROC], [xsltproc])
+  AS_IF([test "x$XSLTPROC" = "x"], [
+    AC_MSG_ERROR([unable to find xsltproc, you need this to build feng])
+  ])
+])
+
 fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot|sed -e "s:/\+:/:g; s:NONE::g")
 
 AC_SUBST(fenice_avroot_dir)

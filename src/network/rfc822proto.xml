@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rfc288proto>
+  <supportedproto name="RTSP">
+    <supportedversion>1.0</supportedversion>
+
+    <supportedmethod>DESCRIBE</supportedmethod>
+    <supportedmethod>OPTIONS</supportedmethod>
+    <supportedmethod>PAUSE</supportedmethod>
+    <supportedmethod>PLAY</supportedmethod>
+    <supportedmethod>SETUP</supportedmethod>
+    <supportedmethod>TEARDOWN</supportedmethod>
+
+    <supportedheader>Allow</supportedheader>
+    <supportedheader>CSeq</supportedheader>
+    <supportedheader>Content-Base</supportedheader>
+    <supportedheader>Content-Length</supportedheader>
+    <supportedheader>Content-Type</supportedheader>
+    <supportedheader>Date</supportedheader>
+    <supportedheader>Proxy-Require</supportedheader>
+    <supportedheader>Public</supportedheader>
+    <supportedheader>RTP-Info</supportedheader>
+    <supportedheader>Range</supportedheader>
+    <supportedheader>Referer</supportedheader>
+    <supportedheader>Require</supportedheader>
+    <supportedheader>Server</supportedheader>
+    <supportedheader>Session</supportedheader>
+    <supportedheader>Timestamp</supportedheader>
+    <supportedheader>Transport</supportedheader>
+    <supportedheader>Unsupported</supportedheader>
+    <supportedheader>User-Agent</supportedheader>
+  </supportedproto>
+</rfc288proto>

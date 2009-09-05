@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsl:stylesheet version="1.0"
+		xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:output omit-xml-declaration="yes" method="text" />
+
+  <xsl:variable name="lowercase">abcdefghijklmnopqrstuvwxyz</xsl:variable>
+  <xsl:variable name="uppercase">ABCDEFGHIJKLMNOPQRSTUVWXYZ</xsl:variable>
+
+  <xsl:template match="/">
+    <xsl:text><![CDATA[
+/* Automatically-generated code, do not modify! */
+
+typedef enum RFC822_Protocols {
+    RFC822_Protocol_Unsupported = -1,
+]]></xsl:text>
+    
+    <xsl:for-each select="supportedproto">
+      <xsl:for-each select="supportedversion">
+	<xsl:text>    RFC822_Protocol_</xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:value-of select="translate(., '.', '')" />
+	<xsl:text><![CDATA[,
+]]></xsl:text>
+      </xsl:for-each>
+
+      <xsl:text>    RFC822_Protocol_</xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_UnsupportedVersion,
+]]></xsl:text>
+    </xsl:for-each>
+    
+    <xsl:text><![CDATA[
+} RFC822_Protocols;
+
+]]></xsl:text>
+
+    <xsl:for-each select="//supportedproto">
+      <xsl:text>typedef enum </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Methods {
+]]></xsl:text>
+
+      <xsl:text>    </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Method__Unsupported,
+]]></xsl:text>
+      
+      <xsl:for-each select="supportedmethod">
+	<xsl:text>    </xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:text>_Method_</xsl:text>
+	<xsl:value-of select="." />
+	<xsl:text><![CDATA[,
+]]></xsl:text>
+      </xsl:for-each>
+
+    <xsl:text><![CDATA[
+} ]]></xsl:text>
+    <xsl:value-of select="@name" />
+    <xsl:text><![CDATA[_Methods;
+
+]]></xsl:text>
+
+      <xsl:text>typedef enum </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Headers {
+]]></xsl:text>
+
+      <xsl:text>    </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Header__Unsupported,
+]]></xsl:text>
+
+      <xsl:for-each select="supportedheader">
+	<xsl:text>    </xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:text>_Header_</xsl:text>
+	<xsl:value-of select="translate(., '-', '_')" />
+	<xsl:text><![CDATA[,
+]]></xsl:text>
+      </xsl:for-each>
+
+    <xsl:text><![CDATA[
+} ]]></xsl:text>
+    <xsl:value-of select="@name" />
+    <xsl:text><![CDATA[_Headers;
+
+]]></xsl:text>
+
+    <xsl:text>const char *</xsl:text>
+    <xsl:value-of select="translate(@name, $uppercase, $lowercase)" />
+    <xsl:text>_header_to_string(</xsl:text>
+    <xsl:value-of select="@name" />
+    <xsl:text>_Headers hdr);</xsl:text>
+
+    </xsl:for-each>
+  </xsl:template>
+</xsl:stylesheet>
+
+
