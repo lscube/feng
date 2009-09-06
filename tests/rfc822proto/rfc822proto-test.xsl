@@ -51,7 +51,7 @@
       <xsl:value-of select="@name" />
       <xsl:text><![CDATA[_Method . 0;
 
-    write data noerror;
+    write data noerror nofinal;
     write init;
     write exec;
 }%%
@@ -147,7 +147,7 @@ void test_]]></xsl:text>
       <xsl:value-of select="@name" />
       <xsl:text><![CDATA[_Header_Name . 0;
 
-    write data noerror;
+    write data noerror nofinal;
     write init;
     write exec;
 }%%
