@@ -12,6 +12,7 @@
     <xsl:text><![CDATA[
 /* Automatically-generated code, do not modify! */
 
+#include <string.h>
 #include <glib.h>
 #include "rfc822proto.h"
 
@@ -21,11 +22,43 @@
       <xsl:variable name="proto_lower"
 		    select="translate(@name, $uppercase, $lowercase)" />
 
-      <xsl:text>extern </xsl:text>
+      <xsl:text>static </xsl:text>
       <xsl:value-of select="@name" />
       <xsl:text>_Method </xsl:text>
       <xsl:value-of select="$proto_lower" />
-      <xsl:text>_method_str_to_enum(const char*);</xsl:text>
+      <xsl:text><![CDATA[_method_str_to_enum(const char *str) {
+]]></xsl:text>
+
+      <xsl:text>    </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text>_Method method_code = </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Method__Invalid;
+]]></xsl:text>
+
+      <xsl:text><![CDATA[
+    const char *p = str, *pe = p + strlen(str) + 1;
+    int cs;
+
+%%{
+    machine ]]></xsl:text>
+      <xsl:value-of select="$proto_lower" />
+      <xsl:text><![CDATA[_method_tokenizer;
+
+    include RFC822Proto "rfc822proto-statemachine.rl";
+
+    main := ]]></xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Method . 0;
+
+    write data noerror;
+    write init;
+    write exec;
+}%%
+
+    return method_code;
+}
+]]></xsl:text>
 
       <xsl:text><![CDATA[
 
@@ -85,67 +118,43 @@ void test_]]></xsl:text>
 }
 ]]></xsl:text>
 
-      <exslt:document href="{$proto_lower}-method.rl"
-		      encoding="UTF-8" method="text">
-	<xsl:text><![CDATA[
-/* Automatically generated file, do not modify.
- * The next line is used to propely clean up the generated files at
- * distclean time, so please ignore it. Thanks.
- *
- * please_delete_me_on_distclean
- */
-
-#include <string.h>
-#include "rfc822proto.h"
-
+      <xsl:text>static </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text>_Header </xsl:text>
+      <xsl:value-of select="$proto_lower" />
+      <xsl:text><![CDATA[_header_str_to_enum(const char *str) {
 ]]></xsl:text>
 
-	<xsl:text>%% machine </xsl:text>
-	<xsl:value-of select="$proto_lower" />
-	<xsl:text><![CDATA[_method_tokenizer;
-
+      <xsl:text>    </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text>_Header header_code = </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Header__Invalid;
 ]]></xsl:text>
 
-	<xsl:text><![CDATA[%% include RFC822Proto "rfc822proto-statemachine.rl";
-]]></xsl:text>
-
-	<xsl:value-of select="@name" />
-	<xsl:text>_Method </xsl:text>
-	<xsl:value-of select="$proto_lower" />
-	<xsl:text><![CDATA[_method_str_to_enum(const char *str) {
-]]></xsl:text>
-
-	<xsl:text>    </xsl:text>
-	<xsl:value-of select="@name" />
-	<xsl:text>_Method method_code = </xsl:text>
-	<xsl:value-of select="@name" />
-	<xsl:text><![CDATA[_Method__Invalid;
-]]></xsl:text>
-
-	<xsl:text><![CDATA[
+      <xsl:text><![CDATA[
     const char *p = str, *pe = p + strlen(str) + 1;
     int cs;
 
 %%{
+    machine ]]></xsl:text>
+      <xsl:value-of select="$proto_lower" />
+      <xsl:text><![CDATA[_header_tokenizer;
+
+    include RFC822Proto "rfc822proto-statemachine.rl";
+
     main := ]]></xsl:text>
-	<xsl:value-of select="@name" />
-	<xsl:text><![CDATA[_Method . 0;
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Header_Name . 0;
 
     write data noerror;
     write init;
     write exec;
 }%%
 
-    return method_code;
+    return header_code;
 }
 ]]></xsl:text>
-      </exslt:document>
-
-      <xsl:text>extern </xsl:text>
-      <xsl:value-of select="@name" />
-      <xsl:text>_Header </xsl:text>
-      <xsl:value-of select="$proto_lower" />
-      <xsl:text>_header_str_to_enum(const char*);</xsl:text>
 
       <xsl:text><![CDATA[
 
@@ -228,62 +237,6 @@ void test_]]></xsl:text>
       <xsl:text><![CDATA[
 }
 ]]></xsl:text>
-
-      <exslt:document href="{$proto_lower}-header.rl"
-		      encoding="UTF-8" method="text">
-	<xsl:text><![CDATA[
-/* Automatically generated file, do not modify.
- * The next line is used to propely clean up the generated files at
- * distclean time, so please ignore it. Thanks.
- *
- * please_delete_me_on_distclean
- */
-
-#include <string.h>
-#include "rfc822proto.h"
-
-]]></xsl:text>
-
-	<xsl:text>%% machine </xsl:text>
-	<xsl:value-of select="$proto_lower" />
-	<xsl:text><![CDATA[_header_tokenizer;
-
-]]></xsl:text>
-
-	<xsl:text><![CDATA[%% include RFC822Proto "rfc822proto-statemachine.rl";
-]]></xsl:text>
-
-	<xsl:value-of select="@name" />
-	<xsl:text>_Header </xsl:text>
-	<xsl:value-of select="$proto_lower" />
-	<xsl:text><![CDATA[_header_str_to_enum(const char *str) {
-]]></xsl:text>
-
-	<xsl:text>    </xsl:text>
-	<xsl:value-of select="@name" />
-	<xsl:text>_Header header_code = </xsl:text>
-	<xsl:value-of select="@name" />
-	<xsl:text><![CDATA[_Header__Invalid;
-]]></xsl:text>
-
-	<xsl:text><![CDATA[
-    const char *p = str, *pe = p + strlen(str) + 1;
-    int cs;
-
-%%{
-    main := ]]></xsl:text>
-	<xsl:value-of select="@name" />
-	<xsl:text><![CDATA[_Header_Name . 0;
-
-    write data noerror;
-    write init;
-    write exec;
-}%%
-
-    return header_code;
-}
-]]></xsl:text>
-      </exslt:document>
 
     </xsl:for-each>
   </xsl:template>

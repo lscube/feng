@@ -130,14 +130,10 @@ src/network/rfc822proto.h: src/network/rfc822proto-header.xsl src/network/rfc822
 src/network/rfc822proto-statemachine.rl: src/network/rfc822proto-statemachine.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
 
-tests/rfc822proto/rfc822proto-test.c: tests/rfc822proto/rfc822proto-test.xsl src/network/rfc822proto.xml
+tests/rfc822proto/rfc822proto-test.rl: tests/rfc822proto/rfc822proto-test.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
 
-RFC822_TEST_SOURCES = \
-	tests/rfc822proto/rtsp-method.c \
-	tests/rfc822proto/rtsp-header.c
-
-$(RFC822_TEST_SOURCES): src/network/rfc822proto-statemachine.rl
+tests/rfc822proto/rfc822proto-test.c: src/network/rfc822proto-statemachine.rl
 
 INCLUDES = -I. -I$(srcdir)/src
 
@@ -174,8 +170,7 @@ tests_testsuite_SOURCES = \
 	tests/bufferqueue/test-3.c \
 	tests/bufferqueue/test-4.c \
 	tests/bufferqueue/test-5.c \
-	tests/rfc822proto/rfc822proto-test.c \
-	$(RFC822_TEST_SOURCES)
+	tests/rfc822proto/rfc822proto-test.c
 
 tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG -Isrc/network
 
