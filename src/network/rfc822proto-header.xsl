@@ -17,7 +17,7 @@ typedef enum RFC822_Protocols {
     RFC822_Protocol_Unsupported = -1,
 ]]></xsl:text>
     
-    <xsl:for-each select="supportedproto">
+    <xsl:for-each select="//supportedproto">
       <xsl:for-each select="supportedversion">
 	<xsl:text>    RFC822_Protocol_</xsl:text>
 	<xsl:value-of select="../@name" />
