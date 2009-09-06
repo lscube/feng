@@ -20,7 +20,7 @@
     <xsl:for-each select="//supportedproto">
       <xsl:text>    </xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_Methods = (
+      <xsl:text><![CDATA[_Method = (
 ]]></xsl:text>
       <xsl:for-each select="supportedmethod">
 	<xsl:text>        '</xsl:text>

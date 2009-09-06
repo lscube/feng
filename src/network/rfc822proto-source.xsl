@@ -20,7 +20,7 @@
       <xsl:value-of select="translate(@name, $uppercase, $lowercase)" />
       <xsl:text>_header_to_string(</xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_Headers hdr) {
+      <xsl:text><![CDATA[_Header hdr) {
     static const char *const header_names[] = {
 ]]></xsl:text>
 

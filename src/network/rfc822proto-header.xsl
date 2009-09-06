@@ -40,7 +40,7 @@ typedef enum RFC822_Protocols {
     <xsl:for-each select="//supportedproto">
       <xsl:text>typedef enum </xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_Methods {
+      <xsl:text><![CDATA[_Method {
 ]]></xsl:text>
 
       <xsl:text>    </xsl:text>
@@ -60,13 +60,13 @@ typedef enum RFC822_Protocols {
     <xsl:text><![CDATA[
 } ]]></xsl:text>
     <xsl:value-of select="@name" />
-    <xsl:text><![CDATA[_Methods;
+    <xsl:text><![CDATA[_Method;
 
 ]]></xsl:text>
 
       <xsl:text>typedef enum </xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_Headers {
+      <xsl:text><![CDATA[_Header {
 ]]></xsl:text>
 
       <xsl:text>    </xsl:text>
@@ -86,7 +86,7 @@ typedef enum RFC822_Protocols {
     <xsl:text><![CDATA[
 } ]]></xsl:text>
     <xsl:value-of select="@name" />
-    <xsl:text><![CDATA[_Headers;
+    <xsl:text><![CDATA[_Header;
 
 ]]></xsl:text>
 
@@ -94,7 +94,7 @@ typedef enum RFC822_Protocols {
     <xsl:value-of select="translate(@name, $uppercase, $lowercase)" />
     <xsl:text>_header_to_string(</xsl:text>
     <xsl:value-of select="@name" />
-    <xsl:text>_Headers hdr);</xsl:text>
+    <xsl:text>_Header hdr);</xsl:text>
 
     </xsl:for-each>
 
