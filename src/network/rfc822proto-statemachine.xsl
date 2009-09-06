@@ -44,7 +44,7 @@
 ]]></xsl:text>
     </xsl:for-each>
 
-    <xsl:text><![CDATA[        (/[A-Z]+/ . '/' . digit . "." . digit) > ( protocol_code, 0 )
+    <xsl:text><![CDATA[        ([A-Z]+ . '/' . digit . "." . digit) > ( protocol_code, 0 )
 	      % { protocol_code = RFC822_Protocol_Unsupported; }
     );
 
