@@ -29,7 +29,7 @@
       <xsl:for-each select="supportedversion">
 	<xsl:text>            '</xsl:text>
 	<xsl:value-of select="." />
-	<xsl:text><![CDATA[' > ( protocol_code 3, )
+	<xsl:text><![CDATA[' > ( protocol_code, 3 )
 		% { protocol_code = RFC822_Protocol_]]></xsl:text>
 	<xsl:value-of select="../@name" />
 	<xsl:value-of select="translate(., '.', '')" />
