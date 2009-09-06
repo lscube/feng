@@ -11,6 +11,10 @@
 /* Automatically-generated code, do not modify! */
 
 %%{
+    machine RFC822Proto;
+
+    include common "common.rl";
+
 ]]></xsl:text>
 
     <xsl:for-each select="//supportedproto">
