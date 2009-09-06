@@ -45,7 +45,7 @@ typedef enum RFC822_Protocols {
 
       <xsl:text>    </xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_Method__Unsupported,
+      <xsl:text><![CDATA[_Method__Unsupported = -1,
 ]]></xsl:text>
       
       <xsl:for-each select="supportedmethod">
@@ -71,7 +71,7 @@ typedef enum RFC822_Protocols {
 
       <xsl:text>    </xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_Header__Unsupported,
+      <xsl:text><![CDATA[_Header__Unsupported = -1,
 ]]></xsl:text>
 
       <xsl:for-each select="supportedheader">
