@@ -133,7 +133,11 @@ src/network/rfc822proto-statemachine.rl: src/network/rfc822proto-statemachine.xs
 tests/rfc822proto/rfc822proto-test.c: tests/rfc822proto/rfc822proto-test.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
 
-tests/rfc822proto/rtsp-method.c: src/network/rfc822proto-statemachine.rl
+RFC822_TEST_SOURCES = \
+	tests/rfc822proto/rtsp-method.c \
+	tests/rfc822proto/rtsp-header.c
+
+$(RFC822_TEST_SOURCES): src/network/rfc822proto-statemachine.rl
 
 INCLUDES = -I. -I$(srcdir)/src
 
@@ -152,7 +156,8 @@ check_PROGRAMS = $(TESTS)
 
 BUILT_SOURCES += tests/gtestmain.c \
 	tests/rfc822proto/rfc822proto-test.c \
-	tests/rfc822proto/rtsp-method.c
+	tests/rfc822proto/rtsp-method.c \
+	tests/rfc822proto/rtsp-header.c
 
 tests/gtestmain.c: $(tests_testsuite_SOURCES)
 	@$(mkdir_p) $(dir $@)
@@ -170,7 +175,8 @@ tests_testsuite_SOURCES = \
 	tests/bufferqueue/test-4.c \
 	tests/bufferqueue/test-5.c \
 	tests/rfc822proto/rfc822proto-test.c \
-	tests/rfc822proto/rtsp-method.c
+	$(RFC822_TEST_SOURCES)
+
 tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG -Isrc/network
 
 dist_tests_testsuite_SOURCES = tests/gtestmain.c
