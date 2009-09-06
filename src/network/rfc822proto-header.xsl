@@ -10,6 +10,9 @@
     <xsl:text><![CDATA[
 /* Automatically-generated code, do not modify! */
 
+#ifndef RFC822PROTO_H__
+#define RFC822PROTO_H__
+
 typedef enum RFC822_Protocols {
     RFC822_Protocol_Unsupported = -1,
 ]]></xsl:text>
@@ -94,6 +97,11 @@ typedef enum RFC822_Protocols {
     <xsl:text>_Headers hdr);</xsl:text>
 
     </xsl:for-each>
+
+    <xsl:text><![CDATA[
+
+#endif /* RFC822PROTO_H__ */
+]]></xsl:text>
   </xsl:template>
 </xsl:stylesheet>
 
