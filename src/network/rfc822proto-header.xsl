@@ -34,7 +34,7 @@ typedef enum RFC822_Protocol {
     </xsl:for-each>
     
     <xsl:text><![CDATA[
-} RFC822_Protocols;
+} RFC822_Protocol;
 
 ]]></xsl:text>
 
