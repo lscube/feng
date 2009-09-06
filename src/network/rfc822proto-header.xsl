@@ -13,7 +13,7 @@
 #ifndef RFC822PROTO_H__
 #define RFC822PROTO_H__
 
-typedef enum RFC822_Protocols {
+typedef enum RFC822_Protocol {
     RFC822_Protocol_Unsupported = -1,
 ]]></xsl:text>
     
