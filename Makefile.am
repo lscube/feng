@@ -130,7 +130,14 @@ src/network/rfc822proto.h: src/network/rfc822proto-header.xsl src/network/rfc822
 src/network/rfc822proto-statemachine.rl: src/network/rfc822proto-statemachine.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
 
+tests/rfc822proto/rfc822proto-test.c: tests/rfc822proto/rfc822proto-test.xsl src/network/rfc822proto.xml
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+
+tests/rfc822proto/rtsp-method.c: src/network/rfc822proto-statemachine.rl
+
 INCLUDES = -I. -I$(srcdir)/src
+
+AM_RAGELFLAGS = -I$(srcdir)/src/network -Isrc/network
 
 if HAVE_RAGEL
 include $(top_srcdir)/ragel.make
@@ -143,7 +150,9 @@ TESTS = tests/testsuite
 
 check_PROGRAMS = $(TESTS)
 
-BUILT_SOURCES += tests/gtestmain.c
+BUILT_SOURCES += tests/gtestmain.c \
+	tests/rfc822proto/rfc822proto-test.c \
+	tests/rfc822proto/rtsp-method.c
 
 tests/gtestmain.c: $(tests_testsuite_SOURCES)
 	@$(mkdir_p) $(dir $@)
@@ -159,8 +168,10 @@ tests_testsuite_SOURCES = \
 	tests/bufferqueue/test-2.c \
 	tests/bufferqueue/test-3.c \
 	tests/bufferqueue/test-4.c \
-	tests/bufferqueue/test-5.c
-tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
+	tests/bufferqueue/test-5.c \
+	tests/rfc822proto/rfc822proto-test.c \
+	tests/rfc822proto/rtsp-method.c
+tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG -Isrc/network
 
 dist_tests_testsuite_SOURCES = tests/gtestmain.c
 
