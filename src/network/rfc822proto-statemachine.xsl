@@ -17,6 +17,39 @@
 
 ]]></xsl:text>
 
+    <xsl:text><![CDATA[
+    RFC822_Protocol = (
+]]></xsl:text>
+
+    <xsl:for-each select="//supportedproto">
+      <xsl:text>        '</xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[/' > ( protocol_code, 2 ) . (
+]]></xsl:text>
+      <xsl:for-each select="supportedversion">
+	<xsl:text>            '</xsl:text>
+	<xsl:value-of select="." />
+	<xsl:text><![CDATA[' > ( protocol_code 3, )
+		% { protocol_code = RFC822_Protocol_]]></xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:value-of select="translate(., '.', '')" />
+	<xsl:text><![CDATA[; } |
+]]></xsl:text>
+      </xsl:for-each>
+      <xsl:text><![CDATA[            (digit . "." . digit) > ( protocol_code, 1 )
+		% { protocol_code = RFC822_Protocol_]]></xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_UnsupportedVersion; }
+	) |
+]]></xsl:text>
+    </xsl:for-each>
+
+    <xsl:text><![CDATA[        (/[A-Z]+/ . '/' . digit . "." . digit) > ( protocol_code, 0 )
+	      % { protocol_code = RFC822_Protocol_Unsupported; }
+    );
+
+]]></xsl:text>
+
     <xsl:for-each select="//supportedproto">
       <xsl:text>    </xsl:text>
       <xsl:value-of select="@name" />
