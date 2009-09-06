@@ -16,8 +16,65 @@
 #include <glib.h>
 #include "rfc822proto.h"
 
+static RFC822_Protocol rfc822_protocol_str_to_enum(const char *str) {
+    RFC822_Protocol protocol_code = RFC822_Protocol_Invalid;
+    const char *p = str, *pe = p + strlen(str) + 1;
+    int cs;
+
+%%{
+    machine rfc822_protocoL_tokenizer;
+
+    include RFC822Proto "rfc822proto-statemachine.rl";
+
+    main := RFC822_Protocol . 0;
+
+    write data noerror nofinal;
+    write init;
+    write exec;
+}%%
+
+    return protocol_code;
+}
+
+void test_rfc822_tokenizer() {
 ]]></xsl:text>
-    
+
+    <xsl:for-each select="//supportedproto">
+      <xsl:for-each select="supportedversion">
+	<xsl:text>    g_assert_cmpint(rfc822_protocol_str_to_enum("</xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:text>/</xsl:text>
+	<xsl:value-of select="." />
+	<xsl:text>"), ==, RFC822_Protocol_</xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:value-of select="translate(., '.', '')" />
+	<xsl:text><![CDATA[);
+]]></xsl:text>
+      </xsl:for-each>
+
+	<xsl:text>    g_assert_cmpint(rfc822_protocol_str_to_enum("</xsl:text>
+	<xsl:value-of select="@name" />
+	<xsl:text>/9.9"), ==, RFC822_Protocol_</xsl:text>
+	<xsl:value-of select="@name" />
+	<xsl:text><![CDATA[_UnsupportedVersion);
+]]></xsl:text>
+
+	<xsl:text>    g_assert_cmpint(rfc822_protocol_str_to_enum("</xsl:text>
+	<xsl:value-of select="@name" />
+	<xsl:text><![CDATA[/X.Y"), ==, RFC822_Protocol_Invalid);
+]]></xsl:text>
+    </xsl:for-each>
+
+    <xsl:text><![CDATA[
+
+    g_assert_cmpint(rfc822_protocol_str_to_enum("FOOBAR/1.1"), ==, RFC822_Protocol_Unsupported);
+    g_assert_cmpint(rfc822_protocol_str_to_enum("FOOBAR/A.B"), ==, RFC822_Protocol_Invalid);
+    g_assert_cmpint(rfc822_protocol_str_to_enum("FoObAr/1.1"), ==, RFC822_Protocol_Invalid);
+    g_assert_cmpint(rfc822_protocol_str_to_enum("FoObAr-1.1"), ==, RFC822_Protocol_Invalid);
+}
+
+]]></xsl:text>
+
     <xsl:for-each select="//supportedproto">
       <xsl:variable name="proto_lower"
 		    select="translate(@name, $uppercase, $lowercase)" />
