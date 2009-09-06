@@ -135,7 +135,7 @@ tests/rfc822proto/rfc822proto-test.rl: tests/rfc822proto/rfc822proto-test.xsl sr
 
 tests/rfc822proto/rfc822proto-test.c: src/network/rfc822proto-statemachine.rl
 
-INCLUDES = -I. -I$(srcdir)/src
+INCLUDES = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network
 
 AM_RAGELFLAGS = -I$(srcdir)/src/network -Isrc/network
 
@@ -170,7 +170,7 @@ tests_testsuite_SOURCES = \
 	tests/bufferqueue/test-5.c \
 	tests/rfc822proto/rfc822proto-test.c
 
-tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG -Isrc/network
+tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
 
 dist_tests_testsuite_SOURCES = tests/gtestmain.c
 
