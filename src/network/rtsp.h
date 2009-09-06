@@ -34,6 +34,8 @@
 #include <netembryo/rtsp.h>
 #include <netembryo/url.h>
 
+#include "rfc822proto.h"
+
 struct feng;
 struct Resource;
 struct RTP_transport;
@@ -159,27 +161,6 @@ typedef struct RTSP_Client {
 void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents);
 
 /**
- * @brief RTSP method tokens
- *
- * They are used to identify in which state of the state machines we
- * are.
- */
-enum RTSP_method_token {
-  RTSP_ID_ERROR = ERR_GENERIC,
-  RTSP_ID_DESCRIBE,
-  RTSP_ID_ANNOUNCE,
-  RTSP_ID_GET_PARAMETERS,
-  RTSP_ID_OPTIONS,
-  RTSP_ID_PAUSE,
-  RTSP_ID_PLAY,
-  RTSP_ID_RECORD,
-  RTSP_ID_REDIRECT,
-  RTSP_ID_SETUP,
-  RTSP_ID_SET_PARAMETER,
-  RTSP_ID_TEARDOWN
-};
-
-/**
  * @brief Structure representing an incoming request
  *
  * This structure is used to access all the data related to a request
@@ -191,17 +172,28 @@ typedef struct {
     RTSP_Client *client;
 
     /**
-     * @brief String representing the method used
-     *
-     * Mostly used for logging purposes.
-     */
-    char *method;
-    /**
      * @brief Machine-readable ID of the method
      *
      * Used by the state machine to choose the callback method.
      */
-    enum RTSP_method_token method_id;
+    enum RTSP_Method method;
+
+    /**
+     * @brief Machine-readable protocol used for the request
+     *
+     * Holds the value sent by the client in the request line for the
+     * protocol version; for now we only support RTSP/1.0, but in the
+     * future we're going to add RTSP/2.0 and HTTP support (for
+     * QuickTime proxy-passthrough streaming).
+     */
+    RFC822_Protocol protocol;
+
+    /**
+     * @brief Method used for the request
+     *
+     * Logged here for access.log handling
+     */
+    char *method_str;
 
     /**
      * @brief Object of the request
@@ -213,16 +205,11 @@ typedef struct {
     char *object;
 
     /**
-     * @brief Protocol version used
+     * @brief Protocol string used for the request
      *
-     * This can only be RTSP/1.0 right now. We log it here for access.log and to
-     * remove more logic from the parser itself.
-     *
-     * @todo This could be HTTP/1.0 or 1.1 when requests come from
-     *       QuickTime's proxy-passthrough. Currently that is not the
-     *       case though.
+     * Logged here for access.log handling
      */
-    char *version;
+    char *protocol_str;
 
     /**
      * @brief All the headers of the request, unparsed.

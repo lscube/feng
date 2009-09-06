@@ -29,46 +29,34 @@ size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Reque
     int cs;
     const char *p = msg, *pe = p + length + 1, *s = NULL, *eof = pe;
 
-    /* We want to express clearly which versions we support, so that we
-     * can return right away if an unsupported one is found.
-     */
+    /* Map the variable used by the state machine directly into the
+     * RTSP_Request structure so we avoid temporary variables. */
+    #define method_code req->method
+    #define protocol_code req->protocol
 
     %%{
-        SP = ' ';
-        CRLF = "\r\n";
+
+        include RFC822Proto "rfc822proto-statemachine.rl";
 
         action set_s {
             s = p;
         }
 
         action end_method {
-            req->method = g_strndup(s, p-s);
+            req->method_str = g_strndup(s, p-s);
         }
 
-        Supported_Method =
-            "DESCRIBE" % { req->method_id = RTSP_ID_DESCRIBE; } |
-            "OPTIONS" % { req->method_id = RTSP_ID_OPTIONS; } |
-            "PAUSE" % { req->method_id = RTSP_ID_PAUSE; } |
-            "PLAY" % { req->method_id = RTSP_ID_PLAY; } |
-            "SETUP" % { req->method_id = RTSP_ID_SETUP; } |
-            "TEARDOWN" % { req->method_id = RTSP_ID_TEARDOWN; };
-
-        Method = (Supported_Method | alpha+ )
-            > set_s % end_method;
-
-        action end_version {
-            req->version = g_strndup(s, p-s);
+        action end_protocol {
+            req->protocol_str = g_strndup(s, p-s);
         }
-
-        Version = (alpha+ . '/' . [0-9] '.' [0-9]);
 
         action end_object {
             req->object = g_strndup(s, p-s);
         }
 
-        Request_Line = (Supported_Method | Method) . SP
+        Request_Line = RTSP_Method > set_s % end_method . SP
             (print*) > set_s % end_object . SP
-            Version > set_s % end_version . CRLF;
+            RFC822_Protocol > set_s % end_protocol . CRLF;
 
         Header = (alpha|'-')+  . ':' . SP . print+ . CRLF;
 

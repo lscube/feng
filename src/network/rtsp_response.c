@@ -180,8 +180,8 @@ static void rtsp_log_access(RTSP_Response *response)
     fprintf(stderr, "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",
             response->client->sock->remote_host,
             (const char*)g_hash_table_lookup(response->headers, eris_hdr_date),
-            response->request->method, response->request->object,
-            response->request->version,
+            response->request->method_str, response->request->object,
+            response->request->protocol_str,
             response->status, response_length ? response_length : "-",
             referer ? referer : "-",
             useragent ? useragent : "-");

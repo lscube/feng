@@ -80,9 +80,9 @@ static void rtsp_free_request(RTSP_Request *req)
     if ( req->headers )
         g_hash_table_destroy(req->headers);
 
-    g_free(req->version);
-    g_free(req->method);
+    g_free(req->method_str);
     g_free(req->object);
+    g_free(req->protocol_str);
     g_slice_free(RTSP_Request, req);
 }
 
@@ -179,7 +179,8 @@ static RTSP_Request *rtsp_parse_request(RTSP_Client *rtsp)
         request_line_length, headers_length;
 
     req->client = rtsp;
-    req->method_id = RTSP_ID_ERROR;
+    req->method = RTSP_Method__Invalid;
+    req->protocol = RFC822_Protocol_Invalid;
 
     request_line_length = ragel_parse_request_line(message_data, message_length, req);
 
@@ -204,7 +205,7 @@ static RTSP_Request *rtsp_parse_request(RTSP_Client *rtsp)
      *       for supporting the QuickTime tunneling of RTP/RTSP over
      *       HTTP proxy we have to accept (limited) HTTP requests too.
      */
-    if ( strcmp(req->version, "RTSP/1.0") != 0 ) {
+    if ( req->protocol != RFC822_Protocol_RTSP10 ) {
         rtsp_quick_response(req, RTSP_VersionNotSupported);
         goto error;
     }
@@ -226,7 +227,7 @@ static RTSP_Request *rtsp_parse_request(RTSP_Client *rtsp)
     }
 
     /* Check if the method is a know and supported one */
-    if ( req->method_id == RTSP_ID_ERROR ) {
+    if ( req->method == RTSP_Method__Invalid ) {
         rtsp_quick_response(req, RTSP_NotImplemented);
         goto error;
     }
@@ -405,12 +406,12 @@ static rtsp_rcvd_status RTSP_full_msg_rcvd(RTSP_Client * rtsp,
 static void rtsp_handle_request(RTSP_Client *rtsp)
 {
     static const rtsp_method_function methods[] = {
-        [RTSP_ID_DESCRIBE] = RTSP_describe,
-        [RTSP_ID_SETUP]    = RTSP_setup,
-        [RTSP_ID_TEARDOWN] = RTSP_teardown,
-        [RTSP_ID_OPTIONS]  = RTSP_options,
-        [RTSP_ID_PLAY]     = RTSP_play,
-        [RTSP_ID_PAUSE]    = RTSP_pause
+        [RTSP_Method_DESCRIBE] = RTSP_describe,
+        [RTSP_Method_SETUP]    = RTSP_setup,
+        [RTSP_Method_TEARDOWN] = RTSP_teardown,
+        [RTSP_Method_OPTIONS]  = RTSP_options,
+        [RTSP_Method_PLAY]     = RTSP_play,
+        [RTSP_Method_PAUSE]    = RTSP_pause
     };
 
     RTSP_Request *req = rtsp_parse_request(rtsp);
@@ -420,7 +421,7 @@ static void rtsp_handle_request(RTSP_Client *rtsp)
     /* We're safe to use the array of functions since rtsp_parse_request() takes
      * care of responding with an error if the method is not implemented.
      */
-    methods[req->method_id](rtsp, req);
+    methods[req->method](rtsp, req);
 
     rtsp_free_request(req);
 }
