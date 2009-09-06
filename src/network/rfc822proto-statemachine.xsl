@@ -25,7 +25,7 @@
       <xsl:for-each select="supportedmethod">
 	<xsl:text>        '</xsl:text>
 	<xsl:value-of select="." />
-	<xsl:text>' % { method_code = </xsl:text>
+	<xsl:text>' > (method_code, 2) % { method_code = </xsl:text>
 	<xsl:value-of select="../@name" />
 	<xsl:text>_Method_</xsl:text>
 	<xsl:value-of select="." />
@@ -33,7 +33,9 @@
 ]]></xsl:text>
       </xsl:for-each>
 
-      <xsl:text><![CDATA[         unreserved+
+      <xsl:text>         unreserved+ > (method_code, 1)  % { method_code = </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Method__Unsupported; }
     );
 ]]></xsl:text>
 
@@ -53,7 +55,9 @@
 ]]></xsl:text>
       </xsl:for-each>
 
-      <xsl:text><![CDATA[         unreserved+
+      <xsl:text>         unreserved+ % { method_code = </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Header__Unsupported; }
     );
 ]]></xsl:text>
     </xsl:for-each>

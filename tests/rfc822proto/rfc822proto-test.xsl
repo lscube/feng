@@ -45,7 +45,41 @@ void test_]]></xsl:text>
 	<xsl:value-of select="translate(., '-', '_')" />
 	<xsl:text><![CDATA[);
 ]]></xsl:text>
+
+	<xsl:text>    g_assert_cmpint(</xsl:text>
+	<xsl:value-of select="$proto_lower" />
+	<xsl:text>_method_str_to_enum("</xsl:text>
+	<xsl:value-of select="translate(., 'AEIOU', 'XXXXX')" />
+	<xsl:text>"), ==, </xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:text>_Method__Unsupported</xsl:text>
+	<xsl:text><![CDATA[);
+]]></xsl:text>
+
+	<xsl:text>    g_assert_cmpint(</xsl:text>
+	<xsl:value-of select="$proto_lower" />
+	<xsl:text>_method_str_to_enum("</xsl:text>
+	<xsl:value-of select="." />
+	<xsl:text>%%TEST"), ==, </xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:text>_Method__Invalid</xsl:text>
+	<xsl:text><![CDATA[);
+]]></xsl:text>
       </xsl:for-each>
+
+	<xsl:text>    g_assert_cmpint(</xsl:text>
+	<xsl:value-of select="$proto_lower" />
+	<xsl:text>_method_str_to_enum("XXTESTXX"), ==, </xsl:text>
+	<xsl:value-of select="@name" />
+	<xsl:text><![CDATA[_Method__Unsupported);
+]]></xsl:text>
+
+	<xsl:text>    g_assert_cmpint(</xsl:text>
+	<xsl:value-of select="$proto_lower" />
+	<xsl:text>_method_str_to_enum("%%TEST%%"), ==, </xsl:text>
+	<xsl:value-of select="@name" />
+	<xsl:text><![CDATA[_Method__Invalid);
+]]></xsl:text>
 
       <xsl:text><![CDATA[
 }
@@ -85,7 +119,7 @@ void test_]]></xsl:text>
 	<xsl:value-of select="@name" />
 	<xsl:text>_Method method_code = </xsl:text>
 	<xsl:value-of select="@name" />
-	<xsl:text><![CDATA[_Method__Unsupported;
+	<xsl:text><![CDATA[_Method__Invalid;
 ]]></xsl:text>
 
 	<xsl:text><![CDATA[

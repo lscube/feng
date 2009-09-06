@@ -45,6 +45,11 @@ typedef enum RFC822_Protocols {
 
       <xsl:text>    </xsl:text>
       <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Method__Invalid = -1,
+]]></xsl:text>
+
+      <xsl:text>    </xsl:text>
+      <xsl:value-of select="@name" />
       <xsl:text><![CDATA[_Method__Unsupported = -1,
 ]]></xsl:text>
       
@@ -67,6 +72,11 @@ typedef enum RFC822_Protocols {
       <xsl:text>typedef enum </xsl:text>
       <xsl:value-of select="@name" />
       <xsl:text><![CDATA[_Header {
+]]></xsl:text>
+
+      <xsl:text>    </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Header__Invalid = -1,
 ]]></xsl:text>
 
       <xsl:text>    </xsl:text>
