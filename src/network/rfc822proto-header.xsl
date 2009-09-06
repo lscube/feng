@@ -17,7 +17,7 @@ typedef enum RFC822_Protocol {
     RFC822_Protocol_Invalid = -2,
     RFC822_Protocol_Unsupported = -1,
 ]]></xsl:text>
-    
+
     <xsl:for-each select="//supportedproto">
       <xsl:for-each select="supportedversion">
 	<xsl:text>    RFC822_Protocol_</xsl:text>
@@ -32,7 +32,7 @@ typedef enum RFC822_Protocol {
       <xsl:text><![CDATA[_UnsupportedVersion,
 ]]></xsl:text>
     </xsl:for-each>
-    
+
     <xsl:text><![CDATA[
 } RFC822_Protocol;
 
@@ -53,7 +53,7 @@ typedef enum RFC822_Protocol {
       <xsl:value-of select="@name" />
       <xsl:text><![CDATA[_Method__Unsupported = -1,
 ]]></xsl:text>
-      
+
       <xsl:for-each select="supportedmethod">
 	<xsl:text>    </xsl:text>
 	<xsl:value-of select="../@name" />
@@ -115,5 +115,3 @@ typedef enum RFC822_Protocol {
 ]]></xsl:text>
   </xsl:template>
 </xsl:stylesheet>
-
-
