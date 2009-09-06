@@ -151,9 +151,7 @@ TESTS = tests/testsuite
 check_PROGRAMS = $(TESTS)
 
 BUILT_SOURCES += tests/gtestmain.c \
-	tests/rfc822proto/rfc822proto-test.c \
-	tests/rfc822proto/rtsp-method.c \
-	tests/rfc822proto/rtsp-header.c
+	tests/rfc822proto/rfc822proto-test.c
 
 tests/gtestmain.c: $(tests_testsuite_SOURCES)
 	@$(mkdir_p) $(dir $@)
