@@ -47,7 +47,7 @@
       <xsl:for-each select="supportedheader">
 	<xsl:text>        '</xsl:text>
 	<xsl:value-of select="." />
-	<xsl:text>'i % { hdr_code = </xsl:text>
+	<xsl:text>'i > (header_code, 2) % { header_code = </xsl:text>
 	<xsl:value-of select="../@name" />
 	<xsl:text>_Header_</xsl:text>
 	<xsl:value-of select="translate(., '-', '_')" />
@@ -55,7 +55,7 @@
 ]]></xsl:text>
       </xsl:for-each>
 
-      <xsl:text>         unreserved+ % { method_code = </xsl:text>
+      <xsl:text>         unreserved+ > (header_code, 1) % { header_code = </xsl:text>
       <xsl:value-of select="@name" />
       <xsl:text><![CDATA[_Header__Unsupported; }
     );
