@@ -188,7 +188,12 @@ static void rtsp_handle_request(RTSP_Request *req)
 }
 
 static gboolean RTSP_handle_interleaved(RTSP_Client *rtsp) {
-    uint16_t length = (uint16_t)(rtsp->input->data[2]) << 8 | rtsp->input->data[3];
+    uint16_t length;
+
+    if ( rtsp->input->len < 4 )
+        return false;
+
+    length = (uint16_t)(rtsp->input->data[2]) << 8 | rtsp->input->data[3];
 
     g_assert_cmpint(rtsp->input->data[0], ==, '$');
 
@@ -207,6 +212,9 @@ static gboolean RTSP_handle_interleaved(RTSP_Client *rtsp) {
 }
 
 static gboolean RTSP_handle_new(RTSP_Client *rtsp) {
+    if ( rtsp->input->len < 1 )
+        return false;
+
     if ( rtsp->input->data[0] == '$' ) {
         rtsp->status = Parser_Interleaved;
         return RTSP_handle_interleaved(rtsp);
@@ -275,6 +283,8 @@ static gboolean RTSP_handle_content(RTSP_Client *rtsp) {
     }
 
     rtsp_handle_request(rtsp->pending_request);
+
+    rtsp->status = Parser_Empty;
     return true;
 }
 
@@ -289,6 +299,5 @@ void RTSP_handler(RTSP_Client * rtsp)
         [Parser_Interleaved] = RTSP_handle_interleaved
     };
 
-    while ( rtsp->input->len > 0 &&
-            handlers[rtsp->status](rtsp) );
+    while ( handlers[rtsp->status](rtsp) );
 }
