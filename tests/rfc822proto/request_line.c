@@ -22,17 +22,21 @@
 
 #include "rtsp.h"
 
-#define ragel_parse_constant_request_line(line, req) \
-    ragel_parse_request_line(line, sizeof(line)-1, req)
+#define ragel_parse_constant_request_line()                 \
+    ragel_parse_request_line(line, sizeof(line)-1, &req)
+
+#define line_len                                \
+    (strstr(line, "\r\n") - line + 2)
 
 void test_request_line_rtsp10()
 {
     size_t resval;
     RTSP_Request req;
+    static const char line[] = "PLAY rtsp://host/object RTSP/1.0\r\n";
 
-    resval = ragel_parse_constant_request_line("PLAY rtsp://host/object RTSP/1.0\n", &req);
+    resval = ragel_parse_constant_request_line();
 
-    g_assert_cmpint(resval, >, 0);
+    g_assert_cmpint(resval, ==, line_len);
     g_assert_cmpint(req.method, ==, RTSP_Method_PLAY);
     g_assert_cmpint(req.protocol, ==, RFC822_Protocol_RTSP10);
     g_assert_cmpstr(req.method_str, ==, "PLAY");
@@ -44,10 +48,11 @@ void test_request_line_rtsp10_discard()
 {
     size_t resval;
     RTSP_Request req;
+    static const char line[] = "PLAY rtsp://host/object RTSP/1.0\r\n         ";
 
-    resval = ragel_parse_constant_request_line("PLAY rtsp://host/object RTSP/1.0\n         ", &req);
+    resval = ragel_parse_constant_request_line();
 
-    g_assert_cmpint(resval, >, 0);
+    g_assert_cmpint(resval, ==, line_len);
     g_assert_cmpint(req.method, ==, RTSP_Method_PLAY);
     g_assert_cmpint(req.protocol, ==, RFC822_Protocol_RTSP10);
     g_assert_cmpstr(req.method_str, ==, "PLAY");
@@ -59,10 +64,11 @@ void test_request_line_rtsp20()
 {
     size_t resval;
     RTSP_Request req;
+    static const char line[] = "PLAY rtsp://host/object RTSP/2.0\r\n";
 
-    resval = ragel_parse_constant_request_line("PLAY rtsp://host/object RTSP/2.0\n", &req);
+    resval = ragel_parse_constant_request_line();
 
-    g_assert_cmpint(resval, >, 0);
+    g_assert_cmpint(resval, ==, line_len);
     g_assert_cmpint(req.method, ==, RTSP_Method_PLAY);
     g_assert_cmpint(req.protocol, ==, RFC822_Protocol_RTSP_UnsupportedVersion);
     g_assert_cmpstr(req.method_str, ==, "PLAY");
@@ -74,10 +80,11 @@ void test_request_line_rtsp10_method_unsupported()
 {
     size_t resval;
     RTSP_Request req;
+    static const char line[] = "MYMETHOD rtsp://host/object RTSP/1.0\r\n";
 
-    resval = ragel_parse_constant_request_line("MYMETHOD rtsp://host/object RTSP/1.0\n", &req);
+    resval = ragel_parse_constant_request_line();
 
-    g_assert_cmpint(resval, >, 0);
+    g_assert_cmpint(resval, ==, line_len);
     g_assert_cmpint(req.method, ==, RTSP_Method__Unsupported);
     g_assert_cmpint(req.protocol, ==, RFC822_Protocol_RTSP10);
     g_assert_cmpstr(req.method_str, ==, "MYMETHOD");
@@ -89,8 +96,9 @@ void test_request_line_rtsp10_method_invalid()
 {
     size_t resval;
     RTSP_Request req;
+    static const char line[] = "%My13Method rtsp://host/object RTSP/1.0\r\n";
 
-    resval = ragel_parse_constant_request_line("%My13Method rtsp://host/object RTSP/1.0\n", &req);
+    resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, -1);
 }
@@ -99,10 +107,11 @@ void test_request_line_protocol_unsupported()
 {
     size_t resval;
     RTSP_Request req;
+    static const char line[] = "MYMETHOD * MYPROTO/2.1\r\n";
 
-    resval = ragel_parse_constant_request_line("MYMETHOD * MYPROTO/2.1\n", &req);
+    resval = ragel_parse_constant_request_line();
 
-    g_assert_cmpint(resval, >, 0);
+    g_assert_cmpint(resval, ==, line_len);
     g_assert_cmpint(req.method, ==, RTSP_Method__Unsupported);
     g_assert_cmpint(req.protocol, ==, RFC822_Protocol_Unsupported);
     g_assert_cmpstr(req.method_str, ==, "MYMETHOD");
@@ -114,8 +123,9 @@ void test_request_line_protocol_invalid()
 {
     size_t resval;
     RTSP_Request req;
+    static const char line[] = "MYMETHOD * MYPROTO\r\n";
 
-    resval = ragel_parse_constant_request_line("MYMETHOD * MYPROTO\n", &req);
+    resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, -1);
 }
@@ -124,8 +134,9 @@ void test_request_line_bogus()
 {
     size_t resval;
     RTSP_Request req;
+    static const char line[] = "NOT_A_REQUEST_LINE\r\n";
 
-    resval = ragel_parse_constant_request_line("NOT_A_REQUEST_LINE\n", &req);
+    resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, -1);
 }
@@ -140,8 +151,9 @@ void test_request_line_incomplete_missing_newline()
         .protocol_str = NULL,
         .object = NULL
     };
+    static const char line[] = "PLAY rtsp://host/object RTSP/1.0";
 
-    resval = ragel_parse_constant_request_line("PLAY rtsp://host/object RTSP/1.0", &req);
+    resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, 0);
     g_assert_cmpint(req.method, ==, RTSP_Method__Invalid);
@@ -161,8 +173,9 @@ void test_request_line_incomplete_missing_protocol()
         .protocol_str = NULL,
         .object = NULL
     };
+    static const char line[] = "PLAY rtsp://host/object";
 
-    resval = ragel_parse_constant_request_line("PLAY rtsp://host/object", &req);
+    resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, 0);
     g_assert_cmpint(req.method, ==, RTSP_Method__Invalid);
@@ -182,8 +195,9 @@ void test_request_line_incomplete_partial_object()
         .protocol_str = NULL,
         .object = NULL
     };
+    static const char line[] = "PLAY rtsp://";
 
-    resval = ragel_parse_constant_request_line("PLAY rtsp://", &req);
+    resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, 0);
     g_assert_cmpint(req.method, ==, RTSP_Method__Invalid);
@@ -203,8 +217,9 @@ void test_request_line_incomplete_missing_object()
         .protocol_str = NULL,
         .object = NULL
     };
+    static const char line[] = "PLAY";
 
-    resval = ragel_parse_constant_request_line("PLAY", &req);
+    resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, 0);
     g_assert_cmpint(req.method, ==, RTSP_Method__Invalid);
@@ -224,8 +239,9 @@ void test_request_line_incomplete_empty()
         .protocol_str = NULL,
         .object = NULL
     };
+    static const char line[] = "";
 
-    resval = ragel_parse_constant_request_line("", &req);
+    resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, 0);
     g_assert_cmpint(req.method, ==, RTSP_Method__Invalid);

@@ -66,7 +66,7 @@ size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Reque
         Request_Line := (
                 RTSP_Method > set_s % end_method . SP
                 (print*) > set_s % end_object . SP
-                RFC822_Protocol > set_s % end_protocol . CRLF % from{ fbreak; } );
+                RFC822_Protocol > set_s % end_protocol . CRLF ) % to{ fbreak; };
 
         write data noerror;
         write init;
