@@ -61,7 +61,7 @@ int ragel_read_rtsp_headers(GHashTable *headers, const char *msg,
 
         RTSP_Header = (
                        RTSP_Header_Name . ':' WSP * .
-                       VCHAR+ > set_header_str % set_header_len .
+                       (VCHAR|WSP)+ > set_header_str % set_header_len .
                        WSP * . CRLF
                        ) %*save_header;
 

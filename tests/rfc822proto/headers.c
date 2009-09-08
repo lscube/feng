@@ -122,3 +122,15 @@ void test_unsupported_header_sender() {
 
     rtsp_headers_destroy(headers);
 }
+
+void test_real_headers() {
+    GHashTable *headers = rtsp_headers_new();
+    size_t read_size = (size_t)-1;
+    static const char headers_str[] = "CSeq: 1\r\nAccept: application/sdp\r\nBandwidth: 512000\r\nAccept-Language: en-US\r\nUser-Agent: QuickTime/7.6.3 (qtver=7.6.3;cpu=IA32;os=Mac 10.6)\r\n\r\n";
+    int res = ragel_read_constant_rtsp_headers(headers, headers_str, &read_size);
+
+    g_assert_cmpint(res, ==, 1);
+    g_assert_cmpint(read_size, ==, sizeof(headers_str)-1);
+
+    rtsp_headers_destroy(headers);
+}
