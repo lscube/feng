@@ -225,6 +225,26 @@ typedef struct {
 int RTSP_handler(RTSP_Client * rtsp);
 
 /**
+ * RTSP high level functions, mapping to the actual RTSP methods
+ *
+ * @defgroup rtsp_methods Method functions
+ *
+ * @{
+ */
+
+typedef void (*rtsp_method_function)(RTSP_Client * rtsp, RTSP_Request *req);
+
+void RTSP_describe(RTSP_Client * rtsp, RTSP_Request *req);
+void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req);
+void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req);
+void RTSP_pause(RTSP_Client * rtsp, RTSP_Request *req);
+void RTSP_teardown(RTSP_Client * rtsp, RTSP_Request *req);
+void RTSP_options(RTSP_Client * rtsp, RTSP_Request *req);
+/**
+ * @}
+ */
+
+/**
  * @}
  */
 
