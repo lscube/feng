@@ -250,8 +250,10 @@ static gboolean RTSP_handle_headers(RTSP_Client *rtsp) {
                                           rtsp->input->len,
                                           &parsed_headers);
 
-    if ( headers_res == -1 )
+    if ( headers_res == -1 ) {
         rtsp_quick_response(rtsp->pending_request, RTSP_BadRequest);
+        return false;
+    }
 
     g_byte_array_remove_range(rtsp->input, 0, parsed_headers);
 
