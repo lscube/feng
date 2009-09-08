@@ -395,6 +395,8 @@ gboolean ragel_parse_range_header(const char *header,
  *@}
  */
 
+size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Request *req);
+
 /**
  *@}
  */

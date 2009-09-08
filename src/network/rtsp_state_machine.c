@@ -33,8 +33,6 @@
 #include "rtp.h"
 #include "fnc_log.h"
 
-extern size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Request *req);
-
 /**
  * @brief Free a request structure as parsed by rtsp_parse_request().
  *
