@@ -27,12 +27,18 @@
 
 size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Request *req) {
     int cs;
-    const char *p = msg, *pe = p + length + 1, *s = NULL, *eof = pe;
+    const char *p = msg, *pe = p + length, *s = NULL, *eof = pe;
+    RTSP_Method method_code = RTSP_Method__Invalid;
+    RFC822_Protocol protocol_code = RFC822_Protocol_Invalid;
 
-    /* Map the variable used by the state machine directly into the
-     * RTSP_Request structure so we avoid temporary variables. */
-    #define method_code req->method
-    #define protocol_code req->protocol
+    const char *method_str = NULL;
+    size_t method_len = 0;
+
+    const char *protocol_str = NULL;
+    size_t protocol_len = 0;
+
+    const char *object_str = NULL;
+    size_t object_len = 0;
 
     %%{
 
@@ -43,28 +49,25 @@ size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Reque
         }
 
         action end_method {
-            req->method_str = g_strndup(s, p-s);
+            method_str = s;
+            method_len = p-s;
         }
 
         action end_protocol {
-            req->protocol_str = g_strndup(s, p-s);
+            protocol_str = s;
+            protocol_len = p-s;
         }
 
         action end_object {
-            req->object = g_strndup(s, p-s);
+            object_str = s;
+            object_len = p-s;
         }
 
-        Request_Line = RTSP_Method > set_s % end_method . SP
-            (print*) > set_s % end_object . SP
-            RFC822_Protocol > set_s % end_protocol . CRLF;
-
-        Header = (alpha|'-')+  . ':' . SP . print+ . CRLF;
-
-        action stop_parser {
-            return p-msg;
-        }
-
-        main := Request_Line % stop_parser . /.*/;
+        Request_Line := (
+                RTSP_Method > set_s % end_method . SP
+                (print*) > set_s % end_object . SP
+                RFC822_Protocol > set_s % end_protocol . CRLF )
+            % { pe = eof = p; };
 
         write data noerror;
         write init;
@@ -72,9 +75,16 @@ size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Reque
     }%%
 
     if ( cs < rtsp_request_line_first_final )
-        return 0;
+        return ( p == pe ) ? 0 : -1;
 
-    cs = rtsp_request_line_en_main; // Kill a warning
+    /* Only set these when the parsing was successful: an incomplete
+     * request line won't help!
+     */
+    req->protocol = protocol_code;
+    req->method = method_code;
+    req->method_str = g_strndup(method_str, method_len);
+    req->protocol_str = g_strndup(protocol_str, protocol_len);
+    req->object = g_strndup(object_str, object_len);
 
     return p-msg;
 }

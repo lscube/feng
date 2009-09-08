@@ -163,12 +163,14 @@ endif
 
 tests_testsuite_SOURCES = \
 	src/bufferqueue.c \
+	src/network/ragel_request_line.c \
 	tests/bufferqueue/test-1.c \
 	tests/bufferqueue/test-2.c \
 	tests/bufferqueue/test-3.c \
 	tests/bufferqueue/test-4.c \
 	tests/bufferqueue/test-5.c \
-	tests/rfc822proto/rfc822proto-test.c
+	tests/rfc822proto/rfc822proto-test.c \
+	tests/rfc822proto/request_line.c
 
 tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
 
