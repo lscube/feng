@@ -31,7 +31,7 @@ BEGIN {
 {
     suitename = $2;
     sub("^.*tests/", "", suitename);
-    sub("/[a-z0-9-]+\\.c$", "", suitename);
+    sub("/[_a-z0-9-]+\\.c$", "", suitename);
     testname = $1;
     sub("test_", "", testname);
 
