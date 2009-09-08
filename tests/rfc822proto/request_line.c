@@ -40,6 +40,21 @@ void test_request_line_rtsp10()
     g_assert_cmpstr(req.object, ==, "rtsp://host/object");
 }
 
+void test_request_line_rtsp10_discard()
+{
+    size_t resval;
+    RTSP_Request req;
+
+    resval = ragel_parse_constant_request_line("PLAY rtsp://host/object RTSP/1.0\n         ", &req);
+
+    g_assert_cmpint(resval, >, 0);
+    g_assert_cmpint(req.method, ==, RTSP_Method_PLAY);
+    g_assert_cmpint(req.protocol, ==, RFC822_Protocol_RTSP10);
+    g_assert_cmpstr(req.method_str, ==, "PLAY");
+    g_assert_cmpstr(req.protocol_str, ==, "RTSP/1.0");
+    g_assert_cmpstr(req.object, ==, "rtsp://host/object");
+}
+
 void test_request_line_rtsp20()
 {
     size_t resval;

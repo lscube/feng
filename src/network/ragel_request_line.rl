@@ -27,7 +27,7 @@
 
 size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Request *req) {
     int cs;
-    const char *p = msg, *pe = p + length, *s = NULL, *eof = pe;
+    const char *p = msg, *pe = p + length, *s = NULL;
     RTSP_Method method_code = RTSP_Method__Invalid;
     RFC822_Protocol protocol_code = RFC822_Protocol_Invalid;
 
@@ -66,12 +66,11 @@ size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Reque
         Request_Line := (
                 RTSP_Method > set_s % end_method . SP
                 (print*) > set_s % end_object . SP
-                RFC822_Protocol > set_s % end_protocol . CRLF )
-            % { pe = eof = p; };
+                RFC822_Protocol > set_s % end_protocol . CRLF % from{ fbreak; } );
 
         write data noerror;
         write init;
-        write exec;
+        write exec noend;
     }%%
 
     if ( cs < rtsp_request_line_first_final )
