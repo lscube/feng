@@ -74,25 +74,29 @@
 
       <xsl:text>    </xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_Header_Name = (
+      <xsl:text><![CDATA[_Header_Name =
+        (unreserved+) % ( header_code, 0 ) % { header_code = ]]></xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_Header__Unsupported; } | (
 ]]></xsl:text>
 
       <xsl:for-each select="supportedheader">
-	<xsl:text>        '</xsl:text>
+	<xsl:text>            </xsl:text>
+	<xsl:text>'</xsl:text>
 	<xsl:value-of select="." />
-	<xsl:text>'i > (header_code, 2) % { header_code = </xsl:text>
+	<xsl:text><![CDATA['i > ( header_code, 1 ) % { header_code = ]]></xsl:text>
 	<xsl:value-of select="../@name" />
 	<xsl:text>_Header_</xsl:text>
 	<xsl:value-of select="translate(., '-', '_')" />
-	<xsl:text><![CDATA[; } |
+	<xsl:text>; }</xsl:text>
+	<xsl:if test="position()!=last()">
+	  <xsl:text> |</xsl:text>
+	</xsl:if>
+	<xsl:text><![CDATA[
 ]]></xsl:text>
       </xsl:for-each>
 
-      <xsl:text>         unreserved+ > (header_code, 1) % { header_code = </xsl:text>
-      <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_Header__Unsupported; }
-    );
-]]></xsl:text>
+      <xsl:text>        );</xsl:text>
     </xsl:for-each>
 
     <xsl:text><![CDATA[
