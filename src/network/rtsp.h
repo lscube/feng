@@ -245,10 +245,6 @@ void RTSP_options(RTSP_Client * rtsp, RTSP_Request *req);
  */
 
 /**
- * @}
- */
-
-/**
  * @brief Structure respresenting a response sent to the client
  * @ingroup rtsp_response
  */
@@ -322,5 +318,9 @@ void rtsp_session_editlist_append(RTSP_session *session, RTSP_Range *range);
 void rtsp_session_editlist_free(RTSP_session *session);
 
 void rtsp_do_pause(RTSP_Client *rtsp);
+
+/**
+ * @}
+ */
 
 #endif // FN_RTSP_H
