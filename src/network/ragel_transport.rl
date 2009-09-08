@@ -2,9 +2,8 @@
 
 #include <stdbool.h>
 
-#include "network/rtsp.h"
-#include "network/rtp.h"
-#include "network/ragel_parsers.h"
+#include "rtsp.h"
+#include "rtp.h"
 
 %% machine ragel_transport_header;
 

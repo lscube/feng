@@ -35,6 +35,7 @@
 #include <netembryo/url.h>
 
 #include "rfc822proto.h"
+#include "rtp.h"
 
 struct feng;
 struct Resource;
@@ -318,6 +319,85 @@ void rtsp_session_editlist_append(RTSP_session *session, RTSP_Range *range);
 void rtsp_session_editlist_free(RTSP_session *session);
 
 void rtsp_do_pause(RTSP_Client *rtsp);
+
+/**
+ * @defgroup ragel Ragel parsing
+ *
+ * @brief Functions and data structure for parsing of RTSP protocol.
+ *
+ * This group enlists all the shared data structure between the
+ * parsers written using Ragel (http://www.complang.org/ragel/) and
+ * the users of those parsers, usually the method handlers (see @ref
+ * rtsp_methods).
+ *
+ * @{
+ */
+
+/**
+ * @defgroup ragel_transport Transport: header parsing
+ *
+ * @{
+ */
+
+/**
+ * @brief Structure filled by the ragel parser of the transport header.
+ *
+ * @internal
+ */
+struct ParsedTransport {
+    RTP_Protocol protocol;
+    //! Mode for UDP transmission, here is easier to access
+    enum { TransportUnicast, TransportMulticast } mode;
+    union {
+        union {
+            struct {
+                uint16_t port_rtp;
+                uint16_t port_rtcp;
+            } Unicast;
+            struct {
+            } Multicast;
+        } UDP;
+        struct {
+            uint16_t ich_rtp;  //!< Interleaved channel for RTP
+            uint16_t ich_rtcp; //!< Interleaved channel for RTCP
+        } TCP;
+        struct {
+            uint16_t ch_rtp;  //!< SCTP channel for RTP
+            uint16_t ch_rtcp; //!< SCTP channel for RTCP
+        } SCTP;
+    } parameters;
+};
+
+gboolean check_parsed_transport(struct RTSP_Client *rtsp,
+                                struct RTP_transport *rtp_t,
+                                struct ParsedTransport *transport);
+
+
+gboolean ragel_parse_transport_header(struct RTSP_Client *rtsp,
+                                      struct RTP_transport *rtp_t,
+                                      const char *header);
+/**
+ *@}
+ */
+
+/**
+ * @defgroup ragel_range Range: header parsing
+ *
+ * @{
+ */
+
+struct RTSP_Range;
+
+gboolean ragel_parse_range_header(const char *header,
+                                  RTSP_Range *range);
+
+/**
+ *@}
+ */
+
+/**
+ *@}
+ */
 
 /**
  * @}

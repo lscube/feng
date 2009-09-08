@@ -4,8 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "network/rtsp.h"
-#include "network/ragel_parsers.h"
+#include "rtsp.h"
 
 %% machine ragel_range_header;
 
