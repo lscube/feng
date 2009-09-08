@@ -29,8 +29,6 @@
 #include <stdbool.h>
 #include <netembryo/url.h>
 
-#include <liberis/headers.h>
-
 #include "feng.h"
 #include "rtsp.h"
 #include "rtp.h"
@@ -123,18 +121,18 @@ static void send_play_reply(RTSP_Request *req,
     if (range->end_time > 0)
       g_string_append_printf(str, "%f", range->end_time);
 
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_range),
-                        g_string_free(str, false));
+    rtsp_headers_set(response->headers,
+                     RTSP_Header_Range,
+                     g_string_free(str, false));
 
     /* Create RTP-Info header */
     g_slist_foreach(rtsp_session->rtp_sessions, rtp_session_send_play_reply, rtp_info);
 
     g_string_truncate(rtp_info, rtp_info->len-1);
 
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_rtp_info),
-                        g_string_free(rtp_info, false));
+    rtsp_headers_set(response->headers,
+                     RTSP_Header_RTP_Info,
+                     g_string_free(rtp_info, false));
 
     rtsp_response_send(response);
 }
@@ -186,7 +184,7 @@ static RTSP_ResponseCode parse_range_header(RTSP_Request *req)
     };
 
     RTSP_session *session = req->client->session;
-    const char *range_hdr = g_hash_table_lookup(req->headers, "Range");
+    const char *range_hdr = rtsp_headers_lookup(req->headers, RTSP_Header_Range);
     RTSP_Range *range;
 
     /* If we have no range header and there is no play request queued,
@@ -296,7 +294,7 @@ void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
      * instead of seeking.
     */
     if ( rtsp_sess->cur_state == RTSP_SERVER_PLAYING &&
-         (user_agent = g_hash_table_lookup(req->headers, eris_hdr_user_agent)) &&
+         (user_agent = rtsp_headers_lookup(req->headers, RTSP_Header_User_Agent)) &&
          strncmp(user_agent, "VLC media player", strlen("VLC media player")) == 0 ) {
         fnc_log(FNC_LOG_WARN, "Working around broken seek of %s", user_agent);
         rtsp_do_pause(rtsp);

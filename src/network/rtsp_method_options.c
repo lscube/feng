@@ -24,8 +24,6 @@
  * @brief Contains OPTIONS method and reply handlers
  */
 
-#include <liberis/headers.h>
-
 #include "rtsp.h"
 
 /**
@@ -38,9 +36,9 @@ void RTSP_options(ATTR_UNUSED RTSP_Client * rtsp, RTSP_Request *req)
 {
     RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
 
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_public),
-                        g_strdup("OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN"));
+    rtsp_headers_set(response->headers,
+                     RTSP_Header_Public,
+                     g_strdup("OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN"));
 
     rtsp_response_send(response);
 }

@@ -65,6 +65,18 @@ static int rtsp_sock_read(RTSP_Client *rtsp, int *stream, char *buffer, int size
     return n;
 }
 
+void rtsp_interleaved(RTSP_Client *rtsp, int channel, uint8_t *data, size_t len)
+{
+    RTP_session *rtp = NULL;
+
+    if ( (rtp = g_hash_table_lookup(rtsp->channels, GINT_TO_POINTER(channel))) == NULL ) {
+        fnc_log(FNC_LOG_INFO, "Received interleaved message for unknown channel %d", channel);
+    } else if ( channel == rtp->transport.rtcp_ch )
+        rtcp_handle(rtp, data, len);
+    else
+        g_assert_not_reached();
+}
+
 void rtsp_read_cb(struct ev_loop *loop, ev_io *w,
                   ATTR_UNUSED int revents)
 {
@@ -96,10 +108,7 @@ void rtsp_read_cb(struct ev_loop *loop, ev_io *w,
     }
 
     g_byte_array_append(rtsp->input, (guint8*)buffer, read_size);
-    if (RTSP_handler(rtsp) == ERR_GENERIC) {
-        fnc_log(FNC_LOG_ERR, "Invalid input message.\n");
-        goto server_close;
-    }
+    RTSP_handler(rtsp);
 
     return;
 

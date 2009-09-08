@@ -30,7 +30,6 @@
 
 #include <stdbool.h>
 
-#include <liberis/headers.h>
 #include <glib.h>
 
 #include "feng.h"
@@ -299,9 +298,9 @@ gboolean rtsp_check_invalid_state(const RTSP_Request *req,
 
     response = rtsp_response_new(req, RTSP_InvalidMethodInState);
 
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_allow),
-                        g_strdup(valid_states[invalid_state]));
+    rtsp_headers_set(response->headers,
+                     RTSP_Header_Allow,
+                     g_strdup(valid_states[invalid_state]));
 
     rtsp_response_send(response);
 

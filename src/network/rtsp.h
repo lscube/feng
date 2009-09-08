@@ -40,6 +40,7 @@
 struct feng;
 struct Resource;
 struct RTP_transport;
+struct RTSP_Request;
 
 /**
  * @addtogroup RTSP
@@ -129,6 +130,16 @@ typedef struct RTSP_Range {
     double playback_time;
 } RTSP_Range;
 
+/**
+ * @brief Status of the parser for the client
+ */
+typedef enum Parser_Status {
+    Parser_Empty,
+    Parser_Headers,
+    Parser_Content,
+    Parser_Interleaved
+} Parser_Status;
+
 typedef struct RTSP_Client {
     Sock *sock;
 
@@ -139,6 +150,19 @@ typedef struct RTSP_Client {
      * GByteArray allows for automatic sizing of the array.
      */
     GByteArray *input;
+
+    /**
+     * @brief Status of the connected client for the parser
+     */
+    Parser_Status status;
+
+    /**
+     * @brief Current request being parsed
+     *
+     * @note The pointer is only valid when RTSP_Client::status is
+     *       either Parser_Headers or Parser_Content.
+     */
+    struct RTSP_Request *pending_request;
 
     GQueue *out_queue;
 
@@ -168,7 +192,7 @@ void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents);
  * message. Since it also embeds the client, it's everything the
  * server needs to send a response for the request.
  */
-typedef struct {
+typedef struct RTSP_Request {
     /** The client the request comes from */
     RTSP_Client *client;
 
@@ -223,7 +247,35 @@ typedef struct {
     GHashTable *headers;
 } RTSP_Request;
 
-int RTSP_handler(RTSP_Client * rtsp);
+static inline GHashTable *rtsp_headers_new()
+{
+    return g_hash_table_new_full(g_direct_hash, g_direct_equal,
+                                 NULL, g_free);
+}
+
+static inline void rtsp_headers_set(GHashTable *headers, RTSP_Header hdr, char *value)
+{
+    return g_hash_table_insert(headers,
+                               GINT_TO_POINTER(hdr),
+                               value);
+}
+
+static inline const char *rtsp_headers_lookup(GHashTable *headers, RTSP_Header hdr)
+{
+    if ( headers == NULL )
+        return NULL;
+
+    return g_hash_table_lookup(headers,
+                               GINT_TO_POINTER(hdr));
+}
+
+static inline void rtsp_headers_destroy(GHashTable *headers)
+{
+    if ( headers )
+        g_hash_table_destroy(headers);
+}
+
+void RTSP_handler(RTSP_Client * rtsp);
 
 /**
  * RTSP high level functions, mapping to the actual RTSP methods
@@ -397,6 +449,8 @@ gboolean ragel_parse_range_header(const char *header,
 
 size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Request *req);
 
+int ragel_read_rtsp_headers(GHashTable *headers, const char *msg,
+                            size_t length, size_t *read_size);
 /**
  *@}
  */

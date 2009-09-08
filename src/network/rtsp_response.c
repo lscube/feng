@@ -22,8 +22,6 @@
 
 #include <stdbool.h>
 
-#include <liberis/headers.h>
-
 #include "rtsp.h"
 
 /**
@@ -93,26 +91,25 @@ RTSP_Response *rtsp_response_new(const RTSP_Request *req, RTSP_ResponseCode code
     response->client = req->client;
     response->request = req;
     response->status = code;
-    response->headers = g_hash_table_new_full(g_str_hash, g_str_equal,
-                                              g_free, g_free);
+    response->headers = rtsp_headers_new();
     response->body = NULL;
 
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_server), g_strdup(server_header));
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_date), rtsp_timestamp());
+    rtsp_headers_set(response->headers,
+                     RTSP_Header_Server, g_strdup(server_header));
+    rtsp_headers_set(response->headers,
+                     RTSP_Header_Date, rtsp_timestamp());
 
-    if ( (hdr = g_hash_table_lookup(req->headers, eris_hdr_cseq)) )
-        g_hash_table_insert(response->headers,
-                            g_strdup(eris_hdr_cseq), g_strdup(hdr));
+    if ( (hdr = rtsp_headers_lookup(req->headers, RTSP_Header_CSeq)) )
+        rtsp_headers_set(response->headers,
+                         RTSP_Header_CSeq, g_strdup(hdr));
 
-    if ( (hdr = g_hash_table_lookup(req->headers, eris_hdr_session)) )
-        g_hash_table_insert(response->headers,
-                            g_strdup(eris_hdr_session), g_strdup(hdr));
+    if ( (hdr = rtsp_headers_lookup(req->headers, RTSP_Header_Session)) )
+        rtsp_headers_set(response->headers,
+                         RTSP_Header_Session, g_strdup(hdr));
 
-    if ( (hdr = g_hash_table_lookup(req->headers, eris_hdr_timestamp)) )
-        g_hash_table_insert(response->headers,
-                            g_strdup(eris_hdr_timestamp), g_strdup(hdr));
+    if ( (hdr = rtsp_headers_lookup(req->headers, RTSP_Header_Timestamp)) )
+        rtsp_headers_set(response->headers,
+                         RTSP_Header_Timestamp, g_strdup(hdr));
 
     return response;
 }
@@ -124,7 +121,7 @@ RTSP_Response *rtsp_response_new(const RTSP_Request *req, RTSP_ResponseCode code
  */
 static void rtsp_response_free(RTSP_Response *response)
 {
-    g_hash_table_destroy(response->headers);
+    rtsp_headers_destroy(response->headers);
     if ( response->body )
         g_string_free(response->body, true);
     g_slice_free(RTSP_Response, response);
@@ -140,16 +137,16 @@ static void rtsp_response_free(RTSP_Response *response)
  * This function is used by g_hash_table_foreach to append the various headers
  * to the final response string.
  */
-static void rtsp_response_append_headers(gpointer hdr_name_p,
+static void rtsp_response_append_headers(gpointer hdr_code_p,
                                          gpointer hdr_value_p,
                                          gpointer response_str_p)
 {
-    const char *const hdr_name = hdr_name_p;
+    RTSP_Header hdr_code = GPOINTER_TO_INT(hdr_code_p);
     const char *const hdr_value = hdr_value_p;
     GString *response_str = response_str_p;
 
     g_string_append_printf(response_str, "%s: %s" RTSP_EL,
-                           hdr_name, hdr_value);
+                           rtsp_header_to_string(hdr_code), hdr_value);
 }
 
 /**
@@ -171,15 +168,15 @@ static void rtsp_response_append_headers(gpointer hdr_name_p,
 static void rtsp_log_access(RTSP_Response *response)
 {
     const char *referer =
-        g_hash_table_lookup(response->request->headers, eris_hdr_referer);
+        rtsp_headers_lookup(response->request->headers, RTSP_Header_Referer);
     const char *useragent =
-        g_hash_table_lookup(response->request->headers, eris_hdr_user_agent);
+        rtsp_headers_lookup(response->request->headers, RTSP_Header_User_Agent);
     char *response_length = response->body ?
         g_strdup_printf("%zd", response->body->len) : NULL;
 
     fprintf(stderr, "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",
             response->client->sock->remote_host,
-            (const char*)g_hash_table_lookup(response->headers, eris_hdr_date),
+            rtsp_headers_lookup(response->headers, RTSP_Header_Date),
             response->request->method_str, response->request->object,
             response->request->protocol_str,
             response->status, response_length ? response_length : "-",
@@ -215,7 +212,7 @@ void rtsp_response_send(RTSP_Response *response)
      * headers, see RFC 2326 Sec. 12.14. */
     if ( response->body )
         g_string_append_printf(str, "%s: %zu" RTSP_EL,
-                               eris_hdr_content_length,
+                               rtsp_header_to_string(RTSP_Header_Content_Length),
                                response->body->len + 2);
 
     g_string_append(str, RTSP_EL);

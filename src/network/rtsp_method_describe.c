@@ -26,8 +26,6 @@
 
 #include <stdbool.h>
 
-#include <liberis/headers.h>
-
 #include "fnc_log.h"
 #include "rtsp.h"
 #include "media/demuxer.h"
@@ -309,9 +307,9 @@ static void send_describe_reply(RTSP_Request *req, GString *descr)
     response->body = descr;
 
     /* When we're going to have more than one option, add alternatives here */
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_content_type),
-                        g_strdup("application/sdp"));
+    rtsp_headers_set(response->headers,
+                     RTSP_Header_Content_Type,
+                     g_strdup("application/sdp"));
 
     /* We can trust the req->object value since we already have checked it
      * beforehand. Since the object was already escaped by the client, we just
@@ -320,9 +318,9 @@ static void send_describe_reply(RTSP_Request *req, GString *descr)
      * Note: this _might_ not be what we want if we decide to redirect the
      * stream to different servers, but since we don't do that now...
      */
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_content_base),
-                        g_strdup_printf("%s/", req->object));
+    rtsp_headers_set(response->headers,
+                     RTSP_Header_Content_Base,
+                     g_strdup_printf("%s/", req->object));
 
     rtsp_response_send(response);
 }

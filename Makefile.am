@@ -31,7 +31,7 @@ RAGEL_SOURCES = \
 	src/network/ragel_request_line.c \
 	src/network/ragel_transport.c \
 	src/network/ragel_range.c \
-	src/liberis/headers_parser.c
+	src/network/ragel_headers.c
 
 BUILT_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rfc822proto.c \
@@ -65,9 +65,6 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/conf/data_config.c \
 	src/conf/data_string.c \
 	src/conf/settings.h \
-	\
-	src/liberis/headers.h \
-	src/liberis/utils.c src/liberis/utils.h \
 	\
 	src/network/ragel_parsers.h \
 	src/network/rfc822proto.c \

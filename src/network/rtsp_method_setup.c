@@ -29,8 +29,6 @@
 #include <stdbool.h>
 #include <glib.h>
 
-#include <liberis/headers.h>
-
 #include "feng.h"
 #include "rtp.h"
 #include "rtsp.h"
@@ -289,16 +287,16 @@ static void send_setup_reply(RTSP_Client * rtsp, RTSP_Request *req, RTSP_session
     }
     g_string_append_printf(transport, ";ssrc=%08X", rtp_s->ssrc);
 
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_transport),
-                        g_string_free(transport, false));
+    rtsp_headers_set(response->headers,
+                     RTSP_Header_Transport,
+                     g_string_free(transport, false));
 
     /* We add the Session here since it was not added by rtsp_response_new (the
      * incoming request had no session).
      */
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_session),
-                        g_strdup(session->session_id));
+    rtsp_headers_set(response->headers,
+                    RTSP_Header_Session,
+                    g_strdup(session->session_id));
 
     rtsp_response_send(response);
 }
@@ -333,7 +331,7 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
      * If the parsing returns false, we should respond to the client with a
      * status 461 "Unsupported Transport"
      */
-    transport_header = g_hash_table_lookup(req->headers, "Transport");
+    transport_header = rtsp_headers_lookup(req->headers, RTSP_Header_Transport);
     if ( transport_header == NULL ||
          !ragel_parse_transport_header(rtsp, &transport, transport_header) ) {
 
