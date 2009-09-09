@@ -35,7 +35,7 @@ RAGEL_SOURCES = \
 
 BUILT_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rfc822proto.c \
-	src/network/rfc822proto.h
+	src/network/rfc822proto-constants.h
 
 dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	\
@@ -68,6 +68,7 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	\
 	src/network/ragel_parsers.h \
 	src/network/rfc822proto.c \
+	src/network/rfc822proto-constants.h \
 	src/network/rfc822proto.h \
 	src/network/rtcp.c \
 	src/network/rtp.c network/rtp.h \
@@ -121,7 +122,7 @@ endif
 src/network/rfc822proto.c: src/network/rfc822proto-source.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
 
-src/network/rfc822proto.h: src/network/rfc822proto-header.xsl src/network/rfc822proto.xml
+src/network/rfc822proto-constants.h: src/network/rfc822proto-header.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
 
 src/network/rfc822proto-statemachine.rl: src/network/rfc822proto-statemachine.xsl src/network/rfc822proto.xml

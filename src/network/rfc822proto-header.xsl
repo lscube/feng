@@ -10,8 +10,8 @@
     <xsl:text><![CDATA[
 /* Automatically-generated code, do not modify! */
 
-#ifndef RFC822PROTO_H__
-#define RFC822PROTO_H__
+#ifndef RFC822PROTO_CONSTANTS_H__
+#define RFC822PROTO_CONSTANTS_H__
 
 typedef enum RFC822_Protocol {
     RFC822_Protocol_Invalid = -2,
@@ -111,7 +111,7 @@ typedef enum RFC822_Protocol {
 
     <xsl:text><![CDATA[
 
-#endif /* RFC822PROTO_H__ */
+#endif /* RFC822PROTO_CONSTANTS_H__ */
 ]]></xsl:text>
   </xsl:template>
 </xsl:stylesheet>
