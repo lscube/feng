@@ -201,7 +201,7 @@ void rtsp_response_send(RTSP_Response *response)
     /* Generate the status line, see RFC 2326 Sec. 7.1 */
     g_string_printf(str, "%s %d %s" RTSP_EL,
                     "RTSP/1.0", response->status,
-                    rtsp_reason_phrase(response->status));
+                    rtsp_response_reason(response->status));
 
     /* Append the headers */
     g_hash_table_foreach(response->headers,
