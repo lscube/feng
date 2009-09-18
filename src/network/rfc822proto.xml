@@ -28,5 +28,29 @@
     <supportedheader>Transport</supportedheader>
     <supportedheader>Unsupported</supportedheader>
     <supportedheader>User-Agent</supportedheader>
+
+    <response code="100">Continue</response>
+    <response code="200">OK</response>
+    <response code="201">Created</response>
+    <response code="202">Accepted</response>
+    <response code="400">Bad Request</response>
+    <response code="403">Forbidden</response>
+    <response code="404">Not Found</response>
+    <response code="406">Not Acceptable</response>
+    <response code="415">Unsupported Media Type</response>
+    <response code="451">Parameter Not Understood</response>
+    <response code="453">Not Enough Bandwith</response>
+    <response code="454">Session Not Found</response>
+    <response code="455">Method Not Valid In This State</response>
+    <response code="456">Header Field Not Valid for Resource</response>
+    <response code="457">Invalid Range</response>
+    <response code="459">Aggregate Operation Not Allowed</response>
+    <response code="460">Only Aggregate Operation Allowed</response>
+    <response code="461">Unsupported Transport</response>
+    <response code="500">Internal Server Error</response>
+    <response code="501">Not Implemented</response>
+    <response code="503">Service Unavailable</response>
+    <response code="505">RTSP Version Not Supported</response>
+    <response code="551">Option not supported</response>
   </supportedproto>
 </rfc288proto>
