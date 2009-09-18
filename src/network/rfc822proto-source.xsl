@@ -74,6 +74,71 @@
 ]]></xsl:text>
 
     </xsl:for-each>
+
+    <xsl:text><![CDATA[
+const char *rfc822_header_to_string(RFC822_Protocol proto, int hdr)
+{
+    switch(proto)
+    {
+]]></xsl:text>
+
+    <xsl:for-each select="//supportedproto">
+      <xsl:for-each select="supportedversion">
+	<xsl:text>    case RFC822_Protocol_</xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:value-of select="translate(., '.', '')" />
+	<xsl:text><![CDATA[:
+]]></xsl:text>
+      </xsl:for-each>
+      <xsl:text>    case RFC822_Protocol_</xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_UnsupportedVersion:
+]]></xsl:text>
+      <xsl:text>        return </xsl:text>
+      <xsl:value-of select="translate(@name, $uppercase, $lowercase)" />
+      <xsl:text>_header_to_string(hdr);</xsl:text>
+    </xsl:for-each>
+
+    <xsl:text><![CDATA[
+    };
+
+    g_assert_not_reached();
+    return NULL;
+}
+]]></xsl:text>
+
+    <xsl:text><![CDATA[
+const char *rfc822_response_reason(RFC822_Protocol proto, int code)
+{
+    switch(proto)
+    {
+]]></xsl:text>
+
+    <xsl:for-each select="//supportedproto">
+      <xsl:for-each select="supportedversion">
+	<xsl:text>    case RFC822_Protocol_</xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:value-of select="translate(., '.', '')" />
+	<xsl:text><![CDATA[:
+]]></xsl:text>
+      </xsl:for-each>
+      <xsl:text>    case RFC822_Protocol_</xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_UnsupportedVersion:
+]]></xsl:text>
+      <xsl:text>        return </xsl:text>
+      <xsl:value-of select="translate(@name, $uppercase, $lowercase)" />
+      <xsl:text>_response_reason(code);</xsl:text>
+    </xsl:for-each>
+
+    <xsl:text><![CDATA[
+    };
+
+    g_assert_not_reached();
+    return NULL;
+}
+]]></xsl:text>
+
   </xsl:template>
 </xsl:stylesheet>
 
