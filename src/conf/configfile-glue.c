@@ -58,7 +58,7 @@
 
 /** parse config array */
 static int config_insert_values_internal(server *srv, array *ca,
-					 const config_values_t cv[]) {
+                     const config_values_t cv[]) {
     size_t i;
     data_unset *du;
 
