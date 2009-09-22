@@ -65,7 +65,7 @@ typedef struct feng {
 
     GMutex *lock;        //!< lock to access live_mq
     GHashTable *live_mq; //!< keeps the association producer/mq
-
+    GSList *modules;
 } feng;
 
 typedef feng server;
