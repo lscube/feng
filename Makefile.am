@@ -132,9 +132,9 @@ check_PROGRAMS = $(TESTS)
 
 BUILT_SOURCES += tests/gtestmain.c
 
-tests/gtestmain.c: $(tests_testsuite_SOURCES)
+tests/gtestmain.c: $(tests_testsuite_SOURCES) Makefile.am
 	@$(mkdir_p) $(dir $@)
-	$(AM_V_GEN)$(EXUBERANT_CTAGS) -f - --file-scope=no $^ | \
+	$(AM_V_GEN)$(EXUBERANT_CTAGS) -f - --file-scope=no $(tests_testsuite_SOURCES) | \
 		sort -k 2 | $(EGREP) '^test_' | \
 		$(GAWK) -f $(srcdir)/tests/genmain.awk \
 		> $@
