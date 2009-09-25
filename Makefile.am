@@ -33,7 +33,13 @@ RAGEL_SOURCES = \
 	src/network/ragel_range.c \
 	src/liberis/headers_parser.c
 
-BUILT_SOURCES = $(RAGEL_SOURCES)
+BUILT_SOURCES = $(RAGEL_SOURCES) $(top_srcdir)/.version
+
+$(top_srcdir)/.version:
+	echo $(VERSION) > $@-t && mv $@-t $@
+
+dist-hook:
+	echo $(VERSION) > $(distdir)/.tarball-version
 
 dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/bufferqueue.c src/bufferqueue.h \

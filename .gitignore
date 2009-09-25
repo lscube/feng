@@ -30,3 +30,5 @@ Doxyfile
 .cproject
 .dirstamp
 ChangeLog
+.version
+.tarball-version

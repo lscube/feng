@@ -1,6 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.61)
-AC_INIT([feng], [2.1.0_rc1])
+AC_INIT([feng],
+        [m4_esyscmd([./git-version-gen .tarball-version])],
+        [lscube-devel@lscube.org])
 AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip foreign subdir-objects])
 LSC_INIT

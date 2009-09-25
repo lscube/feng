@@ -101,7 +101,7 @@ int accesslog_set_defaults(feng *srv, void *data)
         if (s->access_logfile->used < 2) continue;
 
         if (-1 == (s->log_access_fd = open(s->access_logfile->ptr,
-                                           O_APPEND| O_CREAT)))
+                                           O_APPEND| O_CREAT, S_IRWXG)))
             return ERR_FATAL;
 
     }
