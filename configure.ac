@@ -1,9 +1,14 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.61)
-AC_INIT([feng], [2.1.0_rc1])
+AC_INIT([feng],
+        [m4_esyscmd([./git-version-gen .tarball-version])],
+        [lscube-devel@lscube.org])
 AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip foreign subdir-objects])
 LSC_INIT
+
+LT_PREREQ(2.2)
+LT_INIT([dlopen disable-static])
 
 AC_CONFIG_HEADER([config.h])
 
@@ -109,7 +114,7 @@ fi
 
 AM_CONDITIONAL(FENG_CPD, test "x$enable_metadata" = "xyes")
 
-PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16 gthread-2.0])
+PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16 gthread-2.0 gmodule-2.0])
 CFLAGS="$CFLAGS $GLIB_CFLAGS"
 LIBS="$LIBS $GLIB_LIBS"
 

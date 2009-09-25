@@ -3,11 +3,11 @@ var.basedir  = "@feng_basedir@"
 var.logdir   = "@feng_logdir@"
 var.statedir = "@feng_statedir@"
 
+server.modules = (
 # Non functional right now
-#server.modules = (
 #    "mod_access",
-#    "mod_accesslog"
-#)
+    "mod_accesslog"
+)
 
 # bind to port (defaults to @fenice_rtsp_port@)
 # server.port         = 8554
@@ -15,8 +15,8 @@ var.statedir = "@feng_statedir@"
 # bind to name (defaults to all interfaces)
 # server.bind         = "live.host.tld"
 
-# use sctp instead of tcp
-# $SERVER["socket"] == "localhost:5554" {
+# use sctp instead of tcp (you may use the same port)
+# $SERVER["socket"] == "localhost:@fenice_rtsp_port@" {
 #   sctp.protocol       = "enable"
 #   sctp.max_streams    = 16
 # }
@@ -29,7 +29,11 @@ server.loglevel      = 1
 server.max-connections = @fenice_max_session@
 server.document-root = var.basedir + "/avroot"
 server.errorlog      = var.logdir  + "/error.log"
+
+# Accesslog module
 accesslog.filename   = var.logdir + "/access.log"
+# enable accesslog to syslog
+#accesslog.use-syslog = "enable"
 
 # CPD
 #cpd.port			= "30000"

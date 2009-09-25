@@ -243,9 +243,9 @@ r_open_hashed(struct feng *srv, gchar *mrl, const Demuxer *dmx)
 
     if (!r) {
         r = r_open_direct(srv, mrl, dmx);
-        g_hash_table_insert(shared_resources, mrl, r);
+        if (r) g_hash_table_insert(shared_resources, mrl, r);
     }
-    r->count++;
+    if (r) r->count++;
     g_mutex_unlock(shared_resources_lock);
 
     return r;
