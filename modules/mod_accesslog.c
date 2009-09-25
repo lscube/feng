@@ -43,14 +43,16 @@
 #include "network/rtsp.h"
 #include "plugin.h"
 
-#include <fcntl.h>
+#include <liberis/headers.h>
+#include <syslog.h>
+#include <stdio.h>
 #include <glib.h>
 #include <gmodule.h>
 
 typedef struct {
     unsigned short use_syslog;
     conf_buffer *access_logfile;
-    int    log_access_fd;
+    FILE*    log_access_file;
 } accesslog_config;
 
 typedef struct {
@@ -80,7 +82,7 @@ int accesslog_set_defaults(feng *srv, void *data)
     for (i = 0; i < srv->config_context->used; i++) {
         accesslog_config *s = g_new0(accesslog_config, 1);
         s->access_logfile = buffer_init();
-        s->log_access_fd = -1;
+        s->log_access_file = stderr;
 
         cv[0].destination = s->access_logfile;
         cv[1].destination = &(s->use_syslog);
@@ -94,16 +96,15 @@ int accesslog_set_defaults(feng *srv, void *data)
         }
 
         if (s->use_syslog) {
+
             /* ignore the next checks */
             continue;
         }
 
         if (s->access_logfile->used < 2) continue;
 
-        if (-1 == (s->log_access_fd = open(s->access_logfile->ptr,
-                                           O_APPEND| O_CREAT, S_IRWXG)))
+        if (NULL == (s->log_access_file = fopen(s->access_logfile->ptr, "a")))
             return ERR_FATAL;
-
     }
     return ERR_NOERROR;
 }
@@ -113,9 +114,34 @@ int accesslog_uninit(feng *srv, void *data)
     return 0;
 }
 
-int accesslog_log(feng *srv, RTSP_Response *resp, void *data)
+#define PRINT_STRING \
+    "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",\
+        response->client->sock->remote_host,\
+        (const char*)g_hash_table_lookup(response->headers, eris_hdr_date),\
+        response->request->method, response->request->object,\
+        response->request->version,\
+        response->status, response_length ? response_length : "-",\
+        referer ? referer : "-",\
+        useragent ? useragent : "-"
+
+int accesslog_log(RTSP_Response *response, void *data)
 {
-    return 0;
+    accesslog_data *d = data;
+    accesslog_config *s = d->config_storage[0]; //XXX support vhost!!
+    const char *referer =
+        g_hash_table_lookup(response->request->headers, eris_hdr_referer);
+    const char *useragent =
+        g_hash_table_lookup(response->request->headers, eris_hdr_user_agent);
+    char *response_length = response->body ?
+        g_strdup_printf("%zd", response->body->len) : NULL;
+
+    if (s->use_syslog)
+        syslog(LOG_INFO, PRINT_STRING);
+    else
+        fprintf(s->log_access_file, PRINT_STRING);
+    g_free(response_length);
+
+    return ERR_NOERROR;
 }
 
 int init (struct plugin *p)

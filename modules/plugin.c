@@ -121,16 +121,16 @@ int module_set_defaults(feng *srv)
     return err;
 }
 
-int module_respose_send(feng *srv, RTSP_Response *resp)
+int module_respose_send(RTSP_Response *resp)
 {
-    GSList *mod = srv->modules;
+    GSList *mod = resp->client->srv->modules;
     int err = ERR_NOERROR;
     while (mod && !err)
     {
         plugin *p = mod->data;
         if (p->response_send)
         {
-            err = p->response_send(srv, resp, p->data);
+            err = p->response_send(resp, p->data);
             switch(err) {
                 case ERR_NOERROR:
                     break;

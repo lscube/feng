@@ -42,12 +42,12 @@ typedef struct plugin {
     GModule *module;
     void *data;
 //XXX add the callbacks here once we have them set somewhere.
-    int (*response_send) (feng *srv, RTSP_Response *resp, void *data);
+    int (*response_send) (RTSP_Response *resp, void *data);
 } plugin;
 
 int modules_load(feng *srv);
 
-int module_respose_send(feng *srv, RTSP_Response *resp);
+int module_respose_send(RTSP_Response *resp);
 int module_set_defaults(feng *srv);
 
 #endif // FN_PLUGIN_H
