@@ -25,6 +25,7 @@
 #include <liberis/headers.h>
 
 #include "rtsp.h"
+#include "modules/plugin.h"
 
 /**
  * @file
