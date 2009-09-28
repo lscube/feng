@@ -47,7 +47,7 @@ typedef struct plugin {
 
 int modules_load(feng *srv);
 
-int module_respose_send(RTSP_Response *resp);
+int module_response_send(RTSP_Response *resp);
 int module_set_defaults(feng *srv);
 
 #endif // FN_PLUGIN_H

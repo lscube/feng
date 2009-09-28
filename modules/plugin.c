@@ -121,7 +121,7 @@ int module_set_defaults(feng *srv)
     return err;
 }
 
-int module_respose_send(RTSP_Response *resp)
+int module_response_send(RTSP_Response *resp)
 {
     GSList *mod = resp->client->srv->modules;
     int err = ERR_NOERROR;

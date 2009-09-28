@@ -231,7 +231,7 @@ void rtsp_response_send(RTSP_Response *response)
     rtsp_bwrite(response->client, str);
 
     /* Log the access */
-    module_respose_send(response);
+    module_response_send(response);
 
     /* After we did output to access.log, we can free the response since it's no
      * longer necessary. */
