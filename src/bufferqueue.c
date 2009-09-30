@@ -610,6 +610,7 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     if ( elem == NULL )
         return;
 
+    g_assert_cmpint(elem->seen, !=, producer->consumers);
     /* If we're the last one to see the element, we need to take care
      * of removing and freeing it. */
     bq_debug("C:%p pointer %p object %p payload %p seen %lu consumers %lu PQH:%p",
@@ -659,6 +660,9 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
             consumer->current_element_pointer);
 
     bq_consumer_confirm_pointer(consumer);
+
+    if (BQ_OBJECT(consumer))
+    g_assert_cmpint(BQ_OBJECT(consumer)->seen, !=, producer->consumers);
 
     if (consumer->current_element_pointer) {
         bq_debug("C:%p pointer %p object %p next %p prev %p",
@@ -786,7 +790,6 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
                 bq_producer_destroy_head(producer, it);
             else
                 g_assert_cmpuint(elem->seen, <, producer->consumers);
-
             it = it->next;
         }
     }}
@@ -861,7 +864,8 @@ gboolean bq_consumer_move(BufferQueue_Consumer *consumer) {
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
-
+    if (BQ_OBJECT(consumer))
+    g_assert_cmpint(BQ_OBJECT(consumer)->seen, !=, producer->consumers);
     ret = bq_consumer_move_internal(consumer);
 
     bq_debug("(after) C:%p pointer %p",
@@ -921,7 +925,6 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
 
     element = (BufferQueue_Element*)(consumer->current_element_pointer->data);
     consumer->last_element_serial = element->serial;
-
     bq_debug("C:%p pointer %p object %p payload %p seen %lu/%lu",
             consumer,
             consumer->current_element_pointer,
@@ -929,6 +932,8 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
             element->payload,
             element->seen,
             producer->consumers);
+    if (element)
+    g_assert_cmpint(element->seen, !=, producer->consumers);
  end:
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
