@@ -102,6 +102,45 @@ const char *rfc822_response_reason(RFC822_Protocol proto, int code)
 }
 ]]></xsl:text>
 
+    <xsl:text><![CDATA[
+const char *rfc822_proto_to_string(RFC822_Protocol proto)
+{
+    switch(proto)
+    {
+]]></xsl:text>
+
+    <xsl:for-each select="//supportedproto">
+      <xsl:for-each select="supportedversion">
+	<xsl:text>    case RFC822_Protocol_</xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:value-of select="translate(., '.', '')" />
+	<xsl:text><![CDATA[:
+        return "]]></xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:text>/</xsl:text>
+	<xsl:value-of select="." />
+	<xsl:text><![CDATA[";
+]]></xsl:text>
+      </xsl:for-each>
+      <xsl:text>    case RFC822_Protocol_</xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_UnsupportedVersion:
+        return "]]></xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text>/</xsl:text>
+      <xsl:value-of select="supportedversion[last()]" />
+	<xsl:text><![CDATA[";
+]]></xsl:text>
+    </xsl:for-each>
+
+    <xsl:text><![CDATA[
+    };
+
+    g_assert_not_reached();
+    return NULL;
+}
+]]></xsl:text>
+
   </xsl:template>
 </xsl:stylesheet>
 
