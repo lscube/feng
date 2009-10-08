@@ -118,12 +118,6 @@ typedef enum RFC822_Header {
 
 ]]></xsl:text>
 
-    <xsl:text>const char *</xsl:text>
-    <xsl:value-of select="translate(@name, $uppercase, $lowercase)" />
-    <xsl:text>_header_to_string(</xsl:text>
-    <xsl:value-of select="@name" />
-    <xsl:text>_Header hdr);</xsl:text>
-
     <xsl:text><![CDATA[
 ]]></xsl:text>
 
