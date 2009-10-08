@@ -13,31 +13,23 @@
 #include <glib.h>
 #include "rfc822proto.h"
 
-]]></xsl:text>
-
-    <xsl:for-each select="//supportedproto">
-      <xsl:variable name="loname" select="translate(@name, $uppercase, $lowercase)" />
-
-      <xsl:text>const char *</xsl:text>
-      <xsl:value-of select="$loname" />
-      <xsl:text>_header_to_string(</xsl:text>
-      <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_Header hdr) {
+const char *rfc822_header_to_string(int hdr)
+{
     static const char *const header_names[] = {
 ]]></xsl:text>
 
-      <xsl:for-each select="supportedheader">
-	<xsl:text>        [</xsl:text>
-	<xsl:value-of select="../@name" />
-	<xsl:text>_Header_</xsl:text>
-	<xsl:value-of select="translate(., '-', '_')" />
-	<xsl:text>] = "</xsl:text>
-	<xsl:value-of select="." />
-	<xsl:text><![CDATA[",
+    <xsl:for-each select="//supportedheader[not(.=preceding::supportedheader)]">
+      <xsl:text>        [</xsl:text>
+      <xsl:value-of select="../@name" />
+      <xsl:text>_Header_</xsl:text>
+      <xsl:value-of select="translate(., '-', '_')" />
+      <xsl:text>] = "</xsl:text>
+      <xsl:value-of select="." />
+      <xsl:text><![CDATA[",
 ]]></xsl:text>
-      </xsl:for-each>
+    </xsl:for-each>
 
-      <xsl:text><![CDATA[
+    <xsl:text><![CDATA[
         NULL
     };
 
@@ -48,6 +40,9 @@
 }
 
 ]]></xsl:text>
+
+    <xsl:for-each select="//supportedproto">
+      <xsl:variable name="loname" select="translate(@name, $uppercase, $lowercase)" />
 
       <xsl:text>const char *</xsl:text>
       <xsl:value-of select="$loname" />
@@ -74,38 +69,6 @@
 ]]></xsl:text>
 
     </xsl:for-each>
-
-    <xsl:text><![CDATA[
-const char *rfc822_header_to_string(RFC822_Protocol proto, int hdr)
-{
-    switch(proto)
-    {
-]]></xsl:text>
-
-    <xsl:for-each select="//supportedproto">
-      <xsl:for-each select="supportedversion">
-	<xsl:text>    case RFC822_Protocol_</xsl:text>
-	<xsl:value-of select="../@name" />
-	<xsl:value-of select="translate(., '.', '')" />
-	<xsl:text><![CDATA[:
-]]></xsl:text>
-      </xsl:for-each>
-      <xsl:text>    case RFC822_Protocol_</xsl:text>
-      <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_UnsupportedVersion:
-]]></xsl:text>
-      <xsl:text>        return </xsl:text>
-      <xsl:value-of select="translate(@name, $uppercase, $lowercase)" />
-      <xsl:text>_header_to_string(hdr);</xsl:text>
-    </xsl:for-each>
-
-    <xsl:text><![CDATA[
-    };
-
-    g_assert_not_reached();
-    return NULL;
-}
-]]></xsl:text>
 
     <xsl:text><![CDATA[
 const char *rfc822_response_reason(RFC822_Protocol proto, int code)
