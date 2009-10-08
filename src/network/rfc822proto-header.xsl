@@ -132,7 +132,7 @@ typedef enum RFC822_Header {
 
     <xsl:text><![CDATA[
 
-const char *rfc822_header_to_string(RFC822_Protocol proto, int hdr);
+const char *rfc822_header_to_string(RFC822_Protocol proto, RFC822_Header hdr);
 const char *rfc822_response_reason(RFC822_Protocol proto, int code);
 
 #endif /* RFC822PROTO_CONSTANTS_H__ */
