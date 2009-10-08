@@ -13,7 +13,7 @@
 #include <glib.h>
 #include "rfc822proto.h"
 
-const char *rfc822_header_to_string(int hdr)
+const char *rfc822_header_to_string(RFC822_Header hdr)
 {
     static const char *const header_names[] = {
 ]]></xsl:text>
