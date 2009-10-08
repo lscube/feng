@@ -14,8 +14,8 @@
 #define RFC822PROTO_CONSTANTS_H__
 
 typedef enum RFC822_Protocol {
-    RFC822_Protocol_Invalid = -2,
-    RFC822_Protocol_Unsupported = -1,
+    RFC822_Protocol_Invalid = -1,
+    RFC822_Protocol_Unsupported = 0,
 ]]></xsl:text>
 
     <xsl:for-each select="//supportedproto">
@@ -38,7 +38,7 @@ typedef enum RFC822_Protocol {
 
 typedef enum RFC822_Header {
     RFC822_Header__Invalid = -1,
-    RFC822_Header__Unsupported = -2,
+    RFC822_Header__Unsupported = 0,
 ]]></xsl:text>
 
     <xsl:for-each select="//supportedheader[not(.=preceding::supportedheader)]">
@@ -66,7 +66,7 @@ typedef enum RFC822_Header {
 
       <xsl:text>    </xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_Method__Unsupported = -1,
+      <xsl:text><![CDATA[_Method__Unsupported = 0,
 ]]></xsl:text>
 
       <xsl:for-each select="supportedmethod">
@@ -97,7 +97,7 @@ typedef enum RFC822_Header {
 
       <xsl:text>    </xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_Header__Unsupported = -1,
+      <xsl:text><![CDATA[_Header__Unsupported = 0,
 ]]></xsl:text>
 
       <xsl:for-each select="supportedheader">
