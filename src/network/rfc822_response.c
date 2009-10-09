@@ -1,7 +1,7 @@
 /* *
  *  This file is part of Feng
  *
- * Copyright (C) 2008 by LScube team <team@streaming.polito.it>
+ * Copyright (C) 2009 by LScube team <team@streaming.polito.it>
  * See AUTHORS for more details
  *
  * Feng is free software; you can redistribute it and/or
@@ -20,24 +20,32 @@
  *
  */
 
-#include <stdbool.h>
+#include "config.h"
 
+#include <stdbool.h>
+#include <stdio.h>
+#include "rfc822proto.h"
 #include "rtsp.h"
+
+#define ENDLINE "\r\n"
 
 /**
  * @file
- * @brief RTSP response generation
+ * @brief Response generation and handling for RFC822-based protocols
  */
 
 /**
- * @defgroup rtsp_response Response messages
- * @ingroup RTSP
+ * @defgroup rfc822_response Response messages
+ * @ingroup RFC822
  *
- * This module contains the functions that are used to produce RTSP response
- * that the server sends to the client.
+ * This module contains the functions that are used to produce
+ * responses, sent by the server to the client, for RFC822-baesd
+ * protocols such as RTSP and HTTP.
  *
- * RTSP responses are comprised of status line, headers and an eventual body
- * (entity), and are described by RFC2326, Section 7.
+ * RFC822 responese are comprised of status line, headers and an eventual body
+ * (entity).
+ *
+ * RTSP protocols describe responses in RFC 2326, Section 7.
  *
  * @{
  */
@@ -47,10 +55,12 @@
  *
  * Create a timestamp in the format of "23 Jan 1997 15:35:06 GMT".
  *
- * The timestamp format is described in RFC2616, Section 14.18, and is actually
- * used for more than just the Date: header.
+ * The timestamp format is described in RFC 2616, Section 14.18, and
+ * is actually used for more than just the Date header.
+ *
+ * RTSP uses this value in the Date header (RFC 2326; Section 12.18).
  */
-static char *rtsp_timestamp() {
+static char *http_timestamp() {
   char buffer[31] = { 0, };
 
   time_t now = time(NULL);
@@ -62,19 +72,19 @@ static char *rtsp_timestamp() {
 }
 
 /**
- * @brief Create a new RTSP_Response structure
+ * @brief Create a new RFC822_Response structure
  *
  * @param req The request to respond to
- * @param code The status code of the response
+ * @param status_code The status code of the response
  *
- * @return A new RTSP_Response object
+ * @return A new RFC822_Response object
  *
  * This method creates a new object for the response and adds some of the basic
  * headers common to all responses:
  *
- * @li Server (Sec. 12.36)
- * @li Date (Sec. 12.18)
- * @li CSeq (Sec. 12.17)
+ * @li Server (RFC 2326; Sec. 12.36)
+ * @li Date (RFC 2326; Sec. 12.18)
+ * @li CSeq (RFC 2326; Sec. 12.17)
  * @li Session (if applicable) (Sec. 12.37)
  * @li Timestamp (if present) (Sec. 12.38)
  *
@@ -82,53 +92,53 @@ static char *rtsp_timestamp() {
  * taken through its headers hash table. Session is copied over if present, but
  * it might be added by the SETUP method function too.
  */
-RTSP_Response *rtsp_response_new(const RTSP_Request *req, RTSP_ResponseCode code)
+RFC822_Response *rfc822_response_new(const RFC822_Request *req, int status_code)
 {
     static const char server_header[] = PACKAGE "/" VERSION;
-    RTSP_Response *response = g_slice_new0(RTSP_Response);
+    RFC822_Response *response = g_slice_new0(RFC822_Response);
     char *hdr;
 
-    response->client = req->client;
+    response->proto = req->proto;
     response->request = req;
-    response->status = code;
-    response->headers = rtsp_headers_new();
+    response->status = status_code;
+    response->headers = rfc822_headers_new();
     response->body = NULL;
 
-    rtsp_headers_set(response->headers,
-                     RTSP_Header_Server, g_strdup(server_header));
-    rtsp_headers_set(response->headers,
-                     RTSP_Header_Date, rtsp_timestamp());
+    rfc822_headers_set(response->headers,
+                       RFC822_Header_Server, g_strdup(server_header));
+    rfc822_headers_set(response->headers,
+                       RFC822_Header_Date, http_timestamp());
 
-    if ( (hdr = rtsp_headers_lookup(req->headers, RTSP_Header_CSeq)) )
-        rtsp_headers_set(response->headers,
-                         RTSP_Header_CSeq, g_strdup(hdr));
+    if ( (hdr = rfc822_headers_lookup(req->headers, RTSP_Header_CSeq)) )
+        rfc822_headers_set(response->headers,
+                           RTSP_Header_CSeq, g_strdup(hdr));
 
-    if ( (hdr = rtsp_headers_lookup(req->headers, RTSP_Header_Session)) )
-        rtsp_headers_set(response->headers,
-                         RTSP_Header_Session, g_strdup(hdr));
+    if ( (hdr = rfc822_headers_lookup(req->headers, RTSP_Header_Session)) )
+        rfc822_headers_set(response->headers,
+                           RTSP_Header_Session, g_strdup(hdr));
 
-    if ( (hdr = rtsp_headers_lookup(req->headers, RTSP_Header_Timestamp)) )
-        rtsp_headers_set(response->headers,
-                         RTSP_Header_Timestamp, g_strdup(hdr));
+    if ( (hdr = rfc822_headers_lookup(req->headers, RTSP_Header_Timestamp)) )
+        rfc822_headers_set(response->headers,
+                           RTSP_Header_Timestamp, g_strdup(hdr));
 
     return response;
 }
 
 /**
- * @brief Frees an RTSP_Response object deallocating all its content
+ * @brief Frees an RFC822_Response object deallocating all its content
  *
  * @param response The response to free
  */
-static void rtsp_response_free(RTSP_Response *response)
+static void rfc822_response_free(RFC822_Response *response)
 {
-    rtsp_headers_destroy(response->headers);
+    rfc822_headers_destroy(response->headers);
     if ( response->body )
         g_string_free(response->body, true);
-    g_slice_free(RTSP_Response, response);
+    g_slice_free(RFC822_Response, response);
 }
 
 /**
- * @brief Iterating function used by rtsp_response_send
+ * @brief Iterating function used by rfc822_response_send
  *
  * @param hdr_name_p Pointer to the header name string
  * @param hdr_value_p Pointer to the header value string
@@ -137,21 +147,22 @@ static void rtsp_response_free(RTSP_Response *response)
  * This function is used by g_hash_table_foreach to append the various headers
  * to the final response string.
  */
-static void rtsp_response_append_headers(gpointer hdr_code_p,
-                                         gpointer hdr_value_p,
-                                         gpointer response_str_p)
+static void rfc822_response_append_headers(gpointer hdr_code_p,
+                                           gpointer hdr_value_p,
+                                           gpointer response_str_p)
 {
-    RTSP_Header hdr_code = GPOINTER_TO_INT(hdr_code_p);
+    int hdr_code = GPOINTER_TO_INT(hdr_code_p);
     const char *const hdr_value = hdr_value_p;
     GString *response_str = response_str_p;
 
-    g_string_append_printf(response_str, "%s: %s" RTSP_EL,
-                           rtsp_header_to_string(hdr_code), hdr_value);
+    g_string_append_printf(response_str, "%s: %s" ENDLINE,
+                           rfc822_header_to_string(hdr_code), hdr_value);
 }
 
 /**
- * @brief Log an RTSP access to the proper log
+ * @brief Log an access to the proper log
  *
+ * @param client The client the response is being sent to
  * @param response Response to log to the access log
  *
  * Like Apache and most of the web servers, we log the access through CLF
@@ -165,18 +176,18 @@ static void rtsp_response_append_headers(gpointer hdr_code_p,
  * @todo This should use an Apache-compatible user setting to decide the output
  *       format, and parse that line.
  */
-static void rtsp_log_access(RTSP_Response *response)
+static void log_access(RTSP_Client *client, RFC822_Response *response)
 {
     const char *referer =
-        rtsp_headers_lookup(response->request->headers, RTSP_Header_Referer);
+        rfc822_headers_lookup(response->request->headers, RFC822_Header_Referer);
     const char *useragent =
-        rtsp_headers_lookup(response->request->headers, RTSP_Header_User_Agent);
+        rfc822_headers_lookup(response->request->headers, RFC822_Header_User_Agent);
     char *response_length = response->body ?
         g_strdup_printf("%zd", response->body->len) : NULL;
 
     fprintf(stderr, "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",
-            response->client->sock->remote_host,
-            rtsp_headers_lookup(response->headers, RTSP_Header_Date),
+            client->sock->remote_host,
+            rfc822_headers_lookup(response->headers, RFC822_Header_Date),
             response->request->method_str, response->request->object,
             response->request->protocol_str,
             response->status, response_length ? response_length : "-",
@@ -194,45 +205,46 @@ static void rtsp_log_access(RTSP_Response *response)
  * This method generates an RTSP response message, following the indication of
  * RFC 2326 Section 7.
  */
-void rtsp_response_send(RTSP_Response *response)
+void rfc822_response_send(RTSP_Client *client, RFC822_Response *response)
 {
     GString *str = g_string_new("");
 
     /* Generate the status line, see RFC 2326 Sec. 7.1 */
-    g_string_printf(str, "%s %d %s" RTSP_EL,
-                    "RTSP/1.0", response->status,
-                    rtsp_response_reason(response->status));
+    g_string_printf(str, "%s %d %s" ENDLINE,
+                    rfc822_proto_to_string(response->proto),
+                    response->status,
+                    rfc822_response_reason(response->proto, response->status));
 
     /* Append the headers */
     g_hash_table_foreach(response->headers,
-                         rtsp_response_append_headers,
+                         rfc822_response_append_headers,
                          str);
 
     /* If there is a body we need to calculate its length and append that to the
      * headers, see RFC 2326 Sec. 12.14. */
     if ( response->body )
-        g_string_append_printf(str, "%s: %zu" RTSP_EL,
-                               rtsp_header_to_string(RTSP_Header_Content_Length),
+        g_string_append_printf(str, "%s: %zu" ENDLINE,
+                               rfc822_header_to_string(RFC822_Header_Content_Length),
                                response->body->len + 2);
 
-    g_string_append(str, RTSP_EL);
+    g_string_append(str, ENDLINE);
 
     if ( response->body ) {
         g_string_append(str, response->body->str);
-        /* Make sure we add a final RTSP_EL here since the body string might
+        /* Make sure we add a final ENDLINE here since the body string might
          * not have it at all. */
-        g_string_append(str, RTSP_EL);
+        g_string_append(str, ENDLINE);
     }
 
     /* Now the whole response is complete, we can queue it to be sent away. */
-    rtsp_bwrite(response->client, str);
+    rtsp_bwrite(client, str);
 
     /* Log the access */
-    rtsp_log_access(response);
+    log_access(client, response);
 
     /* After we did output to access.log, we can free the response since it's no
      * longer necessary. */
-    rtsp_response_free(response);
+    rfc822_response_free(response);
 }
 
 /**

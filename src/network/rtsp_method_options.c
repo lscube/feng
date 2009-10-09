@@ -32,13 +32,13 @@
  * @param req The client request for the method
  * @return ERR_NOERROR
  */
-void RTSP_options(ATTR_UNUSED RTSP_Client * rtsp, RTSP_Request *req)
+void RTSP_options(RTSP_Client *rtsp, RFC822_Request *req)
 {
-    RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
+    RFC822_Response *response = rfc822_response_new(req, RTSP_Ok);
 
-    rtsp_headers_set(response->headers,
-                     RTSP_Header_Public,
-                     g_strdup("OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN"));
+    rfc822_headers_set(response->headers,
+                       RTSP_Header_Public,
+                       g_strdup("OPTIONS,DESCRIBE,SETUP,PLAY,PAUSE,TEARDOWN"));
 
-    rtsp_response_send(response);
+    rfc822_response_send(rtsp, response);
 }

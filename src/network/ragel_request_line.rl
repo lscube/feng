@@ -25,10 +25,10 @@
 
 %% machine rtsp_request_line;
 
-size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Request *req) {
+size_t ragel_parse_request_line(const char *msg, const size_t length, RFC822_Request *req) {
     int cs;
     const char *p = msg, *pe = p + length, *s = NULL;
-    RTSP_Method method_code = RTSP_Method__Invalid;
+    int method_code = RTSP_Method__Invalid;
     RFC822_Protocol protocol_code = RFC822_Protocol_Invalid;
 
     const char *method_str = NULL;
@@ -79,8 +79,8 @@ size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Reque
     /* Only set these when the parsing was successful: an incomplete
      * request line won't help!
      */
-    req->protocol = protocol_code;
-    req->method = method_code;
+    req->proto = protocol_code;
+    req->method_id = method_code;
     req->method_str = g_strndup(method_str, method_len);
     req->protocol_str = g_strndup(protocol_str, protocol_len);
     req->object = g_strndup(object_str, object_len);

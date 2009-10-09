@@ -56,19 +56,19 @@ void rtsp_do_pause(RTSP_Client *rtsp)
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
-void RTSP_pause(RTSP_Client * rtsp, RTSP_Request *req)
+void RTSP_pause(RTSP_Client *rtsp, RFC822_Request *req)
 {
     /* This is only valid in Playing state */
-    if ( !rtsp_check_invalid_state(req, RTSP_SERVER_INIT) ||
-         !rtsp_check_invalid_state(req, RTSP_SERVER_READY) )
+    if ( !rtsp_check_invalid_state(rtsp, req, RTSP_SERVER_INIT) ||
+         !rtsp_check_invalid_state(rtsp, req, RTSP_SERVER_READY) )
         return;
 
-    if ( !rtsp_request_check_url(req) )
+    if ( !rfc822_request_check_url(rtsp, req) )
         return;
 
     /** @todo we need to check if the client provided a Range
      *        header */
     rtsp_do_pause(rtsp);
 
-    rtsp_quick_response(req, RTSP_Ok);
+    rtsp_quick_response(rtsp, req, RTSP_Ok);
 }

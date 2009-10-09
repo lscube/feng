@@ -148,7 +148,7 @@ gboolean check_parsed_transport(RTSP_Client *rtsp, RTP_transport *rtp_t,
  * @retval NULL Unable to find the requested resource or track, or
  *              other errors. The client already received a response.
  */
-static Track *select_requested_track(RTSP_Request *req, RTSP_session *rtsp_s)
+static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, RTSP_session *rtsp_s)
 {
     feng *srv = rtsp_s->srv;
     char *trackname = NULL;
@@ -174,7 +174,7 @@ static Track *select_requested_track(RTSP_Request *req, RTSP_session *rtsp_s)
 
         /* If we found no separator it's a resource URI */
         if ( separator == NULL ) {
-            rtsp_quick_response(req, RTSP_AggregateOnly);
+            rtsp_quick_response(client, req, RTSP_AggregateOnly);
             return NULL;
         }
 
@@ -196,7 +196,7 @@ static Track *select_requested_track(RTSP_Request *req, RTSP_session *rtsp_s)
             g_free(rtsp_s->resource_uri);
             rtsp_s->resource_uri = NULL;
 
-            rtsp_quick_response(req, RTSP_NotFound);
+            rtsp_quick_response(client, req, RTSP_NotFound);
             return NULL;
         }
 
@@ -207,7 +207,7 @@ static Track *select_requested_track(RTSP_Request *req, RTSP_session *rtsp_s)
 
         /* Check that it starts with the correct resource URI */
         if ( strncmp(req->object, rtsp_s->resource_uri, resource_uri_length) != 0 ) {
-            rtsp_quick_response(req, RTSP_AggregateNotAllowed);
+            rtsp_quick_response(client, req, RTSP_AggregateNotAllowed);
             return NULL;
         }
 
@@ -217,7 +217,7 @@ static Track *select_requested_track(RTSP_Request *req, RTSP_session *rtsp_s)
         if ( strncmp(req->object + resource_uri_length,
                      SDP_TRACK_URI_SEPARATOR,
                      strlen(SDP_TRACK_URI_SEPARATOR)) != 0 ) {
-            rtsp_quick_response(req, RTSP_AggregateOnly);
+            rtsp_quick_response(client, req, RTSP_AggregateOnly);
             return NULL;
         }
 
@@ -228,7 +228,7 @@ static Track *select_requested_track(RTSP_Request *req, RTSP_session *rtsp_s)
 
     if ( (selected_track = r_find_track(rtsp_s->resource, trackname))
          == NULL )
-        rtsp_quick_response(req, RTSP_NotFound);
+        rtsp_quick_response(client, req, RTSP_NotFound);
 
     return selected_track;
 }
@@ -240,9 +240,9 @@ static Track *select_requested_track(RTSP_Request *req, RTSP_session *rtsp_s)
  * @param session the new RTSP session allocated for the client
  * @param rtp_s the new RTP session allocated for the client
  */
-static void send_setup_reply(RTSP_Client * rtsp, RTSP_Request *req, RTSP_session * session, RTP_session * rtp_s)
+static void send_setup_reply(RTSP_Client *rtsp, RFC822_Request *req, RTSP_session * session, RTP_session * rtp_s)
 {
-    RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
+    RFC822_Response *response = rfc822_response_new(req, RTSP_Ok);
     GString *transport = g_string_new("");
 
     switch ( rtp_s->transport.protocol ) {
@@ -287,18 +287,18 @@ static void send_setup_reply(RTSP_Client * rtsp, RTSP_Request *req, RTSP_session
     }
     g_string_append_printf(transport, ";ssrc=%08X", rtp_s->ssrc);
 
-    rtsp_headers_set(response->headers,
+    rfc822_headers_set(response->headers,
                      RTSP_Header_Transport,
                      g_string_free(transport, false));
 
     /* We add the Session here since it was not added by rtsp_response_new (the
      * incoming request had no session).
      */
-    rtsp_headers_set(response->headers,
+    rfc822_headers_set(response->headers,
                     RTSP_Header_Session,
                     g_strdup(session->session_id));
 
-    rtsp_response_send(response);
+    rfc822_response_send(rtsp, response);
 }
 
 /**
@@ -306,7 +306,7 @@ static void send_setup_reply(RTSP_Client * rtsp, RTSP_Request *req, RTSP_session
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
-void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
+void RTSP_setup(RTSP_Client *rtsp, RFC822_Request *req)
 {
     const char *transport_header = NULL;
     RTP_transport transport;
@@ -320,7 +320,7 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
     // init
     memset(&transport, 0, sizeof(transport));
 
-    if ( !rtsp_request_check_url(req) )
+    if ( !rfc822_request_check_url(rtsp, req) )
         return;
 
     /* Parse the transport header through Ragel-generated state machine.
@@ -331,11 +331,11 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
      * If the parsing returns false, we should respond to the client with a
      * status 461 "Unsupported Transport"
      */
-    transport_header = rtsp_headers_lookup(req->headers, RTSP_Header_Transport);
+    transport_header = rfc822_headers_lookup(req->headers, RTSP_Header_Transport);
     if ( transport_header == NULL ||
          !ragel_parse_transport_header(rtsp, &transport, transport_header) ) {
 
-        rtsp_quick_response(req, RTSP_UnsupportedTransport);
+        rtsp_quick_response(rtsp, req, RTSP_UnsupportedTransport);
         return;
     }
 
@@ -344,7 +344,7 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
     if (rtsp->srv->connection_count > rtsp->srv->srvconf.max_conns) {
         /* @todo should redirect, but we haven't the code to do that just
          * yet. */
-        rtsp_quick_response(req, RTSP_NotEnoughBandwidth);
+        rtsp_quick_response(rtsp, req, RTSP_NotEnoughBandwidth);
         return;
     }
 
@@ -357,11 +357,11 @@ void RTSP_setup(RTSP_Client * rtsp, RTSP_Request *req)
      * couldn't be found, the function will take care of sending out
      * the error response, so we don't need to do anything else.
      */
-    if ( (req_track = select_requested_track(req, rtsp_s)) == NULL )
+    if ( (req_track = select_requested_track(rtsp, req, rtsp_s)) == NULL )
         return;
 
     if ( !(rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, req->object, req_track)) ) {
-        rtsp_quick_response(req, RTSP_InternalServerError);
+        rtsp_quick_response(rtsp, req, RTSP_InternalServerError);
         return;
     }
 

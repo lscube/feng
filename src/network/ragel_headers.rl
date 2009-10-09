@@ -50,8 +50,8 @@ int ragel_read_rtsp_headers(GHashTable *headers, const char *msg,
         action save_header {
             if ( header_code != RTSP_Header__Invalid &&
                  header_code != RTSP_Header__Unsupported )
-                rtsp_headers_set(headers, header_code,
-                                 g_strndup(header_str, header_len));
+                rfc822_headers_set(headers, header_code,
+                                   g_strndup(header_str, header_len));
 
             header_code = RTSP_Header__Invalid;
             header_str = NULL;
@@ -65,7 +65,7 @@ int ragel_read_rtsp_headers(GHashTable *headers, const char *msg,
                        WSP * . CRLF
                        ) %*save_header;
 
-    RTSP_Headers := RTSP_Header * . CRLF % from{ *read_size = p - msg; fbreak; };
+        RTSP_Headers := RTSP_Header * . CRLF % from{ *read_size = p - msg; fbreak; };
 
         write data noerror;
         write init;

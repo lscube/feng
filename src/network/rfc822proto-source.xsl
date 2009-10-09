@@ -63,7 +63,7 @@ const char *rfc822_header_to_string(RFC822_Header hdr)
         [999] = NULL
     };
 
-    g_assert(100 <= code && code >= 999);
+    g_assert(100 <= code && code <= 999);
     return responses[code];
 }
 ]]></xsl:text>

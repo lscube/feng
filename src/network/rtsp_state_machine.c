@@ -36,16 +36,16 @@
  *
  * @param req Request to free
  */
-static void rtsp_free_request(RTSP_Request *req)
+static void rfc822_free_request(RFC822_Request *req)
 {
     if ( req == NULL )
         return;
 
-    rtsp_headers_destroy(req->headers);
+    rfc822_headers_destroy(req->headers);
     g_free(req->method_str);
     g_free(req->object);
     g_free(req->protocol_str);
-    g_slice_free(RTSP_Request, req);
+    g_slice_free(RFC822_Request, req);
 }
 
 /**
@@ -63,22 +63,22 @@ static void rtsp_free_request(RTSP_Request *req)
  * A 551 response contain an Unsupported header that lists the unsupported
  * options (which in our case are _all_ of them).
  */
-static gboolean check_required_options(RTSP_Request *req) {
-    const char *require_hdr = rtsp_headers_lookup(req->headers, RTSP_Header_Require);
-    const char *proxy_require_hdr = rtsp_headers_lookup(req->headers, RTSP_Header_Proxy_Require);
-    RTSP_Response *response;
+static gboolean rtsp_check_required_options(RTSP_Client *client, RFC822_Request *req) {
+    const char *require_hdr = rfc822_headers_lookup(req->headers, RTSP_Header_Require);
+    const char *proxy_require_hdr = rfc822_headers_lookup(req->headers, RTSP_Header_Proxy_Require);
+    RFC822_Response *response;
 
     if ( !require_hdr && !proxy_require_hdr )
         return true;
 
-    response = rtsp_response_new(req, RTSP_OptionNotSupported);
-    rtsp_headers_set(response->headers, RTSP_Header_Unsupported,
-                     g_strdup_printf("%s %s",
-                                     require_hdr ? require_hdr : "",
-                                     proxy_require_hdr ? proxy_require_hdr : "")
-                     );
+    response = rfc822_response_new(req, RTSP_OptionNotSupported);
+    rfc822_headers_set(response->headers, RTSP_Header_Unsupported,
+                       g_strdup_printf("%s %s",
+                                       require_hdr ? require_hdr : "",
+                                       proxy_require_hdr ? proxy_require_hdr : "")
+                       );
 
-    rtsp_response_send(response);
+    rfc822_response_send(client, response);
     return false;
 }
 
@@ -95,11 +95,11 @@ static gboolean check_required_options(RTSP_Request *req) {
  * session or if the session differs from the expected one, we respond with a
  * 454 "Session Not Found" status.
  */
-static gboolean check_session(RTSP_Request *req)
+static gboolean rtsp_check_session(RTSP_Client *client, RFC822_Request *req)
 {
-    const char *session_hdr = rtsp_headers_lookup(req->headers, RTSP_Header_Session);
+    const char *session_hdr = rfc822_headers_lookup(req->headers, RTSP_Header_Session);
 
-    RTSP_session *session = req->client->session;
+    RTSP_session *session = client->session;
 
     if (/* We always accept requests without a Session header, since even when a
          * session _is_ present, the client might make a request that is not
@@ -115,7 +115,7 @@ static gboolean check_session(RTSP_Request *req)
      * with a different id from expected, respond with a 454 "Session Not
      * Found".
      */
-    rtsp_quick_response(req, RTSP_SessionNotFound);
+    rtsp_quick_response(client, req, RTSP_SessionNotFound);
 
     return false;
 }
@@ -128,7 +128,7 @@ static gboolean check_session(RTSP_Request *req)
  * This function takes care of calling the proper method for the
  * request, and freeing it afterwards.
  */
-static void rtsp_handle_request(RTSP_Request *req)
+static void rtsp_handle_request(RTSP_Client *client, RFC822_Request *req)
 {
     static const rtsp_method_function methods[] = {
         [RTSP_Method_DESCRIBE] = RTSP_describe,
@@ -153,38 +153,38 @@ static void rtsp_handle_request(RTSP_Request *req)
      *       for supporting the QuickTime tunneling of RTP/RTSP over
      *       HTTP proxy we have to accept (limited) HTTP requests too.
      */
-    if ( req->protocol != RFC822_Protocol_RTSP10 ) {
-        rtsp_quick_response(req, RTSP_VersionNotSupported);
+    if ( req->proto != RFC822_Protocol_RTSP10 ) {
+        rtsp_quick_response(client, req, RTSP_VersionNotSupported);
         goto error;
     }
 
     /* Check if the method is a know and supported one */
-    if ( req->method == RTSP_Method__Invalid ||
-         req->method == RTSP_Method__Unsupported ) {
-        rtsp_quick_response(req, RTSP_NotImplemented);
+    if ( req->method_id == RTSP_Method__Invalid ||
+         req->method_id == RTSP_Method__Unsupported ) {
+        rtsp_quick_response(client, req, RTSP_NotImplemented);
         goto error;
     }
 
     /* No CSeq found */
-    if ( rtsp_headers_lookup(req->headers, RTSP_Header_CSeq) == NULL ) {
+    if ( rfc822_headers_lookup(req->headers, RTSP_Header_CSeq) == NULL ) {
         /** @todo This should be corrected for RFC! */
-        rtsp_quick_response(req, RTSP_BadRequest);
+        rtsp_quick_response(client, req, RTSP_BadRequest);
         goto error;
     }
 
-    if ( !check_session(req) )
+    if ( !rtsp_check_session(client, req) )
         goto error;
 
-    if ( !check_required_options(req) )
+    if ( !rtsp_check_required_options(client, req) )
         goto error;
 
     /* We're safe to use the array of functions since rtsp_parse_request() takes
      * care of responding with an error if the method is not implemented.
      */
-    methods[req->method](req->client, req);
+    methods[req->method_id](client, req);
 
  error:
-    rtsp_free_request(req);
+    rfc822_free_request(req);
 }
 
 static gboolean RTSP_handle_interleaved(RTSP_Client *rtsp) {
@@ -220,10 +220,9 @@ static gboolean RTSP_handle_new(RTSP_Client *rtsp) {
         return RTSP_handle_interleaved(rtsp);
     } else {
         size_t request_line_len = 0;
-        RTSP_Request tmpreq = {
-            .client = rtsp,
-            .method = RTSP_Method__Invalid,
-            .protocol = RFC822_Protocol_Invalid
+        RFC822_Request tmpreq = {
+            .method_id = RTSP_Method__Invalid,
+            .proto = RFC822_Protocol_Invalid
         };
 
         request_line_len = ragel_parse_request_line(rtsp->input->data,
@@ -232,12 +231,12 @@ static gboolean RTSP_handle_new(RTSP_Client *rtsp) {
 
         switch(request_line_len) {
         case (size_t)(-1):
-            rtsp_quick_response(&tmpreq, RTSP_BadRequest);
+            rtsp_quick_response(rtsp, &tmpreq, RTSP_BadRequest);
             return false;
         case 0:
             return false;
         default:
-            rtsp->pending_request = g_slice_dup(RTSP_Request, &tmpreq);
+            rtsp->pending_request = g_slice_dup(RFC822_Request, &tmpreq);
 
             g_byte_array_remove_range(rtsp->input, 0, request_line_len);
             rtsp->status = Parser_Headers;
@@ -251,7 +250,7 @@ static gboolean RTSP_handle_headers(RTSP_Client *rtsp) {
     int headers_res;
 
     if ( rtsp->pending_request->headers == NULL )
-        rtsp->pending_request->headers = rtsp_headers_new();
+        rtsp->pending_request->headers = rfc822_headers_new();
 
     headers_res = ragel_read_rtsp_headers(rtsp->pending_request->headers,
                                           rtsp->input->data,
@@ -259,7 +258,7 @@ static gboolean RTSP_handle_headers(RTSP_Client *rtsp) {
                                           &parsed_headers);
 
     if ( headers_res == -1 ) {
-        rtsp_quick_response(rtsp->pending_request, RTSP_BadRequest);
+        rtsp_quick_response(rtsp, rtsp->pending_request, RTSP_BadRequest);
         return false;
     }
 
@@ -274,15 +273,15 @@ static gboolean RTSP_handle_headers(RTSP_Client *rtsp) {
 
 static gboolean RTSP_handle_content(RTSP_Client *rtsp) {
     const char *content_length_str =
-        rtsp_headers_lookup(rtsp->pending_request->headers,
-                            RTSP_Header_Content_Length);
+        rfc822_headers_lookup(rtsp->pending_request->headers,
+                              RFC822_Header_Content_Length);
 
     if ( content_length_str != NULL ) {
         /* Duh! TODO obviously! */
         g_assert_not_reached();
     }
 
-    rtsp_handle_request(rtsp->pending_request);
+    rtsp_handle_request(rtsp, rtsp->pending_request);
 
     rtsp->status = Parser_Empty;
     return true;

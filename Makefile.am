@@ -70,6 +70,7 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rfc822proto.c \
 	src/network/rfc822proto-constants.h \
 	src/network/rfc822proto.h \
+	src/network/rfc822_response.c \
 	src/network/rtcp.c \
 	src/network/rtp.c network/rtp.h \
 	src/network/rtp_port.c \
@@ -82,7 +83,6 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rtsp_method_play.c \
 	src/network/rtsp_method_setup.c \
 	src/network/rtsp_method_teardown.c \
-	src/network/rtsp_response.c \
 	src/network/rtsp_state_machine.c \
 	src/network/rtsp_utils.c \
 	\

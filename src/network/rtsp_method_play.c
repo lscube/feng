@@ -101,10 +101,11 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
  *       and end_time parameters, since those are the only values used
  *       out of the structure.
  */
-static void send_play_reply(RTSP_Request *req,
+static void send_play_reply(RTSP_Client *client,
+                            RFC822_Request *req,
                             RTSP_session * rtsp_session)
 {
-    RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
+    RFC822_Response *response = rfc822_response_new(req, RTSP_Ok);
     GString *rtp_info = g_string_new("");
 
     /* temporary string used for creating headers */
@@ -121,20 +122,20 @@ static void send_play_reply(RTSP_Request *req,
     if (range->end_time > 0)
       g_string_append_printf(str, "%f", range->end_time);
 
-    rtsp_headers_set(response->headers,
-                     RTSP_Header_Range,
-                     g_string_free(str, false));
+    rfc822_headers_set(response->headers,
+                       RTSP_Header_Range,
+                       g_string_free(str, false));
 
     /* Create RTP-Info header */
     g_slist_foreach(rtsp_session->rtp_sessions, rtp_session_send_play_reply, rtp_info);
 
     g_string_truncate(rtp_info, rtp_info->len-1);
 
-    rtsp_headers_set(response->headers,
-                     RTSP_Header_RTP_Info,
-                     g_string_free(rtp_info, false));
+    rfc822_headers_set(response->headers,
+                       RTSP_Header_RTP_Info,
+                       g_string_free(rtp_info, false));
 
-    rtsp_response_send(response);
+    rfc822_response_send(client, response);
 }
 
 /**
@@ -170,7 +171,8 @@ static void send_play_reply(RTSP_Request *req,
  *
  * @see ragel_parse_range_header()
  */
-static RTSP_ResponseCode parse_range_header(RTSP_Request *req)
+static RTSP_ResponseCode parse_range_header(RTSP_Client *client,
+                                            RFC822_Request *req)
 {
     /* This is the default range to start from, if we need it. It sets
      * end_time and playback_time to negative values (that are invalid
@@ -183,8 +185,8 @@ static RTSP_ResponseCode parse_range_header(RTSP_Request *req)
         .playback_time = -0.1
     };
 
-    RTSP_session *session = req->client->session;
-    const char *range_hdr = rtsp_headers_lookup(req->headers, RTSP_Header_Range);
+    RTSP_session *session = client->session;
+    const char *range_hdr = rfc822_headers_lookup(req->headers, RTSP_Header_Range);
     RTSP_Range *range;
 
     /* If we have no range header and there is no play request queued,
@@ -270,16 +272,16 @@ static RTSP_ResponseCode parse_range_header(RTSP_Request *req)
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
-void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
+void RTSP_play(RTSP_Client *rtsp, RFC822_Request *req)
 {
     RTSP_session *rtsp_sess = rtsp->session;
     RTSP_ResponseCode error;
     const char *user_agent;
 
-    if ( !rtsp_check_invalid_state(req, RTSP_SERVER_INIT) )
+    if ( !rtsp_check_invalid_state(rtsp, req, RTSP_SERVER_INIT) )
         return;
 
-    if ( !rtsp_request_check_url(req) )
+    if ( !rfc822_request_check_url(rtsp, req) )
         return;
 
     if ( rtsp_sess->session_id == 0 ) {
@@ -294,26 +296,26 @@ void RTSP_play(RTSP_Client * rtsp, RTSP_Request *req)
      * instead of seeking.
     */
     if ( rtsp_sess->cur_state == RTSP_SERVER_PLAYING &&
-         (user_agent = rtsp_headers_lookup(req->headers, RTSP_Header_User_Agent)) &&
+         (user_agent = rfc822_headers_lookup(req->headers, RTSP_Header_User_Agent)) &&
          strncmp(user_agent, "VLC media player", strlen("VLC media player")) == 0 ) {
         fnc_log(FNC_LOG_WARN, "Working around broken seek of %s", user_agent);
         rtsp_do_pause(rtsp);
     }
 
-    if ( (error = parse_range_header(req)) != RTSP_Ok )
+    if ( (error = parse_range_header(rtsp, req)) != RTSP_Ok )
         goto error_management;
 
     if ( rtsp_sess->cur_state != RTSP_SERVER_PLAYING &&
          (error = do_play(rtsp_sess)) != RTSP_Ok )
         goto error_management;
 
-    send_play_reply(req, rtsp_sess);
+    send_play_reply(rtsp, req, rtsp_sess);
 
     ev_timer_again (rtsp->srv->loop, &rtsp->ev_timeout);
 
     return;
 
 error_management:
-    rtsp_quick_response(req, error);
+    rtsp_quick_response(rtsp, req, error);
     return;
 }
