@@ -33,7 +33,7 @@ RAGEL_SOURCES = \
 	src/network/ragel_range.c \
 	src/liberis/headers_parser.c
 
-BUILT_SOURCES = $(RAGEL_SOURCES) $(top_srcdir)/.version
+BUILT_SOURCES = $(RAGEL_SOURCES)
 
 $(top_srcdir)/.version:
 	echo $(VERSION) > $@-t && mv $@-t $@
