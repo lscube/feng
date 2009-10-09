@@ -116,7 +116,7 @@ int accesslog_uninit(feng *srv, void *data)
 
 #define PRINT_STRING \
     "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",\
-        response->client->sock->remote_host,\
+        client->sock->remote_host,\
         (const char*)g_hash_table_lookup(response->headers, eris_hdr_date),\
         response->request->method, response->request->object,\
         response->request->version,\
@@ -124,7 +124,7 @@ int accesslog_uninit(feng *srv, void *data)
         referer ? referer : "-",\
         useragent ? useragent : "-"
 
-int accesslog_log(RTSP_Response *response, void *data)
+int accesslog_log(RTSP_Client *client, RTSP_Response *response, void *data)
 {
     accesslog_data *d = data;
     accesslog_config *s = d->config_storage[0]; //XXX support vhost!!
