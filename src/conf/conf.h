@@ -71,7 +71,7 @@ typedef struct {
 
 //	conf_buffer *event_handler;
 
-	conf_buffer *modules_dir;
+	char *modules_dir;
 //	conf_buffer *network_backend;
 	array *modules;
 	array *upload_tempdirs;

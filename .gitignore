@@ -23,8 +23,12 @@ m4/lt~obsolete.m4
 stamp-h1
 etc/*.conf
 Doxygen
-src/feng
+feng
 *.a
 Doxyfile
 .project
 .cproject
+.dirstamp
+ChangeLog
+.version
+.tarball-version

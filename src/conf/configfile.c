@@ -949,7 +949,7 @@ int config_read(server *srv, const char *fn) {
     } else {
         return -1;
     }
-
+#if 0
     if (NULL != (modules = (data_array *)array_get_element(srv->config, "server.modules"))) {
         data_string *ds;
         data_array *prepends;
@@ -958,7 +958,6 @@ int config_read(server *srv, const char *fn) {
             fprintf(stderr, "server.modules must be an array");
             return -1;
         }
-
         prepends = data_array_init();
 
         /* prepend default modules */
@@ -987,6 +986,7 @@ int config_read(server *srv, const char *fn) {
             array_insert_unique(modules->value, (data_unset *)ds);
         }
     } else {
+
         data_string *ds;
 
         modules = data_array_init();
@@ -1007,7 +1007,7 @@ int config_read(server *srv, const char *fn) {
         buffer_copy_string(modules->key, "server.modules");
         array_insert_unique(srv->config, (data_unset *)modules);
     }
-
+#endif
 
     if (0 != config_insert(srv)) {
         return -1;

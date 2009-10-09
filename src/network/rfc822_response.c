@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include "rfc822proto.h"
 #include "rtsp.h"
+#include "modules/plugin.h"
 
 #define ENDLINE "\r\n"
 
@@ -160,44 +161,6 @@ static void rfc822_response_append_headers(gpointer hdr_code_p,
 }
 
 /**
- * @brief Log an access to the proper log
- *
- * @param client The client the response is being sent to
- * @param response Response to log to the access log
- *
- * Like Apache and most of the web servers, we log the access through CLF
- * (Common Log Format).
- *
- * @todo Create a true access.log file
- *
- * Right now the access is just logged to stderr for debug purposes.  It
- * should also be possible to let the user configure the log format.
- *
- * @todo This should use an Apache-compatible user setting to decide the output
- *       format, and parse that line.
- */
-static void log_access(RTSP_Client *client, RFC822_Response *response)
-{
-    const char *referer =
-        rfc822_headers_lookup(response->request->headers, RFC822_Header_Referer);
-    const char *useragent =
-        rfc822_headers_lookup(response->request->headers, RFC822_Header_User_Agent);
-    char *response_length = response->body ?
-        g_strdup_printf("%zd", response->body->len) : NULL;
-
-    fprintf(stderr, "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",
-            client->sock->remote_host,
-            rfc822_headers_lookup(response->headers, RFC822_Header_Date),
-            response->request->method_str, response->request->object,
-            response->request->protocol_str,
-            response->status, response_length ? response_length : "-",
-            referer ? referer : "-",
-            useragent ? useragent : "-");
-
-    g_free(response_length);
-}
-
-/**
  * @brief Finalise, send and free an response object
  *
  * @param response The response to send
@@ -240,7 +203,7 @@ void rfc822_response_send(RTSP_Client *client, RFC822_Response *response)
     rtsp_bwrite(client, str);
 
     /* Log the access */
-    log_access(client, response);
+    module_response_send(client, response);
 
     /* After we did output to access.log, we can free the response since it's no
      * longer necessary. */

@@ -37,6 +37,12 @@ BUILT_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rfc822proto.c \
 	src/network/rfc822proto-constants.h
 
+$(top_srcdir)/.version:
+	echo $(VERSION) > $@-t && mv $@-t $@
+
+dist-hook:
+	echo $(VERSION) > $(distdir)/.tarball-version
+
 dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	\
 	src/bufferqueue.c src/bufferqueue.h \
@@ -133,7 +139,17 @@ tests/rfc822proto/rfc822proto-test.rl: tests/rfc822proto/rfc822proto-test.xsl sr
 
 tests/rfc822proto/rfc822proto-test.c: src/network/rfc822proto-statemachine.rl
 
-INCLUDES = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network
+INCLUDES = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network -I$(srcdir)/src/modules -Isrc/modules
+
+##if FENG_PLUGINS
+dist_feng_SOURCES += modules/plugin.c \
+		     modules/plugin.h
+
+pkglib_LTLIBRARIES = modules/mod_accesslog.la
+modules_mod_accesslog_la_LDFLAGS = -module -disable-static -avoid-version -no-undefined
+
+feng_CPPFLAGS = -DLIBDIR="\"$(pkglibdir)\""
+##endif
 
 AM_RAGELFLAGS = -I$(srcdir)/src/network -Isrc/network
 
@@ -151,9 +167,9 @@ check_PROGRAMS = $(TESTS)
 BUILT_SOURCES += tests/gtestmain.c \
 	tests/rfc822proto/rfc822proto-test.c
 
-tests/gtestmain.c: $(tests_testsuite_SOURCES)
+tests/gtestmain.c: $(tests_testsuite_SOURCES) Makefile.am
 	@$(mkdir_p) $(dir $@)
-	$(AM_V_GEN)$(EXUBERANT_CTAGS) -f - --file-scope=no $^ | \
+	$(AM_V_GEN)$(EXUBERANT_CTAGS) -f - --file-scope=no $(filter %.c,$^) | \
 		sort -k 2 | $(EGREP) '^test_' | \
 		$(GAWK) -f $(srcdir)/tests/genmain.awk \
 		> $@
