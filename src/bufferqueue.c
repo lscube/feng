@@ -28,7 +28,7 @@
 #include <stdio.h>
 
 /* We don't enable this with !NDEBUG because it's _massive_! */
-#if 1 //def FENG_BQ_DEBUG
+#ifdef FENG_BQ_DEBUG
 # define bq_debug(fmt, ...) g_debug("[%s] " fmt, __PRETTY_FUNCTION__, __VA_ARGS__)
 #else
 # define bq_debug(...)
