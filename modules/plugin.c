@@ -121,9 +121,9 @@ int module_set_defaults(feng *srv)
     return err;
 }
 
-int module_response_send(RTSP_Client *client, RTSP_Response *resp)
+int module_response_send(RTSP_Client *client, RFC822_Response *resp)
 {
-    GSList *mod = resp->client->srv->modules;
+    GSList *mod = client->srv->modules;
     int err = ERR_NOERROR;
     while (mod && !err)
     {
