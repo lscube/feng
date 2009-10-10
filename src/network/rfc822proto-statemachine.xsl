@@ -96,7 +96,9 @@
 ]]></xsl:text>
       </xsl:for-each>
 
-      <xsl:text>        );</xsl:text>
+      <xsl:text><![CDATA[        );
+
+]]></xsl:text>
     </xsl:for-each>
 
     <xsl:text><![CDATA[
