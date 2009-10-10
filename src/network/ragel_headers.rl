@@ -23,8 +23,6 @@
 
 #include "rtsp.h"
 
-%% machine rtsp_headers;
-
 int ragel_read_rtsp_headers(GHashTable *headers, const char *msg,
                             size_t length, size_t *read_size)
 {
@@ -36,6 +34,7 @@ int ragel_read_rtsp_headers(GHashTable *headers, const char *msg,
     size_t header_len = 0;
 
     %%{
+        machine rtsp_headers;
 
         include RFC822Proto "rfc822proto-statemachine.rl";
 
@@ -73,6 +72,60 @@ int ragel_read_rtsp_headers(GHashTable *headers, const char *msg,
     }%%
 
     if ( cs < rtsp_headers_first_final )
+        return ( p == pe ) ? 0 : -1;
+
+    return 1;
+}
+
+int ragel_read_http_headers(GHashTable *headers, const char *msg,
+                            size_t length, size_t *read_size)
+{
+    int cs;
+    const char *p = msg, *pe = p + length;
+    HTTP_Header header_code = HTTP_Header__Invalid;
+
+    const char *header_str = NULL;
+    size_t header_len = 0;
+
+    %%{
+        machine http_headers;
+
+        include RFC822Proto "rfc822proto-statemachine.rl";
+
+        action set_header_str {
+            header_str = p;
+        }
+
+        action set_header_len {
+            header_len = p - header_str;
+        }
+
+        action save_header {
+            if ( header_code != HTTP_Header__Invalid &&
+                 header_code != HTTP_Header__Unsupported )
+                rfc822_headers_set(headers, header_code,
+                                   g_strndup(header_str, header_len));
+
+            header_code = HTTP_Header__Invalid;
+            header_str = NULL;
+            header_len = 0;
+            *read_size = p - msg;
+        }
+
+        HTTP_Header = (
+                       HTTP_Header_Name . ':' WSP * .
+                       (VCHAR|WSP)+ > set_header_str % set_header_len .
+                       WSP * . CRLF
+                       ) %*save_header;
+
+        HTTP_Headers := HTTP_Header * . CRLF % from{ *read_size = p - msg; fbreak; };
+
+        write data noerror;
+        write init;
+        write exec noend;
+    }%%
+
+    if ( cs < http_headers_first_final )
         return ( p == pe ) ? 0 : -1;
 
     return 1;

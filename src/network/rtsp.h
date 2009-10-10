@@ -309,6 +309,8 @@ size_t ragel_parse_request_line(const char *msg, const size_t length, RFC822_Req
 
 int ragel_read_rtsp_headers(GHashTable *headers, const char *msg,
                             size_t length, size_t *read_size);
+int ragel_read_http_headers(GHashTable *headers, const char *msg,
+                            size_t length, size_t *read_size);
 /**
  *@}
  */

@@ -53,4 +53,26 @@
     <response code="505">RTSP Version Not Supported</response>
     <response code="551">Option not supported</response>
   </supportedproto>
+
+  <supportedproto name="HTTP">
+    <supportedversion>1.0</supportedversion>
+
+    <supportedmethod>GET</supportedmethod>
+    <supportedmethod>POST</supportedmethod>
+
+    <supportedheader>Cache-Control</supportedheader>
+    <supportedheader>Connection</supportedheader>
+    <supportedheader>Content-Length</supportedheader>
+    <supportedheader>Content-Type</supportedheader>
+    <supportedheader>Date</supportedheader>
+    <supportedheader>Expires</supportedheader>
+    <supportedheader>Pragma</supportedheader>
+    <supportedheader>Server</supportedheader>
+    <supportedheader>User-Agent</supportedheader>
+    <supportedheader>x-sessioncookie</supportedheader>
+
+    <response code="200">OK</response>
+    <response code="400">Bad Request</response>
+    <response code="500">Internal Server Error</response>
+  </supportedproto>
 </rfc288proto>
