@@ -49,26 +49,24 @@
     );
 
 ]]></xsl:text>
-
     <xsl:for-each select="//supportedproto">
-      <xsl:text>    </xsl:text>
       <xsl:value-of select="@name" />
       <xsl:text><![CDATA[_Method = (
-]]></xsl:text>
+         unreserved+ % (method_code, 0)  % { method_code = ]]></xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text>_Method__Unsupported; }</xsl:text>
       <xsl:for-each select="supportedmethod">
-	<xsl:text>        '</xsl:text>
+      <xsl:text><![CDATA[ |
+        ']]></xsl:text>
 	<xsl:value-of select="." />
-	<xsl:text>' > (method_code, 2) % { method_code = </xsl:text>
+	<xsl:text>' > (method_code, 1) % { method_code = </xsl:text>
 	<xsl:value-of select="../@name" />
 	<xsl:text>_Method_</xsl:text>
 	<xsl:value-of select="." />
-	<xsl:text><![CDATA[; } |
-]]></xsl:text>
+	<xsl:text>; }</xsl:text>
       </xsl:for-each>
 
-      <xsl:text>         unreserved+ > (method_code, 1)  % { method_code = </xsl:text>
-      <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[_Method__Unsupported; }
+      <xsl:text><![CDATA[
     );
 ]]></xsl:text>
 
