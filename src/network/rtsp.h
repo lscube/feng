@@ -208,8 +208,18 @@ void RTSP_options(RTSP_Client * rtsp, RFC822_Request *req);
 
 static inline void rtsp_quick_response(struct RTSP_Client *client, RFC822_Request *req, int code)
 {
-    RFC822_Protocol proto = req->proto != RFC822_Protocol_RTSP_UnsupportedVersion ?
-        req->proto : RFC822_Protocol_RTSP10;
+    /* We want to make sure we respond with an RTSP protocol every
+       time if we called this function in particular. */
+    RFC822_Protocol proto;
+    switch ( req->proto ) {
+    case RFC822_Protocol_RTSP10:
+        proto = req->proto;
+        break;
+    default:
+        proto = RFC822_Protocol_RTSP10;
+        break;
+    }
+
     rfc822_quick_response(client, req, proto, code);
 }
 
