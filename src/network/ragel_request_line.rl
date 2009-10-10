@@ -23,8 +23,6 @@
 
 #include "network/rtsp.h"
 
-%% machine rtsp_request_line;
-
 size_t ragel_parse_request_line(const char *msg, const size_t length, RFC822_Request *req) {
     int cs;
     const char *p = msg, *pe = p + length, *s = NULL;
@@ -41,39 +39,18 @@ size_t ragel_parse_request_line(const char *msg, const size_t length, RFC822_Req
     size_t object_len = 0;
 
     %%{
+        machine request_line;
 
         include RFC822Proto "rfc822proto-statemachine.rl";
 
-        action set_s {
-            s = p;
-        }
-
-        action end_method {
-            method_str = s;
-            method_len = p-s;
-        }
-
-        action end_protocol {
-            protocol_str = s;
-            protocol_len = p-s;
-        }
-
-        action end_object {
-            object_str = s;
-            object_len = p-s;
-        }
-
-        Request_Line := (
-                RTSP_Method > set_s % end_method . SP
-                (print*) > set_s % end_object . SP
-                RFC822_Protocol > set_s % end_protocol . CRLF ) % to{ fbreak; };
+        Request_Line := RFC822_Request_Line;
 
         write data noerror;
         write init;
         write exec noend;
     }%%
 
-    if ( cs < rtsp_request_line_first_final )
+    if ( cs < request_line_first_final )
         return ( p == pe ) ? 0 : -1;
 
     /* Only set these when the parsing was successful: an incomplete

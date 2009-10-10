@@ -17,6 +17,11 @@
 
     include common "common.rl";
 
+    RFC822_Generic_Protocol =
+        ([A-Z]+ . '/' . digit . "." . digit)
+        % { protocol_code = RFC822_Protocol_Unsupported; };
+
+    RFC822_Generic_Method = unreserved+;
 ]]></xsl:text>
 
     <xsl:for-each select="//supportedproto">
@@ -57,15 +62,14 @@
       <xsl:value-of select="$newline" />
     </xsl:for-each>
 
-    <xsl:text><![CDATA[        ([A-Z]+ . '/' . digit . "." . digit) > ( protocol_code, 0 )
-	      % { protocol_code = RFC822_Protocol_Unsupported; }
+    <xsl:text><![CDATA[        RFC822_Generic_Protocol
     );
 
 ]]></xsl:text>
     <xsl:for-each select="//supportedproto">
       <xsl:value-of select="@name" />
       <xsl:text><![CDATA[_Method = (
-         unreserved+ % (method_code, 0)  % { method_code = ]]></xsl:text>
+         RFC822_Generic_Method % (method_code, 0)  % { method_code = ]]></xsl:text>
       <xsl:value-of select="@name" />
       <xsl:text>_Method__Unsupported; }</xsl:text>
       <xsl:for-each select="supportedmethod">
@@ -113,6 +117,50 @@
     </xsl:for-each>
 
     <xsl:text><![CDATA[
+
+    action set_s {
+        s = p;
+    }
+
+    action end_method {
+        method_str = s;
+        method_len = p-s;
+    }
+
+    action end_protocol {
+        protocol_str = s;
+        protocol_len = p-s;
+    }
+
+    action end_object {
+        object_str = s;
+        object_len = p-s;
+    }
+]]></xsl:text>
+
+    <xsl:text><![CDATA[
+    RFC822_Request_Line = ( (
+        ( RFC822_Generic_Method >  set_s % end_method . SP .
+            (print*) > set_s % end_object . SP .
+	    RFC822_Generic_Protocol > set_s % end_protocol ) > (status_line, 0) ]]></xsl:text>
+
+    <xsl:for-each select="//supportedproto">
+      <xsl:text> | </xsl:text>
+      <xsl:value-of select="$newline" />
+      <xsl:text>        ( </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text>_Method > set_s % end_method . SP .</xsl:text>
+      <xsl:value-of select="$newline" />
+      <xsl:text>            (print*) > set_s % end_object . SP .</xsl:text>
+      <xsl:value-of select="$newline" />
+      <xsl:text>            RFC822_</xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text>_Versions > set_s % end_protocol ) > (status_line, 1)</xsl:text>
+    </xsl:for-each>
+
+    <xsl:text><![CDATA[
+        ) . CRLF ) % to{ fbreak; };
+
 }%%
 
 ]]></xsl:text>
