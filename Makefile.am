@@ -134,6 +134,8 @@ src/network/rfc822proto-constants.h: src/network/rfc822proto-header.xsl src/netw
 src/network/rfc822proto-statemachine.rl: src/network/rfc822proto-statemachine.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
 
+src/network/ragel_request_line.c: src/network/rfc822proto-statemachine.rl
+
 tests/rfc822proto/rfc822proto-test.rl: tests/rfc822proto/rfc822proto-test.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
 
