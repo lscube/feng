@@ -26,7 +26,7 @@
     ragel_read_rtsp_headers(headers, string, sizeof(string)-1, read_size)
 
 void test_single_header() {
-    GHashTable *headers = rtsp_headers_new();
+    GHashTable *headers = rfc822_headers_new();
     size_t read_size = (size_t)-1;
     int res = ragel_read_constant_rtsp_headers(headers, "CSeq: 1\r\n", &read_size);
 
@@ -34,13 +34,13 @@ void test_single_header() {
     g_assert_cmpint(read_size, ==, sizeof("CSeq: 1\r\n")-1);
     g_assert_cmpint(g_hash_table_size(headers), ==, 1);
 
-    g_assert_cmpstr(rtsp_headers_lookup(headers, RTSP_Header_CSeq), ==, "1");
+    g_assert_cmpstr(rfc822_headers_lookup(headers, RTSP_Header_CSeq), ==, "1");
 
-    rtsp_headers_destroy(headers);
+    rfc822_headers_destroy(headers);
 }
 
 void test_single_header_discarding() {
-    GHashTable *headers = rtsp_headers_new();
+    GHashTable *headers = rfc822_headers_new();
     size_t read_size = (size_t)-1;
     int res = ragel_read_constant_rtsp_headers(headers, "CSeq: 1\r\nMyTest", &read_size);
 
@@ -48,13 +48,13 @@ void test_single_header_discarding() {
     g_assert_cmpint(read_size, ==, sizeof("CSeq: 1\r\n")-1);
     g_assert_cmpint(g_hash_table_size(headers), ==, 1);
 
-    g_assert_cmpstr(rtsp_headers_lookup(headers, RTSP_Header_CSeq), ==, "1");
+    g_assert_cmpstr(rfc822_headers_lookup(headers, RTSP_Header_CSeq), ==, "1");
 
-    rtsp_headers_destroy(headers);
+    rfc822_headers_destroy(headers);
 }
 
 void test_two_headers() {
-    GHashTable *headers = rtsp_headers_new();
+    GHashTable *headers = rfc822_headers_new();
     size_t read_size = (size_t)-1;
     int res = ragel_read_constant_rtsp_headers(headers, "CSeq: 1\r\nSession: Test\r\n", &read_size);
 
@@ -62,15 +62,15 @@ void test_two_headers() {
     g_assert_cmpint(read_size, ==, sizeof("CSeq: 1\r\nSession: Test\r\n")-1);
     g_assert_cmpint(g_hash_table_size(headers), ==, 2);
 
-    g_assert_cmpstr(rtsp_headers_lookup(headers, RTSP_Header_CSeq), ==, "1");
-    g_assert_cmpstr(rtsp_headers_lookup(headers, RTSP_Header_Session), ==, "Test");
+    g_assert_cmpstr(rfc822_headers_lookup(headers, RTSP_Header_CSeq), ==, "1");
+    g_assert_cmpstr(rfc822_headers_lookup(headers, RTSP_Header_Session), ==, "Test");
 
-    rtsp_headers_destroy(headers);
+    rfc822_headers_destroy(headers);
 }
 
 
 void test_two_headers_ending() {
-    GHashTable *headers = rtsp_headers_new();
+    GHashTable *headers = rfc822_headers_new();
     size_t read_size = (size_t)-1;
     int res = ragel_read_constant_rtsp_headers(headers, "CSeq: 1\r\nSession: Test\r\n\r\n", &read_size);
 
@@ -78,14 +78,14 @@ void test_two_headers_ending() {
     g_assert_cmpint(read_size, ==, sizeof("CSeq: 1\r\nSession: Test\r\n\r\n")-1);
     g_assert_cmpint(g_hash_table_size(headers), ==, 2);
 
-    g_assert_cmpstr(rtsp_headers_lookup(headers, RTSP_Header_CSeq), ==, "1");
-    g_assert_cmpstr(rtsp_headers_lookup(headers, RTSP_Header_Session), ==, "Test");
+    g_assert_cmpstr(rfc822_headers_lookup(headers, RTSP_Header_CSeq), ==, "1");
+    g_assert_cmpstr(rfc822_headers_lookup(headers, RTSP_Header_Session), ==, "Test");
 
-    rtsp_headers_destroy(headers);
+    rfc822_headers_destroy(headers);
 }
 
 void test_unsupported_header() {
-    GHashTable *headers = rtsp_headers_new();
+    GHashTable *headers = rfc822_headers_new();
     size_t read_size = (size_t)-1;
     static const char headers_str[] = "MyFakeHeader: Value\r\n";
     int res = ragel_read_constant_rtsp_headers(headers, headers_str, &read_size);
@@ -94,11 +94,11 @@ void test_unsupported_header() {
     g_assert_cmpint(read_size, ==, sizeof(headers_str)-1);
     g_assert_cmpint(g_hash_table_size(headers), ==, 0);
 
-    rtsp_headers_destroy(headers);
+    rfc822_headers_destroy(headers);
 }
 
 void test_unsupported_header_accept() {
-    GHashTable *headers = rtsp_headers_new();
+    GHashTable *headers = rfc822_headers_new();
     size_t read_size = (size_t)-1;
     static const char headers_str[] = "Accept: application/sdp\r\n";
     int res = ragel_read_constant_rtsp_headers(headers, headers_str, &read_size);
@@ -107,11 +107,11 @@ void test_unsupported_header_accept() {
     g_assert_cmpint(read_size, ==, sizeof(headers_str)-1);
     g_assert_cmpint(g_hash_table_size(headers), ==, 0);
 
-    rtsp_headers_destroy(headers);
+    rfc822_headers_destroy(headers);
 }
 
 void test_unsupported_header_sender() {
-    GHashTable *headers = rtsp_headers_new();
+    GHashTable *headers = rfc822_headers_new();
     size_t read_size = (size_t)-1;
     static const char headers_str[] = "Sender: test\r\n";
     int res = ragel_read_constant_rtsp_headers(headers, headers_str, &read_size);
@@ -120,11 +120,11 @@ void test_unsupported_header_sender() {
     g_assert_cmpint(read_size, ==, sizeof(headers_str)-1);
     g_assert_cmpint(g_hash_table_size(headers), ==, 0);
 
-    rtsp_headers_destroy(headers);
+    rfc822_headers_destroy(headers);
 }
 
 void test_real_headers() {
-    GHashTable *headers = rtsp_headers_new();
+    GHashTable *headers = rfc822_headers_new();
     size_t read_size = (size_t)-1;
     static const char headers_str[] = "CSeq: 1\r\nAccept: application/sdp\r\nBandwidth: 512000\r\nAccept-Language: en-US\r\nUser-Agent: QuickTime/7.6.3 (qtver=7.6.3;cpu=IA32;os=Mac 10.6)\r\n\r\n";
     int res = ragel_read_constant_rtsp_headers(headers, headers_str, &read_size);
@@ -132,5 +132,5 @@ void test_real_headers() {
     g_assert_cmpint(res, ==, 1);
     g_assert_cmpint(read_size, ==, sizeof(headers_str)-1);
 
-    rtsp_headers_destroy(headers);
+    rfc822_headers_destroy(headers);
 }

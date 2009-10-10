@@ -31,14 +31,14 @@
 void test_request_line_rtsp10()
 {
     size_t resval;
-    RTSP_Request req;
+    RFC822_Request req;
     static const char line[] = "PLAY rtsp://host/object RTSP/1.0\r\n";
 
     resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, line_len);
-    g_assert_cmpint(req.method, ==, RTSP_Method_PLAY);
-    g_assert_cmpint(req.protocol, ==, RFC822_Protocol_RTSP10);
+    g_assert_cmpint(req.method_id, ==, RTSP_Method_PLAY);
+    g_assert_cmpint(req.proto, ==, RFC822_Protocol_RTSP10);
     g_assert_cmpstr(req.method_str, ==, "PLAY");
     g_assert_cmpstr(req.protocol_str, ==, "RTSP/1.0");
     g_assert_cmpstr(req.object, ==, "rtsp://host/object");
@@ -47,14 +47,14 @@ void test_request_line_rtsp10()
 void test_request_line_rtsp10_discard()
 {
     size_t resval;
-    RTSP_Request req;
+    RFC822_Request req;
     static const char line[] = "PLAY rtsp://host/object RTSP/1.0\r\n         ";
 
     resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, line_len);
-    g_assert_cmpint(req.method, ==, RTSP_Method_PLAY);
-    g_assert_cmpint(req.protocol, ==, RFC822_Protocol_RTSP10);
+    g_assert_cmpint(req.method_id, ==, RTSP_Method_PLAY);
+    g_assert_cmpint(req.proto, ==, RFC822_Protocol_RTSP10);
     g_assert_cmpstr(req.method_str, ==, "PLAY");
     g_assert_cmpstr(req.protocol_str, ==, "RTSP/1.0");
     g_assert_cmpstr(req.object, ==, "rtsp://host/object");
@@ -63,14 +63,14 @@ void test_request_line_rtsp10_discard()
 void test_request_line_rtsp20()
 {
     size_t resval;
-    RTSP_Request req;
+    RFC822_Request req;
     static const char line[] = "PLAY rtsp://host/object RTSP/2.0\r\n";
 
     resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, line_len);
-    g_assert_cmpint(req.method, ==, RTSP_Method_PLAY);
-    g_assert_cmpint(req.protocol, ==, RFC822_Protocol_RTSP_UnsupportedVersion);
+    g_assert_cmpint(req.method_id, ==, RTSP_Method_PLAY);
+    g_assert_cmpint(req.proto, ==, RFC822_Protocol_RTSP_UnsupportedVersion);
     g_assert_cmpstr(req.method_str, ==, "PLAY");
     g_assert_cmpstr(req.protocol_str, ==, "RTSP/2.0");
     g_assert_cmpstr(req.object, ==, "rtsp://host/object");
@@ -79,14 +79,14 @@ void test_request_line_rtsp20()
 void test_request_line_rtsp10_method_unsupported()
 {
     size_t resval;
-    RTSP_Request req;
+    RFC822_Request req;
     static const char line[] = "MYMETHOD rtsp://host/object RTSP/1.0\r\n";
 
     resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, line_len);
-    g_assert_cmpint(req.method, ==, RTSP_Method__Unsupported);
-    g_assert_cmpint(req.protocol, ==, RFC822_Protocol_RTSP10);
+    g_assert_cmpint(req.method_id, ==, RTSP_Method__Unsupported);
+    g_assert_cmpint(req.proto, ==, RFC822_Protocol_RTSP10);
     g_assert_cmpstr(req.method_str, ==, "MYMETHOD");
     g_assert_cmpstr(req.protocol_str, ==, "RTSP/1.0");
     g_assert_cmpstr(req.object, ==, "rtsp://host/object");
@@ -95,7 +95,7 @@ void test_request_line_rtsp10_method_unsupported()
 void test_request_line_rtsp10_method_invalid()
 {
     size_t resval;
-    RTSP_Request req;
+    RFC822_Request req;
     static const char line[] = "%My13Method rtsp://host/object RTSP/1.0\r\n";
 
     resval = ragel_parse_constant_request_line();
@@ -106,14 +106,14 @@ void test_request_line_rtsp10_method_invalid()
 void test_request_line_protocol_unsupported()
 {
     size_t resval;
-    RTSP_Request req;
+    RFC822_Request req;
     static const char line[] = "MYMETHOD * MYPROTO/2.1\r\n";
 
     resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, line_len);
-    g_assert_cmpint(req.method, ==, RTSP_Method__Unsupported);
-    g_assert_cmpint(req.protocol, ==, RFC822_Protocol_Unsupported);
+    g_assert_cmpint(req.method_id, ==, RTSP_Method__Unsupported);
+    g_assert_cmpint(req.proto, ==, RFC822_Protocol_Unsupported);
     g_assert_cmpstr(req.method_str, ==, "MYMETHOD");
     g_assert_cmpstr(req.protocol_str, ==, "MYPROTO/2.1");
     g_assert_cmpstr(req.object, ==, "*");
@@ -122,7 +122,7 @@ void test_request_line_protocol_unsupported()
 void test_request_line_protocol_invalid()
 {
     size_t resval;
-    RTSP_Request req;
+    RFC822_Request req;
     static const char line[] = "MYMETHOD * MYPROTO\r\n";
 
     resval = ragel_parse_constant_request_line();
@@ -133,7 +133,7 @@ void test_request_line_protocol_invalid()
 void test_request_line_bogus()
 {
     size_t resval;
-    RTSP_Request req;
+    RFC822_Request req;
     static const char line[] = "NOT_A_REQUEST_LINE\r\n";
 
     resval = ragel_parse_constant_request_line();
@@ -144,9 +144,9 @@ void test_request_line_bogus()
 void test_request_line_incomplete_missing_newline()
 {
     size_t resval;
-    RTSP_Request req = {
-        .method = RTSP_Method__Invalid,
-        .protocol = RFC822_Protocol_Invalid,
+    RFC822_Request req = {
+        .method_id = RTSP_Method__Invalid,
+        .proto = RFC822_Protocol_Invalid,
         .method_str = NULL,
         .protocol_str = NULL,
         .object = NULL
@@ -156,8 +156,8 @@ void test_request_line_incomplete_missing_newline()
     resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, 0);
-    g_assert_cmpint(req.method, ==, RTSP_Method__Invalid);
-    g_assert_cmpint(req.protocol, ==, RFC822_Protocol_Invalid);
+    g_assert_cmpint(req.method_id, ==, RTSP_Method__Invalid);
+    g_assert_cmpint(req.proto, ==, RFC822_Protocol_Invalid);
     g_assert_cmpstr(req.method_str, ==, NULL);
     g_assert_cmpstr(req.protocol_str, ==, NULL);
     g_assert_cmpstr(req.object, ==, NULL);
@@ -166,9 +166,9 @@ void test_request_line_incomplete_missing_newline()
 void test_request_line_incomplete_missing_protocol()
 {
     size_t resval;
-    RTSP_Request req = {
-        .method = RTSP_Method__Invalid,
-        .protocol = RFC822_Protocol_Invalid,
+    RFC822_Request req = {
+        .method_id = RTSP_Method__Invalid,
+        .proto = RFC822_Protocol_Invalid,
         .method_str = NULL,
         .protocol_str = NULL,
         .object = NULL
@@ -178,8 +178,8 @@ void test_request_line_incomplete_missing_protocol()
     resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, 0);
-    g_assert_cmpint(req.method, ==, RTSP_Method__Invalid);
-    g_assert_cmpint(req.protocol, ==, RFC822_Protocol_Invalid);
+    g_assert_cmpint(req.method_id, ==, RTSP_Method__Invalid);
+    g_assert_cmpint(req.proto, ==, RFC822_Protocol_Invalid);
     g_assert_cmpstr(req.method_str, ==, NULL);
     g_assert_cmpstr(req.protocol_str, ==, NULL);
     g_assert_cmpstr(req.object, ==, NULL);
@@ -188,9 +188,9 @@ void test_request_line_incomplete_missing_protocol()
 void test_request_line_incomplete_partial_object()
 {
     size_t resval;
-    RTSP_Request req = {
-        .method = RTSP_Method__Invalid,
-        .protocol = RFC822_Protocol_Invalid,
+    RFC822_Request req = {
+        .method_id = RTSP_Method__Invalid,
+        .proto = RFC822_Protocol_Invalid,
         .method_str = NULL,
         .protocol_str = NULL,
         .object = NULL
@@ -200,8 +200,8 @@ void test_request_line_incomplete_partial_object()
     resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, 0);
-    g_assert_cmpint(req.method, ==, RTSP_Method__Invalid);
-    g_assert_cmpint(req.protocol, ==, RFC822_Protocol_Invalid);
+    g_assert_cmpint(req.method_id, ==, RTSP_Method__Invalid);
+    g_assert_cmpint(req.proto, ==, RFC822_Protocol_Invalid);
     g_assert_cmpstr(req.method_str, ==, NULL);
     g_assert_cmpstr(req.protocol_str, ==, NULL);
     g_assert_cmpstr(req.object, ==, NULL);
@@ -210,9 +210,9 @@ void test_request_line_incomplete_partial_object()
 void test_request_line_incomplete_missing_object()
 {
     size_t resval;
-    RTSP_Request req = {
-        .method = RTSP_Method__Invalid,
-        .protocol = RFC822_Protocol_Invalid,
+    RFC822_Request req = {
+        .method_id = RTSP_Method__Invalid,
+        .proto = RFC822_Protocol_Invalid,
         .method_str = NULL,
         .protocol_str = NULL,
         .object = NULL
@@ -222,8 +222,8 @@ void test_request_line_incomplete_missing_object()
     resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, 0);
-    g_assert_cmpint(req.method, ==, RTSP_Method__Invalid);
-    g_assert_cmpint(req.protocol, ==, RFC822_Protocol_Invalid);
+    g_assert_cmpint(req.method_id, ==, RTSP_Method__Invalid);
+    g_assert_cmpint(req.proto, ==, RFC822_Protocol_Invalid);
     g_assert_cmpstr(req.method_str, ==, NULL);
     g_assert_cmpstr(req.protocol_str, ==, NULL);
     g_assert_cmpstr(req.object, ==, NULL);
@@ -232,9 +232,9 @@ void test_request_line_incomplete_missing_object()
 void test_request_line_incomplete_empty()
 {
     size_t resval;
-    RTSP_Request req = {
-        .method = RTSP_Method__Invalid,
-        .protocol = RFC822_Protocol_Invalid,
+    RFC822_Request req = {
+        .method_id = RTSP_Method__Invalid,
+        .proto = RFC822_Protocol_Invalid,
         .method_str = NULL,
         .protocol_str = NULL,
         .object = NULL
@@ -244,8 +244,8 @@ void test_request_line_incomplete_empty()
     resval = ragel_parse_constant_request_line();
 
     g_assert_cmpint(resval, ==, 0);
-    g_assert_cmpint(req.method, ==, RTSP_Method__Invalid);
-    g_assert_cmpint(req.protocol, ==, RFC822_Protocol_Invalid);
+    g_assert_cmpint(req.method_id, ==, RTSP_Method__Invalid);
+    g_assert_cmpint(req.proto, ==, RFC822_Protocol_Invalid);
     g_assert_cmpstr(req.method_str, ==, NULL);
     g_assert_cmpstr(req.protocol_str, ==, NULL);
     g_assert_cmpstr(req.object, ==, NULL);
