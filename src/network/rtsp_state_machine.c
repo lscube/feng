@@ -206,7 +206,7 @@ static gboolean RTSP_handle_interleaved(RTSP_Client *rtsp) {
                      rtsp->input->data+4, length-4);
 
     g_byte_array_remove_range(rtsp->input, 0, length+4);
-    rtsp->status = Parser_Empty;
+    rtsp->status = RFC822_State_Begin;
 
     return true;
 }
@@ -216,7 +216,7 @@ static gboolean RTSP_handle_new(RTSP_Client *rtsp) {
         return false;
 
     if ( rtsp->input->data[0] == '$' ) {
-        rtsp->status = Parser_Interleaved;
+        rtsp->status = RFC822_State_Interleaved;
         return RTSP_handle_interleaved(rtsp);
     } else {
         size_t request_line_len = 0;
@@ -239,7 +239,7 @@ static gboolean RTSP_handle_new(RTSP_Client *rtsp) {
             rtsp->pending_request = g_slice_dup(RFC822_Request, &tmpreq);
 
             g_byte_array_remove_range(rtsp->input, 0, request_line_len);
-            rtsp->status = Parser_Headers;
+            rtsp->status = RFC822_State_RTSP_Headers;
             return true;
         }
     }
@@ -267,7 +267,7 @@ static gboolean RTSP_handle_headers(RTSP_Client *rtsp) {
     if ( headers_res == 0 )
         return false;
 
-    rtsp->status = Parser_Content;
+    rtsp->status = RFC822_State_RTSP_Content;
     return true;
 }
 
@@ -283,7 +283,7 @@ static gboolean RTSP_handle_content(RTSP_Client *rtsp) {
 
     rtsp_handle_request(rtsp, rtsp->pending_request);
 
-    rtsp->status = Parser_Empty;
+    rtsp->status = RFC822_State_Begin;
     return true;
 }
 
@@ -292,10 +292,10 @@ void RTSP_handler(RTSP_Client * rtsp)
     typedef gboolean (*state_machine_handler)(RTSP_Client *);
 
     static const state_machine_handler handlers[] = {
-        [Parser_Empty] = RTSP_handle_new,
-        [Parser_Headers] = RTSP_handle_headers,
-        [Parser_Content] = RTSP_handle_content,
-        [Parser_Interleaved] = RTSP_handle_interleaved
+        [RFC822_State_Begin] = RTSP_handle_new,
+        [RFC822_State_RTSP_Headers] = RTSP_handle_headers,
+        [RFC822_State_RTSP_Content] = RTSP_handle_content,
+        [RFC822_State_Interleaved] = RTSP_handle_interleaved
     };
 
     while ( handlers[rtsp->status](rtsp) );

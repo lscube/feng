@@ -129,16 +129,6 @@ typedef struct RTSP_Range {
     double playback_time;
 } RTSP_Range;
 
-/**
- * @brief Status of the parser for the client
- */
-typedef enum Parser_Status {
-    Parser_Empty,
-    Parser_Headers,
-    Parser_Content,
-    Parser_Interleaved
-} Parser_Status;
-
 typedef struct RTSP_Client {
     Sock *sock;
 
@@ -153,7 +143,7 @@ typedef struct RTSP_Client {
     /**
      * @brief Status of the connected client for the parser
      */
-    Parser_Status status;
+    RFC822_Parser_State status;
 
     /**
      * @brief Current request being parsed
