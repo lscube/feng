@@ -41,9 +41,7 @@ size_t ragel_parse_request_line(const char *msg, const size_t length, RFC822_Req
     %%{
         machine request_line;
 
-        include RFC822Proto "rfc822proto-statemachine.rl";
-
-        Request_Line := RFC822_Request_Line;
+        include RFC822RequestLine "rfc822proto-requestline.rl";
 
         write data noerror;
         write init;
