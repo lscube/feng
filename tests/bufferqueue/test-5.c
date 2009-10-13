@@ -32,10 +32,10 @@ static GMutex *mux;
 
 static void fill_cb(gpointer cons_p, gpointer prod_p)
 {
-    g_mutex_lock(mux);
     BufferQueue_Consumer *consumer = cons_p;
     BufferQueue_Producer *producer = prod_p;
 
+    g_mutex_lock(mux);
     while (bq_consumer_unseen(consumer) < 16) {
         bq_producer_put(producer, g_malloc0 (sizeof(guint64)));
         if(awake++ > 11) {
@@ -51,15 +51,13 @@ static void fill_cb(gpointer cons_p, gpointer prod_p)
 
 void test_5()
 {
-    if (!g_thread_supported ()) g_thread_init (NULL);
-
     int size = 1, i;
     int count = 2000, count_reset = 0;
     int reset = 5;
     BufferQueue_Consumer *cons[size];
     BufferQueue_Producer *prod[size];
-    mux = g_mutex_new();
     GThreadPool *pool[size];
+    mux = g_mutex_new();
 
 //init
     for (i = 0; i< size; i++) {

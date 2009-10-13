@@ -27,8 +27,6 @@
 
 void test_3()
 {
-    if (!g_thread_supported ()) g_thread_init (NULL);
-
     int size = 10, i, j;
     int count = 24;
     guint64 *ret;

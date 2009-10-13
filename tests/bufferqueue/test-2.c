@@ -39,10 +39,11 @@ static GMutex *mux;
 
 static void fill_cb(gpointer cons_p, gpointer prod_p)
 {
-    g_mutex_lock(mux);
     BufferQueue_Consumer *consumer = cons_p;
     BufferQueue_Producer *producer = prod_p;
     Stuff *buffer = g_malloc0(sizeof(Stuff) + 2000);
+
+    g_mutex_lock(mux);
 
     while (bq_consumer_unseen(consumer) < 16) {
         buffer->foo++;
@@ -65,8 +66,6 @@ static void fill_cb(gpointer cons_p, gpointer prod_p)
 
 void test_2()
 {
-    if (!g_thread_supported ()) g_thread_init (NULL);
-
     int size = 10, i;
     int count = 24, j;
     Stuff *ret;
