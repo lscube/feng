@@ -665,13 +665,14 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     g_assert_cmpint(BQ_OBJECT(consumer)->seen, !=, producer->consumers);
 
     if (consumer->current_element_pointer) {
+        GList *next = consumer->current_element_pointer->next;
+
         bq_debug("C:%p pointer %p object %p next %p prev %p",
                 consumer,
                 consumer->current_element_pointer,
                 consumer->current_element_pointer->data,
                 consumer->current_element_pointer->next,
                 consumer->current_element_pointer->prev);
-        GList *next = consumer->current_element_pointer->next;
 
         /* If there is any element at all saved, we take care of marking
          * it as seen. We don't have to check if it's non-NULL since the

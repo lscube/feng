@@ -95,16 +95,18 @@ size_t eris_parse_headers(const char *hdrs_string, size_t len, GHashTable **tabl
   /* Create the new hash table */
   *table = _eris_hdr_table_new();
 
-  %% write data noerror;
-  %% write init;
-  %% write exec;
+  {
+    %% write data noerror;
+    %% write init;
+    %% write exec;
 
-  if ( cs < headers_parser_first_final ) {
-    g_hash_table_destroy(*table);
-    return 0;
+    if ( cs < headers_parser_first_final ) {
+      g_hash_table_destroy(*table);
+      return 0;
+    }
+
+    cs = headers_parser_en_main;
   }
-
-  cs = headers_parser_en_main;
 
   return p-hdrs_string;
 }
