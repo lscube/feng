@@ -163,7 +163,7 @@ tests_testsuite_SOURCES = \
 	tests/bufferqueue/test-3.c \
 	tests/bufferqueue/test-4.c \
 	tests/bufferqueue/test-5.c
-tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
+# tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
 
 dist_tests_testsuite_SOURCES = tests/gtestmain.c
 
