@@ -237,6 +237,9 @@ AC_DEFINE_UNQUOTED(FENIC_STATE_DIR_STR,
                     "$fenice_state_dir",
                     [Define default string dir for Certificate (pem format)])
 
+CC_CHECK_CFLAGS_APPEND([-Werror=declaration-after-statement -Wdeclaration-after-statement],
+                       [break;])
+
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_FILES([Makefile])

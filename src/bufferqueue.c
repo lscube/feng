@@ -661,17 +661,15 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
 
     bq_consumer_confirm_pointer(consumer);
 
-    if (BQ_OBJECT(consumer))
-    g_assert_cmpint(BQ_OBJECT(consumer)->seen, !=, producer->consumers);
-
     if (consumer->current_element_pointer) {
+        GList *next = consumer->current_element_pointer->next;
+
         bq_debug("C:%p pointer %p object %p next %p prev %p",
                 consumer,
                 consumer->current_element_pointer,
                 consumer->current_element_pointer->data,
                 consumer->current_element_pointer->next,
                 consumer->current_element_pointer->prev);
-        GList *next = consumer->current_element_pointer->next;
 
         /* If there is any element at all saved, we take care of marking
          * it as seen. We don't have to check if it's non-NULL since the
@@ -698,12 +696,20 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
 
     /* Now we have a new "next" element and we can set it properly */
     if ( consumer->current_element_pointer ) {
+        consumer->last_element_serial =
+            GLIST_TO_BQELEM(consumer->current_element_pointer)->serial;
         if ( consumer->queue_serial != producer->queue_serial )
             consumer->last_element_serial = 0;
         consumer->queue_serial = producer->queue_serial;
     }
 
     return ( consumer->current_element_pointer != NULL );
+}
+
+static void bq_decrement_seen_on_free(gpointer elem, gpointer unused)
+{
+    BufferQueue_Element *const element = elem;
+    element->seen--;
 }
 
 /**
@@ -736,63 +742,13 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
      */
     g_assert_cmpuint(producer->consumers, >,  0);
 
-    bq_consumer_elem_unref(consumer);
+    while (bq_consumer_move_internal(consumer));
 
-    if ( --producer->consumers == 0 ) {
-        if ( producer->stopped ) {
-            g_cond_signal(producer->last_consumer);
-        } else if ( producer->queue ) {
-            /* Decrement consumers and check, if we're the latest consumer, we
-             * want to clean the queue up entirely!
-             */
-            g_queue_foreach(producer->queue,
-                            bq_element_free_internal,
-                            producer->free_function);
-            g_queue_clear(producer->queue);
-        }
-    } else {
-        bq_debug("C:%p LES:%lu:%lu PQH:%p PQHS:%lu:%lu",
-                consumer,
-                consumer->queue_serial, consumer->last_element_serial,
-                producer->queue->head,
-                producer->queue_serial,
-                producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->serial: 0);
-        if ( consumer->last_element_serial != 0 &&
-                consumer->queue_serial == producer->queue_serial &&
-                producer->queue->head != NULL &&
-                GLIST_TO_BQELEM(producer->queue->head)->serial <= consumer->last_element_serial ) {
-        GList *it = producer->queue->head;
-        BufferQueue_Element *elem;
+    g_queue_foreach(producer->queue,
+                    bq_decrement_seen_on_free,
+                    NULL);
 
-        g_assert_cmpuint(GLIST_TO_BQELEM(producer->queue->tail)->serial, >=, consumer->last_element_serial);
-
-        bq_debug("C:%p decrementing elements till serial %lu",
-                consumer,
-                consumer->last_element_serial);
-
-        /* If we have a NULL current pointer, we're at the end of the
-         * queue waiting for something new (are we sure about it? :|)
-         * so we'll decrease the whole queue! */
-        while ( it != NULL &&
-                (elem = GLIST_TO_BQELEM(it))->serial <= consumer->last_element_serial ) {
-            bq_debug("C:%p decrementing counter for pointer %p object %p serial %lu seen %lu/%lu",
-                    consumer,
-                    it,
-                    elem,
-                    elem->serial,
-                    elem->seen,
-                    producer->consumers);
-
-            /* we've got to have seen it! */
-            g_assert_cmpuint(elem->seen, >, 0);
-
-            if ( --elem->seen == producer->consumers )
-                bq_producer_destroy_head(producer, it);
-            else
-                g_assert_cmpuint(elem->seen, <, producer->consumers);
-            it = it->next;
-        }
-    }}
+    --producer->consumers;
 
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
@@ -864,8 +820,6 @@ gboolean bq_consumer_move(BufferQueue_Consumer *consumer) {
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
-    if (BQ_OBJECT(consumer))
-    g_assert_cmpint(BQ_OBJECT(consumer)->seen, !=, producer->consumers);
     ret = bq_consumer_move_internal(consumer);
 
     bq_debug("(after) C:%p pointer %p",
@@ -924,7 +878,7 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
             goto end;
 
     element = (BufferQueue_Element*)(consumer->current_element_pointer->data);
-    consumer->last_element_serial = element->serial;
+
     bq_debug("C:%p pointer %p object %p payload %p seen %lu/%lu",
             consumer,
             consumer->current_element_pointer,
@@ -932,8 +886,6 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
             element->payload,
             element->seen,
             producer->consumers);
-    if (element)
-    g_assert_cmpint(element->seen, !=, producer->consumers);
  end:
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);

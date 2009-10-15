@@ -193,7 +193,7 @@ tests_testsuite_SOURCES = \
 	tests/rfc822proto/request_line.c \
 	tests/rfc822proto/headers.c
 
-tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
+# tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
 
 dist_tests_testsuite_SOURCES = tests/gtestmain.c
 

@@ -87,7 +87,7 @@ int modules_load(feng *srv)
     for (i = 0; i < srv->srvconf.modules->used; i++) {
         data_string *d = (data_string *)srv->srvconf.modules->data[i];
         char *module = d->value->ptr;
-        fprintf(stderr, "Loading %s\n", module);
+        fnc_log(FNC_LOG_INFO, "Loading %s", module);
         if (load_module(srv, module)) {
             fnc_log(FNC_LOG_FATAL, "Cannot load %s", module);
             return ERR_FATAL;
