@@ -48,7 +48,7 @@
       <xsl:value-of select="$newline" />
       <xsl:text>        RFC822_</xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text>_Versions > set_s % end_protocol );</xsl:text>
+      <xsl:text>_Versions) %to { fret; };</xsl:text>
       <xsl:value-of select="$newline" />
     </xsl:for-each>
 
@@ -56,7 +56,7 @@
 
     <xsl:text><![CDATA[
     RFC822_Request_Line := (
-        RFC822_Generic_Method >  set_s % end_method . SP .
+        RFC822_Generic_Method > set_s % end_method . SP .
             (print*) > set_s % end_object . SP .
             ( RFC822_Generic_Protocol]]></xsl:text>
 
@@ -71,7 +71,7 @@
     </xsl:for-each>
 
     <xsl:text><![CDATA[
-            ) . CRLF ) %to { fbreak; };
+            ) > set_s % end_protocol . CRLF ) %to { fbreak; };
 
 }%%
 

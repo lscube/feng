@@ -14,6 +14,7 @@
 
 #include <string.h>
 #include <glib.h>
+#include <stdio.h>
 #include "rfc822proto.h"
 
 static RFC822_Protocol rfc822_protocol_str_to_enum(const char *str) {

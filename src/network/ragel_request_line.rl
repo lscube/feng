@@ -24,8 +24,8 @@
 #include "network/rtsp.h"
 
 size_t ragel_parse_request_line(const char *msg, const size_t length, RFC822_Request *req) {
-    int cs;
-    const char *p = msg, *pe = p + length, *s = NULL;
+    int cs, top, stack[2];
+    const char *p = msg, *pe = p + length, *eof = pe, *s = NULL;
     int method_code = RTSP_Method__Invalid;
     RFC822_Protocol protocol_code = RFC822_Protocol_Invalid;
 

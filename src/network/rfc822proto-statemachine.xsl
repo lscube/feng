@@ -21,7 +21,8 @@
         ([A-Z]+ . '/' . digit . "." . digit)
         % { protocol_code = RFC822_Protocol_Unsupported; };
 
-    RFC822_Generic_Method = unreserved+;
+    RFC822_Generic_Method = unreserved+
+	 % { method_code = RFC822_Protocol_Unsupported; };
 ]]></xsl:text>
 
     <xsl:for-each select="//supportedproto">
@@ -76,7 +77,7 @@
       <xsl:text><![CDATA[ |
         ']]></xsl:text>
 	<xsl:value-of select="." />
-	<xsl:text>' > (method_code, 1) % { method_code = </xsl:text>
+	<xsl:text>' % (method_code, 1) % { method_code = </xsl:text>
 	<xsl:value-of select="../@name" />
 	<xsl:text>_Method_</xsl:text>
 	<xsl:value-of select="." />
