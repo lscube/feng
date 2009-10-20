@@ -139,32 +139,6 @@ static void rtsp_handle_request(RTSP_Client *client, RFC822_Request *req)
         [RTSP_Method_PAUSE]    = RTSP_pause
     };
 
-    /* Check for supported RTSP version.
-     *
-     * It is important to check for this for the first thing, this because this
-     * is the failsafe mechanism that allows for somewhat-incompatible changes
-     * to be made to the protocol.
-     *
-     * While we could check for this after accepting the method, if a client
-     * uses a method of a RTSP version we don't support, we want to make it
-     * clear to the client it should not be using that version at all.
-     *
-     * @todo This needs to be changed to something different, since
-     *       for supporting the QuickTime tunneling of RTP/RTSP over
-     *       HTTP proxy we have to accept (limited) HTTP requests too.
-     */
-    if ( req->proto != RFC822_Protocol_RTSP10 ) {
-        rtsp_quick_response(client, req, RTSP_VersionNotSupported);
-        goto error;
-    }
-
-    /* Check if the method is a know and supported one */
-    if ( req->method_id == RTSP_Method__Invalid ||
-         req->method_id == RTSP_Method__Unsupported ) {
-        rtsp_quick_response(client, req, RTSP_NotImplemented);
-        goto error;
-    }
-
     /* No CSeq found */
     if ( rfc822_headers_lookup(req->headers, RTSP_Header_CSeq) == NULL ) {
         /** @todo This should be corrected for RFC! */
@@ -236,10 +210,37 @@ static gboolean RTSP_handle_new(RTSP_Client *rtsp) {
         case 0:
             return false;
         default:
-            rtsp->pending_request = g_slice_dup(RFC822_Request, &tmpreq);
+            switch(tmpreq.proto) {
+            default:
+                rfc822_quick_response(rtsp, &tmpreq, RFC822_Protocol_RTSP10, RTSP_VersionNotSupported);
+                return false;
 
+            case RFC822_Protocol_HTTP_UnsupportedVersion:
+                rfc822_quick_response(rtsp, &tmpreq, RFC822_Protocol_HTTP10, HTTP_VersionNotSupported);
+                return false;
+
+            case RFC822_Protocol_RTSP10:
+                rtsp->status = RFC822_State_RTSP_Headers;
+                break;
+
+            case RFC822_Protocol_HTTP10:
+            case RFC822_Protocol_HTTP11:
+                rtsp->status = RFC822_State_HTTP_Headers;
+                break;
+            }
+
+            /* Check if the method is a know and supported one.  Don't
+             * get fooled by the RTSP_ prefix; all the Invalid and
+             * Unsupported constants have the same value. And the same
+             * goes for the NotImplemented response code. */
+            if ( tmpreq.method_id == RTSP_Method__Invalid ||
+                 tmpreq.method_id == RTSP_Method__Unsupported ) {
+                rfc822_quick_response(rtsp, &tmpreq, tmpreq.proto, RTSP_NotImplemented);
+                goto error;
+            }
+
+            rtsp->pending_request = g_slice_dup(RFC822_Request, &tmpreq);
             g_byte_array_remove_range(rtsp->input, 0, request_line_len);
-            rtsp->status = RFC822_State_RTSP_Headers;
             return true;
         }
     }
