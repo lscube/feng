@@ -18,8 +18,7 @@
     include common "common.rl";
 
     RFC822_Generic_Protocol =
-        ([A-Z]+ . '/' . digit . "." . digit)
-        % { protocol_code = RFC822_Protocol_Unsupported; };
+        ([A-Z]+ . '/' . digit . "." . digit);
 
     RFC822_Generic_Method = unreserved+;
 ]]></xsl:text>
@@ -62,7 +61,7 @@
       <xsl:value-of select="$newline" />
     </xsl:for-each>
 
-    <xsl:text><![CDATA[        RFC822_Generic_Protocol
+    <xsl:text><![CDATA[        RFC822_Generic_Protocol % { protocol_code = RFC822_Protocol_Unsupported; }
     );
 
 ]]></xsl:text>
