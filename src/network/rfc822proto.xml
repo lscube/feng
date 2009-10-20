@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rfc822proto>
   <response code="100">Continue</response>
-  <response code="200">OK</response>
+  <response code="200">Ok</response>
   <response code="201">Created</response>
   <response code="202">Accepted</response>
   <response code="400">Bad Request</response>
@@ -46,13 +46,13 @@
     <response code="451">Parameter Not Understood</response>
     <response code="453">Not Enough Bandwith</response>
     <response code="454">Session Not Found</response>
-    <response code="455">Method Not Valid In This State</response>
+    <response code="455" enum="InvalidMethodInState">Method Not Valid In This State</response>
     <response code="456">Header Field Not Valid for Resource</response>
     <response code="457">Invalid Range</response>
-    <response code="459">Aggregate Operation Not Allowed</response>
-    <response code="460">Only Aggregate Operation Allowed</response>
+    <response code="459" enum="AggregateNotAllowed">Aggregate Operation Not Allowed</response>
+    <response code="460" enum="AggregateOnly">Only Aggregate Operation Allowed</response>
     <response code="461">Unsupported Transport</response>
-    <response code="551">Option not supported</response>
+    <response code="551">Option Not Supported</response>
   </supportedproto>
 
   <supportedproto name="HTTP">

@@ -31,7 +31,6 @@
 
 #include "feng_utils.h"
 #include <netembryo/wsocket.h>
-#include <netembryo/rtsp.h>
 #include <netembryo/url.h>
 
 #include "rfc822proto.h"
