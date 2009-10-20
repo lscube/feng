@@ -21,8 +21,7 @@
         ([A-Z]+ . '/' . digit . "." . digit)
         % { protocol_code = RFC822_Protocol_Unsupported; };
 
-    RFC822_Generic_Method = unreserved+
-	 % { method_code = RFC822_Protocol_Unsupported; };
+    RFC822_Generic_Method = unreserved+;
 ]]></xsl:text>
 
     <xsl:for-each select="//supportedproto">
