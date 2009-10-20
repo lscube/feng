@@ -56,6 +56,8 @@ typedef enum RFC822_Header {
 ]]></xsl:text>
 
     <xsl:for-each select="//supportedproto">
+      <xsl:variable name="proto" select="@name" />
+
       <xsl:text>typedef enum </xsl:text>
       <xsl:value-of select="@name" />
       <xsl:text><![CDATA[_Method {
@@ -115,7 +117,7 @@ typedef enum RFC822_Header {
 
       <xsl:value-of select="$newline" />
 
-      <xsl:text>}</xsl:text>
+      <xsl:text>} </xsl:text>
       <xsl:value-of select="@name" />
       <xsl:text>_Header;</xsl:text>
       <xsl:value-of select="$newline" />
@@ -127,11 +129,42 @@ typedef enum RFC822_Header {
       <xsl:text>_response_reason(int code);</xsl:text>
 
       <xsl:value-of select="$newline" />
+      <xsl:value-of select="$newline" />
+
+      <xsl:text>typedef enum </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text>_ReponseCode {</xsl:text>
+      <xsl:value-of select="$newline" />
+
+      <xsl:for-each select="/rfc822proto/response|response">
+	<xsl:text>    </xsl:text>
+	<xsl:value-of select="$proto" />
+	<xsl:text>_</xsl:text>
+
+	<xsl:choose>
+	  <xsl:when test="@enum">
+	    <xsl:value-of select="@enum" />
+	  </xsl:when>
+	  <xsl:otherwise>
+	      <xsl:value-of select="translate(., ' ', '')" />
+	  </xsl:otherwise>
+	</xsl:choose>
+
+	<xsl:text> = </xsl:text>
+	<xsl:value-of select="@code" />
+	<xsl:text>,</xsl:text>
+	<xsl:value-of select="$newline" />
+      </xsl:for-each>
+
+      <xsl:text>} </xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text>_ResponseCode;</xsl:text>
+      <xsl:value-of select="$newline" />
+      <xsl:value-of select="$newline" />
 
     </xsl:for-each>
 
     <xsl:text><![CDATA[
-
 const char *rfc822_header_to_string(RFC822_Header hdr);
 const char *rfc822_response_reason(RFC822_Protocol proto, int code);
 const char *rfc822_proto_to_string(RFC822_Protocol proto);
