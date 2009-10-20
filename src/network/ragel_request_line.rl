@@ -25,7 +25,7 @@
 
 size_t ragel_parse_request_line(const char *msg, const size_t length, RFC822_Request *req) {
     int cs, top, stack[2];
-    const char *p = msg, *pe = p + length, *eof = pe, *s = NULL;
+    const char *p = msg, *pe = p + length, *eof = pe, *s = NULL, *pp;
     int rtsp_method_code = RTSP_Method__Unsupported;
     int http_method_code = HTTP_Method__Unsupported;
     RFC822_Protocol protocol_code = RFC822_Protocol_Invalid;

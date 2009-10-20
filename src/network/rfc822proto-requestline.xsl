@@ -40,15 +40,9 @@
       <xsl:value-of select="$newline" />
       <xsl:text>    </xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text>_Status_Line := ( </xsl:text>
+      <xsl:text>_SL_Method := ( </xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text>_Method . SP .</xsl:text>
-      <xsl:value-of select="$newline" />
-      <xsl:text>        (print*) . SP .</xsl:text>
-      <xsl:value-of select="$newline" />
-      <xsl:text>        RFC822_</xsl:text>
-      <xsl:value-of select="@name" />
-      <xsl:text>_Versions) %to { fret; };</xsl:text>
+      <xsl:text>_Method . SP) @ { p = pp; fret; };</xsl:text>
       <xsl:value-of select="$newline" />
     </xsl:for-each>
 
@@ -65,9 +59,9 @@
       <xsl:value-of select="$newline" />
       <xsl:text>              RFC822_</xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text>_Versions % { p = msg; fcall </xsl:text>
+      <xsl:text>_Versions % { pp = p; p = method_str; fcall </xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text>_Status_Line; }</xsl:text>
+      <xsl:text>_SL_Method; }</xsl:text>
     </xsl:for-each>
 
     <xsl:text><![CDATA[
