@@ -56,6 +56,7 @@
 
   <supportedproto name="HTTP">
     <supportedversion>1.0</supportedversion>
+    <supportedversion>1.1</supportedversion>
 
     <supportedmethod>GET</supportedmethod>
     <supportedmethod>POST</supportedmethod>

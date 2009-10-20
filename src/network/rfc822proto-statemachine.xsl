@@ -34,14 +34,14 @@
 	<xsl:text>            "</xsl:text>
 	<xsl:value-of select="." />
 	<xsl:text><![CDATA[" > ( protocol_code, 3 )
-		> { protocol_code = RFC822_Protocol_]]></xsl:text>
+		% { protocol_code = RFC822_Protocol_]]></xsl:text>
 	<xsl:value-of select="../@name" />
 	<xsl:value-of select="translate(., '.', '')" />
 	<xsl:text>; } |</xsl:text>
       <xsl:value-of select="$newline" />
       </xsl:for-each>
       <xsl:text><![CDATA[            (digit . "." . digit) > ( protocol_code, 1 )
-		> { protocol_code = RFC822_Protocol_]]></xsl:text>
+		% { protocol_code = RFC822_Protocol_]]></xsl:text>
       <xsl:value-of select="@name" />
       <xsl:text>_UnsupportedVersion; }</xsl:text>
       <xsl:value-of select="$newline" />
