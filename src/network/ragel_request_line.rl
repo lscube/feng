@@ -26,7 +26,8 @@
 size_t ragel_parse_request_line(const char *msg, const size_t length, RFC822_Request *req) {
     int cs, top, stack[2];
     const char *p = msg, *pe = p + length, *eof = pe, *s = NULL;
-    int method_code = RTSP_Method__Invalid;
+    int rtsp_method_code = RTSP_Method__Unsupported;
+    int http_method_code = HTTP_Method__Unsupported;
     RFC822_Protocol protocol_code = RFC822_Protocol_Invalid;
 
     const char *method_str = NULL;
@@ -55,7 +56,21 @@ size_t ragel_parse_request_line(const char *msg, const size_t length, RFC822_Req
      * request line won't help!
      */
     req->proto = protocol_code;
-    req->method_id = method_code;
+
+    switch ( req->proto ) {
+    case RFC822_Protocol_RTSP10:
+        req->method_id = rtsp_method_code;
+        break;
+    case RFC822_Protocol_HTTP10:
+        req->method_id = http_method_code;
+        break;
+    default:
+        /* Unsupported method; we don't care whatever it is at this
+           point, since we don't know the protocol to begin with.. */
+        req->method_id = 0;
+        break;
+    }
+
     req->method_str = g_strndup(method_str, method_len);
     req->protocol_str = g_strndup(protocol_str, protocol_len);
     req->object = g_strndup(object_str, object_len);

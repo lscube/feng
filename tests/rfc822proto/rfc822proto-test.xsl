@@ -89,7 +89,9 @@ void test_rfc822_tokenizer() {
 
       <xsl:text>    </xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text>_Method method_code = </xsl:text>
+      <xsl:text>_Method </xsl:text>
+      <xsl:value-of select="$proto_lower" />
+      <xsl:text>_method_code = </xsl:text>
       <xsl:value-of select="@name" />
       <xsl:text><![CDATA[_Method__Invalid;
 ]]></xsl:text>
@@ -114,7 +116,9 @@ void test_rfc822_tokenizer() {
     write exec;
 }%%
 
-    return method_code;
+    return ]]></xsl:text>
+      <xsl:value-of select="$proto_lower" />
+      <xsl:text><![CDATA[_method_code;
 }
 ]]></xsl:text>
 
