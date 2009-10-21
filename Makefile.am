@@ -19,11 +19,14 @@ dist_doc_DATA = AUTHORS ChangeLog NEWS README RELEASE TODO
 
 if CHANGELOG_REGEN
 ChangeLog:
-	$(AM_V_GEN)GIT_DIR="${srcdir}/.git" git log --pretty > $@
+	-$(AM_V_GEN)GIT_DIR="${srcdir}/.git" git log --pretty > $@
 
 # Always regenerate!
 .PHONY: ChangeLog
 endif
+
+distcheck-hook:
+	@test -s "${srcdir}"/ChangeLog || { echo "distcheck: empty ChangeLog found; make sure you have GIT installed" >/dev/stderr; false; }
 
 bin_PROGRAMS = feng
 
