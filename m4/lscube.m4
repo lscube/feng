@@ -114,16 +114,19 @@ AC_DEFUN([LSC_SYSTEM_EXTENSIONS], [
 ])
 
 AC_DEFUN([LSC_GIT_CHANGELOG], [
+  AC_ARG_VAR([GIT], [GIT revision control system command])
+
   AC_MSG_CHECKING([whether we need git to generate ChangeLog])
   AS_IF([test -f "$srcdir/ChangeLog"],
     [AC_MSG_RESULT([no, we're good])],
     [AC_MSG_RESULT([yes])
-     AC_CHECK_PROG([GIT], [git], [yes], [no])
+     AC_CHECK_PROGS([GIT], [git], [no])
      AS_IF([test "x$GIT" = "xno"],
-       [AC_MSG_ERROR([You need git to use a git snapshot!])])
+       [AC_MSG_WARN([You're using a GIT snapshot but GIT is not installed])
+	GIT="$srcdir/config/missing --run git"])
     ])
 
-  AM_CONDITIONAL([CHANGELOG_REGEN], [test "x$GIT" = "xyes"])
+  AM_CONDITIONAL([CHANGELOG_REGEN], [! test -f "$srcdir/ChangeLog"])
 ])
 
 AC_DEFUN([LSC_INIT], [
