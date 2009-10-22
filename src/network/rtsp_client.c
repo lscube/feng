@@ -114,6 +114,21 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w,
     ev_timer_again (loop, w);
 }
 
+/**
+ * @brief Write data to the RTSP socket of the client
+ *
+ * @param client The client to write the data to
+ * @param data The GByteArray object to queue for sending
+ *
+ * @note after calling this function, the @p data object should no
+ * longer be referenced by the code path.
+ */
+static void rtsp_write_data_direct(RTSP_Client *client, GByteArray *data)
+{
+    g_queue_push_head(client->out_queue, data);
+    ev_io_start(client->srv->loop, &client->ev_io_write);
+}
+
 RTSP_Client *rtsp_client_new(feng *srv)
 {
     RTSP_Client *rtsp = g_slice_new0(RTSP_Client);
@@ -223,19 +238,4 @@ void rtsp_write_string(RTSP_Client *client, GString *string)
     g_string_free(string, false);
 
     client->write_data(client, outpkt);
-}
-
-/**
- * @brief Write data to the RTSP socket of the client
- *
- * @param client The client to write the data to
- * @param data The GByteArray object to queue for sending
- *
- * @note after calling this function, the @p data object should no
- * longer be referenced by the code path.
- */
-void rtsp_write_data_direct(RTSP_Client *client, GByteArray *data)
-{
-    g_queue_push_head(client->out_queue, data);
-    ev_io_start(client->srv->loop, &client->ev_io_write);
 }

@@ -182,8 +182,6 @@ typedef struct RTSP_Client {
 
 RTSP_Client *rtsp_client_new(struct feng *srv);
 
-void rtsp_write_data_direct(RTSP_Client *client, GByteArray *data);
-void rtsp_write_data_base64(RTSP_Client *client, GByteArray *data);
 void rtsp_write_string(RTSP_Client *client, GString *str);
 
 void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents);

@@ -26,12 +26,29 @@
 #include "network/rtsp.h"
 
 typedef struct HTTP_Tunnel_Pair {
-    RTSP_Client *client;
+    RTSP_Client *rtsp_client;
+    RTSP_Client *http_client;
     gint base64_state;
     gint base64_save;
 } HTTP_Tunnel_Pair;
 
 static GHashTable *http_tunnel_pairs;
+
+/**
+ * @brief Write data to the hidden HTTP socket of the client
+ *
+ * @param client The client to write the data to
+ * @param data The GByteArray object to queue for sending
+ *
+ * @note after calling this function, the @p ataobject should no
+ * longer be referenced by the code path.
+ *
+ * This is used by the RTSP-over-HTTP tunnel implementation.
+ */
+static void rtsp_write_data_http(RTSP_Client *client, GByteArray *data)
+{
+    client->pair->http_client->write_data(client->pair->http_client, data);
+}
 
 static gboolean http_tunnel_create_pair(RTSP_Client *client, RFC822_Request *req)
 {
@@ -50,11 +67,13 @@ static gboolean http_tunnel_create_pair(RTSP_Client *client, RFC822_Request *req
     }
 
     pair = g_slice_new0(HTTP_Tunnel_Pair);
-    pair->client = rtsp_client_new(client->srv);
-    pair->client->sock = client->sock;
-    pair->client->write_data = rtsp_write_data_base64;
-    memcpy(&pair->client->ev_io_write, &client->ev_io_write, sizeof(client->ev_io_write));
-    memcpy(&pair->client->ev_sig_disconnect, &client->ev_sig_disconnect, sizeof(client->ev_sig_disconnect));
+    pair->http_client = client;
+
+    pair->rtsp_client = rtsp_client_new(client->srv);
+    pair->rtsp_client->sock = client->sock;
+    pair->rtsp_client->write_data = rtsp_write_data_http;
+    pair->rtsp_client->pair = pair;
+    memcpy(&pair->rtsp_client->ev_sig_disconnect, &client->ev_sig_disconnect, sizeof(client->ev_sig_disconnect));
 
     g_hash_table_insert(http_tunnel_pairs, strdup(http_session), pair);
 
@@ -136,32 +155,10 @@ gboolean HTTP_handle_headers(RTSP_Client *rtsp)
     return true;
 }
 
-/**
- * @brief Write data to the RTSP socket of the client (base64-encoded)
- *
- * @param client The client to write the data to
- * @param data The GByteArray object to queue for sending
- *
- * @note after calling this function, the @p ataobject should no
- * longer be referenced by the code path.
- *
- * This is used by the RTSP-over-HTTP tunnel implementation.
- */
-void rtsp_write_data_base64(RTSP_Client *client, GByteArray *data)
-{
-    GByteArray *encoded = g_byte_array_new();
-    encoded->data = (guint8*)g_base64_encode(data->data, data->len);
-    encoded->len = strlen((char*)encoded->data);
-
-    g_byte_array_free(data, true);
-
-    rtsp_write_data_direct(client, encoded);
-}
-
 gboolean HTTP_handle_content(RTSP_Client *rtsp)
 {
     gsize decoded_length = (rtsp->input->len / 4) * 3 + 6, actual_decoded_length;
-    GByteArray *decoded_input = rtsp->pair->client->input;
+    GByteArray *decoded_input = rtsp->pair->rtsp_client->input;
     gsize prev_size = decoded_input->len;
     guint8 *outbuf;
 
@@ -179,7 +176,7 @@ gboolean HTTP_handle_content(RTSP_Client *rtsp)
     decoded_input->len -= (decoded_length - actual_decoded_length);
     g_byte_array_set_size(rtsp->input, 0);
 
-    RTSP_handler(rtsp->pair->client);
+    RTSP_handler(rtsp->pair->rtsp_client);
 
     return false;
 }
