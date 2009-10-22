@@ -161,6 +161,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     rtsp->input = g_byte_array_new();
     rtsp->out_queue = g_queue_new();
     rtsp->srv = srv;
+    rtsp->write_data = rtsp_write_data_direct;
 
     srv->connection_count++;
     client_sock->data = srv;
@@ -188,4 +189,66 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     timer->repeat = STREAM_TIMEOUT;
 
     fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
+}
+
+/**
+ * @brief Write a GString to the RTSP socket of the client
+ *
+ * @param client The client to write the data to
+ * @param string The data to send out as string
+ *
+ * @note after calling this function, the @p string object should no
+ * longer be referenced by the code path.
+ */
+void rtsp_write_string(RTSP_Client *client, GString *string)
+{
+    /* Copy the GString into a GByteArray; we can avoid copying the
+       data since both are transparent structures with a g_malloc'd
+       data pointer.
+     */
+    GByteArray *outpkt = g_byte_array_new();
+    outpkt->data = (guint8*)string->str;
+    outpkt->len = string->len;
+
+    /* make sure you don't free the actual data pointer! */
+    g_string_free(string, false);
+
+    client->write_data(client, outpkt);
+}
+
+/**
+ * @brief Write data to the RTSP socket of the client (base64-encoded)
+ *
+ * @param client The client to write the data to
+ * @param data The GByteArray object to queue for sending
+ *
+ * @note after calling this function, the @p ataobject should no
+ * longer be referenced by the code path.
+ *
+ * This is used by the RTSP-over-HTTP tunnel implementation.
+ */
+void rtsp_write_data_base64(RTSP_Client *client, GByteArray *data)
+{
+    GByteArray *encoded = g_byte_array_new();
+    encoded->data = (guint8*)g_base64_encode(data->data, data->len);
+    encoded->len = strlen((char*)encoded->data);
+
+    g_byte_array_free(data, true);
+
+    rtsp_write_data_direct(client, encoded);
+}
+
+/**
+ * @brief Write data to the RTSP socket of the client
+ *
+ * @param client The client to write the data to
+ * @param data The GByteArray object to queue for sending
+ *
+ * @note after calling this function, the @p data object should no
+ * longer be referenced by the code path.
+ */
+void rtsp_write_data_direct(RTSP_Client *client, GByteArray *data)
+{
+    g_queue_push_head(client->out_queue, data);
+    ev_io_start(client->srv->loop, &client->ev_io_write);
 }

@@ -248,32 +248,6 @@ gboolean rfc822_request_check_url(RTSP_Client *client, RFC822_Request *req) {
  */
 
 /**
- * @brief Writes a GString to the output buffer of an RTSP connection
- *
- * @param rtsp where the output buffer is saved
- * @param buffer GString instance from which to get the data to send
- *
- * @note The buffer has to be considered destroyed after calling this function
- *       (the writing thread will take care of the actual destruction).
- */
-void rtsp_bwrite(RTSP_Client *rtsp, GString *buffer)
-{
-    /* Copy the GString into a GByteArray; we can avoid copying the
-       data since both are transparent structures with a g_malloc'd
-       data pointer.
-     */
-    GByteArray *outpkt = g_byte_array_new();
-    outpkt->data = (guint8*)buffer->str;
-    outpkt->len = buffer->len;
-
-    /* make sure you don't free the actual data pointer! */
-    g_string_free(buffer, false);
-
-    g_queue_push_head(rtsp->out_queue, outpkt);
-    ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
-}
-
-/**
  * @brief Check if a method has been called in an invalid state.
  *
  * @param req Request for the method

@@ -200,7 +200,7 @@ void rfc822_response_send(RTSP_Client *client, RFC822_Response *response)
     }
 
     /* Now the whole response is complete, we can queue it to be sent away. */
-    rtsp_bwrite(client, str);
+    rtsp_write_string(client, str);
 
     /* Log the access */
     module_response_send(client, response);

@@ -128,6 +128,10 @@ typedef struct RTSP_Range {
     double playback_time;
 } RTSP_Range;
 
+struct RTSP_Client;
+
+typedef void (*rtsp_write_data)(struct RTSP_Client *client, GByteArray *data);
+
 typedef struct RTSP_Client {
     Sock *sock;
 
@@ -163,6 +167,8 @@ typedef struct RTSP_Client {
     RTSP_session *session;
     struct feng *srv;
 
+    rtsp_write_data write_data;
+
     //Events
     ev_async ev_sig_disconnect;
     ev_timer ev_timeout;
@@ -170,6 +176,10 @@ typedef struct RTSP_Client {
     ev_io ev_io_read;
     ev_io ev_io_write;
 } RTSP_Client;
+
+void rtsp_write_data_direct(RTSP_Client *client, GByteArray *data);
+void rtsp_write_data_base64(RTSP_Client *client, GByteArray *data);
+void rtsp_write_string(RTSP_Client *client, GString *str);
 
 void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents);
 
@@ -220,7 +230,6 @@ void rtsp_write_cb(struct ev_loop *, ev_io *, int);
 void rtsp_read_cb(struct ev_loop *, ev_io *, int);
 
 void rtsp_interleaved(RTSP_Client *rtsp, int channel, uint8_t *data, size_t len);
-void rtsp_bwrite(RTSP_Client *rtsp, GString *buffer);
 
 RTSP_session *rtsp_session_new(RTSP_Client *rtsp);
 void rtsp_session_free(RTSP_session *session);
