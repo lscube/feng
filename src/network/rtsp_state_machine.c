@@ -236,7 +236,7 @@ static gboolean RTSP_handle_new(RTSP_Client *rtsp) {
             if ( tmpreq.method_id == RTSP_Method__Invalid ||
                  tmpreq.method_id == RTSP_Method__Unsupported ) {
                 rfc822_quick_response(rtsp, &tmpreq, tmpreq.proto, RTSP_NotImplemented);
-                goto error;
+                return false;
             }
 
             rtsp->pending_request = g_slice_dup(RFC822_Request, &tmpreq);
