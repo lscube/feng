@@ -185,7 +185,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     /* to be started/stopped when necessary */
     io = &rtsp->ev_io_write;
     io->data = rtsp;
-    ev_io_init(io, rtsp_write_cb, Sock_fd(sock), EV_WRITE);
+    ev_io_init(io, rtsp_write_cb, Sock_fd(rtsp->sock), EV_WRITE);
 
     async = &rtsp->ev_sig_disconnect;
     async->data = rtsp;
