@@ -114,6 +114,18 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w,
     ev_timer_again (loop, w);
 }
 
+RTSP_Client *rtsp_client_new(feng *srv)
+{
+    RTSP_Client *rtsp = g_slice_new0(RTSP_Client);
+
+    rtsp->input = g_byte_array_new();
+    rtsp->out_queue = g_queue_new();
+    rtsp->srv = srv;
+    rtsp->write_data = rtsp_write_data_direct;
+
+    return rtsp;
+}
+
 /**
  * @brief Handle an incoming RTSP connection
  *
@@ -156,27 +168,24 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         return;
     }
 
-    rtsp = g_slice_new0(RTSP_Client);
+    fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
+            Sock_fd(client_sock));
+
+    rtsp = rtsp_client_new(srv);
     rtsp->sock = client_sock;
-    rtsp->input = g_byte_array_new();
-    rtsp->out_queue = g_queue_new();
-    rtsp->srv = srv;
-    rtsp->write_data = rtsp_write_data_direct;
 
     srv->connection_count++;
-    client_sock->data = srv;
+    rtsp->sock->data = srv;
 
     io = &rtsp->ev_io_read;
     io->data = rtsp;
-    ev_io_init(io, rtsp_read_cb, Sock_fd(client_sock), EV_READ);
+    ev_io_init(io, rtsp_read_cb, Sock_fd(rtsp->sock), EV_READ);
     ev_io_start(srv->loop, io);
 
     /* to be started/stopped when necessary */
     io = &rtsp->ev_io_write;
     io->data = rtsp;
-    ev_io_init(io, rtsp_write_cb, Sock_fd(client_sock), EV_WRITE);
-    fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
-            Sock_fd(client_sock));
+    ev_io_init(io, rtsp_write_cb, Sock_fd(sock), EV_WRITE);
 
     async = &rtsp->ev_sig_disconnect;
     async->data = rtsp;
@@ -214,28 +223,6 @@ void rtsp_write_string(RTSP_Client *client, GString *string)
     g_string_free(string, false);
 
     client->write_data(client, outpkt);
-}
-
-/**
- * @brief Write data to the RTSP socket of the client (base64-encoded)
- *
- * @param client The client to write the data to
- * @param data The GByteArray object to queue for sending
- *
- * @note after calling this function, the @p ataobject should no
- * longer be referenced by the code path.
- *
- * This is used by the RTSP-over-HTTP tunnel implementation.
- */
-void rtsp_write_data_base64(RTSP_Client *client, GByteArray *data)
-{
-    GByteArray *encoded = g_byte_array_new();
-    encoded->data = (guint8*)g_base64_encode(data->data, data->len);
-    encoded->len = strlen((char*)encoded->data);
-
-    g_byte_array_free(data, true);
-
-    rtsp_write_data_direct(client, encoded);
 }
 
 /**

@@ -353,6 +353,7 @@ int main(int argc, char **argv)
      * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
 
     RTP_port_pool_init(srv, srv->srvconf.first_udp_port);
+    http_tunnel_initialise();
 
     ev_loop (srv->loop, 0);
 

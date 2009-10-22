@@ -129,6 +129,7 @@ typedef struct RTSP_Range {
 } RTSP_Range;
 
 struct RTSP_Client;
+struct HTTP_Tunnel_Pair;
 
 typedef void (*rtsp_write_data)(struct RTSP_Client *client, GByteArray *data);
 
@@ -169,6 +170,8 @@ typedef struct RTSP_Client {
 
     rtsp_write_data write_data;
 
+    struct HTTP_Tunnel_Pair *pair;
+
     //Events
     ev_async ev_sig_disconnect;
     ev_timer ev_timeout;
@@ -176,6 +179,8 @@ typedef struct RTSP_Client {
     ev_io ev_io_read;
     ev_io ev_io_write;
 } RTSP_Client;
+
+RTSP_Client *rtsp_client_new(struct feng *srv);
 
 void rtsp_write_data_direct(RTSP_Client *client, GByteArray *data);
 void rtsp_write_data_base64(RTSP_Client *client, GByteArray *data);
@@ -322,6 +327,11 @@ int ragel_read_http_headers(GHashTable *headers, const char *msg,
 /**
  *@}
  */
+
+gboolean HTTP_handle_headers(RTSP_Client *rtsp);
+gboolean HTTP_handle_content(RTSP_Client *rtsp);
+gboolean HTTP_handle_idle(RTSP_Client *rtsp);
+void http_tunnel_initialise();
 
 /**
  * @}

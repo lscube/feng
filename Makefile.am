@@ -94,6 +94,7 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rtsp_method_teardown.c \
 	src/network/rtsp_state_machine.c \
 	src/network/rtsp_utils.c \
+	src/network/http_tunnelling.c \
 	\
 	src/media/demuxer.c \
 	src/media/demuxer.h \
