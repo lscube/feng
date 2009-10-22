@@ -119,7 +119,6 @@ RTSP_Client *rtsp_client_new(feng *srv)
     RTSP_Client *rtsp = g_slice_new0(RTSP_Client);
 
     rtsp->input = g_byte_array_new();
-    rtsp->out_queue = g_queue_new();
     rtsp->srv = srv;
     rtsp->write_data = rtsp_write_data_direct;
 
@@ -173,6 +172,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 
     rtsp = rtsp_client_new(srv);
     rtsp->sock = client_sock;
+    rtsp->out_queue = g_queue_new();
 
     srv->connection_count++;
     rtsp->sock->data = srv;
