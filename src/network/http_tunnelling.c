@@ -162,9 +162,13 @@ gboolean HTTP_handle_content(RTSP_Client *rtsp)
 {
     gsize decoded_length = (rtsp->input->len / 4) * 3 + 6, actual_decoded_length;
     GByteArray *decoded_input = rtsp->pair->client->input;
-    guint8 *outbuf = decoded_input->data + decoded_input->len;
+    gsize prev_size = decoded_input->len;
+    guint8 *outbuf;
 
     g_byte_array_set_size(decoded_input, decoded_input->len + decoded_length);
+
+    /* This way if it's empty it'll be allocated */
+    outbuf = decoded_input->data + prev_size;
 
     actual_decoded_length = g_base64_decode_step(rtsp->input->data,
                                                  rtsp->input->len,
@@ -173,6 +177,7 @@ gboolean HTTP_handle_content(RTSP_Client *rtsp)
                                                  &rtsp->pair->base64_save);
 
     decoded_input->len -= (decoded_length - actual_decoded_length);
+    g_byte_array_set_size(rtsp->input, 0);
 
     RTSP_handler(rtsp->pair->client);
 
