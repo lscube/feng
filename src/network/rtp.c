@@ -345,8 +345,7 @@ static gboolean rtp_packet_send_interleaved(RTP_session *session, RTP_packet *pa
     memcpy(&outpkt->data[2], &ne_n, sizeof(uint16_t));
     memcpy(&outpkt->data[4], packet, packet_size);
 
-    g_queue_push_head(rtsp->out_queue, outpkt);
-    ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
+    rtsp->write_data(rtsp, outpkt);
 
     return true;
 }
