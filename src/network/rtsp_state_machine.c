@@ -337,6 +337,8 @@ static gboolean HTTP_handle_headers(RTSP_Client *rtsp)
                            strdup("application/x-rtsp-tunnelled"));
 
         rfc822_response_send(rtsp, response);
+        rtsp->status = RFC822_State_HTTP_Idle;
+        return false;
     }
     return true;
 }
@@ -357,6 +359,11 @@ static gboolean HTTP_handle_content(RTSP_Client *rtsp)
     return false;
 }
 
+static gboolean HTTP_handle_idle(RTSP_Client *rtsp)
+{
+    return false;
+}
+
 void RTSP_handler(RTSP_Client * rtsp)
 {
     typedef gboolean (*state_machine_handler)(RTSP_Client *);
@@ -367,7 +374,8 @@ void RTSP_handler(RTSP_Client * rtsp)
         [RFC822_State_RTSP_Content] = RTSP_handle_content,
         [RFC822_State_Interleaved] = RTSP_handle_interleaved,
         [RFC822_State_HTTP_Headers] = HTTP_handle_headers,
-        [RFC822_State_HTTP_Content] = HTTP_handle_content
+        [RFC822_State_HTTP_Content] = HTTP_handle_content,
+        [RFC822_State_HTTP_Idle] = HTTP_handle_idle
     };
 
     while ( handlers[rtsp->status](rtsp) );

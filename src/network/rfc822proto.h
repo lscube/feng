@@ -48,7 +48,9 @@ typedef enum RFC822_Parser_State {
     /** HTTP headers read, reading content */
     RFC822_State_HTTP_Content,
     /** HTTP request read, handling */
-    RFC822_State_HTTP_Handler
+    RFC822_State_HTTP_Handler,
+    /** HTTP GET request read, idling (output only) */
+    RFC822_State_HTTP_Idle
 } RFC822_Parser_State;
 
 typedef struct RFC822_Request {
