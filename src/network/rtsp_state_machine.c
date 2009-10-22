@@ -326,7 +326,7 @@ static gboolean HTTP_handle_headers(RTSP_Client *rtsp)
 
         rfc822_headers_set(response->headers,
                            HTTP_Header_Cache_Control,
-                           strdup("none"));
+                           strdup("no-store"));
 
         rfc822_headers_set(response->headers,
                            HTTP_Header_Pragma,
