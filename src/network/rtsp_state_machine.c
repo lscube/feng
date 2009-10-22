@@ -347,6 +347,9 @@ static gboolean HTTP_handle_content(RTSP_Client *rtsp)
 {
     /* We assume that each request ends with some padding, hopefully */
     guint8 *base64_end = memchr(rtsp->input->data, '=', rtsp->input->len);
+    gsize base64_size = 0;
+    guint8 *decoded = NULL;
+    gsize decoded_size = 0;
 
     if ( base64_end == NULL )
         return false;
@@ -354,7 +357,21 @@ static gboolean HTTP_handle_content(RTSP_Client *rtsp)
     /* Find the last '=' padding byte */
     while ( *base64_end == '=' ) base64_end++;
 
-    fprintf(stderr, "%s\n", g_strndup(rtsp->input->data, (base64_end-rtsp->input->data)));
+    base64_size = base64_end - rtsp->input->data;
+
+    /* we duplicate this because g_base64_decode will not otherwise
+     * stop; yes this will cause some angst since the size of the
+     * allocated memory area in this case is slightly larger than the
+     * actual request, but it doesn't really matter.
+    */
+    decoded = g_strndup(rtsp->input->data, base64_size);
+
+    g_base64_decode_inplace(decoded, &decoded_size);
+    decoded[decoded_size] = '\0';
+
+    fprintf(stderr, "%s\n", decoded);
+
+    g_byte_array_remove_range(rtsp->input, 0, base64_size);
 
     return false;
 }
