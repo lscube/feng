@@ -129,8 +129,13 @@ if LIVE_STREAMING
 dist_feng_SOURCES += src/media/demuxer/demuxer_sd.c
 endif
 
-src/network/rfc822proto.c: src/network/rfc822proto-source.xsl src/network/rfc822proto.xml
+if AVOID_TABLES
+src/network/rfc822proto.c: src/network/rfc822proto-source-switch.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+else
+src/network/rfc822proto.c: src/network/rfc822proto-source-table.xsl src/network/rfc822proto.xml
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+endif
 
 src/network/rfc822proto-constants.h: src/network/rfc822proto-header.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^

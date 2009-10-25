@@ -50,6 +50,11 @@ AC_ARG_ENABLE(metadata,
     AS_HELP_STRING([--enable-metadata], [enable metadata support [[default=no]]]),,
     enable_metadata="no")
 
+AC_ARG_ENABLE([tables],
+    AS_HELP_STRING([--disable-tables], [disable big build-time tables (for embedded)]))
+
+AM_CONDITIONAL([AVOID_TABLES], [test "x$enable_tables" = "xno"])
+
 dnl Checks used by feng itself
 AC_CHECK_HEADERS_ONCE([syslog.h])
 
