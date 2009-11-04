@@ -69,13 +69,16 @@ gboolean ragel_parse_range_header(const char *header,
 
         NTPMinSecs = ([0-5]? [0-9]);
 
+        # For compatibility with old, broken versions of live555, we accept the
+        # comma as well as the dot as decimal separator (which is the only one
+        # prescribed by RFC2326).
         NTPhhmmss = (digit+) > start_integer @ count_integer % sum_hours . ":" .
             NTPMinSecs > start_integer @ count_integer % sum_minutes . ":" .
             NTPMinSecs > start_integer @ count_integer % sum_seconds .
-            ("." . digit+ > start_secfrac @ count_secfrac % sum_secfrac )?;
+            (/[\.,]/ . digit+ > start_secfrac @ count_secfrac % sum_secfrac )?;
 
         NTPSeconds = (digit+ > start_integer @ count_integer % sum_seconds)
-            . ("." digit+ > start_secfrac @ count_secfrac % sum_secfrac )?;
+            . (/[\.,]/ digit+ > start_secfrac @ count_secfrac % sum_secfrac )?;
 
         NTPTime = ("now"%{ return false; }) |
             NTPSeconds | NTPhhmmss;
