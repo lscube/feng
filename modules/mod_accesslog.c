@@ -137,8 +137,10 @@ int accesslog_log(RTSP_Client *client, RTSP_Response *response, void *data)
 
     if (s->use_syslog)
         syslog(LOG_INFO, PRINT_STRING);
-    else
+    else {
         fprintf(s->log_access_file, PRINT_STRING);
+        fflush(s->log_access_file);
+    }
     g_free(response_length);
 
     return ERR_NOERROR;
