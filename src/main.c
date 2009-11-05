@@ -152,14 +152,12 @@ static gboolean show_version(ATTR_UNUSED const gchar *option_name,
 
 static gboolean command_environment(feng *srv, int argc, char **argv)
 {
-    gchar *config_file = NULL, *modules_dir = NULL;
+    gchar *config_file = NULL;
     gboolean quiet = FALSE, verbose = FALSE, syslog = FALSE;
 
     GOptionEntry optionsTable[] = {
         { "config", 'f', 0, G_OPTION_ARG_STRING, &config_file,
             "specify configuration file", NULL },
-        { "modules", 'm', 0, G_OPTION_ARG_STRING, &srv->srvconf.modules_dir ,
-            "specify the modules path" },
         { "quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet,
             "show as little output as possible", NULL },
         { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose,
@@ -194,8 +192,7 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
         return false;
     }
     g_free(config_file);
-    if (srv->srvconf.modules_dir == NULL)
-        srv->srvconf.modules_dir = g_strdup(LIBDIR);
+
     {
 #ifndef CLEANUP_DESTRUCTOR
         gchar *progname;
@@ -240,6 +237,7 @@ static feng *feng_alloc(void)
     CLEAN(errorlog_file);
     CLEAN(username);
     CLEAN(groupname);
+    CLEAN(modules_dir);
 #undef CLEAN
 
 #define CLEAN(x) \
@@ -277,6 +275,7 @@ static void feng_free(feng* srv)
     CLEAN(errorlog_file);
     CLEAN(username);
     CLEAN(groupname);
+    CLEAN(modules_dir);
 #undef CLEAN
 
     for(i = 0; i < srv->config_context->used; i++) {

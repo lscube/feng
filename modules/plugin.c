@@ -54,7 +54,7 @@ static int load_module(feng *srv, const char *module)
     int err = ERR_FATAL;
     int (*init) (plugin *p) = NULL;
     char * filename = g_strdup_printf("%s/%s.so",
-                                      srv->srvconf.modules_dir,
+                                      srv->srvconf.modules_dir->ptr,
                                       module);
     plugin *p = g_new0(plugin, 1);
     p->name = g_strdup(module);
