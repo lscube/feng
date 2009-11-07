@@ -25,8 +25,11 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-#include <syslog.h>
 #include <stdarg.h>
+
+#if HAVE_SYSLOG_H
+# include <syslog.h>
+#endif
 
 #include "fnc_log.h"
 

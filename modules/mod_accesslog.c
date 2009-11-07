@@ -43,10 +43,13 @@
 #include "network/rtsp.h"
 #include "plugin.h"
 
-#include <syslog.h>
 #include <stdio.h>
 #include <glib.h>
 #include <gmodule.h>
+
+#if HAVE_SYSLOG_H
+# include <syslog.h>
+#endif
 
 typedef struct {
     unsigned short use_syslog;
@@ -95,9 +98,12 @@ int accesslog_set_defaults(feng *srv, void *data)
         }
 
         if (s->use_syslog) {
-
+#if HAVE_SYSLOG_H
             /* ignore the next checks */
             continue;
+#else
+            return ERR_FATAL;
+#endif
         }
 
         if (s->access_logfile->used < 2) continue;
@@ -132,10 +138,15 @@ int accesslog_log(RTSP_Client *client, RFC822_Response *response, void *data)
     char *response_length = response->body ?
         g_strdup_printf("%zd", response->body->len) : NULL;
 
+#if HAVE_SYSLOG_H
     if (s->use_syslog)
         syslog(LOG_INFO, PRINT_STRING);
     else
+#endif
+    {
         fprintf(s->log_access_file, PRINT_STRING);
+        fflush(s->log_access_file);
+    }
     g_free(response_length);
 
     return ERR_NOERROR;
