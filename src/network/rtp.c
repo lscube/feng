@@ -222,15 +222,16 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
                     0, NULL);
     ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
     switch (session->transport.protocol) {
-        case RTP_UDP:
-            ev_io_start(session->srv->loop, &session->transport.rtcp_reader);
-        break;
-        case RTP_TCP:
-        case RTP_SCTP:
+    case RTP_UDP:
+        ev_io_start(session->srv->loop, &session->transport.rtcp_reader);
         break;
 
-        default:
-            g_assert_not_reached();
+    case RTP_TCP:
+    case RTP_SCTP:
+        break;
+
+    default:
+        g_assert_not_reached();
         break;
     }
 }
