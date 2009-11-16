@@ -25,7 +25,7 @@ AC_DEFUN([CHECK_RAGEL], [
   dnl Only test the need if not found
   AS_IF([test x"$RAGEL" = x"false"], [
     AC_MSG_CHECKING([whether we need ragel to regenerate sources])
-    AS_IF([test -a ${srcdir}/$1], [ragel_needed=no], [ragel_needed=yes])
+    AS_IF([test -a "${srcdir}/$1"], [ragel_needed=no], [ragel_needed=yes])
     AC_MSG_RESULT([$ragel_needed])
 
     AS_IF([test x"$ragel_needed" = x"yes"],
