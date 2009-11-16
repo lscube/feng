@@ -3,13 +3,6 @@ var.basedir  = "@abs_top_builddir@"
 var.logdir   = "@abs_top_builddir@"
 var.statedir = "@abs_top_builddir@"
 
-server.modulesdir = "@abs_top_builddir@/modules/.libs"
-
-server.modules = (
-#    "mod_access",
-    "mod_accesslog"
-)
-
 # bind to port (defaults to @fenice_rtsp_port@)
 server.port         = 8554
 

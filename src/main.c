@@ -42,7 +42,7 @@
 #include "fnc_log.h"
 #include "incoming.h"
 #include "network/rtp.h"
-#include "modules/plugin.h"
+#include "network/rtsp.h"
 #include <glib.h>
 
 #ifdef HAVE_METADATA
@@ -237,14 +237,12 @@ static feng *feng_alloc(void)
     CLEAN(errorlog_file);
     CLEAN(username);
     CLEAN(groupname);
-    CLEAN(modules_dir);
 #undef CLEAN
 
 #define CLEAN(x) \
     srv->x = array_init();
     CLEAN(config_context);
     CLEAN(config_touched);
-    CLEAN(srvconf.modules);
 #undef CLEAN
 
     return srv;
@@ -275,7 +273,6 @@ static void feng_free(feng* srv)
     CLEAN(errorlog_file);
     CLEAN(username);
     CLEAN(groupname);
-    CLEAN(modules_dir);
 #undef CLEAN
 
     for(i = 0; i < srv->config_context->used; i++) {
@@ -284,6 +281,8 @@ static void feng_free(feng* srv)
         buffer_free(srv->config_storage[i].ssl_pemfile);
         buffer_free(srv->config_storage[i].ssl_ca_file);
         buffer_free(srv->config_storage[i].ssl_cipher_list);
+
+        buffer_free(srv->config_storage[i].access_log_file);
 
 #ifdef HAVE_METADATA
         buffer_free(srv->config_storage[i].cpd_port);
@@ -299,7 +298,6 @@ static void feng_free(feng* srv)
     array_free(srv->x)
     CLEAN(config_context);
     CLEAN(config_touched);
-    CLEAN(srvconf.modules);
 #undef CLEAN
 
     g_free(srv);
@@ -327,10 +325,6 @@ int main(int argc, char **argv)
 
     config_set_defaults(srv);
 
-    modules_load(srv);
-
-    module_set_defaults(srv);
-
     /* This goes before feng_bind_ports */
     srv->loop = ev_default_loop(0);
 
@@ -341,8 +335,12 @@ int main(int argc, char **argv)
         goto end;
     }
 
-    feng_drop_privs(srv);
+    if ( !accesslog_init(srv) ) {
+        res = 1;
+        goto end;
+    }
 
+    feng_drop_privs(srv);
 
 #ifdef HAVE_METADATA
     g_thread_create(cpd_server, (void *) srv, FALSE, NULL);
@@ -357,6 +355,7 @@ int main(int argc, char **argv)
     ev_loop (srv->loop, 0);
 
  end:
+    accesslog_uninit(srv);
     feng_free(srv);
 
     return res;

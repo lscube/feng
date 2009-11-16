@@ -7,9 +7,6 @@ AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip foreign subdir-objects])
 LSC_INIT
 
-LT_PREREQ(2.2)
-LT_INIT([dlopen disable-static])
-
 AC_CONFIG_HEADER([config.h])
 
 AC_ARG_WITH(rtsp-port,
@@ -119,7 +116,7 @@ fi
 
 AM_CONDITIONAL(FENG_CPD, test "x$enable_metadata" = "xyes")
 
-PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16 gthread-2.0 gmodule-2.0])
+PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16 gthread-2.0])
 CFLAGS="$CFLAGS $GLIB_CFLAGS"
 LIBS="$LIBS $GLIB_LIBS"
 

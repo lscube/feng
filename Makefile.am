@@ -48,6 +48,7 @@ dist-hook:
 
 dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	\
+	src/accesslog.c \
 	src/bufferqueue.c src/bufferqueue.h \
 	src/fnc_log.c src/fnc_log.h \
 	src/incoming.c src/incoming.h \
@@ -153,17 +154,7 @@ tests/rfc822proto/rfc822proto-test.rl: tests/rfc822proto/rfc822proto-test.xsl sr
 
 tests/rfc822proto/rfc822proto-test.c: src/network/rfc822proto-statemachine.rl
 
-INCLUDES = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network -I$(srcdir)/src/modules -Isrc/modules
-
-##if FENG_PLUGINS
-dist_feng_SOURCES += modules/plugin.c \
-		     modules/plugin.h
-
-pkglib_LTLIBRARIES = modules/mod_accesslog.la
-modules_mod_accesslog_la_LDFLAGS = -module -disable-static -avoid-version -no-undefined
-
-feng_CPPFLAGS = -DLIBDIR="\"$(pkglibdir)\""
-##endif
+INCLUDES = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network
 
 AM_RAGELFLAGS = -I$(srcdir)/src/network -Isrc/network
 
