@@ -65,7 +65,6 @@ typedef struct feng {
 
     GMutex *lock;        //!< lock to access live_mq
     GHashTable *live_mq; //!< keeps the association producer/mq
-    GSList *modules;
 } feng;
 
 typedef feng server;
@@ -73,5 +72,12 @@ typedef feng server;
 #define MAX_PROCESS    1    /*! number of fork */
 #define MAX_CONNECTION    srv->srvconf.max_conns   /*! rtsp connection */
 #define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS)) /*! rtsp connection for one fork */
+
+struct RTSP_Client;
+struct RTSP_Response;
+
+gboolean accesslog_init(feng *srv);
+void accesslog_uninit(feng *srv);
+void accesslog_log(struct RTSP_Client *client, struct RTSP_Response *response);
 
 #endif // FN_SERVER_H

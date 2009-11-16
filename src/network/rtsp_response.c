@@ -25,7 +25,7 @@
 #include <liberis/headers.h>
 
 #include "rtsp.h"
-#include "modules/plugin.h"
+#include "feng.h"
 
 /**
  * @file
@@ -154,43 +154,6 @@ static void rtsp_response_append_headers(gpointer hdr_name_p,
 }
 
 /**
- * @brief Log an RTSP access to the proper log
- *
- * @param response Response to log to the access log
- *
- * Like Apache and most of the web servers, we log the access through CLF
- * (Common Log Format).
- *
- * @todo Create a true access.log file
- *
- * Right now the access is just logged to stderr for debug purposes.  It
- * should also be possible to let the user configure the log format.
- *
- * @todo This should use an Apache-compatible user setting to decide the output
- *       format, and parse that line.
- */
-static void rtsp_log_access(RTSP_Response *response)
-{
-    const char *referer =
-        g_hash_table_lookup(response->request->headers, eris_hdr_referer);
-    const char *useragent =
-        g_hash_table_lookup(response->request->headers, eris_hdr_user_agent);
-    char *response_length = response->body ?
-        g_strdup_printf("%zd", response->body->len) : NULL;
-
-    fprintf(stderr, "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",
-            response->client->sock->remote_host,
-            (const char*)g_hash_table_lookup(response->headers, eris_hdr_date),
-            response->request->method, response->request->object,
-            response->request->version,
-            response->status, response_length ? response_length : "-",
-            referer ? referer : "-",
-            useragent ? useragent : "-");
-
-    g_free(response_length);
-}
-
-/**
  * @brief Finalise, send and free an response object
  *
  * @param response The response to send
@@ -232,7 +195,7 @@ void rtsp_response_send(RTSP_Response *response)
     rtsp_bwrite(response->client, str);
 
     /* Log the access */
-    module_response_send(response->client, response);
+    accesslog_log(response->client, response);
 
     /* After we did output to access.log, we can free the response since it's no
      * longer necessary. */

@@ -3,12 +3,6 @@ var.basedir  = "@feng_basedir@"
 var.logdir   = "@feng_logdir@"
 var.statedir = "@feng_statedir@"
 
-server.modules = (
-# Non functional right now
-#    "mod_access",
-    "mod_accesslog"
-)
-
 # bind to port (defaults to @fenice_rtsp_port@)
 # server.port         = 8554
 

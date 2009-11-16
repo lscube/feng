@@ -248,7 +248,7 @@ int RTSP_handler(RTSP_Client * rtsp);
  * @brief Structure respresenting a response sent to the client
  * @ingroup rtsp_response
  */
-typedef struct {
+typedef struct RTSP_Response {
     /**
      * @brief Backreference to the client.
      *

@@ -45,6 +45,7 @@ dist-hook:
 	echo $(VERSION) > $(distdir)/.tarball-version
 
 dist_feng_SOURCES = $(RAGEL_SOURCES) \
+	src/accesslog.c \
 	src/bufferqueue.c src/bufferqueue.h \
 	src/fnc_log.c src/fnc_log.h \
 	src/incoming.c src/incoming.h \
@@ -126,17 +127,7 @@ if LIVE_STREAMING
 dist_feng_SOURCES += src/media/demuxer/demuxer_sd.c
 endif
 
-##if FENG_PLUGINS
-dist_feng_SOURCES += modules/plugin.c \
-		     modules/plugin.h
-
-pkglib_LTLIBRARIES = modules/mod_accesslog.la
-modules_mod_accesslog_la_LDFLAGS = -module -disable-static -avoid-version -no-undefined
-
-feng_CPPFLAGS = -DLIBDIR="\"$(pkglibdir)\""
-##endif
-
-INCLUDES = -I. -I$(srcdir)/src -I$(srcdir)/modules
+INCLUDES = -I. -I$(srcdir)/src
 
 if HAVE_RAGEL
 include $(top_srcdir)/ragel.make
