@@ -73,7 +73,7 @@ dnl Checks used by conf/*
 dnl AC_CHECK_HEADERS([pcre.h fam.h])
 dnl AC_CHECK_FUNCS([lstat])
 
-CHECK_RAGEL_AM([src/network/ragel_range.c])
+CHECK_RAGEL_AM([src/network/ragel_range.c], [6.6])
 
 fenice_state_dir=$(eval echo ${localstatedir}/feng)
 AC_SUBST(fenice_state_dir)
