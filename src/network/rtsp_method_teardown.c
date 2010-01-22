@@ -37,7 +37,8 @@ void RTSP_teardown(RTSP_Client *rtsp, RFC822_Request *req)
     if ( !rfc822_request_check_url(rtsp, req) )
         return;
 
-//    ev_async_send(rtsp->srv->loop, rtsp->ev_sig_disconnect);
+    rtsp_session_free(rtsp->session);
+    rtsp->session = NULL;
 
     rtsp_quick_response(rtsp, req, RTSP_Ok);
 }
