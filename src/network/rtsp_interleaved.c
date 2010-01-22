@@ -294,8 +294,10 @@ static void interleaved_free(gpointer element, gpointer user_data)
  */
 void interleaved_free_list(RTSP_Client *rtsp)
 {
-  g_slist_foreach(rtsp->interleaved, interleaved_free, rtsp->srv->loop);
-  g_slist_free(rtsp->interleaved);
+    if(!rtsp->interleaved) return;
+    g_slist_foreach(rtsp->interleaved, interleaved_free, rtsp->srv->loop);
+    g_slist_free(rtsp->interleaved);
+    rtsp->interleaved = NULL;
 }
 
 /**

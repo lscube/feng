@@ -37,6 +37,9 @@ void RTSP_teardown(ATTR_UNUSED RTSP_Client *rtsp,
 {
     if ( !rtsp_request_check_url(req) )
         return;
+    rtsp_session_free(rtsp->session);
+    rtsp->session = NULL;
+    interleaved_free_list(rtsp);
 
 //    ev_async_send(rtsp->srv->loop, rtsp->ev_sig_disconnect);
 
