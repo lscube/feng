@@ -19,11 +19,14 @@ dist_doc_DATA = AUTHORS ChangeLog NEWS README RELEASE TODO
 
 if CHANGELOG_REGEN
 ChangeLog:
-	$(AM_V_GEN)GIT_DIR="${srcdir}/.git" git log --pretty > $@
+	-$(AM_V_GEN)GIT_DIR="${srcdir}/.git" git log --pretty > $@
 
 # Always regenerate!
 .PHONY: ChangeLog
 endif
+
+distcheck-hook:
+	@test -s "${srcdir}"/ChangeLog || { echo "distcheck: empty ChangeLog found; make sure you have GIT installed" >/dev/stderr; false; }
 
 bin_PROGRAMS = feng
 
@@ -45,6 +48,7 @@ dist-hook:
 
 dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	\
+	src/accesslog.c \
 	src/bufferqueue.c src/bufferqueue.h \
 	src/fnc_log.c src/fnc_log.h \
 	src/incoming.c src/incoming.h \
@@ -91,6 +95,7 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rtsp_method_teardown.c \
 	src/network/rtsp_state_machine.c \
 	src/network/rtsp_utils.c \
+	src/network/http_tunnelling.c \
 	\
 	src/media/demuxer.c \
 	src/media/demuxer.h \
@@ -125,8 +130,13 @@ if LIVE_STREAMING
 dist_feng_SOURCES += src/media/demuxer/demuxer_sd.c
 endif
 
-src/network/rfc822proto.c: src/network/rfc822proto-source.xsl src/network/rfc822proto.xml
+if AVOID_TABLES
+src/network/rfc822proto.c: src/network/rfc822proto-source-switch.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+else
+src/network/rfc822proto.c: src/network/rfc822proto-source-table.xsl src/network/rfc822proto.xml
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+endif
 
 src/network/rfc822proto-constants.h: src/network/rfc822proto-header.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
@@ -144,17 +154,7 @@ tests/rfc822proto/rfc822proto-test.rl: tests/rfc822proto/rfc822proto-test.xsl sr
 
 tests/rfc822proto/rfc822proto-test.c: src/network/rfc822proto-statemachine.rl
 
-INCLUDES = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network -I$(srcdir)/src/modules -Isrc/modules
-
-##if FENG_PLUGINS
-dist_feng_SOURCES += modules/plugin.c \
-		     modules/plugin.h
-
-pkglib_LTLIBRARIES = modules/mod_accesslog.la
-modules_mod_accesslog_la_LDFLAGS = -module -disable-static -avoid-version -no-undefined
-
-feng_CPPFLAGS = -DLIBDIR="\"$(pkglibdir)\""
-##endif
+INCLUDES = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network
 
 AM_RAGELFLAGS = -I$(srcdir)/src/network -Isrc/network
 
@@ -193,7 +193,7 @@ tests_testsuite_SOURCES = \
 	tests/rfc822proto/request_line.c \
 	tests/rfc822proto/headers.c
 
-tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
+# tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
 
 dist_tests_testsuite_SOURCES = tests/gtestmain.c
 

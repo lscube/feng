@@ -221,7 +221,19 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
                     range->playback_time - 0.05,
                     0, NULL);
     ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
-    ev_io_start(session->srv->loop, &session->transport.rtcp_reader);
+    switch (session->transport.protocol) {
+    case RTP_UDP:
+        ev_io_start(session->srv->loop, &session->transport.rtcp_reader);
+        break;
+
+    case RTP_TCP:
+    case RTP_SCTP:
+        break;
+
+    default:
+        g_assert_not_reached();
+        break;
+    }
 }
 
 /**
@@ -345,8 +357,7 @@ static gboolean rtp_packet_send_interleaved(RTP_session *session, RTP_packet *pa
     memcpy(&outpkt->data[2], &ne_n, sizeof(uint16_t));
     memcpy(&outpkt->data[4], packet, packet_size);
 
-    g_queue_push_head(rtsp->out_queue, outpkt);
-    ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
+    rtsp->write_data(rtsp, outpkt);
 
     return true;
 }

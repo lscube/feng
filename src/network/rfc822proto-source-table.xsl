@@ -6,7 +6,7 @@
   <xsl:variable name="lowercase">abcdefghijklmnopqrstuvwxyz</xsl:variable>
   <xsl:variable name="uppercase">ABCDEFGHIJKLMNOPQRSTUVWXYZ</xsl:variable>
 
-  <xsl:template match="/">
+  <xsl:template match="/rfc822proto">
     <xsl:text><![CDATA[
 /* Automatically-generated code, do not modify! */
 
@@ -63,7 +63,6 @@ const char *rfc822_header_to_string(RFC822_Header hdr)
         [999] = NULL
     };
 
-    g_assert(100 <= code && code <= 999);
     return responses[code];
 }
 ]]></xsl:text>
@@ -73,6 +72,27 @@ const char *rfc822_header_to_string(RFC822_Header hdr)
     <xsl:text><![CDATA[
 const char *rfc822_response_reason(RFC822_Protocol proto, int code)
 {
+    static const char *const responses[1000] = {
+]]></xsl:text>
+
+    <xsl:for-each select="./response">
+      <xsl:text>        [</xsl:text>
+      <xsl:value-of select="@code" />
+      <xsl:text>] = "</xsl:text>
+      <xsl:value-of select="." />
+      <xsl:text><![CDATA[",
+]]></xsl:text>
+    </xsl:for-each>
+
+    <xsl:text><![CDATA[
+        [999] = NULL
+    };
+
+    g_assert(100 <= code && code <= 999);
+
+    if ( responses[code] != NULL )
+        return responses[code];
+
     switch(proto)
     {
 ]]></xsl:text>

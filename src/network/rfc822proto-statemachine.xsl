@@ -18,8 +18,7 @@
     include common "common.rl";
 
     RFC822_Generic_Protocol =
-        ([A-Z]+ . '/' . digit . "." . digit)
-        % { protocol_code = RFC822_Protocol_Unsupported; };
+        ([A-Z]+ . '/' . digit . "." . digit);
 
     RFC822_Generic_Method = unreserved+;
 ]]></xsl:text>
@@ -27,14 +26,14 @@
     <xsl:for-each select="//supportedproto">
       <xsl:text>    RFC822_</xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text>_Versions = '</xsl:text>
+      <xsl:text>_Versions = "</xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text><![CDATA[/' > ( protocol_code, 2 ) . (]]></xsl:text>
+      <xsl:text><![CDATA[/" > ( protocol_code, 2 ) . (]]></xsl:text>
       <xsl:value-of select="$newline" />
       <xsl:for-each select="supportedversion">
-	<xsl:text>            '</xsl:text>
+	<xsl:text>            "</xsl:text>
 	<xsl:value-of select="." />
-	<xsl:text><![CDATA[' > ( protocol_code, 3 )
+	<xsl:text><![CDATA[" > ( protocol_code, 3 )
 		% { protocol_code = RFC822_Protocol_]]></xsl:text>
 	<xsl:value-of select="../@name" />
 	<xsl:value-of select="translate(., '.', '')" />
@@ -58,11 +57,11 @@
     <xsl:for-each select="//supportedproto">
       <xsl:text>        RFC822_</xsl:text>
       <xsl:value-of select="@name" />
-      <xsl:text>_Versions |</xsl:text>
+      <xsl:text>_Versions > ( rfc822_proto, 2 ) |</xsl:text>
       <xsl:value-of select="$newline" />
     </xsl:for-each>
 
-    <xsl:text><![CDATA[        RFC822_Generic_Protocol
+    <xsl:text><![CDATA[        RFC822_Generic_Protocol > ( rfc822_proto, 1 )  % { protocol_code = RFC822_Protocol_Unsupported; }
     );
 
 ]]></xsl:text>
@@ -76,7 +75,7 @@
       <xsl:text><![CDATA[ |
         ']]></xsl:text>
 	<xsl:value-of select="." />
-	<xsl:text>' > (method_code, 1) % { method_code = </xsl:text>
+	<xsl:text>' % (method_code, 1) % { method_code = </xsl:text>
 	<xsl:value-of select="../@name" />
 	<xsl:text>_Method_</xsl:text>
 	<xsl:value-of select="." />

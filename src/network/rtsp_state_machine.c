@@ -139,32 +139,6 @@ static void rtsp_handle_request(RTSP_Client *client, RFC822_Request *req)
         [RTSP_Method_PAUSE]    = RTSP_pause
     };
 
-    /* Check for supported RTSP version.
-     *
-     * It is important to check for this for the first thing, this because this
-     * is the failsafe mechanism that allows for somewhat-incompatible changes
-     * to be made to the protocol.
-     *
-     * While we could check for this after accepting the method, if a client
-     * uses a method of a RTSP version we don't support, we want to make it
-     * clear to the client it should not be using that version at all.
-     *
-     * @todo This needs to be changed to something different, since
-     *       for supporting the QuickTime tunneling of RTP/RTSP over
-     *       HTTP proxy we have to accept (limited) HTTP requests too.
-     */
-    if ( req->proto != RFC822_Protocol_RTSP10 ) {
-        rtsp_quick_response(client, req, RTSP_VersionNotSupported);
-        goto error;
-    }
-
-    /* Check if the method is a know and supported one */
-    if ( req->method_id == RTSP_Method__Invalid ||
-         req->method_id == RTSP_Method__Unsupported ) {
-        rtsp_quick_response(client, req, RTSP_NotImplemented);
-        goto error;
-    }
-
     /* No CSeq found */
     if ( rfc822_headers_lookup(req->headers, RTSP_Header_CSeq) == NULL ) {
         /** @todo This should be corrected for RFC! */
@@ -236,10 +210,37 @@ static gboolean RTSP_handle_new(RTSP_Client *rtsp) {
         case 0:
             return false;
         default:
-            rtsp->pending_request = g_slice_dup(RFC822_Request, &tmpreq);
+            switch(tmpreq.proto) {
+            default:
+                rfc822_quick_response(rtsp, &tmpreq, RFC822_Protocol_RTSP10, RTSP_VersionNotSupported);
+                return false;
 
+            case RFC822_Protocol_HTTP_UnsupportedVersion:
+                rfc822_quick_response(rtsp, &tmpreq, RFC822_Protocol_HTTP10, HTTP_VersionNotSupported);
+                return false;
+
+            case RFC822_Protocol_RTSP10:
+                rtsp->status = RFC822_State_RTSP_Headers;
+                break;
+
+            case RFC822_Protocol_HTTP10:
+            case RFC822_Protocol_HTTP11:
+                rtsp->status = RFC822_State_HTTP_Headers;
+                break;
+            }
+
+            /* Check if the method is a know and supported one.  Don't
+             * get fooled by the RTSP_ prefix; all the Invalid and
+             * Unsupported constants have the same value. And the same
+             * goes for the NotImplemented response code. */
+            if ( tmpreq.method_id == RTSP_Method__Invalid ||
+                 tmpreq.method_id == RTSP_Method__Unsupported ) {
+                rfc822_quick_response(rtsp, &tmpreq, tmpreq.proto, RTSP_NotImplemented);
+                return false;
+            }
+
+            rtsp->pending_request = g_slice_dup(RFC822_Request, &tmpreq);
             g_byte_array_remove_range(rtsp->input, 0, request_line_len);
-            rtsp->status = RFC822_State_RTSP_Headers;
             return true;
         }
     }
@@ -287,75 +288,6 @@ static gboolean RTSP_handle_content(RTSP_Client *rtsp) {
     return true;
 }
 
-static gboolean HTTP_handle_headers(RTSP_Client *rtsp)
-{
-    size_t parsed_headers;
-    int headers_res;
-
-    if ( rtsp->pending_request->headers == NULL )
-        rtsp->pending_request->headers = rfc822_headers_new();
-
-    headers_res = ragel_read_http_headers(rtsp->pending_request->headers,
-                                          rtsp->input->data,
-                                          rtsp->input->len,
-                                          &parsed_headers);
-
-    if ( headers_res == -1 ) {
-        rfc822_quick_response(rtsp, rtsp->pending_request, RFC822_Protocol_HTTP10, RTSP_BadRequest);
-        return false;
-    }
-
-    g_byte_array_remove_range(rtsp->input, 0, parsed_headers);
-
-    if ( headers_res == 0 )
-        return false;
-
-    if ( rtsp->pending_request->method_id == HTTP_Method_POST )
-        rtsp->status = RFC822_State_HTTP_Content;
-    else {
-        RFC822_Response *response = rfc822_response_new(rtsp->pending_request, RTSP_Ok);
-
-        rfc822_headers_set(response->headers,
-                           HTTP_Header_Connection,
-                           strdup("close"));
-
-        rfc822_headers_set(response->headers,
-                           HTTP_Header_Date,
-                           strdup("Tue, 8 Jun 2004 15:04:35 GMT"));
-
-        rfc822_headers_set(response->headers,
-                           HTTP_Header_Cache_Control,
-                           strdup("none"));
-
-        rfc822_headers_set(response->headers,
-                           HTTP_Header_Pragma,
-                           strdup("no-cache"));
-
-        rfc822_headers_set(response->headers,
-                           HTTP_Header_Content_Type,
-                           strdup("application/x-rtsp-tunnelled"));
-
-        rfc822_response_send(rtsp, response);
-    }
-    return true;
-}
-
-static gboolean HTTP_handle_content(RTSP_Client *rtsp)
-{
-    /* We assume that each request ends with some padding, hopefully */
-    guint8 *base64_end = memchr(rtsp->input->data, '=', rtsp->input->len);
-
-    if ( base64_end == NULL )
-        return false;
-
-    /* Find the last '=' padding byte */
-    while ( *base64_end == '=' ) base64_end++;
-
-    fprintf(stderr, "%s\n", g_strndup(rtsp->input->data, (base64_end-rtsp->input->data)));
-
-    return false;
-}
-
 void RTSP_handler(RTSP_Client * rtsp)
 {
     typedef gboolean (*state_machine_handler)(RTSP_Client *);
@@ -366,7 +298,8 @@ void RTSP_handler(RTSP_Client * rtsp)
         [RFC822_State_RTSP_Content] = RTSP_handle_content,
         [RFC822_State_Interleaved] = RTSP_handle_interleaved,
         [RFC822_State_HTTP_Headers] = HTTP_handle_headers,
-        [RFC822_State_HTTP_Content] = HTTP_handle_content
+        [RFC822_State_HTTP_Content] = HTTP_handle_content,
+        [RFC822_State_HTTP_Idle] = HTTP_handle_idle
     };
 
     while ( handlers[rtsp->status](rtsp) );

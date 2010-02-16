@@ -42,7 +42,7 @@
 #include "fnc_log.h"
 #include "incoming.h"
 #include "network/rtp.h"
-#include "modules/plugin.h"
+#include "network/rtsp.h"
 #include <glib.h>
 
 #ifdef HAVE_METADATA
@@ -152,14 +152,12 @@ static gboolean show_version(ATTR_UNUSED const gchar *option_name,
 
 static gboolean command_environment(feng *srv, int argc, char **argv)
 {
-    gchar *config_file = NULL, *modules_dir = NULL;
+    gchar *config_file = NULL;
     gboolean quiet = FALSE, verbose = FALSE, syslog = FALSE;
 
     GOptionEntry optionsTable[] = {
         { "config", 'f', 0, G_OPTION_ARG_STRING, &config_file,
             "specify configuration file", NULL },
-        { "modules", 'm', 0, G_OPTION_ARG_STRING, &srv->srvconf.modules_dir ,
-            "specify the modules path" },
         { "quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet,
             "show as little output as possible", NULL },
         { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose,
@@ -194,8 +192,7 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
         return false;
     }
     g_free(config_file);
-    if (srv->srvconf.modules_dir == NULL)
-        srv->srvconf.modules_dir = g_strdup(LIBDIR);
+
     {
 #ifndef CLEANUP_DESTRUCTOR
         gchar *progname;
@@ -246,7 +243,6 @@ static feng *feng_alloc(void)
     srv->x = array_init();
     CLEAN(config_context);
     CLEAN(config_touched);
-    CLEAN(srvconf.modules);
 #undef CLEAN
 
     return srv;
@@ -286,6 +282,8 @@ static void feng_free(feng* srv)
         buffer_free(srv->config_storage[i].ssl_ca_file);
         buffer_free(srv->config_storage[i].ssl_cipher_list);
 
+        buffer_free(srv->config_storage[i].access_log_file);
+
 #ifdef HAVE_METADATA
         buffer_free(srv->config_storage[i].cpd_port);
         buffer_free(srv->config_storage[i].cpd_db_host);
@@ -300,7 +298,6 @@ static void feng_free(feng* srv)
     array_free(srv->x)
     CLEAN(config_context);
     CLEAN(config_touched);
-    CLEAN(srvconf.modules);
 #undef CLEAN
 
     g_free(srv);
@@ -328,10 +325,6 @@ int main(int argc, char **argv)
 
     config_set_defaults(srv);
 
-    modules_load(srv);
-
-    module_set_defaults(srv);
-
     /* This goes before feng_bind_ports */
     srv->loop = ev_default_loop(0);
 
@@ -342,8 +335,12 @@ int main(int argc, char **argv)
         goto end;
     }
 
-    feng_drop_privs(srv);
+    if ( !accesslog_init(srv) ) {
+        res = 1;
+        goto end;
+    }
 
+    feng_drop_privs(srv);
 
 #ifdef HAVE_METADATA
     g_thread_create(cpd_server, (void *) srv, FALSE, NULL);
@@ -353,10 +350,12 @@ int main(int argc, char **argv)
      * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
 
     RTP_port_pool_init(srv, srv->srvconf.first_udp_port);
+    http_tunnel_initialise();
 
     ev_loop (srv->loop, 0);
 
  end:
+    accesslog_uninit(srv);
     feng_free(srv);
 
     return res;

@@ -289,12 +289,12 @@ static int sd_init(Resource * r)
                     g_strlcpy(trackinfo.name, separator + 1, sizeof(trackinfo.name));
                 }
             } else if (!g_ascii_strcasecmp(keyword, SD_ENCODING_NAME)) {
+                const RTP_static_payload *info;
                 // SD_ENCODING_NAME
                 sscanf(line, "%*s%10s", props_hints.encoding_name);
 
                 // Automatic media detection
-                const RTP_static_payload *info = probe_stream_info(props_hints.encoding_name);
-                if (info) {
+                if ((info = probe_stream_info(props_hints.encoding_name))) {
                     fnc_log(FNC_LOG_INFO, "[.SD] Static Payload Detected, probing info...");
                     if (!payload_type_forced)
                         set_payload_type(&props_hints, info->PldType);

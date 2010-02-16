@@ -71,9 +71,7 @@ typedef struct {
 
 //	conf_buffer *event_handler;
 
-	char *modules_dir;
 //	conf_buffer *network_backend;
-	array *modules;
 	array *upload_tempdirs;
 
 //	unsigned short max_worker;
@@ -172,6 +170,10 @@ typedef struct specific_config {
 #ifdef USE_OPENSSL
 	SSL_CTX *ssl_ctx;
 #endif
+
+    conf_buffer *access_log_file;
+    FILE *access_log_fp;
+    int access_log_syslog;
 } specific_config;
 
 #endif // FN_CONF_H

@@ -178,8 +178,7 @@ static gboolean rtcp_send_interleaved(RTP_session *session, GByteArray *buffer)
     g_byte_array_prepend(buffer, interleaved_preamble, 4);
     memcpy(&buffer->data[2], &ne_n, sizeof(uint16_t));
 
-    g_queue_push_head(rtsp->out_queue, buffer);
-    ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
+    rtsp->write_data(rtsp, buffer);
 
     return true;
 }

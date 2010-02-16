@@ -7,9 +7,6 @@ AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip foreign subdir-objects])
 LSC_INIT
 
-LT_PREREQ(2.2)
-LT_INIT([dlopen disable-static])
-
 AC_CONFIG_HEADER([config.h])
 
 AC_ARG_WITH(rtsp-port,
@@ -50,6 +47,11 @@ AC_ARG_ENABLE(metadata,
     AS_HELP_STRING([--enable-metadata], [enable metadata support [[default=no]]]),,
     enable_metadata="no")
 
+AC_ARG_ENABLE([tables],
+    AS_HELP_STRING([--disable-tables], [disable big build-time tables (for embedded)]))
+
+AM_CONDITIONAL([AVOID_TABLES], [test "x$enable_tables" = "xno"])
+
 dnl Checks used by feng itself
 AC_CHECK_HEADERS_ONCE([syslog.h])
 
@@ -71,7 +73,7 @@ dnl Checks used by conf/*
 dnl AC_CHECK_HEADERS([pcre.h fam.h])
 dnl AC_CHECK_FUNCS([lstat])
 
-CHECK_RAGEL_AM([src/network/ragel_range.c])
+CHECK_RAGEL_AM([src/network/ragel_range.c], [6.6])
 
 fenice_state_dir=$(eval echo ${localstatedir}/feng)
 AC_SUBST(fenice_state_dir)
@@ -114,7 +116,7 @@ fi
 
 AM_CONDITIONAL(FENG_CPD, test "x$enable_metadata" = "xyes")
 
-PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16 gthread-2.0 gmodule-2.0])
+PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16 gthread-2.0])
 CFLAGS="$CFLAGS $GLIB_CFLAGS"
 LIBS="$LIBS $GLIB_LIBS"
 
@@ -236,6 +238,9 @@ AC_DEFINE_UNQUOTED(FENICE_STATE_DIR,
 AC_DEFINE_UNQUOTED(FENIC_STATE_DIR_STR,
                     "$fenice_state_dir",
                     [Define default string dir for Certificate (pem format)])
+
+CC_CHECK_CFLAGS_APPEND([-Werror=declaration-after-statement -Wdeclaration-after-statement],
+                       [break;])
 
 AC_CONFIG_MACRO_DIR([m4])
 

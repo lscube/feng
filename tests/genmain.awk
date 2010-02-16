@@ -25,6 +25,7 @@ BEGIN {
 	"\n",
 	"int main(int argc, char *argv[])\n",
 	"{\n",
+	"    if (!g_thread_supported ()) g_thread_init (NULL);\n",
 	"    g_test_init(&argc, &argv, NULL);\n";
 }
 
@@ -35,8 +36,8 @@ BEGIN {
     testname = $1;
     sub("test_", "", testname);
 
-    printf "extern void %s();\n", $1;
-    printf "g_test_add_func(\"/%s/%s\", %s);\n",
+    printf "{ extern void %s();\n", $1;
+    printf "  g_test_add_func(\"/%s/%s\", %s); }\n",
 	suitename, testname, $1;
 }
 

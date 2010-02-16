@@ -73,47 +73,51 @@ static int config_insert(server *srv) {
         { "server.port", &srv->srvconf.port, T_CONFIG_SHORT,  T_CONFIG_SCOPE_SERVER },      /* 4 */
 //        { "server.tag",                  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 6 */
         { "server.use-ipv6",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 5 */
-        { "server.modules", srv->srvconf.modules, T_CONFIG_ARRAY, T_CONFIG_SCOPE_SERVER },       /* 6 */
 
-        { "server.document-root", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 7 */
-        { "server.name",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 8 */
+        { "server.document-root", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 6 */
+        { "server.name",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 7 */
 
-        { "server.max-fds", &srv->srvconf.max_fds, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 9 */
+        { "server.max-fds", &srv->srvconf.max_fds, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 8 */
 #if 0 // HAVE_LSTAT
-        { "server.follow-symlink",       NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 12 */
+        { "server.follow-symlink",       NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },
 #else
         { "server.follow-symlink",
           (void *)"Unsupported for now",
-          T_CONFIG_UNSUPPORTED, T_CONFIG_SCOPE_UNSET }, /* 10 */
+          T_CONFIG_UNSUPPORTED, T_CONFIG_SCOPE_UNSET }, /* 9 */
 #endif
 //        { "server.kbytes-per-second",    NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 25 */
 //        { "connection.kbytes-per-second", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },  /* 26 */
-        { "ssl.pemfile",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 11 */
+        { "ssl.pemfile",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 10 */
 
-        { "ssl.engine",                  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 12 */
+        { "ssl.engine",                  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 11 */
 
-        { "ssl.ca-file",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 13 */
+        { "ssl.ca-file",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 12 */
 
-        { "server.errorlog-use-syslog", &srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 14 */
-        { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 15 */
+        { "server.errorlog-use-syslog", &srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 13 */
+        { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 14 */
 //        { "server.upload-dirs",          NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },   /* 44 */
-        { "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 16 */
+        { "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 15 */
         { "sctp.protocol",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },
         { "sctp.max_streams",            NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
 
+        { "accesslog.filename",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 18 */
+        { "accesslog.use-syslog",           NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },
+        { "accesslog.format",               NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
+
 	// Metadata begin
 #ifdef HAVE_METADATA
-        { "cpd.port",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 19 */
-        { "cpd.db.host",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 20 */
-        { "cpd.db.user",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 21 */
-        { "cpd.db.password",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 22 */
-        { "cpd.db.name",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 23 */
+        { "cpd.port",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 22 */
+        { "cpd.db.host",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 23 */
+        { "cpd.db.user",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 24 */
+        { "cpd.db.password",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 25 */
+        { "cpd.db.name",                    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },    /* 26 */
 #endif
 	// Metadata end
 
         { "server.first_udp_port",  &srv->srvconf.first_udp_port, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { "server.loglevel", &srv->srvconf.loglevel, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
+
         { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
     };
 
@@ -133,6 +137,8 @@ static int config_insert(server *srv) {
         s->is_ssl        = 0;
         s->is_sctp       = 0;
         s->sctp_max_streams = 16;
+        s->access_log_file = buffer_init();
+        s->access_log_syslog = 1;
 
 	// Metadata begin
 #ifdef HAVE_METADATA
@@ -154,30 +160,33 @@ static int config_insert(server *srv) {
 */
         cv[5].destination = &s->use_ipv6;
 
-        cv[7].destination = s->document_root;
-        cv[8].destination = s->server_name;
+        cv[6].destination = s->document_root;
+        cv[7].destination = s->server_name;
         /* 9 -> max-fds */
 #ifdef HAVE_LSTAT
-        cv[10].destination = &s->follow_symlink;
+        cv[9].destination = &s->follow_symlink;
 #endif
 //        cv[25].destination = &(s->global_kbytes_per_second);
 //        cv[26].destination = &(s->kbytes_per_second);
-        cv[11].destination = s->ssl_pemfile;
+        cv[10].destination = s->ssl_pemfile;
 
-        cv[12].destination = &s->is_ssl;
-        cv[13].destination = s->ssl_ca_file;
-        cv[16].destination = s->ssl_cipher_list;
+        cv[11].destination = &s->is_ssl;
+        cv[12].destination = s->ssl_ca_file;
+        cv[15].destination = s->ssl_cipher_list;
 
-        cv[17].destination = &s->is_sctp;
-        cv[18].destination = &s->sctp_max_streams;
+        cv[16].destination = &s->is_sctp;
+        cv[17].destination = &s->sctp_max_streams;
+
+        cv[18].destination = s->access_log_file;
+        cv[19].destination = &s->access_log_syslog;
 
 	// Metadata begin
 #ifdef HAVE_METADATA
-        cv[19].destination = s->cpd_port;
-        cv[20].destination = s->cpd_db_host;
-        cv[21].destination = s->cpd_db_user;
-        cv[22].destination = s->cpd_db_password;
-        cv[23].destination = s->cpd_db_name;
+        cv[22].destination = s->cpd_port;
+        cv[23].destination = s->cpd_db_host;
+        cv[24].destination = s->cpd_db_user;
+        cv[25].destination = s->cpd_db_password;
+        cv[26].destination = s->cpd_db_name;
 #endif
 	// Metadata end
 
@@ -894,7 +903,6 @@ int config_read(server *srv, const char *fn) {
     data_string *dcwd;
     int ret;
     char *pos;
-    data_array *modules;
 
     context_init(srv, &context);
     context.all_configs = srv->config_context;
@@ -949,65 +957,6 @@ int config_read(server *srv, const char *fn) {
     } else {
         return -1;
     }
-#if 0
-    if (NULL != (modules = (data_array *)array_get_element(srv->config, "server.modules"))) {
-        data_string *ds;
-        data_array *prepends;
-
-        if (modules->type != TYPE_ARRAY) {
-            fprintf(stderr, "server.modules must be an array");
-            return -1;
-        }
-        prepends = data_array_init();
-
-        /* prepend default modules */
-        if (NULL == array_get_element(modules->value, "mod_indexfile")) {
-            ds = data_string_init();
-            buffer_copy_string(ds->value, "mod_indexfile");
-            array_insert_unique(prepends->value, (data_unset *)ds);
-        }
-
-        prepends = (data_array *)configparser_merge_data((data_unset *)prepends, (data_unset *)modules);
-        buffer_copy_string_buffer(prepends->key, modules->key);
-        array_replace(srv->config, (data_unset *)prepends);
-        modules->free((data_unset *)modules);
-        modules = prepends;
-
-        /* append default modules */
-        if (NULL == array_get_element(modules->value, "mod_dirlisting")) {
-            ds = data_string_init();
-            buffer_copy_string(ds->value, "mod_dirlisting");
-            array_insert_unique(modules->value, (data_unset *)ds);
-        }
-
-        if (NULL == array_get_element(modules->value, "mod_staticfile")) {
-            ds = data_string_init();
-            buffer_copy_string(ds->value, "mod_staticfile");
-            array_insert_unique(modules->value, (data_unset *)ds);
-        }
-    } else {
-
-        data_string *ds;
-
-        modules = data_array_init();
-
-        /* server.modules is not set */
-        ds = data_string_init();
-        buffer_copy_string(ds->value, "mod_indexfile");
-        array_insert_unique(modules->value, (data_unset *)ds);
-
-        ds = data_string_init();
-        buffer_copy_string(ds->value, "mod_dirlisting");
-        array_insert_unique(modules->value, (data_unset *)ds);
-
-        ds = data_string_init();
-        buffer_copy_string(ds->value, "mod_staticfile");
-        array_insert_unique(modules->value, (data_unset *)ds);
-
-        buffer_copy_string(modules->key, "server.modules");
-        array_insert_unique(srv->config, (data_unset *)modules);
-    }
-#endif
 
     if (0 != config_insert(srv)) {
         return -1;
