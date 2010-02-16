@@ -1,0 +1,3 @@
+#!/bin/bash
+
+for i in `seq 1 300`; do sleep 0.5;  mplayer -rtsp-stream-over-tcp -vo null 'rtsp://media.lscube.org:554/live/test.sd' < /dev/null 2>&1 1>/dev/null & done
