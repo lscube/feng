@@ -108,7 +108,7 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w,
                               ATTR_UNUSED int revents)
 {
     RTSP_Client *rtsp = w->data;
-    if(rtsp->session->rtp_sessions)
+    if(rtsp->session && rtsp->session->rtp_sessions)
         g_slist_foreach(rtsp->session->rtp_sessions,
                         check_if_any_rtp_session_timedout, NULL);
     ev_timer_again (loop, w);
