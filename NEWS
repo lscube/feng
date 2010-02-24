@@ -1,7 +1,8 @@
 + Feng changelog
 
-  25 Sep 2009; Luca Barbato <lu_zero@gentoo.org>:
-  Plugin layer
+  23 Feb 2010; Luca Barbato <lu_zero@gentoo.org>:
+  Merge Diego's new parser and new interleave infrastructure,
+  http-tunneling a la Quicktime now supported
 
   27 Jul 2009; Luca Barbato <lu_zero@gentoo.org>:
   Improved live support
