@@ -139,12 +139,6 @@ fi
 
 AM_CONDITIONAL(FENICE_FFMPEG, [test "$enable_ffmpeg" = "yes"])
 
-if test "$enable_duma" = "yes"; then
-    AC_DEFINE(ENABLE_DUMA, 1,[Debug enabled])
-    enable_debug=yes
-    LIBS="$LIBS -lduma"
-fi
-
 CC_ATTRIBUTE_UNUSED(
   [AC_DEFINE([ATTR_UNUSED], [__attribute__((__unused__))], [Define this if ATTR_UNUSED is supported])],
   [AC_DEFINE([ATTR_UNUSED], [], [Define this if ATTR_UNUSED is not supported])])
@@ -264,7 +258,6 @@ live streaming supported...... : $live_streaming
 sctp support enabled ......... : $enable_sctp
 avformat support enabled ..... : $avformat_msg
 avutil support enabled ....... : $avutil_msg
- duma enabled ................ : $enable_duma
 
 metadata support enabled...... : $enable_metadata
 
