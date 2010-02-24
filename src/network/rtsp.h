@@ -31,8 +31,10 @@
 
 #include "feng_utils.h"
 #include <netembryo/wsocket.h>
-#include <netembryo/rtsp.h>
 #include <netembryo/url.h>
+
+#include "rfc822proto.h"
+#include "rtp.h"
 
 struct feng;
 struct Resource;
@@ -126,6 +128,11 @@ typedef struct RTSP_Range {
     double playback_time;
 } RTSP_Range;
 
+struct RTSP_Client;
+struct HTTP_Tunnel_Pair;
+
+typedef void (*rtsp_write_data)(struct RTSP_Client *client, GByteArray *data);
+
 typedef struct RTSP_Client {
     Sock *sock;
 
@@ -137,19 +144,33 @@ typedef struct RTSP_Client {
      */
     GByteArray *input;
 
+    /**
+     * @brief Status of the connected client for the parser
+     */
+    RFC822_Parser_State status;
+
+    /**
+     * @brief Current request being parsed
+     *
+     * @note The pointer is only valid when RTSP_Client::status is
+     *       either Parser_Headers or Parser_Content.
+     */
+    RFC822_Request *pending_request;
+
     GQueue *out_queue;
+
+    /**
+     * @brief Hash table for interleaved and SCTP channels
+     */
+    GHashTable *channels;
 
     // Run-Time
     RTSP_session *session;
     struct feng *srv;
 
-    /**
-     * @brief Interleaved setup data
-     *
-     * Singly-linked list of @ref RTSP_interleaved instances, one per
-     * RTP session linked to the RTSP session.
-     */
-    GSList *interleaved;
+    rtsp_write_data write_data;
+
+    struct HTTP_Tunnel_Pair *pair;
 
     //Events
     ev_async ev_sig_disconnect;
@@ -159,168 +180,159 @@ typedef struct RTSP_Client {
     ev_io ev_io_write;
 } RTSP_Client;
 
+RTSP_Client *rtsp_client_new(struct feng *srv);
+
+void rtsp_write_string(RTSP_Client *client, GString *str);
+
 void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents);
 
-/**
- * @brief RTSP method tokens
- *
- * They are used to identify in which state of the state machines we
- * are.
- */
-enum RTSP_method_token {
-  RTSP_ID_ERROR = ERR_GENERIC,
-  RTSP_ID_DESCRIBE,
-  RTSP_ID_ANNOUNCE,
-  RTSP_ID_GET_PARAMETERS,
-  RTSP_ID_OPTIONS,
-  RTSP_ID_PAUSE,
-  RTSP_ID_PLAY,
-  RTSP_ID_RECORD,
-  RTSP_ID_REDIRECT,
-  RTSP_ID_SETUP,
-  RTSP_ID_SET_PARAMETER,
-  RTSP_ID_TEARDOWN
-};
+void RTSP_handler(RTSP_Client * rtsp);
 
 /**
- * @brief Structure representing an incoming request
+ * RTSP high level functions, mapping to the actual RTSP methods
  *
- * This structure is used to access all the data related to a request
- * message. Since it also embeds the client, it's everything the
- * server needs to send a response for the request.
+ * @defgroup rtsp_methods Method functions
+ *
+ * @{
  */
-typedef struct {
-    /** The client the request comes from */
-    RTSP_Client *client;
 
-    /**
-     * @brief String representing the method used
-     *
-     * Mostly used for logging purposes.
-     */
-    char *method;
-    /**
-     * @brief Machine-readable ID of the method
-     *
-     * Used by the state machine to choose the callback method.
-     */
-    enum RTSP_method_token method_id;
+typedef void (*rtsp_method_function)(RTSP_Client * rtsp, RFC822_Request *req);
 
-    /**
-     * @brief Object of the request
-     *
-     * Represents the object to work on, usually the URL for the
-     * request (either a resource URL or a track URL). It can be "*"
-     * for methods like OPTIONS.
-     */
-    char *object;
-
-    /**
-     * @brief Protocol version used
-     *
-     * This can only be RTSP/1.0 right now. We log it here for access.log and to
-     * remove more logic from the parser itself.
-     *
-     * @todo This could be HTTP/1.0 or 1.1 when requests come from
-     *       QuickTime's proxy-passthrough. Currently that is not the
-     *       case though.
-     */
-    char *version;
-
-    /**
-     * @brief All the headers of the request, unparsed.
-     *
-     * This hash table contains all the headers of the request, in
-     * unparsed string form; they can used for debugging purposes or
-     * simply to access the original value of an header for
-     * pass-through copy.
-     */
-    GHashTable *headers;
-} RTSP_Request;
-
-int RTSP_handler(RTSP_Client * rtsp);
-
+void RTSP_describe(RTSP_Client * rtsp, RFC822_Request *req);
+void RTSP_setup(RTSP_Client * rtsp, RFC822_Request *req);
+void RTSP_play(RTSP_Client * rtsp, RFC822_Request *req);
+void RTSP_pause(RTSP_Client * rtsp, RFC822_Request *req);
+void RTSP_teardown(RTSP_Client * rtsp, RFC822_Request *req);
+void RTSP_options(RTSP_Client * rtsp, RFC822_Request *req);
 /**
  * @}
  */
 
-/**
- * @brief Structure respresenting a response sent to the client
- * @ingroup rtsp_response
- */
-typedef struct RTSP_Response {
-    /**
-     * @brief Backreference to the client.
-     *
-     * Used to be able to send the response faster
-     */
-    RTSP_Client *client;
-
-    /**
-     * @brief Reference to the original request
-     *
-     * Used to log the request/response in access.log
-     */
-    const RTSP_Request *request;
-
-    /**
-     * @brief The status code of the response.
-     *
-     * The list of valid status codes is present in RFC 2326 Section 7.1.1 and
-     * they are described through Section 11.
-     */
-    RTSP_ResponseCode status;
-
-    /**
-     * @brief An hash table of headers to add to the response.
-     */
-    GHashTable *headers;
-
-    /**
-     * @brief An eventual body for the response, used by the DESCRIBE method.
-     */
-    GString *body;
-} RTSP_Response;
-
-RTSP_Response *rtsp_response_new(const RTSP_Request *req, RTSP_ResponseCode code);
-void rtsp_response_send(RTSP_Response *response);
-
-/**
- * @brief Create and send a response in a single function call
- * @ingroup rtsp_response
- *
- * @param req Request object to respond to
- * @param code Status code for the response
- *
- * This function is used to avoid creating and sending a new response when just
- * sending out an error response.
- */
-static inline void rtsp_quick_response(RTSP_Request *req, RTSP_ResponseCode code)
+static inline void rtsp_quick_response(struct RTSP_Client *client, RFC822_Request *req, int code)
 {
-    rtsp_response_send(rtsp_response_new(req, code));
+    /* We want to make sure we respond with an RTSP protocol every
+       time if we called this function in particular. */
+    RFC822_Protocol proto;
+    switch ( req->proto ) {
+    case RFC822_Protocol_RTSP10:
+        proto = req->proto;
+        break;
+    default:
+        proto = RFC822_Protocol_RTSP10;
+        break;
+    }
+
+    rfc822_quick_response(client, req, proto, code);
 }
 
-gboolean rtsp_check_invalid_state(const RTSP_Request *req,
+gboolean rtsp_check_invalid_state(RTSP_Client *client,
+                                  const RFC822_Request *req,
                                   RTSP_Server_State invalid_state);
 
 void rtsp_write_cb(struct ev_loop *, ev_io *, int);
 void rtsp_read_cb(struct ev_loop *, ev_io *, int);
 
-gboolean rtsp_request_get_url(RTSP_Request *req, Url *url);
-gboolean rtsp_request_check_url(RTSP_Request *req);
-
-void rtsp_bwrite(RTSP_Client *rtsp, GString *buffer);
+void rtsp_interleaved(RTSP_Client *rtsp, int channel, uint8_t *data, size_t len);
 
 RTSP_session *rtsp_session_new(RTSP_Client *rtsp);
 void rtsp_session_free(RTSP_session *session);
 void rtsp_session_editlist_append(RTSP_session *session, RTSP_Range *range);
 void rtsp_session_editlist_free(RTSP_session *session);
 
-gboolean interleaved_setup_transport(RTSP_Client *, struct RTP_transport *,
-                                     int, int);
-void interleaved_rtcp_send(RTSP_Client *, int, void *, size_t);
-void interleaved_free_list(RTSP_Client *);
-
 void rtsp_do_pause(RTSP_Client *rtsp);
+
+/**
+ * @defgroup ragel Ragel parsing
+ *
+ * @brief Functions and data structure for parsing of RTSP protocol.
+ *
+ * This group enlists all the shared data structure between the
+ * parsers written using Ragel (http://www.complang.org/ragel/) and
+ * the users of those parsers, usually the method handlers (see @ref
+ * rtsp_methods).
+ *
+ * @{
+ */
+
+/**
+ * @defgroup ragel_transport Transport: header parsing
+ *
+ * @{
+ */
+
+/**
+ * @brief Structure filled by the ragel parser of the transport header.
+ *
+ * @internal
+ */
+struct ParsedTransport {
+    RTP_Protocol protocol;
+    //! Mode for UDP transmission, here is easier to access
+    enum { TransportUnicast, TransportMulticast } mode;
+    union {
+        union {
+            struct {
+                uint16_t port_rtp;
+                uint16_t port_rtcp;
+            } Unicast;
+            struct {
+            } Multicast;
+        } UDP;
+        struct {
+            uint16_t ich_rtp;  //!< Interleaved channel for RTP
+            uint16_t ich_rtcp; //!< Interleaved channel for RTCP
+        } TCP;
+        struct {
+            uint16_t ch_rtp;  //!< SCTP channel for RTP
+            uint16_t ch_rtcp; //!< SCTP channel for RTCP
+        } SCTP;
+    } parameters;
+};
+
+gboolean check_parsed_transport(struct RTSP_Client *rtsp,
+                                struct RTP_transport *rtp_t,
+                                struct ParsedTransport *transport);
+
+
+gboolean ragel_parse_transport_header(struct RTSP_Client *rtsp,
+                                      struct RTP_transport *rtp_t,
+                                      const char *header);
+/**
+ *@}
+ */
+
+/**
+ * @defgroup ragel_range Range: header parsing
+ *
+ * @{
+ */
+
+struct RTSP_Range;
+
+gboolean ragel_parse_range_header(const char *header,
+                                  RTSP_Range *range);
+
+/**
+ *@}
+ */
+
+size_t ragel_parse_request_line(const char *msg, const size_t length, RFC822_Request *req);
+
+int ragel_read_rtsp_headers(GHashTable *headers, const char *msg,
+                            size_t length, size_t *read_size);
+int ragel_read_http_headers(GHashTable *headers, const char *msg,
+                            size_t length, size_t *read_size);
+/**
+ *@}
+ */
+
+gboolean HTTP_handle_headers(RTSP_Client *rtsp);
+gboolean HTTP_handle_content(RTSP_Client *rtsp);
+gboolean HTTP_handle_idle(RTSP_Client *rtsp);
+void http_tunnel_initialise();
+
+/**
+ * @}
+ */
 
 #endif // FN_RTSP_H

@@ -1,3 +1,10 @@
 #!/bin/bash
 
-for i in `seq 1 300`; do sleep 0.5;  mplayer -rtsp-stream-over-tcp -vo null 'rtsp://media.lscube.org:554/live/test.sd' < /dev/null 2>&1 1>/dev/null & done
+## pick a target stream
+
+TARGET='rtsp://localhost/tc.mov'
+#TARGET='tsp://media.lscube.org:554/live/test.sd'
+
+for i in `seq 1 300`; do sleep 0.5; ffmpeg -i $TARGET -vcodec copy -acodec copy -f null - &>/dev/null & done
+
+#for i in `seq 1 300`; do sleep 0.5;  mplayer -rtsp-stream-over-tcp -vo null 'rtsp://media.lscube.org:554/live/test.sd' < /dev/null 2>&1 1>/dev/null & done

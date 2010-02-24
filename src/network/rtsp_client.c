@@ -63,7 +63,8 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
 
     rtsp_session_free(rtsp->session);
 
-    interleaved_free_list(rtsp);
+    if ( rtsp->channels )
+        g_hash_table_destroy(rtsp->channels);
 
     /* Remove the output queue */
     while( (outbuf = g_queue_pop_tail(rtsp->out_queue)) )
@@ -107,10 +108,36 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w,
                               ATTR_UNUSED int revents)
 {
     RTSP_Client *rtsp = w->data;
-    if(rtsp->session->rtp_sessions)
+    if(rtsp->session && rtsp->session->rtp_sessions)
         g_slist_foreach(rtsp->session->rtp_sessions,
                         check_if_any_rtp_session_timedout, NULL);
     ev_timer_again (loop, w);
+}
+
+/**
+ * @brief Write data to the RTSP socket of the client
+ *
+ * @param client The client to write the data to
+ * @param data The GByteArray object to queue for sending
+ *
+ * @note after calling this function, the @p data object should no
+ * longer be referenced by the code path.
+ */
+static void rtsp_write_data_direct(RTSP_Client *client, GByteArray *data)
+{
+    g_queue_push_head(client->out_queue, data);
+    ev_io_start(client->srv->loop, &client->ev_io_write);
+}
+
+RTSP_Client *rtsp_client_new(feng *srv)
+{
+    RTSP_Client *rtsp = g_slice_new0(RTSP_Client);
+
+    rtsp->input = g_byte_array_new();
+    rtsp->srv = srv;
+    rtsp->write_data = rtsp_write_data_direct;
+
+    return rtsp;
 }
 
 /**
@@ -155,26 +182,25 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         return;
     }
 
-    rtsp = g_slice_new0(RTSP_Client);
+    fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
+            Sock_fd(client_sock));
+
+    rtsp = rtsp_client_new(srv);
     rtsp->sock = client_sock;
-    rtsp->input = g_byte_array_new();
     rtsp->out_queue = g_queue_new();
-    rtsp->srv = srv;
 
     srv->connection_count++;
-    client_sock->data = srv;
+    rtsp->sock->data = srv;
 
     io = &rtsp->ev_io_read;
     io->data = rtsp;
-    ev_io_init(io, rtsp_read_cb, Sock_fd(client_sock), EV_READ);
+    ev_io_init(io, rtsp_read_cb, Sock_fd(rtsp->sock), EV_READ);
     ev_io_start(srv->loop, io);
 
     /* to be started/stopped when necessary */
     io = &rtsp->ev_io_write;
     io->data = rtsp;
-    ev_io_init(io, rtsp_write_cb, Sock_fd(client_sock), EV_WRITE);
-    fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
-            Sock_fd(client_sock));
+    ev_io_init(io, rtsp_write_cb, Sock_fd(rtsp->sock), EV_WRITE);
 
     async = &rtsp->ev_sig_disconnect;
     async->data = rtsp;
@@ -187,4 +213,29 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     timer->repeat = STREAM_TIMEOUT;
 
     fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
+}
+
+/**
+ * @brief Write a GString to the RTSP socket of the client
+ *
+ * @param client The client to write the data to
+ * @param string The data to send out as string
+ *
+ * @note after calling this function, the @p string object should no
+ * longer be referenced by the code path.
+ */
+void rtsp_write_string(RTSP_Client *client, GString *string)
+{
+    /* Copy the GString into a GByteArray; we can avoid copying the
+       data since both are transparent structures with a g_malloc'd
+       data pointer.
+     */
+    GByteArray *outpkt = g_byte_array_new();
+    outpkt->data = (guint8*)string->str;
+    outpkt->len = string->len;
+
+    /* make sure you don't free the actual data pointer! */
+    g_string_free(string, false);
+
+    client->write_data(client, outpkt);
 }

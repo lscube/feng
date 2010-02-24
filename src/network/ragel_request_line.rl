@@ -23,70 +23,42 @@
 
 #include "network/rtsp.h"
 
-%% machine rtsp_request_line;
+size_t ragel_parse_request_line(const char *msg, const size_t length, RFC822_Request *req) {
+    int cs, top, stack[2];
+    const char *p = msg, *pe = p + length, *s = NULL, *pp;
+    int method_code = RTSP_Method__Invalid;
+    RFC822_Protocol protocol_code = RFC822_Protocol_Invalid;
 
-size_t ragel_parse_request_line(const char *msg, const size_t length, RTSP_Request *req) {
-    int cs;
-    const char *p = msg, *pe = p + length + 1, *s = NULL, *eof = pe;
+    const char *method_str = NULL;
+    size_t method_len = 0;
 
-    /* We want to express clearly which versions we support, so that we
-     * can return right away if an unsupported one is found.
-     */
+    const char *protocol_str = NULL;
+    size_t protocol_len = 0;
+
+    const char *object_str = NULL;
+    size_t object_len = 0;
 
     %%{
-        SP = ' ';
-        CRLF = "\r\n";
+        machine request_line;
 
-        action set_s {
-            s = p;
-        }
-
-        action end_method {
-            req->method = g_strndup(s, p-s);
-        }
-
-        Supported_Method =
-            "DESCRIBE" % { req->method_id = RTSP_ID_DESCRIBE; } |
-            "OPTIONS" % { req->method_id = RTSP_ID_OPTIONS; } |
-            "PAUSE" % { req->method_id = RTSP_ID_PAUSE; } |
-            "PLAY" % { req->method_id = RTSP_ID_PLAY; } |
-            "SETUP" % { req->method_id = RTSP_ID_SETUP; } |
-            "TEARDOWN" % { req->method_id = RTSP_ID_TEARDOWN; };
-
-        Method = (Supported_Method | alpha+ )
-            > set_s % end_method;
-
-        action end_version {
-            req->version = g_strndup(s, p-s);
-        }
-
-        Version = (alpha+ . '/' . [0-9] '.' [0-9]);
-
-        action end_object {
-            req->object = g_strndup(s, p-s);
-        }
-
-        Request_Line = (Supported_Method | Method) . SP
-            (print*) > set_s % end_object . SP
-            Version > set_s % end_version . CRLF;
-
-        Header = (alpha|'-')+  . ':' . SP . print+ . CRLF;
-
-        action stop_parser {
-            return p-msg;
-        }
-
-        main := Request_Line % stop_parser . /.*/;
+        include RFC822RequestLine "rfc822proto-requestline.rl";
 
         write data noerror;
         write init;
-        write exec;
+        write exec noend;
     }%%
 
-    if ( cs < rtsp_request_line_first_final )
-        return 0;
+    if ( cs < request_line_first_final )
+        return ( p == pe ) ? 0 : -1;
 
-    cs = rtsp_request_line_en_main; // Kill a warning
+    /* Only set these when the parsing was successful: an incomplete
+     * request line won't help!
+     */
+    req->proto = protocol_code;
+    req->method_id = method_code;
+    req->method_str = g_strndup(method_str, method_len);
+    req->protocol_str = g_strndup(protocol_str, protocol_len);
+    req->object = g_strndup(object_str, object_len);
 
     return p-msg;
 }

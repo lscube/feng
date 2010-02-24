@@ -20,13 +20,20 @@
  *
  * */
 
+#include "config.h"
+
 #include <glib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <netinet/in.h>
 
+#ifdef HAVE_SCTP
+# include <netinet/sctp.h>
+#endif
+
 #include "rtp.h"
 #include "rtsp.h"
+#include "feng.h"
 #include "fnc_log.h"
 #include "media/demuxer.h"
 
@@ -128,9 +135,9 @@ typedef struct {
 } RTCP_SR_Compound;
 
 /**
- * Send the given RTCP compound report
+ * Send the given RTCP packet directly to the RTCP socket
  */
-static gboolean rtcp_send_and_flush(RTP_session * session, GByteArray *buffer)
+static gboolean rtcp_send_direct(RTP_session * session, GByteArray *buffer)
 {
     fd_set wset;
     struct timeval t;
@@ -144,6 +151,7 @@ static gboolean rtcp_send_and_flush(RTP_session * session, GByteArray *buffer)
     FD_SET(Sock_fd(rtcp_sock), &wset);
     if (select(Sock_fd(rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
         fnc_log(FNC_LOG_ERR, "select error\n");
+        g_byte_array_free(buffer, true);
         return false;
     }
 
@@ -154,8 +162,42 @@ static gboolean rtcp_send_and_flush(RTP_session * session, GByteArray *buffer)
         fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
     }
 
+    g_byte_array_free(buffer, true);
     return true;
 }
+
+/**
+ * Send the given RTCP packet through the interleaved RTSP protocol
+ */
+static gboolean rtcp_send_interleaved(RTP_session *session, GByteArray *buffer)
+{
+    RTSP_Client *rtsp = session->client;
+    uint16_t ne_n = htons((uint16_t)buffer->len);
+    uint8_t interleaved_preamble[4] = { '$', session->transport.rtcp_ch, 0, 0 };
+
+    g_byte_array_prepend(buffer, interleaved_preamble, 4);
+    memcpy(&buffer->data[2], &ne_n, sizeof(uint16_t));
+
+    rtsp->write_data(rtsp, buffer);
+
+    return true;
+}
+
+#ifdef HAVE_SCTP
+static gboolean rtcp_send_sctp(RTP_session *session, GByteArray *buffer)
+{
+    struct sctp_sndrcvinfo sctp_info = {
+        .sinfo_stream = session->transport.rtcp_ch
+    };
+
+    if ( Sock_write(session->client->sock, buffer->data, buffer->len,
+                    &sctp_info, MSG_EOR | MSG_DONTWAIT ) < 0 )
+        fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
+
+    g_byte_array_free(buffer, true);
+    return true;
+}
+#endif
 
 /**
  * @brief Sets the SR preamble for the given compound
@@ -200,8 +242,8 @@ static GByteArray *rtcp_pkt_sr_sdes(RTP_session *session)
     RTCP_SR_Compound *outpkt;
     GByteArray *outpkt_buffer;
 
-    const char *name = session->transport.rtcp_sock->local_host ?
-        session->transport.rtcp_sock->local_host : "::";
+    const char *name = session->client->sock->local_host ?
+        session->client->sock->local_host : "::";
     const size_t name_len = strlen(name);
     size_t sdes_size = sizeof(RTCP_header) + sizeof(RTCP_header_SDES) +
         name_len;
@@ -302,7 +344,6 @@ static GByteArray *rtcp_pkt_sr_bye(RTP_session *session)
 gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type)
 {
     GByteArray *outpkt = NULL;
-    gboolean ret;
 
     switch(type) {
     case SDES:
@@ -317,10 +358,27 @@ gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type)
 
     g_assert(outpkt != NULL);
 
-    ret = rtcp_send_and_flush(session, outpkt);
+    switch ( session->transport.protocol ) {
+    case RTP_UDP:
+        return rtcp_send_direct(session, outpkt);
+    case RTP_TCP:
+        return rtcp_send_interleaved(session, outpkt);
+#ifdef HAVE_SCTP
+    case RTP_SCTP:
+        return rtcp_send_sctp(session, outpkt);
+#endif
+    }
 
-    g_byte_array_free(outpkt, true);
-    return ret;
+    g_assert_not_reached();
+    return false;
+}
+
+/**
+ * @brief Parse and handle an incoming RTCP packet.
+ */
+void rtcp_handle(RTP_session *session, uint8_t *packet, size_t len)
+{
+    fnc_log(FNC_LOG_INFO, "[RTCP] Handling a %zd byte packet", len);
 }
 
 /**

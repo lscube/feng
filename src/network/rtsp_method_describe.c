@@ -26,8 +26,6 @@
 
 #include <stdbool.h>
 
-#include <liberis/headers.h>
-
 #include "fnc_log.h"
 #include "rtsp.h"
 #include "media/demuxer.h"
@@ -301,30 +299,8 @@ static GString *sdp_session_descr(struct feng *srv, const Url *url)
  * @param req The client request for the method
  * @param descr the description string to send
  */
-static void send_describe_reply(RTSP_Request *req, GString *descr)
+static void send_describe_reply(RFC822_Request *req, GString *descr)
 {
-    RTSP_Response *response = rtsp_response_new(req, RTSP_Ok);
-
-    /* bluntly put it there */
-    response->body = descr;
-
-    /* When we're going to have more than one option, add alternatives here */
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_content_type),
-                        g_strdup("application/sdp"));
-
-    /* We can trust the req->object value since we already have checked it
-     * beforehand. Since the object was already escaped by the client, we just
-     * repeat it as it was, saving a further escaping.
-     *
-     * Note: this _might_ not be what we want if we decide to redirect the
-     * stream to different servers, but since we don't do that now...
-     */
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_content_base),
-                        g_strdup_printf("%s/", req->object));
-
-    rtsp_response_send(response);
 }
 
 /**
@@ -332,12 +308,12 @@ static void send_describe_reply(RTSP_Request *req, GString *descr)
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
-void RTSP_describe(RTSP_Client * rtsp, RTSP_Request *req)
+void RTSP_describe(RTSP_Client *rtsp, RFC822_Request *req)
 {
     Url url;
     GString *descr;
 
-    if ( !rtsp_request_get_url(req, &url) )
+    if ( !rfc822_request_get_url(rtsp, req, &url) )
         return;
 
     // Get Session Description
@@ -348,9 +324,29 @@ void RTSP_describe(RTSP_Client * rtsp, RTSP_Request *req)
     /* The only error we may have here is when the file does not exist
        or if a demuxer is not available for the given file */
     if ( descr == NULL ) {
-        rtsp_quick_response(req, RTSP_NotFound);
-        return;
-    }
+        rtsp_quick_response(rtsp, req, RTSP_NotFound);
+    } else {
+        RFC822_Response *response = rfc822_response_new(req, RTSP_Ok);
 
-    send_describe_reply(req, descr);
+        /* bluntly put it there */
+        response->body = descr;
+
+        /* When we're going to have more than one option, add alternatives here */
+        rfc822_headers_set(response->headers,
+                           RTSP_Header_Content_Type,
+                           g_strdup("application/sdp"));
+
+        /* We can trust the req->object value since we already have checked it
+         * beforehand. Since the object was already escaped by the client, we just
+         * repeat it as it was, saving a further escaping.
+         *
+         * Note: this _might_ not be what we want if we decide to redirect the
+         * stream to different servers, but since we don't do that now...
+         */
+        rfc822_headers_set(response->headers,
+                           RTSP_Header_Content_Base,
+                           g_strdup_printf("%s/", req->object));
+
+        rfc822_response_send(rtsp, response);
+    }
 }

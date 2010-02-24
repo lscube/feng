@@ -47,6 +47,11 @@ AC_ARG_ENABLE(metadata,
     AS_HELP_STRING([--enable-metadata], [enable metadata support [[default=no]]]),,
     enable_metadata="no")
 
+AC_ARG_ENABLE([tables],
+    AS_HELP_STRING([--disable-tables], [disable big build-time tables (for embedded)]))
+
+AM_CONDITIONAL([AVOID_TABLES], [test "x$enable_tables" = "xno"])
+
 dnl Checks used by feng itself
 AC_CHECK_HEADERS_ONCE([syslog.h])
 
@@ -68,7 +73,7 @@ dnl Checks used by conf/*
 dnl AC_CHECK_HEADERS([pcre.h fam.h])
 dnl AC_CHECK_FUNCS([lstat])
 
-CHECK_RAGEL_AM([src/network/ragel_range.c])
+CHECK_RAGEL_AM([src/network/ragel_range.c], [6.6])
 
 fenice_state_dir=$(eval echo ${localstatedir}/feng)
 AC_SUBST(fenice_state_dir)
@@ -147,6 +152,14 @@ CC_ATTRIBUTE_UNUSED(
 if test "$enable_trace" = "yes"; then
     AC_DEFINE(TRACE, 1,[Trace enabled])
 fi
+
+AC_ARG_VAR([XSLTPROC], [A libxslt-compatible XSLT processor command])
+AS_IF([test "x$XSLTPROC" = "x"], [
+  AC_CHECK_PROGS([XSLTPROC], [xsltproc])
+  AS_IF([test "x$XSLTPROC" = "x"], [
+    AC_MSG_ERROR([unable to find xsltproc, you need this to build feng])
+  ])
+])
 
 fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot|sed -e "s:/\+:/:g; s:NONE::g")
 

@@ -74,10 +74,10 @@ typedef feng server;
 #define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS)) /*! rtsp connection for one fork */
 
 struct RTSP_Client;
-struct RTSP_Response;
+struct RFC822_Response;
 
 gboolean accesslog_init(feng *srv);
 void accesslog_uninit(feng *srv);
-void accesslog_log(struct RTSP_Client *client, struct RTSP_Response *response);
+void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response);
 
 #endif // FN_SERVER_H

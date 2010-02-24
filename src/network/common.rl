@@ -6,7 +6,7 @@
 	BIT = "0" | "1";
 	CHAR = 0x01..0x7f;
 	CR = "\r";
-	LF = "\n" %{line++;};
+	LF = "\n";
 	CRLF = CR* LF;
 	CTL = 0x00..0x1f | 0x7f;
 	DQUOTE = "\"";

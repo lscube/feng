@@ -50,7 +50,14 @@ typedef struct {
     int RTCP;
 } port_pair;
 
+typedef enum {
+    RTP_UDP,
+    RTP_TCP,
+    RTP_SCTP
+} RTP_Protocol;
+
 typedef struct RTP_transport {
+    RTP_Protocol protocol;
     Sock *rtp_sock;
     Sock *rtcp_sock;
     struct sockaddr_storage last_stg;
@@ -175,6 +182,7 @@ typedef enum {
 } rtcp_pkt_type;
 
 gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type);
+void rtcp_handle(RTP_session *session, uint8_t *packet, size_t len);
 
 /**
  * @}

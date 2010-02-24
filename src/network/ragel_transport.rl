@@ -2,9 +2,8 @@
 
 #include <stdbool.h>
 
-#include "network/rtsp.h"
-#include "network/rtp.h"
-#include "network/ragel_parsers.h"
+#include "rtsp.h"
+#include "rtp.h"
 
 %% machine ragel_transport_header;
 
@@ -75,11 +74,11 @@ gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
 
         SCTPParams = ( Streams | TransportParam)+;
 
-        TransportUDP = ("/UDP")? %{transport.protocol = TransportUDP; }
+        TransportUDP = ("/UDP")? %{transport.protocol = RTP_UDP; }
             . UDPParams;
-        TransportTCP = "/TCP" %{transport.protocol = TransportTCP; }
+        TransportTCP = "/TCP" %{transport.protocol = RTP_TCP; }
             . TCPParams;
-        TransportSCTP = "/SCTP" %{transport.protocol = TransportSCTP; }
+        TransportSCTP = "/SCTP" %{transport.protocol = RTP_SCTP; }
             . SCTPParams;
 
         action check_transport {

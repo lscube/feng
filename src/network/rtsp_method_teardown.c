@@ -32,16 +32,12 @@
  * @param req The client request for the method
  * @todo trigger the release of rtp resources here
  */
-void RTSP_teardown(ATTR_UNUSED RTSP_Client *rtsp,
-                   RTSP_Request *req)
+void RTSP_teardown(RTSP_Client *rtsp, RFC822_Request *req)
 {
-    if ( !rtsp_request_check_url(req) )
+    if ( !rfc822_request_check_url(rtsp, req) )
         return;
     rtsp_session_free(rtsp->session);
     rtsp->session = NULL;
-    interleaved_free_list(rtsp);
 
-//    ev_async_send(rtsp->srv->loop, rtsp->ev_sig_disconnect);
-
-    rtsp_quick_response(req, RTSP_Ok);
+    rtsp_quick_response(rtsp, req, RTSP_Ok);
 }

@@ -30,7 +30,6 @@
 
 #include <stdbool.h>
 
-#include <liberis/headers.h>
 #include <glib.h>
 
 #include "feng.h"
@@ -208,14 +207,14 @@ static gboolean validate_url(char *urlstr, Url * url)
  * @retval true The URL was properly found and extracted
  * @retval false An error was found, and a reply was already sent.
  */
-gboolean rtsp_request_get_url(RTSP_Request *req, Url *url) {
+gboolean rfc822_request_get_url(RTSP_Client *client, RFC822_Request *req, Url *url) {
   if ( !validate_url(req->object, url) ) {
-      rtsp_quick_response(req, RTSP_BadRequest);
+      rtsp_quick_response(client, req, RTSP_BadRequest);
       return false;
   }
 
   if ( !check_forbidden_path(url) ) {
-      rtsp_quick_response(req, RTSP_Forbidden);
+      rtsp_quick_response(client, req, RTSP_Forbidden);
       return false;
   }
 
@@ -233,10 +232,10 @@ gboolean rtsp_request_get_url(RTSP_Request *req, Url *url) {
  * @note This function will allocate and destroy the memory by itself,
  *       it's used where the actual URL is not relevant to the code
  */
-gboolean rtsp_request_check_url(RTSP_Request *req) {
+gboolean rfc822_request_check_url(RTSP_Client *client, RFC822_Request *req) {
     Url url;
 
-    if ( !rtsp_request_get_url(req, &url) )
+    if ( !rfc822_request_get_url(client, req, &url) )
         return false;
 
     Url_destroy(&url);
@@ -249,32 +248,6 @@ gboolean rtsp_request_check_url(RTSP_Request *req) {
  */
 
 /**
- * @brief Writes a GString to the output buffer of an RTSP connection
- *
- * @param rtsp where the output buffer is saved
- * @param buffer GString instance from which to get the data to send
- *
- * @note The buffer has to be considered destroyed after calling this function
- *       (the writing thread will take care of the actual destruction).
- */
-void rtsp_bwrite(RTSP_Client *rtsp, GString *buffer)
-{
-    /* Copy the GString into a GByteArray; we can avoid copying the
-       data since both are transparent structures with a g_malloc'd
-       data pointer.
-     */
-    GByteArray *outpkt = g_byte_array_new();
-    outpkt->data = (guint8*)buffer->str;
-    outpkt->len = buffer->len;
-
-    /* make sure you don't free the actual data pointer! */
-    g_string_free(buffer, false);
-
-    g_queue_push_head(rtsp->out_queue, outpkt);
-    ev_io_start(rtsp->srv->loop, &rtsp->ev_io_write);
-}
-
-/**
  * @brief Check if a method has been called in an invalid state.
  *
  * @param req Request for the method
@@ -284,7 +257,8 @@ void rtsp_bwrite(RTSP_Client *rtsp, GString *buffer)
  * to the client with a 455 "Method not allowed in this state" response, which
  * contain the Allow header as specified by RFC2326 Sections 11.3.6 and 12.4.
  */
-gboolean rtsp_check_invalid_state(const RTSP_Request *req,
+gboolean rtsp_check_invalid_state(RTSP_Client *client,
+                                  const RFC822_Request *req,
                                   RTSP_Server_State invalid_state) {
     static const char *const valid_states[] = {
         [RTSP_SERVER_INIT] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN",
@@ -292,18 +266,18 @@ gboolean rtsp_check_invalid_state(const RTSP_Request *req,
         [RTSP_SERVER_PLAYING] = "OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE"
         /* We ignore RECORDING state since we don't support it */
     };
-    RTSP_Response *response;
+    RFC822_Response *response;
 
-    if ( req->client->session->cur_state != invalid_state )
+    if ( client->session->cur_state != invalid_state )
         return true;
 
-    response = rtsp_response_new(req, RTSP_InvalidMethodInState);
+    response = rfc822_response_new(req, RTSP_InvalidMethodInState);
 
-    g_hash_table_insert(response->headers,
-                        g_strdup(eris_hdr_allow),
-                        g_strdup(valid_states[invalid_state]));
+    rfc822_headers_set(response->headers,
+                       RTSP_Header_Allow,
+                       g_strdup(valid_states[invalid_state]));
 
-    rtsp_response_send(response);
+    rfc822_response_send(client, response);
 
     return false;
 }

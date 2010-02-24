@@ -34,9 +34,11 @@ RAGEL_SOURCES = \
 	src/network/ragel_request_line.c \
 	src/network/ragel_transport.c \
 	src/network/ragel_range.c \
-	src/liberis/headers_parser.c
+	src/network/ragel_headers.c
 
-BUILT_SOURCES = $(RAGEL_SOURCES)
+BUILT_SOURCES = $(RAGEL_SOURCES) \
+	src/network/rfc822proto.c \
+	src/network/rfc822proto-constants.h
 
 $(top_srcdir)/.version:
 	echo $(VERSION) > $@-t && mv $@-t $@
@@ -45,6 +47,7 @@ dist-hook:
 	echo $(VERSION) > $(distdir)/.tarball-version
 
 dist_feng_SOURCES = $(RAGEL_SOURCES) \
+	\
 	src/accesslog.c \
 	src/bufferqueue.c src/bufferqueue.h \
 	src/fnc_log.c src/fnc_log.h \
@@ -73,16 +76,16 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/conf/data_string.c \
 	src/conf/settings.h \
 	\
-	src/liberis/headers.h \
-	src/liberis/utils.c src/liberis/utils.h \
-	\
 	src/network/ragel_parsers.h \
+	src/network/rfc822proto.c \
+	src/network/rfc822proto-constants.h \
+	src/network/rfc822proto.h \
+	src/network/rfc822_response.c \
 	src/network/rtcp.c \
 	src/network/rtp.c network/rtp.h \
 	src/network/rtp_port.c \
 	src/network/rtsp.h \
 	src/network/rtsp_client.c \
-	src/network/rtsp_interleaved.c \
 	src/network/rtsp_lowlevel.c \
 	src/network/rtsp_method_describe.c \
 	src/network/rtsp_method_options.c \
@@ -90,9 +93,9 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rtsp_method_play.c \
 	src/network/rtsp_method_setup.c \
 	src/network/rtsp_method_teardown.c \
-	src/network/rtsp_response.c \
 	src/network/rtsp_state_machine.c \
 	src/network/rtsp_utils.c \
+	src/network/http_tunnelling.c \
 	\
 	src/media/demuxer.c \
 	src/media/demuxer.h \
@@ -127,7 +130,33 @@ if LIVE_STREAMING
 dist_feng_SOURCES += src/media/demuxer/demuxer_sd.c
 endif
 
-INCLUDES = -I. -I$(srcdir)/src
+if AVOID_TABLES
+src/network/rfc822proto.c: src/network/rfc822proto-source-switch.xsl src/network/rfc822proto.xml
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+else
+src/network/rfc822proto.c: src/network/rfc822proto-source-table.xsl src/network/rfc822proto.xml
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+endif
+
+src/network/rfc822proto-constants.h: src/network/rfc822proto-header.xsl src/network/rfc822proto.xml
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+
+src/network/rfc822proto-statemachine.rl: src/network/rfc822proto-statemachine.xsl src/network/rfc822proto.xml
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+
+src/network/rfc822proto-requestline.rl: src/network/rfc822proto-requestline.xsl src/network/rfc822proto.xml
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+
+src/network/ragel_request_line.c: src/network/rfc822proto-statemachine.rl src/network/rfc822proto-requestline.rl
+
+tests/rfc822proto/rfc822proto-test.rl: tests/rfc822proto/rfc822proto-test.xsl src/network/rfc822proto.xml
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+
+tests/rfc822proto/rfc822proto-test.c: src/network/rfc822proto-statemachine.rl
+
+INCLUDES = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network
+
+AM_RAGELFLAGS = -I$(srcdir)/src/network -Isrc/network
 
 if HAVE_RAGEL
 include $(top_srcdir)/ragel.make
@@ -140,7 +169,8 @@ TESTS = tests/testsuite
 
 check_PROGRAMS = $(TESTS)
 
-BUILT_SOURCES += tests/gtestmain.c
+BUILT_SOURCES += tests/gtestmain.c \
+	tests/rfc822proto/rfc822proto-test.c
 
 tests/gtestmain.c: $(tests_testsuite_SOURCES) Makefile.am
 	@$(mkdir_p) $(dir $@)
@@ -152,11 +182,17 @@ endif
 
 tests_testsuite_SOURCES = \
 	src/bufferqueue.c \
+	src/network/ragel_request_line.c \
+	src/network/ragel_headers.c \
 	tests/bufferqueue/test-1.c \
 	tests/bufferqueue/test-2.c \
 	tests/bufferqueue/test-3.c \
 	tests/bufferqueue/test-4.c \
-	tests/bufferqueue/test-5.c
+	tests/bufferqueue/test-5.c \
+	tests/rfc822proto/rfc822proto-test.c \
+	tests/rfc822proto/request_line.c \
+	tests/rfc822proto/headers.c
+
 # tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
 
 dist_tests_testsuite_SOURCES = tests/gtestmain.c

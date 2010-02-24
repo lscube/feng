@@ -38,7 +38,6 @@
 #include "feng_utils.h"
 #include "network/rtsp.h"
 
-#include <liberis/headers.h>
 #include <stdio.h>
 #include <glib.h>
 
@@ -83,19 +82,17 @@ void accesslog_uninit(feng *srv)
 #define PRINT_STRING \
     "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",\
         client->sock->remote_host,\
-        (const char*)g_hash_table_lookup(response->headers, eris_hdr_date),\
-        response->request->method, response->request->object,\
-        response->request->version,\
+        rfc822_headers_lookup(response->headers, RFC822_Header_Date),\
+        response->request->method_str, response->request->object,\
+        response->request->protocol_str,\
         response->status, response_length ? response_length : "-",\
         referer ? referer : "-",\
         useragent ? useragent : "-"
 
-void accesslog_log(struct RTSP_Client *client, struct RTSP_Response *response)
+void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response)
 {
-    const char *referer =
-        g_hash_table_lookup(response->request->headers, eris_hdr_referer);
-    const char *useragent =
-        g_hash_table_lookup(response->request->headers, eris_hdr_user_agent);
+    const char *referer = rfc822_headers_lookup(response->request->headers, RFC822_Header_Referer);
+    const char *useragent = rfc822_headers_lookup(response->request->headers, RFC822_Header_User_Agent);
     char *response_length = response->body ?
         g_strdup_printf("%zd", response->body->len) : NULL;
 
