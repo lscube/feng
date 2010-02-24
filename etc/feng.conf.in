@@ -29,9 +29,3 @@ accesslog.filename   = var.logdir + "/access.log"
 # enable accesslog to syslog
 #accesslog.use-syslog = "enable"
 
-# CPD
-#cpd.port			= "30000"
-#cpd.db.host			= "localhost"
-#cpd.db.user			= "javauser"
-#cpd.db.password		= "javadude"
-#cpd.db.name			= "chillout_cpd"

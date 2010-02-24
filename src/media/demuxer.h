@@ -102,11 +102,6 @@ typedef struct Resource {
     guint count;
     const struct Demuxer *demuxer;
     ResourceInfo *info;
-    // Metadata begin
-#ifdef HAVE_METADATA
-    void *metadata;
-#endif
-    // Metadata end
 
     /* Timescale fixer callback function for meta-demuxers */
     double (*timescaler)(struct Resource *, double);

@@ -36,10 +36,6 @@
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 
-#ifdef HAVE_METADATA
-# include "media/metadata/cpd.h"
-#endif
-
 /*
  * Make sure all the threads get collected
  *
@@ -451,10 +447,6 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
     MParserBuffer *buffer = NULL;
     ev_tstamp next_time = w->offset;
 
-#ifdef HAVE_METADATA
-    if (session->metadata)
-        cpd_send(session, ev_now(loop));
-#endif
     /* If there is no buffer, it means that either the producer
      * has been stopped (as we reached the end of stream) or that
      * there is no data for the consumer to read. If that's the
@@ -594,9 +586,6 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
     rtp_s->ssrc = g_random_int();
     rtp_s->client = rtsp;
 
-#ifdef HAVE_METADATA
-	rtp_s->metadata = rtsp_s->resource->metadata;
-#endif
     periodic->data = rtp_s;
     ev_periodic_init(periodic, rtp_write_cb, 0, 0, NULL);
 

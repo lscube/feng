@@ -90,10 +90,6 @@ typedef struct RTP_session {
     /** Pointer to the currently-selected track */
     struct Track *track;
 
-#ifdef HAVE_METADATA
-    void *metadata;
-#endif
-
     /**
      * @brief Pool of one thread for filling up data for the session
      *

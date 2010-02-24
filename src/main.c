@@ -45,10 +45,6 @@
 #include "network/rtsp.h"
 #include <glib.h>
 
-#ifdef HAVE_METADATA
-#include "media/metadata/cpd.h"
-#endif
-
 #ifdef CLEANUP_DESTRUCTOR
 /**
  * @brief Program name to clean up
@@ -284,13 +280,6 @@ static void feng_free(feng* srv)
 
         buffer_free(srv->config_storage[i].access_log_file);
 
-#ifdef HAVE_METADATA
-        buffer_free(srv->config_storage[i].cpd_port);
-        buffer_free(srv->config_storage[i].cpd_db_host);
-        buffer_free(srv->config_storage[i].cpd_db_user);
-        buffer_free(srv->config_storage[i].cpd_db_password);
-        buffer_free(srv->config_storage[i].cpd_db_name);
-#endif
     }
     free(srv->config_storage);
 
@@ -341,10 +330,6 @@ int main(int argc, char **argv)
     }
 
     feng_drop_privs(srv);
-
-#ifdef HAVE_METADATA
-    g_thread_create(cpd_server, (void *) srv, FALSE, NULL);
-#endif
 
     /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
      * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */

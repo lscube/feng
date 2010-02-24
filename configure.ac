@@ -43,10 +43,6 @@ AC_ARG_ENABLE(trace,
     AS_HELP_STRING([--enable-trace], [enable additional informations in log [[default=no]]]),,
     enable_trace="no")
 
-AC_ARG_ENABLE(metadata,
-    AS_HELP_STRING([--enable-metadata], [enable metadata support [[default=no]]]),,
-    enable_metadata="no")
-
 AC_ARG_ENABLE([tables],
     AS_HELP_STRING([--disable-tables], [disable big build-time tables (for embedded)]))
 
@@ -105,16 +101,6 @@ AS_IF([test "x$live_streaming" = "xyes"],
                [live_streaming=no])])
 
 AM_CONDITIONAL([LIVE_STREAMING], [test "x$live_streaming" = "xyes"])
-
-if test "x$enable_metadata" = "xyes"; then
-dnl MYSQL
-AX_LIB_MYSQL([5.0])
-LIBS="$LIBS $MYSQL_LDFLAGS"
-CFLAGS="$CFLAGS $MYSQL_CFLAGS"
-AC_DEFINE(HAVE_METADATA, [1], [Define this if metadata support must be included])
-fi
-
-AM_CONDITIONAL(FENG_CPD, test "x$enable_metadata" = "xyes")
 
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16 gthread-2.0])
 CFLAGS="$CFLAGS $GLIB_CFLAGS"
@@ -258,8 +244,6 @@ live streaming supported...... : $live_streaming
 sctp support enabled ......... : $enable_sctp
 avformat support enabled ..... : $avformat_msg
 avutil support enabled ....... : $avutil_msg
-
-metadata support enabled...... : $enable_metadata
 
  'make' will now compile Feng and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.

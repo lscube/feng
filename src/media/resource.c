@@ -28,10 +28,6 @@
 #include "feng.h"
 #include "fnc_log.h"
 
-#ifdef HAVE_METADATA
-# include "metadata/cpd.h"
-#endif
-
 // global demuxer modules:
 #ifdef LIVE_STREAMING
 extern Demuxer fnc_demuxer_sd;
@@ -219,10 +215,6 @@ r_open_direct(struct feng *srv, gchar *mrl, const Demuxer *dmx)
      * the extras */
 
     r->lock = g_mutex_new();
-
-#ifdef HAVE_METADATA
-    cpd_find_request(srv, r, mrl);
-#endif
 
     return r;
 }

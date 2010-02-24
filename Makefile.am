@@ -110,10 +110,6 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/media/parser/mpeg2t.c \
 	src/media/demuxer/demuxer_ds.c
 
-if FENG_CPD
-dist_feng_SOURCES += src/media/metadata/cpd.c src/media/metadata/cpd.h
-endif
-
 if FENICE_FFMPEG
 dist_feng_SOURCES += src/media/parser/h264.c \
 		     src/media/parser/vorbis.c \

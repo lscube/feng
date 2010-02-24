@@ -133,12 +133,6 @@ typedef struct specific_config {
         int is_sctp;
         unsigned short sctp_max_streams;
 
-        conf_buffer *cpd_port;
-        conf_buffer *cpd_db_host;
-        conf_buffer *cpd_db_user;
-        conf_buffer *cpd_db_password;
-        conf_buffer *cpd_db_name;
-
 //	int allow_http11;
 /*	unsigned short etag_use_inode;
 	unsigned short etag_use_mtime;

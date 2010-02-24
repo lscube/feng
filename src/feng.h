@@ -38,13 +38,6 @@
 
 typedef struct feng {
 
-    // Metadata begin
-    //pthread_t cpd;                  //!< CPD Metadata thread
-#ifdef HAVE_METADATA
-    void *metadata_clients;	    //!< CPD Clients
-#endif
-    // Metadata end
-
     array *config;
     array *config_touched;
 
