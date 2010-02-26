@@ -27,7 +27,7 @@
 #include <stdbool.h>
 #include <netinet/in.h>
 
-#ifdef HAVE_SCTP
+#ifdef ENABLE_SCTP
 # include <netinet/sctp.h>
 #endif
 
@@ -183,7 +183,7 @@ static gboolean rtcp_send_interleaved(RTP_session *session, GByteArray *buffer)
     return true;
 }
 
-#ifdef HAVE_SCTP
+#ifdef ENABLE_SCTP
 static gboolean rtcp_send_sctp(RTP_session *session, GByteArray *buffer)
 {
     struct sctp_sndrcvinfo sctp_info = {
@@ -363,7 +363,7 @@ gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type)
         return rtcp_send_direct(session, outpkt);
     case RTP_TCP:
         return rtcp_send_interleaved(session, outpkt);
-#ifdef HAVE_SCTP
+#ifdef ENABLE_SCTP
     case RTP_SCTP:
         return rtcp_send_sctp(session, outpkt);
 #endif

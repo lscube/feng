@@ -24,7 +24,7 @@
 
 #include <stdbool.h>
 
-#ifdef HAVE_SCTP
+#ifdef ENABLE_SCTP
 # include <netinet/in.h>
 # include <netinet/sctp.h>
 #endif
@@ -358,14 +358,13 @@ static gboolean rtp_packet_send_interleaved(RTP_session *session, RTP_packet *pa
     return true;
 }
 
-#ifdef HAVE_SCTP
+#ifdef ENABLE_SCTP
 static gboolean rtp_packet_send_sctp(RTP_session *session, RTP_packet *packet,
                                      size_t packet_size)
 {
     struct sctp_sndrcvinfo sctp_info = {
         .sinfo_stream = session->transport.rtp_ch
     };
-
     return Sock_write(session->client->sock, packet, packet_size,
                       &sctp_info, MSG_DONTWAIT | MSG_EOR) == packet_size;
 }
@@ -411,7 +410,7 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     case RTP_TCP:
         sent = rtp_packet_send_interleaved(session, packet, packet_size);
         break;
-#ifdef HAVE_SCTP
+#ifdef ENABLE_SCTP
     case RTP_SCTP:
         sent = rtp_packet_send_sctp(session, packet, packet_size);
         break;
