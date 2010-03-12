@@ -177,7 +177,8 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     if ( (client_sock = Sock_accept(sock, NULL)) == NULL )
         return;
 
-    if (srv->connection_count >= ONE_FORK_MAX_CONNECTION) {
+// Paranoid safeguard
+    if (srv->connection_count >= ONE_FORK_MAX_CONNECTION*2) {
         Sock_close(client_sock);
         return;
     }
