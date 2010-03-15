@@ -150,7 +150,7 @@ static gboolean rtcp_send_direct(RTP_session * session, GByteArray *buffer)
 
     FD_SET(Sock_fd(rtcp_sock), &wset);
     if (select(Sock_fd(rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
-        fnc_log(FNC_LOG_ERR, "select error\n");
+        fnc_log(FNC_LOG_ERR, "select error: %s\n", strerror(errno));
         g_byte_array_free(buffer, true);
         return false;
     }
@@ -233,7 +233,7 @@ static void rtcp_set_sr(RTP_session *session, RTCP_SR_Compound *outpkt)
 }
 
 /**
- * @brief Create a new compound server report for SDES packets
+ * @brief Create a new compound sender report for SDES packets
  *
  * @param session The session to create the report for
  */
@@ -282,7 +282,7 @@ static GByteArray *rtcp_pkt_sr_sdes(RTP_session *session)
 }
 
 /**
- * @brief Create a new compound server report for BYE packets
+ * @brief Create a new compound sender report for BYE packets
  *
  * @param session The session to create the report for
  *
@@ -329,7 +329,7 @@ static GByteArray *rtcp_pkt_sr_bye(RTP_session *session)
 }
 
 /**
- * @brief Send a compound RTCP server report
+ * @brief Send a compound RTCP sender report
  *
  * @param session The RTP session to send the command for
  * @param type The type of packet to send after the SR preamble
