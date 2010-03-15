@@ -373,12 +373,47 @@ gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type)
     return false;
 }
 
+
+#define rtcp_pt_to_string(pt)\
+    ((pt == SR) ?  "Sender Report" : \
+     (pt == RR) ?  "Receiver Report" : \
+     (pt == SDES)? "Source Description" : \
+     (pt == BYE) ? "Bye" : \
+     (pt == APP) ? "Application" : \
+                   "Unknown")
+
+
 /**
  * @brief Parse and handle an incoming RTCP packet.
  */
 void rtcp_handle(RTP_session *session, uint8_t *packet, size_t len)
 {
+    int rtcp_size = 0;
+
     fnc_log(FNC_LOG_INFO, "[RTCP] Handling a %zd byte packet", len);
+    while (len > sizeof(RTCP_header)) {
+        RTCP_header *rtcp = (RTCP_header *)packet;
+        rtcp_size = (ntohs(rtcp->length)+1)<<2;
+
+        fnc_log(FNC_LOG_INFO, "[RTCP] %s (%d) packet found %d byte",
+                rtcp_pt_to_string(rtcp->pt), rtcp->pt, rtcp_size);
+
+        if (rtcp_size > len) {
+            fnc_log(FNC_LOG_INFO, "[RTCP]  Malformed packet %d > %zd",
+                    rtcp_size, len);
+            return;
+        }
+
+        switch (rtcp->pt) {
+            case SR:
+            case RR:
+            case SDES:
+            default:
+                break;
+        }
+        len -= rtcp_size;
+        packet += rtcp_size;
+    }
 }
 
 /**
