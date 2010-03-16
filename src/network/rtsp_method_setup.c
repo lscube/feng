@@ -54,6 +54,13 @@ static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
     //UDP bind for outgoing RTCP packets
     snprintf(port_buffer, 8, "%d", ser_ports.RTCP);
     transport->rtcp_sock = Sock_bind(NULL, port_buffer, NULL, UDP, NULL);
+
+    if ( !transport->rtp_sock || !transport->rtcp_sock ) {
+        Sock_close(transport->rtp_sock);
+        Sock_close(transport->rtcp_sock);
+        return RTSP_UnsupportedTransport;
+    }
+
     //UDP connection for outgoing RTP packets
     snprintf(port_buffer, 8, "%d", rtp_port);
     Sock_connect (get_remote_host(rtsp->sock), port_buffer,
@@ -62,9 +69,6 @@ static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
     snprintf(port_buffer, 8, "%d", rtcp_port);
     Sock_connect (get_remote_host(rtsp->sock), port_buffer,
                   transport->rtcp_sock, UDP, NULL);
-
-    if (!transport->rtp_sock)
-        return RTSP_UnsupportedTransport;
 
     return RTSP_Ok;
 }
