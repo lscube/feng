@@ -271,17 +271,19 @@ static void feng_free(feng* srv)
     CLEAN(groupname);
 #undef CLEAN
 
-    for(i = 0; i < srv->config_context->used; i++) {
-        buffer_free(srv->config_storage[i].document_root);
-        buffer_free(srv->config_storage[i].server_name);
-        buffer_free(srv->config_storage[i].ssl_pemfile);
-        buffer_free(srv->config_storage[i].ssl_ca_file);
-        buffer_free(srv->config_storage[i].ssl_cipher_list);
+    if ( srv->config_storage != NULL ) {
+        for(i = 0; i < srv->config_context->used; i++) {
+            buffer_free(srv->config_storage[i].document_root);
+            buffer_free(srv->config_storage[i].server_name);
+            buffer_free(srv->config_storage[i].ssl_pemfile);
+            buffer_free(srv->config_storage[i].ssl_ca_file);
+            buffer_free(srv->config_storage[i].ssl_cipher_list);
 
-        buffer_free(srv->config_storage[i].access_log_file);
+            buffer_free(srv->config_storage[i].access_log_file);
+        }
 
+        free(srv->config_storage);
     }
-    free(srv->config_storage);
 
 #define CLEAN(x) \
     array_free(srv->x)
