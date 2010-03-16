@@ -76,7 +76,8 @@ void accesslog_uninit(feng *srv)
 
     if ( srv->config_storage )
         for(i = 0; i < srv->config_context->used; i++)
-            if ( !srv->config_storage[i].access_log_syslog )
+            if ( !srv->config_storage[i].access_log_syslog &&
+                 srv->config_storage[i].access_log_fp != NULL )
                 fclose(srv->config_storage[i].access_log_fp);
 }
 
