@@ -401,7 +401,9 @@ static void parse_receiver_report(RTP_session *session,
                 report->packet_lost[0]<<3|
                 report->packet_lost[1]<<2|
                 report->packet_lost[2],
-                report->h_seq_no, report->last_sr, report->delay_last_sr);
+                ntohl(report->h_seq_no),
+                ntohl(report->last_sr),
+                ntohl(report->delay_last_sr));
         packet+=sizeof(RTCP_report_block);
     }
 }
