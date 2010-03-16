@@ -84,15 +84,15 @@ typedef struct RTCP_header_RR {
     uint32_t ssrc;
 } RTCP_header_RR;
 
-typedef struct RTCP_header_SR_report_block {
+typedef struct RTCP_report_block {
     uint32_t ssrc;
     uint8_t fract_lost;
-    uint8_t pck_lost[3];
+    uint8_t packet_lost[3];
     uint32_t h_seq_no;
     uint32_t jitter;
-    uint32_t last_SR;
-    uint32_t delay_last_SR;
-} RTCP_header_SR_report_block;
+    uint32_t last_sr;
+    uint32_t delay_last_sr;
+} RTCP_report_block;
 
 typedef struct RTCP_header_SDES {
     uint32_t ssrc;
@@ -381,7 +381,30 @@ gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type)
      (pt == BYE) ? "Bye" : \
      (pt == APP) ? "Application" : \
                    "Unknown")
+/**
+ * @brief parse Receiver Reports and update the statistics accordingly
+ */
 
+static void parse_receiver_report(RTP_session *session,
+                                  uint8_t *packet, int count)
+{
+    int ssrc = ntohl(((RTCP_header_RR*)packet)->ssrc);
+    fnc_log(FNC_LOG_INFO, "[RTCP] Receiver report for %u", ssrc);
+    packet+=4;
+    while(count--) {
+        RTCP_report_block *report = (RTCP_report_block *)packet;
+        fnc_log(FNC_LOG_INFO,
+                "[RTCP] ssrc %u, fraction %d, lost %d, "
+                "sequence %u, jitter %u, "
+                "last Sender Report %u, delay %u",
+                report->ssrc, report->fract_lost,
+                report->packet_lost[0]<<3|
+                report->packet_lost[1]<<2|
+                report->packet_lost[2],
+                report->h_seq_no, report->last_sr, report->delay_last_sr);
+        packet+=sizeof(RTCP_report_block);
+    }
+}
 
 /**
  * @brief Parse and handle an incoming RTCP packet.
@@ -407,6 +430,7 @@ void rtcp_handle(RTP_session *session, uint8_t *packet, size_t len)
         switch (rtcp->pt) {
             case SR:
             case RR:
+                parse_receiver_report(session, packet+4, rtcp->count);
             case SDES:
             default:
                 break;
