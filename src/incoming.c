@@ -89,6 +89,8 @@ static void feng_bound_socket_close(gpointer element,
  */
 static void CLEANUP_DESTRUCTOR feng_ports_cleanup()
 {
+    if ( listening_sockets == NULL ) return;
+
     g_ptr_array_foreach(listening_sockets, feng_bound_socket_close, NULL);
     g_ptr_array_free(listening_sockets, true);
     g_free(listeners);

@@ -74,9 +74,10 @@ void accesslog_uninit(feng *srv)
 {
     size_t i;
 
-    for(i = 0; i < srv->config_context->used; i++)
-        if ( !srv->config_storage[i].access_log_syslog )
-            fclose(srv->config_storage[i].access_log_fp);
+    if ( srv->config_storage )
+        for(i = 0; i < srv->config_context->used; i++)
+            if ( !srv->config_storage[i].access_log_syslog )
+                fclose(srv->config_storage[i].access_log_fp);
 }
 
 #define PRINT_STRING \
