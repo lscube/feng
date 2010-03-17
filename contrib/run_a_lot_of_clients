@@ -1,10 +1,37 @@
 #!/bin/bash
 
-## pick a target stream
+if [[ (-z "$1") || (-z "$2") || (-z "$3") ]]; then
+    echo "$0 uri burst loop"
+    echo ""
+    echo -e "\t uri: resource uri (e.g. rtsp://host/resource)"
+    echo -e "\t burst: burst of concurrent client (e.g 10)"
+    echo -e "\t loop: how many burst per test (e.g 20)"
+    exit 0
+fi
 
-TARGET='rtsp://localhost/tc.mov'
-#TARGET='tsp://media.lscube.org:554/live/test.sd'
+TARGET="$1"
 
-for i in `seq 1 300`; do sleep 0.5; ffmpeg -i $TARGET -vcodec copy -acodec copy -f null - &>/dev/null & done
+BURST="$2"
 
-#for i in `seq 1 300`; do sleep 0.5;  mplayer -rtsp-stream-over-tcp -vo null 'rtsp://media.lscube.org:554/live/test.sd' < /dev/null 2>&1 1>/dev/null & done
+LOOP="$3"
+count=0
+total=$(($BURST * $LOOP))
+echo "Running" $total "concurrent runs"
+for i in `seq 1 $LOOP`
+do
+    for j in `seq 1 $BURST`
+    do
+        #echo -e .\\c
+        ffmpeg -i ${TARGET} -vcodec copy -acodec copy -f null - &>/dev/null &
+        ((count++))
+    done
+    sleep 2
+    if (( (i*j) % 100))
+    then
+        echo -e .\\c
+    else
+        echo -e \\r\\b\\c
+        echo -e \\r$count\\c
+    fi
+done
+echo -e \\r\\b\\c
