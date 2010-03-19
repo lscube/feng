@@ -229,6 +229,8 @@ gboolean rtsp_check_invalid_state(RTSP_Client *client,
                                   const RFC822_Request *req,
                                   RTSP_Server_State invalid_state);
 
+gboolean rtsp_connection_limit(RTSP_Client *rtsp, RFC822_Request *req);
+
 void rtsp_write_cb(struct ev_loop *, ev_io *, int);
 void rtsp_read_cb(struct ev_loop *, ev_io *, int);
 

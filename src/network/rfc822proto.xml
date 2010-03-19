@@ -4,6 +4,7 @@
   <response code="200">Ok</response>
   <response code="201">Created</response>
   <response code="202">Accepted</response>
+  <response code="302">Found</response>
   <response code="400">Bad Request</response>
   <response code="403">Forbidden</response>
   <response code="404">Not Found</response>
@@ -30,6 +31,7 @@
     <supportedheader>Content-Length</supportedheader>
     <supportedheader>Content-Type</supportedheader>
     <supportedheader>Date</supportedheader>
+    <supportedheader>Location</supportedheader>
     <supportedheader>Proxy-Require</supportedheader>
     <supportedheader>Public</supportedheader>
     <supportedheader>RTP-Info</supportedheader>

@@ -56,6 +56,8 @@ static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
     transport->rtcp_sock = Sock_bind(NULL, port_buffer, NULL, UDP, NULL);
 
     if ( !transport->rtp_sock || !transport->rtcp_sock ) {
+        fnc_log(FNC_LOG_ERR, "Cannot bind ports %d %d",
+            ser_ports.RTP, ser_ports.RTCP);
         Sock_close(transport->rtp_sock);
         Sock_close(transport->rtcp_sock);
         return RTSP_UnsupportedTransport;
@@ -340,15 +342,6 @@ void RTSP_setup(RTSP_Client *rtsp, RFC822_Request *req)
          !ragel_parse_transport_header(rtsp, &transport, transport_header) ) {
 
         rtsp_quick_response(rtsp, req, RTSP_UnsupportedTransport);
-        return;
-    }
-
-    /* Check if we still have space for new connections, if not, respond with a
-     * 453 status (Not Enough Bandwidth), so that client knows what happened. */
-    if (rtsp->srv->connection_count > rtsp->srv->srvconf.max_conns) {
-        /* @todo should redirect, but we haven't the code to do that just
-         * yet. */
-        rtsp_quick_response(rtsp, req, RTSP_NotEnoughBandwidth);
         return;
     }
 

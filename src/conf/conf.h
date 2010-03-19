@@ -61,6 +61,7 @@ typedef struct {
     short first_udp_port;
     short buffered_frames;
     short loglevel;
+    conf_buffer *twin;
 
 //    unsigned short dont_daemonize;
 //    conf_buffer *changeroot;

@@ -30,6 +30,7 @@
 #include "rtsp.h"
 #include "rtp.h"
 #include "fnc_log.h"
+#include "feng.h"
 
 /**
  * @brief Free a request structure as parsed by rtsp_parse_request().
@@ -185,9 +186,59 @@ static gboolean RTSP_handle_interleaved(RTSP_Client *rtsp) {
     return true;
 }
 
+/**
+ * @brief enforce connection limit as set by configuration
+ *
+ * @param req The request to handle
+ *
+ * This function enforces connection limit by redirecting to a twin
+ * server with a 302 (Found) status or, if no server had been designed
+ * in the configuration, replying with a 453 status (Not Enough
+ * Bandwidth)
+ */
+
+gboolean rtsp_connection_limit(RTSP_Client *rtsp, RFC822_Request *req)
+{
+    if (rtsp->srv->connection_count > rtsp->srv->srvconf.max_conns) {
+        fnc_log(FNC_LOG_INFO, "Max connection reached");
+        if (rtsp->srv->srvconf.twin->ptr) {
+            Url url;
+            char *redir;
+            char *hostname = rtsp->srv->srvconf.twin->ptr;
+            RFC822_Response *response = rfc822_response_new(req, RTSP_Found);
+
+            Url_init(&url, req->object);
+            switch(req->proto) {
+                case RFC822_Protocol_HTTP10:
+                case RFC822_Protocol_HTTP11:
+                    redir = g_strdup_printf("http://%s/%s", hostname, url.path);
+                break;
+                default:
+                    redir = g_strdup_printf("rtsp://%s/%s", hostname, url.path);
+                break;
+            }
+
+            fnc_log(FNC_LOG_INFO, "Redirecting to %s", redir);
+
+            response->proto = req->proto;
+            rfc822_headers_set(response->headers,
+                               RFC822_Header_Location,
+                               strdup(redir));
+            rfc822_response_send(rtsp, response);
+            Url_destroy(&url);
+            g_free(redir);
+        } else {
+            rtsp_quick_response(rtsp, req, RTSP_NotEnoughBandwidth);
+        }
+        return false;
+    }
+    return true;
+}
+
 static gboolean RTSP_handle_new(RTSP_Client *rtsp) {
     if ( rtsp->input->len < 1 )
         return false;
+
 
     if ( rtsp->input->data[0] == '$' ) {
         rtsp->status = RFC822_State_Interleaved;
@@ -269,7 +320,7 @@ static gboolean RTSP_handle_headers(RTSP_Client *rtsp) {
         return false;
 
     rtsp->status = RFC822_State_RTSP_Content;
-    return true;
+    return rtsp_connection_limit(rtsp, rtsp->pending_request);
 }
 
 static gboolean RTSP_handle_content(RTSP_Client *rtsp) {

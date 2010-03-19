@@ -132,6 +132,9 @@ gboolean HTTP_handle_headers(RTSP_Client *rtsp)
     if ( headers_res == 0 )
         return false;
 
+    if (!rtsp_connection_limit(rtsp, rtsp->pending_request))
+        return false;
+
     if ( rtsp->pending_request->method_id == HTTP_Method_POST ) {
         const char *http_session = rfc822_headers_lookup(rtsp->pending_request->headers, HTTP_Header_x_sessioncookie);
 

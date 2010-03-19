@@ -233,6 +233,7 @@ static feng *feng_alloc(void)
     CLEAN(errorlog_file);
     CLEAN(username);
     CLEAN(groupname);
+    CLEAN(twin);
 #undef CLEAN
 
 #define CLEAN(x) \
@@ -269,6 +270,7 @@ static void feng_free(feng* srv)
     CLEAN(errorlog_file);
     CLEAN(username);
     CLEAN(groupname);
+    CLEAN(twin);
 #undef CLEAN
 
     if ( srv->config_storage != NULL ) {
