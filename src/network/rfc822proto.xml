@@ -26,6 +26,7 @@
     <supportedmethod>TEARDOWN</supportedmethod>
 
     <supportedheader>Allow</supportedheader>
+    <supportedheader>Authorization</supportedheader>
     <supportedheader>CSeq</supportedheader>
     <supportedheader>Content-Base</supportedheader>
     <supportedheader>Content-Length</supportedheader>
