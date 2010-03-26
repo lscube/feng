@@ -389,11 +389,11 @@ static void parse_receiver_report(RTP_session *session,
                                   uint8_t *packet, int count)
 {
     int ssrc = ntohl(((RTCP_header_RR*)packet)->ssrc);
-    fnc_log(FNC_LOG_INFO, "[RTCP] Receiver report for %u", ssrc);
+    fnc_log(FNC_LOG_VERBOSE, "[RTCP] Receiver report for %u", ssrc);
     packet+=4;
     while(count--) {
         RTCP_report_block *report = (RTCP_report_block *)packet;
-        fnc_log(FNC_LOG_INFO,
+        fnc_log(FNC_LOG_VERBOSE,
                 "[RTCP] ssrc %u, fraction %d, lost %d, "
                 "sequence %u, jitter %u, "
                 "last Sender Report %u, delay %u",
@@ -415,16 +415,16 @@ void rtcp_handle(RTP_session *session, uint8_t *packet, size_t len)
 {
     int rtcp_size = 0;
 
-    fnc_log(FNC_LOG_INFO, "[RTCP] Handling a %zd byte packet", len);
+    fnc_log(FNC_LOG_VERBOSE, "[RTCP] Handling a %zd byte packet", len);
     while (len > sizeof(RTCP_header)) {
         RTCP_header *rtcp = (RTCP_header *)packet;
         rtcp_size = (ntohs(rtcp->length)+1)<<2;
 
-        fnc_log(FNC_LOG_INFO, "[RTCP] %s (%d) packet found %d byte",
+        fnc_log(FNC_LOG_VERBOSE, "[RTCP] %s (%d) packet found %d byte",
                 rtcp_pt_to_string(rtcp->pt), rtcp->pt, rtcp_size);
 
         if (rtcp_size > len) {
-            fnc_log(FNC_LOG_INFO, "[RTCP]  Malformed packet %d > %zd",
+            fnc_log(FNC_LOG_WARN, "[RTCP]  Malformed packet %d > %zd",
                     rtcp_size, len);
             return;
         }
