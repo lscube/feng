@@ -55,8 +55,9 @@ static int amr_init(Track *track)
 
     track->properties.clock_rate = 8000;
     track_add_sdp_field(track, rtpmap,
-                        g_strdup_printf ("AMR/%d",
-                                         track->properties.clock_rate));
+                        g_strdup_printf ("AMR/%d/%d",
+                                         track->properties.clock_rate,
+                                         track->properties.audio_channels));
 
     return ERR_NOERROR;
 }
