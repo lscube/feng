@@ -110,75 +110,50 @@ typedef struct
 
 static int amr_parse(Track *tr, uint8_t *data, size_t len)
 {
-    uint32_t header_len, off = 1, payload, i, body_len, body_num = 0;
     uint8_t packet[DEFAULT_MTU] = {0};
     amr_header *header = (amr_header *) packet;
-    toc tocv,end_tocv;
     const uint32_t packet_size[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0};
     /*1(toc size) +  unit size of frame body{12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0}*/
 
     header->cmr = 0xf;
 
-   /*the first byte of data is 'table of content'*/
-    /*'f' bit of the end_tocv should be 0*/
-    memset(&end_tocv, *data, 1);
-    memset(&tocv, *data, 1);
-    tocv.f = 1;
+    while (len > 0) {
+        uint32_t read_offset = 0, frames = 0;
+        uint32_t body_len, i, off;
+        toc tocv;
 
-    /*get frame body size by tocv and packet_size*/
-    /*data len = 1 + frame body_len * frame body number*/
-    body_len = packet_size[tocv.ft];
-
-    /*get toc number and header_len, first assume data len > MTU size*/
-    if(body_len > 0)
-        body_num = (DEFAULT_MTU - 1) / body_len;
-    header_len = body_num + 1;
-    payload = DEFAULT_MTU - header_len;
-    fnc_log(FNC_LOG_DEBUG, "AMR:data len: %d, frame body len: %d", len,body_len);
-
-    if (len > payload) {
-        /*fill toc to payload packet*/
-        for(i = 1; i < body_num; i++)
-        {
-            memcpy(packet+ i, &tocv, 1);
+        /* Count the number of frames that fit into the packet */
+        while (read_offset < len) {
+            memcpy(&tocv, &data[read_offset], 1);
+            body_len = packet_size[tocv.ft];
+            if (read_offset + 1 + body_len > len)
+                break; /* Not enough speech data */
+            if (read_offset + 1 + body_len > DEFAULT_MTU - 1)
+                break; /* This frame doesn't fit into the current packet */
+            read_offset += 1 + body_len;
+            frames++;
         }
-        memcpy(packet+body_num, &end_tocv, 1);
-
-        /*fill the frame content*/
-        while (len > payload) {
-            memcpy(packet + header_len, data + off, payload);
-            mparser_buffer_write(tr,
-                                 tr->properties.pts,
-                                 tr->properties.dts,
-                                 tr->properties.frame_duration,
-                                 0,
-                                 packet, header_len + payload);
-
-            len -= payload;
-            off += payload;
+        if (frames <= 0) /* No frames - bad trailing data? */
+            break;
+        off = 1 + frames; /* Write the body data at this offset */
+        for (i = 0; i < frames; i++) {
+            memcpy(&tocv, data, 1);
+            body_len = packet_size[tocv.ft];
+            tocv.f = i < frames - 1;
+            memcpy(packet + 1 + i, &tocv, 1);
+            memcpy(packet + off, &data[1], body_len);
+            off  +=     body_len;
+            data += 1 + body_len;
+            len  -= 1 + body_len;
         }
+        mparser_buffer_write(tr,
+                             tr->properties.pts,
+                             tr->properties.dts,
+                             tr->properties.frame_duration,
+                             0,
+                             packet, off);
     }
 
-    /*remaining frame, the length < payload*/
-    /*get toc number and header_len*/
-    if(body_len > 0)
-        body_num = len / body_len;
-    header_len = body_num + 1;
-    /*fill toc to payload packet*/
-    for(i = 1; i < body_num; i++)
-    {
-        memcpy(packet+ i, &tocv, 1);
-    }
-    memcpy(packet+body_num, &end_tocv, 1);
-
-    /*fill the frame content*/
-    memcpy(packet + header_len, data + off, len);
-    mparser_buffer_write(tr,
-                         tr->properties.pts,
-                         tr->properties.dts,
-                         tr->properties.frame_duration,
-                         1,
-                         packet, len + body_num);
     return ERR_NOERROR;
 }
 
