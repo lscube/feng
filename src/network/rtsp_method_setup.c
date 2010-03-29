@@ -50,10 +50,10 @@ static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
     }
     //UDP bind for outgoing RTP packets
     snprintf(port_buffer, 8, "%d", ser_ports.RTP);
-    transport->rtp_sock = Sock_bind(NULL, port_buffer, NULL, UDP, NULL);
+    transport->rtp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
     //UDP bind for outgoing RTCP packets
     snprintf(port_buffer, 8, "%d", ser_ports.RTCP);
-    transport->rtcp_sock = Sock_bind(NULL, port_buffer, NULL, UDP, NULL);
+    transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
 
     if ( !transport->rtp_sock || !transport->rtcp_sock ) {
         fnc_log(FNC_LOG_ERR, "Cannot bind ports %d %d",
