@@ -191,6 +191,8 @@ AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT_STR,
                     "$fenice_avroot_dir",
                     [Define default directory string for Feng A/V resources])
 
+AC_DEFINE_UNQUOTED(FENG_DEFAULT_PORT, $fenice_rtsp_port, [Define default listening port])
+
 AC_DEFINE_UNQUOTED(FENICE_CONF_FILE_DEFAULT,
                     $fenice_conf_file,
                     [Define default file for Feng configuration])

@@ -993,7 +993,7 @@ int config_set_defaults(server *srv) {
 #endif
 
     if (srv->srvconf.port == 0) {
-        srv->srvconf.port = s->is_ssl ? 322 : 554;
+        srv->srvconf.port = s->is_ssl ? 322 : FENG_DEFAULT_PORT;
     }
 
     if (srv->srvconf.max_conns == 0)
