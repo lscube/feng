@@ -180,7 +180,7 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
     if (!quiet) fncheader();
 
     if ( config_file == NULL )
-        config_file = g_strdup(FENICE_CONF_PATH_DEFAULT_STR);
+        config_file = g_strdup(FENG_CONF_PATH_DEFAULT_STR);
 
     if (config_read(srv, config_file)) {
         g_critical("unable to read configuration file '%s'\n", config_file);

@@ -1,16 +1,16 @@
 ACLOCAL_AMFLAGS = -I m4
 
-FENICE_AVROOT_DIR = $(fenice_avroot_dir)
-FENICE_LOG_FILE = `basename $(fenice_log_file)`
+FENG_AVROOT_DIR = $(feng_avroot_dir)
+FENG_LOG_FILE = `basename $(feng_log_file)`
 
-avrootdir = $(fenice_avroot_dir)
+avrootdir = $(feng_avroot_dir)
 
 dist_avroot_DATA = \
 	avroot/h264.ds \
 	avroot/h264_scramble.ds \
 	avroot/test.mov
 
-feng_confdir = $(fenice_conf_dir)
+feng_confdir = $(feng_conf_dir)
 dist_feng_conf_DATA = etc/feng.conf
 
 dist_man_MANS = docs/feng.1
@@ -110,7 +110,7 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/media/parser/mpeg2t.c \
 	src/media/demuxer/demuxer_ds.c
 
-if FENICE_FFMPEG
+if FENG_FFMPEG
 dist_feng_SOURCES += src/media/parser/h264.c \
 		     src/media/parser/vorbis.c \
 		     src/media/parser/theora.c \

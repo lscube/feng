@@ -71,8 +71,8 @@ dnl AC_CHECK_FUNCS([lstat])
 
 CHECK_RAGEL_AM([src/network/ragel_range.c], [6.6])
 
-fenice_state_dir=$(eval echo ${localstatedir}/feng)
-AC_SUBST(fenice_state_dir)
+feng_state_dir=$(eval echo ${localstatedir}/feng)
+AC_SUBST(feng_state_dir)
 
 LSC_CHECK_IPV6
 LSC_CHECK_SCTP
@@ -123,7 +123,7 @@ if test "x$enable_ffmpeg" = "xyes"; then
          LIBS="$LIBS $LIBAVUTIL_LIBS"
 fi
 
-AM_CONDITIONAL(FENICE_FFMPEG, [test "$enable_ffmpeg" = "yes"])
+AM_CONDITIONAL(FENG_FFMPEG, [test "$enable_ffmpeg" = "yes"])
 
 CC_ATTRIBUTE_UNUSED(
   [AC_DEFINE([ATTR_UNUSED], [__attribute__((__unused__))], [Define this if ATTR_UNUSED is supported])],
@@ -141,18 +141,18 @@ AS_IF([test "x$XSLTPROC" = "x"], [
   ])
 ])
 
-fenice_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot|sed -e "s:/\+:/:g; s:NONE::g")
+feng_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot|sed -e "s:/\+:/:g; s:NONE::g")
 
-AC_SUBST(fenice_avroot_dir)
+AC_SUBST(feng_avroot_dir)
 
-fenice_max_session=$(eval echo $with_max_session)
-AC_SUBST(fenice_max_session)
+feng_max_session=$(eval echo $with_max_session)
+AC_SUBST(feng_max_session)
 
-fenice_rtsp_port=$(eval echo $with_rtsp_port)
-AC_SUBST(fenice_rtsp_port)
+feng_rtsp_port=$(eval echo $with_rtsp_port)
+AC_SUBST(feng_rtsp_port)
 
-fenice_conf_file=$(eval echo $with_config_file|sed -e "s:/\+:/:g")
-AC_SUBST(fenice_conf_file)
+feng_conf_file=$(eval echo $with_config_file|sed -e "s:/\+:/:g")
+AC_SUBST(feng_conf_file)
 
 
 feng_basedir=$(eval echo $localstatedir|sed -e "s:/\+:/:g; s:NONE::g")
@@ -160,8 +160,8 @@ feng_basedir=$(eval echo $localstatedir|sed -e "s:/\+:/:g; s:NONE::g")
 feng_logdir="${feng_basedir}/log/$PACKAGE_NAME"
 AC_SUBST(feng_logdir)
 
-fenice_log_file="${feng_basedir}/log/$with_log_file"
-AC_SUBST(fenice_log_file)
+feng_log_file="${feng_basedir}/log/$with_log_file"
+AC_SUBST(feng_log_file)
 
 feng_statedir="${feng_basedir}/lib/$PACKAGE_NAME"
 AC_SUBST(feng_statedir)
@@ -169,56 +169,56 @@ AC_SUBST(feng_statedir)
 feng_basedir="${feng_basedir}/$PACKAGE_NAME"
 AC_SUBST(feng_basedir)
 
-fenice_conf_dir=$(eval echo $sysconfdir|sed -e "s:/\+:/:g; s:NONE::g")
-AC_SUBST(fenice_conf_dir)
+feng_conf_dir=$(eval echo $sysconfdir|sed -e "s:/\+:/:g; s:NONE::g")
+AC_SUBST(feng_conf_dir)
 
-fenice_docs_dir=$(eval echo $datadir/doc/$PACKAGE_NAME|sed -e "s:/\+:/:g")
-AC_SUBST(fenice_docs_dir)
+feng_docs_dir=$(eval echo $datadir/doc/$PACKAGE_NAME|sed -e "s:/\+:/:g")
+AC_SUBST(feng_docs_dir)
 
-AC_DEFINE_UNQUOTED(FENICE_MAX_SESSION_DEFAULT,
-                    $fenice_max_session,
+AC_DEFINE_UNQUOTED(FENG_MAX_SESSION_DEFAULT,
+                    $feng_max_session,
                     [Define max number of RTSP incoming sessions for Feng])
 
-AC_DEFINE_UNQUOTED(FENICE_RTSP_PORT_DEFAULT,
-                    $fenice_rtsp_port,
+AC_DEFINE_UNQUOTED(FENG_RTSP_PORT_DEFAULT,
+                    $feng_rtsp_port,
                     [Define default RTSP listening port])
 
-AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT,
-                    $fenice_avroot_dir,
+AC_DEFINE_UNQUOTED(FENG_AVROOT_DIR_DEFAULT,
+                    $feng_avroot_dir,
                     [Define default directory for Feng A/V resources])
 
-AC_DEFINE_UNQUOTED(FENICE_AVROOT_DIR_DEFAULT_STR,
-                    "$fenice_avroot_dir",
+AC_DEFINE_UNQUOTED(FENG_AVROOT_DIR_DEFAULT_STR,
+                    "$feng_avroot_dir",
                     [Define default directory string for Feng A/V resources])
 
-AC_DEFINE_UNQUOTED(FENG_DEFAULT_PORT, $fenice_rtsp_port, [Define default listening port])
+AC_DEFINE_UNQUOTED(FENG_DEFAULT_PORT, $feng_rtsp_port, [Define default listening port])
 
-AC_DEFINE_UNQUOTED(FENICE_CONF_FILE_DEFAULT,
-                    $fenice_conf_file,
+AC_DEFINE_UNQUOTED(FENG_CONF_FILE_DEFAULT,
+                    $feng_conf_file,
                     [Define default file for Feng configuration])
 
-AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT,
-                    $fenice_log_file,
+AC_DEFINE_UNQUOTED(FENG_LOG_FILE_DEFAULT,
+                    $feng_log_file,
                     [Define default file for Feng logger])
 
-AC_DEFINE_UNQUOTED(FENICE_LOG_FILE_DEFAULT_STR,
-                    "$fenice_log_file",
+AC_DEFINE_UNQUOTED(FENG_LOG_FILE_DEFAULT_STR,
+                    "$feng_log_file",
                     [Define default string for Feng log file])
 
-AC_DEFINE_UNQUOTED(FENICE_CONF_DIR_DEFAULT,
-                    $fenice_conf_dir,
+AC_DEFINE_UNQUOTED(FENG_CONF_DIR_DEFAULT,
+                    $feng_conf_dir,
                     [Define default directory for Feng configuration])
 
-AC_DEFINE_UNQUOTED(FENICE_CONF_PATH_DEFAULT_STR,
-                    "$(eval echo ${fenice_conf_dir}/${fenice_conf_file}|sed -e s:/\+:/:g)",
+AC_DEFINE_UNQUOTED(FENG_CONF_PATH_DEFAULT_STR,
+                    "$(eval echo ${feng_conf_dir}/${feng_conf_file}|sed -e s:/\+:/:g)",
                     [Define absolute path string for Feng configuration file])
 
-AC_DEFINE_UNQUOTED(FENICE_STATE_DIR,
-                    $fenice_state_dir,
+AC_DEFINE_UNQUOTED(FENG_STATE_DIR,
+                    $feng_state_dir,
                     [Define default dir for Certificate (pem format)])
 
 AC_DEFINE_UNQUOTED(FENIC_STATE_DIR_STR,
-                    "$fenice_state_dir",
+                    "$feng_state_dir",
                     [Define default string dir for Certificate (pem format)])
 
 CC_CHECK_CFLAGS_APPEND([-Werror=declaration-after-statement -Wdeclaration-after-statement],
@@ -237,10 +237,10 @@ AC_MSG_NOTICE([config files successfully generated!
 
 Feng Install prefix .......... : $prefix
 Feng Binary path ............. : $(eval echo $exec_prefix/bin/feng)
-Feng Configuration path ...... : $fenice_conf_dir
-Feng Log File ................ : $fenice_log_file
-Feng Multimedia Files root ... : $fenice_avroot_dir
-Feng RTSP listening port ..... : $fenice_rtsp_port
+Feng Configuration path ...... : $feng_conf_dir
+Feng Log File ................ : $feng_log_file
+Feng Multimedia Files root ... : $feng_avroot_dir
+Feng RTSP listening port ..... : $feng_rtsp_port
 
 live streaming supported...... : $live_streaming
 sctp support enabled ......... : $enable_sctp
