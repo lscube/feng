@@ -105,39 +105,39 @@ gboolean check_parsed_transport(RTSP_Client *rtsp, RTP_transport *rtp_t,
     case RTP_UDP:
         if ( transport->mode == TransportUnicast ) {
             return ( unicast_transport(rtsp, rtp_t,
-                                       transport->parameters.UDP.Unicast.port_rtp,
-                                       transport->parameters.UDP.Unicast.port_rtcp)
+                                       transport->rtp_channel,
+                                       transport->rtcp_channel)
                      == RTSP_Ok );
         } else { /* Multicast */
             return false;
         }
     case RTP_TCP:
-        if ( transport->parameters.TCP.ich_rtp &&
-             !transport->parameters.TCP.ich_rtcp )
-            transport->parameters.TCP.ich_rtcp = transport->parameters.TCP.ich_rtp + 1;
+        if ( transport->rtp_channel &&
+             !transport->rtcp_channel )
+            transport->rtcp_channel = transport->rtp_channel + 1;
 
-        if ( !transport->parameters.TCP.ich_rtp ) {
+        if ( !transport->rtp_channel ) {
             /** @todo This part was surely broken before, so needs to be
              * written from scratch */
         }
 
 
         return interleaved_setup_transport(rtp_t,
-                                           transport->parameters.TCP.ich_rtp,
-                                           transport->parameters.TCP.ich_rtcp);
+                                           transport->rtp_channel,
+                                           transport->rtcp_channel);
     case RTP_SCTP:
-        if ( transport->parameters.SCTP.ch_rtp &&
-             !transport->parameters.SCTP.ch_rtcp )
-            transport->parameters.SCTP.ch_rtcp = transport->parameters.SCTP.ch_rtp + 1;
+        if ( transport->rtp_channel &&
+             !transport->rtcp_channel )
+            transport->rtcp_channel = transport->rtp_channel + 1;
 
-        if ( !transport->parameters.SCTP.ch_rtp ) {
+        if ( !transport->rtp_channel ) {
             /** @todo This part was surely broken before, so needs to be
              * written from scratch */
         }
 
         return interleaved_setup_transport(rtp_t,
-                                           transport->parameters.SCTP.ch_rtp,
-                                           transport->parameters.SCTP.ch_rtcp);
+                                           transport->rtp_channel,
+                                           transport->rtcp_channel);
 
     default:
         return false;

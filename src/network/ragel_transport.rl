@@ -54,8 +54,8 @@ gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
         TransportParam = ";" . TransportParamName . ( '=' . TransportParamValue )?;
 
         ClientPort = ";client_port=" .
-            Port%{transport.parameters.UDP.Unicast.port_rtp = portval;} .
-            ( "-" . Port%{transport.parameters.UDP.Unicast.port_rtcp = portval;} );
+            Port%{transport.rtp_channel = portval;} .
+            ( "-" . Port%{transport.rtcp_channel = portval;} );
 
         UnicastUDPParams = Unicast . ( ClientPort | TransportParam )+;
         MulticastUDPParams = Multicast . TransportParam+;
@@ -63,14 +63,14 @@ gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
         UDPParams = ( UnicastUDPParams | MulticastUDPParams );
 
         Interleaved = ";interleaved=" .
-            Channel%{transport.parameters.TCP.ich_rtp = chanval;} .
-            ( "-" . Channel%{transport.parameters.TCP.ich_rtcp = chanval;} );
+            Channel%{transport.rtp_channel = chanval;} .
+            ( "-" . Channel%{transport.rtcp_channel = chanval;} );
 
         TCPParams = ( Interleaved | TransportParam)+;
 
         Streams = ";streams=" .
-            Channel%{transport.parameters.SCTP.ch_rtp = chanval;} .
-            ( "-" . Channel%{transport.parameters.SCTP.ch_rtcp = chanval;} );
+            Channel%{transport.rtp_channel = chanval;} .
+            ( "-" . Channel%{transport.rtcp_channel = chanval;} );
 
         SCTPParams = ( Streams | TransportParam)+;
 

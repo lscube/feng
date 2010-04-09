@@ -271,24 +271,8 @@ struct ParsedTransport {
     RTP_Protocol protocol;
     //! Mode for UDP transmission, here is easier to access
     enum { TransportUnicast, TransportMulticast } mode;
-    union {
-        union {
-            struct {
-                uint16_t port_rtp;
-                uint16_t port_rtcp;
-            } Unicast;
-            struct {
-            } Multicast;
-        } UDP;
-        struct {
-            uint16_t ich_rtp;  //!< Interleaved channel for RTP
-            uint16_t ich_rtcp; //!< Interleaved channel for RTCP
-        } TCP;
-        struct {
-            uint16_t ch_rtp;  //!< SCTP channel for RTP
-            uint16_t ch_rtcp; //!< SCTP channel for RTCP
-        } SCTP;
-    } parameters;
+    unsigned rtp_channel;
+    unsigned rtcp_channel;
 };
 
 gboolean check_parsed_transport(struct RTSP_Client *rtsp,
