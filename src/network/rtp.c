@@ -73,12 +73,7 @@ static void rtp_session_free(gpointer session_gen,
     switch (session->transport.protocol) {
     case RTP_UDP:
         {
-            port_pair pair;
-            pair.RTP = get_local_port(session->transport.rtp_sock);
-            pair.RTCP = get_local_port(session->transport.rtcp_sock);
-
             ev_io_stop(session->srv->loop, &session->transport.rtcp_reader);
-            RTP_release_port_pair(session->srv, &pair);
 
             Sock_close(session->transport.rtp_sock);
             Sock_close(session->transport.rtcp_sock);

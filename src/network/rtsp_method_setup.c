@@ -43,36 +43,61 @@ static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
                                            uint16_t rtp_port, uint16_t rtcp_port)
 {
     char port_buffer[8];
-    port_pair ser_ports;
+    uint16_t port = rtsp->srv->srvconf.first_udp_port;
 
-    if (RTP_get_port_pair(rtsp->srv, &ser_ports) != ERR_NOERROR) {
-        return RTSP_InternalServerError;
-    }
+    /* Set this to whenever we want to stop trying to get ports;
+       probably to configure */
+    static const uint16_t port_upper_bound = 65535;
+
+    /*
+     * RFC 3550 Section 11 describe the choice of port numbers for RTP
+     * applications; since we're delievering RTP as part of an RTSP
+     * stream, we fall in the latest case described. We thus *may*
+     * avoid using the next-available port but we'll try our best to.
+     */
+
     //UDP bind for outgoing RTP packets
-    snprintf(port_buffer, 8, "%d", ser_ports.RTP);
-    transport->rtp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
-    //UDP bind for outgoing RTCP packets
-    snprintf(port_buffer, 8, "%d", ser_ports.RTCP);
-    transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
+    while ( transport->rtp_sock == NULL ) {
+        if ( port >= port_upper_bound )
+            goto err_rtp_sock;
 
-    if ( !transport->rtp_sock || !transport->rtcp_sock ) {
-        fnc_log(FNC_LOG_ERR, "Cannot bind ports %d %d",
-            ser_ports.RTP, ser_ports.RTCP);
-        Sock_close(transport->rtp_sock);
-        Sock_close(transport->rtcp_sock);
-        return RTSP_UnsupportedTransport;
+        snprintf(port_buffer, 8, "%d", port);
+        transport->rtp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
+
+        /* Try to keep an even RTP port, at least */
+        port += 2;
     }
 
     //UDP connection for outgoing RTP packets
     snprintf(port_buffer, 8, "%d", rtp_port);
-    Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                  transport->rtp_sock, UDP, NULL);
+    if ( Sock_connect (get_remote_host(rtsp->sock), port_buffer,
+                       transport->rtp_sock, UDP, NULL) == NULL )
+        goto err_rtcp_sock;
+
+    //UDP bind for outgoing RTCP packets
+    while ( transport->rtcp_sock == NULL ) {
+        if ( port >= port_upper_bound )
+            goto err_rtcp_sock;
+
+        snprintf(port_buffer, 8, "%d", port);
+        transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
+        port++;
+    }
+
     //UDP connection for outgoing RTCP packets
     snprintf(port_buffer, 8, "%d", rtcp_port);
-    Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                  transport->rtcp_sock, UDP, NULL);
+    if ( Sock_connect (get_remote_host(rtsp->sock), port_buffer,
+                       transport->rtcp_sock, UDP, NULL) == NULL )
+        goto err_connect;
 
     return RTSP_Ok;
+
+ err_connect:
+    Sock_close(transport->rtcp_sock);
+ err_rtcp_sock:
+    Sock_close(transport->rtp_sock);
+ err_rtp_sock:
+    return RTSP_UnsupportedTransport;
 }
 
 static gboolean interleaved_setup_transport(RTP_transport *transport,

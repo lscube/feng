@@ -83,7 +83,6 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rfc822_response.c \
 	src/network/rtcp.c \
 	src/network/rtp.c network/rtp.h \
-	src/network/rtp_port.c \
 	src/network/rtsp.h \
 	src/network/rtsp_client.c \
 	src/network/rtsp_lowlevel.c \

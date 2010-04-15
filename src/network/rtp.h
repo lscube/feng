@@ -45,11 +45,6 @@ struct RTSP_session;
 #define BUFFERED_FRAMES_DEFAULT 16
 #define RTP_DEFAULT_MTU 1500
 
-typedef struct {
-    int RTP;
-    int RTCP;
-} port_pair;
-
 typedef enum {
     RTP_UDP,
     RTP_TCP,
@@ -129,20 +124,6 @@ typedef struct RTP_session {
 /**
  * @defgroup RTP RTP Layer
  * @{
- */
-
-/**
- * RTP ports management functions
- * @defgroup rtp_port RTP ports management functions
- * @{
- */
-
-void RTP_port_pool_init(struct feng *srv, int port);
-int RTP_get_port_pair(struct feng *srv, port_pair * pair);
-int RTP_release_port_pair(struct feng *srv, port_pair * pair);
-
-/**
- * @}
  */
 
 /**
