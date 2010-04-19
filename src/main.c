@@ -241,6 +241,7 @@ static feng *feng_alloc(void)
     CLEAN(config_context);
     CLEAN(config_touched);
 #undef CLEAN
+    srv->clients = g_slist_alloc();
 
     return srv;
 }
@@ -292,6 +293,8 @@ static void feng_free(feng* srv)
     CLEAN(config_context);
     CLEAN(config_touched);
 #undef CLEAN
+
+    g_slist_free(srv->clients)
 
     g_free(srv);
 

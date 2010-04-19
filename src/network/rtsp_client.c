@@ -74,6 +74,8 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
 
     g_byte_array_free(rtsp->input, true);
 
+    g_slist_remove(srv->clients, rtsp);
+
     g_slice_free(RTSP_Client, rtsp);
 
     fnc_log(FNC_LOG_INFO, "[client] Client removed");
@@ -136,6 +138,8 @@ RTSP_Client *rtsp_client_new(feng *srv)
     rtsp->input = g_byte_array_new();
     rtsp->srv = srv;
     rtsp->write_data = rtsp_write_data_direct;
+
+    g_slist_append(srv->clients, rtsp);
 
     return rtsp;
 }

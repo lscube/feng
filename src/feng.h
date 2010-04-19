@@ -36,6 +36,12 @@
 #include "conf/array.h"
 #include "conf/conf.h"
 
+typedef struct feng_stats {
+    size_t total_sent;
+    size_t total_received;
+    //add_more
+} feng_stats;
+
 typedef struct feng {
 
     array *config;
@@ -56,8 +62,8 @@ typedef struct feng {
      */
     size_t connection_count;
 
-    GMutex *lock;        //!< lock to access live_mq
-    GHashTable *live_mq; //!< keeps the association producer/mq
+    GList *clients; //!< All the currently connected clients
+    feng_stats *stats;
 } feng;
 
 typedef feng server;

@@ -133,6 +133,11 @@ struct HTTP_Tunnel_Pair;
 
 typedef void (*rtsp_write_data)(struct RTSP_Client *client, GByteArray *data);
 
+typedef struct RTSP_stats {
+    size_t sent;
+    size_t received;
+} RTSP_stats;
+
 typedef struct RTSP_Client {
     Sock *sock;
 
@@ -167,6 +172,7 @@ typedef struct RTSP_Client {
     // Run-Time
     RTSP_session *session;
     struct feng *srv;
+    RTSP_stats *stats;
 
     rtsp_write_data write_data;
 

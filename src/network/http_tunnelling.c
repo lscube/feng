@@ -135,6 +135,21 @@ gboolean HTTP_handle_headers(RTSP_Client *rtsp)
     if (!rtsp_connection_limit(rtsp, rtsp->pending_request))
         return false;
 
+    if ( rtsp->pending_request->method_id == HTTP_Method_GET &&
+         strstr(rtsp->pending_request->object, "stats") ) {
+        RFC822_Response *response = rfc822_response_new(rtsp->pending_request, RTSP_Ok);
+
+        response->body = g_string_new("{\"stats\":\"none\"}");
+
+        rfc822_headers_set(response->headers,
+                           RTSP_Header_Content_Type,
+                           g_strdup("application/json"));
+        rfc822_headers_set(response->headers,
+                           RTSP_Header_Content_Base,
+                           g_strdup_printf("%s/", rtsp->pending_request->object));
+        rfc822_response_send(rtsp, response);
+    }
+
     if ( rtsp->pending_request->method_id == HTTP_Method_POST ) {
         const char *http_session = rfc822_headers_lookup(rtsp->pending_request->headers, HTTP_Header_x_sessioncookie);
 
