@@ -101,7 +101,7 @@ void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response)
     /** @TODO Support VHOST */
 #if HAVE_SYSLOG_H
     if (client->srv->config_storage[0].access_log_syslog)
-        syslog(LOG_INFO, PRINT_STRING);
+        syslog(LOG_INFO, "Access " PRINT_STRING);
     else
 #endif
     {
