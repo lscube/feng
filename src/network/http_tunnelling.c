@@ -25,6 +25,10 @@
 #include "feng.h"
 #include "network/rtsp.h"
 
+#ifdef HAVE_JSON
+#   include "json.h"
+#endif
+
 typedef struct HTTP_Tunnel_Pair {
     RTSP_Client *rtsp_client;
     RTSP_Client *http_client;
@@ -134,12 +138,29 @@ gboolean HTTP_handle_headers(RTSP_Client *rtsp)
 
     if (!rtsp_connection_limit(rtsp, rtsp->pending_request))
         return false;
-
+//XXX move to a separate file soon
+#ifdef HAVE_JSON
     if ( rtsp->pending_request->method_id == HTTP_Method_GET &&
          strstr(rtsp->pending_request->object, "stats") ) {
         RFC822_Response *response = rfc822_response_new(rtsp->pending_request, RTSP_Ok);
+        json_object *stats = json_object_new_object();
+        feng *srv = rtsp->srv;
+        // do not count the current client
+        json_object_object_add(stats, "clients",
+            json_object_new_int(g_slist_length(srv->clients)-1));
 
-        response->body = g_string_new("{\"stats\":\"none\"}");
+        json_object_object_add(stats, "sent",
+            json_object_new_int(0 /*srv->stats->total_sent*/));
+
+        json_object_object_add(stats, "received",
+            json_object_new_int(0 /*srv->stats->total_received*/));
+
+        json_object_object_add(stats, "uptime",
+            json_object_new_int(0));
+
+//        g_slist_foreach(srv->clients, client_stats, stats);
+
+        response->body = g_string_new(json_object_to_json_string(stats));
 
         rfc822_headers_set(response->headers,
                            RTSP_Header_Content_Type,
@@ -148,8 +169,9 @@ gboolean HTTP_handle_headers(RTSP_Client *rtsp)
                            RTSP_Header_Content_Base,
                            g_strdup_printf("%s/", rtsp->pending_request->object));
         rfc822_response_send(rtsp, response);
+        return false;
     }
-
+#endif
     if ( rtsp->pending_request->method_id == HTTP_Method_POST ) {
         const char *http_session = rfc822_headers_lookup(rtsp->pending_request->headers, HTTP_Header_x_sessioncookie);
 

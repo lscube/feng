@@ -141,6 +141,10 @@ AS_IF([test "x$XSLTPROC" = "x"], [
   ])
 ])
 
+PKG_HAVE_DEFINE_WITH_MODULES(JSON,[json])
+CFLAGS="$CFLAGS $JSON_CFLAGS"
+LIBS="$LIBS $JSON_LIBS"
+
 feng_avroot_dir=$(eval echo $localstatedir/$PACKAGE_NAME/avroot|sed -e "s:/\+:/:g; s:NONE::g")
 
 AC_SUBST(feng_avroot_dir)
@@ -246,6 +250,8 @@ live streaming supported...... : $live_streaming
 sctp support enabled ......... : $enable_sctp
 avformat support enabled ..... : $avformat_msg
 avutil support enabled ....... : $avutil_msg
+json support enabled ......... : $with_json
+
 
  'make' will now compile Feng and 'su -c make install' will install it.
  Note: On non-Linux systems you might need to use 'gmake' instead of 'make'.
