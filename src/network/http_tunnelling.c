@@ -113,6 +113,21 @@ static void http_tunnel_destroy_pair(gpointer ptr)
     g_slice_free(HTTP_Tunnel_Pair, ptr);
 }
 
+static void client_stats(gpointer c, gpointer s)
+{
+    RTSP_Client *client = c;
+    RTSP_session *session = client->session;
+    json_object *clients_stats = s;
+    json_object *stats = json_object_new_object();
+    // Sessionless clients are querying stats.
+    if (!session) return;
+    json_object_object_add(stats, "resource_uri",
+        json_object_new_string(session->resource_uri));
+    json_object_object_add(stats, "remote_host",
+        json_object_new_string(client->sock->remote_host));
+    json_object_array_add(clients_stats, stats);
+}
+
 gboolean HTTP_handle_headers(RTSP_Client *rtsp)
 {
     size_t parsed_headers;
@@ -144,6 +159,7 @@ gboolean HTTP_handle_headers(RTSP_Client *rtsp)
          strstr(rtsp->pending_request->object, "stats") ) {
         RFC822_Response *response = rfc822_response_new(rtsp->pending_request, RTSP_Ok);
         json_object *stats = json_object_new_object();
+        json_object *clients_stats = json_object_new_array();
         feng *srv = rtsp->srv;
         // do not count the current client
         json_object_object_add(stats, "clients",
@@ -158,7 +174,9 @@ gboolean HTTP_handle_headers(RTSP_Client *rtsp)
         json_object_object_add(stats, "uptime",
             json_object_new_int(0));
 
-//        g_slist_foreach(srv->clients, client_stats, stats);
+        g_slist_foreach(srv->clients, client_stats, clients_stats);
+
+        json_object_object_add(stats, "per_client", clients_stats);
 
         response->body = g_string_new(json_object_to_json_string(stats));
 
