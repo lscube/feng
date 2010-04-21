@@ -323,6 +323,7 @@ gboolean HTTP_handle_content(RTSP_Client *rtsp);
 gboolean HTTP_handle_idle(RTSP_Client *rtsp);
 void http_tunnel_initialise();
 
+void feng_send_statistics(RTSP_Client *rtsp);
 /**
  * @}
  */

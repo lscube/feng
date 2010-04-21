@@ -125,6 +125,10 @@ if LIVE_STREAMING
 dist_feng_SOURCES += src/media/demuxer/demuxer_sd.c
 endif
 
+if HAVE_JSON
+dist_feng_SOURCES += src/statistics.c
+endif
+
 if AVOID_TABLES
 src/network/rfc822proto.c: src/network/rfc822proto-source-switch.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
