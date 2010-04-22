@@ -426,6 +426,7 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
                 break;
             default:
                 session->client->bytes_sent += sent;
+                session->srv->total_sent += sent;
         }
 #endif
     }

@@ -63,7 +63,10 @@ typedef struct feng {
     size_t connection_count;
 
     GSList *clients; //!< All the currently connected clients
-    feng_stats *stats;
+#if 1
+    size_t total_sent;
+    size_t total_read;
+#endif
 } feng;
 
 typedef feng server;

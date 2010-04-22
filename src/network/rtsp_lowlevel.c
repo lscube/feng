@@ -111,6 +111,7 @@ void rtsp_read_cb(struct ev_loop *loop, ev_io *w,
 
 #if 1
     rtsp->bytes_read += read_size;
+    rtsp->srv->total_read += read_size;
 #endif
     RTSP_handler(rtsp);
 
@@ -197,6 +198,7 @@ void rtsp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     }
 #if 1
     rtsp->bytes_sent += outpkt->len;
+    rtsp->srv->total_sent += outpkt->len;
 #endif
     g_byte_array_free(outpkt, TRUE);
 }
