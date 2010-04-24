@@ -531,8 +531,9 @@ static void rtcp_read_cb(ATTR_UNUSED struct ev_loop *loop,
     uint8_t buffer[RTP_DEFAULT_MTU*2] = { 0, }; //FIXME just a quick hack...
     RTP_session *session = w->data;
     int n = Sock_read(session->transport.rtcp_sock, buffer,
-                      RTP_DEFAULT_MTU*2, NULL, 0);
-    rtcp_handle(session, buffer, n);
+                      RTP_DEFAULT_MTU*2, NULL, MSG_DONTWAIT);
+    if (n>0)
+        rtcp_handle(session, buffer, n);
 }
 
 /**
