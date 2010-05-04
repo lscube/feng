@@ -63,7 +63,7 @@ typedef struct feng {
     size_t connection_count;
 
     GSList *clients; //!< All the currently connected clients
-#if 1
+#ifdef HAVE_JSON
     size_t total_sent;
     size_t total_read;
 #endif

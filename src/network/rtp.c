@@ -419,7 +419,7 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
         session->octet_count += buffer->data_size;
 
         session->last_packet_send_time = time(NULL);
-#if 1
+#ifdef HAVE_JSON
         switch ( session->transport.protocol ) {
             case RTP_TCP:
                 // already took in account

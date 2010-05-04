@@ -179,7 +179,7 @@ typedef struct RTSP_Client {
     ev_io ev_io_read;
     ev_io ev_io_write;
 
-#if 1 //stats
+#ifdef HAVE_JSON //stats
     char *user_agent;
     size_t bytes_read;
     size_t bytes_sent;

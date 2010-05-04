@@ -109,7 +109,7 @@ void rtsp_read_cb(struct ev_loop *loop, ev_io *w,
 
     g_byte_array_append(rtsp->input, (guint8*)buffer, read_size);
 
-#if 1
+#ifdef HAVE_JSON
     rtsp->bytes_read += read_size;
     rtsp->srv->total_read += read_size;
 #endif
@@ -196,7 +196,7 @@ void rtsp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         }
         fnc_log(FNC_LOG_ERR, "Sock_write() error in rtsp_send()");
     }
-#if 1
+#ifdef HAVE_JSON
     rtsp->bytes_sent += outpkt->len;
     rtsp->srv->total_sent += outpkt->len;
 #endif
