@@ -484,6 +484,17 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     timestamp = package_timestamp/((double)tr->properties.clock_rate);
     marker = (packet[1]>>7);
 
+    // calculate the duration while consuming stale packets.
+    // This is an HACK that must be moved to Flux, here just to quick fix live problems
+    if (!tr->properties.frame_duration) {
+        if (tr->properties.dts) {
+            tr->properties.frame_duration = (timestamp - tr->properties.dts);
+        } else {
+            tr->properties.dts = timestamp;
+        }
+    }
+
+
 #if 0
     fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
             tr->info->mrl,
@@ -496,7 +507,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     mparser_buffer_write(tr,
                          timestamp,
                          package_start_time + delivery,
-                         0.0,
+                         tr->properties.frame_duration * 3,
                          marker,
                          packet+12, msg_len-12);
 

@@ -501,7 +501,9 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
                                 next->delivery;
             }
         } else {
-            if (marker)
+            if (session->track->properties.media_source == LIVE_SOURCE)
+                next_time += duration;
+            else if (marker)
                 next_time += duration;
         }
 
