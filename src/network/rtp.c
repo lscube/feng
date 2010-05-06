@@ -501,10 +501,8 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
                                 next->delivery;
             }
         } else {
-            if (session->track->properties.media_source == LIVE_SOURCE)
-                next_time += duration;
-            else if (marker)
-                next_time += duration;
+            /* Wait a bit of time to recover from buffer underrun */
+            next_time += duration * 3;
         }
 
         fnc_log(FNC_LOG_VERBOSE,

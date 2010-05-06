@@ -34,6 +34,8 @@
 #include "media/demuxer_module.h"
 #include "media/mediaparser.h"
 
+#define REQUIRED_FLUX_PROTOCOL_VERSION 3
+
 /**
  * @brief Uninitialisation function for the demuxer_sd fake parser
  *
@@ -416,6 +418,7 @@ static int sd_init(Resource * r)
 static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     double package_start_time;
     uint32_t package_timestamp;
+    double package_duration;
     double timestamp;
     double delivery;
     double delta;
@@ -449,6 +452,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     msg_buffer = g_malloc(attr.mq_msgsize);
 
     do {
+        unsigned int package_version;
         unsigned int package_start_dts;
         unsigned int package_dts;
 
@@ -464,12 +468,20 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
             return RESOURCE_OK;
         }
 
-        package_start_time = *((double*)msg_buffer);
-        package_dts = *((unsigned int*)(msg_buffer+sizeof(double)));
-        package_start_dts = *((unsigned int*)(msg_buffer+sizeof(double)+sizeof(unsigned int)));
+        package_version = *((unsigned int*)msg_buffer);
+        if (package_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
+            fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d\n",
+                                   tr->info->mrl, REQUIRED_FLUX_PROTOCOL_VERSION, package_version);
+            return RESOURCE_OK;
+        }
 
-        packet = msg_buffer+sizeof(double)+sizeof(unsigned int)*2;
-        msg_len -= (sizeof(double)+sizeof(unsigned int)*2);
+        package_start_time = *((double*)(msg_buffer+sizeof(unsigned int)));
+        package_dts = *((unsigned int*)(msg_buffer+sizeof(double)+sizeof(unsigned int)));
+        package_start_dts = *((unsigned int*)(msg_buffer+sizeof(double)+sizeof(unsigned int)*2));
+        package_duration = *((double*)(msg_buffer+sizeof(double)+sizeof(unsigned int)*3));
+
+        packet = msg_buffer+sizeof(double)*2+sizeof(unsigned int)*3;
+        msg_len -= (sizeof(double)*2+sizeof(unsigned int)*3);
 
         package_timestamp = ntohl(*(uint32_t*)(packet+4));
         delivery = (package_dts - package_start_dts)/((double)tr->properties.clock_rate);
@@ -481,19 +493,9 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
 #endif
     } while(delta > 1.0f);
 
+    tr->properties.frame_duration = package_duration/((double)tr->properties.clock_rate);
     timestamp = package_timestamp/((double)tr->properties.clock_rate);
     marker = (packet[1]>>7);
-
-    // calculate the duration while consuming stale packets.
-    // This is an HACK that must be moved to Flux, here just to quick fix live problems
-    if (!tr->properties.frame_duration) {
-        if (tr->properties.dts) {
-            tr->properties.frame_duration = (timestamp - tr->properties.dts);
-        } else {
-            tr->properties.dts = timestamp;
-        }
-    }
-
 
 #if 0
     fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
@@ -507,7 +509,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     mparser_buffer_write(tr,
                          timestamp,
                          package_start_time + delivery,
-                         tr->properties.frame_duration * 3,
+                         tr->properties.frame_duration,
                          marker,
                          packet+12, msg_len-12);
 
