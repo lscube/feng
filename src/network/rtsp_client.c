@@ -187,7 +187,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         return;
     }
 
-    fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted on socket: %d\n",
+    fnc_log(FNC_LOG_INFO, "Incoming connection accepted on socket: %d\n",
             Sock_fd(client_sock));
 
     rtsp = rtsp_client_new(srv);
