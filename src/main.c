@@ -146,6 +146,12 @@ static gboolean show_version(ATTR_UNUSED const gchar *option_name,
   exit(0);
 }
 
+static void fnc_nulllog(int level, const char *fmt, va_list args)
+{
+    return;
+}
+
+
 static gboolean command_environment(feng *srv, int argc, char **argv)
 {
     gchar *config_file = NULL;
@@ -210,7 +216,7 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
                           srv->srvconf.loglevel,
                           progname);
 
-        Sock_init(fn);
+        Sock_init(fnc_nulllog);
     }
 
     return true;

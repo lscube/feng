@@ -271,13 +271,11 @@ static gboolean RTSP_handle_new(RTSP_Client *rtsp) {
                 return false;
 
             case RFC822_Protocol_RTSP10:
-                fnc_log(FNC_LOG_INFO, "Incoming RTSP connection accepted");
                 rtsp->status = RFC822_State_RTSP_Headers;
                 break;
 
             case RFC822_Protocol_HTTP10:
             case RFC822_Protocol_HTTP11:
-                fnc_log(FNC_LOG_INFO, "Incoming HTTP connection accepted");
                 rtsp->status = RFC822_State_HTTP_Headers;
                 break;
             }
