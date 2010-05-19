@@ -135,6 +135,14 @@ gboolean HTTP_handle_headers(RTSP_Client *rtsp)
     if (!rtsp_connection_limit(rtsp, rtsp->pending_request))
         return false;
 
+#ifdef HAVE_JSON
+    if ( rtsp->pending_request->method_id == HTTP_Method_GET &&
+         strstr(rtsp->pending_request->object, "stats") ) {
+
+        feng_send_statistics(rtsp);
+        return false;
+    }
+#endif
     if ( rtsp->pending_request->method_id == HTTP_Method_POST ) {
         const char *http_session = rfc822_headers_lookup(rtsp->pending_request->headers, HTTP_Header_x_sessioncookie);
 

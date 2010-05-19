@@ -114,7 +114,7 @@ void rtp_session_gslist_free(GSList *sessions_list) {
 /**
  * @brief Do the work of filling an RTP session with data
  *
- * @param unued_data Unused
+ * @param unused_data Unused
  * @param session_p The session parameter from rtp_session_fill
  *
  *
@@ -283,9 +283,8 @@ void rtp_session_gslist_pause(GSList *sessions_list) {
  * @param buffer Buffer of which calculate timestamp
  * @return RTP Timestamp (in local endianess)
  */
-static inline uint32_t RTP_calc_rtptime(RTP_session *session,
-                                        int clock_rate,
-                                        MParserBuffer *buffer)
+static inline
+uint32_t rtptime(RTP_session *session, int clock_rate, MParserBuffer *buffer)
 {
     uint32_t calc_rtptime =
         (buffer->timestamp - session->range->begin_time) * clock_rate;
@@ -379,9 +378,8 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     const size_t packet_size = sizeof(RTP_packet) + buffer->data_size;
     RTP_packet *packet = g_malloc0(packet_size);
     Track *tr = session->track;
-    const uint32_t timestamp = RTP_calc_rtptime(session,
-                                                tr->properties.clock_rate,
-                                                buffer);
+    const uint32_t timestamp = rtptime(session, tr->properties.clock_rate,
+                                       buffer);
     gboolean sent = false;
 
     packet->version = 2;
@@ -413,7 +411,6 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     default:
         g_assert_not_reached();
     }
-
     if (!sent) {
         fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
     } else {
@@ -422,6 +419,16 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
         session->octet_count += buffer->data_size;
 
         session->last_packet_send_time = time(NULL);
+#ifdef HAVE_JSON
+        switch ( session->transport.protocol ) {
+            case RTP_TCP:
+                // already took in account
+                break;
+            default:
+                session->client->bytes_sent += sent;
+                session->srv->total_sent += sent;
+        }
+#endif
     }
     g_free(packet);
 }

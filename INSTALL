@@ -11,6 +11,10 @@ In order to build feng you need:
 - netembryo >= 0.1.0 [4]
 - libev >= 3.48 [5]
 
+Optionally we additionally use:
+
+- json-c [6] to provide realtime statistics
+
 + Build instructions
 
 The following steps will be enough to build and install feng from release
@@ -33,8 +37,8 @@ sources.
 In order to use the live sources for our scm you need the following additional
 softwares:
 
-- git >= 1.5 [6]
-- autotools (automake >= 1.9, autoconf >= 2.61) [7]
+- git >= 1.5 [7]
+- autotools (automake >= 1.9, autoconf >= 2.61) [8]
 
 The sources reside at git://lscube.org/feng.git you can fetch them
 by issuing
@@ -67,7 +71,9 @@ The standard build instruction applies form this step.
 
 [5] http://software.schmorp.de/pkg/libev.html   -- Libev
 
-[6] http://git.or.cz                            -- Git Version Control System
+[6] http://oss.metaparadigm.com/json-c/         -- A JSON implementation in C
 
-[7] http://www.gnu.org/software/automake/       -- GNU automake
+[7] http://git.or.cz                            -- Git Version Control System
+
+[8] http://www.gnu.org/software/automake/       -- GNU automake
     http://www.gnu.org/software/autoconf/       -- GNU autoconf

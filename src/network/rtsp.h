@@ -178,6 +178,13 @@ typedef struct RTSP_Client {
 
     ev_io ev_io_read;
     ev_io ev_io_write;
+
+#ifdef HAVE_JSON //stats
+    char *user_agent;
+    size_t bytes_read;
+    size_t bytes_sent;
+#endif
+
 } RTSP_Client;
 
 RTSP_Client *rtsp_client_new(struct feng *srv);
@@ -317,6 +324,7 @@ gboolean HTTP_handle_content(RTSP_Client *rtsp);
 gboolean HTTP_handle_idle(RTSP_Client *rtsp);
 void http_tunnel_initialise();
 
+void feng_send_statistics(RTSP_Client *rtsp);
 /**
  * @}
  */
