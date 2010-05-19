@@ -114,6 +114,7 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
 {
     gboolean is_sctp = !!s->is_sctp;
     Sock *sock;
+    int on = 1;
 
     if (is_sctp)
         sock = Sock_bind(host, port, NULL, SCTP, NULL);
@@ -137,10 +138,21 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
             ((host == NULL)? "all interfaces" : host));
 
     if(Sock_listen(sock, SOMAXCONN)) {
-        fnc_log(FNC_LOG_ERR, "Sock_listen() error for TCP socket.");
-        fprintf(stderr, "[fatal] Sock_listen() error for TCP socket.\n");
+        fnc_log(FNC_LOG_ERR, "Cannot listen on port %s (%s) on %s",
+                port,
+                (is_sctp? "SCTP" : "TCP"),
+                ((host == NULL)? "all interfaces" : host));
+        fprintf(stderr, "[fatal] Cannot listen on port %s (%s) on %s",
+                port,
+                (is_sctp? "SCTP" : "TCP"),
+                ((host == NULL)? "all interfaces" : host));
         return false;
     }
+    if (setsockopt(Sock_fd(sock),
+                   SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
+        fnc_log(FNC_LOG_WARN, "SO_REUSEADDR unavailable");
+    }
+
     sock->data = srv;
     listener->data = sock;
     ev_io_init(listener,
