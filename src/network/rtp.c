@@ -470,14 +470,20 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
         /* We wait a bit of time to get the data but before it is
          * expired.
          */
+        double sleep_for = 0.1;
+
         if (resource->eor) {
             fnc_log(FNC_LOG_INFO, "[rtp] Stream Finished");
             rtcp_send_sr(session, BYE);
             return;
         }
-        next_time += 0.03; // assumed to be enough
-        fnc_log(FNC_LOG_VERBOSE, "[%s] nothing to read\n",
-                session->track->properties.encoding_name);
+
+        if (session->track->properties.frame_duration > 0)
+            sleep_for = session->track->properties.frame_duration * 3; // assumed to be enough
+
+        next_time += sleep_for;
+        fnc_log(FNC_LOG_INFO, "[%s] nothing to read, waiting %f...",
+                session->track->properties.encoding_name, sleep_for);
     } else {
         MParserBuffer *next;
         double delivery  = buffer->delivery;
@@ -502,7 +508,11 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
             }
         } else {
             /* Wait a bit of time to recover from buffer underrun */
-            next_time += duration * 3;
+            double sleep_for = duration ? duration * 3 : 0.1;
+
+            next_time += sleep_for;
+            fnc_log(FNC_LOG_INFO, "[%s] next packet not available, waiting %f...",
+                    session->track->properties.encoding_name, sleep_for);
         }
 
         fnc_log(FNC_LOG_VERBOSE,
