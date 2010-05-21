@@ -131,7 +131,8 @@ static void rtp_session_fill_cb(ATTR_UNUSED gpointer unused_data,
     const gulong buffered_frames = resource->srv->srvconf.buffered_frames;
 
     while ( g_atomic_int_get(&resource->eor) == 0 &&
-            (unseen = bq_consumer_unseen(consumer)) < buffered_frames &&
+            ((unseen = bq_consumer_unseen(consumer)) < buffered_frames ||
+             resource->demuxer->info->source == LIVE_SOURCE) &&
             session->fill_pool != NULL ) {
 #if 0
         fprintf(stderr, "calling read_packet from %p for %p[%s] (%u/%d)\n",
