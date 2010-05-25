@@ -45,7 +45,7 @@
  * @todo The size parameter and the return value should be size_t
  *       instead of int.
  */
-static int rtsp_sock_read(RTSP_Client *rtsp, int *stream, char *buffer, int size)
+static int rtsp_sock_read(RTSP_Client *rtsp, int *stream, guint8 *buffer, int size)
 {
     Sock *sock = rtsp->sock;
     int n;
@@ -80,7 +80,7 @@ void rtsp_interleaved(RTSP_Client *rtsp, int channel, uint8_t *data, size_t len)
 void rtsp_read_cb(struct ev_loop *loop, ev_io *w,
                   ATTR_UNUSED int revents)
 {
-    char buffer[RTSP_BUFFERSIZE + 1] = { 0, };    /* +1 to control the final '\0' */
+    guint8 buffer[RTSP_BUFFERSIZE + 1] = { 0, };    /* +1 to control the final '\0' */
     int read_size;
     gint channel = 0;
     RTSP_Client *rtsp = w->data;
