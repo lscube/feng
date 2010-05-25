@@ -119,26 +119,6 @@ RFC822_Response *rfc822_response_new(const RFC822_Request *request,
 void rfc822_response_send(struct RTSP_Client *client, RFC822_Response *response);
 
 /**
- * @brief Create and send a response in a single function call
- * @ingroup rtsp_response
- *
- * @param req Request object to respond to
- * @param proto The protocol to use for the response
- * @param code Status code for the response
- *
- * This function is used to avoid creating and sending a new response when just
- * sending out an error response.
- */
-static inline void rfc822_quick_response(struct RTSP_Client *client, RFC822_Request *req,
-                                         RFC822_Protocol proto, int code)
-{
-    RFC822_Response *response = rfc822_response_new(req, code);
-    response->proto = proto;
-    rfc822_response_send(client, response);
-}
-
-
-/**
  * @brief Creates a new hash table for handling RFC822 headers.
  *
  * @return A new GHashTable object with direct hash and g_free as
@@ -204,6 +184,28 @@ static inline void rfc822_headers_destroy(GHashTable *headers)
 {
     if ( headers )
         g_hash_table_destroy(headers);
+}
+
+/**
+ * @brief Create and send a response in a single function call
+ * @ingroup rtsp_response
+ *
+ * @param req Request object to respond to
+ * @param proto The protocol to use for the response
+ * @param code Status code for the response
+ *
+ * This function is used to avoid creating and sending a new response when just
+ * sending out an error response.
+ */
+static inline void rfc822_quick_response(struct RTSP_Client *client, RFC822_Request *req,
+                                         RFC822_Protocol proto, int code)
+{
+    RFC822_Response *response = rfc822_response_new(req, code);
+    response->proto = proto;
+    rfc822_headers_set(response->headers,
+                       HTTP_Header_Connection,
+                       strdup("close"));
+    rfc822_response_send(client, response);
 }
 
 #endif /* RFC822_PROTO_H__ */
