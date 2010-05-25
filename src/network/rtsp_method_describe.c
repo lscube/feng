@@ -295,15 +295,6 @@ static GString *sdp_session_descr(struct feng *srv, const Url *url)
 }
 
 /**
- * Sends the reply for the describe method
- * @param req The client request for the method
- * @param descr the description string to send
- */
-static void send_describe_reply(RFC822_Request *req, GString *descr)
-{
-}
-
-/**
  * RTSP DESCRIBE method handler
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
