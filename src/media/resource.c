@@ -233,10 +233,17 @@ r_open_hashed(struct feng *srv, gchar *mrl, const Demuxer *dmx)
     g_mutex_lock(shared_resources_lock);
     r = g_hash_table_lookup(shared_resources, mrl);
 
+    /* only free mrl if it was found already in the hash table,
+     * otherwise we stored it for later usage!
+     */
     if (!r) {
-        r = r_open_direct(srv, mrl, dmx);
-        if (r) g_hash_table_insert(shared_resources, mrl, r);
-    }
+        if ( (r = r_open_direct(srv, mrl, dmx)) != NULL )
+            g_hash_table_insert(shared_resources, mrl, r);
+        else
+            g_free(mrl);
+    } else
+        g_free(mrl);
+
     if (r) r->count++;
     g_mutex_unlock(shared_resources_lock);
 
@@ -267,8 +274,14 @@ Resource *r_open(struct feng *srv, const char *inner_path)
         fnc_log(FNC_LOG_DEBUG,
                 "[MT] Could not find a valid demuxer for resource %s\n",
                 mrl);
-        goto error;
+        g_free(mrl);
+        return NULL;
     }
+
+    /* From here on, we don't care any more of the doom of the mrl
+     * variable, the called functions will save it for use later, or
+     * will free it as needed.
+     */
 
     fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource"
                                "\"%s\"\n", dmx->info->name, mrl);
@@ -287,11 +300,7 @@ Resource *r_open(struct feng *srv, const char *inner_path)
             break;
     }
 
-    if(r) return r;
-
- error:
-    g_free(mrl);
-    return NULL;
+    return r;
 }
 
 /**
