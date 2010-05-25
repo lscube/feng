@@ -192,7 +192,7 @@ gboolean HTTP_handle_content(RTSP_Client *rtsp)
     return false;
 }
 
-gboolean HTTP_handle_idle(RTSP_Client *rtsp)
+gboolean HTTP_handle_idle(ATTR_UNUSED RTSP_Client *rtsp)
 {
     return false;
 }

@@ -146,7 +146,9 @@ static gboolean show_version(ATTR_UNUSED const gchar *option_name,
   exit(0);
 }
 
-static void fnc_nulllog(int level, const char *fmt, va_list args)
+static void fnc_nulllog(ATTR_UNUSED int level,
+                        ATTR_UNUSED const char *fmt,
+                        ATTR_UNUSED va_list args)
 {
     return;
 }
