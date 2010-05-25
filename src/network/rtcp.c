@@ -385,8 +385,7 @@ gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type)
  * @brief parse Receiver Reports and update the statistics accordingly
  */
 
-static void parse_receiver_report(RTP_session *session,
-                                  uint8_t *packet, int count)
+static void parse_receiver_report(uint8_t *packet, int count)
 {
     int ssrc = ntohl(((RTCP_header_RR*)packet)->ssrc);
     fnc_log(FNC_LOG_VERBOSE, "[RTCP] Receiver report for %u", ssrc);
@@ -432,7 +431,7 @@ void rtcp_handle(RTP_session *session, uint8_t *packet, size_t len)
         switch (rtcp->pt) {
             case SR:
             case RR:
-                parse_receiver_report(session, packet+4, rtcp->count);
+                parse_receiver_report(packet+4, rtcp->count);
             case SDES:
             default:
                 break;
