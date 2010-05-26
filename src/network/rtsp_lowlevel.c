@@ -141,7 +141,7 @@ void rtsp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     }
 
     if ( neb_sock_write(rtsp->sock, outpkt->data, outpkt->len,
-                    NULL, MSG_DONTWAIT) < outpkt->len) {
+                        MSG_DONTWAIT) < outpkt->len) {
         fnc_perror("");
         if ( errno == EAGAIN )
             return;

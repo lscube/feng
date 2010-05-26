@@ -329,8 +329,7 @@ static gboolean rtp_packet_send_direct(RTP_session *session, RTP_packet *packet,
                                        size_t packet_size)
 {
     return neb_sock_write(session->transport.rtp_sock, packet,
-                      packet_size, NULL, MSG_DONTWAIT
-                      | MSG_EOR) == packet_size;
+                          packet_size, MSG_DONTWAIT | MSG_EOR) == packet_size;
 }
 
 static gboolean rtp_packet_send_interleaved(RTP_session *session, RTP_packet *packet,
@@ -357,11 +356,9 @@ static gboolean rtp_packet_send_interleaved(RTP_session *session, RTP_packet *pa
 static gboolean rtp_packet_send_sctp(RTP_session *session, RTP_packet *packet,
                                      size_t packet_size)
 {
-    struct sctp_sndrcvinfo sctp_info = {
-        .sinfo_stream = session->transport.rtp_ch
-    };
-    return neb_sock_write(session->client->sock, packet, packet_size,
-                      &sctp_info, MSG_DONTWAIT | MSG_EOR) == packet_size;
+    return neb_sock_write_stream(session->client->sock, packet, packet_size,
+                                 MSG_DONTWAIT | MSG_EOR, session->transport.rtp_ch)
+        == packet_size;
 }
 #endif
 

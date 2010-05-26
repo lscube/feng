@@ -157,7 +157,7 @@ static gboolean rtcp_send_direct(RTP_session * session, GByteArray *buffer)
 
     if (FD_ISSET(rtcp_sock->fd, &wset)) {
         if (neb_sock_write(rtcp_sock, buffer->data,
-            buffer->len, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
+                           buffer->len, MSG_EOR | MSG_DONTWAIT) < 0)
             fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
         fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
     }
@@ -186,12 +186,8 @@ static gboolean rtcp_send_interleaved(RTP_session *session, GByteArray *buffer)
 #ifdef ENABLE_SCTP
 static gboolean rtcp_send_sctp(RTP_session *session, GByteArray *buffer)
 {
-    struct sctp_sndrcvinfo sctp_info = {
-        .sinfo_stream = session->transport.rtcp_ch
-    };
-
-    if ( neb_sock_write(session->client->sock, buffer->data, buffer->len,
-                    &sctp_info, MSG_EOR | MSG_DONTWAIT ) < 0 )
+    if ( neb_sock_write_stream(session->client->sock, buffer->data, buffer->len,
+                               MSG_EOR | MSG_DONTWAIT, session->transport.rtcp_ch ) < 0 )
         fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
 
     g_byte_array_free(buffer, true);
