@@ -142,60 +142,11 @@ void rtsp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 
     if ( Sock_write(rtsp->sock, outpkt->data, outpkt->len,
                     NULL, MSG_DONTWAIT) < outpkt->len) {
-        switch (errno) {
-            case EACCES:
-                fnc_log(FNC_LOG_ERR, "EACCES error");
-                break;
-            case EAGAIN:
-                fnc_log(FNC_LOG_ERR, "EAGAIN error");
-                return; // Don't close socket if tx buffer is full!
-            case EBADF:
-                fnc_log(FNC_LOG_ERR, "EBADF error");
-                break;
-            case ECONNRESET:
-                fnc_log(FNC_LOG_ERR, "ECONNRESET error");
-                break;
-            case EDESTADDRREQ:
-                fnc_log(FNC_LOG_ERR, "EDESTADDRREQ error");
-                break;
-            case EFAULT:
-                fnc_log(FNC_LOG_ERR, "EFAULT error");
-                break;
-            case EINTR:
-                fnc_log(FNC_LOG_ERR, "EINTR error");
-                break;
-            case EINVAL:
-                fnc_log(FNC_LOG_ERR, "EINVAL error");
-                break;
-            case EISCONN:
-                fnc_log(FNC_LOG_ERR, "EISCONN error");
-                break;
-            case EMSGSIZE:
-                fnc_log(FNC_LOG_ERR, "EMSGSIZE error");
-                break;
-            case ENOBUFS:
-                fnc_log(FNC_LOG_ERR, "ENOBUFS error");
-                break;
-            case ENOMEM:
-                fnc_log(FNC_LOG_ERR, "ENOMEM error");
-                break;
-            case ENOTCONN:
-                fnc_log(FNC_LOG_ERR, "ENOTCONN error");
-                break;
-            case ENOTSOCK:
-                fnc_log(FNC_LOG_ERR, "ENOTSOCK error");
-                break;
-            case EOPNOTSUPP:
-                fnc_log(FNC_LOG_ERR, "EOPNOTSUPP error");
-                break;
-            case EPIPE:
-                fnc_log(FNC_LOG_ERR, "EPIPE error");
-                break;
-            default:
-                break;
-        }
-        fnc_log(FNC_LOG_ERR, "Sock_write() error in rtsp_send()");
+        fnc_perror("");
+        if ( errno == EAGAIN )
+            return;
     }
+
 #ifdef HAVE_JSON
     rtsp->bytes_sent += outpkt->len;
     rtsp->srv->total_sent += outpkt->len;
