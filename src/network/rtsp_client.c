@@ -178,7 +178,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     ev_timer *timer;
     RTSP_Client *rtsp;
 
-    if ( (client_sock = Sock_accept(sock, NULL)) == NULL )
+    if ( (client_sock = Sock_accept(sock)) == NULL )
         return;
 
 // Paranoid safeguard

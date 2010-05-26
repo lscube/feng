@@ -117,9 +117,9 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
     int on = 1;
 
     if (is_sctp)
-        sock = Sock_bind(host, port, NULL, SCTP, NULL);
+        sock = Sock_bind(host, port, NULL, SCTP);
     else
-        sock = Sock_bind(host, port, NULL, TCP, NULL);
+        sock = Sock_bind(host, port, NULL, TCP);
     if(!sock) {
         fnc_log(FNC_LOG_ERR,"Sock_bind() error for port %s.", port);
         fprintf(stderr,

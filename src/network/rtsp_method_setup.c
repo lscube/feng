@@ -54,7 +54,7 @@ static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
      * stream, we fall in the latest case described. We thus *can*
      * avoid using the even-odd adjacent ports pair for RTP-RTCP.
      */
-    Sock *firstsock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP, NULL);
+    Sock *firstsock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP);
     if ( firstsock == NULL )
         return RTSP_UnsupportedTransport;
 
@@ -62,16 +62,16 @@ static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
     case 0:
         transport->rtp_sock = firstsock;
         snprintf(port_buffer, 8, "%d", firstsock->local_port+1);
-        transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
+        transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP);
         if ( transport->rtcp_sock == NULL )
-            transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP, NULL);
+            transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP);
         break;
     case 1:
         transport->rtcp_sock = firstsock;
         snprintf(port_buffer, 8, "%d", firstsock->local_port-1);
-        transport->rtp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
+        transport->rtp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP);
         if ( transport->rtp_sock == NULL )
-            transport->rtp_sock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP, NULL);
+            transport->rtp_sock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP);
         break;
     }
 
