@@ -201,7 +201,6 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
 #ifndef CLEANUP_DESTRUCTOR
         gchar *progname;
 #endif
-        fnc_log_t fn;
         int view_log;
 
         progname = g_path_get_basename(argv[0]);
@@ -213,10 +212,10 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
         else
             view_log = FNC_LOG_FILE;
 
-        fn = fnc_log_init(srv->srvconf.errorlog_file->ptr,
-                          view_log,
-                          srv->srvconf.loglevel,
-                          progname);
+        fnc_log_init(srv->srvconf.errorlog_file->ptr,
+                     view_log,
+                     srv->srvconf.loglevel,
+                     progname);
 
         Sock_init(fnc_nulllog);
     }

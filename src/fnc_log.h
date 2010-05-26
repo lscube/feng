@@ -42,8 +42,6 @@ enum {
     FNC_LOG_VERBOSE,    //!< Overly verbose debug
 };
 
-typedef void (*fnc_log_t)(int, const char*, va_list);
-
 void fnc_log(int level, const char *fmt, ...);
 
 #ifdef TRACE
@@ -51,6 +49,6 @@ void fnc_log(int level, const char *fmt, ...);
     fnc_log(level, "[%s - %d]" fmt, __FILE__, __LINE__ , ## string)
 #endif
 
-fnc_log_t fnc_log_init(char *file, int out, int level, char *name);
+void fnc_log_init(char *file, int out, int level, char *name);
 
 #endif // FN_FNC_LOG_H

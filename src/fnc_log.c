@@ -126,14 +126,12 @@ static void fnc_syslog(int level, const char *fmt, va_list args)
 static void (*fnc_vlog)(int, const char*, va_list) = fnc_errlog;
 
 /**
- * Set the logger and returns the function pointer to be feed to the
- * Sock_init
+ * Initialize the logger.
  * @param file path to the logfile
  * @param out specifies the logger function
  * @param name specifies the application name
- * @return the logger currently in use
  * */
-fnc_log_t fnc_log_init(char *file, int out, int level, char *name)
+void fnc_log_init(char *file, int out, int level, char *name)
 {
     fd = stderr;
     log_level = level;
@@ -150,7 +148,6 @@ fnc_log_t fnc_log_init(char *file, int out, int level, char *name)
         case FNC_LOG_OUT:
             break;
     }
-    return fnc_vlog;
 }
 
 /**
