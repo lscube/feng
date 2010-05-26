@@ -75,8 +75,8 @@ static void rtp_session_free(gpointer session_gen,
         {
             ev_io_stop(session->srv->loop, &session->transport.rtcp_reader);
 
-            Sock_close(session->transport.rtp_sock);
-            Sock_close(session->transport.rtcp_sock);
+            neb_sock_close(session->transport.rtp_sock);
+            neb_sock_close(session->transport.rtcp_sock);
         }
         break;
     case RTP_TCP:
@@ -328,7 +328,7 @@ typedef struct {
 static gboolean rtp_packet_send_direct(RTP_session *session, RTP_packet *packet,
                                        size_t packet_size)
 {
-    return Sock_write(session->transport.rtp_sock, packet,
+    return neb_sock_write(session->transport.rtp_sock, packet,
                       packet_size, NULL, MSG_DONTWAIT
                       | MSG_EOR) == packet_size;
 }
@@ -360,7 +360,7 @@ static gboolean rtp_packet_send_sctp(RTP_session *session, RTP_packet *packet,
     struct sctp_sndrcvinfo sctp_info = {
         .sinfo_stream = session->transport.rtp_ch
     };
-    return Sock_write(session->client->sock, packet, packet_size,
+    return neb_sock_write(session->client->sock, packet, packet_size,
                       &sctp_info, MSG_DONTWAIT | MSG_EOR) == packet_size;
 }
 #endif
@@ -548,7 +548,7 @@ static void rtcp_read_cb(ATTR_UNUSED struct ev_loop *loop,
 {
     uint8_t buffer[RTP_DEFAULT_MTU*2] = { 0, }; //FIXME just a quick hack...
     RTP_session *session = w->data;
-    int n = Sock_read(session->transport.rtcp_sock, buffer,
+    int n = neb_sock_read(session->transport.rtcp_sock, buffer,
                       RTP_DEFAULT_MTU*2, NULL, MSG_DONTWAIT);
     if (n>0)
         rtcp_handle(session, buffer, n);
@@ -606,7 +606,7 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
     case RTP_UDP:
         io->data = rtp_s;
         ev_io_init(io, rtcp_read_cb,
-                   Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
+                   rtp_s->transport.rtcp_sock->fd, EV_READ);
         break;
     case RTP_TCP:
     case RTP_SCTP:

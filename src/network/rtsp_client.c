@@ -58,7 +58,7 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
     ev_async_stop(srv->loop, &rtsp->ev_sig_disconnect);
     ev_timer_stop(srv->loop, &rtsp->ev_timeout);
 
-    Sock_close(rtsp->sock);
+    neb_sock_close(rtsp->sock);
     srv->connection_count--;
 
     rtsp_session_free(rtsp->session);
@@ -178,17 +178,17 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     ev_timer *timer;
     RTSP_Client *rtsp;
 
-    if ( (client_sock = Sock_accept(sock)) == NULL )
+    if ( (client_sock = neb_sock_accept(sock)) == NULL )
         return;
 
 // Paranoid safeguard
     if (srv->connection_count >= ONE_FORK_MAX_CONNECTION*2) {
-        Sock_close(client_sock);
+        neb_sock_close(client_sock);
         return;
     }
 
     fnc_log(FNC_LOG_INFO, "Incoming connection accepted on socket: %d\n",
-            Sock_fd(client_sock));
+            client_sock->fd);
 
     rtsp = rtsp_client_new(srv);
     rtsp->sock = client_sock;
@@ -199,13 +199,13 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 
     io = &rtsp->ev_io_read;
     io->data = rtsp;
-    ev_io_init(io, rtsp_read_cb, Sock_fd(rtsp->sock), EV_READ);
+    ev_io_init(io, rtsp_read_cb, rtsp->sock->fd, EV_READ);
     ev_io_start(srv->loop, io);
 
     /* to be started/stopped when necessary */
     io = &rtsp->ev_io_write;
     io->data = rtsp;
-    ev_io_init(io, rtsp_write_cb, Sock_fd(rtsp->sock), EV_WRITE);
+    ev_io_init(io, rtsp_write_cb, rtsp->sock->fd, EV_WRITE);
 
     async = &rtsp->ev_sig_disconnect;
     async->data = rtsp;

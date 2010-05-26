@@ -69,7 +69,7 @@ static GPtrArray *listening_sockets;
 static void feng_bound_socket_close(gpointer element,
                                     ATTR_UNUSED gpointer user_data)
 {
-    Sock_close((Sock*)element);
+    neb_sock_close((Sock*)element);
 }
 
 /**
@@ -117,13 +117,13 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
     int on = 1;
 
     if (is_sctp)
-        sock = Sock_bind(host, port, NULL, SCTP);
+        sock = neb_sock_bind(host, port, NULL, SCTP);
     else
-        sock = Sock_bind(host, port, NULL, TCP);
+        sock = neb_sock_bind(host, port, NULL, TCP);
     if(!sock) {
-        fnc_log(FNC_LOG_ERR,"Sock_bind() error for port %s.", port);
+        fnc_log(FNC_LOG_ERR,"neb_sock_bind() error for port %s.", port);
         fprintf(stderr,
-                "[fatal] Sock_bind() error in main() for port %s.\n",
+                "[fatal] neb_sock_bind() error in main() for port %s.\n",
                 port);
         return false;
     }
@@ -137,7 +137,7 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
             (is_sctp? "SCTP" : "TCP"),
             ((host == NULL)? "all interfaces" : host));
 
-    if(Sock_listen(sock, SOMAXCONN)) {
+    if(neb_sock_listen(sock, SOMAXCONN)) {
         fnc_log(FNC_LOG_ERR, "Cannot listen on port %s (%s) on %s",
                 port,
                 (is_sctp? "SCTP" : "TCP"),
@@ -148,7 +148,7 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
                 ((host == NULL)? "all interfaces" : host));
         return false;
     }
-    if (setsockopt(Sock_fd(sock),
+    if (setsockopt(sock->fd,
                    SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
         fnc_log(FNC_LOG_WARN, "SO_REUSEADDR unavailable");
     }
@@ -157,7 +157,7 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
     listener->data = sock;
     ev_io_init(listener,
                rtsp_client_incoming_cb,
-               Sock_fd(sock), EV_READ);
+               sock->fd, EV_READ);
     ev_io_start(srv->loop, listener);
 
     return true;

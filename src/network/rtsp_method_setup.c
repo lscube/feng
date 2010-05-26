@@ -54,7 +54,7 @@ static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
      * stream, we fall in the latest case described. We thus *can*
      * avoid using the even-odd adjacent ports pair for RTP-RTCP.
      */
-    Sock *firstsock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP);
+    Sock *firstsock = neb_sock_bind(rtsp->sock->local_host, NULL, NULL, UDP);
     if ( firstsock == NULL )
         return RTSP_UnsupportedTransport;
 
@@ -62,30 +62,30 @@ static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
     case 0:
         transport->rtp_sock = firstsock;
         snprintf(port_buffer, 8, "%d", firstsock->local_port+1);
-        transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP);
+        transport->rtcp_sock = neb_sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP);
         if ( transport->rtcp_sock == NULL )
-            transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP);
+            transport->rtcp_sock = neb_sock_bind(rtsp->sock->local_host, NULL, NULL, UDP);
         break;
     case 1:
         transport->rtcp_sock = firstsock;
         snprintf(port_buffer, 8, "%d", firstsock->local_port-1);
-        transport->rtp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP);
+        transport->rtp_sock = neb_sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP);
         if ( transport->rtp_sock == NULL )
-            transport->rtp_sock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP);
+            transport->rtp_sock = neb_sock_bind(rtsp->sock->local_host, NULL, NULL, UDP);
         break;
     }
 
     if ( transport->rtp_sock == NULL ||
          transport->rtcp_sock == NULL ||
          ( snprintf(port_buffer, 8, "%d", client_rtp_port) != 0 &&
-           Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                         transport->rtp_sock, UDP) == NULL ) ||
+           neb_sock_connect (neb_sock_remote_host(rtsp->sock), port_buffer,
+                             transport->rtp_sock, UDP) == NULL ) ||
          ( snprintf(port_buffer, 8, "%d", client_rtcp_port) != 0 &&
-           Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                         transport->rtcp_sock, UDP) == NULL )
+           neb_sock_connect (neb_sock_remote_host(rtsp->sock), port_buffer,
+                             transport->rtcp_sock, UDP) == NULL )
          ) {
-        Sock_close(transport->rtp_sock);
-        Sock_close(transport->rtcp_sock);
+        neb_sock_close(transport->rtp_sock);
+        neb_sock_close(transport->rtcp_sock);
         return RTSP_UnsupportedTransport;
     }
 
@@ -282,14 +282,14 @@ static void send_setup_reply(RTSP_Client *rtsp, RFC822_Request *req, RTSP_sessio
             g_string_append_printf(transport,
                     "RTP/AVP;unicast;source=%s;"
                     "client_port=%d-%d;server_port=",
-                    get_local_host(rtsp->sock),
-                    get_remote_port(rtp_s->transport.rtp_sock),
-                    get_remote_port(rtp_s->transport.rtcp_sock));
+                    neb_sock_local_host(rtsp->sock),
+                    neb_sock_remote_port(rtp_s->transport.rtp_sock),
+                    neb_sock_remote_port(rtp_s->transport.rtcp_sock));
         }
 
         g_string_append_printf(transport, "%d-%d",
-                               get_local_port(rtp_s->transport.rtp_sock),
-                               get_local_port(rtp_s->transport.rtcp_sock));
+                               neb_sock_local_port(rtp_s->transport.rtp_sock),
+                               neb_sock_local_port(rtp_s->transport.rtcp_sock));
 
         break;
     case RTP_TCP:

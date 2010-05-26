@@ -148,15 +148,15 @@ static gboolean rtcp_send_direct(RTP_session * session, GByteArray *buffer)
     t.tv_sec = 0;
     t.tv_usec = 1000;
 
-    FD_SET(Sock_fd(rtcp_sock), &wset);
-    if (select(Sock_fd(rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
+    FD_SET(rtcp_sock->fd, &wset);
+    if (select(rtcp_sock->fd + 1, 0, &wset, 0, &t) < 0) {
         fnc_log(FNC_LOG_ERR, "select error: %s\n", strerror(errno));
         g_byte_array_free(buffer, true);
         return false;
     }
 
-    if (FD_ISSET(Sock_fd(rtcp_sock), &wset)) {
-        if (Sock_write(rtcp_sock, buffer->data,
+    if (FD_ISSET(rtcp_sock->fd, &wset)) {
+        if (neb_sock_write(rtcp_sock, buffer->data,
             buffer->len, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
             fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
         fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
@@ -190,7 +190,7 @@ static gboolean rtcp_send_sctp(RTP_session *session, GByteArray *buffer)
         .sinfo_stream = session->transport.rtcp_ch
     };
 
-    if ( Sock_write(session->client->sock, buffer->data, buffer->len,
+    if ( neb_sock_write(session->client->sock, buffer->data, buffer->len,
                     &sctp_info, MSG_EOR | MSG_DONTWAIT ) < 0 )
         fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
 

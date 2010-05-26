@@ -51,16 +51,16 @@ static int rtsp_sock_read(RTSP_Client *rtsp, int *stream, guint8 *buffer, int si
     int n;
 #ifdef ENABLE_SCTP
     struct sctp_sndrcvinfo sctp_info;
-    if (Sock_type(sock) == SCTP) {
+    if (sock->socktype == SCTP) {
         memset(&sctp_info, 0, sizeof(sctp_info));
-        n = Sock_read(sock, buffer, size, &sctp_info, 0);
+        n = neb_sock_read(sock, buffer, size, &sctp_info, 0);
         *stream = sctp_info.sinfo_stream;
         fnc_log(FNC_LOG_DEBUG,
-            "Sock_read() received %d bytes from sctp stream %d\n", n, stream);
+            "neb_sock_read() received %d bytes from sctp stream %d\n", n, stream);
     } else    // RTSP protocol is TCP
 #endif    // ENABLE_SCTP
 
-    n = Sock_read(sock, buffer, size, NULL, 0);
+    n = neb_sock_read(sock, buffer, size, NULL, 0);
 
     return n;
 }
@@ -140,7 +140,7 @@ void rtsp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         return;
     }
 
-    if ( Sock_write(rtsp->sock, outpkt->data, outpkt->len,
+    if ( neb_sock_write(rtsp->sock, outpkt->data, outpkt->len,
                     NULL, MSG_DONTWAIT) < outpkt->len) {
         fnc_perror("");
         if ( errno == EAGAIN )
