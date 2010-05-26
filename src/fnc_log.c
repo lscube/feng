@@ -162,3 +162,22 @@ void fnc_log(int level, const char *fmt, ...) {
     fnc_vlog(level, fmt, vl);
     va_end(vl);
 }
+
+/**
+ * @brief Wrapper function to simulate perror() on the fnc_log
+ *
+ * @param errno_val The value of errno to call this for
+ * @param function The function this error occurred on
+ * @param comment An optional comment on where this happened (use "" for none)
+ */
+void _fnc_perror(int errno_val, const char *function, const char *comment)
+{
+    char errbuffer[512];
+    if ( strerror_r(errno_val, errbuffer, sizeof(errbuffer)-1) == 0 )
+        fnc_log(FNC_LOG_ERR, "%s%s%s: %s", function,
+                *comment ? " " : "", comment,
+                errbuffer);
+    else
+        fnc_log(FNC_LOG_ERR, "%s %s: unknown error", function,
+                *comment ? " " : "", comment);
+}

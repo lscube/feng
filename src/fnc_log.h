@@ -49,14 +49,9 @@ void fnc_log(int level, const char *fmt, ...);
     fnc_log(level, "[%s - %d]" fmt, __FILE__, __LINE__ , ## string)
 #endif
 
-#define fnc_perror(comment)                                             \
-    do {                                                                \
-        char errbuffer[512];                                            \
-        if ( strerror_r(errno, errbuffer, sizeof(errbuffer)-1) == 0 )   \
-            fnc_log(FNC_LOG_ERR, "%s %s: %s", __func__, comment, errbuffer); \
-        else                                                            \
-            fnc_log(FNC_LOG_ERR, "%s %s: unknown error", __func__, comment); \
-    } while(0)
+void _fnc_perror(int errno_val, const char *function, const char *comment);
+
+#define fnc_perror(comment) _fnc_perror(errno, __func__, comment)
 
 void fnc_log_init(char *file, int out, int level, char *name);
 
