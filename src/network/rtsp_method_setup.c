@@ -99,10 +99,14 @@ static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
         }
     }
 
-    if ( Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                       transport->rtp_sock, UDP, NULL) == NULL ||
-         Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                       transport->rtcp_sock, UDP, NULL) == NULL ) {
+    if ( ( snprintf(port_buffer, 8, "%d", rtp_port) != 0 &&
+           Sock_connect (get_remote_host(rtsp->sock), port_buffer,
+                         transport->rtp_sock, UDP, NULL) == NULL )
+         ||
+         ( snprintf(port_buffer, 8, "%d", rtcp_port) != 0 &&
+           Sock_connect (get_remote_host(rtsp->sock), port_buffer,
+                         transport->rtcp_sock, UDP, NULL) == NULL )
+         ) {
         Sock_close(transport->rtp_sock);
         Sock_close(transport->rtcp_sock);
         return RTSP_UnsupportedTransport;
