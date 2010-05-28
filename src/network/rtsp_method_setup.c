@@ -40,70 +40,47 @@
  */
 static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
                                            RTP_transport *transport,
-                                           uint16_t rtp_port, uint16_t rtcp_port)
+                                           uint16_t client_rtp_port,
+                                           uint16_t client_rtcp_port)
 {
     char port_buffer[8];
 
-    /* Try first the port that the client requested */
-    snprintf(port_buffer, 8, "%d", rtp_port);
-    transport->rtp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
-
-    snprintf(port_buffer, 8, "%d", rtcp_port);
-    transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
-
-    if ( transport->rtp_sock == NULL &&
-         transport->rtcp_sock == NULL ) {
-        /* Both the ports the client requested are busy, we ask some
-         * help from the kernel here, then we try to use it for either
-         * RTCP (if odd) or RTP (if even).
-         */
-        Sock *firstsock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP, NULL);
-        if ( firstsock == NULL )
-            return RTSP_UnsupportedTransport;
-
-        switch ( firstsock->local_port % 2 ) {
-        case 0:
-            transport->rtp_sock = firstsock;
-            snprintf(port_buffer, 8, "%d", firstsock->local_port+1);
-            transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
-            break;
-        case 1:
-            transport->rtcp_sock = firstsock;
-            snprintf(port_buffer, 8, "%d", firstsock->local_port-1);
-            transport->rtp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
-            break;
-        }
-    }
-
-    /*
-     * At this point we have either both ports open, or one of the two
-     * failed to open, but just one. We won't do many more trick, and
-     * simply get a new socket, it doesn't matter where, let the
-     * kernel find one.
+    /* The client will not provide ports for us, obviously, let's
+     * just ask the kernel for one, and try it to use for RTP/RTCP
+     * as needed, if it fails, just get another random one.
      *
      * RFC 3550 Section 11 describe the choice of port numbers for RTP
      * applications; since we're delievering RTP as part of an RTSP
      * stream, we fall in the latest case described. We thus *can*
      * avoid using the even-odd adjacent ports pair for RTP-RTCP.
      */
+    Sock *firstsock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP, NULL);
+    if ( firstsock == NULL )
+        return RTSP_UnsupportedTransport;
 
-    if ( transport->rtp_sock == NULL ) {
-        if ( (transport->rtp_sock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP, NULL)) == NULL ) {
-            Sock_close(transport->rtcp_sock);
-            return RTSP_UnsupportedTransport;
-        }
-    } else if ( transport->rtcp_sock == NULL ) {
-        if ( (transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP, NULL)) == NULL ) {
-            Sock_close(transport->rtp_sock);
-            return RTSP_UnsupportedTransport;
-        }
+    switch ( firstsock->local_port % 2 ) {
+    case 0:
+        transport->rtp_sock = firstsock;
+        snprintf(port_buffer, 8, "%d", firstsock->local_port+1);
+        transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
+        if ( transport->rtcp_sock == NULL )
+            transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP, NULL);
+        break;
+    case 1:
+        transport->rtcp_sock = firstsock;
+        snprintf(port_buffer, 8, "%d", firstsock->local_port-1);
+        transport->rtp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
+        if ( transport->rtp_sock == NULL )
+            transport->rtp_sock = Sock_bind(rtsp->sock->local_host, NULL, NULL, UDP, NULL);
+        break;
     }
 
-    if ( ( snprintf(port_buffer, 8, "%d", rtp_port) != 0 &&
+    if ( transport->rtp_sock == NULL ||
+         transport->rtcp_sock == NULL ||
+         ( snprintf(port_buffer, 8, "%d", client_rtp_port) != 0 &&
            Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                         transport->rtp_sock, UDP, NULL) == NULL )
-         ||
-         ( snprintf(port_buffer, 8, "%d", rtcp_port) != 0 &&
+                         transport->rtp_sock, UDP, NULL) == NULL ) ||
+         ( snprintf(port_buffer, 8, "%d", client_rtcp_port) != 0 &&
            Sock_connect (get_remote_host(rtsp->sock), port_buffer,
                          transport->rtcp_sock, UDP, NULL) == NULL )
          ) {
