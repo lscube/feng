@@ -85,8 +85,8 @@ AS_IF([test "x$have_sctp" = "xyes"],
   [AC_SUBST([ENABLE_SCTP], ["#"])])
 
 AS_IF([test "x$have_sctp" = "xyes"],
-  [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.1.2"],
-  [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.1.2"])
+  [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.2.0"],
+  [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.2.0"])
 
 PKG_CHECK_MODULES(LIBNETEMBRYO,[$LIBNETEMBRYO_REQUIRES])
 AC_SUBST(LIBNETEMBRYO_REQUIRES)
