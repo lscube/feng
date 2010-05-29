@@ -308,7 +308,6 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     Track *tr = session->track;
     const uint32_t timestamp = rtptime(session, tr->properties.clock_rate,
                                        buffer);
-    gboolean sent = false;
 
     outbuf->len = packet_size;
 
@@ -326,16 +325,14 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
 
     memcpy(packet->data, buffer->data, buffer->data_size);
 
-    session->send_rtp(session, outbuf);
-
-    if (!sent) {
-        fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
-    } else {
+    if (session->send_rtp(session, outbuf)) {
         session->last_timestamp = buffer->timestamp;
         session->pkt_count++;
         session->octet_count += buffer->data_size;
 
         session->last_packet_send_time = time(NULL);
+    } else {
+        fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
     }
 }
 
