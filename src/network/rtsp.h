@@ -313,7 +313,7 @@ gboolean HTTP_handle_content(RTSP_Client *rtsp);
 gboolean HTTP_handle_idle(RTSP_Client *rtsp);
 void http_tunnel_initialise();
 
-#ifdef ENABLE_JSON
+#ifdef HAVE_JSON
 void stats_account_read(RTSP_Client *rtsp, size_t bytes);
 void stats_account_sent(RTSP_Client *rtsp, size_t bytes);
 void feng_send_statistics(RTSP_Client *rtsp);

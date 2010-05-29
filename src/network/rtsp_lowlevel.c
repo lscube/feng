@@ -55,16 +55,16 @@ static gboolean rtp_udp_send_rtp(RTP_session *rtp, GByteArray *buffer)
     }
 
     if (FD_ISSET(transport->rtp->fd, &wset)) {
-        if (neb_sock_write(transport->rtp, buffer->data,
-                           buffer->len, MSG_EOR | MSG_DONTWAIT) < 0) {
+        size_t written = neb_sock_write(transport->rtp, buffer->data,
+                                   buffer->len, MSG_EOR | MSG_DONTWAIT);
+        if (written < 0) {
             fnc_log(FNC_LOG_VERBOSE, "RTP Packet Lost\n");
             res = FALSE;
             goto exit;
         }
         fnc_log(FNC_LOG_VERBOSE, "OUT RTP\n");
+        stats_account_sent(rtp->client, written);
     }
-
-    stats_account_sent(rtp->client, written);
 
  exit:
     g_byte_array_free(buffer, TRUE);
@@ -92,16 +92,17 @@ static gboolean rtp_udp_send_rtcp(RTP_session *rtp, GByteArray *buffer)
     }
 
     if (FD_ISSET(transport->rtcp->fd, &wset)) {
-        if (neb_sock_write(transport->rtcp, buffer->data,
-                           buffer->len, MSG_EOR | MSG_DONTWAIT) < 0) {
+        size_t written = neb_sock_write(transport->rtcp, buffer->data,
+                                   buffer->len, MSG_EOR | MSG_DONTWAIT);
+        if (written < 0) {
             fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
             res = FALSE;
             goto exit;
         }
         fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
+        stats_account_sent(rtp->client, written);
     }
 
-    stats_account_sent(rtp->client, written);
 
  exit:
     g_byte_array_free(buffer, TRUE);
@@ -272,21 +273,21 @@ void rtsp_tcp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 {
     RTSP_Client *rtsp = w->data;
     GByteArray *outpkt = (GByteArray *)g_queue_pop_tail(rtsp->out_queue);
+    size_t written = 0;
 
     if (outpkt == NULL) {
         ev_io_stop(rtsp->srv->loop, &rtsp->ev_io_write);
         return;
     }
-
-    if ( send(rtsp->sock->fd, outpkt->data, outpkt->len, MSG_DONTWAIT) < outpkt->len ) {
+    written = send(rtsp->sock->fd, outpkt->data, outpkt->len, MSG_DONTWAIT);
+    if ( written < outpkt->len ) {
         fnc_perror("");
         /* verify if this ever happens, as it is it'll still be popped
            from the queue */
         if ( errno == EAGAIN )
             return;
-    }
-
-    stats_account_sent(rtsp, written);
+    } else
+        stats_account_sent(rtsp, written);
 
     g_byte_array_free(outpkt, TRUE);
 }
