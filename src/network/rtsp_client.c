@@ -116,28 +116,12 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w,
     ev_timer_again (loop, w);
 }
 
-/**
- * @brief Write data to the RTSP socket of the client
- *
- * @param client The client to write the data to
- * @param data The GByteArray object to queue for sending
- *
- * @note after calling this function, the @p data object should no
- * longer be referenced by the code path.
- */
-static void rtsp_write_data_direct(RTSP_Client *client, GByteArray *data)
-{
-    g_queue_push_head(client->out_queue, data);
-    ev_io_start(client->srv->loop, &client->ev_io_write);
-}
-
 RTSP_Client *rtsp_client_new(feng *srv)
 {
     RTSP_Client *rtsp = g_slice_new0(RTSP_Client);
 
     rtsp->input = g_byte_array_new();
     rtsp->srv = srv;
-    rtsp->write_data = rtsp_write_data_direct;
 
     srv->clients = g_slist_append(srv->clients, rtsp);
 
@@ -192,20 +176,42 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 
     rtsp = rtsp_client_new(srv);
     rtsp->sock = client_sock;
-    rtsp->out_queue = g_queue_new();
+
+    switch(rtsp->sock->socktype) {
+    case TCP:
+        rtsp->out_queue = g_queue_new();
+        rtsp->write_data = rtsp_write_data_queue;
+
+        /* to be started/stopped when necessary */
+        io = &rtsp->ev_io_write;
+        io->data = rtsp;
+        ev_io_init(io, rtsp_tcp_write_cb, rtsp->sock->fd, EV_WRITE);
+
+        io = &rtsp->ev_io_read;
+        io->data = rtsp;
+        ev_io_init(io, rtsp_tcp_read_cb, rtsp->sock->fd, EV_READ);
+
+        break;
+
+#ifdef ENABLE_SCTP
+    case SCTP:
+        rtsp->write_data = rtsp_sctp_send_rtsp;
+
+        io = &rtsp->ev_io_read;
+        io->data = rtsp;
+        ev_io_init(io, rtsp_sctp_read_cb, rtsp->sock->fd, EV_READ);
+
+        break;
+#endif
+
+    default:
+        g_assert_not_reached();
+    }
 
     srv->connection_count++;
     rtsp->sock->data = srv;
 
-    io = &rtsp->ev_io_read;
-    io->data = rtsp;
-    ev_io_init(io, rtsp_read_cb, rtsp->sock->fd, EV_READ);
-    ev_io_start(srv->loop, io);
-
-    /* to be started/stopped when necessary */
-    io = &rtsp->ev_io_write;
-    io->data = rtsp;
-    ev_io_init(io, rtsp_write_cb, rtsp->sock->fd, EV_WRITE);
+    ev_io_start(srv->loop, &rtsp->ev_io_read);
 
     async = &rtsp->ev_sig_disconnect;
     async->data = rtsp;

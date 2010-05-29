@@ -27,10 +27,6 @@
 #include <stdbool.h>
 #include <netinet/in.h>
 
-#ifdef ENABLE_SCTP
-# include <netinet/sctp.h>
-#endif
-
 #include "rtp.h"
 #include "rtsp.h"
 #include "feng.h"
@@ -133,67 +129,6 @@ typedef struct {
         RTCP_header_BYE bye;
     } payload;
 } RTCP_SR_Compound;
-
-/**
- * Send the given RTCP packet directly to the RTCP socket
- */
-static gboolean rtcp_send_direct(RTP_session * session, GByteArray *buffer)
-{
-    fd_set wset;
-    struct timeval t;
-    Sock *rtcp_sock = session->transport.rtcp_sock;
-
-    /*---------------SEE eventloop/rtsp_server.c-------*/
-    FD_ZERO(&wset);
-    t.tv_sec = 0;
-    t.tv_usec = 1000;
-
-    FD_SET(rtcp_sock->fd, &wset);
-    if (select(rtcp_sock->fd + 1, 0, &wset, 0, &t) < 0) {
-        fnc_log(FNC_LOG_ERR, "select error: %s\n", strerror(errno));
-        g_byte_array_free(buffer, true);
-        return false;
-    }
-
-    if (FD_ISSET(rtcp_sock->fd, &wset)) {
-        if (neb_sock_write(rtcp_sock, buffer->data,
-                           buffer->len, MSG_EOR | MSG_DONTWAIT) < 0)
-            fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
-        fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
-    }
-
-    g_byte_array_free(buffer, true);
-    return true;
-}
-
-/**
- * Send the given RTCP packet through the interleaved RTSP protocol
- */
-static gboolean rtcp_send_interleaved(RTP_session *session, GByteArray *buffer)
-{
-    RTSP_Client *rtsp = session->client;
-    uint16_t ne_n = htons((uint16_t)buffer->len);
-    uint8_t interleaved_preamble[4] = { '$', session->transport.rtcp_ch, 0, 0 };
-
-    g_byte_array_prepend(buffer, interleaved_preamble, 4);
-    memcpy(&buffer->data[2], &ne_n, sizeof(uint16_t));
-
-    rtsp->write_data(rtsp, buffer);
-
-    return true;
-}
-
-#ifdef ENABLE_SCTP
-static gboolean rtcp_send_sctp(RTP_session *session, GByteArray *buffer)
-{
-    if ( neb_sock_write_stream(session->client->sock, buffer->data, buffer->len,
-                               MSG_EOR | MSG_DONTWAIT, session->transport.rtcp_ch ) < 0 )
-        fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
-
-    g_byte_array_free(buffer, true);
-    return true;
-}
-#endif
 
 /**
  * @brief Sets the SR preamble for the given compound
@@ -354,19 +289,7 @@ gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type)
 
     g_assert(outpkt != NULL);
 
-    switch ( session->transport.protocol ) {
-    case RTP_UDP:
-        return rtcp_send_direct(session, outpkt);
-    case RTP_TCP:
-        return rtcp_send_interleaved(session, outpkt);
-#ifdef ENABLE_SCTP
-    case RTP_SCTP:
-        return rtcp_send_sctp(session, outpkt);
-#endif
-    }
-
-    g_assert_not_reached();
-    return false;
+    return session->send_rtcp(session, outpkt);
 }
 
 
