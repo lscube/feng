@@ -27,6 +27,18 @@
 #include "media/demuxer.h"
 #include "json.h"
 
+void stats_account_read(RTSP_Client *rtsp, size_t bytes)
+{
+    rtsp->bytes_read += bytes;
+    rtsp->srv->total_read += bytes;
+}
+
+void stats_account_sent(RTSP_Client *rtsp, size_t bytes)
+{
+    rtsp->bytes_sent += bytes;
+    rtsp->srv->total_sent += bytes;
+}
+
 /**
  * @brief Produce per client statistics
  *

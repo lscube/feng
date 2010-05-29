@@ -177,8 +177,8 @@ static gboolean RTSP_handle_interleaved(RTSP_Client *rtsp) {
     if ( rtsp->input->len < (length + 4) )
         return false;
 
-    rtsp_interleaved(rtsp, rtsp->input->data[1],
-                     rtsp->input->data+4, length);
+    rtsp_interleaved_receive(rtsp, rtsp->input->data[1],
+                             rtsp->input->data+4, length);
 
     g_byte_array_remove_range(rtsp->input, 0, length+4);
     rtsp->status = RFC822_State_Begin;

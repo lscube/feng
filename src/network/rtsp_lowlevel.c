@@ -24,82 +24,224 @@
 
 #include "feng.h"
 #include "rtsp.h"
+#include "rtp.h"
 #include "fnc_log.h"
 #include "feng_utils.h"
 
-#ifdef ENABLE_SCTP
-# include <netinet/sctp.h>
-#endif
+typedef struct {
+    Sock *rtp;
+    Sock *rtcp;
+    ev_io rtcp_reader;
+} RTP_UDP_Transport;
+
+static gboolean rtp_udp_send_rtp(RTP_session *rtp, GByteArray *buffer)
+{
+    RTP_UDP_Transport *transport = rtp->transport_data;
+
+    fd_set wset;
+    struct timeval t;
+    gboolean res = TRUE;
+
+    /*---------------SEE eventloop/rtsp_server.c-------*/
+    FD_ZERO(&wset);
+    t.tv_sec = 0;
+    t.tv_usec = 1000;
+
+    FD_SET(transport->rtp->fd, &wset);
+    if (select(transport->rtp->fd + 1, 0, &wset, 0, &t) < 0) {
+        fnc_log(FNC_LOG_ERR, "select error: %s\n", strerror(errno));
+        res = FALSE;
+        goto exit;
+    }
+
+    if (FD_ISSET(transport->rtp->fd, &wset)) {
+        if (neb_sock_write(transport->rtp, buffer->data,
+                           buffer->len, MSG_EOR | MSG_DONTWAIT) < 0) {
+            fnc_log(FNC_LOG_VERBOSE, "RTP Packet Lost\n");
+            res = FALSE;
+            goto exit;
+        }
+        fnc_log(FNC_LOG_VERBOSE, "OUT RTP\n");
+    }
+
+    stats_account_sent(rtp->client, written);
+
+ exit:
+    g_byte_array_free(buffer, TRUE);
+    return res;
+}
+
+static gboolean rtp_udp_send_rtcp(RTP_session *rtp, GByteArray *buffer)
+{
+    RTP_UDP_Transport *transport = rtp->transport_data;
+
+    fd_set wset;
+    struct timeval t;
+    gboolean res = TRUE;
+
+    /*---------------SEE eventloop/rtsp_server.c-------*/
+    FD_ZERO(&wset);
+    t.tv_sec = 0;
+    t.tv_usec = 1000;
+
+    FD_SET(transport->rtcp->fd, &wset);
+    if (select(transport->rtcp->fd + 1, 0, &wset, 0, &t) < 0) {
+        fnc_log(FNC_LOG_ERR, "select error: %s\n", strerror(errno));
+        res = FALSE;
+        goto exit;
+    }
+
+    if (FD_ISSET(transport->rtcp->fd, &wset)) {
+        if (neb_sock_write(transport->rtcp, buffer->data,
+                           buffer->len, MSG_EOR | MSG_DONTWAIT) < 0) {
+            fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
+            res = FALSE;
+            goto exit;
+        }
+        fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
+    }
+
+    stats_account_sent(rtp->client, written);
+
+ exit:
+    g_byte_array_free(buffer, TRUE);
+    return res;
+}
+
+static void rtp_udp_close_transport(RTP_session *rtp)
+{
+    RTP_UDP_Transport *transport = rtp->transport_data;
+
+    ev_io_stop(rtp->srv->loop, &transport->rtcp_reader);
+
+    neb_sock_close(transport->rtp);
+    neb_sock_close(transport->rtcp);
+
+    g_slice_free(RTP_UDP_Transport, transport);
+}
 
 /**
- * @brief Read data out of an RTSP client socket
- *
- * @param rtsp The client to read data from
- * @param stream Pointer to the variable to save the stream number to
- * @param buffer Pointer to the memory area to read
- * @param size The size of the memory area to read
- *
- * @return The amount of data read from the socket
- * @return -1 Error during read.
- *
- * @todo The size parameter and the return value should be size_t
- *       instead of int.
+ * @brief Read incoming RTCP packets from the socket
  */
-static int rtsp_sock_read(RTSP_Client *rtsp, int *stream, guint8 *buffer, int size)
+static void rtcp_udp_read_cb(ATTR_UNUSED struct ev_loop *loop,
+                             ev_io *w,
+                             ATTR_UNUSED int revents)
 {
-    Sock *sock = rtsp->sock;
-    int n;
-#ifdef ENABLE_SCTP
-    struct sctp_sndrcvinfo sctp_info;
-    if (sock->socktype == SCTP) {
-        memset(&sctp_info, 0, sizeof(sctp_info));
-        n = neb_sock_read(sock, buffer, size, &sctp_info, 0);
-        *stream = sctp_info.sinfo_stream;
-        fnc_log(FNC_LOG_DEBUG,
-            "neb_sock_read() received %d bytes from sctp stream %d\n", n, stream);
-    } else    // RTSP protocol is TCP
-#endif    // ENABLE_SCTP
+    uint8_t buffer[RTP_DEFAULT_MTU*2] = { 0, }; //FIXME just a quick hack...
+    RTP_session *rtp = w->data;
+    RTP_UDP_Transport *transport = rtp->transport_data;
 
-    n = neb_sock_read(sock, buffer, size, NULL, 0);
+    int n = neb_sock_read(transport->rtcp,
+                          buffer, RTP_DEFAULT_MTU*2,
+                          NULL, MSG_DONTWAIT);
 
-    return n;
+    if (n>0)
+        rtcp_handle(rtp, buffer, n);
 }
 
-void rtsp_interleaved(RTSP_Client *rtsp, int channel, uint8_t *data, size_t len)
+/**
+ * @brief Setup unicast UDP transport sockets for an RTP session
+ */
+void rtp_udp_transport(RTSP_Client *rtsp,
+                              RTP_session *rtp_s,
+                              struct ParsedTransport *parsed)
 {
-    RTP_session *rtp = NULL;
+    char port_buffer[8];
+    RTP_UDP_Transport transport;
+    ev_io *io = &transport.rtcp_reader;
 
-    if ( (rtp = g_hash_table_lookup(rtsp->channels, GINT_TO_POINTER(channel))) == NULL ) {
-        fnc_log(FNC_LOG_INFO, "Received interleaved message for unknown channel %d", channel);
-    } else if ( channel == rtp->transport.rtcp_ch )
-        rtcp_handle(rtp, data, len);
-    else
-        g_assert_not_reached();
+    /* The client will not provide ports for us, obviously, let's
+     * just ask the kernel for one, and try it to use for RTP/RTCP
+     * as needed, if it fails, just get another random one.
+     *
+     * RFC 3550 Section 11 describe the choice of port numbers for RTP
+     * applications; since we're delievering RTP as part of an RTSP
+     * stream, we fall in the latest case described. We thus *can*
+     * avoid using the even-odd adjacent ports pair for RTP-RTCP.
+     */
+    Sock *firstsock = neb_sock_bind(rtsp->sock->local_host, NULL, NULL, UDP);
+    if ( firstsock == NULL )
+        return;
+
+    switch ( firstsock->local_port % 2 ) {
+    case 0:
+        transport.rtp = firstsock;
+        snprintf(port_buffer, 8, "%d", firstsock->local_port+1);
+        transport.rtcp = neb_sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP);
+        if ( transport.rtcp == NULL )
+            transport.rtcp = neb_sock_bind(rtsp->sock->local_host, NULL, NULL, UDP);
+        break;
+    case 1:
+        transport.rtcp = firstsock;
+        snprintf(port_buffer, 8, "%d", firstsock->local_port-1);
+        transport.rtp = neb_sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP);
+        if ( transport.rtp == NULL )
+            transport.rtp = neb_sock_bind(rtsp->sock->local_host, NULL, NULL, UDP);
+        break;
+    }
+
+    if ( transport.rtp == NULL ||
+         transport.rtcp == NULL ||
+         ( snprintf(port_buffer, 8, "%d", parsed->rtp_channel) != 0 &&
+           neb_sock_connect (neb_sock_remote_host(rtsp->sock), port_buffer,
+                             transport.rtp, UDP) == NULL ) ||
+         ( snprintf(port_buffer, 8, "%d", parsed->rtcp_channel) != 0 &&
+           neb_sock_connect (neb_sock_remote_host(rtsp->sock), port_buffer,
+                             transport.rtcp, UDP) == NULL )
+         ) {
+        neb_sock_close(transport.rtp);
+        neb_sock_close(transport.rtcp);
+        return;
+    }
+
+    io->data = rtp_s;
+    ev_io_init(io, rtcp_udp_read_cb,
+               transport.rtcp->fd, EV_READ);
+
+    rtp_s->transport_data = g_slice_dup(RTP_UDP_Transport, &transport);
+    rtp_s->send_rtp = rtp_udp_send_rtp;
+    rtp_s->send_rtcp = rtp_udp_send_rtcp;
+    rtp_s->close_transport = rtp_udp_close_transport;
+
+    rtp_s->transport_string = g_strdup_printf("RTP/AVP;unicast;source=%s;client_port=%d-%d;server_port=%d-%d;ssrc=%08X",
+                                              neb_sock_local_host(rtsp->sock),
+                                              neb_sock_remote_port(transport.rtp),
+                                              neb_sock_remote_port(transport.rtcp),
+                                              neb_sock_local_port(transport.rtp),
+                                              neb_sock_local_port(transport.rtcp),
+                                              rtp_s->ssrc);
 }
 
-void rtsp_read_cb(struct ev_loop *loop, ev_io *w,
-                  ATTR_UNUSED int revents)
+/**
+ * @brief Queue data for write in the client's output queue
+ *
+ * @param client The client to write the data to
+ * @param data The GByteArray object to queue for sending
+ *
+ * @note after calling this function, the @p data object should no
+ * longer be referenced by the code path.
+ */
+void rtsp_write_data_queue(RTSP_Client *client, GByteArray *data)
+{
+    g_queue_push_head(client->out_queue, data);
+    ev_io_start(client->srv->loop, &client->ev_io_write);
+}
+
+void rtsp_tcp_read_cb(struct ev_loop *loop, ev_io *w,
+                      ATTR_UNUSED int revents)
 {
     guint8 buffer[RTSP_BUFFERSIZE + 1] = { 0, };    /* +1 to control the final '\0' */
     int read_size;
-    gint channel = 0;
     RTSP_Client *rtsp = w->data;
 
-    if ( (read_size = rtsp_sock_read(rtsp,
-                                     &channel,
-                                     buffer,
-                                     sizeof(buffer) - 1)
+    if ( (read_size = neb_sock_read(rtsp->sock,
+                                    buffer,
+                                    sizeof(buffer) - 1,
+                                    NULL, 0)
           ) <= 0 )
         goto client_close;
 
-    /* If we got a channel number from the socket, it means that we're
-     * reading data out of some interleaved lower level protocol
-     * protocol; right now this only means SCTP.
-    */
-    if ( channel != 0 ) {
-        rtsp_interleaved(rtsp, channel, buffer, read_size);
-        return;
-    }
+    stats_account_read(rtsp, read_size);
 
     if (rtsp->input->len + read_size > RTSP_BUFFERSIZE) {
         fnc_log(FNC_LOG_DEBUG,
@@ -109,10 +251,6 @@ void rtsp_read_cb(struct ev_loop *loop, ev_io *w,
 
     g_byte_array_append(rtsp->input, (guint8*)buffer, read_size);
 
-#ifdef HAVE_JSON
-    rtsp->bytes_read += read_size;
-    rtsp->srv->total_read += read_size;
-#endif
     RTSP_handler(rtsp);
 
     return;
@@ -129,8 +267,8 @@ void rtsp_read_cb(struct ev_loop *loop, ev_io *w,
     ev_async_send(loop, &rtsp->ev_sig_disconnect);
 }
 
-void rtsp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
-                   ATTR_UNUSED int revents)
+void rtsp_tcp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
+                       ATTR_UNUSED int revents)
 {
     RTSP_Client *rtsp = w->data;
     GByteArray *outpkt = (GByteArray *)g_queue_pop_tail(rtsp->out_queue);
@@ -140,16 +278,15 @@ void rtsp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         return;
     }
 
-    if ( neb_sock_write(rtsp->sock, outpkt->data, outpkt->len,
-                        MSG_DONTWAIT) < outpkt->len) {
+    if ( send(rtsp->sock->fd, outpkt->data, outpkt->len, MSG_DONTWAIT) < outpkt->len ) {
         fnc_perror("");
+        /* verify if this ever happens, as it is it'll still be popped
+           from the queue */
         if ( errno == EAGAIN )
             return;
     }
 
-#ifdef HAVE_JSON
-    rtsp->bytes_sent += outpkt->len;
-    rtsp->srv->total_sent += outpkt->len;
-#endif
+    stats_account_sent(rtsp, written);
+
     g_byte_array_free(outpkt, TRUE);
 }

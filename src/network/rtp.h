@@ -40,29 +40,16 @@ struct Track;
 struct RTSP_Client;
 struct RTSP_Range;
 struct RTSP_session;
+struct RTP_session;
 
 #define RTP_DEFAULT_PORT 5004
 #define BUFFERED_FRAMES_DEFAULT 16
 #define RTP_DEFAULT_MTU 1500
 
-typedef enum {
-    RTP_UDP,
-    RTP_TCP,
-    RTP_SCTP
-} RTP_Protocol;
-
-typedef struct RTP_transport {
-    RTP_Protocol protocol;
-    Sock *rtp_sock;
-    Sock *rtcp_sock;
-    struct sockaddr_storage last_stg;
-    int rtp_ch, rtcp_ch;
-    ev_periodic rtp_writer;
-    ev_io rtcp_reader;
-} RTP_transport;
+typedef gboolean (*rtp_send_cb)(struct RTP_session *client, GByteArray *data);
+typedef void (*rtp_close_cb)(struct RTP_session *rtp);
 
 typedef struct RTP_session {
-
     /** Multicast session (treated in a special way) */
     gboolean multicast;
 
@@ -118,7 +105,34 @@ typedef struct RTP_session {
     uint32_t octet_count;
     uint32_t pkt_count;
 
-    RTP_transport transport;
+    rtp_send_cb send_rtp;
+    rtp_send_cb send_rtcp;
+    rtp_close_cb close_transport;
+
+    /**
+     * @brief Private data for the transport.
+     *
+     * This pointer might point to an RTP_UDP_Transport,
+     * RTP_Interleaved_Transport or RTP_SCTP_Transport instance, and
+     * is only used by the two functions above.
+     */
+    gpointer transport_data;
+
+    ev_periodic rtp_writer;
+
+    /**
+     * @brief String representing the Transport header to report
+     *
+     * It's basically the one chosen between the options provided by
+     * the client, as indicated by RFC2326, Section 12.39. We could
+     * skip over it if the client only proposed a single transport,
+     * but since we need to tell them where to get the data from, and
+     * send it to, we always report it.
+     *
+     * This gets freed right after responding to the SETUP request, so
+     * don't rely on it anywhere else.
+     */
+    char *transport_string;
 } RTP_session;
 
 /**
@@ -131,9 +145,44 @@ typedef struct RTP_session {
  * @{
  */
 
-RTP_session *rtp_session_new(struct RTSP_Client *, struct RTSP_session *,
-                             RTP_transport *, const char *,
-                             struct Track *);
+typedef enum {
+    RTP_UDP,
+    RTP_TCP,
+    RTP_SCTP,
+    _RTP_PROTOCOL_MAX
+} RTP_Protocol;
+
+/**
+ * @brief Structure filled by the ragel parser of the transport header.
+ *
+ * @internal
+ */
+struct ParsedTransport {
+    RTP_Protocol protocol;
+    //! Mode for UDP transmission, here is easier to access
+    enum { TransportUnicast, TransportMulticast } mode;
+    int rtp_channel;
+    int rtcp_channel;
+};
+
+
+void rtp_udp_transport(struct RTSP_Client *rtsp,
+                       struct RTP_session *rtp_s,
+                       struct ParsedTransport *parsed);
+void rtp_interleaved_transport(struct RTSP_Client *rtsp,
+                               struct RTP_session *rtp_s,
+                               struct ParsedTransport *parsed);
+void rtp_sctp_transport(struct RTSP_Client *rtsp,
+                        struct RTP_session *rtp_s,
+                        struct ParsedTransport *parsed);
+
+void rtsp_interleaved_register(struct RTSP_Client *rtsp,
+                               struct RTP_session *rtp_s,
+                               int rtp_channel, int rtcp_channel);
+
+RTP_session *rtp_session_new(struct RTSP_Client *,
+                             const char *, struct Track *,
+                             GSList *transports);
 
 void rtp_session_gslist_resume(GSList *, struct RTSP_Range *range);
 void rtp_session_gslist_pause(GSList *);
