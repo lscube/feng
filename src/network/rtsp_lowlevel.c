@@ -55,8 +55,8 @@ static gboolean rtp_udp_send_rtp(RTP_session *rtp, GByteArray *buffer)
     }
 
     if (FD_ISSET(transport->rtp->fd, &wset)) {
-        size_t written = neb_sock_write(transport->rtp, buffer->data,
-                                   buffer->len, MSG_EOR | MSG_DONTWAIT);
+        int written = neb_sock_write(transport->rtp, buffer->data,
+                                     buffer->len, MSG_EOR | MSG_DONTWAIT);
         if (written < 0) {
             fnc_log(FNC_LOG_VERBOSE, "RTP Packet Lost\n");
             res = FALSE;
@@ -92,8 +92,8 @@ static gboolean rtp_udp_send_rtcp(RTP_session *rtp, GByteArray *buffer)
     }
 
     if (FD_ISSET(transport->rtcp->fd, &wset)) {
-        size_t written = neb_sock_write(transport->rtcp, buffer->data,
-                                   buffer->len, MSG_EOR | MSG_DONTWAIT);
+        int written = neb_sock_write(transport->rtcp, buffer->data,
+                                     buffer->len, MSG_EOR | MSG_DONTWAIT);
         if (written < 0) {
             fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
             res = FALSE;
