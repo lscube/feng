@@ -184,10 +184,10 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     if ( transport.rtp == NULL ||
          transport.rtcp == NULL ||
          ( snprintf(port_buffer, 8, "%d", parsed->rtp_channel) != 0 &&
-           neb_sock_connect (neb_sock_remote_host(rtsp->sock), port_buffer,
+           neb_sock_connect (rtsp->sock->remote_host, port_buffer,
                              transport.rtp, UDP) == NULL ) ||
          ( snprintf(port_buffer, 8, "%d", parsed->rtcp_channel) != 0 &&
-           neb_sock_connect (neb_sock_remote_host(rtsp->sock), port_buffer,
+           neb_sock_connect (rtsp->sock->remote_host, port_buffer,
                              transport.rtcp, UDP) == NULL )
          ) {
         neb_sock_close(transport.rtp);
@@ -205,11 +205,11 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     rtp_s->close_transport = rtp_udp_close_transport;
 
     rtp_s->transport_string = g_strdup_printf("RTP/AVP;unicast;source=%s;client_port=%d-%d;server_port=%d-%d;ssrc=%08X",
-                                              neb_sock_local_host(rtsp->sock),
-                                              neb_sock_remote_port(transport.rtp),
-                                              neb_sock_remote_port(transport.rtcp),
-                                              neb_sock_local_port(transport.rtp),
-                                              neb_sock_local_port(transport.rtcp),
+                                              rtsp->sock->local_host,
+                                              transport.rtp->remote_port,
+                                              transport.rtcp->remote_port,
+                                              transport.rtp->local_port,
+                                              transport.rtcp->local_port,
                                               rtp_s->ssrc);
 }
 
