@@ -286,8 +286,9 @@ void rtsp_tcp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
            from the queue */
         if ( errno == EAGAIN )
             return;
-    } else
+    } else {
         stats_account_sent(rtsp, written);
+    }
 
     g_byte_array_free(outpkt, TRUE);
 }
