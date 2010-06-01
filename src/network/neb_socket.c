@@ -181,8 +181,7 @@ Sock * neb_sock_bind(const char const *host, const char const *port, Sock *sock,
         return NULL;
     }
 
-    if ( (s = calloc(1, sizeof(Sock))) == NULL )
-        goto error;
+    s = g_slice_new0(Sock);
 
     s->fd = sockfd;
     s->socktype = socktype;
@@ -216,7 +215,7 @@ int neb_sock_close(Sock *s)
 
     res = close(s->fd);
 
-    free(s);
+    g_slice_free(Sock, s);
 
     return res;
 }
