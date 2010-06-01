@@ -86,6 +86,11 @@ static void append_to_string(gpointer data, gpointer user_data)
     g_string_append_printf(path, "/%s", segment);
 }
 
+static void segment_free(gpointer data, ATTR_UNUSED gpointer unused)
+{
+    g_free(data);
+}
+
 /**
  * @brief Parse and split an URI string into an URI structure
  *
@@ -107,6 +112,7 @@ URI *uri_parse(const char *uri_string)
     %% write init;
     %% write exec;
 
+    g_queue_foreach(stack, segment_free, NULL);
     g_queue_free(stack);
 
     if (cs < uri_parser_first_final) {
