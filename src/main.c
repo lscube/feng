@@ -81,7 +81,7 @@ static void feng_drop_privs(feng *srv)
             if (setgid(gr->gr_gid) < 0)
                 fnc_perror("setgid");
         } else {
-            fnc_perror(getgrnam);
+            fnc_perror("getgrnam");
         }
     }
 
