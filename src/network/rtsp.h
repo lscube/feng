@@ -186,7 +186,6 @@ typedef struct RTSP_Client {
     ev_io ev_io_read;
     ev_io ev_io_write;
 
-    char *local_host;
     char *remote_host;
 
 #ifdef HAVE_JSON //stats
@@ -195,7 +194,7 @@ typedef struct RTSP_Client {
     size_t bytes_sent;
 #endif
 
-    struct sockaddr_storage local;
+    struct Feng_Listener *local_sock;
     struct sockaddr_storage peer;
 } RTSP_Client;
 

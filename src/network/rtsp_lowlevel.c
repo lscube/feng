@@ -137,13 +137,10 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     };
     ev_io *io = &transport.rtcp_reader;
 
-    struct sockaddr_storage sa_temp;
-    struct sockaddr *sa_p = (struct sockaddr *)&sa_temp;
-    socklen_t sa_len;
+    socklen_t sa_len = rtsp->local_sock->sa_len;
+    struct sockaddr *sa_p = g_slice_copy(sa_len, rtsp->local_sock->local_sa);
     int firstsd;
     in_port_t firstport, rtp_port, rtcp_port;
-
-    memcpy(sa_p, &rtsp->local, sizeof(struct sockaddr_storage));
 
     /* The client will not provide ports for us, obviously, let's
      * just ask the kernel for one, and try it to use for RTP/RTCP
@@ -161,7 +158,7 @@ void rtp_udp_transport(RTSP_Client *rtsp,
         goto error;
     }
 
-    if ( bind(firstsd, sa_p, sizeof(struct sockaddr_storage)) < 0 ) {
+    if ( bind(firstsd, sa_p, sa_len) < 0 ) {
         fnc_perror("bind 1");
         goto error;
     }
@@ -184,11 +181,11 @@ void rtp_udp_transport(RTSP_Client *rtsp,
 
         neb_sa_set_port(sa_p, rtcp_port);
 
-        if ( bind(transport.rtcp_sd, sa_p, sizeof(struct sockaddr_storage)) < 0 ) {
+        if ( bind(transport.rtcp_sd, sa_p, sa_len) < 0 ) {
             fnc_perror("bind 2");
 
             neb_sa_set_port(sa_p, 0);
-            if ( bind(transport.rtcp_sd, sa_p, sizeof(struct sockaddr_storage)) < 0 ) {
+            if ( bind(transport.rtcp_sd, sa_p, sa_len) < 0 ) {
                 fnc_perror("bind 3");
                 goto error;
             }
@@ -212,10 +209,10 @@ void rtp_udp_transport(RTSP_Client *rtsp,
 
         neb_sa_set_port(sa_p, rtp_port);
 
-        if ( bind(transport.rtp_sd, sa_p, sizeof(struct sockaddr_storage)) < 0 ) {
+        if ( bind(transport.rtp_sd, sa_p, sa_len) < 0 ) {
             fnc_perror("bind 4");
             neb_sa_set_port(sa_p, 0);
-            if ( bind(transport.rtp_sd, sa_p, sizeof(struct sockaddr_storage)) < 0 ) {
+            if ( bind(transport.rtp_sd, sa_p, sa_len) < 0 ) {
                 fnc_perror("bind 5");
                 goto error;
             }
@@ -261,16 +258,18 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     rtp_s->close_transport = rtp_udp_close_transport;
 
     rtp_s->transport_string = g_strdup_printf("RTP/AVP;unicast;source=%s;client_port=%d-%d;server_port=%d-%d;ssrc=%08X",
-                                              rtsp->local_host,
+                                              rtsp->local_sock->local_host,
                                               parsed->rtp_channel,
                                               parsed->rtcp_channel,
                                               rtp_port,
                                               rtcp_port,
                                               rtp_s->ssrc);
 
+    g_slice_free1(sa_len, sa_p);
     return;
 
  error:
+    g_slice_free1(sa_len, sa_p);
     if ( firstsd >= 0 )
         close(firstsd);
     if ( transport.rtp_sd >= 0 )

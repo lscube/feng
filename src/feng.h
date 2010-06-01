@@ -75,7 +75,8 @@ typedef struct Feng_Listener {
     char *local_host;
     feng *srv;
     ev_io io;
-    struct sockaddr_storage local_sa;
+    struct sockaddr *local_sa;
+    socklen_t sa_len;
 } Feng_Listener;
 
 typedef feng server;

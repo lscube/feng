@@ -59,7 +59,6 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
     ev_timer_stop(srv->loop, &rtsp->ev_timeout);
 
     close(rtsp->sd);
-    g_free(rtsp->local_host);
     g_free(rtsp->remote_host);
     srv->connection_count--;
 
@@ -210,10 +209,9 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 #endif
     }
 
-    rtsp->local_host = neb_sa_get_host((struct sockaddr*)&listen->local_sa);
-    rtsp->remote_host = neb_sa_get_host((struct sockaddr*)&sa);
+    rtsp->local_sock = listen;
 
-    memcpy(&rtsp->local, &listen->local_sa, sizeof(struct sockaddr_storage));
+    rtsp->remote_host = neb_sa_get_host((struct sockaddr*)&sa);
     memcpy(&rtsp->peer, &sa, sizeof(struct sockaddr_storage));
 
     srv->connection_count++;

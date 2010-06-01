@@ -70,6 +70,8 @@ static void feng_bound_socket_close(gpointer element,
     close(listener->fd);
     free(listener->local_host);
 
+    g_slice_free1(listener->sa_len, listener->local_sa);
+
     g_slice_free(Feng_Listener, listener);
 }
 
@@ -111,6 +113,7 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
     int sock;
     static const int on = 1;
     Feng_Listener *listener = NULL;
+    struct sockaddr_storage sa;
     socklen_t sa_len = sizeof(struct sockaddr_storage);
 
     if ( (sock = socket(ai->ai_family, SOCK_STREAM,
@@ -171,16 +174,22 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
         goto open_error;
     }
 
-    listener = g_slice_new0(Feng_Listener);
-
-    if ( getsockname(sock, (struct sockaddr *)(&listener->local_sa), &sa_len) < 0 ) {
+    if ( getsockname(sock, (struct sockaddr *)(&sa), &sa_len) < 0 ) {
         fnc_perror("getsockname");
-        goto slice_error;
+        goto open_error;
     }
+
+    listener = g_slice_new0(Feng_Listener);
 
     listener->fd = sock;
     listener->is_sctp = is_sctp;
     listener->srv = srv;
+
+    listener->sa_len = sa_len;
+    listener->local_sa = g_slice_copy(sa_len, &sa);
+    listener->local_host = neb_sa_get_host(listener->local_sa);
+    if ( listener->local_host == NULL )
+        listener->local_host = strdup(ai->ai_family == AF_INET6 ? "::" : "0.0.0.0");
 
     listener->io.data = listener;
     ev_io_init(&listener->io,
@@ -194,8 +203,6 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
 
     return true;
 
- slice_error:
-    g_slice_free(Feng_Listener, listener);
  open_error:
     close(sock);
     return false;

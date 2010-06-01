@@ -28,6 +28,7 @@
 
 #include "fnc_log.h"
 #include "rtsp.h"
+#include "feng.h"
 #include "media/demuxer.h"
 #include "uri.h"
 #include "netembryo.h"
@@ -206,7 +207,7 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
 
     char *path = g_uri_unescape_string(uri->path, "/");
 
-    int inet_family = ((struct sockaddr*)(&rtsp->local))->sa_family;
+    int inet_family = rtsp->local_sock->local_sa->sa_family;
 
     fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s", path);
     if ( !(resource = r_open(srv, path)) ) {
