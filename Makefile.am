@@ -34,7 +34,8 @@ RAGEL_SOURCES = \
 	src/network/ragel_request_line.c \
 	src/network/ragel_transport.c \
 	src/network/ragel_range.c \
-	src/network/ragel_headers.c
+	src/network/ragel_headers.c \
+	src/network/ragel_uri.c
 
 BUILT_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rfc822proto.c \
@@ -96,6 +97,7 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rtsp_utils.c \
 	src/network/http_tunnelling.c \
 	src/network/rtsp_interleaved.c \
+	src/network/uri.c src/network/uri.h \
 	\
 	src/media/demuxer.c \
 	src/media/demuxer.h \
@@ -191,6 +193,8 @@ tests_testsuite_SOURCES = \
 	src/network/ragel_request_line.c \
 	src/network/ragel_headers.c \
 	src/network/ragel_transport.c \
+	src/network/ragel_uri.c \
+	src/network/uri.c \
 	tests/bufferqueue/test-1.c \
 	tests/bufferqueue/test-2.c \
 	tests/bufferqueue/test-3.c \
@@ -199,7 +203,9 @@ tests_testsuite_SOURCES = \
 	tests/rfc822proto/rfc822proto-test.c \
 	tests/rfc822proto/request_line.c \
 	tests/rfc822proto/headers.c \
-	tests/rfc822proto/transport_header.c
+	tests/rfc822proto/transport_header.c \
+	tests/uri.c \
+	tests/gtest-extra.h
 
 # tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
 
