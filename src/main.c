@@ -79,13 +79,9 @@ static void feng_drop_privs(feng *srv)
         struct group *gr = getgrnam(id);
         if (gr) {
             if (setgid(gr->gr_gid) < 0)
-                fnc_log(FNC_LOG_WARN,
-                    "Cannot setgid to user %s, %s",
-                    id, strerror(errno));
+                fnc_perror("setgid");
         } else {
-            fnc_log(FNC_LOG_WARN,
-                    "Cannot get group %s id, %s",
-                    id, strerror(errno));
+            fnc_perror(getgrnam);
         }
     }
 
@@ -94,13 +90,9 @@ static void feng_drop_privs(feng *srv)
         struct passwd *pw = getpwnam(id);
         if (pw) {
             if (setuid(pw->pw_uid) < 0)
-                fnc_log(FNC_LOG_WARN,
-                    "Cannot setuid to user %s, %s",
-                    id, strerror(errno));
+                fnc_perror("setuid");
         } else {
-            fnc_log(FNC_LOG_WARN,
-                    "Cannot get user %s id, %s",
-                    id, strerror(errno));
+            fnc_perror("getpwnam");
         }
     }
 }

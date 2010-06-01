@@ -61,7 +61,7 @@ static gboolean rtp_udp_send_pkt(int sd, struct sockaddr *sa, GByteArray *buffer
 
     FD_SET(sd, &wset);
     if (select(sd + 1, 0, &wset, 0, &t) < 0) {
-        fnc_log(FNC_LOG_ERR, "select error: %s\n", strerror(errno));
+        fnc_perror("select");
         goto end;
     }
 
@@ -69,16 +69,14 @@ static gboolean rtp_udp_send_pkt(int sd, struct sockaddr *sa, GByteArray *buffer
         written = sendto(sd, buffer->data, buffer->len,
                          MSG_EOR | MSG_DONTWAIT,
                          sa, sizeof(struct sockaddr_storage));
-
         if (written >= 0 ) {
             stats_account_sent(rtsp, written);
+        } else {
+            fnc_perror("sendto");
         }
     }
 
  end:
-    if ( written < 0 )
-        fnc_perror("RTP/RTCP packet lost");
-
     g_byte_array_free(buffer, true);
 
     return written >= 0;
