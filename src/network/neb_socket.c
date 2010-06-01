@@ -124,16 +124,14 @@ static int _neb_sock_sctp_setparams(int sd)
  * bind wrapper
  */
 
-static int _neb_sock_bind(const char const *host, const char const *port, int *sock, sock_type socktype)
+static int _neb_sock_bind(const char const *host, const char const *port, sock_type socktype)
 {
-    int bind_new;
+    int sock;
     struct addrinfo *res, *ressave;
 
     if ( (ressave = res = _neb_sock_getaddrinfo(host, port, socktype)) == NULL ) {
         return WSOCK_ERRADDR;
     }
-
-    bind_new = (*sock < 0);
 
     do {
         /* Always use SOCK_STREAM for the bound socket; this function
@@ -141,22 +139,20 @@ static int _neb_sock_bind(const char const *host, const char const *port, int *s
          * connections that are accepted, and accept() on GNU/Linux
          * only works on SOCK_STREAM sockets.
          */
-        if (bind_new && (*sock = socket(res->ai_family, SOCK_STREAM, res->ai_protocol)) < 0)
+        if ((sock = socket(res->ai_family, SOCK_STREAM, res->ai_protocol)) < 0)
             continue;
 
         if ( socktype == SCTP &&
-             _neb_sock_sctp_setparams(*sock) < 0 )
+             _neb_sock_sctp_setparams(sock) < 0 )
             continue;
 
-        if (bind(*sock, res->ai_addr, res->ai_addrlen) == 0)
+        if (bind(sock, res->ai_addr, res->ai_addrlen) == 0)
             break;
 
-        if (bind_new) {
-            if (close(*sock) < 0)
-                return WSOCK_ERROR;
-            else
-                *sock = -1;
-        }
+        if (close(sock) < 0)
+            return WSOCK_ERROR;
+        else
+            sock = -1;
 
     } while ((res = res->ai_next) != NULL);
 
@@ -165,11 +161,10 @@ static int _neb_sock_bind(const char const *host, const char const *port, int *s
     if ( !res )
         return WSOCK_ERROR;
 
-    return 0;
+    return sock;
 }
 
-Sock * neb_sock_bind(const char const *host, const char const *port, Sock *sock,
-                     sock_type socktype)
+Sock * neb_sock_bind(const char const *host, const char const *port, sock_type socktype)
 {
 
     Sock *s = NULL;
@@ -177,11 +172,7 @@ Sock * neb_sock_bind(const char const *host, const char const *port, Sock *sock,
     struct sockaddr *sa_p = NULL;
     socklen_t sa_len = sizeof(struct sockaddr_storage);
 
-    if(sock) {
-        sockfd = sock->fd;
-    }
-
-    if (_neb_sock_bind(host, port, &sockfd, socktype)) {
+    if ( (sockfd = _neb_sock_bind(host, port, socktype)) < 0 ) {
         fnc_perror("_neb_sock_bind");
         return NULL;
     }

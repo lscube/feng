@@ -95,7 +95,6 @@ typedef struct {
  */
 Sock * neb_sock_bind(const char const *host,
                      const char const *port,
-                     Sock *sock,
                      sock_type socktype);
 
 int neb_sock_close(Sock *s);
