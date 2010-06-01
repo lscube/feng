@@ -136,7 +136,12 @@ static int _neb_sock_bind(const char const *host, const char const *port, int *s
     bind_new = (*sock < 0);
 
     do {
-        if (bind_new && (*sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) < 0)
+        /* Always use SOCK_STREAM for the bound socket; this function
+         * is called only for TCP and SCTP sockets we listen to for
+         * connections that are accepted, and accept() on GNU/Linux
+         * only works on SOCK_STREAM sockets.
+         */
+        if (bind_new && (*sock = socket(res->ai_family, SOCK_STREAM, res->ai_protocol)) < 0)
             continue;
 
         if ( socktype == SCTP &&
