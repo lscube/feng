@@ -71,16 +71,9 @@ typedef struct {
     void *data; ///< user data
 } Sock;
 
-#define WSOCK_ERRORPROTONOSUPPORT -5
-#define WSOCK_ERRORIOCTL    -4
-#define WSOCK_ERRORINTERFACE    -3
 #define WSOCK_ERROR    -2
-#define WSOCK_ERRFAMILYUNKNOWN    -1
 #define WSOCK_OK 0
-#define WSOCK_ERRSIZE    1
-#define WSOCK_ERRFAMILY    2
 #define WSOCK_ERRADDR    3
-#define WSOCK_ERRPORT    4
 
 #define NETEMBRYO_MAX_SCTP_STREAMS 15
 
