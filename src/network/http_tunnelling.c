@@ -71,6 +71,8 @@ static gboolean http_tunnel_create_pair(RTSP_Client *client, RFC822_Request *req
 
     pair->rtsp_client = rtsp_client_new(client->srv);
     pair->rtsp_client->sock = client->sock;
+    pair->rtsp_client->local_host = client->local_host;
+    pair->rtsp_client->remote_host = client->remote_host;
     pair->rtsp_client->write_data = rtsp_write_data_http;
     pair->rtsp_client->pair = pair;
     memcpy(&pair->rtsp_client->ev_sig_disconnect, &client->ev_sig_disconnect, sizeof(client->ev_sig_disconnect));

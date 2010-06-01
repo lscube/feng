@@ -83,7 +83,7 @@ void accesslog_uninit(feng *srv)
 
 #define PRINT_STRING \
     "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",\
-        client->sock->remote_host,\
+        client->remote_host,\
         rfc822_headers_lookup(response->headers, RFC822_Header_Date),\
         response->request->method_str, response->request->object,\
         response->request->protocol_str,\

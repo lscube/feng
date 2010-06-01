@@ -181,6 +181,9 @@ typedef struct RTSP_Client {
     ev_io ev_io_read;
     ev_io ev_io_write;
 
+    char *local_host;
+    char *remote_host;
+
 #ifdef HAVE_JSON //stats
     char *user_agent;
     size_t bytes_read;

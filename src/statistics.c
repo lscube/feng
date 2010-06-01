@@ -58,9 +58,9 @@ static void client_stats(gpointer c, gpointer s)
     json_object_object_add(stats, "user_agent",
         json_object_new_string("missing"/*client->stats->user_agent*/));
     json_object_object_add(stats, "remote_host",
-        json_object_new_string(client->sock->remote_host));
+        json_object_new_string(client->remote_host));
     json_object_object_add(stats, "remote_host",
-        json_object_new_string(client->sock->remote_host));
+        json_object_new_string(client->remote_host));
     json_object_object_add(stats, "bytes_sent",
         json_object_new_int(client->bytes_sent));
     json_object_object_add(stats, "bytes_read",

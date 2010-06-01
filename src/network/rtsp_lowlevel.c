@@ -236,7 +236,7 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     rtp_s->close_transport = rtp_udp_close_transport;
 
     rtp_s->transport_string = g_strdup_printf("RTP/AVP;unicast;source=%s;client_port=%d-%d;server_port=%d-%d;ssrc=%08X",
-                                              rtsp->sock->local_host,
+                                              rtsp->local_host,
                                               parsed->rtp_channel,
                                               parsed->rtcp_channel,
                                               rtp_port,
