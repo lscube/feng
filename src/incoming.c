@@ -28,6 +28,15 @@
 #include "incoming.h"
 #include "network/rtsp.h"
 
+#ifdef ENABLE_SCTP
+# include <netinet/sctp.h>
+/* FreeBSD and Mac OS X don't have SOL_SCTP and re-use IPPROTO_SCTP
+   for setsockopt() */
+# if !defined(SOL_SCTP)
+#  define SOL_SCTP IPPROTO_SCTP
+# endif
+#endif
+
 #ifdef CLEANUP_DESTRUCTOR
 /**
  * @brief libev listeners for incoming connections on opened ports
@@ -40,20 +49,7 @@
  * @note Part of the cleanup destructors code, not compiled in
  *       production use.
  */
-static ev_io *listeners;
-
-/**
- * @brief List of listening sockets for the process
- *
- * This array is created in @ref feng_bind_ports and used in @ref
- * feng_bind_port if the cleanup destructors are enabled, and will be
- * used by @ref feng_ports_cleanup() to close the sockets and free
- * their memory.
- *
- * @note Part of the cleanup destructors code, not compiled in
- *       production use.
- */
-static GPtrArray *listening_sockets;
+static GSList *listening;
 
 /**
  * @brief Close sockets in the listening_sockets array
@@ -69,13 +65,18 @@ static GPtrArray *listening_sockets;
 static void feng_bound_socket_close(gpointer element,
                                     ATTR_UNUSED gpointer user_data)
 {
-    neb_sock_close((Sock*)element);
+    Feng_Listener *listener = element;
+
+    close(listener->fd);
+    free(listener->local_host);
+
+    g_slice_free(Feng_Listener, listener);
 }
 
 /**
- * @brief Cleanup function for the @ref listeners array
+ * @brief Cleanup function for the @ref listening array
  *
- * This function is used to free the @ref listeners array that was
+ * This function is used to free the @ref listening array that was
  * allocated in @ref feng_bind_ports; note that this function is
  * called automatically as a destructur when the compiler supports it,
  * and debug is not disabled.
@@ -89,13 +90,116 @@ static void feng_bound_socket_close(gpointer element,
  */
 static void CLEANUP_DESTRUCTOR feng_ports_cleanup()
 {
-    if ( listening_sockets == NULL ) return;
+    if ( listening == NULL ) return;
 
-    g_ptr_array_foreach(listening_sockets, feng_bound_socket_close, NULL);
-    g_ptr_array_free(listening_sockets, true);
-    g_free(listeners);
+    g_slist_foreach(listening, feng_bound_socket_close, NULL);
+    g_slist_free(listening);
 }
 #endif
+
+/**
+ * @brief Bind a socket to a given address information
+ *
+ * @param srv Server object for feng
+ * @param ai Address to bind the socket to
+ * @param is_sctp If true, the socket will be bound as SCTP, otherwise
+ *                as TCP
+ */
+static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
+                               gboolean is_sctp)
+{
+    int sock;
+    static const int on = 1;
+    Feng_Listener *listener = NULL;
+    socklen_t sa_len;
+
+    if ( (sock = socket(ai->ai_family, SOCK_STREAM,
+                        is_sctp ? IPPROTO_SCTP : IPPROTO_TCP)) < 0 ) {
+        fnc_perror("opening socket");
+        return false;
+    }
+
+#if ENABLE_SCTP
+    if ( is_sctp ) {
+        static const struct sctp_initmsg initparams = {
+            .sinit_max_instreams = NETEMBRYO_MAX_SCTP_STREAMS,
+            .sinit_num_ostreams = NETEMBRYO_MAX_SCTP_STREAMS,
+        };
+        static const struct sctp_event_subscribe subscribe = {
+            .sctp_data_io_event = 1
+        };
+
+        // Enable the propagation of packets headers
+        if (setsockopt(sock, SOL_SCTP, SCTP_EVENTS, &subscribe,
+                       sizeof(subscribe)) < 0) {
+            fnc_perror("setsockopt(SCTP_EVENTS)");
+            goto open_error;
+        }
+
+        // Setup number of streams to be used for SCTP connection
+        if (setsockopt(sock, SOL_SCTP, SCTP_INITMSG, &initparams,
+                       sizeof(initparams)) < 0) {
+            fnc_perror("setsockopt(SCTP_INITMSG)");
+            goto open_error;
+        }
+    }
+#endif
+
+    /* For IPv6 sockets, we make sure to only bind the v6 address, and
+       we'll then be binding the v4 later on. */
+
+    if ( ai->ai_family == AF_INET6 &&
+         setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+                    &on, sizeof(on)) < 0 ) {
+        fnc_perror("setsockopt(IPV6_V6ONLY)");
+        goto open_error;
+    }
+
+    if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+                    &on, sizeof(on)) < 0 ) {
+        fnc_perror("setsockopt(SO_REUSEADDR)");
+        goto open_error;
+    }
+
+    if ( bind(sock, ai->ai_addr, ai->ai_addrlen) < 0 ) {
+        fnc_perror("bind");
+        goto open_error;
+    }
+
+    if ( listen(sock, SOMAXCONN ) < 0 ) {
+        fnc_perror("listen");
+        goto open_error;
+    }
+
+    listener = g_slice_new0(Feng_Listener);
+
+    if ( getsockname(sock, (struct sockaddr *)(&listener->local_sa), &sa_len) < 0 ) {
+        fnc_perror("getsockname");
+        goto slice_error;
+    }
+
+    listener->fd = sock;
+    listener->is_sctp = is_sctp;
+    listener->srv = srv;
+
+    listener->io.data = listener;
+    ev_io_init(&listener->io,
+               rtsp_client_incoming_cb,
+               sock, EV_READ);
+    ev_io_start(srv->loop, &listener->io);
+
+#ifdef CLEANUP_DESTRUCTOR
+    listening = g_slist_prepend(listening, listener);
+#endif
+
+    return true;
+
+ slice_error:
+    g_slice_free(Feng_Listener, listener);
+ open_error:
+    close(sock);
+    return false;
+}
 
 /**
  * Bind to the defined listening port
@@ -104,63 +208,67 @@ static void CLEANUP_DESTRUCTOR feng_ports_cleanup()
  * @param host The hostname to bind ports on
  * @param port The port to bind
  * @param s The specific configuration from @ref feng::config_storage
- * @param listener The listener pointer from @ref listeners
  *
  * @retval true Binding complete
  * @retval false Error during binding
  */
 static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
-                               specific_config *s, ev_io *listener)
+                               specific_config *s)
 {
     gboolean is_sctp = !!s->is_sctp;
-    Sock *sock;
-    int on = 1;
+    int n;
 
-    if (is_sctp)
-        sock = neb_sock_bind(host, port, SCTP);
-    else
-        sock = neb_sock_bind(host, port, TCP);
-    if(!sock) {
-        fnc_log(FNC_LOG_ERR,"neb_sock_bind() error for port %s.", port);
-        fprintf(stderr,
-                "[fatal] neb_sock_bind() error in main() for port %s.\n",
-                port);
+    struct addrinfo *res, *it;
+    static const struct addrinfo hints_ipv4 = {
+        .ai_family = AF_INET,
+        .ai_socktype = SOCK_STREAM,
+        .ai_flags = AI_PASSIVE
+    };
+    static const struct addrinfo hints_ipv6 = {
+        .ai_family = AF_INET6,
+        .ai_socktype = SOCK_STREAM,
+        .ai_flags = AI_PASSIVE
+    };
+
+    /* if host is empty, make it NULL */
+    if ( host != NULL && *host == '\0' )
+        host = NULL;
+
+    if ( s->use_ipv6 ) {
+        if ( (n = getaddrinfo(host, port, &hints_ipv6, &res)) < 0 ) {
+            fnc_log(FNC_LOG_ERR, "unable to resolve %s:%s (%s)",
+                    host, port, gai_strerror(n));
+            return false;
+        }
+
+        it = res;
+        do
+            if ( !feng_bind_addr(srv, it, is_sctp) )
+                goto error;
+        while ( (it = it->ai_next) != NULL );
+
+        freeaddrinfo(res);
+    }
+
+    if ( (n = getaddrinfo(host, port, &hints_ipv4, &res)) < 0 ) {
+        fnc_log(FNC_LOG_ERR, "unable to resolve %s:%s (%s)",
+                host, port, gai_strerror(n));
         return false;
     }
 
-#ifdef CLEANUP_DESTRUCTOR
-    g_ptr_array_add(listening_sockets, sock);
-#endif
+    it = res;
+    do
+        if ( !feng_bind_addr(srv, it, is_sctp) )
+            goto error;
+    while ( (it = it->ai_next) != NULL );
 
-    fnc_log(FNC_LOG_INFO, "Listening to port %s (%s) on %s",
-            port,
-            (is_sctp? "SCTP" : "TCP"),
-            ((host == NULL)? "all interfaces" : host));
-
-    if(listen(sock->fd, SOMAXCONN)) {
-        fnc_log(FNC_LOG_ERR, "Cannot listen on port %s (%s) on %s",
-                port,
-                (is_sctp? "SCTP" : "TCP"),
-                ((host == NULL)? "all interfaces" : host));
-        fprintf(stderr, "[fatal] Cannot listen on port %s (%s) on %s",
-                port,
-                (is_sctp? "SCTP" : "TCP"),
-                ((host == NULL)? "all interfaces" : host));
-        return false;
-    }
-    if (setsockopt(sock->fd,
-                   SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
-        fnc_log(FNC_LOG_WARN, "SO_REUSEADDR unavailable");
-    }
-
-    sock->data = srv;
-    listener->data = sock;
-    ev_io_init(listener,
-               rtsp_client_incoming_cb,
-               sock->fd, EV_READ);
-    ev_io_start(srv->loop, listener);
+    freeaddrinfo(res);
 
     return true;
+
+ error:
+    freeaddrinfo(res);
+    return false;
 }
 
 gboolean feng_bind_ports(feng *srv)
@@ -168,22 +276,11 @@ gboolean feng_bind_ports(feng *srv)
     size_t i;
     char *host = srv->srvconf.bindhost->ptr;
     char port[6] = { 0, };
-#ifndef CLEANUP_DESTRUCTORS
-    /* We make it local if we don't need the cleanup */
-    ev_io *listeners;
-#endif
 
     snprintf(port, sizeof(port), "%d", srv->srvconf.port);
 
-    /* This is either static or local, we don't care */
-    listeners = g_new0(ev_io, srv->config_context->used);
-#ifdef CLEANUP_DESTRUCTOR
-    listening_sockets = g_ptr_array_sized_new(srv->config_context->used);
-#endif
-
     if (!feng_bind_port(srv, host, port,
-                              &srv->config_storage[0],
-                              &listeners[0]))
+                        &srv->config_storage[0]))
         return false;
 
    /* check for $SERVER["socket"] */
@@ -221,8 +318,7 @@ gboolean feng_bind_ports(feng *srv)
 
         port++;
 
-        if (!feng_bind_port(srv, host, port,
-                            s, &listeners[i]))
+        if (!feng_bind_port(srv, host, port, s))
             return false;
     }
 

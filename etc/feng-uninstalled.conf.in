@@ -9,6 +9,8 @@ server.port         = 8554
 # bind to name (defaults to all interfaces)
 # server.bind         = "live.host.tld"
 
+server.use_ipv6 = 1
+
 # use sctp instead of tcp
 @ENABLE_SCTP@$SERVER["socket"] == "localhost:8554" {
 @ENABLE_SCTP@   sctp.protocol       = "enable"

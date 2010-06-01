@@ -156,8 +156,8 @@ RTSP_Client *rtsp_client_new(feng *srv)
 void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
                              ATTR_UNUSED int revents)
 {
-    Sock *sock = w->data;
-    feng *srv = sock->data;
+    Feng_Listener *listen = w->data;
+    feng *srv = listen->srv;
     int client_sd = -1;
     struct sockaddr_storage sa;
     socklen_t sa_len;
@@ -167,7 +167,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     ev_timer *timer;
     RTSP_Client *rtsp;
 
-    if ( (client_sd = accept(sock->fd, (struct sockaddr*)&sa, &sa_len)) < 0 ) {
+    if ( (client_sd = accept(listen->fd, (struct sockaddr*)&sa, &sa_len)) < 0 ) {
         fnc_perror("accept failed");
         return;
     }
@@ -184,8 +184,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     rtsp = rtsp_client_new(srv);
     rtsp->sd = client_sd;
 
-    switch(sock->socktype) {
-    case TCP:
+    if ( ! listen->is_sctp ) {
         rtsp->socktype = RTSP_TCP;
         rtsp->out_queue = g_queue_new();
         rtsp->write_data = rtsp_write_data_queue;
@@ -198,29 +197,23 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         io = &rtsp->ev_io_read;
         io->data = rtsp;
         ev_io_init(io, rtsp_tcp_read_cb, rtsp->sd, EV_READ);
-
-        break;
-
+    } else {
 #ifdef ENABLE_SCTP
-    case SCTP:
         rtsp->socktype = RTSP_SCTP;
         rtsp->write_data = rtsp_sctp_send_rtsp;
 
         io = &rtsp->ev_io_read;
         io->data = rtsp;
         ev_io_init(io, rtsp_sctp_read_cb, rtsp->sd, EV_READ);
-
-        break;
-#endif
-
-    default:
+#else
         g_assert_not_reached();
+#endif
     }
 
-    rtsp->local_host = neb_sa_get_host((struct sockaddr*)&sock->local_stg);
+    rtsp->local_host = neb_sa_get_host((struct sockaddr*)&listen->local_sa);
     rtsp->remote_host = neb_sa_get_host((struct sockaddr*)&sa);
 
-    memcpy(&rtsp->local, &sock->local_stg, sizeof(struct sockaddr_storage));
+    memcpy(&rtsp->local, &listen->local_sa, sizeof(struct sockaddr_storage));
     memcpy(&rtsp->peer, &sa, sizeof(struct sockaddr_storage));
 
     srv->connection_count++;

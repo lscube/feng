@@ -69,6 +69,15 @@ typedef struct feng {
 #endif
 } feng;
 
+typedef struct Feng_Listener {
+    int fd;
+    gboolean is_sctp;
+    char *local_host;
+    feng *srv;
+    ev_io io;
+    struct sockaddr_storage local_sa;
+} Feng_Listener;
+
 typedef feng server;
 
 #define MAX_PROCESS    1    /*! number of fork */

@@ -71,37 +71,7 @@ typedef struct {
     void *data; ///< user data
 } Sock;
 
-#define WSOCK_ERROR    -2
-#define WSOCK_OK 0
-#define WSOCK_ERRADDR    3
-
 #define NETEMBRYO_MAX_SCTP_STREAMS 15
-
-/** @defgroup NetEmbryo_Socket Sockets Access Interface
- *
- * @brief simple socket abstraction.
- *
- * @{
- */
-
-/**
- * Create a new socket and binds it to an address/port.
- * @param host Local address to be used by this socket, if NULL the socket will
- *        be bound to all interfaces.
- * @param port Local port to be used by this socket, if NULL a random port will
- *        be used.
- * @param sock Pointer to a pre-created socket
- * @param socktype The type of socket to be created.
- */
-Sock * neb_sock_bind(const char const *host,
-                     const char const *port,
-                     sock_type socktype);
-
-int neb_sock_close(Sock *s);
-
-/**
- * @}
- */
 
 char *neb_sa_get_host(const struct sockaddr *sa);
 in_port_t neb_sa_get_port(struct sockaddr *sa);
