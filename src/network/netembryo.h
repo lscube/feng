@@ -47,30 +47,6 @@ typedef unsigned short in_port_t;
 typedef unsigned int in_addr_t;
 #endif
 
-/** socket type definition */
-typedef enum {
-    /** socket fd not valid */
-    SOCK_NONE,
-    /** IP based protcols */
-    TCP,
-    UDP,
-    SCTP,
-    /** Local socket (Unix) */
-    LOCAL
-} sock_type;
-
-/**
- * Socket abstraction structure
- */
-typedef struct {
-    sock_type socktype; ///< socket type
-    int fd;    ///< low level socket file descriptor
-    struct sockaddr_storage remote_stg;    ///< low level address storage from getpeername
-    struct sockaddr_storage local_stg;    ///< low level address storage from getsockname
-    /** human readable data */
-    void *data; ///< user data
-} Sock;
-
 #define NETEMBRYO_MAX_SCTP_STREAMS 15
 
 char *neb_sa_get_host(const struct sockaddr *sa);
