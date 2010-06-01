@@ -160,7 +160,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     feng *srv = listen->srv;
     int client_sd = -1;
     struct sockaddr_storage sa;
-    socklen_t sa_len;
+    socklen_t sa_len = sizeof(struct sockaddr_storage);
 
     ev_io *io;
     ev_async *async;
