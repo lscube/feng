@@ -22,18 +22,8 @@
 #ifndef FN_NETEMBRYO_H__
 #define FN_NETEMBRYO_H__
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <errno.h>
-
-#include <unistd.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 
 #define NETEMBRYO_MAX_SCTP_STREAMS 15
 

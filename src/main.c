@@ -32,6 +32,7 @@
 #include <grp.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #include "conf/buffer.h"
 #include "conf/array.h"

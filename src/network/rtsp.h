@@ -25,12 +25,12 @@
 
 #include <time.h>
 #include <config.h>
+#include <netinet/in.h>
 
 #include <glib.h>
 #include <ev.h>
 
 #include "feng_utils.h"
-#include "netembryo.h"
 
 #include "rfc822proto.h"
 

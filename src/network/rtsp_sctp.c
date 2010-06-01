@@ -20,11 +20,16 @@
  *
  * */
 
+#include <config.h>
+
+#include <errno.h>
+#include <netinet/in.h>
+#include <netinet/sctp.h>
+
 #include "rtsp.h"
 #include "rtp.h"
 #include "fnc_log.h"
-
-#include <netinet/sctp.h>
+#include "netembryo.h"
 
 typedef struct {
     struct sctp_sndrcvinfo rtp;

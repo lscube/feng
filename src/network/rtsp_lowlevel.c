@@ -20,14 +20,19 @@
  *
  * */
 
+#include <config.h>
+
 #include <strings.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include "feng.h"
 #include "rtsp.h"
 #include "rtp.h"
 #include "fnc_log.h"
 #include "feng_utils.h"
+#include "netembryo.h"
 
 typedef struct {
     /** RTP socket descriptor */

@@ -21,12 +21,18 @@
  * */
 
 #include <stdbool.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <errno.h>
+
 #include <ev.h>
 
 #include "feng.h"
 #include "fnc_log.h"
 #include "incoming.h"
 #include "network/rtsp.h"
+#include "network/netembryo.h"
 
 #ifdef ENABLE_SCTP
 # include <netinet/sctp.h>

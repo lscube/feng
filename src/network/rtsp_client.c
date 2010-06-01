@@ -20,15 +20,21 @@
  *
  * */
 
-#include "feng.h"
-#include "network/rtsp.h"
-#include "network/rtp.h"
-#include "fnc_log.h"
-#include "media/demuxer.h"
+#include <config.h>
 
 #include <sys/time.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <errno.h>
+
 #include <ev.h>
+
+#include "feng.h"
+#include "network/rtsp.h"
+#include "network/rtp.h"
+#include "network/netembryo.h"
+#include "fnc_log.h"
+#include "media/demuxer.h"
 
 #define LIVE_STREAM_BYE_TIMEOUT 6
 #define STREAM_TIMEOUT 12 /* This one must be big enough to permit to VLC to switch to another

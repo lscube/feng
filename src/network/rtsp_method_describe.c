@@ -31,7 +31,6 @@
 #include "feng.h"
 #include "media/demuxer.h"
 #include "uri.h"
-#include "netembryo.h"
 
 #define SDP_EL "\r\n"
 #define DEFAULT_TTL 32

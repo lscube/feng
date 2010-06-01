@@ -31,7 +31,6 @@
 #include <sys/socket.h>
 #include <ev.h>
 
-#include "netembryo.h"
 #include "bufferqueue.h"
 
 struct feng;

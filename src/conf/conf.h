@@ -27,6 +27,9 @@
 
 #ifndef FN_CONF_H
 #define FN_CONF_H
+
+#include <stdio.h>
+
 typedef enum { T_CONFIG_UNSET,
                 T_CONFIG_STRING,
                 T_CONFIG_SHORT,

@@ -23,6 +23,7 @@
 #include <glib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <errno.h>
 
 #include "demuxer.h"
 #include "feng.h"
