@@ -29,10 +29,10 @@
 #define FN_SERVER_H
 
 #include <glib.h>
-#include <netembryo/wsocket.h>
 #include <ev.h>
 #include <pwd.h>
 
+#include "network/netembryo.h"
 #include "conf/array.h"
 #include "conf/conf.h"
 

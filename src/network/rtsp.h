@@ -30,7 +30,7 @@
 #include <ev.h>
 
 #include "feng_utils.h"
-#include <netembryo/wsocket.h>
+#include "netembryo.h"
 
 #include "rfc822proto.h"
 

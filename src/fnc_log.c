@@ -181,14 +181,3 @@ void _fnc_perror(int errno_val, const char *function, const char *comment)
         fnc_log(FNC_LOG_ERR, "%s %s: unknown error", function,
                 *comment ? " " : "", comment);
 }
-
-#include <netembryo/wsocket.h>
-
-/**
- * Override of the weak reference neb_vlog in netembryo
- */
-void neb_vlog(ATTR_UNUSED NebLogLevel level,
-              ATTR_UNUSED const char *fmt,
-              ATTR_UNUSED va_list args)
-{
-}

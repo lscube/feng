@@ -77,6 +77,9 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/conf/data_string.c \
 	src/conf/settings.h \
 	\
+	src/network/netembryo.h \
+	src/network/neb_sockaddr.c \
+	src/network/neb_socket.c \
 	src/network/ragel_parsers.h \
 	src/network/rfc822proto.c \
 	src/network/rfc822proto-constants.h \

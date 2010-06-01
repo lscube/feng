@@ -50,6 +50,7 @@ AM_CONDITIONAL([AVOID_TABLES], [test "x$enable_tables" = "xno"])
 
 dnl Checks used by feng itself
 AC_CHECK_HEADERS_ONCE([syslog.h])
+AC_CHECK_FUNCS_ONCE([inet_ntop])
 
 AC_SEARCH_LIBS([clock_gettime], [rt],
   [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define this if you have clock_gettime])])
@@ -83,15 +84,6 @@ dnl the -uninstalled variant of feng.conf to use sctp if enabled.
 AS_IF([test "x$have_sctp" = "xyes"],
   [AC_SUBST([ENABLE_SCTP], [""])],
   [AC_SUBST([ENABLE_SCTP], ["#"])])
-
-AS_IF([test "x$have_sctp" = "xyes"],
-  [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.2.0"],
-  [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.2.0"])
-
-PKG_CHECK_MODULES(LIBNETEMBRYO,[$LIBNETEMBRYO_REQUIRES])
-AC_SUBST(LIBNETEMBRYO_REQUIRES)
-CPPFLAGS="$CPPFLAGS $LIBNETEMBRYO_CFLAGS"
-LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 
 dnl Check for prerequisites to enable live streaming with flux.
 AS_IF([test "x$live_streaming" = "xyes"],
