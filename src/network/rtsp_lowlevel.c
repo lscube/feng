@@ -59,7 +59,7 @@ static gboolean rtp_udp_send_pkt(Sock *sock, GByteArray *buffer)
                          sizeof(struct sockaddr_storage));
 
         if (written >= 0 ) {
-            stats_account_sent(rtp->client, written);
+            stats_account_sent(((RTP_session *)sock->data)->client, written);
         }
     }
 
@@ -182,6 +182,9 @@ void rtp_udp_transport(RTSP_Client *rtsp,
         neb_sock_close(transport.rtcp);
         return;
     }
+
+    transport.rtp->data=rtp_s;
+    transport.rtcp->data=rtp_s;
 
     io->data = rtp_s;
     ev_io_init(io, rtcp_udp_read_cb,
