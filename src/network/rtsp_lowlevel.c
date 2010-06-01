@@ -156,14 +156,20 @@ void rtp_udp_transport(RTSP_Client *rtsp,
      */
     neb_sa_set_port(sa_p, 0);
 
-    if ( (firstsd = socket(sa_p->sa_family, SOCK_DGRAM, 0)) < 0 )
+    if ( (firstsd = socket(sa_p->sa_family, SOCK_DGRAM, 0)) < 0 ) {
+        fnc_perror("socket 1");
         goto error;
+    }
 
-    if ( bind(firstsd, sa_p, sizeof(struct sockaddr_storage)) < 0 )
+    if ( bind(firstsd, sa_p, sizeof(struct sockaddr_storage)) < 0 ) {
+        fnc_perror("bind 1");
         goto error;
+    }
 
-    if ( getsockname(firstsd, sa_p, &sa_len) < 0 )
+    if ( getsockname(firstsd, sa_p, &sa_len) < 0 ) {
+        fnc_perror("getsockname 1");
         goto error;
+    }
 
     firstport = neb_sa_get_port(sa_p);
 
@@ -171,18 +177,26 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     case 0:
         transport.rtp_sd = firstsd; firstsd = -1;
         rtp_port = firstport; rtcp_port = firstport+1;
-        if ( (transport.rtcp_sd = socket(sa_p->sa_family, SOCK_DGRAM, 0)) < 0 )
+        if ( (transport.rtcp_sd = socket(sa_p->sa_family, SOCK_DGRAM, 0)) < 0 ) {
+            fnc_perror("socket 2");
             goto error;
+        }
 
         neb_sa_set_port(sa_p, rtcp_port);
 
         if ( bind(transport.rtcp_sd, sa_p, sizeof(struct sockaddr_storage)) < 0 ) {
-            neb_sa_set_port(sa_p, 0);
-            if ( bind(transport.rtcp_sd, sa_p, sizeof(struct sockaddr_storage)) < 0 )
-                goto error;
+            fnc_perror("bind 2");
 
-            if ( getsockname(transport.rtcp_sd, sa_p, &sa_len) < 0 )
+            neb_sa_set_port(sa_p, 0);
+            if ( bind(transport.rtcp_sd, sa_p, sizeof(struct sockaddr_storage)) < 0 ) {
+                fnc_perror("bind 3");
                 goto error;
+            }
+
+            if ( getsockname(transport.rtcp_sd, sa_p, &sa_len) < 0 ) {
+                fnc_perror("getsockname 2");
+                goto error;
+            }
 
             rtcp_port = neb_sa_get_port(sa_p);
         }
@@ -191,18 +205,25 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     case 1:
         transport.rtcp_sd = firstsd; firstsd = -1;
         rtcp_port = firstport; rtp_port = firstport-1;
-        if ( (transport.rtp_sd = socket(sa_p->sa_family, SOCK_DGRAM, 0)) < 0 )
+        if ( (transport.rtp_sd = socket(sa_p->sa_family, SOCK_DGRAM, 0)) < 0 ) {
+            fnc_perror("socket 3");
             goto error;
+        }
 
         neb_sa_set_port(sa_p, rtp_port);
 
         if ( bind(transport.rtp_sd, sa_p, sizeof(struct sockaddr_storage)) < 0 ) {
+            fnc_perror("bind 4");
             neb_sa_set_port(sa_p, 0);
-            if ( bind(transport.rtp_sd, sa_p, sizeof(struct sockaddr_storage)) < 0 )
+            if ( bind(transport.rtp_sd, sa_p, sizeof(struct sockaddr_storage)) < 0 ) {
+                fnc_perror("bind 5");
                 goto error;
+            }
 
-            if ( getsockname(transport.rtp_sd, sa_p, &sa_len) < 0 )
+            if ( getsockname(transport.rtp_sd, sa_p, &sa_len) < 0 ) {
+                fnc_perror("getsockname 3");
                 goto error;
+            }
 
             rtp_port = neb_sa_get_port(sa_p);
         }
@@ -215,16 +236,20 @@ void rtp_udp_transport(RTSP_Client *rtsp,
 
     if ( connect(transport.rtp_sd,
                  (struct sockaddr *)(&transport.rtp_sa),
-                 sizeof(struct sockaddr_storage)) < 0 )
+                 sizeof(struct sockaddr_storage)) < 0 ) {
+        fnc_perror("connect 1");
         goto error;
+    }
 
     memcpy(&transport.rtcp_sa, &rtsp->peer, sizeof(struct sockaddr_storage));
     neb_sa_set_port((struct sockaddr *)(&transport.rtcp_sa), parsed->rtcp_channel);
 
     if ( connect(transport.rtcp_sd,
                  (struct sockaddr *)(&transport.rtcp_sa),
-                 sizeof(struct sockaddr_storage)) < 0 )
+                 sizeof(struct sockaddr_storage)) < 0 ) {
+        fnc_perror("connect 1");
         goto error;
+    }
 
     io->data = rtp_s;
     ev_io_init(io, rtcp_udp_read_cb,
@@ -246,7 +271,6 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     return;
 
  error:
-    fnc_perror("trying RTP transport");
     if ( firstsd >= 0 )
         close(firstsd);
     if ( transport.rtp_sd >= 0 )
