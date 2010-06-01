@@ -31,6 +31,7 @@
 #include "rtp.h"
 #include "fnc_log.h"
 #include "feng.h"
+#include "uri.h"
 
 /**
  * @brief Free a request structure as parsed by rtsp_parse_request().
@@ -43,6 +44,7 @@ static void rfc822_free_request(RFC822_Request *req)
         return;
 
     rfc822_headers_destroy(req->headers);
+    uri_free(req->uri);
     g_free(req->method_str);
     g_free(req->object);
     g_free(req->protocol_str);
@@ -202,19 +204,18 @@ gboolean rtsp_connection_limit(RTSP_Client *rtsp, RFC822_Request *req)
     if (rtsp->srv->connection_count > rtsp->srv->srvconf.max_conns) {
         fnc_log(FNC_LOG_INFO, "Max connection reached");
         if (rtsp->srv->srvconf.twin->ptr) {
-            Url url;
+            URI *uri;
             char *redir;
             char *hostname = rtsp->srv->srvconf.twin->ptr;
             RFC822_Response *response = rfc822_response_new(req, RTSP_Found);
 
-            Url_init(&url, req->object);
             switch(req->proto) {
                 case RFC822_Protocol_HTTP10:
                 case RFC822_Protocol_HTTP11:
-                    redir = g_strdup_printf("http://%s/%s", hostname, url.path);
+                    redir = g_strdup_printf("http://%s/%s", hostname, req->uri->path);
                 break;
                 default:
-                    redir = g_strdup_printf("rtsp://%s/%s", hostname, url.path);
+                    redir = g_strdup_printf("rtsp://%s/%s", hostname, req->uri->path);
                 break;
             }
 
@@ -225,7 +226,6 @@ gboolean rtsp_connection_limit(RTSP_Client *rtsp, RFC822_Request *req)
                                RFC822_Header_Location,
                                strdup(redir));
             rfc822_response_send(rtsp, response);
-            Url_destroy(&url);
             g_free(redir);
         } else {
             rtsp_quick_response(rtsp, req, RTSP_NotEnoughBandwidth);
@@ -317,6 +317,16 @@ static gboolean RTSP_handle_headers(RTSP_Client *rtsp) {
     }
 
     g_byte_array_remove_range(rtsp->input, 0, parsed_headers);
+
+    /* try parsing the URI already, since we'll most likely need it,
+       and the new parser is fast enough */
+    if ( rtsp->pending_request->object ) {
+        char *decoded_url = g_uri_unescape_string(rtsp->pending_request->object, NULL);
+
+        rtsp->pending_request->uri = uri_parse(rtsp->pending_request->object);
+
+        g_free(decoded_url);
+    }
 
     if ( headers_res == 0 )
         return false;

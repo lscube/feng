@@ -27,7 +27,6 @@
 #include <glib.h>
 #include <math.h>
 #include <stdbool.h>
-#include <netembryo/url.h>
 
 #include "feng.h"
 #include "rtsp.h"

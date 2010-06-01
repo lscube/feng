@@ -20,10 +20,16 @@
  */
 
 #include <config.h>
+#include <stdbool.h>
+#include <glib.h>
+#include <string.h>
 #include "uri.h"
 
 void uri_free(URI *uri)
 {
+    if ( uri == NULL )
+        return;
+
     g_free(uri->scheme);
     g_free(uri->userinfo);
     g_free(uri->host);

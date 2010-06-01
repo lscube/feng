@@ -35,6 +35,7 @@
 #include "feng.h"
 #include "rtsp.h"
 #include "rtp.h"
+#include "uri.h"
 #include "media/demuxer.h"
 
 /**
@@ -144,7 +145,7 @@ void rtsp_session_free(RTSP_session *session)
 /**
  * @brief Checks if the path required by the connection is inside the avroot.
  *
- * @param url The netembryo Url structure to validate.
+ * @param url The URI structure to validate.
  *
  * @retval true The URL does not contian any forbidden sequence.
  * @retval false The URL contains forbidden sequences that might have malicious
@@ -153,42 +154,10 @@ void rtsp_session_free(RTSP_session *session)
  * @todo This function should be moved to netembryo.
  * @todo This function does not check properly for paths.
  */
-static gboolean check_forbidden_path(Url *url)
+static gboolean check_forbidden_path(URI *uri)
 {
-    if ( strstr(url->path, "../") || strstr(url->path, "./") )
+    if ( strstr(uri->path, "../") || strstr(uri->path, "./") )
         return false;
-
-    return true;
-}
-
-/**
- * Validates the url requested and sets up the connection informations
- * for the given url
- *
- * @param urlstr The string contianing the raw URL that has to be
- *               validated and split.
- * @param[out] url The netembryo Url structure to fill with the
- *                 validate Url.
- *
- * @retval true The URL has been filled in url.
- * @retval false The URL is malformed.
- *
- * @todo This function should be moved to netembryo.
- */
-static gboolean validate_url(char *urlstr, Url * url)
-{
-    char *decoded_url = g_uri_unescape_string(urlstr, NULL);
-    if ( decoded_url == NULL )
-        return false;
-
-    Url_init(url, decoded_url);
-
-    g_free(decoded_url);
-
-    if ( url->path == NULL ) {
-      Url_destroy(url);
-      return false;
-    }
 
     return true;
 }
@@ -198,7 +167,9 @@ static gboolean validate_url(char *urlstr, Url * url)
  *        structure.
  *
  * @param req The request structure from where to extract the URL
- * @param[out] url The netembryo Url structure where to save the buffer
+ *
+ * @retval true The URL is valid and allowed
+ * @retval false The URL is not not valid or forbidden
  *
  * This function already takes care of sending a 400 "Bad Request" response for
  * invalid URLs or a 403 "Forbidden" reply for paths that try to exit the
@@ -207,38 +178,17 @@ static gboolean validate_url(char *urlstr, Url * url)
  * @retval true The URL was properly found and extracted
  * @retval false An error was found, and a reply was already sent.
  */
-gboolean rfc822_request_get_url(RTSP_Client *client, RFC822_Request *req, Url *url) {
-  if ( !validate_url(req->object, url) ) {
-      rtsp_quick_response(client, req, RTSP_BadRequest);
-      return false;
-  }
-
-  if ( !check_forbidden_path(url) ) {
-      rtsp_quick_response(client, req, RTSP_Forbidden);
-      return false;
-  }
-
-  return true;
-}
-
-/**
- * @brief Check the URL from a request structure without saving it
- *
- * @param req The request structure from where to check the URL
- *
- * @retval true The URL is valid and allowed
- * @retval false The URL is not not valid or forbidden
- *
- * @note This function will allocate and destroy the memory by itself,
- *       it's used where the actual URL is not relevant to the code
- */
-gboolean rfc822_request_check_url(RTSP_Client *client, RFC822_Request *req) {
-    Url url;
-
-    if ( !rfc822_request_get_url(client, req, &url) )
+gboolean rfc822_request_check_url(RTSP_Client *client, RFC822_Request *req)
+{
+    if ( req->uri == NULL ) {
+        rtsp_quick_response(client, req, RTSP_BadRequest);
         return false;
+    }
 
-    Url_destroy(&url);
+    if ( !check_forbidden_path(req->uri) ) {
+        rtsp_quick_response(client, req, RTSP_Forbidden);
+        return false;
+    }
 
     return true;
 }

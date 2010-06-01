@@ -34,6 +34,7 @@
 #include "rtsp.h"
 #include "fnc_log.h"
 #include "media/demuxer.h"
+#include "uri.h"
 
 /**
  * Gets the track requested for the object
@@ -64,7 +65,6 @@ static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, R
     if ( !rtsp_s->resource ) {
         /* Here we don't know the URL and we have to find it out, we
          * check for the presence of the SDP_TRACK_URI_SEPARATOR */
-        Url url;
         char *path;
 
         char *separator = strstr(req->object, SDP_TRACK_URI_SEPARATOR);
@@ -82,9 +82,7 @@ static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, R
          * have to dupe it here. */
         rtsp_s->resource_uri = g_strndup(req->object, separator - req->object);
 
-        Url_init(&url, rtsp_s->resource_uri);
-        path = g_uri_unescape_string(url.path, "/");
-        Url_destroy(&url);
+        path = g_uri_unescape_string(req->uri->path, "/");
 
         if (!(rtsp_s->resource = r_open(srv, path))) {
             fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", path);

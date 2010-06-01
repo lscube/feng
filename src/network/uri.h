@@ -46,7 +46,7 @@
  * This structure encapsulate the basic fragments composing an URI
  * strings.
  */
-typedef struct {
+typedef struct URI {
     /** URI scheme, otherwise called protocol */
     char *scheme;
     /** User information (username and password) */
@@ -64,6 +64,8 @@ typedef struct {
 } URI;
 
 URI *uri_parse(const char *uri_string);
+URI *uri_validate(const char *urlstr);
+
 void uri_free(URI *uri);
 
 /**
