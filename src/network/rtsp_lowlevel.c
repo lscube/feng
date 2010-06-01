@@ -53,8 +53,11 @@ static gboolean rtp_udp_send_pkt(Sock *sock, GByteArray *buffer)
     }
 
     if (FD_ISSET(sock->fd, &wset)) {
-        written = neb_sock_write(sock, buffer->data,
-                                     buffer->len, MSG_EOR | MSG_DONTWAIT);
+        written = sendto(sock->fd, buffer->data, buffer->len,
+                         MSG_EOR | MSG_DONTWAIT,
+                         (struct sockaddr*)&sock->remote_stg,
+                         sizeof(struct sockaddr_storage));
+
         if (written >= 0 ) {
             stats_account_sent(rtp->client, written);
         }
