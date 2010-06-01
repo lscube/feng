@@ -134,7 +134,7 @@ static void rtcp_udp_read_cb(ATTR_UNUSED struct ev_loop *loop,
 
     int n = neb_sock_read(transport->rtcp,
                           buffer, RTP_DEFAULT_MTU*2,
-                          NULL, MSG_DONTWAIT);
+                          MSG_DONTWAIT);
 
     if (n>0)
         rtcp_handle(rtp, buffer, n);
@@ -238,7 +238,7 @@ void rtsp_tcp_read_cb(struct ev_loop *loop, ev_io *w,
     if ( (read_size = neb_sock_read(rtsp->sock,
                                     buffer,
                                     sizeof(buffer) - 1,
-                                    NULL, 0)
+                                    0)
           ) <= 0 )
         goto client_close;
 
