@@ -137,7 +137,7 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
             (is_sctp? "SCTP" : "TCP"),
             ((host == NULL)? "all interfaces" : host));
 
-    if(neb_sock_listen(sock, SOMAXCONN)) {
+    if(listen(sock->fd, SOMAXCONN)) {
         fnc_log(FNC_LOG_ERR, "Cannot listen on port %s (%s) on %s",
                 port,
                 (is_sctp? "SCTP" : "TCP"),
