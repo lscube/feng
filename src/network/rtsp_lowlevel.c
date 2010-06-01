@@ -69,6 +69,9 @@ static gboolean rtp_udp_send_pkt(int sd, struct sockaddr *sa, GByteArray *buffer
     }
 
  end:
+    if ( written < 0 )
+        fnc_perror("RTP/RTCP packet lost");
+
     g_byte_array_free(buffer, true);
 
     return written >= 0;
@@ -77,31 +80,17 @@ static gboolean rtp_udp_send_pkt(int sd, struct sockaddr *sa, GByteArray *buffer
 static gboolean rtp_udp_send_rtp(RTP_session *rtp, GByteArray *buffer)
 {
     RTP_UDP_Transport *transport = rtp->transport_data;
-    gboolean res = true;
 
-    if ( (res = rtp_udp_send_pkt(transport->rtp_sd, (struct sockaddr *)&transport->rtp_sa,
-                                 buffer, rtp->client)) ) {
-        fnc_log(FNC_LOG_VERBOSE, "OUT RTP\n");
-    } else {
-        fnc_log(FNC_LOG_VERBOSE, "RTP Packet Lost\n");
-    }
-
-    return res;
+    return rtp_udp_send_pkt(transport->rtp_sd, (struct sockaddr *)&transport->rtp_sa,
+                            buffer, rtp->client);
 }
 
 static gboolean rtp_udp_send_rtcp(RTP_session *rtp, GByteArray *buffer)
 {
     RTP_UDP_Transport *transport = rtp->transport_data;
-    gboolean res = true;
 
-    if ( (res = rtp_udp_send_pkt(transport->rtcp_sd, (struct sockaddr *)&transport->rtcp_sa,
-                                 buffer, rtp->client)) ) {
-        fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
-    } else {
-        fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
-    }
-
-    return res;
+    return rtp_udp_send_pkt(transport->rtcp_sd, (struct sockaddr *)&transport->rtcp_sa,
+                            buffer, rtp->client);
 }
 
 static void rtp_udp_close_transport(RTP_session *rtp)
