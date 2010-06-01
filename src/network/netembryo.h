@@ -27,25 +27,13 @@
 #include <stdarg.h>
 #include <errno.h>
 
-#ifndef WIN32
-#   include <unistd.h>
-#   include <netinet/in.h>
-#   include <arpa/inet.h>
-#   include <sys/types.h>
-#   include <sys/socket.h>
-#   include <arpa/inet.h>
-#   include <netdb.h>
-#else
-#   include <winsock2.h>
-#   include <ws2tcpip.h>
-#   include <stdint.h>
-#endif
-
-#ifdef WIN32
-typedef unsigned short sa_family_t;
-typedef unsigned short in_port_t;
-typedef unsigned int in_addr_t;
-#endif
+#include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 #define NETEMBRYO_MAX_SCTP_STREAMS 15
 
