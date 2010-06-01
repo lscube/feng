@@ -195,7 +195,8 @@ typedef struct RTSP_Client {
 #endif
 
     struct Feng_Listener *local_sock;
-    struct sockaddr_storage peer;
+    struct sockaddr *peer_sa;
+    socklen_t peer_len;
 } RTSP_Client;
 
 RTSP_Client *rtsp_client_new(struct feng *srv);

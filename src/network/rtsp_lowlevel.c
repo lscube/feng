@@ -35,9 +35,11 @@ typedef struct {
     /** RTCP socket descriptor */
     int rtcp_sd;
     /** RTP remote socket address */
-    struct sockaddr_storage rtp_sa;
+    struct sockaddr *rtp_sa;
     /** RTCP remote socket address */
-    struct sockaddr_storage rtcp_sa;
+    struct sockaddr *rtcp_sa;
+    /* Length of the sockaddr structures above */
+    socklen_t sa_len;
     ev_io rtcp_reader;
 } RTP_UDP_Transport;
 
@@ -81,7 +83,7 @@ static gboolean rtp_udp_send_rtp(RTP_session *rtp, GByteArray *buffer)
 {
     RTP_UDP_Transport *transport = rtp->transport_data;
 
-    return rtp_udp_send_pkt(transport->rtp_sd, (struct sockaddr *)&transport->rtp_sa,
+    return rtp_udp_send_pkt(transport->rtp_sd, transport->rtp_sa,
                             buffer, rtp->client);
 }
 
@@ -89,7 +91,7 @@ static gboolean rtp_udp_send_rtcp(RTP_session *rtp, GByteArray *buffer)
 {
     RTP_UDP_Transport *transport = rtp->transport_data;
 
-    return rtp_udp_send_pkt(transport->rtcp_sd, (struct sockaddr *)&transport->rtcp_sa,
+    return rtp_udp_send_pkt(transport->rtcp_sd, transport->rtcp_sa,
                             buffer, rtp->client);
 }
 
@@ -102,6 +104,8 @@ static void rtp_udp_close_transport(RTP_session *rtp)
     close(transport->rtp_sd);
     close(transport->rtcp_sd);
 
+    g_slice_free1(transport->sa_len, transport->rtp_sa);
+    g_slice_free1(transport->sa_len, transport->rtcp_sa);
     g_slice_free(RTP_UDP_Transport, transport);
 }
 
@@ -133,7 +137,9 @@ void rtp_udp_transport(RTSP_Client *rtsp,
 {
     RTP_UDP_Transport transport = {
         .rtp_sd = -1,
-        .rtcp_sd = -1
+        .rtp_sa = NULL,
+        .rtcp_sd = -1,
+        .rtcp_sa = NULL
     };
     ev_io *io = &transport.rtcp_reader;
 
@@ -228,23 +234,25 @@ void rtp_udp_transport(RTSP_Client *rtsp,
         break;
     }
 
-    memcpy(&transport.rtp_sa, &rtsp->peer, sizeof(struct sockaddr_storage));
-    neb_sa_set_port((struct sockaddr *)(&transport.rtp_sa), parsed->rtp_channel);
+    transport.sa_len = rtsp->peer_len;
+
+    transport.rtp_sa = g_slice_copy(transport.sa_len, rtsp->peer_sa);
+    neb_sa_set_port(transport.rtp_sa, parsed->rtp_channel);
 
     if ( connect(transport.rtp_sd,
-                 (struct sockaddr *)(&transport.rtp_sa),
-                 sizeof(struct sockaddr_storage)) < 0 ) {
+                 transport.rtp_sa,
+                 transport.sa_len) < 0 ) {
         fnc_perror("connect 1");
         goto error;
     }
 
-    memcpy(&transport.rtcp_sa, &rtsp->peer, sizeof(struct sockaddr_storage));
-    neb_sa_set_port((struct sockaddr *)(&transport.rtcp_sa), parsed->rtcp_channel);
+    transport.rtcp_sa = g_slice_copy(transport.sa_len, rtsp->peer_sa);
+    neb_sa_set_port(transport.rtcp_sa, parsed->rtcp_channel);
 
     if ( connect(transport.rtcp_sd,
-                 (struct sockaddr *)(&transport.rtcp_sa),
-                 sizeof(struct sockaddr_storage)) < 0 ) {
-        fnc_perror("connect 1");
+                 transport.rtcp_sa,
+                 transport.sa_len) < 0 ) {
+        fnc_perror("connect 2");
         goto error;
     }
 
@@ -270,6 +278,10 @@ void rtp_udp_transport(RTSP_Client *rtsp,
 
  error:
     g_slice_free1(sa_len, sa_p);
+    if ( transport.rtp_sa != NULL )
+        g_slice_free1(transport.sa_len, transport.rtp_sa);
+    if ( transport.rtcp_sa != NULL )
+        g_slice_free1(transport.sa_len, transport.rtcp_sa);
     if ( firstsd >= 0 )
         close(firstsd);
     if ( transport.rtp_sd >= 0 )

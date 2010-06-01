@@ -77,6 +77,8 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
 
     srv->clients = g_slist_remove(srv->clients, rtsp);
 
+    g_slice_free1(rtsp->peer_len, rtsp->peer_sa);
+
     g_slice_free(RTSP_Client, rtsp);
 
     fnc_log(FNC_LOG_INFO, "[client] Client removed");
@@ -212,7 +214,9 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     rtsp->local_sock = listen;
 
     rtsp->remote_host = neb_sa_get_host((struct sockaddr*)&sa);
-    memcpy(&rtsp->peer, &sa, sizeof(struct sockaddr_storage));
+
+    rtsp->peer_len = sa_len;
+    rtsp->peer_sa = g_slice_copy(rtsp->peer_len, &sa);
 
     srv->connection_count++;
 
