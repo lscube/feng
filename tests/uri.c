@@ -100,3 +100,8 @@ void test_just_proto_host_port()
 {
     test_url("rtsp://host:1234", "rtsp", "host", "1234", NULL);
 }
+
+void test_url_parentdir()
+{
+    test_url("rtsp://this.is.the.host/this/is/not/../the/path.avi", "rtsp", "this.is.the.host", NULL, "/this/is/not/../the/path.avi");
+}

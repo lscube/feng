@@ -45,11 +45,10 @@
                     ( ":" digit* >mark
                      %{uri->port = g_strndup(mark, fpc-mark);})?;
 	pchar = unreserved | pct_encoded | sub_delims | ":" | "@";
-	segment = ( pchar+ - ".." - "." ) >mark
+	segment = ( pchar+ ) >mark
                         %{mark = g_strndup(mark, fpc-mark);
                           g_queue_push_tail(stack, mark);}|
-                  ".." %{g_queue_pop_tail(stack);}|
-                    zlen | ".";
+                    zlen;
 	path_abempty = ( "/" segment )*;
 	segment_nz = ( pchar+ - ".." ) | "..";
 	path_absolute = "/" ( segment_nz ( "/" segment )* )?;
