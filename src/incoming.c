@@ -111,7 +111,7 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
     int sock;
     static const int on = 1;
     Feng_Listener *listener = NULL;
-    socklen_t sa_len;
+    socklen_t sa_len = sizeof(struct sockaddr_storage);
 
     if ( (sock = socket(ai->ai_family, SOCK_STREAM,
                         is_sctp ? IPPROTO_SCTP : IPPROTO_TCP)) < 0 ) {
