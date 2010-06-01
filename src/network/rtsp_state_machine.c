@@ -162,6 +162,7 @@ static void rtsp_handle_request(RTSP_Client *client, RFC822_Request *req)
 
  error:
     rfc822_free_request(req);
+    client->pending_request = NULL;
 }
 
 static gboolean RTSP_handle_interleaved(RTSP_Client *rtsp) {

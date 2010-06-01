@@ -83,6 +83,8 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
 
     srv->clients = g_slist_remove(srv->clients, rtsp);
 
+    g_slice_free(RFC822_Request, rtsp->pending_request);
+
     g_slice_free1(rtsp->peer_len, rtsp->peer_sa);
 
     g_slice_free(RTSP_Client, rtsp);
