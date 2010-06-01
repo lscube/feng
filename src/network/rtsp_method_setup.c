@@ -229,4 +229,5 @@ void RTSP_setup(RTSP_Client *rtsp, RFC822_Request *req)
 
  cleanup:
     g_slist_foreach(transports, parsed_transport_free, NULL);
+    g_slist_free(transports);
 }
