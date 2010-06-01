@@ -21,6 +21,7 @@
  * */
 
 #include <strings.h>
+#include <stdbool.h>
 
 #include "feng.h"
 #include "rtsp.h"
@@ -34,78 +35,62 @@ typedef struct {
     ev_io rtcp_reader;
 } RTP_UDP_Transport;
 
+static gboolean rtp_udp_send_pkt(Sock *sock, GByteArray *buffer)
+{
+    fd_set wset;
+    struct timeval t;
+    int written = -1;
+
+    /*---------------SEE eventloop/rtsp_server.c-------*/
+    FD_ZERO(&wset);
+    t.tv_sec = 0;
+    t.tv_usec = 1000;
+
+    FD_SET(sock->fd, &wset);
+    if (select(sock->fd + 1, 0, &wset, 0, &t) < 0) {
+        fnc_log(FNC_LOG_ERR, "select error: %s\n", strerror(errno));
+        goto end;
+    }
+
+    if (FD_ISSET(sock->fd, &wset)) {
+        written = neb_sock_write(sock, buffer->data,
+                                     buffer->len, MSG_EOR | MSG_DONTWAIT);
+        if (written >= 0 ) {
+            stats_account_sent(rtp->client, written);
+        }
+    }
+
+ end:
+    g_byte_array_free(buffer, true);
+
+    return written >= 0;
+}
+
 static gboolean rtp_udp_send_rtp(RTP_session *rtp, GByteArray *buffer)
 {
     RTP_UDP_Transport *transport = rtp->transport_data;
+    gboolean res = true;
 
-    fd_set wset;
-    struct timeval t;
-    gboolean res = TRUE;
-
-    /*---------------SEE eventloop/rtsp_server.c-------*/
-    FD_ZERO(&wset);
-    t.tv_sec = 0;
-    t.tv_usec = 1000;
-
-    FD_SET(transport->rtp->fd, &wset);
-    if (select(transport->rtp->fd + 1, 0, &wset, 0, &t) < 0) {
-        fnc_log(FNC_LOG_ERR, "select error: %s\n", strerror(errno));
-        res = FALSE;
-        goto exit;
-    }
-
-    if (FD_ISSET(transport->rtp->fd, &wset)) {
-        int written = neb_sock_write(transport->rtp, buffer->data,
-                                     buffer->len, MSG_EOR | MSG_DONTWAIT);
-        if (written < 0) {
-            fnc_log(FNC_LOG_VERBOSE, "RTP Packet Lost\n");
-            res = FALSE;
-            goto exit;
-        }
+    if ( (res = rtp_udp_send_pkt(transport->rtp, buffer)) ) {
         fnc_log(FNC_LOG_VERBOSE, "OUT RTP\n");
-        stats_account_sent(rtp->client, written);
+    } else {
+        fnc_log(FNC_LOG_VERBOSE, "RTP Packet Lost\n");
     }
 
- exit:
-    g_byte_array_free(buffer, TRUE);
     return res;
 }
 
-static gboolean rtp_udp_send_rtcp(RTP_session *rtp, GByteArray *buffer)
+static gboolean rtp_udp_send_rtcp(RTP_session *rtcp, GByteArray *buffer)
 {
-    RTP_UDP_Transport *transport = rtp->transport_data;
+    RTP_UDP_Transport *transport = rtcp->transport_data;
+    gboolean res = true;
 
-    fd_set wset;
-    struct timeval t;
-    gboolean res = TRUE;
-
-    /*---------------SEE eventloop/rtsp_server.c-------*/
-    FD_ZERO(&wset);
-    t.tv_sec = 0;
-    t.tv_usec = 1000;
-
-    FD_SET(transport->rtcp->fd, &wset);
-    if (select(transport->rtcp->fd + 1, 0, &wset, 0, &t) < 0) {
-        fnc_log(FNC_LOG_ERR, "select error: %s\n", strerror(errno));
-        res = FALSE;
-        goto exit;
-    }
-
-    if (FD_ISSET(transport->rtcp->fd, &wset)) {
-        int written = neb_sock_write(transport->rtcp, buffer->data,
-                                     buffer->len, MSG_EOR | MSG_DONTWAIT);
-        if (written < 0) {
-            fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
-            res = FALSE;
-            goto exit;
-        }
+    if ( (res = rtp_udp_send_pkt(transport->rtcp, buffer)) ) {
         fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
-        stats_account_sent(rtp->client, written);
+    } else {
+        fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
     }
 
-
- exit:
-    g_byte_array_free(buffer, TRUE);
     return res;
 }
 
