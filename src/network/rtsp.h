@@ -131,7 +131,12 @@ struct HTTP_Tunnel_Pair;
 typedef void (*rtsp_write_data)(struct RTSP_Client *client, GByteArray *data);
 
 typedef struct RTSP_Client {
-    Sock *sock;
+    /**
+     * @brief Socket descriptor for the main connection of the client
+     */
+    int sd;
+
+    enum { RTSP_TCP, RTSP_SCTP } socktype;
 
     /**
      * @brief Input buffer
@@ -190,6 +195,8 @@ typedef struct RTSP_Client {
     size_t bytes_sent;
 #endif
 
+    struct sockaddr_storage local;
+    struct sockaddr_storage peer;
 } RTSP_Client;
 
 RTSP_Client *rtsp_client_new(struct feng *srv);

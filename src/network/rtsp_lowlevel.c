@@ -143,7 +143,7 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     int firstsd;
     in_port_t firstport, rtp_port, rtcp_port;
 
-    memcpy(sa_p, &rtsp->sock->local_stg, sizeof(struct sockaddr_storage));
+    memcpy(sa_p, &rtsp->local, sizeof(struct sockaddr_storage));
 
     /* The client will not provide ports for us, obviously, let's
      * just ask the kernel for one, and try it to use for RTP/RTCP
@@ -210,7 +210,7 @@ void rtp_udp_transport(RTSP_Client *rtsp,
         break;
     }
 
-    memcpy(&transport.rtp_sa, &rtsp->sock->remote_stg, sizeof(struct sockaddr_storage));
+    memcpy(&transport.rtp_sa, &rtsp->peer, sizeof(struct sockaddr_storage));
     neb_sa_set_port((struct sockaddr *)(&transport.rtp_sa), parsed->rtp_channel);
 
     if ( connect(transport.rtp_sd,
@@ -218,7 +218,7 @@ void rtp_udp_transport(RTSP_Client *rtsp,
                  sizeof(struct sockaddr_storage)) < 0 )
         goto error;
 
-    memcpy(&transport.rtcp_sa, &rtsp->sock->remote_stg, sizeof(struct sockaddr_storage));
+    memcpy(&transport.rtcp_sa, &rtsp->peer, sizeof(struct sockaddr_storage));
     neb_sa_set_port((struct sockaddr *)(&transport.rtcp_sa), parsed->rtcp_channel);
 
     if ( connect(transport.rtcp_sd,
@@ -277,7 +277,7 @@ void rtsp_tcp_read_cb(struct ev_loop *loop, ev_io *w,
     int read_size;
     RTSP_Client *rtsp = w->data;
 
-    if ( (read_size = recv(rtsp->sock->fd,
+    if ( (read_size = recv(rtsp->sd,
                            buffer,
                            sizeof(buffer),
                            0) ) <= 0 )
@@ -320,7 +320,7 @@ void rtsp_tcp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         ev_io_stop(rtsp->srv->loop, &rtsp->ev_io_write);
         return;
     }
-    written = send(rtsp->sock->fd, outpkt->data, outpkt->len, MSG_DONTWAIT);
+    written = send(rtsp->sd, outpkt->data, outpkt->len, MSG_DONTWAIT);
     if ( written < outpkt->len ) {
         fnc_perror("");
         /* verify if this ever happens, as it is it'll still be popped

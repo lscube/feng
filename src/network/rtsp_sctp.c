@@ -34,7 +34,7 @@ typedef struct {
 static gboolean rtsp_sctp_send_pkt(RTSP_Client *rtsp, GByteArray *buffer,
                                    const struct sctp_sndrcvinfo *sctp_info)
 {
-    int written = sctp_send(rtsp->sock->fd,
+    int written = sctp_send(rtsp->sd,
                             buffer->data, buffer->len,
                             sctp_info,
                             MSG_DONTWAIT | MSG_EOR);
@@ -145,7 +145,7 @@ void rtsp_sctp_read_cb(struct ev_loop *loop, ev_io *w,
     do {
         int flags;
 
-        int partial = sctp_recvmsg(rtsp->sock->fd,
+        int partial = sctp_recvmsg(rtsp->sd,
                                    &buffer->data[size], buffer->len - size,
                                    NULL, 0, &sctp_info, &flags);
 

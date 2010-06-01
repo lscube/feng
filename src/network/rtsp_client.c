@@ -58,7 +58,7 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
     ev_async_stop(srv->loop, &rtsp->ev_sig_disconnect);
     ev_timer_stop(srv->loop, &rtsp->ev_timeout);
 
-    neb_sock_close(rtsp->sock);
+    close(rtsp->sd);
     g_free(rtsp->local_host);
     g_free(rtsp->remote_host);
     srv->connection_count--;
@@ -158,50 +158,57 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 {
     Sock *sock = w->data;
     feng *srv = sock->data;
-    Sock *client_sock = NULL;
+    int client_sd = -1;
+    struct sockaddr_storage sa;
+    socklen_t sa_len;
+
     ev_io *io;
     ev_async *async;
     ev_timer *timer;
     RTSP_Client *rtsp;
 
-    if ( (client_sock = neb_sock_accept(sock)) == NULL )
+    if ( (client_sd = accept(sock->fd, (struct sockaddr*)&sa, &sa_len)) < 0 ) {
+        fnc_perror("accept failed");
         return;
+    }
 
 // Paranoid safeguard
     if (srv->connection_count >= ONE_FORK_MAX_CONNECTION*2) {
-        neb_sock_close(client_sock);
+        close(client_sd);
         return;
     }
 
     fnc_log(FNC_LOG_INFO, "Incoming connection accepted on socket: %d\n",
-            client_sock->fd);
+            client_sd);
 
     rtsp = rtsp_client_new(srv);
-    rtsp->sock = client_sock;
+    rtsp->sd = client_sd;
 
-    switch(rtsp->sock->socktype) {
+    switch(sock->socktype) {
     case TCP:
+        rtsp->socktype = RTSP_TCP;
         rtsp->out_queue = g_queue_new();
         rtsp->write_data = rtsp_write_data_queue;
 
         /* to be started/stopped when necessary */
         io = &rtsp->ev_io_write;
         io->data = rtsp;
-        ev_io_init(io, rtsp_tcp_write_cb, rtsp->sock->fd, EV_WRITE);
+        ev_io_init(io, rtsp_tcp_write_cb, rtsp->sd, EV_WRITE);
 
         io = &rtsp->ev_io_read;
         io->data = rtsp;
-        ev_io_init(io, rtsp_tcp_read_cb, rtsp->sock->fd, EV_READ);
+        ev_io_init(io, rtsp_tcp_read_cb, rtsp->sd, EV_READ);
 
         break;
 
 #ifdef ENABLE_SCTP
     case SCTP:
+        rtsp->socktype = RTSP_SCTP;
         rtsp->write_data = rtsp_sctp_send_rtsp;
 
         io = &rtsp->ev_io_read;
         io->data = rtsp;
-        ev_io_init(io, rtsp_sctp_read_cb, rtsp->sock->fd, EV_READ);
+        ev_io_init(io, rtsp_sctp_read_cb, rtsp->sd, EV_READ);
 
         break;
 #endif
@@ -210,11 +217,13 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         g_assert_not_reached();
     }
 
-    rtsp->local_host = neb_sa_get_host((struct sockaddr*)&client_sock->local_stg);
-    rtsp->remote_host = neb_sa_get_host((struct sockaddr*)&client_sock->remote_stg);
+    rtsp->local_host = neb_sa_get_host((struct sockaddr*)&sock->local_stg);
+    rtsp->remote_host = neb_sa_get_host((struct sockaddr*)&sa);
+
+    memcpy(&rtsp->local, &sock->local_stg, sizeof(struct sockaddr_storage));
+    memcpy(&rtsp->peer, &sa, sizeof(struct sockaddr_storage));
 
     srv->connection_count++;
-    rtsp->sock->data = srv;
 
     ev_io_start(srv->loop, &rtsp->ev_io_read);
 
