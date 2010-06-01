@@ -173,11 +173,9 @@ void fnc_log(int level, const char *fmt, ...) {
 void _fnc_perror(int errno_val, const char *function, const char *comment)
 {
     char errbuffer[512];
-    if ( strerror_r(errno_val, errbuffer, sizeof(errbuffer)-1) == 0 )
-        fnc_log(FNC_LOG_ERR, "%s%s%s: %s", function,
-                *comment ? " " : "", comment,
-                errbuffer);
-    else
-        fnc_log(FNC_LOG_ERR, "%s %s: unknown error", function,
-                *comment ? " " : "", comment);
+    char *strerr = strerror_r(errno_val, errbuffer, sizeof(errbuffer)-1);
+
+    fnc_log(FNC_LOG_ERR, "%s%s%s: %s", function,
+            *comment ? " " : "", comment,
+            strerr);
 }
