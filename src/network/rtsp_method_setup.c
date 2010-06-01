@@ -84,6 +84,10 @@ static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, R
 
         path = g_uri_unescape_string(req->uri->path, "/");
 
+        separator = strstr(path, SDP_TRACK_URI_SEPARATOR);
+
+        *separator = '\0';
+
         if (!(rtsp_s->resource = r_open(srv, path))) {
             fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", path);
 
