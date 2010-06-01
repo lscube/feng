@@ -30,7 +30,7 @@
     action collapse_path {
         if ( ! g_queue_is_empty(stack) ) {
             GString *uri_path = g_string_new("");
-            g_queue_foreach(stack, (GFunc)append_to_string, uri_path);
+            g_queue_foreach(stack, append_to_string, uri_path);
             uri->path = g_string_free(uri_path, FALSE);
         }
     }
@@ -79,7 +79,7 @@
     main:= URI 0;
 }%%
 
-static void append_to_string(gpointer *data, gpointer *user_data)
+static void append_to_string(gpointer data, gpointer user_data)
 {
     GString *path = (GString*)user_data;
     char *segment = (char *)data;
