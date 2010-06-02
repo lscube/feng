@@ -121,6 +121,7 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
     Feng_Listener *listener = NULL;
     struct sockaddr_storage sa;
     socklen_t sa_len = sizeof(struct sockaddr_storage);
+    ev_io *io;
 
     if ( (sock = socket(ai->ai_family, SOCK_STREAM,
                         is_sctp ? IPPROTO_SCTP : IPPROTO_TCP)) < 0 ) {
@@ -197,11 +198,10 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
     if ( listener->local_host == NULL )
         listener->local_host = strdup(ai->ai_family == AF_INET6 ? "::" : "0.0.0.0");
 
-    listener->io.data = listener;
-    ev_io_init(&listener->io,
-               rtsp_client_incoming_cb,
-               sock, EV_READ);
-    ev_io_start(srv->loop, &listener->io);
+    io = &listener->io;
+    io->data = listener;
+    ev_io_init(io, rtsp_client_incoming_cb, sock, EV_READ);
+    ev_io_start(srv->loop, io);
 
 #ifdef CLEANUP_DESTRUCTOR
     listening = g_slist_prepend(listening, listener);
