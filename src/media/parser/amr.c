@@ -112,7 +112,7 @@ static int amr_parse(Track *tr, uint8_t *data, size_t len)
 {
     uint8_t packet[DEFAULT_MTU] = {0};
     amr_header *header = (amr_header *) packet;
-    const uint32_t packet_size[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0};
+    static const uint32_t packet_size[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0};
     /*1(toc size) +  unit size of frame body{12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0}*/
 
     header->cmr = 0xf;
