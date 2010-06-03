@@ -74,10 +74,12 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
         g_hash_table_destroy(rtsp->channels);
 
     /* Remove the output queue */
-    while( (outbuf = g_queue_pop_tail(rtsp->out_queue)) )
-        g_string_free(outbuf, TRUE);
+    if ( rtsp->out_queue ) {
+        while( (outbuf = g_queue_pop_tail(rtsp->out_queue)) )
+            g_string_free(outbuf, TRUE);
 
-    g_queue_free(rtsp->out_queue);
+        g_queue_free(rtsp->out_queue);
+    }
 
     g_byte_array_free(rtsp->input, true);
 
