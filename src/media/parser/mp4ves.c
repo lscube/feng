@@ -37,7 +37,7 @@ static int mp4ves_init(Track *track)
     char *config;
 
     if ( (config = extradata2config(&track->properties)) == NULL )
-        return ERR_PARSE;
+        return -1;
 
     track_add_sdp_field(track, fmtp,
                         g_strdup_printf("profile-level-id=1;config=%s;",
@@ -49,21 +49,12 @@ static int mp4ves_init(Track *track)
 
     g_free(config);
 
-    return ERR_NOERROR;
+    return 0;
 }
 
 static int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
 {
     int32_t offset, rem = len;
-
-#if 0
-    uint32_t start_code = 0, ptr = 0;
-    while ((ptr = (uint32_t) find_start_code(data + ptr, data + len, &start_code)) < (uint32_t) data + len ) {
-        ptr -= (uint32_t) data;
-        fnc_log(FNC_LOG_DEBUG, "[mp4v] start code offset %d", ptr);
-    }
-    fnc_log(FNC_LOG_DEBUG, "[mp4v]no more start codes");
-#endif
 
     if (DEFAULT_MTU >= len) {
         mparser_buffer_write(tr,
@@ -87,7 +78,7 @@ static int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
         } while (rem >= 0);
     }
     fnc_log(FNC_LOG_VERBOSE, "[mp4v]Frame completed");
-    return ERR_NOERROR;
+    return 0;
 }
 
 FNC_LIB_MEDIAPARSER(mp4ves);

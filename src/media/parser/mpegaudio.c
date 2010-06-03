@@ -26,7 +26,6 @@
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"
-#include "feng_utils.h"
 #include "fnc_log.h"
 
 static const MediaParserInfo info = {
@@ -36,7 +35,7 @@ static const MediaParserInfo info = {
 
 static int mpa_init(ATTR_UNUSED Track *track)
 {
-    return ERR_NOERROR;
+    return 0;
 }
 
 static int mpa_parse(Track *tr, uint8_t *data, size_t len)
@@ -58,7 +57,7 @@ static int mpa_parse(Track *tr, uint8_t *data, size_t len)
     } else {
         do {
             offset = len - rem;
-            if (offset & 0xffff0000) return ERR_ALLOC;
+            if (offset & 0xffff0000) return -1;
             memcpy (dst + 4, data + offset, MIN(DEFAULT_MTU - 4, rem));
             offset = htonl(offset & 0xffff);
             memcpy (dst, &offset, 4);
@@ -74,7 +73,7 @@ static int mpa_parse(Track *tr, uint8_t *data, size_t len)
         } while (rem >= 0);
     }
     fnc_log(FNC_LOG_VERBOSE, "[mp3]Frame completed");
-    return ERR_NOERROR;
+    return 0;
 }
 
 #define mpa_uninit NULL

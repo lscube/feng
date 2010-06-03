@@ -26,7 +26,6 @@
 #include <stdint.h>
 
 #include "demuxer.h"
-#include "feng_utils.h"
 
 struct Track;
 

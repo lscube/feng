@@ -20,6 +20,10 @@
  *
  * */
 
+#include <config.h>
+
+#include <string.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"
@@ -38,7 +42,7 @@ static int aac_init(Track *track)
     char *sdp_value;
 
     if ( (config = extradata2config(&track->properties)) == NULL )
-        return ERR_PARSE;
+        return -1;
 
     sdp_value = g_strdup_printf("streamtype=5;profile-level-id=1;"
                                 "mode=AAC-hbr;sizeLength=13;indexLength=3;"
@@ -51,7 +55,7 @@ static int aac_init(Track *track)
                                  track->properties.clock_rate);
     track_add_sdp_field(track, rtpmap, sdp_value);
 
-    return ERR_NOERROR;
+    return 0;
 }
 
 #define AU_HEADER_SIZE 4
@@ -85,7 +89,7 @@ static int aac_parse(Track *tr, uint8_t *data, size_t len)
     uint32_t payload = DEFAULT_MTU - AU_HEADER_SIZE;
     uint8_t *packet = g_malloc0(DEFAULT_MTU);
 
-    if(!packet) return ERR_ALLOC;
+    if(!packet) return -1;
 
 // trim away extradata
 //    data += AAC_EXTRA;
@@ -120,7 +124,7 @@ static int aac_parse(Track *tr, uint8_t *data, size_t len)
                          packet, len + AU_HEADER_SIZE);
 
     g_free(packet);
-    return ERR_NOERROR;
+    return 0;
 }
 
 

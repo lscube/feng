@@ -24,7 +24,10 @@
  * @brief Contains DESCRIBE method and reply handlers
  */
 
+#include <config.h>
+
 #include <stdbool.h>
+#include <math.h>
 
 #include "fnc_log.h"
 #include "rtsp.h"

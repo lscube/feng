@@ -20,7 +20,7 @@
  *
  * */
 
-#include "config.h"
+#include <config.h>
 
 #include <stdbool.h>
 #include <time.h>
@@ -28,9 +28,11 @@
 #include <fcntl.h> /* for mq_open's O_* options */
 #include <errno.h>
 #include <unistd.h> /* for usleep() */
+#include <string.h>
+#include <math.h>
+#include <ctype.h> /* for tolower */
 
 #include "feng.h"
-#include "feng_utils.h"
 #include "fnc_log.h"
 
 #include "media/demuxer_module.h"
@@ -247,7 +249,7 @@ static int sd_init(Resource * r)
         if (len >= sizeof(content_base)) {
             fnc_log(FNC_LOG_ERR, "[sd] content base string too long\n");
             fclose(fd);
-            return ERR_GENERIC;
+            return -1;
         } else {
             strncpy(content_base, r->info->mrl, len);
             fnc_log(FNC_LOG_DEBUG, "[sd] content base: %s\n", content_base);
@@ -370,7 +372,7 @@ static int sd_init(Resource * r)
             continue;
 
         if (!(track = add_track(r, &trackinfo, &props_hints))) {
-            err = ERR_ALLOC;
+            err = -1;
             break;
         }
 

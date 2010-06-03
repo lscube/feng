@@ -20,6 +20,10 @@
  *
  * */
 
+#include <config.h>
+
+#include <string.h>
+
 #include "fnc_log.h"
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
@@ -206,11 +210,10 @@ static int h264_init(Track *track)
 {
     h264_priv *priv;
     char *sprop = NULL;
-    int err = ERR_ALLOC;
 
     if (track->properties.extradata_len == 0) {
         fnc_log(FNC_LOG_WARN, "[h264] No Extradata, unsupported\n");
-        return ERR_UNSUPPORTED_PT;
+        return -1;
     }
 
     priv = g_slice_new(h264_priv);
@@ -235,11 +238,11 @@ static int h264_init(Track *track)
 
     track->private_data = priv;
 
-    return ERR_NOERROR;
+    return 0;
 
  err_alloc:
     g_slice_free(h264_priv, priv);
-    return err;
+    return -1;
 }
 
 // h264 has provisions for
@@ -292,7 +295,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
                 break;
             }
         }
-        if (p >= data + len) return ERR_PARSE;
+        if (p >= data + len) return -1;
 
         while (1) {
         //seek to the next startcode [0 0 1]
@@ -340,7 +343,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
     }
 
     fnc_log(FNC_LOG_VERBOSE, "[h264] Frame completed");
-    return ERR_NOERROR;
+    return 0;
 }
 
 static void h264_uninit(Track *tr)

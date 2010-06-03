@@ -20,6 +20,10 @@
  *
  * */
 
+#include <config.h>
+
+#include <string.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"
@@ -66,7 +70,7 @@ static int h263_init(Track *track)
                         g_strdup_printf ("H263-1998/%d",
                                          track->properties.clock_rate));
 
-    return ERR_NOERROR;
+    return 0;
 }
 
 static int h263_parse(Track *tr, uint8_t *data, size_t len)
@@ -103,7 +107,7 @@ static int h263_parse(Track *tr, uint8_t *data, size_t len)
         cur += payload;
     }
 
-    return ERR_NOERROR;
+    return 0;
 }
 
 #define h263_uninit NULL

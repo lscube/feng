@@ -53,7 +53,8 @@ AC_CHECK_HEADERS_ONCE([syslog.h])
 AC_CHECK_FUNCS_ONCE([inet_ntop])
 
 AC_SEARCH_LIBS([clock_gettime], [rt],
-  [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define this if you have clock_gettime])])
+  [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define this if you have clock_gettime])],
+  [AC_MSG_WARN([POSIX realtime features not available])])
 
 CC_ATTRIBUTE_DESTRUCTOR
 
