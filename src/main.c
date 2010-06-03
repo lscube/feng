@@ -328,9 +328,6 @@ int main(int argc, char **argv)
 
     feng_drop_privs(srv);
 
-    /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
-     * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
-
     http_tunnel_initialise();
 
     ev_loop (srv->loop, 0);
