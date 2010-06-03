@@ -123,8 +123,13 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
     socklen_t sa_len = sizeof(struct sockaddr_storage);
     ev_io *io;
 
-    if ( (sock = socket(ai->ai_family, SOCK_STREAM,
-                        is_sctp ? IPPROTO_SCTP : IPPROTO_TCP)) < 0 ) {
+#if ENABLE_SCTP
+    const int ipproto = is_sctp ? IPPROTO_SCTP : IPPROTO_TCP;
+#else
+    static const int ipproto = IPPROTO_TCP;
+#endif
+
+    if ( (sock = socket(ai->ai_family, SOCK_STREAM, ipproto)) < 0 ) {
         fnc_perror("opening socket");
         return false;
     }
