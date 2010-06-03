@@ -206,11 +206,10 @@ static int h264_init(Track *track)
 {
     h264_priv *priv;
     char *sprop = NULL;
-    int err = ERR_ALLOC;
 
     if (track->properties.extradata_len == 0) {
         fnc_log(FNC_LOG_WARN, "[h264] No Extradata, unsupported\n");
-        return ERR_UNSUPPORTED_PT;
+        return -1;
     }
 
     priv = g_slice_new(h264_priv);
@@ -235,11 +234,11 @@ static int h264_init(Track *track)
 
     track->private_data = priv;
 
-    return ERR_NOERROR;
+    return 0;
 
  err_alloc:
     g_slice_free(h264_priv, priv);
-    return err;
+    return -1;
 }
 
 // h264 has provisions for
