@@ -60,7 +60,7 @@ static int mp2t_init(Track *track)
 {
     track->private_data = g_slice_new(mp2t_priv);
 
-    return ERR_NOERROR;
+    return 0;
 }
 
 static int mp2t_packetize(uint8_t *dst, size_t *dst_nbytes, uint8_t *src,
@@ -112,7 +112,7 @@ static int mp2t_parse(Track *tr, uint8_t *data, size_t len)
             dst_len = len;
         }
     } while (ret);
-    return ERR_NOERROR;
+    return 0;
 }
 
 static void mp2t_uninit(Track *track)

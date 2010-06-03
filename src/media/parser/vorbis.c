@@ -150,7 +150,7 @@ static int vorbis_init(Track *track)
     char *buf;
 
     if(track->properties.extradata_len == 0)
-        return ERR_ALLOC;
+        return -1;
 
     priv = g_slice_new(vorbis_priv);
 
@@ -171,13 +171,13 @@ static int vorbis_init(Track *track)
 
     track->private_data = priv;
 
-    return ERR_NOERROR;
+    return 0;
 
  err_alloc:
     g_free(priv->conf);
     g_free(priv->packet);
     g_slice_free(vorbis_priv, priv);
-    return ERR_ALLOC;
+    return -1;
 }
 
 #define XIPH_HEADER_SIZE 6
@@ -189,7 +189,7 @@ static int vorbis_parse(Track *tr, uint8_t *data, size_t len)
     uint32_t payload = DEFAULT_MTU - XIPH_HEADER_SIZE;
     uint8_t *packet = g_malloc0(DEFAULT_MTU);
 
-    if(!packet) return ERR_ALLOC;
+    if(!packet) return -1;
 
     // the ident is always the same
     packet[0] = (priv->ident>>16)& 0xff;
@@ -234,7 +234,7 @@ static int vorbis_parse(Track *tr, uint8_t *data, size_t len)
                          packet, len + XIPH_HEADER_SIZE);
 
     g_free(packet);
-    return ERR_NOERROR;
+    return 0;
 }
 
 

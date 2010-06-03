@@ -34,13 +34,13 @@ static const MediaParserInfo info = {
 
 static int speex_init(ATTR_UNUSED Track *track)
 {
-    return ERR_NOERROR;
+    return 0;
 }
 
 static int speex_parse(Track *tr, uint8_t *data, size_t len)
 {
     if (len > DEFAULT_MTU)
-        return ERR_ALLOC;
+        return -1;
 
     mparser_buffer_write(tr,
                          tr->properties.pts,
@@ -49,7 +49,7 @@ static int speex_parse(Track *tr, uint8_t *data, size_t len)
                          1,
                          data, len);
 
-    return ERR_NOERROR;
+    return 0;
 }
 
 #define speex_uninit NULL

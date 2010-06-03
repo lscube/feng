@@ -96,11 +96,11 @@ static int mpegts_init(Resource * r)
 //    r->info->duration =
     r->timescaler = timescaler;
     r->private_data = priv;
-    return RESOURCE_OK;
+    return 0;
 
 err_alloc:
     g_free(priv);
-    return ERR_PARSE;
+    return -1;
 }
 
 

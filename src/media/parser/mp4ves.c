@@ -37,7 +37,7 @@ static int mp4ves_init(Track *track)
     char *config;
 
     if ( (config = extradata2config(&track->properties)) == NULL )
-        return ERR_PARSE;
+        return -1;
 
     track_add_sdp_field(track, fmtp,
                         g_strdup_printf("profile-level-id=1;config=%s;",
@@ -49,7 +49,7 @@ static int mp4ves_init(Track *track)
 
     g_free(config);
 
-    return ERR_NOERROR;
+    return 0;
 }
 
 static int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
@@ -78,7 +78,7 @@ static int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
         } while (rem >= 0);
     }
     fnc_log(FNC_LOG_VERBOSE, "[mp4v]Frame completed");
-    return ERR_NOERROR;
+    return 0;
 }
 
 FNC_LIB_MEDIAPARSER(mp4ves);

@@ -43,7 +43,7 @@ static int amr_init(Track *track)
     {
         config = extradata2config(&track->properties);
         if (!config)
-            return ERR_PARSE;
+            return -1;
 
         sdp_value = g_strdup_printf("octet-align=1; config=%s", config);
         g_free(config);
@@ -59,7 +59,7 @@ static int amr_init(Track *track)
                                          track->properties.clock_rate,
                                          track->properties.audio_channels));
 
-    return ERR_NOERROR;
+    return 0;
 }
 
 /* AMR Payload Header (RFC3267)
@@ -154,7 +154,7 @@ static int amr_parse(Track *tr, uint8_t *data, size_t len)
                              packet, off);
     }
 
-    return ERR_NOERROR;
+    return 0;
 }
 
 

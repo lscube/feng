@@ -66,7 +66,7 @@ static uint8_t *find_start_code(uint8_t *p, uint8_t *end, uint32_t *state)
 
 static int mpv_init(ATTR_UNUSED Track *track)
 {
-    return ERR_NOERROR;
+    return 0;
 }
 
 /* Source code taken from ff_rtp_send_mpegvideo (ffmpeg libavformat) and
@@ -178,7 +178,7 @@ static int mpv_parse(Track *tr, uint8_t *data, size_t len)
             begin_of_sequence = 0;
         } else rem = 0;
     }
-    return ERR_NOERROR;
+    return 0;
 }
 
 #define mpv_uninit NULL

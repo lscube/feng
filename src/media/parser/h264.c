@@ -291,7 +291,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
                 break;
             }
         }
-        if (p >= data + len) return ERR_PARSE;
+        if (p >= data + len) return -1;
 
         while (1) {
         //seek to the next startcode [0 0 1]
@@ -339,7 +339,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
     }
 
     fnc_log(FNC_LOG_VERBOSE, "[h264] Frame completed");
-    return ERR_NOERROR;
+    return 0;
 }
 
 static void h264_uninit(Track *tr)

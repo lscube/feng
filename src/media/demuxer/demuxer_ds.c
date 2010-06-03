@@ -179,14 +179,14 @@ static int ds_init(Resource * r)
     fnc_log(FNC_LOG_DEBUG, "[ds] duration=%f", r_offset);
     ((edl_priv_data *) r->private_data)->head = g_list_reverse(edl_head);
 
-    return RESOURCE_OK;
+    return 0;
 err_alloc:
     if (edl_head) {
         g_list_foreach(edl_head, destroy_list_data, NULL);
         g_list_free(edl_head);
         r->private_data = NULL;
     }
-    return ERR_ALLOC;
+    return -1;
 }
 
 /*
