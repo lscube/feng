@@ -59,7 +59,6 @@ static inline double gettimeinseconds(struct timespec *now) {
     return (double)now->tv_sec + (double)now->tv_nsec * .000000001;
 }
 #else
-#warning Posix RealTime features not available
 static inline double gettimeinseconds(struct timespec *now) {
     struct timeval tmp;
     gettimeofday(&tmp, NULL);
