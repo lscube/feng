@@ -38,6 +38,5 @@
 #define ERR_GENERIC             -1
 #define ERR_PARSE               -3
 #define ERR_ALLOC               -4
-#define ERR_EOF                 -8
 
 #endif // FN_UTILS_H
