@@ -89,7 +89,7 @@ static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, R
         if ( separator != NULL )
             *separator = '\0';
         else
-            fnc_log(FNC_LOG_ERROR, "Mismatch! uri path %s vs %s\n",
+            fnc_log(FNC_LOG_ERR, "Mismatch! uri path %s vs %s\n",
                     path,
                     rtsp_s->resource_uri);
 
