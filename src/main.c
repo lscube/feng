@@ -73,27 +73,29 @@ static void sigint_cb (struct ev_loop *loop,
  */
 static void feng_drop_privs(feng *srv)
 {
-    char *id = srv->srvconf.groupname->ptr;
+    const char *wanted_group = srv->srvconf.groupname->ptr;
+    const char *wanted_user = srv->srvconf.username->ptr;
 
-    if (id) {
-        struct group *gr = getgrnam(id);
-        if (gr) {
-            if (setgid(gr->gr_gid) < 0)
-                fnc_perror("setgid");
-        } else {
+    errno = 0;
+    if ( wanted_group != NULL ) {
+        struct group *gr = getgrnam(wanted_group);
+        if ( errno != 0 )
             fnc_perror("getgrnam");
-        }
+        else if ( gr == NULL )
+            fnc_log(FNC_LOG_ERR, "%s: group %s not found", __func__, wanted_group);
+        else if ( setgid(gr->gr_gid) < 0 )
+            fnc_perror("setgid");
     }
 
-    id = srv->srvconf.username->ptr;
-    if (id) {
-        struct passwd *pw = getpwnam(id);
-        if (pw) {
-            if (setuid(pw->pw_uid) < 0)
-                fnc_perror("setuid");
-        } else {
+    errno = 0;
+    if ( wanted_user != NULL ) {
+        struct passwd *pw = getpwnam(wanted_user);
+        if ( errno != 0 )
             fnc_perror("getpwnam");
-        }
+        else if ( pw == NULL )
+            fnc_log(FNC_LOG_ERR, "%s: user %s not found", __func__, wanted_user);
+        else if ( setuid(pw->pw_uid) < 0 )
+            fnc_perror("setuid");
     }
 }
 
