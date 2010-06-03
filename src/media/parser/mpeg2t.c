@@ -81,7 +81,7 @@ static int mp2t_packetize(uint8_t *dst, size_t *dst_nbytes, uint8_t *src,
     }
 
     if(i==0) {
-        fnc_log(FNC_LOG_ERR, "mp2t: dropping %d bytes\n",
+        fnc_log(FNC_LOG_ERR, "mp2t: dropping %d bytes",
             src_nbytes - priv->ncopied);
         return 0;
     }

@@ -189,7 +189,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         return;
     }
 
-    fnc_log(FNC_LOG_INFO, "Incoming connection accepted on socket: %d\n",
+    fnc_log(FNC_LOG_INFO, "Incoming connection accepted on socket: %d",
             client_sd);
 
     rtsp = rtsp_client_new(srv);
@@ -242,7 +242,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     ev_init(timer, client_ev_timeout);
     timer->repeat = STREAM_TIMEOUT;
 
-    fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
+    fnc_log(FNC_LOG_INFO, "Connection reached: %d", srv->connection_count);
 }
 
 /**

@@ -63,13 +63,13 @@ MediaParser *mparser_find(const char *encoding_name)
     for(i=0; media_parsers[i]; i++) {
         if ( !g_ascii_strcasecmp(encoding_name,
                                  media_parsers[i]->info->encoding_name) ) {
-            fnc_log(FNC_LOG_DEBUG, "[MT] Found Media Parser for %s\n",
+            fnc_log(FNC_LOG_DEBUG, "[MT] Found Media Parser for %s",
                     encoding_name);
             return media_parsers[i];
         }
     }
 
-    fnc_log(FNC_LOG_DEBUG, "[MT] Media Parser for %s not found\n",
+    fnc_log(FNC_LOG_DEBUG, "[MT] Media Parser for %s not found",
             encoding_name);
     return NULL;
 }

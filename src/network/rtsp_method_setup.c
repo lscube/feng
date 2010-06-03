@@ -94,7 +94,7 @@ static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, R
                     rtsp_s->resource_uri);
 
         if (!(rtsp_s->resource = r_open(srv, path))) {
-            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", path);
+            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found", path);
 
             g_free(path);
             g_free(rtsp_s->resource_uri);

@@ -63,7 +63,7 @@ static RTSP_ResponseCode do_play(RTSP_session * rtsp_sess)
 
     rtsp_sess->started = 1;
 
-    fnc_log(FNC_LOG_VERBOSE, "[%f] resuming with parameters %f %f %f\n",
+    fnc_log(FNC_LOG_VERBOSE, "[%f] resuming with parameters %f %f %f",
             ev_now(rtsp_sess->srv->loop),
             range->begin_time, range->end_time, range->playback_time);
     rtp_session_gslist_resume(rtsp_sess->rtp_sessions, range);
@@ -199,7 +199,7 @@ static RTSP_ResponseCode parse_range_header(RTSP_Client *client,
         return RTSP_Ok;
     }
 
-    fnc_log(FNC_LOG_VERBOSE, "Range header: %s\n", range_hdr);
+    fnc_log(FNC_LOG_VERBOSE, "Range header: %s", range_hdr);
 
     /* Initialise the RTSP_Range structure by setting the three
      * values to the starting values. */

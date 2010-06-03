@@ -212,7 +212,7 @@ static int h264_init(Track *track)
     char *sprop = NULL;
 
     if (track->properties.extradata_len == 0) {
-        fnc_log(FNC_LOG_WARN, "[h264] No Extradata, unsupported\n");
+        fnc_log(FNC_LOG_WARN, "[h264] No Extradata, unsupported");
         return -1;
     }
 

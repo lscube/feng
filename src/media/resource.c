@@ -182,17 +182,17 @@ r_open_direct(struct feng *srv, gchar *mrl, const Demuxer *dmx)
     if (stat(mrl, &filestat) == -1 ) {
         switch(errno) {
         case ENOENT:
-            fnc_log(FNC_LOG_ERR,"%s: file not found\n", mrl);
+            fnc_log(FNC_LOG_ERR,"%s: file not found", mrl);
             break;
         default:
-            fnc_log(FNC_LOG_ERR,"Cannot stat file %s\n", mrl);
+            fnc_log(FNC_LOG_ERR,"Cannot stat file %s", mrl);
             break;
         }
         return NULL;
     }
 
     if ( S_ISFIFO(filestat.st_mode) ) {
-        fnc_log(FNC_LOG_ERR, "%s: not a file\n");
+        fnc_log(FNC_LOG_ERR, "%s: not a file");
         return NULL;
     }
 
@@ -341,7 +341,7 @@ Track *r_find_track(Resource *resource, const char *track_name) {
                                       r_find_track_cmp_name);
 
     if ( !track ) {
-        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
+        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s",
                 track_name, resource->info->mrl);
         return NULL;
     }

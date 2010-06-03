@@ -173,7 +173,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     RTP_session *session = (RTP_session*)session_gen;
     RTSP_Range *range = (RTSP_Range*)range_gen;
 
-    fnc_log(FNC_LOG_VERBOSE, "Resuming session %p\n", session);
+    fnc_log(FNC_LOG_VERBOSE, "Resuming session %p", session);
 
     session->range = range;
     session->start_seq = 1 + session->seq_no;
@@ -332,7 +332,7 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
 
         session->last_packet_send_time = time(NULL);
     } else {
-        fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
+        fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost");
     }
 }
 
