@@ -20,7 +20,7 @@
  *
  * */
 
-#include "config.h"
+#include <config.h>
 
 #include <stdbool.h>
 #include <time.h>
@@ -28,9 +28,11 @@
 #include <fcntl.h> /* for mq_open's O_* options */
 #include <errno.h>
 #include <unistd.h> /* for usleep() */
+#include <string.h>
+#include <math.h>
+#include <ctype.h> /* for tolower */
 
 #include "feng.h"
-#include "feng_utils.h"
 #include "fnc_log.h"
 
 #include "media/demuxer_module.h"

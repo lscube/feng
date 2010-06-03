@@ -26,7 +26,6 @@
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"
-#include "feng_utils.h"
 #include "fnc_log.h"
 
 static const MediaParserInfo info = {

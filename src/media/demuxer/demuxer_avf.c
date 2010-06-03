@@ -23,7 +23,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "feng_utils.h"
 #include "fnc_log.h"
 
 #include "media/demuxer_module.h"

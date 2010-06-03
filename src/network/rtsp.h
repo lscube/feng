@@ -30,8 +30,6 @@
 #include <glib.h>
 #include <ev.h>
 
-#include "feng_utils.h"
-
 #include "rfc822proto.h"
 
 struct feng;

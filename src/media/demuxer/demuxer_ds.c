@@ -26,7 +26,6 @@
 #include <math.h>
 
 #include "feng.h"
-#include "feng_utils.h"
 #include "fnc_log.h"
 
 #include "media/demuxer_module.h"

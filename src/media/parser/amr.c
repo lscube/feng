@@ -20,11 +20,14 @@
  *
  * */
 
+#include <config.h>
+
+#include <string.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"
 #include "fnc_log.h"
-#include "feng_utils.h"
 
 static const MediaParserInfo info = {
     "amr",

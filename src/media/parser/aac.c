@@ -20,6 +20,10 @@
  *
  * */
 
+#include <config.h>
+
+#include <string.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"

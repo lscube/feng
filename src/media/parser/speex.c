@@ -20,12 +20,11 @@
  *
  * */
 
-#include <stdio.h>
-#include <string.h>
+#include <config.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"
-#include "feng_utils.h"
 
 static const MediaParserInfo info = {
     "speex",

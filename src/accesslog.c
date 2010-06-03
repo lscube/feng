@@ -35,7 +35,6 @@
 
 #include "feng.h"
 #include "fnc_log.h"
-#include "feng_utils.h"
 #include "network/rtsp.h"
 
 #include <stdio.h>
