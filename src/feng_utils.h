@@ -33,9 +33,4 @@
 #include <math.h>
 #include <string.h>
 
-/*! autodescriptive error values */
-#define ERR_NOERROR              0
-#define ERR_GENERIC             -1
-#define ERR_ALLOC               -4
-
 #endif // FN_UTILS_H
