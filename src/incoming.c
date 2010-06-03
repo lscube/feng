@@ -247,6 +247,12 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
     if ( host != NULL && *host == '\0' )
         host = NULL;
 
+    fnc_log(FNC_LOG_INFO, "Listening to port %s (%s/%s) on %s",
+            port,
+            (is_sctp? "SCTP" : "TCP"),
+            (s->use_ipv6? "ipv6" : "ipv4"),
+            ((host == NULL)? "all interfaces" : host));
+
     if ( s->use_ipv6 ) {
         if ( (n = getaddrinfo(host, port, &hints_ipv6, &res)) < 0 ) {
             fnc_log(FNC_LOG_ERR, "unable to resolve %s:%s (%s)",
