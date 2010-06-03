@@ -154,10 +154,12 @@ void rtsp_sctp_read_cb(struct ev_loop *loop, ev_io *w,
                                    &buffer->data[size], buffer->len - size,
                                    NULL, 0, &sctp_info, &flags);
 
-        if ( partial < 0 ) {
+        if ( partial == 0 ) {
             fnc_log(FNC_LOG_INFO, "SCTP RTSP connection closed by the client.");
-            ev_async_send(loop, &rtsp->ev_sig_disconnect);
-            return;
+            goto disconnect;
+        } else if ( partial < 0 ) {
+            fnc_perror("sctp_recvmsg");
+            goto disconnect;
         }
 
         size += partial;
@@ -189,4 +191,9 @@ void rtsp_sctp_read_cb(struct ev_loop *loop, ev_io *w,
     }
 
     g_byte_array_free(buffer, TRUE);
+    return;
+
+ disconnect:
+    g_byte_array_free(buffer, TRUE);
+    ev_async_send(loop, &rtsp->ev_sig_disconnect);
 }
