@@ -46,28 +46,4 @@
 #define ERR_FATAL               -9
 #define ERR_CONNECTION_CLOSE    -10
 
-/**
- * Returns the current time in seconds
- */
-#ifdef HAVE_CLOCK_GETTIME
-static inline double gettimeinseconds(struct timespec *now) {
-    struct timespec tmp;
-    if (!now) {
-        now = &tmp;
-    }
-    clock_gettime(CLOCK_REALTIME, now);
-    return (double)now->tv_sec + (double)now->tv_nsec * .000000001;
-}
-#else
-static inline double gettimeinseconds(struct timespec *now) {
-    struct timeval tmp;
-    gettimeofday(&tmp, NULL);
-    if (now) {
-        now->tv_sec = tmp.tv_sec;
-        now->tv_nsec = tmp.tv_usec * 1000;
-    }
-    return (double)tmp.tv_sec + (double)tmp.tv_usec * .000001;
-}
-#endif
-
 #endif // FN_UTILS_H

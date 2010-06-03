@@ -173,6 +173,20 @@ static void update_ts_pkt_duration(mp2t_priv* priv, uint8_t* pkt, double now)
     pid_status->last_pkt_num = priv->ts_pkt_count;
 }
 
+#if HAVE_CLOCK_GETTIME
+static double gettimeinseconds() {
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    return (double)now.tv_sec + (double)now.tv_nsec * .000000001;
+}
+#else
+static double gettimeinseconds() {
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    return (double)now.tv_sec + (double)now.tv_usec * .000001;
+}
+#endif
+
 static int mp2t_get_frame2(uint8_t *dst, uint32_t dst_nbytes,
                            double *timestamp, InputStream *istream,
                            MediaProperties *properties, void *private_data)
