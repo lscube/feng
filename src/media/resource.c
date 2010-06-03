@@ -179,15 +179,8 @@ r_open_direct(struct feng *srv, gchar *mrl, const Demuxer *dmx)
     Resource *r;
     struct stat filestat;
 
-    if (stat(mrl, &filestat) == -1 ) {
-        switch(errno) {
-        case ENOENT:
-            fnc_log(FNC_LOG_ERR,"%s: file not found", mrl);
-            break;
-        default:
-            fnc_log(FNC_LOG_ERR,"Cannot stat file %s", mrl);
-            break;
-        }
+    if (stat(mrl, &filestat) < 0 ) {
+        fnc_perror("stat");
         return NULL;
     }
 
