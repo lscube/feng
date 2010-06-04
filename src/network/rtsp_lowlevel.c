@@ -26,6 +26,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <errno.h>
+#include <poll.h>
 
 #include "feng.h"
 #include "rtsp.h"
@@ -49,22 +50,15 @@ typedef struct {
 
 static gboolean rtp_udp_send_pkt(int sd, struct sockaddr *sa, GByteArray *buffer, RTSP_Client *rtsp)
 {
-    fd_set wset;
-    struct timeval t;
     int written = -1;
+    struct pollfd p = { sd, POLLOUT, 0};
 
-    /*---------------SEE eventloop/rtsp_server.c-------*/
-    FD_ZERO(&wset);
-    t.tv_sec = 0;
-    t.tv_usec = 1000;
-
-    FD_SET(sd, &wset);
-    if (select(sd + 1, 0, &wset, 0, &t) < 0) {
-        fnc_perror("select");
+    if (poll(&p, 1, 1) < 0) {
+        fnc_perror("poll");
         goto end;
     }
 
-    if (FD_ISSET(sd, &wset)) {
+    if (p.revents & POLLOUT) {
         written = sendto(sd, buffer->data, buffer->len,
                          MSG_EOR | MSG_DONTWAIT,
                          sa, sizeof(struct sockaddr_storage));
