@@ -96,7 +96,7 @@ typedef struct feng {
 } feng;
 
 extern struct feng feng_srv;
-struct ev_loop *feng_loop;
+extern struct ev_loop *feng_loop;
 
 typedef struct Feng_Listener {
     int fd;
