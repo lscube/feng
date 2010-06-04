@@ -266,19 +266,6 @@ static gboolean command_environment(int argc, char **argv)
     return true;
 }
 
-static void config_set_defaults() {
-    specific_config *s = &feng_srv.config_storage[0];
-
-    if ( s->document_root == NULL )
-        return;
-
-    if (feng_srv.srvconf.max_conns == 0)
-        feng_srv.srvconf.max_conns = 100;
-
-    if (feng_srv.srvconf.buffered_frames == 0)
-        feng_srv.srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
-}
-
 int main(int argc, char **argv)
 {
     int res = 0;
@@ -293,8 +280,6 @@ int main(int argc, char **argv)
         res = 1;
         goto end;
     }
-
-    config_set_defaults();
 
     /* This goes before feng_bind_ports */
     feng_loop = ev_default_loop(0);

@@ -73,7 +73,6 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]);
 
 static int config_insert() {
     size_t i;
-    int ret = 0;
 
     static const config_values_t global_cv[] = {
         { "server.bind", &feng_srv.srvconf.bindhost, T_CONFIG_STRING },      /* 0 */
@@ -95,6 +94,12 @@ static int config_insert() {
 
     if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[0])->value, global_cv))
         return -1;
+
+    if (feng_srv.srvconf.max_conns == 0)
+        feng_srv.srvconf.max_conns = 100;
+
+    if (feng_srv.srvconf.buffered_frames == 0)
+        feng_srv.srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
 
     for (i = 0; i < feng_srv.config_context->used; i++) {
         specific_config *s = &feng_srv.config_storage[i];
@@ -118,9 +123,12 @@ static int config_insert() {
 
         if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[i])->value, vhost_cv))
             return -1;
+
+        if ( s->document_root == NULL )
+            return -1;
     }
 
-    return ret;
+    return 0;
 }
 
 typedef struct {
