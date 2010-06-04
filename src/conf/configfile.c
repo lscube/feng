@@ -53,6 +53,8 @@
 #include "configfile.h"
 #include "proc_open.h"
 
+static int config_insert_values_global(server *srv, array *ca, const config_values_t cv[]);
+
 /**
  * Insert the main configuration keys and their defaults
  */
@@ -723,4 +725,88 @@ int config_set_defaults(server *srv) {
         srv->srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
 
     return 0;
+}
+
+static int config_insert_values_internal(array *ca, const config_values_t cv[]) {
+    size_t i;
+    data_unset *du;
+
+    for (i = 0; cv[i].key; i++) {
+
+        if (NULL == (du = array_get_element(ca, cv[i].key))) {
+            /* no found */
+
+            continue;
+        }
+
+        switch (cv[i].type) {
+        case T_CONFIG_STRING:
+            if (du->type == TYPE_STRING) {
+                data_string *ds = (data_string *)du;
+
+                buffer_copy_string_buffer(cv[i].destination, ds->value);
+            } else {
+                return -1;
+            }
+            break;
+        case T_CONFIG_SHORT:
+            switch(du->type) {
+            case TYPE_INTEGER: {
+                data_integer *di = (data_integer *)du;
+
+                *((unsigned short *)(cv[i].destination)) = di->value;
+                break;
+            }
+            default:
+                return -1;
+            }
+            break;
+        case T_CONFIG_BOOLEAN:
+            if (du->type == TYPE_STRING) {
+                data_string *ds = (data_string *)du;
+
+                if (buffer_is_equal_string(ds->value, CONST_STR_LEN("enable"))) {
+                    *((unsigned short *)(cv[i].destination)) = 1;
+                } else if (buffer_is_equal_string(ds->value, CONST_STR_LEN("disable"))) {
+                    *((unsigned short *)(cv[i].destination)) = 0;
+                } else {
+                    return -1;
+                }
+            } else {
+                return -1;
+            }
+            break;
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Insert configuration value into the global array
+ */
+
+static int config_insert_values_global(server *srv, array *ca, const config_values_t cv[]) {
+    size_t i;
+    data_unset *du;
+
+    for (i = 0; cv[i].key; i++) {
+        data_string *touched;
+
+        if (NULL == (du = array_get_element(ca, cv[i].key))) {
+            /* no found */
+
+            continue;
+        }
+
+        /* touched */
+        touched = data_string_init();
+
+        buffer_copy_string(touched->value, "");
+        buffer_copy_string_buffer(touched->key, du->key);
+
+        array_insert_unique(srv->config_touched, (data_unset *)touched);
+    }
+
+    return config_insert_values_internal(ca, cv);
 }
