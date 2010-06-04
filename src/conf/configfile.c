@@ -75,23 +75,14 @@ static int config_insert() {
     size_t i;
     int ret = 0;
 
-    static config_values_t cv[] = {
+    static const config_values_t global_cv[] = {
         { "server.bind", &feng_srv.srvconf.bindhost, T_CONFIG_STRING },      /* 0 */
         { "server.errorlog", &feng_srv.srvconf.errorlog_file, T_CONFIG_STRING },      /* 1 */
         { "server.username", &feng_srv.srvconf.username, T_CONFIG_STRING },      /* 2 */
         { "server.groupname", &feng_srv.srvconf.groupname, T_CONFIG_STRING },      /* 3 */
         { "server.port", &feng_srv.srvconf.port, T_CONFIG_SHORT },      /* 4 */
-        { "server.use-ipv6",             NULL, T_CONFIG_BOOLEAN }, /* 5 */
-
-        { "server.document-root", NULL, T_CONFIG_STRING },  /* 6 */
         { "server.errorlog-use-syslog", &feng_srv.srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN },     /* 7 */
         { "server.max-connections", &feng_srv.srvconf.max_conns, T_CONFIG_SHORT },       /* 8 */
-        { "sctp.protocol",               NULL, T_CONFIG_BOOLEAN },
-        { "sctp.max_streams",            NULL, T_CONFIG_SHORT },
-
-        { "accesslog.filename",             NULL, T_CONFIG_STRING }, /* 11 */
-        { "accesslog.use-syslog",           NULL, T_CONFIG_BOOLEAN },
-
         { "server.buffered_frames", &feng_srv.srvconf.buffered_frames, T_CONFIG_SHORT },
         { "server.loglevel", &feng_srv.srvconf.loglevel, T_CONFIG_SHORT },
         { "server.twin", &feng_srv.srvconf.twin, T_CONFIG_STRING },
@@ -102,32 +93,34 @@ static int config_insert() {
 
     assert(feng_srv.config_storage);
 
+    if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[0])->value, global_cv))
+        return -1;
+
     for (i = 0; i < feng_srv.config_context->used; i++) {
         specific_config *s = &feng_srv.config_storage[i];
+
+        const config_values_t vhost_cv[] = {
+            { "server.use-ipv6", &s->use_ipv6, T_CONFIG_BOOLEAN }, /* 5 */
+
+            { "server.document-root", &s->document_root, T_CONFIG_STRING },  /* 6 */
+            { "sctp.protocol", &s->is_sctp, T_CONFIG_BOOLEAN },
+            { "sctp.max_streams", &s->sctp_max_streams, T_CONFIG_SHORT },
+
+            { "accesslog.filename", &s->access_log_file, T_CONFIG_STRING }, /* 11 */
+            { "accesslog.use-syslog", &s->access_log_syslog, T_CONFIG_BOOLEAN },
+            { NULL,                          NULL, T_CONFIG_UNSET }
+        };
 
         s->use_ipv6      = 0;
         s->is_sctp       = 0;
         s->sctp_max_streams = 16;
         s->access_log_syslog = 1;
 
-        cv[5].destination = &s->use_ipv6;
-
-        cv[6].destination = &s->document_root;
-
-        cv[9].destination = &s->is_sctp;
-        cv[10].destination = &s->sctp_max_streams;
-
-        cv[11].destination = &s->access_log_file;
-        cv[12].destination = &s->access_log_syslog;
-
-        if (0 != (ret = config_insert_values_internal(((data_config *)feng_srv.config_context->data[i])->value, cv))) {
-            break;
-        }
-
+        if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[i])->value, vhost_cv))
+            return -1;
     }
 
     return ret;
-
 }
 
 typedef struct {
