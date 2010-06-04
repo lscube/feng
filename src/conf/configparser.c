@@ -289,10 +289,6 @@ static YYACTIONTYPE yy_default[] = {
 ** but it does not parse, the type of the token is changed to ID and
 ** the parse is retried before an error is thrown.
 */
-#ifdef YYFALLBACK
-static const YYCODETYPE yyFallback[] = {
-};
-#endif /* YYFALLBACK */
 
 /* The following structure represents a single element of the
 ** parser's stack.  Information stored includes:
@@ -324,14 +320,6 @@ struct yyParser {
   yyStackEntry yystack[YYSTACKDEPTH];  /* The parser's stack */
 };
 typedef struct yyParser yyParser;
-
-/*
-** This function returns the symbolic name associated with a token
-** value.
-*/
-const char *configparserTokenName(int tokenType){
-  return "";
-}
 
 /*
 ** This function allocates a new parser.
@@ -489,13 +477,6 @@ static int yy_find_shift_action(
   }
   i += iLookAhead;
   if( i<0 || i>=YY_SZ_ACTTAB || yy_lookahead[i]!=iLookAhead ){
-#ifdef YYFALLBACK
-    int iFallback;            /* Fallback token */
-    if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
-           && (iFallback = yyFallback[iLookAhead])!=0 ){
-      return yy_find_shift_action(pParser, iFallback);
-    }
-#endif
     return yy_default[stateno];
   }else{
     return yy_action[i];
@@ -1023,38 +1004,6 @@ static void yy_reduce(
     case CONFIG_COND_EQ:
       dc->string = buffer_init_buffer(rvalue);
       break;
-    case CONFIG_COND_NOMATCH:
-    case CONFIG_COND_MATCH: {
-#ifdef HAVE_PCRE_H
-      const char *errptr;
-      int erroff;
-
-      if (NULL == (dc->regex =
-          pcre_compile(rvalue->ptr, 0, &errptr, &erroff, NULL))) {
-        dc->string = buffer_init_string(errptr);
-        dc->cond = CONFIG_COND_UNSET;
-
-        fprintf(stderr, "parsing regex failed: %s -> %s at offset %d\n",
-            rvalue->ptr, errptr, erroff);
-
-        ctx->ok = 0;
-      } else if (NULL == (dc->regex_study =
-          pcre_study(dc->regex, 0, &errptr)) &&
-                 errptr != NULL) {
-        fprintf(stderr, "studying regex failed: %s -> %s\n",
-            rvalue->ptr, errptr);
-        ctx->ok = 0;
-      } else {
-        dc->string = buffer_init_buffer(rvalue);
-      }
-#else
-      fprintf(stderr, "can't handle '$%s[%s] =~ ...' as you compiled without pcre support. \n"
-              "(perhaps just a missing pcre-devel package ?) \n",
-                      yymsp[-5].minor.yy0->ptr, yymsp[-3].minor.yy43->ptr);
-      ctx->ok = 0;
-#endif
-      break;
-    }
 
     default:
       fprintf(stderr, "unknown condition for $%s[%s]\n",
