@@ -79,9 +79,6 @@ typedef struct feng_stats {
 } feng_stats;
 
 typedef struct feng {
-
-    array *config;
-
     array *config_context;
     specific_config *config_storage;
 

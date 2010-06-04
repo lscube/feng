@@ -676,9 +676,6 @@ int config_read(const char *fn) {
     array_insert_unique(context.all_configs, (data_unset *)dc);
     context.current = dc;
 
-    /* default context */
-    feng_srv.config = dc->value;
-
     ret = config_parse_file(&context, fn);
 
     /* remains nothing if parser is ok */
@@ -689,17 +686,7 @@ int config_read(const char *fn) {
         return ret;
     }
 
-    if (NULL != (dc = (data_config *)array_get_element(feng_srv.config_context, "global"))) {
-        feng_srv.config = dc->value;
-    } else {
-        return -1;
-    }
-
-    if (0 != config_insert()) {
-        return -1;
-    }
-
-    return 0;
+    return config_insert();
 }
 
 /**
