@@ -66,32 +66,6 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
         }
 
         switch (cv[i].type) {
-        case T_CONFIG_ARRAY:
-            if (du->type == TYPE_ARRAY) {
-                size_t j;
-                data_array *da = (data_array *)du;
-
-                for (j = 0; j < da->value->used; j++) {
-                    if (da->value->data[j]->type == TYPE_STRING) {
-                        data_string *ds = data_string_init();
-
-                        buffer_copy_string_buffer(ds->value, ((data_string *)(da->value->data[j]))->value);
-                        if (!da->is_index_key) {
-                            /* the id's were generated automaticly, as we copy now we might have to renumber them
-                             * this is used to prepend server.modules by mod_indexfiles as it has to be loaded
-                             * before mod_fastcgi and friends */
-                            buffer_copy_string_buffer(ds->key, ((data_string *)(da->value->data[j]))->key);
-                        }
-
-                        array_insert_unique(cv[i].destination, (data_unset *)ds);
-                    } else {
-                        return -1;
-                    }
-                }
-            } else {
-                return -1;
-            }
-            break;
         case T_CONFIG_STRING:
             if (du->type == TYPE_STRING) {
                 data_string *ds = (data_string *)du;

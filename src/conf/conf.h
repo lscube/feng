@@ -35,11 +35,7 @@
 typedef enum { T_CONFIG_UNSET,
                 T_CONFIG_STRING,
                 T_CONFIG_SHORT,
-                T_CONFIG_BOOLEAN,
-                T_CONFIG_ARRAY,
-                T_CONFIG_LOCAL,
-                T_CONFIG_DEPRECATED,
-                T_CONFIG_UNSUPPORTED
+                T_CONFIG_BOOLEAN
 } config_values_type_t;
 
 typedef enum { T_CONFIG_SCOPE_UNSET,
