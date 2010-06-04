@@ -56,7 +56,7 @@ static void demuxer_sd_fake_mediaparser_uninit(Track *tr) {
  * This object is used to free the slice in Track::private_data as a
  * mqd_t object.
  */
-static MediaParser demuxer_sd_fake_mediaparser = {
+static const MediaParser demuxer_sd_fake_mediaparser = {
     .info = NULL,
     .init = NULL,
     .parse = NULL,
