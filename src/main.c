@@ -258,7 +258,7 @@ static void config_set_defaults() {
  * tools like valgrind that expect a complete freeing of all
  * resources.
  */
-static void feng_free()
+static void CLEANUP_DESTRUCTOR feng_free()
 {
     unsigned int i;
 
@@ -312,15 +312,11 @@ int main(int argc, char **argv)
 
     feng_handle_signals();
 
-    if (!feng_bind_ports()) {
-        res = 1;
-        goto end;
-    }
+    if (!feng_bind_ports())
+        return 1;
 
-    if ( !accesslog_init() ) {
-        res = 1;
-        goto end;
-    }
+    if ( !accesslog_init() )
+        return 1;
 
     feng_drop_privs();
 
@@ -329,9 +325,5 @@ int main(int argc, char **argv)
     ev_loop (feng_loop, 0);
 
  end:
-#ifdef CLEANUP_DESTRUCTOR
-    feng_free();
-#endif
-
     return res;
 }
