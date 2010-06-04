@@ -34,6 +34,13 @@ typedef struct HTTP_Tunnel_Pair {
 
 static GHashTable *http_tunnel_pairs;
 
+#ifdef CLEANUP_DESTRUCTOR
+static void CLEANUP_DESTRUCTOR http_tunnel_cleanup()
+{
+    g_hash_table_destroy(http_tunnel_pairs);
+}
+#endif
+
 /**
  * @brief Write data to the hidden HTTP socket of the client
  *
