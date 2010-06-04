@@ -1126,12 +1126,9 @@ static void yy_parse_failed(
 ** The following code executes when a syntax error first occurs.
 */
 static void yy_syntax_error(
-  yyParser *yypParser,           /* The parser */
-  int yymajor,                   /* The major type of the error token */
-  YYMINORTYPE yyminor            /* The minor type of the error token */
+  yyParser *yypParser           /* The parser */
 ){
   configparserARG_FETCH;
-#define TOKEN (yyminor.yy0)
   configparserARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 
@@ -1227,7 +1224,7 @@ void configparser(
       **
       */
       if( yypParser->yyerrcnt<0 ){
-        yy_syntax_error(yypParser,yymajor,yyminorunion);
+        yy_syntax_error(yypParser);
       }
       yymx = yypParser->yystack[yypParser->yyidx].major;
       if( yymx==YYERRORSYMBOL || yyerrorhit ){
@@ -1264,7 +1261,7 @@ void configparser(
       ** three input tokens have been successfully shifted.
       */
       if( yypParser->yyerrcnt<=0 ){
-        yy_syntax_error(yypParser,yymajor,yyminorunion);
+        yy_syntax_error(yypParser);
       }
       yypParser->yyerrcnt = 3;
       yy_destructor(yymajor,&yyminorunion);
