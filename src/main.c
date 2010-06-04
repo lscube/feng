@@ -110,10 +110,7 @@ static void CLEANUP_DESTRUCTOR feng_free()
         free(feng_srv.config_storage);
     }
 
-#define CLEAN(x) \
-    array_free(feng_srv.x)
-    CLEAN(config_context);
-#undef CLEAN
+    array_free(feng_srv.config_context)
 
     g_slist_free(feng_srv.clients);
 }
@@ -291,10 +288,7 @@ int main(int argc, char **argv)
 
     if (!g_thread_supported ()) g_thread_init (NULL);
 
-#define CLEAN(x) \
-    feng_srv.x = array_init();
-    CLEAN(config_context);
-#undef CLEAN
+    feng_srv.config_context = array_init();
     feng_srv.clients = NULL;
 
     /* parses the command line and initializes the log*/
