@@ -105,8 +105,6 @@ typedef struct Feng_Listener {
     ev_io io;
 } Feng_Listener;
 
-typedef feng server;
-
 #define MAX_PROCESS    1    /*! number of fork */
 #define MAX_CONNECTION    feng_srv.srvconf.max_conns   /*! rtsp connection */
 #define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS)) /*! rtsp connection for one fork */
