@@ -183,9 +183,7 @@ static void feng_handle_signals()
 
 static void fncheader()
 {
-    printf("\n%s - Feng %s\n LScube Project - Politecnico di Torino\n",
-            PACKAGE,
-            VERSION);
+    printf("\n"PACKAGE" - Feng "VERSION"\n LScube Project - Politecnico di Torino\n");
 }
 
 static gboolean show_version(ATTR_UNUSED const gchar *option_name,
