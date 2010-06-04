@@ -267,7 +267,6 @@ int main(int argc, char **argv)
     if (!g_thread_supported ()) g_thread_init (NULL);
 
     feng_srv.config_context = array_init();
-    feng_srv.clients = NULL;
 
     /* parses the command line and initializes the log*/
     if ( !command_environment(argc, argv) )
