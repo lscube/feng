@@ -72,17 +72,13 @@ static int config_insert(server *srv) {
         { "server.use-ipv6",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 5 */
 
         { "server.document-root", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 6 */
-        { "server.name",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 7 */
-
-        { "server.errorlog-use-syslog", &srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 10 */
-        { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 11 */
-        { "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 12 */
+        { "server.errorlog-use-syslog", &srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 7 */
+        { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 8 */
         { "sctp.protocol",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },
         { "sctp.max_streams",            NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
 
-        { "accesslog.filename",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 15 */
+        { "accesslog.filename",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 11 */
         { "accesslog.use-syslog",           NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },
-        { "accesslog.format",               NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
 
         { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { "server.loglevel", &srv->srvconf.loglevel, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
@@ -98,7 +94,6 @@ static int config_insert(server *srv) {
         specific_config *s = &srv->config_storage[i];
 
         s->document_root = buffer_init();
-        s->server_name   = buffer_init();
         s->use_ipv6      = 0;
         s->is_sctp       = 0;
         s->sctp_max_streams = 16;
@@ -108,13 +103,12 @@ static int config_insert(server *srv) {
         cv[5].destination = &s->use_ipv6;
 
         cv[6].destination = s->document_root;
-        cv[7].destination = s->server_name;
 
-        cv[13].destination = &s->is_sctp;
-        cv[14].destination = &s->sctp_max_streams;
+        cv[9].destination = &s->is_sctp;
+        cv[10].destination = &s->sctp_max_streams;
 
-        cv[15].destination = s->access_log_file;
-        cv[16].destination = &s->access_log_syslog;
+        cv[11].destination = s->access_log_file;
+        cv[12].destination = &s->access_log_syslog;
 
         if (0 != (ret = config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv))) {
             break;

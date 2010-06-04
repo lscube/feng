@@ -269,7 +269,6 @@ static void feng_free(feng* srv)
     if ( srv->config_storage != NULL ) {
         for(i = 0; i < srv->config_context->used; i++) {
             buffer_free(srv->config_storage[i].document_root);
-            buffer_free(srv->config_storage[i].server_name);
 
             buffer_free(srv->config_storage[i].access_log_file);
         }

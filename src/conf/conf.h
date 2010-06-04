@@ -86,11 +86,8 @@ typedef struct specific_config {
     unsigned short sctp_max_streams;
 #endif
 
-    array *mimetypes;
-
     /* virtual-servers */
     conf_buffer *document_root;
-    conf_buffer *server_name;
 
     conf_buffer *access_log_file;
     FILE *access_log_fp;
