@@ -51,7 +51,6 @@
 #include "network/rtp.h" // defaults
 #include "configparser.h"
 #include "configfile.h"
-#include "proc_open.h"
 
 typedef enum { T_CONFIG_UNSET,
                 T_CONFIG_STRING,
@@ -454,8 +453,6 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
 
                     if (strcmp(token->ptr, "include") == 0) {
                         tid = TK_INCLUDE;
-                    } else if (strcmp(token->ptr, "include_shell") == 0) {
-                        tid = TK_INCLUDE_SHELL;
                     } else if (strcmp(token->ptr, "global") == 0) {
                         tid = TK_GLOBAL;
                     } else if (strcmp(token->ptr, "else") == 0) {
@@ -582,43 +579,6 @@ int config_parse_file(config_t *context, const char *fn) {
 
     stream_close(&s);
     buffer_free(filename);
-    return ret;
-}
-
-/**
- * read configuration from output of a command
- * @return -1 on failure, 0 on success
- */
-
-int config_parse_cmd(config_t *context, const char *cmd) {
-    proc_handler_t proc;
-    tokenizer_t t;
-    int ret;
-    conf_buffer *source;
-    conf_buffer *out;
-    char oldpwd[PATH_MAX];
-
-    if (NULL == getcwd(oldpwd, sizeof(oldpwd))) {
-        return -1;
-    }
-
-    source = buffer_init_string(cmd);
-    out = buffer_init();
-
-    if (!buffer_is_empty(context->basedir)) {
-        chdir(context->basedir->ptr);
-    }
-
-    if (0 != proc_open_buffer(&proc, cmd, NULL, out, NULL)) {
-        ret = -1;
-    } else {
-        tokenizer_init(&t, source, out->ptr, out->used);
-        ret = config_parse(context, &t);
-    }
-
-    buffer_free(source);
-    buffer_free(out);
-    chdir(oldpwd);
     return ret;
 }
 

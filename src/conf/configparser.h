@@ -20,4 +20,3 @@
 #define TK_EQ                             20
 #define TK_NE                             22
 #define TK_INCLUDE                        24
-#define TK_INCLUDE_SHELL                  25

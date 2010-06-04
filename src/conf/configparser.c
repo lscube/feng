@@ -1054,18 +1054,6 @@ static void yy_reduce(
 }
   yy_destructor(24,&yymsp[-1].minor);
         break;
-      case 39:
-{
-  if (ctx->ok) {
-    if (0 != config_parse_cmd(ctx, yymsp[0].minor.yy43->ptr)) {
-      ctx->ok = 0;
-    }
-    buffer_free(yymsp[0].minor.yy43);
-    yymsp[0].minor.yy43 = NULL;
-  }
-}
-  yy_destructor(25,&yymsp[-1].minor);
-        break;
   };
   yygoto = yyRuleInfo[yyruleno].lhs;
   yysize = yyRuleInfo[yyruleno].nrhs;
