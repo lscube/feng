@@ -57,8 +57,7 @@
 /* handle global options */
 
 /** parse config array */
-static int config_insert_values_internal(server *srv, array *ca,
-                     const config_values_t cv[]) {
+static int config_insert_values_internal(array *ca, const config_values_t cv[]) {
     size_t i;
     data_unset *du;
 
@@ -200,7 +199,7 @@ int config_insert_values_global(server *srv, array *ca, const config_values_t cv
         array_insert_unique(srv->config_touched, (data_unset *)touched);
     }
 
-    return config_insert_values_internal(srv, ca, cv);
+    return config_insert_values_internal(ca, cv);
 }
 #if 0
 unsigned short sock_addr_get_port(sock_addr *addr) {

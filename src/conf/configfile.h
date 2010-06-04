@@ -44,8 +44,8 @@ typedef struct {
 void *configparserAlloc(void *(*mallocProc)(size_t));
 void configparserFree(void *p, void (*freeProc)(void*));
 void configparser(void *yyp, int yymajor, conf_buffer *yyminor, config_t *ctx);
-int config_parse_file(server *srv, config_t *context, const char *fn);
-int config_parse_cmd(server *srv, config_t *context, const char *cmd);
+int config_parse_file(config_t *context, const char *fn);
+int config_parse_cmd(config_t *context, const char *cmd);
 data_unset *configparser_merge_data(data_unset *op1, const data_unset *op2);
 int config_read(server *srv, const char *fn);
 int config_set_defaults(server *srv);

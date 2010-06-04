@@ -1073,7 +1073,7 @@ static void yy_reduce(
       case 38:
 {
   if (ctx->ok) {
-    if (0 != config_parse_file(ctx->srv, ctx, yymsp[0].minor.yy43->ptr)) {
+    if (0 != config_parse_file(ctx, yymsp[0].minor.yy43->ptr)) {
       ctx->ok = 0;
     }
     buffer_free(yymsp[0].minor.yy43);
@@ -1085,7 +1085,7 @@ static void yy_reduce(
       case 39:
 {
   if (ctx->ok) {
-    if (0 != config_parse_cmd(ctx->srv, ctx, yymsp[0].minor.yy43->ptr)) {
+    if (0 != config_parse_cmd(ctx, yymsp[0].minor.yy43->ptr)) {
       ctx->ok = 0;
     }
     buffer_free(yymsp[0].minor.yy43);

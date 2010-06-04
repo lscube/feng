@@ -169,7 +169,7 @@ static int config_skip_comment(tokenizer_t *t) {
  * Break the configuration in tokens
  */
 
-static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buffer *token) {
+static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
     int tid = 0;
     size_t i;
 
@@ -491,7 +491,7 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
  * @return 0 on success, -1 on failure
  */
 
-static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
+static int config_parse(config_t *context, tokenizer_t *t) {
     void *pParser;
     int token_id;
     conf_buffer *token, *lasttoken;
@@ -500,7 +500,7 @@ static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
     pParser = configparserAlloc( malloc );
     lasttoken = buffer_init();
     token = buffer_init();
-    while((1 == (ret = config_tokenizer(srv, t, &token_id, token))) && context->ok) {
+    while((1 == (ret = config_tokenizer(t, &token_id, token))) && context->ok) {
         buffer_copy_string_buffer(lasttoken, token);
         configparser(pParser, token_id, token, context);
 
@@ -552,7 +552,7 @@ static int tokenizer_init(tokenizer_t *t, const conf_buffer *source, const char 
  * @return -1 on failure
  */
 
-int config_parse_file(server *srv, config_t *context, const char *fn) {
+int config_parse_file(config_t *context, const char *fn) {
     tokenizer_t t;
     stream s;
     int ret;
@@ -576,7 +576,7 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
         }
     } else {
         tokenizer_init(&t, filename, s.start, s.size);
-        ret = config_parse(srv, context, &t);
+        ret = config_parse(context, &t);
     }
 
     stream_close(&s);
@@ -589,7 +589,7 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
  * @return -1 on failure, 0 on success
  */
 
-int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
+int config_parse_cmd(config_t *context, const char *cmd) {
     proc_handler_t proc;
     tokenizer_t t;
     int ret;
@@ -612,7 +612,7 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
         ret = -1;
     } else {
         tokenizer_init(&t, source, out->ptr, out->used);
-        ret = config_parse(srv, context, &t);
+        ret = config_parse(context, &t);
     }
 
     buffer_free(source);
@@ -679,7 +679,7 @@ int config_read(server *srv, const char *fn) {
     /* default context */
     srv->config = dc->value;
 
-    ret = config_parse_file(srv, &context, fn);
+    ret = config_parse_file(&context, fn);
 
     /* remains nothing if parser is ok */
     assert(!(0 == ret && context.ok && 0 != context.configs_stack->used));
