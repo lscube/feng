@@ -110,11 +110,10 @@ static void CLEANUP_DESTRUCTOR feng_ports_cleanup()
  *
  * @param srv Server object for feng
  * @param ai Address to bind the socket to
- * @param is_sctp If true, the socket will be bound as SCTP, otherwise
- *                as TCP
+ * @param s The specific vhost configuration to bind for
  */
 static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
-                               gboolean is_sctp)
+                               specific_config *s)
 {
     int sock;
     static const int on = 1;
@@ -124,7 +123,7 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
     ev_io *io;
 
 #if ENABLE_SCTP
-    const int ipproto = is_sctp ? IPPROTO_SCTP : IPPROTO_TCP;
+    const int ipproto = s->is_sctp ? IPPROTO_SCTP : IPPROTO_TCP;
 #else
     static const int ipproto = IPPROTO_TCP;
 #endif
@@ -135,10 +134,10 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
     }
 
 #if ENABLE_SCTP
-    if ( is_sctp ) {
-        static const struct sctp_initmsg initparams = {
-            .sinit_max_instreams = NETEMBRYO_MAX_SCTP_STREAMS,
-            .sinit_num_ostreams = NETEMBRYO_MAX_SCTP_STREAMS,
+    if ( s->is_sctp ) {
+        const struct sctp_initmsg initparams = {
+            .sinit_max_instreams = s->sctp_max_streams,
+            .sinit_num_ostreams = s->sctp_max_streams,
         };
         static const struct sctp_event_subscribe subscribe = {
             .sctp_data_io_event = 1
@@ -194,7 +193,7 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
     listener = g_slice_new0(Feng_Listener);
 
     listener->fd = sock;
-    listener->is_sctp = is_sctp;
+    listener->specific = s;
     listener->srv = srv;
 
     listener->sa_len = sa_len;
@@ -267,7 +266,7 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
 
         it = res;
         do
-            if ( !feng_bind_addr(srv, it, is_sctp) )
+            if ( !feng_bind_addr(srv, it, s) )
                 goto error;
         while ( (it = it->ai_next) != NULL );
 
@@ -282,7 +281,7 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
 
     it = res;
     do
-        if ( !feng_bind_addr(srv, it, is_sctp) )
+        if ( !feng_bind_addr(srv, it, s) )
             goto error;
     while ( (it = it->ai_next) != NULL );
 

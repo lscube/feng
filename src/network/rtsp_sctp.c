@@ -29,7 +29,7 @@
 #include "rtsp.h"
 #include "rtp.h"
 #include "fnc_log.h"
-#include "netembryo.h"
+#include "feng.h"
 
 typedef struct {
     struct sctp_sndrcvinfo rtp;
@@ -77,6 +77,8 @@ void rtp_sctp_transport(RTSP_Client *rtsp,
                         RTP_session *rtp_s,
                         struct ParsedTransport *parsed)
 {
+    const int max_streams = rtsp->local_sock->specific->sctp_max_streams;
+
     if ( parsed->rtp_channel == -1 )
         parsed->rtp_channel = ++rtsp->first_free_channel;
     if ( parsed->rtcp_channel == -1 )
@@ -86,7 +88,8 @@ void rtp_sctp_transport(RTSP_Client *rtsp,
      * since a single byte is used for the $-prefixed interleaved
      * packages.
      */
-    if ( parsed->rtp_channel >= NETEMBRYO_MAX_SCTP_STREAMS || parsed->rtcp_channel >= NETEMBRYO_MAX_SCTP_STREAMS )
+    if ( parsed->rtp_channel >= max_streams ||
+         parsed->rtcp_channel >= max_streams )
         return;
 
     rtsp_interleaved_register(rtsp, rtp_s, parsed->rtp_channel, parsed->rtcp_channel);

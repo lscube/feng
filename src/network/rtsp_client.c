@@ -195,7 +195,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     rtsp = rtsp_client_new(srv);
     rtsp->sd = client_sd;
 
-    if ( ! listen->is_sctp ) {
+    if ( ! listen->specific->is_sctp ) {
         rtsp->socktype = RTSP_TCP;
         rtsp->out_queue = g_queue_new();
         rtsp->write_data = rtsp_write_data_queue;

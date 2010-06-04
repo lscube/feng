@@ -25,8 +25,6 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-#define NETEMBRYO_MAX_SCTP_STREAMS 15
-
 char *neb_sa_get_host(const struct sockaddr *sa);
 in_port_t neb_sa_get_port(struct sockaddr *sa);
 void neb_sa_set_port(struct sockaddr *sa, in_port_t port);

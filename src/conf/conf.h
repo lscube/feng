@@ -28,6 +28,8 @@
 #ifndef FN_CONF_H
 #define FN_CONF_H
 
+#include <config.h>
+
 #include <stdio.h>
 
 typedef enum { T_CONFIG_UNSET,
@@ -78,8 +80,11 @@ typedef struct {
 typedef struct specific_config {
     gboolean use_ipv6;
     gboolean access_log_syslog;
+
+#if ENABLE_SCTP
     gboolean is_sctp;
     unsigned short sctp_max_streams;
+#endif
 
     array *mimetypes;
 
