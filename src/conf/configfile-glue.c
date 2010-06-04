@@ -181,15 +181,13 @@ unsigned short sock_addr_get_port(sock_addr *addr) {
 #endif
 }
 
-static cond_result_t config_check_cond_cached(server *srv, connection *con, data_config *dc);
-
 static cond_result_t config_check_cond_nocache(server *srv, connection *con, data_config *dc) {
     conf_buffer *l;
     server_socket *srv_sock = con->srv_socket;
 
     /* check parent first */
     if (dc->parent && dc->parent->context_ndx) {
-        switch (config_check_cond_cached(srv, con, dc->parent)) {
+        switch (config_check_cond(srv, con, dc->parent)) {
         case COND_RESULT_FALSE:
             return COND_RESULT_FALSE;
         case COND_RESULT_UNSET:
@@ -201,7 +199,7 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 
     if (dc->prev) {
         /* make sure prev is checked first */
-        config_check_cond_cached(srv, con, dc->prev);
+        config_check_cond(srv, con, dc->prev);
 
         /* one of prev set me to FALSE */
         switch (con->cond_cache[dc->context_ndx].result) {
@@ -401,7 +399,7 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
     return COND_RESULT_FALSE;
 }
 
-static cond_result_t config_check_cond_cached(server *srv, connection *con, data_config *dc) {
+cond_result_t config_check_cond(server *srv, connection *con, data_config *dc) {
     cond_cache_t *caches = con->cond_cache;
 
     if (COND_RESULT_UNSET == caches[dc->context_ndx].result) {
@@ -447,10 +445,6 @@ void config_cond_cache_reset(server *srv, connection *con) {
     for (i = 0; i < COMP_LAST_ELEMENT; i++) {
         con->conditional_is_valid[i] = 0;
     }
-}
-
-int config_check_cond(server *srv, connection *con, data_config *dc) {
-    return (config_check_cond_cached(srv, con, dc) == COND_RESULT_TRUE);
 }
 
 int config_append_cond_match_buffer(connection *con, data_config *dc, conf_buffer *buf, int n)
