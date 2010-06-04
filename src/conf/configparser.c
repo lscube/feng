@@ -39,14 +39,7 @@ static data_unset *configparser_get_variable(config_t *ctx, const conf_buffer *k
   data_unset *du;
   data_config *dc;
 
-#if 0
-  fprintf(stderr, "get var %s\n", key->ptr);
-#endif
   for (dc = ctx->current; dc; dc = dc->parent) {
-#if 0
-    fprintf(stderr, "get var on block: %s\n", dc->key->ptr);
-    array_print(dc->value, 0);
-#endif
     if (NULL != (du = array_get_element(dc->value, key->ptr))) {
       return du->copy(du);
     }

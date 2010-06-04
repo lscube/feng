@@ -160,14 +160,6 @@ int buffer_copy_string(conf_buffer *b, const char *s) {
 
 int buffer_copy_string_len(conf_buffer *b, const char *s, size_t s_len) {
     if (!s || !b) return -1;
-#if 0
-    /* removed optimization as we have to keep the empty string
-     * in some cases for the config handling
-     *
-     * url.access-deny = ( "" )
-     */
-    if (s_len == 0) return 0;
-#endif
     buffer_prepare_copy(b, s_len + 1);
 
     memcpy(b->ptr, s, s_len);
