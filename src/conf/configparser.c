@@ -4,14 +4,11 @@
 /* First off, code is include which follows the "include" declaration
 ** in the input file. */
 #include <stdio.h>
-#line 5 "./configparser.y"
 
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include <config.h>
 #include "configfile.h"
 #include "buffer.h"
 #include "array.h"
@@ -99,7 +96,6 @@ data_unset *configparser_merge_data(data_unset *op1, const data_unset *op2) {
 }
 
 
-#line 110 "configparser.c"
 /* Next is all token values, in a form suitable for use by makeheaders.
 ** This section will be null unless lemon is run with the -m switch.
 */
@@ -329,118 +325,12 @@ struct yyParser {
 };
 typedef struct yyParser yyParser;
 
-#ifndef NDEBUG
-#include <stdio.h>
-static FILE *yyTraceFILE = 0;
-static char *yyTracePrompt = 0;
-#endif /* NDEBUG */
-
-#ifndef NDEBUG
-/*
-** Turn parser tracing on by giving a stream to which to write the trace
-** and a prompt to preface each trace message.  Tracing is turned off
-** by making either argument NULL
-**
-** Inputs:
-** <ul>
-** <li> A FILE* to which trace output should be written.
-**      If NULL, then tracing is turned off.
-** <li> A prefix string written at the beginning of every
-**      line of trace output.  If NULL, then tracing is
-**      turned off.
-** </ul>
-**
-** Outputs:
-** None.
-*/
-void configparserTrace(FILE *TraceFILE, char *zTracePrompt){
-  yyTraceFILE = TraceFILE;
-  yyTracePrompt = zTracePrompt;
-  if( yyTraceFILE==0 ) yyTracePrompt = 0;
-  else if( yyTracePrompt==0 ) yyTraceFILE = 0;
-}
-#endif /* NDEBUG */
-
-#ifndef NDEBUG
-/* For tracing shifts, the names of all terminals and nonterminals
-** are required.  The following table supplies these names */
-static const char *yyTokenName[] = {
-  "$",             "EOL",           "ASSIGN",        "APPEND",
-  "LKEY",          "PLUS",          "STRING",        "INTEGER",
-  "LPARAN",        "RPARAN",        "COMMA",         "ARRAY_ASSIGN",
-  "GLOBAL",        "LCURLY",        "RCURLY",        "ELSE",
-  "DOLLAR",        "SRVVARNAME",    "LBRACKET",      "RBRACKET",
-  "EQ",            "MATCH",         "NE",            "NOMATCH",
-  "INCLUDE",       "INCLUDE_SHELL",  "error",         "input",
-  "metalines",     "metaline",      "varline",       "global",
-  "condlines",     "include",       "include_shell",  "value",
-  "expression",    "aelement",      "condline",      "aelements",
-  "array",         "key",           "stringop",      "cond",
-  "eols",          "globalstart",   "context",
-};
-#endif /* NDEBUG */
-
-#ifndef NDEBUG
-/* For tracing reduce actions, the names of all rules are required.
-*/
-static const char *yyRuleName[] = {
- /*   0 */ "input ::= metalines",
- /*   1 */ "metalines ::= metalines metaline",
- /*   2 */ "metalines ::=",
- /*   3 */ "metaline ::= varline",
- /*   4 */ "metaline ::= global",
- /*   5 */ "metaline ::= condlines EOL",
- /*   6 */ "metaline ::= include",
- /*   7 */ "metaline ::= include_shell",
- /*   8 */ "metaline ::= EOL",
- /*   9 */ "varline ::= key ASSIGN expression",
- /*  10 */ "varline ::= key APPEND expression",
- /*  11 */ "key ::= LKEY",
- /*  12 */ "expression ::= expression PLUS value",
- /*  13 */ "expression ::= value",
- /*  14 */ "value ::= key",
- /*  15 */ "value ::= STRING",
- /*  16 */ "value ::= INTEGER",
- /*  17 */ "value ::= array",
- /*  18 */ "array ::= LPARAN RPARAN",
- /*  19 */ "array ::= LPARAN aelements RPARAN",
- /*  20 */ "aelements ::= aelements COMMA aelement",
- /*  21 */ "aelements ::= aelements COMMA",
- /*  22 */ "aelements ::= aelement",
- /*  23 */ "aelement ::= expression",
- /*  24 */ "aelement ::= stringop ARRAY_ASSIGN expression",
- /*  25 */ "eols ::= EOL",
- /*  26 */ "eols ::=",
- /*  27 */ "globalstart ::= GLOBAL",
- /*  28 */ "global ::= globalstart LCURLY metalines RCURLY",
- /*  29 */ "condlines ::= condlines eols ELSE condline",
- /*  30 */ "condlines ::= condline",
- /*  31 */ "condline ::= context LCURLY metalines RCURLY",
- /*  32 */ "context ::= DOLLAR SRVVARNAME LBRACKET stringop RBRACKET cond expression",
- /*  33 */ "cond ::= EQ",
- /*  34 */ "cond ::= MATCH",
- /*  35 */ "cond ::= NE",
- /*  36 */ "cond ::= NOMATCH",
- /*  37 */ "stringop ::= expression",
- /*  38 */ "include ::= INCLUDE stringop",
- /*  39 */ "include_shell ::= INCLUDE_SHELL stringop",
-};
-#endif /* NDEBUG */
-
 /*
 ** This function returns the symbolic name associated with a token
 ** value.
 */
 const char *configparserTokenName(int tokenType){
-#ifndef NDEBUG
-  if( tokenType>0 && tokenType<(sizeof(yyTokenName)/sizeof(yyTokenName[0])) ){
-    return yyTokenName[tokenType];
-  }else{
-    return "Unknown";
-  }
-#else
   return "";
-#endif
 }
 
 /*
@@ -506,44 +396,28 @@ static void yy_destructor(YYCODETYPE yymajor, YYMINORTYPE *yypminor){
     case 23:
     case 24:
     case 25:
-#line 142 "./configparser.y"
 { buffer_free((yypminor->yy0)); }
-#line 518 "configparser.c"
       break;
     case 35:
-#line 133 "./configparser.y"
 { (yypminor->yy41)->free((yypminor->yy41)); }
-#line 523 "configparser.c"
       break;
     case 36:
-#line 134 "./configparser.y"
 { (yypminor->yy41)->free((yypminor->yy41)); }
-#line 528 "configparser.c"
       break;
     case 37:
-#line 135 "./configparser.y"
 { (yypminor->yy41)->free((yypminor->yy41)); }
-#line 533 "configparser.c"
       break;
     case 39:
-#line 136 "./configparser.y"
 { array_free((yypminor->yy40)); }
-#line 538 "configparser.c"
       break;
     case 40:
-#line 137 "./configparser.y"
 { array_free((yypminor->yy40)); }
-#line 543 "configparser.c"
       break;
     case 41:
-#line 138 "./configparser.y"
 { buffer_free((yypminor->yy43)); }
-#line 548 "configparser.c"
       break;
     case 42:
-#line 139 "./configparser.y"
 { buffer_free((yypminor->yy43)); }
-#line 553 "configparser.c"
       break;
     default:  break;   /* If no destructor action specified: do nothing */
   }
@@ -562,13 +436,6 @@ static int yy_pop_parser_stack(yyParser *pParser){
   yyStackEntry *yytos = &pParser->yystack[pParser->yyidx];
 
   if( pParser->yyidx<0 ) return 0;
-#ifndef NDEBUG
-  if( yyTraceFILE && pParser->yyidx>=0 ){
-    fprintf(yyTraceFILE,"%sPopping %s\n",
-      yyTracePrompt,
-      yyTokenName[yytos->major]);
-  }
-#endif
   yymajor = yytos->major;
   yy_destructor( yymajor, &yytos->minor);
   pParser->yyidx--;
@@ -626,12 +493,6 @@ static int yy_find_shift_action(
     int iFallback;            /* Fallback token */
     if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
            && (iFallback = yyFallback[iLookAhead])!=0 ){
-#ifndef NDEBUG
-      if( yyTraceFILE ){
-        fprintf(yyTraceFILE, "%sFALLBACK %s => %s\n",
-           yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[iFallback]);
-      }
-#endif
       return yy_find_shift_action(pParser, iFallback);
     }
 #endif
@@ -685,11 +546,6 @@ static void yy_shift(
   if( yypParser->yyidx>=YYSTACKDEPTH ){
      configparserARG_FETCH;
      yypParser->yyidx--;
-#ifndef NDEBUG
-     if( yyTraceFILE ){
-       fprintf(yyTraceFILE,"%sStack Overflow!\n",yyTracePrompt);
-     }
-#endif
      while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
      /* Here code is inserted which will execute if the parser
      ** stack every overflows */
@@ -700,16 +556,6 @@ static void yy_shift(
   yytos->stateno = yyNewState;
   yytos->major = yyMajor;
   yytos->minor = *yypMinor;
-#ifndef NDEBUG
-  if( yyTraceFILE && yypParser->yyidx>0 ){
-    int i;
-    fprintf(yyTraceFILE,"%sShift %d\n",yyTracePrompt,yyNewState);
-    fprintf(yyTraceFILE,"%sStack:",yyTracePrompt);
-    for(i=1; i<=yypParser->yyidx; i++)
-      fprintf(yyTraceFILE," %s",yyTokenName[yypParser->yystack[i].major]);
-    fprintf(yyTraceFILE,"\n");
-  }
-#endif
 }
 
 /* The following table contains information about every rule that
@@ -778,13 +624,6 @@ static void yy_reduce(
   int yysize;                     /* Amount to pop the stack */
   configparserARG_FETCH;
   yymsp = &yypParser->yystack[yypParser->yyidx];
-#ifndef NDEBUG
-  if( yyTraceFILE && yyruleno>=0
-        && yyruleno<sizeof(yyRuleName)/sizeof(yyRuleName[0]) ){
-    fprintf(yyTraceFILE, "%sReduce [%s].\n", yyTracePrompt,
-      yyRuleName[yyruleno]);
-  }
-#endif /* NDEBUG */
 
   switch( yyruleno ){
   /* Beginning here are the reduction cases.  A typical example
@@ -811,9 +650,7 @@ static void yy_reduce(
         /* No destructor defined for global */
         break;
       case 5:
-#line 116 "./configparser.y"
 { yymsp[-1].minor.yy78 = NULL; }
-#line 823 "configparser.c"
   yy_destructor(1,&yymsp[0].minor);
         break;
       case 6:
@@ -826,7 +663,6 @@ static void yy_reduce(
   yy_destructor(1,&yymsp[0].minor);
         break;
       case 9:
-#line 144 "./configparser.y"
 {
   buffer_copy_string_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
   if (strncmp(yymsp[-2].minor.yy43->ptr, "env.", sizeof("env.") - 1) == 0) {
@@ -848,11 +684,9 @@ static void yy_reduce(
   buffer_free(yymsp[-2].minor.yy43);
   yymsp[-2].minor.yy43 = NULL;
 }
-#line 858 "configparser.c"
   yy_destructor(2,&yymsp[-1].minor);
         break;
       case 10:
-#line 166 "./configparser.y"
 {
   array *vars = ctx->current->value;
   data_unset *du;
@@ -891,11 +725,9 @@ static void yy_reduce(
   yymsp[-2].minor.yy43 = NULL;
   yymsp[0].minor.yy41 = NULL;
 }
-#line 901 "configparser.c"
   yy_destructor(3,&yymsp[-1].minor);
         break;
       case 11:
-#line 205 "./configparser.y"
 {
   if (strchr(yymsp[0].minor.yy0->ptr, '.') == NULL) {
     yygotominor.yy43 = buffer_init_string("var.");
@@ -907,10 +739,8 @@ static void yy_reduce(
     yymsp[0].minor.yy0 = NULL;
   }
 }
-#line 917 "configparser.c"
         break;
       case 12:
-#line 217 "./configparser.y"
 {
   yygotominor.yy41 = configparser_merge_data(yymsp[-2].minor.yy41, yymsp[0].minor.yy41);
   if (NULL == yygotominor.yy41) {
@@ -920,19 +750,15 @@ static void yy_reduce(
   yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
   yymsp[0].minor.yy41 = NULL;
 }
-#line 930 "configparser.c"
   yy_destructor(5,&yymsp[-1].minor);
         break;
       case 13:
-#line 227 "./configparser.y"
 {
   yygotominor.yy41 = yymsp[0].minor.yy41;
   yymsp[0].minor.yy41 = NULL;
 }
-#line 939 "configparser.c"
         break;
       case 14:
-#line 232 "./configparser.y"
 {
   yygotominor.yy41 = NULL;
   if (strncmp(yymsp[0].minor.yy43->ptr, "env.", sizeof("env.") - 1) == 0) {
@@ -959,59 +785,47 @@ static void yy_reduce(
   buffer_free(yymsp[0].minor.yy43);
   yymsp[0].minor.yy43 = NULL;
 }
-#line 969 "configparser.c"
         break;
       case 15:
-#line 259 "./configparser.y"
 {
   yygotominor.yy41 = (data_unset *)data_string_init();
   buffer_copy_string_buffer(((data_string *)(yygotominor.yy41))->value, yymsp[0].minor.yy0);
   buffer_free(yymsp[0].minor.yy0);
   yymsp[0].minor.yy0 = NULL;
 }
-#line 979 "configparser.c"
         break;
       case 16:
-#line 266 "./configparser.y"
 {
   yygotominor.yy41 = (data_unset *)data_integer_init();
   ((data_integer *)(yygotominor.yy41))->value = strtol(yymsp[0].minor.yy0->ptr, NULL, 10);
   buffer_free(yymsp[0].minor.yy0);
   yymsp[0].minor.yy0 = NULL;
 }
-#line 989 "configparser.c"
         break;
       case 17:
-#line 272 "./configparser.y"
 {
   yygotominor.yy41 = (data_unset *)data_array_init();
   array_free(((data_array *)(yygotominor.yy41))->value);
   ((data_array *)(yygotominor.yy41))->value = yymsp[0].minor.yy40;
   yymsp[0].minor.yy40 = NULL;
 }
-#line 999 "configparser.c"
         break;
       case 18:
-#line 278 "./configparser.y"
 {
   yygotominor.yy40 = array_init();
 }
-#line 1006 "configparser.c"
   yy_destructor(8,&yymsp[-1].minor);
   yy_destructor(9,&yymsp[0].minor);
         break;
       case 19:
-#line 281 "./configparser.y"
 {
   yygotominor.yy40 = yymsp[-1].minor.yy40;
   yymsp[-1].minor.yy40 = NULL;
 }
-#line 1016 "configparser.c"
   yy_destructor(8,&yymsp[-2].minor);
   yy_destructor(9,&yymsp[0].minor);
         break;
       case 20:
-#line 286 "./configparser.y"
 {
   if (buffer_is_empty(yymsp[0].minor.yy41->key) ||
       NULL == array_get_element(yymsp[-2].minor.yy40, yymsp[0].minor.yy41->key->ptr)) {
@@ -1028,37 +842,29 @@ static void yy_reduce(
   yygotominor.yy40 = yymsp[-2].minor.yy40;
   yymsp[-2].minor.yy40 = NULL;
 }
-#line 1038 "configparser.c"
   yy_destructor(10,&yymsp[-1].minor);
         break;
       case 21:
-#line 303 "./configparser.y"
 {
   yygotominor.yy40 = yymsp[-1].minor.yy40;
   yymsp[-1].minor.yy40 = NULL;
 }
-#line 1047 "configparser.c"
   yy_destructor(10,&yymsp[0].minor);
         break;
       case 22:
-#line 308 "./configparser.y"
 {
   yygotominor.yy40 = array_init();
   array_insert_unique(yygotominor.yy40, yymsp[0].minor.yy41);
   yymsp[0].minor.yy41 = NULL;
 }
-#line 1057 "configparser.c"
         break;
       case 23:
-#line 314 "./configparser.y"
 {
   yygotominor.yy41 = yymsp[0].minor.yy41;
   yymsp[0].minor.yy41 = NULL;
 }
-#line 1065 "configparser.c"
         break;
       case 24:
-#line 318 "./configparser.y"
 {
   buffer_copy_string_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
   buffer_free(yymsp[-2].minor.yy43);
@@ -1067,7 +873,6 @@ static void yy_reduce(
   yygotominor.yy41 = yymsp[0].minor.yy41;
   yymsp[0].minor.yy41 = NULL;
 }
-#line 1077 "configparser.c"
   yy_destructor(11,&yymsp[-1].minor);
         break;
       case 25:
@@ -1076,18 +881,15 @@ static void yy_reduce(
       case 26:
         break;
       case 27:
-#line 330 "./configparser.y"
 {
   data_config *dc;
   dc = (data_config *)array_get_element(ctx->srv->config_context, "global");
   assert(dc);
   configparser_push(ctx, dc, 0);
 }
-#line 1093 "configparser.c"
   yy_destructor(12,&yymsp[0].minor);
         break;
       case 28:
-#line 337 "./configparser.y"
 {
   data_config *cur;
 
@@ -1098,14 +900,12 @@ static void yy_reduce(
 
   yygotominor.yy78 = cur;
 }
-#line 1108 "configparser.c"
         /* No destructor defined for globalstart */
   yy_destructor(13,&yymsp[-2].minor);
         /* No destructor defined for metalines */
   yy_destructor(14,&yymsp[0].minor);
         break;
       case 29:
-#line 348 "./configparser.y"
 {
   assert(yymsp[-3].minor.yy78->context_ndx < yymsp[0].minor.yy78->context_ndx);
   yymsp[0].minor.yy78->prev = yymsp[-3].minor.yy78;
@@ -1114,20 +914,16 @@ static void yy_reduce(
   yymsp[-3].minor.yy78 = NULL;
   yymsp[0].minor.yy78 = NULL;
 }
-#line 1124 "configparser.c"
         /* No destructor defined for eols */
   yy_destructor(15,&yymsp[-1].minor);
         break;
       case 30:
-#line 357 "./configparser.y"
 {
   yygotominor.yy78 = yymsp[0].minor.yy78;
   yymsp[0].minor.yy78 = NULL;
 }
-#line 1134 "configparser.c"
         break;
       case 31:
-#line 362 "./configparser.y"
 {
   data_config *cur;
 
@@ -1138,14 +934,12 @@ static void yy_reduce(
 
   yygotominor.yy78 = cur;
 }
-#line 1148 "configparser.c"
         /* No destructor defined for context */
   yy_destructor(13,&yymsp[-2].minor);
         /* No destructor defined for metalines */
   yy_destructor(14,&yymsp[0].minor);
         break;
       case 32:
-#line 373 "./configparser.y"
 {
   data_config *dc;
   conf_buffer *b, *rvalue, *op;
@@ -1281,45 +1075,35 @@ static void yy_reduce(
   yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
   yymsp[0].minor.yy41 = NULL;
 }
-#line 1291 "configparser.c"
   yy_destructor(16,&yymsp[-6].minor);
   yy_destructor(18,&yymsp[-4].minor);
   yy_destructor(19,&yymsp[-2].minor);
         break;
       case 33:
-#line 508 "./configparser.y"
 {
   yygotominor.yy27 = CONFIG_COND_EQ;
 }
-#line 1301 "configparser.c"
   yy_destructor(20,&yymsp[0].minor);
         break;
       case 34:
-#line 511 "./configparser.y"
 {
   yygotominor.yy27 = CONFIG_COND_MATCH;
 }
-#line 1309 "configparser.c"
   yy_destructor(21,&yymsp[0].minor);
         break;
       case 35:
-#line 514 "./configparser.y"
 {
   yygotominor.yy27 = CONFIG_COND_NE;
 }
-#line 1317 "configparser.c"
   yy_destructor(22,&yymsp[0].minor);
         break;
       case 36:
-#line 517 "./configparser.y"
 {
   yygotominor.yy27 = CONFIG_COND_NOMATCH;
 }
-#line 1325 "configparser.c"
   yy_destructor(23,&yymsp[0].minor);
         break;
       case 37:
-#line 521 "./configparser.y"
 {
   yygotominor.yy43 = NULL;
   if (ctx->ok) {
@@ -1336,10 +1120,8 @@ static void yy_reduce(
   yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
   yymsp[0].minor.yy41 = NULL;
 }
-#line 1346 "configparser.c"
         break;
       case 38:
-#line 538 "./configparser.y"
 {
   if (ctx->ok) {
     if (0 != config_parse_file(ctx->srv, ctx, yymsp[0].minor.yy43->ptr)) {
@@ -1349,11 +1131,9 @@ static void yy_reduce(
     yymsp[0].minor.yy43 = NULL;
   }
 }
-#line 1359 "configparser.c"
   yy_destructor(24,&yymsp[-1].minor);
         break;
       case 39:
-#line 548 "./configparser.y"
 {
   if (ctx->ok) {
     if (0 != config_parse_cmd(ctx->srv, ctx, yymsp[0].minor.yy43->ptr)) {
@@ -1363,7 +1143,6 @@ static void yy_reduce(
     yymsp[0].minor.yy43 = NULL;
   }
 }
-#line 1373 "configparser.c"
   yy_destructor(25,&yymsp[-1].minor);
         break;
   };
@@ -1385,19 +1164,12 @@ static void yy_parse_failed(
   yyParser *yypParser           /* The parser */
 ){
   configparserARG_FETCH;
-#ifndef NDEBUG
-  if( yyTraceFILE ){
-    fprintf(yyTraceFILE,"%sFail!\n",yyTracePrompt);
-  }
-#endif
   while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
   /* Here code is inserted which will be executed whenever the
   ** parser fails */
-#line 107 "./configparser.y"
 
   ctx->ok = 0;
 
-#line 1407 "configparser.c"
   configparserARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 
@@ -1421,11 +1193,6 @@ static void yy_accept(
   yyParser *yypParser           /* The parser */
 ){
   configparserARG_FETCH;
-#ifndef NDEBUG
-  if( yyTraceFILE ){
-    fprintf(yyTraceFILE,"%sAccept!\n",yyTracePrompt);
-  }
-#endif
   while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
   /* Here code is inserted which will be executed whenever the
   ** parser accepts */
@@ -1476,12 +1243,6 @@ void configparser(
   yyendofinput = (yymajor==0);
   configparserARG_STORE;
 
-#ifndef NDEBUG
-  if( yyTraceFILE ){
-    fprintf(yyTraceFILE,"%sInput %s\n",yyTracePrompt,yyTokenName[yymajor]);
-  }
-#endif
-
   do{
     yyact = yy_find_shift_action(yypParser,yymajor);
     if( yyact<YYNSTATE ){
@@ -1496,11 +1257,6 @@ void configparser(
       yy_reduce(yypParser,yyact-YYNSTATE);
     }else if( yyact == YY_ERROR_ACTION ){
       int yymx;
-#ifndef NDEBUG
-      if( yyTraceFILE ){
-        fprintf(yyTraceFILE,"%sSyntax Error!\n",yyTracePrompt);
-      }
-#endif
 #ifdef YYERRORSYMBOL
       /* A syntax error has occurred.
       ** The response to an error depends upon whether or not the
@@ -1526,12 +1282,6 @@ void configparser(
       }
       yymx = yypParser->yystack[yypParser->yyidx].major;
       if( yymx==YYERRORSYMBOL || yyerrorhit ){
-#ifndef NDEBUG
-        if( yyTraceFILE ){
-          fprintf(yyTraceFILE,"%sDiscard input token %s\n",
-             yyTracePrompt,yyTokenName[yymajor]);
-        }
-#endif
         yy_destructor(yymajor,&yyminorunion);
         yymajor = YYNOCODE;
       }else{
