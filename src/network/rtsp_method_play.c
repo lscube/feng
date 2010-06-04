@@ -64,7 +64,7 @@ static RTSP_ResponseCode do_play(RTSP_session * rtsp_sess)
     rtsp_sess->started = 1;
 
     fnc_log(FNC_LOG_VERBOSE, "[%f] resuming with parameters %f %f %f",
-            ev_now(feng_srv->loop),
+            ev_now(feng_srv.loop),
             range->begin_time, range->end_time, range->playback_time);
     rtp_session_gslist_resume(rtsp_sess->rtp_sessions, range);
 
@@ -194,7 +194,7 @@ static RTSP_ResponseCode parse_range_header(RTSP_Client *client,
      */
     if ( range_hdr == NULL &&
          (range = g_queue_peek_head(session->play_requests)) != NULL ) {
-        range->playback_time = ev_now(feng_srv->loop);
+        range->playback_time = ev_now(feng_srv.loop);
 
         return RTSP_Ok;
     }
@@ -252,7 +252,7 @@ static RTSP_ResponseCode parse_range_header(RTSP_Client *client,
 */
 
     if ( range->playback_time < 0 )
-        range->playback_time = ev_now(feng_srv->loop);
+        range->playback_time = ev_now(feng_srv.loop);
 
     if ( session->cur_state != RTSP_SERVER_PLAYING )
         rtsp_session_editlist_free(session);
@@ -260,7 +260,7 @@ static RTSP_ResponseCode parse_range_header(RTSP_Client *client,
     rtsp_session_editlist_append(session, range);
 
     fnc_log(FNC_LOG_VERBOSE,
-            "PLAY [%f]: %f %f %f\n", ev_now(feng_srv->loop),
+            "PLAY [%f]: %f %f %f\n", ev_now(feng_srv.loop),
             range->begin_time, range->end_time, range->playback_time);
 
     return RTSP_Ok;
@@ -310,7 +310,7 @@ void RTSP_play(RTSP_Client *rtsp, RFC822_Request *req)
 
     send_play_reply(rtsp, req, rtsp_sess);
 
-    ev_timer_again (feng_srv->loop, &rtsp->ev_timeout);
+    ev_timer_again (feng_srv.loop, &rtsp->ev_timeout);
 
     return;
 

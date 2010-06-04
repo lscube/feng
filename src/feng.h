@@ -105,6 +105,8 @@ typedef struct feng {
 #endif
 } feng;
 
+extern struct feng feng_srv;
+
 typedef struct Feng_Listener {
     int fd;
     socklen_t sa_len;
@@ -116,13 +118,8 @@ typedef struct Feng_Listener {
 
 typedef feng server;
 
-/**
- * @brief Global instance for feng settings
- */
-extern struct feng *feng_srv;
-
 #define MAX_PROCESS    1    /*! number of fork */
-#define MAX_CONNECTION    feng_srv->srvconf.max_conns   /*! rtsp connection */
+#define MAX_CONNECTION    feng_srv.srvconf.max_conns   /*! rtsp connection */
 #define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS)) /*! rtsp connection for one fork */
 
 struct RTSP_Client;

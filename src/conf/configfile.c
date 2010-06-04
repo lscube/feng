@@ -77,34 +77,34 @@ static int config_insert() {
     int ret = 0;
 
     config_values_t cv[] = {
-        { "server.bind", &feng_srv->srvconf.bindhost, T_CONFIG_STRING },      /* 0 */
-        { "server.errorlog", &feng_srv->srvconf.errorlog_file, T_CONFIG_STRING },      /* 1 */
-        { "server.username", &feng_srv->srvconf.username, T_CONFIG_STRING },      /* 2 */
-        { "server.groupname", &feng_srv->srvconf.groupname, T_CONFIG_STRING },      /* 3 */
-        { "server.port", &feng_srv->srvconf.port, T_CONFIG_SHORT },      /* 4 */
+        { "server.bind", &feng_srv.srvconf.bindhost, T_CONFIG_STRING },      /* 0 */
+        { "server.errorlog", &feng_srv.srvconf.errorlog_file, T_CONFIG_STRING },      /* 1 */
+        { "server.username", &feng_srv.srvconf.username, T_CONFIG_STRING },      /* 2 */
+        { "server.groupname", &feng_srv.srvconf.groupname, T_CONFIG_STRING },      /* 3 */
+        { "server.port", &feng_srv.srvconf.port, T_CONFIG_SHORT },      /* 4 */
         { "server.use-ipv6",             NULL, T_CONFIG_BOOLEAN }, /* 5 */
 
         { "server.document-root", NULL, T_CONFIG_STRING },  /* 6 */
-        { "server.errorlog-use-syslog", &feng_srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN },     /* 7 */
-        { "server.max-connections", &feng_srv->srvconf.max_conns, T_CONFIG_SHORT },       /* 8 */
+        { "server.errorlog-use-syslog", &feng_srv.srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN },     /* 7 */
+        { "server.max-connections", &feng_srv.srvconf.max_conns, T_CONFIG_SHORT },       /* 8 */
         { "sctp.protocol",               NULL, T_CONFIG_BOOLEAN },
         { "sctp.max_streams",            NULL, T_CONFIG_SHORT },
 
         { "accesslog.filename",             NULL, T_CONFIG_STRING }, /* 11 */
         { "accesslog.use-syslog",           NULL, T_CONFIG_BOOLEAN },
 
-        { "server.buffered_frames", &feng_srv->srvconf.buffered_frames, T_CONFIG_SHORT },
-        { "server.loglevel", &feng_srv->srvconf.loglevel, T_CONFIG_SHORT },
-        { "server.twin", &feng_srv->srvconf.twin, T_CONFIG_STRING },
+        { "server.buffered_frames", &feng_srv.srvconf.buffered_frames, T_CONFIG_SHORT },
+        { "server.loglevel", &feng_srv.srvconf.loglevel, T_CONFIG_SHORT },
+        { "server.twin", &feng_srv.srvconf.twin, T_CONFIG_STRING },
         { NULL,                          NULL, T_CONFIG_UNSET }
     };
 
-    feng_srv->config_storage = calloc(feng_srv->config_context->used, sizeof(specific_config));
+    feng_srv.config_storage = calloc(feng_srv.config_context->used, sizeof(specific_config));
 
-    assert(feng_srv->config_storage);
+    assert(feng_srv.config_storage);
 
-    for (i = 0; i < feng_srv->config_context->used; i++) {
-        specific_config *s = &feng_srv->config_storage[i];
+    for (i = 0; i < feng_srv.config_context->used; i++) {
+        specific_config *s = &feng_srv.config_storage[i];
 
         s->use_ipv6      = 0;
         s->is_sctp       = 0;
@@ -121,7 +121,7 @@ static int config_insert() {
         cv[11].destination = &s->access_log_file;
         cv[12].destination = &s->access_log_syslog;
 
-        if (0 != (ret = config_insert_values_global(((data_config *)feng_srv->config_context->data[i])->value, cv))) {
+        if (0 != (ret = config_insert_values_global(((data_config *)feng_srv.config_context->data[i])->value, cv))) {
             break;
         }
 
@@ -654,7 +654,7 @@ int config_read(const char *fn) {
     char *pos;
 
     context_init(&context);
-    context.all_configs = feng_srv->config_context;
+    context.all_configs = feng_srv.config_context;
 
     pos = strrchr(fn,
 #ifdef __WIN32
@@ -677,7 +677,7 @@ int config_read(const char *fn) {
     context.current = dc;
 
     /* default context */
-    feng_srv->config = dc->value;
+    feng_srv.config = dc->value;
 
     ret = config_parse_file(&context, fn);
 
@@ -689,8 +689,8 @@ int config_read(const char *fn) {
         return ret;
     }
 
-    if (NULL != (dc = (data_config *)array_get_element(feng_srv->config_context, "global"))) {
-        feng_srv->config = dc->value;
+    if (NULL != (dc = (data_config *)array_get_element(feng_srv.config_context, "global"))) {
+        feng_srv.config = dc->value;
     } else {
         return -1;
     }
@@ -707,20 +707,20 @@ int config_read(const char *fn) {
  */
 
 int config_set_defaults() {
-    specific_config *s = &feng_srv->config_storage[0];
+    specific_config *s = &feng_srv.config_storage[0];
 
     if ( s->document_root == NULL )
         return -1;
 
-    if (feng_srv->srvconf.port == 0) {
-        feng_srv->srvconf.port = FENG_DEFAULT_PORT;
+    if (feng_srv.srvconf.port == 0) {
+        feng_srv.srvconf.port = FENG_DEFAULT_PORT;
     }
 
-    if (feng_srv->srvconf.max_conns == 0)
-        feng_srv->srvconf.max_conns = 100;
+    if (feng_srv.srvconf.max_conns == 0)
+        feng_srv.srvconf.max_conns = 100;
 
-    if (feng_srv->srvconf.buffered_frames == 0)
-        feng_srv->srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
+    if (feng_srv.srvconf.buffered_frames == 0)
+        feng_srv.srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
 
     return 0;
 }
@@ -808,7 +808,7 @@ static int config_insert_values_global(array *ca, const config_values_t cv[]) {
         buffer_copy_string(touched->value, "");
         buffer_copy_string_buffer(touched->key, du->key);
 
-        array_insert_unique(feng_srv->config_touched, (data_unset *)touched);
+        array_insert_unique(feng_srv.config_touched, (data_unset *)touched);
     }
 
     return config_insert_values_internal(ca, cv);

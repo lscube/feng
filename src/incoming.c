@@ -203,7 +203,7 @@ static gboolean feng_bind_addr(struct addrinfo *ai,
     io = &listener->io;
     io->data = listener;
     ev_io_init(io, rtsp_client_incoming_cb, sock, EV_READ);
-    ev_io_start(feng_srv->loop, io);
+    ev_io_start(feng_srv.loop, io);
 
 #ifdef CLEANUP_DESTRUCTOR
     listening = g_slist_prepend(listening, listener);
@@ -294,19 +294,19 @@ static gboolean feng_bind_port(const char *host, const char *port,
 gboolean feng_bind_ports()
 {
     size_t i;
-    char *host = feng_srv->srvconf.bindhost;
+    char *host = feng_srv.srvconf.bindhost;
     char port[6] = { 0, };
 
-    snprintf(port, sizeof(port), "%d", feng_srv->srvconf.port);
+    snprintf(port, sizeof(port), "%d", feng_srv.srvconf.port);
 
     if (!feng_bind_port(host, port,
-                        &feng_srv->config_storage[0]))
+                        &feng_srv.config_storage[0]))
         return false;
 
    /* check for $SERVER["socket"] */
-    for (i = 1; i < feng_srv->config_context->used; i++) {
-        data_config *dc = (data_config *)feng_srv->config_context->data[i];
-        specific_config *s = &feng_srv->config_storage[i];
+    for (i = 1; i < feng_srv.config_context->used; i++) {
+        data_config *dc = (data_config *)feng_srv.config_context->data[i];
+        specific_config *s = &feng_srv.config_storage[i];
         char *port, *host;
 
         /* not our stage */

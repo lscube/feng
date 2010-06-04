@@ -63,7 +63,7 @@ static void rtp_session_free(gpointer session_gen,
      * to ensure that we're paused before doing this but doesn't
      * matter now.
      */
-    ev_periodic_stop(feng_srv->loop, &session->rtp_writer);
+    ev_periodic_stop(feng_srv.loop, &session->rtp_writer);
 
     session->close_transport(session);
 
@@ -107,7 +107,7 @@ static void rtp_session_fill_cb(ATTR_UNUSED gpointer unused_data,
     Resource *resource = session->track->parent;
     BufferQueue_Consumer *consumer = session->consumer;
     gulong unseen;
-    const gulong buffered_frames = feng_srv->srvconf.buffered_frames;
+    const gulong buffered_frames = feng_srv.srvconf.buffered_frames;
 
     while ( g_atomic_int_get(&resource->eor) == 0 &&
             ((unseen = bq_consumer_unseen(consumer)) < buffered_frames ||
@@ -191,7 +191,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     ev_periodic_set(&session->rtp_writer,
                     range->playback_time - 0.05,
                     0, NULL);
-    ev_periodic_start(feng_srv->loop, &session->rtp_writer);
+    ev_periodic_start(feng_srv.loop, &session->rtp_writer);
 }
 
 /**
@@ -227,7 +227,7 @@ static void rtp_session_pause(gpointer session_gen,
     if (session->fill_pool)
         rtp_fill_pool_free(session);
 
-    ev_periodic_stop(feng_srv->loop, &session->rtp_writer);
+    ev_periodic_stop(feng_srv.loop, &session->rtp_writer);
 }
 
 /**

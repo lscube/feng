@@ -46,7 +46,7 @@
 #include "network/rtsp.h"
 #include <glib.h>
 
-struct feng *feng_srv;
+struct feng feng_srv;
 
 #ifdef CLEANUP_DESTRUCTOR
 /**
@@ -75,8 +75,8 @@ static void sigint_cb (struct ev_loop *loop,
  */
 static void feng_drop_privs()
 {
-    const char *wanted_group = feng_srv->srvconf.groupname;
-    const char *wanted_user = feng_srv->srvconf.username;
+    const char *wanted_group = feng_srv.srvconf.groupname;
+    const char *wanted_user = feng_srv.srvconf.username;
 
     errno = 0;
     if ( wanted_group != NULL ) {
@@ -115,10 +115,10 @@ static void feng_handle_signals()
     sigset_t block_set;
     ev_signal *sig = &signal_watcher_int;
     ev_signal_init (sig, sigint_cb, SIGINT);
-    ev_signal_start (feng_srv->loop, sig);
+    ev_signal_start (feng_srv.loop, sig);
     sig = &signal_watcher_term;
     ev_signal_init (sig, sigint_cb, SIGTERM);
-    ev_signal_start (feng_srv->loop, sig);
+    ev_signal_start (feng_srv.loop, sig);
 
     /* block PIPE signal */
     sigemptyset(&block_set);
@@ -201,9 +201,9 @@ static gboolean command_environment(int argc, char **argv)
         else
             view_log = FNC_LOG_FILE;
 
-        fnc_log_init(feng_srv->srvconf.errorlog_file,
+        fnc_log_init(feng_srv.srvconf.errorlog_file,
                      view_log,
-                     feng_srv->srvconf.loglevel,
+                     feng_srv.srvconf.loglevel,
                      progname);
     }
 
@@ -227,32 +227,29 @@ static void feng_free()
 #ifndef NDEBUG
     unsigned int i;
 
-    g_free(feng_srv->srvconf.bindhost);
-    g_free(feng_srv->srvconf.errorlog_file);
-    g_free(feng_srv->srvconf.username);
-    g_free(feng_srv->srvconf.groupname);
-    g_free(feng_srv->srvconf.twin);
+    g_free(feng_srv.srvconf.bindhost);
+    g_free(feng_srv.srvconf.errorlog_file);
+    g_free(feng_srv.srvconf.username);
+    g_free(feng_srv.srvconf.groupname);
+    g_free(feng_srv.srvconf.twin);
 
-    if ( feng_srv->config_storage != NULL ) {
-        for(i = 0; i < feng_srv->config_context->used; i++) {
-            g_free(feng_srv->config_storage[i].document_root);
+    if ( feng_srv.config_storage != NULL ) {
+        for(i = 0; i < feng_srv.config_context->used; i++) {
+            g_free(feng_srv.config_storage[i].document_root);
 
-            g_free(feng_srv->config_storage[i].access_log_file);
+            g_free(feng_srv.config_storage[i].access_log_file);
         }
 
-        free(feng_srv->config_storage);
+        free(feng_srv.config_storage);
     }
 
 #define CLEAN(x) \
-    array_free(feng_srv->x)
+    array_free(feng_srv.x)
     CLEAN(config_context);
     CLEAN(config_touched);
 #undef CLEAN
 
-    g_slist_free(feng_srv->clients);
-
-    g_free(feng_srv);
-
+    g_slist_free(feng_srv.clients);
 #endif /* NDEBUG */
 }
 
@@ -262,17 +259,12 @@ int main(int argc, char **argv)
 
     if (!g_thread_supported ()) g_thread_init (NULL);
 
-    if (! (feng_srv = g_new0(struct feng, 1)) ) {
-        res = 1;
-        goto end;
-    }
-
 #define CLEAN(x) \
-    feng_srv->x = array_init();
+    feng_srv.x = array_init();
     CLEAN(config_context);
     CLEAN(config_touched);
 #undef CLEAN
-    feng_srv->clients = NULL;
+    feng_srv.clients = NULL;
 
     /* parses the command line and initializes the log*/
     if ( !command_environment(argc, argv) ) {
@@ -283,7 +275,7 @@ int main(int argc, char **argv)
     config_set_defaults();
 
     /* This goes before feng_bind_ports */
-    feng_srv->loop = ev_default_loop(0);
+    feng_srv.loop = ev_default_loop(0);
 
     feng_handle_signals();
 
@@ -301,7 +293,7 @@ int main(int argc, char **argv)
 
     http_tunnel_initialise();
 
-    ev_loop (feng_srv->loop, 0);
+    ev_loop (feng_srv.loop, 0);
 
  end:
     accesslog_uninit();

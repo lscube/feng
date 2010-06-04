@@ -258,7 +258,7 @@ Resource *r_open(const char *inner_path)
     Resource *r = NULL;
     const Demuxer *dmx;
     gchar *mrl = g_strjoin ("/",
-                            feng_srv->config_storage[0].document_root,
+                            feng_srv.config_storage[0].document_root,
                             inner_path,
                             NULL);
 
