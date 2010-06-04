@@ -66,35 +66,13 @@ typedef struct {
     short loglevel;
     conf_buffer *twin;
 
-//    unsigned short dont_daemonize;
-//    conf_buffer *changeroot;
     conf_buffer *username;
     conf_buffer *groupname;
 
-//    conf_buffer *pid_file;
-
-//    conf_buffer *event_handler;
-
-//    conf_buffer *network_backend;
     array *upload_tempdirs;
 
-//    unsigned short max_worker;
     unsigned short max_fds;
     unsigned short max_conns;
-//    unsigned short max_request_size;
-
-//    unsigned short log_request_header_on_error;
-//    unsigned short log_state_handling;
-/*
-    enum { STAT_CACHE_ENGINE_UNSET,
-            STAT_CACHE_ENGINE_NONE,
-            STAT_CACHE_ENGINE_SIMPLE,
-#ifdef HAVE_FAM_H
-            STAT_CACHE_ENGINE_FAM
-#endif
-    } stat_cache_engine;
-    unsigned short enable_cores;
-*/
 } server_config;
 
 typedef struct specific_config {
@@ -103,27 +81,6 @@ typedef struct specific_config {
     /* virtual-servers */
     conf_buffer *document_root;
     conf_buffer *server_name;
-/*
-    conf_buffer *error_handler;
-    conf_buffer *server_tag;
-    conf_buffer *dirlist_encoding;
-    conf_buffer *errorfile_prefix;
-
-    unsigned short max_keep_alive_requests;
-    unsigned short max_keep_alive_idle;
-    unsigned short max_read_idle;
-    unsigned short max_write_idle;
-    unsigned short use_xattr;
-    unsigned short follow_symlink;
-    unsigned short range_requests;
-
-
-    unsigned short log_file_not_found;
-    unsigned short log_request_header;
-    unsigned short log_request_handling;
-    unsigned short log_response_header;
-    unsigned short log_condition_handling;
-*/
 
     /* server wide */
     conf_buffer *ssl_pemfile;
@@ -136,34 +93,6 @@ typedef struct specific_config {
 
     int is_sctp;
     unsigned short sctp_max_streams;
-
-//    int allow_http11;
-/*    unsigned short etag_use_inode;
-    unsigned short etag_use_mtime;
-    unsigned short etag_use_size;
-    unsigned short force_lowercase_filenames;
-        unsigned short max_request_size;
-*/
-//    unsigned short kbytes_per_second; /* connection kb/s limit */
-
-    /* configside */
-//    unsigned short global_kbytes_per_second; /*  */
-
-//    off_t  global_bytes_per_second_cnt;
-    /* server-wide traffic-shaper
-     *
-     * each context has the counter which is inited once
-     * a second by the global_kbytes_per_second config-var
-     *
-     * as soon as global_kbytes_per_second gets below 0
-     * the connected conns are "offline" a little bit
-     *
-     * the problem:
-     * we somehow have to loose our "we are writable" signal
-     * on the way.
-     *
-     */
-//    off_t *global_bytes_per_second_cnt_ptr; /*  */
 
 #ifdef USE_OPENSSL
     SSL_CTX *ssl_ctx;
