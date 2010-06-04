@@ -264,18 +264,14 @@ static gboolean command_environment(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    int res = 0;
-
     if (!g_thread_supported ()) g_thread_init (NULL);
 
     feng_srv.config_context = array_init();
     feng_srv.clients = NULL;
 
     /* parses the command line and initializes the log*/
-    if ( !command_environment(argc, argv) ) {
-        res = 1;
-        goto end;
-    }
+    if ( !command_environment(argc, argv) )
+        return 1;
 
     /* This goes before feng_bind_ports */
     feng_loop = ev_default_loop(0);
@@ -294,6 +290,5 @@ int main(int argc, char **argv)
 
     ev_loop (feng_loop, 0);
 
- end:
-    return res;
+    return 0;
 }
