@@ -23,4 +23,6 @@ server.max-connections = @feng_max_session@
 server.loglevel      = 5
 server.document-root = "@abs_top_srcdir@/avroot"
 server.errorlog      = var.logdir  + "/error.log"
+server.errorlog-use-syslog = "disable"
 accesslog.filename   = var.logdir + "/access.log"
+accesslog.use-syslog = "disable"
