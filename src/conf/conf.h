@@ -76,20 +76,19 @@ typedef struct {
 } server_config;
 
 typedef struct specific_config {
+    gboolean use_ipv6;
+    gboolean access_log_syslog;
+    gboolean is_sctp;
+    unsigned short sctp_max_streams;
+
     array *mimetypes;
 
     /* virtual-servers */
     conf_buffer *document_root;
     conf_buffer *server_name;
 
-    int use_ipv6;
-
-    int is_sctp;
-    unsigned short sctp_max_streams;
-
     conf_buffer *access_log_file;
     FILE *access_log_fp;
-    int access_log_syslog;
 } specific_config;
 
 #endif // FN_CONF_H
