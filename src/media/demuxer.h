@@ -162,7 +162,7 @@ typedef struct Track {
     GMutex *lock;
     TrackInfo *info;
     double start_time;
-    struct MediaParser *parser;
+    const struct MediaParser *parser;
     /*feng*/
     BufferQueue_Producer *producer;
     Resource *parent;

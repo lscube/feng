@@ -41,7 +41,7 @@ extern MediaParser fnc_mediaparser_h263;
 extern MediaParser fnc_mediaparser_amr;
 
 // static array containing all the available media parsers:
-static MediaParser *media_parsers[] = {
+static const MediaParser *const media_parsers[] = {
     &fnc_mediaparser_mpv,
     &fnc_mediaparser_mpa,
     &fnc_mediaparser_h264,
@@ -56,7 +56,7 @@ static MediaParser *media_parsers[] = {
     NULL
 };
 
-MediaParser *mparser_find(const char *encoding_name)
+const MediaParser *mparser_find(const char *encoding_name)
 {
     int i;
 
