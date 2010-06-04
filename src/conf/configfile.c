@@ -78,19 +78,13 @@ static int config_insert(server *srv) {
         { "server.follow-symlink",
           (void *)"Unsupported for now",
           T_CONFIG_UNSUPPORTED, T_CONFIG_SCOPE_UNSET }, /* 9 */
-        { "ssl.pemfile",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 10 */
-
-        { "ssl.engine",                  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 11 */
-
-        { "ssl.ca-file",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 12 */
-
-        { "server.errorlog-use-syslog", &srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 13 */
-        { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 14 */
-        { "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 15 */
+        { "server.errorlog-use-syslog", &srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 10 */
+        { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 11 */
+        { "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 12 */
         { "sctp.protocol",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },
         { "sctp.max_streams",            NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
 
-        { "accesslog.filename",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 18 */
+        { "accesslog.filename",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 15 */
         { "accesslog.use-syslog",           NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },
         { "accesslog.format",               NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
 
@@ -128,11 +122,11 @@ static int config_insert(server *srv) {
         cv[9].destination = &s->follow_symlink;
 #endif
 
-        cv[16].destination = &s->is_sctp;
-        cv[17].destination = &s->sctp_max_streams;
+        cv[13].destination = &s->is_sctp;
+        cv[14].destination = &s->sctp_max_streams;
 
-        cv[18].destination = s->access_log_file;
-        cv[19].destination = &s->access_log_syslog;
+        cv[15].destination = s->access_log_file;
+        cv[16].destination = &s->access_log_syslog;
 
         if (0 != (ret = config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv))) {
             break;
