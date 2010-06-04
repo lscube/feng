@@ -245,6 +245,7 @@ static void config_set_defaults() {
         feng_srv.srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
 }
 
+#ifdef CLEANUP_DESTRUCTOR
 /**
  * @brief Free the feng server object
  *
@@ -259,7 +260,6 @@ static void config_set_defaults() {
  */
 static void feng_free()
 {
-#ifndef NDEBUG
     unsigned int i;
 
     g_free(feng_srv.srvconf.bindhost);
@@ -284,8 +284,8 @@ static void feng_free()
 #undef CLEAN
 
     g_slist_free(feng_srv.clients);
-#endif /* NDEBUG */
 }
+#endif /* CLEANUP_DESTRUCTOR */
 
 int main(int argc, char **argv)
 {
@@ -330,7 +330,9 @@ int main(int argc, char **argv)
 
  end:
     accesslog_uninit();
+#ifdef CLEANUP_DESTRUCTOR
     feng_free();
+#endif
 
     return res;
 }
