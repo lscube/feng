@@ -109,9 +109,6 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
                 *((unsigned short *)(cv[i].destination)) = di->value;
                 break;
             }
-            case TYPE_STRING: {
-                return -1;
-            }
             default:
                 return -1;
             }
@@ -130,13 +127,6 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
             } else {
                 return -1;
             }
-            break;
-        case T_CONFIG_LOCAL:
-        case T_CONFIG_UNSET:
-            break;
-        case T_CONFIG_UNSUPPORTED:
-            break;
-        case T_CONFIG_DEPRECATED:
             break;
         }
     }
