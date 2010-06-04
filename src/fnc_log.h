@@ -33,7 +33,7 @@ enum {  FNC_LOG_OUT,
 
 	//level
 enum {
-    FNC_LOG_FATAL = -2, //!< Fatal error
+    FNC_LOG_FATAL,      //!< Fatal error
     FNC_LOG_ERR,        //!< Recoverable error
     FNC_LOG_WARN,       //!< Warning
     FNC_LOG_INFO,       //!< Informative message
