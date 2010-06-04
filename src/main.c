@@ -72,26 +72,24 @@ struct ev_loop *feng_loop;
  */
 static char *progname;
 
+/**
+ * @brief Cleanup the data structures used by main()
+ *
+ * This function frees the resources that are allocated during the
+ * initialisation of the server, and used by the main() function
+ * directly.
+ *
+ * @note This si a cleanup destructure, which means that in non-debug
+ *       builds it will not be compiled, while in debug builds will
+ *       free the resources before exiting. This trick is useful to
+ *       avoid false positives in tools like valgrind that expect
+ *       resources to be completely freed at the end of the process.
+ */
 static void CLEANUP_DESTRUCTOR main_cleanup()
 {
-    g_free(progname);
-}
-
-/**
- * @brief Free the feng server object
- *
- * This function frees the resources connected to the server object;
- * this function is empty when debug is disabled since it's unneeded
- * for actual production use, exiting the project will free them just
- * as fine.
- *
- * What this is useful for during debug is to avoid false positives in
- * tools like valgrind that expect a complete freeing of all
- * resources.
- */
-static void CLEANUP_DESTRUCTOR feng_free()
-{
     unsigned int i;
+
+    g_free(progname);
 
     g_free(feng_srv.srvconf.bindhost);
     g_free(feng_srv.srvconf.bindport);
