@@ -53,6 +53,25 @@
 #include "configfile.h"
 #include "proc_open.h"
 
+typedef enum { T_CONFIG_UNSET,
+                T_CONFIG_STRING,
+                T_CONFIG_SHORT,
+                T_CONFIG_BOOLEAN
+} config_values_type_t;
+
+typedef enum { T_CONFIG_SCOPE_UNSET,
+                T_CONFIG_SCOPE_SERVER,
+                T_CONFIG_SCOPE_CONNECTION
+} config_scope_type_t;
+
+typedef struct {
+        const char *key;
+        void *destination;
+
+        config_values_type_t type;
+        config_scope_type_t scope;
+} config_values_t;
+
 static int config_insert_values_global(server *srv, array *ca, const config_values_t cv[]);
 
 /**
