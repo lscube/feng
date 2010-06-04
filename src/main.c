@@ -278,7 +278,7 @@ int main(int argc, char **argv)
 
     feng_handle_signals();
 
-    if (!feng_bind_ports())
+    if ( !feng_bind_ports() )
         return 1;
 
     if ( !accesslog_init() )
