@@ -92,34 +92,19 @@ static void fnc_errlog(int level, const char *fmt, va_list args)
 #if HAVE_SYSLOG_H
 static void fnc_syslog(int level, const char *fmt, va_list args)
 {
-    int l = LOG_ERR;
+    static const int fnc_to_syslog_level[] = {
+        [FNC_LOG_FATAL] = LOG_CRIT,
+        [FNC_LOG_ERR] = LOG_ERR,
+        [FNC_LOG_WARN] = LOG_WARNING,
+        [FNC_LOG_INFO] = LOG_INFO,
+        [FNC_LOG_CLIENT] = LOG_INFO,
+        [FNC_LOG_DEBUG] = LOG_DEBUG,
+        [FNC_LOG_VERBOSE] = LOG_DEBUG
+    };
 
     if (level > log_level) return;
 
-    switch (level) {
-        case FNC_LOG_FATAL:
-            l = LOG_CRIT;
-            break;
-        case FNC_LOG_ERR:
-            l = LOG_ERR;
-            break;
-        case FNC_LOG_WARN:
-            l = LOG_WARNING;
-            break;
-        case FNC_LOG_DEBUG:
-            l = LOG_DEBUG;
-            break;
-        case FNC_LOG_VERBOSE:
-            l = LOG_DEBUG;
-            break;
-        case FNC_LOG_CLIENT:
-            l = LOG_INFO;
-            break;
-        default:
-            l = LOG_INFO;
-            break;
-    }
-    vsyslog(l, fmt, args);
+    vsyslog(fnc_to_syslog_level[level], fmt, args);
 }
 #endif
 
