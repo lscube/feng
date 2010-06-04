@@ -124,7 +124,7 @@ static int config_insert() {
         if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[i])->value, vhost_cv))
             return -1;
 
-        if ( s->document_root == NULL )
+        if ( i == 0 && s->document_root == NULL )
             return -1;
     }
 
