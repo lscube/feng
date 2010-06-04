@@ -957,13 +957,6 @@ static void yy_reduce(
       size_t len;
     } comps[] = {
       { COMP_SERVER_SOCKET,      CONST_STR_LEN("SERVER[\"socket\"]"   ) },
-      { COMP_HTTP_URL,           CONST_STR_LEN("HTTP[\"url\"]"        ) },
-      { COMP_HTTP_HOST,          CONST_STR_LEN("HTTP[\"host\"]"       ) },
-      { COMP_HTTP_REFERER,       CONST_STR_LEN("HTTP[\"referer\"]"    ) },
-      { COMP_HTTP_USERAGENT,     CONST_STR_LEN("HTTP[\"useragent\"]"  ) },
-      { COMP_HTTP_COOKIE,        CONST_STR_LEN("HTTP[\"cookie\"]"     ) },
-      { COMP_HTTP_REMOTEIP,      CONST_STR_LEN("HTTP[\"remoteip\"]"   ) },
-      { COMP_HTTP_QUERYSTRING,   CONST_STR_LEN("HTTP[\"querystring\"]") },
       { COMP_UNSET, "", 0 },
     };
     size_t i;
