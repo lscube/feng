@@ -80,7 +80,7 @@ static int config_insert() {
         { "server.errorlog", &feng_srv.srvconf.errorlog_file, T_CONFIG_STRING },      /* 1 */
         { "server.username", &feng_srv.srvconf.username, T_CONFIG_STRING },      /* 2 */
         { "server.groupname", &feng_srv.srvconf.groupname, T_CONFIG_STRING },      /* 3 */
-        { "server.port", &feng_srv.srvconf.port, T_CONFIG_SHORT },      /* 4 */
+        { "server.port", &feng_srv.srvconf.bindport, T_CONFIG_STRING },      /* 4 */
         { "server.errorlog-use-syslog", &feng_srv.srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN },     /* 7 */
         { "server.max-connections", &feng_srv.srvconf.max_conns, T_CONFIG_SHORT },       /* 8 */
         { "server.buffered_frames", &feng_srv.srvconf.buffered_frames, T_CONFIG_SHORT },
@@ -643,7 +643,15 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
 
         switch (cv[i].type) {
         case T_CONFIG_STRING:
-            if (du->type == TYPE_STRING) {
+            switch(du->type) {
+            case TYPE_INTEGER: {
+                data_integer *di = (data_integer *)du;
+                char **dst = (char**)cv[i].destination;
+
+                *dst = g_strdup_printf("%d", di->value);
+                break;
+            }
+            case TYPE_STRING: {
                 data_string *ds = (data_string *)du;
                 char **dst = (char**)cv[i].destination;
 
@@ -652,7 +660,9 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
                     *dst = NULL;
                 else
                     *dst = g_strdup(ds->value->ptr);
-            } else {
+                break;
+            }
+            default:
                 return -1;
             }
             break;

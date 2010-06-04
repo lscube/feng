@@ -187,7 +187,7 @@ AC_DEFINE_UNQUOTED(FENG_AVROOT_DIR_DEFAULT_STR,
                     "$feng_avroot_dir",
                     [Define default directory string for Feng A/V resources])
 
-AC_DEFINE_UNQUOTED(FENG_DEFAULT_PORT, $feng_rtsp_port, [Define default listening port])
+AC_DEFINE_UNQUOTED(FENG_DEFAULT_PORT, "$feng_rtsp_port", [Define default listening port])
 
 AC_DEFINE_UNQUOTED(FENG_CONF_FILE_DEFAULT,
                     $feng_conf_file,

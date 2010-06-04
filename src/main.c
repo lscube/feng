@@ -95,6 +95,7 @@ static void CLEANUP_DESTRUCTOR feng_free()
     unsigned int i;
 
     g_free(feng_srv.srvconf.bindhost);
+    g_free(feng_srv.srvconf.bindport);
     g_free(feng_srv.srvconf.errorlog_file);
     g_free(feng_srv.srvconf.username);
     g_free(feng_srv.srvconf.groupname);
@@ -271,9 +272,6 @@ static void config_set_defaults() {
 
     if ( s->document_root == NULL )
         return;
-
-    if (feng_srv.srvconf.port == 0)
-        feng_srv.srvconf.port = FENG_DEFAULT_PORT;
 
     if (feng_srv.srvconf.max_conns == 0)
         feng_srv.srvconf.max_conns = 100;

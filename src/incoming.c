@@ -248,6 +248,10 @@ static gboolean feng_bind_port(const char *host, const char *port,
     if ( host != NULL && *host == '\0' )
         host = NULL;
 
+    /* if there is no port, default to the build default */
+    if ( port == NULL )
+        port = FENG_DEFAULT_PORT;
+
     fnc_log(FNC_LOG_INFO, "Listening to port %s (%s/%s) on %s",
             port,
             (is_sctp? "SCTP" : "TCP"),
@@ -294,12 +298,9 @@ static gboolean feng_bind_port(const char *host, const char *port,
 gboolean feng_bind_ports()
 {
     size_t i;
-    char *host = feng_srv.srvconf.bindhost;
-    char port[6] = { 0, };
 
-    snprintf(port, sizeof(port), "%d", feng_srv.srvconf.port);
-
-    if (!feng_bind_port(host, port,
+    if (!feng_bind_port(feng_srv.srvconf.bindhost,
+                        feng_srv.srvconf.bindport,
                         &feng_srv.config_storage[0]))
         return false;
 

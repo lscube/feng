@@ -37,8 +37,6 @@
 #include "conf/array.h"
 
 typedef struct server_config {
-    short port;
-
     short buffered_frames;
     short loglevel;
 
@@ -47,6 +45,7 @@ typedef struct server_config {
     unsigned short max_conns;
 
     char *bindhost;
+    char *bindport;
 
     char *errorlog_file;
 
@@ -65,7 +64,6 @@ typedef struct specific_config {
     unsigned short sctp_max_streams;
 #endif
 
-    /* virtual-servers */
     char *document_root;
 
     char *access_log_file;
