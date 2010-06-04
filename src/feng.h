@@ -31,10 +31,46 @@
 #include <glib.h>
 #include <ev.h>
 #include <pwd.h>
+#include <stdio.h> /* for FILE* */
 #include <netinet/in.h>
 
 #include "conf/array.h"
-#include "conf/conf.h"
+
+typedef struct server_config {
+    short port;
+
+    short buffered_frames;
+    short loglevel;
+
+    int errorlog_use_syslog;
+
+    unsigned short max_conns;
+
+    char *bindhost;
+
+    char *errorlog_file;
+
+    char *twin;
+
+    char *username;
+    char *groupname;
+} server_config;
+
+typedef struct specific_config {
+    gboolean use_ipv6;
+    gboolean access_log_syslog;
+
+#if ENABLE_SCTP
+    gboolean is_sctp;
+    unsigned short sctp_max_streams;
+#endif
+
+    /* virtual-servers */
+    char *document_root;
+
+    char *access_log_file;
+    FILE *access_log_fp;
+} specific_config;
 
 typedef struct feng_stats {
     size_t total_sent;
