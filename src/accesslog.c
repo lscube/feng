@@ -61,7 +61,7 @@ gboolean accesslog_init(feng *srv)
 #endif
         }
 
-        if ( *access_log_filename == '\0' )
+        if ( access_log_filename == NULL )
             continue;
 
         if (NULL == (srv->config_storage[i].access_log_fp = fopen(access_log_filename, "a"))) {

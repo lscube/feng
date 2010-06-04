@@ -709,8 +709,7 @@ int config_read(server *srv, const char *fn) {
 int config_set_defaults(server *srv) {
     specific_config *s = &srv->config_storage[0];
 
-    if ( s->document_root == NULL ||
-         *(s->document_root) == '\0' )
+    if ( s->document_root == NULL )
         return -1;
 
     if (srv->srvconf.port == 0) {
@@ -744,7 +743,11 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
                 data_string *ds = (data_string *)du;
                 char **dst = (char**)cv[i].destination;
 
-                *dst = g_strdup(ds->value->ptr);
+                /* if the string is empty */
+                if ( ds->value->used < 2 )
+                    *dst = NULL;
+                else
+                    *dst = g_strdup(ds->value->ptr);
             } else {
                 return -1;
             }
