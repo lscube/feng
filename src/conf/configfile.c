@@ -66,7 +66,7 @@ typedef struct {
         config_values_type_t type;
 } config_values_t;
 
-static int config_insert_values_global(array *ca, const config_values_t cv[]);
+static int config_insert_values_internal(array *ca, const config_values_t cv[]);
 
 /**
  * Insert the main configuration keys and their defaults
@@ -121,7 +121,7 @@ static int config_insert() {
         cv[11].destination = &s->access_log_file;
         cv[12].destination = &s->access_log_syslog;
 
-        if (0 != (ret = config_insert_values_global(((data_config *)feng_srv.config_context->data[i])->value, cv))) {
+        if (0 != (ret = config_insert_values_internal(((data_config *)feng_srv.config_context->data[i])->value, cv))) {
             break;
         }
 
@@ -783,33 +783,4 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
     }
 
     return 0;
-}
-
-/**
- * Insert configuration value into the global array
- */
-
-static int config_insert_values_global(array *ca, const config_values_t cv[]) {
-    size_t i;
-    data_unset *du;
-
-    for (i = 0; cv[i].key; i++) {
-        data_string *touched;
-
-        if (NULL == (du = array_get_element(ca, cv[i].key))) {
-            /* no found */
-
-            continue;
-        }
-
-        /* touched */
-        touched = data_string_init();
-
-        buffer_copy_string(touched->value, "");
-        buffer_copy_string_buffer(touched->key, du->key);
-
-        array_insert_unique(feng_srv.config_touched, (data_unset *)touched);
-    }
-
-    return config_insert_values_internal(ca, cv);
 }

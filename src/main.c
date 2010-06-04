@@ -246,7 +246,6 @@ static void feng_free()
 #define CLEAN(x) \
     array_free(feng_srv.x)
     CLEAN(config_context);
-    CLEAN(config_touched);
 #undef CLEAN
 
     g_slist_free(feng_srv.clients);
@@ -262,7 +261,6 @@ int main(int argc, char **argv)
 #define CLEAN(x) \
     feng_srv.x = array_init();
     CLEAN(config_context);
-    CLEAN(config_touched);
 #undef CLEAN
     feng_srv.clients = NULL;
 
