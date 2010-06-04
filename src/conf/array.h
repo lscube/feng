@@ -71,12 +71,6 @@ typedef struct {
 typedef struct {
     DATA_UNSET;
 
-    int count;
-} data_count;
-
-typedef struct {
-    DATA_UNSET;
-
     conf_buffer *value;
 } data_string;
 

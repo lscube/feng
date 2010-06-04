@@ -70,7 +70,6 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/conf/configfile.c \
 	src/conf/configfile.h \
 	src/conf/data_array.c \
-	src/conf/data_count.c \
 	src/conf/data_integer.c \
 	src/conf/data_config.c \
 	src/conf/data_string.c \
