@@ -74,10 +74,6 @@ static int config_insert(server *srv) {
         { "server.document-root", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 6 */
         { "server.name",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 7 */
 
-        { "server.max-fds", &srv->srvconf.max_fds, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 8 */
-        { "server.follow-symlink",
-          (void *)"Unsupported for now",
-          T_CONFIG_UNSUPPORTED, T_CONFIG_SCOPE_UNSET }, /* 9 */
         { "server.errorlog-use-syslog", &srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 10 */
         { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 11 */
         { "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 12 */
@@ -88,7 +84,6 @@ static int config_insert(server *srv) {
         { "accesslog.use-syslog",           NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },
         { "accesslog.format",               NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
 
-        { "server.first_udp_port",  &srv->srvconf.first_udp_port, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { "server.loglevel", &srv->srvconf.loglevel, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { "server.twin", srv->srvconf.twin, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
@@ -110,17 +105,10 @@ static int config_insert(server *srv) {
         s->access_log_file = buffer_init();
         s->access_log_syslog = 1;
 
-#ifdef HAVE_LSTAT
-        s->follow_symlink = 1;
-#endif
         cv[5].destination = &s->use_ipv6;
 
         cv[6].destination = s->document_root;
         cv[7].destination = s->server_name;
-        /* 9 -> max-fds */
-#ifdef HAVE_LSTAT
-        cv[9].destination = &s->follow_symlink;
-#endif
 
         cv[13].destination = &s->is_sctp;
         cv[14].destination = &s->sctp_max_streams;
@@ -804,8 +792,6 @@ int config_set_defaults(server *srv) {
     if (srv->srvconf.max_conns == 0)
         srv->srvconf.max_conns = 100;
 
-    if (srv->srvconf.first_udp_port == 0)
-        srv->srvconf.first_udp_port = RTP_DEFAULT_PORT;
     if (srv->srvconf.buffered_frames == 0)
         srv->srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
 

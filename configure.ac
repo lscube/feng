@@ -69,7 +69,6 @@ AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 
 dnl Checks used by conf/*
 dnl AC_CHECK_HEADERS([pcre.h fam.h])
-dnl AC_CHECK_FUNCS([lstat])
 
 CHECK_RAGEL_AM([src/network/ragel_range.c], [6.6])
 

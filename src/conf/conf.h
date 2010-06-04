@@ -56,13 +56,11 @@ typedef struct {
 typedef struct {
     short port;
 
-    short first_udp_port;
     short buffered_frames;
     short loglevel;
 
     int errorlog_use_syslog;
 
-    unsigned short max_fds;
     unsigned short max_conns;
 
     conf_buffer *bindhost;
