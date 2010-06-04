@@ -94,10 +94,6 @@ typedef struct specific_config {
     int is_sctp;
     unsigned short sctp_max_streams;
 
-#ifdef USE_OPENSSL
-    SSL_CTX *ssl_ctx;
-#endif
-
     conf_buffer *access_log_file;
     FILE *access_log_fp;
     int access_log_syslog;

@@ -1012,13 +1012,6 @@ int config_set_defaults(server *srv) {
                     "ssl.pemfile has to be set");
             return -1;
         }
-
-#ifndef USE_OPENSSL
-        log_error_write(srv, __FILE__, __LINE__, "s",
-                "ssl support is missing, recompile with --with-openssl");
-
-        return -1;
-#endif
     }
 
     return 0;
