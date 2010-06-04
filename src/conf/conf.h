@@ -84,13 +84,6 @@ typedef struct specific_config {
     conf_buffer *document_root;
     conf_buffer *server_name;
 
-    /* server wide */
-    conf_buffer *ssl_pemfile;
-    conf_buffer *ssl_ca_file;
-    conf_buffer *ssl_cipher_list;
-    int ssl_use_sslv2;
-    int is_ssl;
-
     int use_ipv6;
 
     int is_sctp;

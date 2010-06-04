@@ -120,11 +120,7 @@ static int config_insert(server *srv) {
 
         s->document_root = buffer_init();
         s->server_name   = buffer_init();
-        s->ssl_pemfile   = buffer_init();
-        s->ssl_ca_file   = buffer_init();
-        s->ssl_cipher_list = buffer_init();
         s->use_ipv6      = 0;
-        s->is_ssl        = 0;
         s->is_sctp       = 0;
         s->sctp_max_streams = 16;
         s->access_log_file = buffer_init();
@@ -148,11 +144,6 @@ static int config_insert(server *srv) {
 #endif
 //        cv[25].destination = &(s->global_kbytes_per_second);
 //        cv[26].destination = &(s->kbytes_per_second);
-        cv[10].destination = s->ssl_pemfile;
-
-        cv[11].destination = &s->is_ssl;
-        cv[12].destination = s->ssl_ca_file;
-        cv[15].destination = s->ssl_cipher_list;
 
         cv[16].destination = &s->is_sctp;
         cv[17].destination = &s->sctp_max_streams;
@@ -186,12 +177,6 @@ int config_setup_connection(server *srv, connection *con) {
     con->conf.global_bytes_per_second_cnt_ptr = &s->global_bytes_per_second_cnt;
     buffer_copy_string_buffer(con->server_name, s->server_name);
 
-    PATCH(is_ssl);
-
-    PATCH(ssl_pemfile);
-    PATCH(ssl_ca_file);
-    PATCH(ssl_cipher_list);
-
     return 0;
 }
 
@@ -217,14 +202,6 @@ int config_patch_connection(server *srv, connection *con, comp_key_t comp) {
 
             if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.document-root"))) {
                 PATCH(document_root);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.pemfile"))) {
-                PATCH(ssl_pemfile);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.ca-file"))) {
-                PATCH(ssl_ca_file);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.cipher-list"))) {
-                PATCH(ssl_cipher_list);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.engine"))) {
-                PATCH(is_ssl);
 #ifdef HAVE_LSTAT
             } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.follow-symlink"))) {
                 PATCH(follow_symlink);
@@ -993,7 +970,7 @@ int config_set_defaults(server *srv) {
 #endif
 
     if (srv->srvconf.port == 0) {
-        srv->srvconf.port = s->is_ssl ? 322 : FENG_DEFAULT_PORT;
+        srv->srvconf.port = FENG_DEFAULT_PORT;
     }
 
     if (srv->srvconf.max_conns == 0)
@@ -1003,16 +980,6 @@ int config_set_defaults(server *srv) {
         srv->srvconf.first_udp_port = RTP_DEFAULT_PORT;
     if (srv->srvconf.buffered_frames == 0)
         srv->srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
-
-    if (s->is_ssl) {
-        if (buffer_is_empty(s->ssl_pemfile)) {
-            /* PEM file is require */
-
-            log_error_write(srv, __FILE__, __LINE__, "s",
-                    "ssl.pemfile has to be set");
-            return -1;
-        }
-    }
 
     return 0;
 }
