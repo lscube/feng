@@ -111,6 +111,8 @@ typedef feng server;
 #define MAX_CONNECTION    feng_srv.srvconf.max_conns   /*! rtsp connection */
 #define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS)) /*! rtsp connection for one fork */
 
+gboolean feng_bind_ports();
+
 struct RTSP_Client;
 struct RFC822_Response;
 

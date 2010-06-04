@@ -30,7 +30,6 @@
 
 #include "feng.h"
 #include "fnc_log.h"
-#include "incoming.h"
 #include "network/rtsp.h"
 #include "network/netembryo.h"
 

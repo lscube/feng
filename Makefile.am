@@ -52,7 +52,7 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/accesslog.c \
 	src/bufferqueue.c src/bufferqueue.h \
 	src/fnc_log.c src/fnc_log.h \
-	src/incoming.c src/incoming.h \
+	src/incoming.c \
 	src/feng.h \
 	src/main.c \
 	src/conf/array.c \
