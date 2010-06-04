@@ -59,17 +59,11 @@ typedef enum { T_CONFIG_UNSET,
                 T_CONFIG_BOOLEAN
 } config_values_type_t;
 
-typedef enum { T_CONFIG_SCOPE_UNSET,
-                T_CONFIG_SCOPE_SERVER,
-                T_CONFIG_SCOPE_CONNECTION
-} config_scope_type_t;
-
 typedef struct {
         const char *key;
         void *destination;
 
         config_values_type_t type;
-        config_scope_type_t scope;
 } config_values_t;
 
 static int config_insert_values_global(server *srv, array *ca, const config_values_t cv[]);
@@ -83,26 +77,26 @@ static int config_insert(server *srv) {
     int ret = 0;
 
     config_values_t cv[] = {
-        { "server.bind", &srv->srvconf.bindhost, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 0 */
-        { "server.errorlog", &srv->srvconf.errorlog_file, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 1 */
-        { "server.username", &srv->srvconf.username, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 2 */
-        { "server.groupname", &srv->srvconf.groupname, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 3 */
-        { "server.port", &srv->srvconf.port, T_CONFIG_SHORT,  T_CONFIG_SCOPE_SERVER },      /* 4 */
-        { "server.use-ipv6",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 5 */
+        { "server.bind", &srv->srvconf.bindhost, T_CONFIG_STRING },      /* 0 */
+        { "server.errorlog", &srv->srvconf.errorlog_file, T_CONFIG_STRING },      /* 1 */
+        { "server.username", &srv->srvconf.username, T_CONFIG_STRING },      /* 2 */
+        { "server.groupname", &srv->srvconf.groupname, T_CONFIG_STRING },      /* 3 */
+        { "server.port", &srv->srvconf.port, T_CONFIG_SHORT },      /* 4 */
+        { "server.use-ipv6",             NULL, T_CONFIG_BOOLEAN }, /* 5 */
 
-        { "server.document-root", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 6 */
-        { "server.errorlog-use-syslog", &srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 7 */
-        { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 8 */
-        { "sctp.protocol",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },
-        { "sctp.max_streams",            NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
+        { "server.document-root", NULL, T_CONFIG_STRING },  /* 6 */
+        { "server.errorlog-use-syslog", &srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN },     /* 7 */
+        { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT },       /* 8 */
+        { "sctp.protocol",               NULL, T_CONFIG_BOOLEAN },
+        { "sctp.max_streams",            NULL, T_CONFIG_SHORT },
 
-        { "accesslog.filename",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 11 */
-        { "accesslog.use-syslog",           NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },
+        { "accesslog.filename",             NULL, T_CONFIG_STRING }, /* 11 */
+        { "accesslog.use-syslog",           NULL, T_CONFIG_BOOLEAN },
 
-        { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
-        { "server.loglevel", &srv->srvconf.loglevel, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
-        { "server.twin", &srv->srvconf.twin, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
-        { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
+        { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT },
+        { "server.loglevel", &srv->srvconf.loglevel, T_CONFIG_SHORT },
+        { "server.twin", &srv->srvconf.twin, T_CONFIG_STRING },
+        { NULL,                          NULL, T_CONFIG_UNSET }
     };
 
     srv->config_storage = calloc(srv->config_context->used, sizeof(specific_config));
