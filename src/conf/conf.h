@@ -55,24 +55,26 @@ typedef struct {
 
 typedef struct {
     short port;
-    conf_buffer *bindhost;
 
-    conf_buffer *errorlog_file;
-    int errorlog_use_syslog;
-
-    /* FIXME feng specific stuff */
     short first_udp_port;
     short buffered_frames;
     short loglevel;
+
+    int errorlog_use_syslog;
+
+    unsigned short max_fds;
+    unsigned short max_conns;
+
+    conf_buffer *bindhost;
+
+    conf_buffer *errorlog_file;
+
     conf_buffer *twin;
 
     conf_buffer *username;
     conf_buffer *groupname;
 
     array *upload_tempdirs;
-
-    unsigned short max_fds;
-    unsigned short max_conns;
 } server_config;
 
 typedef struct specific_config {
