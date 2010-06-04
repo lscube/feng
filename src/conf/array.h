@@ -87,9 +87,7 @@ data_array *data_array_init(void);
 typedef enum {
     CONFIG_COND_UNSET,
     CONFIG_COND_EQ,      /** == */
-    CONFIG_COND_MATCH,   /** =~ */
     CONFIG_COND_NE,      /** != */
-    CONFIG_COND_NOMATCH  /** !~ */
 } config_cond_t;
 
 /**

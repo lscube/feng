@@ -196,12 +196,6 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
                     buffer_copy_string(token, "==");
 
                     tid = TK_EQ;
-                } else if (t->input[t->offset + 1] == '~') {
-                    t->offset += 2;
-
-                    buffer_copy_string(token, "=~");
-
-                    tid = TK_MATCH;
                 } else {
                     return -1;
                 }
@@ -227,12 +221,6 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
                     buffer_copy_string(token, "!=");
 
                     tid = TK_NE;
-                } else if (t->input[t->offset + 1] == '~') {
-                    t->offset += 2;
-
-                    buffer_copy_string(token, "!~");
-
-                    tid = TK_NOMATCH;
                 } else {
                     return -1;
                 }

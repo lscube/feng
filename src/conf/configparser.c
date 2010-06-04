@@ -934,12 +934,6 @@ static void yy_reduce(
   case CONFIG_COND_EQ:
     op = buffer_init_string("==");
     break;
-  case CONFIG_COND_NOMATCH:
-    op = buffer_init_string("!~");
-    break;
-  case CONFIG_COND_MATCH:
-    op = buffer_init_string("=~");
-    break;
   default:
     assert(0);
     return;
@@ -1031,23 +1025,11 @@ static void yy_reduce(
 }
   yy_destructor(20,&yymsp[0].minor);
         break;
-      case 34:
-{
-  yygotominor.yy27 = CONFIG_COND_MATCH;
-}
-  yy_destructor(21,&yymsp[0].minor);
-        break;
       case 35:
 {
   yygotominor.yy27 = CONFIG_COND_NE;
 }
   yy_destructor(22,&yymsp[0].minor);
-        break;
-      case 36:
-{
-  yygotominor.yy27 = CONFIG_COND_NOMATCH;
-}
-  yy_destructor(23,&yymsp[0].minor);
         break;
       case 37:
 {

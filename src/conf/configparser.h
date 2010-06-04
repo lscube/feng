@@ -18,8 +18,6 @@
 #define TK_LBRACKET                       18
 #define TK_RBRACKET                       19
 #define TK_EQ                             20
-#define TK_MATCH                          21
 #define TK_NE                             22
-#define TK_NOMATCH                        23
 #define TK_INCLUDE                        24
 #define TK_INCLUDE_SHELL                  25
