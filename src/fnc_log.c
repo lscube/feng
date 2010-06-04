@@ -49,6 +49,16 @@ static int log_level = FNC_LOG_WARN;
  */
 static void fnc_errlog(int level, const char *fmt, va_list args)
 {
+    static const char *const log_prefix[] = {
+        [FNC_LOG_FATAL] = "[fatal error] ",
+        [FNC_LOG_ERR] = "[error] ",
+        [FNC_LOG_WARN] = "[warning] ",
+        [FNC_LOG_INFO] = "",
+        [FNC_LOG_CLIENT] = "[client] ",
+        [FNC_LOG_DEBUG] = "[debug] ",
+        [FNC_LOG_VERBOSE] = "[verbose debug] "
+    };
+
     time_t now;
     char date[MAX_LEN_DATE];
     const struct tm *tm;
@@ -59,31 +69,7 @@ static void fnc_errlog(int level, const char *fmt, va_list args)
     tm = localtime(&now);
     strftime(date, MAX_LEN_DATE, ERR_FORMAT, tm);
 
-    switch (level) {
-        case FNC_LOG_FATAL:
-            fprintf(fd, "[%s] [fatal error] ", date);
-            break;
-        case FNC_LOG_ERR:
-            fprintf(fd, "[%s] [error] ", date);
-            break;
-        case FNC_LOG_WARN:
-            fprintf(fd, "[%s] [warning] ", date);
-            break;
-        case FNC_LOG_DEBUG:
-            fprintf(fd, "[%s] [debug] ", date);
-            break;
-        case FNC_LOG_VERBOSE:
-            fprintf(fd, "[%s] [verbose debug] ", date);
-            break;
-        case FNC_LOG_CLIENT:
-            fprintf(fd, "[%s] [client] ", date);
-            break;
-        default:
-        case FNC_LOG_INFO:
-            fprintf(fd, "[%s] ", date);
-            break;
-    }
-
+    fprintf(fd, "[%s] %s", date, log_prefix[level]);
     vfprintf(fd, fmt, args);
     fprintf(fd, "\n");
     fflush(fd);
