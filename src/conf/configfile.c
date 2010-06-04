@@ -64,10 +64,10 @@ static int config_insert(server *srv) {
     int ret = 0;
 
     config_values_t cv[] = {
-        { "server.bind", srv->srvconf.bindhost, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 0 */
-        { "server.errorlog", srv->srvconf.errorlog_file, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 1 */
-        { "server.username", srv->srvconf.username, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 2 */
-        { "server.groupname", srv->srvconf.groupname, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 3 */
+        { "server.bind", &srv->srvconf.bindhost, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 0 */
+        { "server.errorlog", &srv->srvconf.errorlog_file, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 1 */
+        { "server.username", &srv->srvconf.username, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 2 */
+        { "server.groupname", &srv->srvconf.groupname, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 3 */
         { "server.port", &srv->srvconf.port, T_CONFIG_SHORT,  T_CONFIG_SCOPE_SERVER },      /* 4 */
         { "server.use-ipv6",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 5 */
 
@@ -82,7 +82,7 @@ static int config_insert(server *srv) {
 
         { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
         { "server.loglevel", &srv->srvconf.loglevel, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
-        { "server.twin", srv->srvconf.twin, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
+        { "server.twin", &srv->srvconf.twin, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
         { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
     };
 
@@ -93,21 +93,19 @@ static int config_insert(server *srv) {
     for (i = 0; i < srv->config_context->used; i++) {
         specific_config *s = &srv->config_storage[i];
 
-        s->document_root = buffer_init();
         s->use_ipv6      = 0;
         s->is_sctp       = 0;
         s->sctp_max_streams = 16;
-        s->access_log_file = buffer_init();
         s->access_log_syslog = 1;
 
         cv[5].destination = &s->use_ipv6;
 
-        cv[6].destination = s->document_root;
+        cv[6].destination = &s->document_root;
 
         cv[9].destination = &s->is_sctp;
         cv[10].destination = &s->sctp_max_streams;
 
-        cv[11].destination = s->access_log_file;
+        cv[11].destination = &s->access_log_file;
         cv[12].destination = &s->access_log_syslog;
 
         if (0 != (ret = config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv))) {
@@ -711,7 +709,8 @@ int config_read(server *srv, const char *fn) {
 int config_set_defaults(server *srv) {
     specific_config *s = &srv->config_storage[0];
 
-    if (buffer_is_empty(s->document_root))
+    if ( s->document_root == NULL ||
+         *(s->document_root) == '\0' )
         return -1;
 
     if (srv->srvconf.port == 0) {
@@ -743,8 +742,9 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
         case T_CONFIG_STRING:
             if (du->type == TYPE_STRING) {
                 data_string *ds = (data_string *)du;
+                char **dst = (char**)cv[i].destination;
 
-                buffer_copy_string_buffer(cv[i].destination, ds->value);
+                *dst = g_strdup(ds->value->ptr);
             } else {
                 return -1;
             }

@@ -61,14 +61,14 @@ typedef struct {
 
     unsigned short max_conns;
 
-    conf_buffer *bindhost;
+    char *bindhost;
 
-    conf_buffer *errorlog_file;
+    char *errorlog_file;
 
-    conf_buffer *twin;
+    char *twin;
 
-    conf_buffer *username;
-    conf_buffer *groupname;
+    char *username;
+    char *groupname;
 } server_config;
 
 typedef struct specific_config {
@@ -81,9 +81,9 @@ typedef struct specific_config {
 #endif
 
     /* virtual-servers */
-    conf_buffer *document_root;
+    char *document_root;
 
-    conf_buffer *access_log_file;
+    char *access_log_file;
     FILE *access_log_fp;
 } specific_config;
 

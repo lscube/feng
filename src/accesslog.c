@@ -49,6 +49,8 @@ gboolean accesslog_init(feng *srv)
     size_t i;
 
     for(i = 0; i < srv->config_context->used; i++) {
+        char *access_log_filename = srv->config_storage[i].access_log_file;
+
         if (srv->config_storage[i].access_log_syslog) {
 #if HAVE_SYSLOG_H
             /* ignore the next checks */
@@ -59,10 +61,11 @@ gboolean accesslog_init(feng *srv)
 #endif
         }
 
-        if (srv->config_storage[i].access_log_file->used < 2) continue;
+        if ( *access_log_filename == '\0' )
+            continue;
 
-        if (NULL == (srv->config_storage[i].access_log_fp = fopen(srv->config_storage[i].access_log_file->ptr, "a"))) {
-            fnc_log(FNC_LOG_ERR, "Unable to open access log %s", srv->config_storage[i].access_log_file->ptr);
+        if (NULL == (srv->config_storage[i].access_log_fp = fopen(access_log_filename, "a"))) {
+            fnc_perror("fopen");
             return false;
         }
     }

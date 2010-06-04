@@ -73,8 +73,8 @@ static void sigint_cb (struct ev_loop *loop,
  */
 static void feng_drop_privs(feng *srv)
 {
-    const char *wanted_group = srv->srvconf.groupname->ptr;
-    const char *wanted_user = srv->srvconf.username->ptr;
+    const char *wanted_group = srv->srvconf.groupname;
+    const char *wanted_user = srv->srvconf.username;
 
     errno = 0;
     if ( wanted_group != NULL ) {
@@ -199,7 +199,7 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
         else
             view_log = FNC_LOG_FILE;
 
-        fnc_log_init(srv->srvconf.errorlog_file->ptr,
+        fnc_log_init(srv->srvconf.errorlog_file,
                      view_log,
                      srv->srvconf.loglevel,
                      progname);
@@ -218,15 +218,6 @@ static feng *feng_alloc(void)
     struct feng *srv = g_new0(server, 1);
 
     if (!srv) return NULL;
-
-#define CLEAN(x) \
-    srv->srvconf.x = buffer_init();
-    CLEAN(bindhost);
-    CLEAN(errorlog_file);
-    CLEAN(username);
-    CLEAN(groupname);
-    CLEAN(twin);
-#undef CLEAN
 
 #define CLEAN(x) \
     srv->x = array_init();
@@ -257,20 +248,17 @@ static void feng_free(feng* srv)
 #ifndef NDEBUG
     unsigned int i;
 
-#define CLEAN(x) \
-    buffer_free(srv->srvconf.x)
-    CLEAN(bindhost);
-    CLEAN(errorlog_file);
-    CLEAN(username);
-    CLEAN(groupname);
-    CLEAN(twin);
-#undef CLEAN
+    g_free(srv->srvconf.bindhost);
+    g_free(srv->srvconf.errorlog_file);
+    g_free(srv->srvconf.username);
+    g_free(srv->srvconf.groupname);
+    g_free(srv->srvconf.twin);
 
     if ( srv->config_storage != NULL ) {
         for(i = 0; i < srv->config_context->used; i++) {
-            buffer_free(srv->config_storage[i].document_root);
+            g_free(srv->config_storage[i].document_root);
 
-            buffer_free(srv->config_storage[i].access_log_file);
+            g_free(srv->config_storage[i].access_log_file);
         }
 
         free(srv->config_storage);

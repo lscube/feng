@@ -204,9 +204,9 @@ gboolean rtsp_connection_limit(RTSP_Client *rtsp, RFC822_Request *req)
 {
     if (rtsp->srv->connection_count > rtsp->srv->srvconf.max_conns) {
         fnc_log(FNC_LOG_INFO, "Max connection reached");
-        if (rtsp->srv->srvconf.twin->ptr) {
+        if (rtsp->srv->srvconf.twin && *(rtsp->srv->srvconf.twin) != '\0' ) {
             char *redir;
-            char *hostname = rtsp->srv->srvconf.twin->ptr;
+            char *hostname = rtsp->srv->srvconf.twin;
             RFC822_Response *response = rfc822_response_new(req, RTSP_Found);
 
             switch(req->proto) {

@@ -297,7 +297,7 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
 gboolean feng_bind_ports(feng *srv)
 {
     size_t i;
-    char *host = srv->srvconf.bindhost->ptr;
+    char *host = srv->srvconf.bindhost;
     char port[6] = { 0, };
 
     snprintf(port, sizeof(port), "%d", srv->srvconf.port);
