@@ -27,16 +27,19 @@
 #include "media/demuxer.h"
 #include "json.h"
 
+static size_t stats_total_bytes_sent;
+static size_t stats_total_bytes_read;
+
 void stats_account_read(RTSP_Client *rtsp, size_t bytes)
 {
     rtsp->bytes_read += bytes;
-    feng_srv.total_read += bytes;
+    stats_total_bytes_sent += bytes;
 }
 
 void stats_account_sent(RTSP_Client *rtsp, size_t bytes)
 {
     rtsp->bytes_sent += bytes;
-    feng_srv.total_sent += bytes;
+    stats_total_bytes_read += bytes;
 }
 
 /**
@@ -83,10 +86,10 @@ void feng_send_statistics(RTSP_Client *rtsp)
         json_object_new_int(g_slist_length(feng_srv.clients)-1));
 
     json_object_object_add(stats, "bytes_sent",
-        json_object_new_int(feng_srv.total_sent));
+        json_object_new_int(stats_total_bytes_sent));
 
     json_object_object_add(stats, "bytes_read",
-        json_object_new_int(feng_srv.total_read));
+        json_object_new_int(stats_total_bytes_read));
 
     json_object_object_add(stats, "uptime",
         json_object_new_int(0));
