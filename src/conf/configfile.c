@@ -66,27 +66,18 @@ static int config_insert(server *srv) {
     config_values_t cv[] = {
         { "server.bind", srv->srvconf.bindhost, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 0 */
         { "server.errorlog", srv->srvconf.errorlog_file, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 1 */
-//        { "server.errorfile-prefix",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 2 */
-//        { "server.chroot",               NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 3 */
         { "server.username", srv->srvconf.username, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 2 */
         { "server.groupname", srv->srvconf.groupname, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 3 */
         { "server.port", &srv->srvconf.port, T_CONFIG_SHORT,  T_CONFIG_SCOPE_SERVER },      /* 4 */
-//        { "server.tag",                  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 6 */
         { "server.use-ipv6",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 5 */
 
         { "server.document-root", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 6 */
         { "server.name",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 7 */
 
         { "server.max-fds", &srv->srvconf.max_fds, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 8 */
-#if 0 // HAVE_LSTAT
-        { "server.follow-symlink",       NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },
-#else
         { "server.follow-symlink",
           (void *)"Unsupported for now",
           T_CONFIG_UNSUPPORTED, T_CONFIG_SCOPE_UNSET }, /* 9 */
-#endif
-//        { "server.kbytes-per-second",    NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 25 */
-//        { "connection.kbytes-per-second", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },  /* 26 */
         { "ssl.pemfile",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 10 */
 
         { "ssl.engine",                  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 11 */
@@ -95,7 +86,6 @@ static int config_insert(server *srv) {
 
         { "server.errorlog-use-syslog", &srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 13 */
         { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 14 */
-//        { "server.upload-dirs",          NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },   /* 44 */
         { "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 15 */
         { "sctp.protocol",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },
         { "sctp.max_streams",            NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
@@ -129,11 +119,6 @@ static int config_insert(server *srv) {
 #ifdef HAVE_LSTAT
         s->follow_symlink = 1;
 #endif
-/*        s->kbytes_per_second = 0;
-        s->global_kbytes_per_second = 0;
-        s->global_bytes_per_second_cnt = 0;
-        s->global_bytes_per_second_cnt_ptr = &s->global_bytes_per_second_cnt;
-*/
         cv[5].destination = &s->use_ipv6;
 
         cv[6].destination = s->document_root;
@@ -142,8 +127,6 @@ static int config_insert(server *srv) {
 #ifdef HAVE_LSTAT
         cv[9].destination = &s->follow_symlink;
 #endif
-//        cv[25].destination = &(s->global_kbytes_per_second);
-//        cv[26].destination = &(s->kbytes_per_second);
 
         cv[16].destination = &s->is_sctp;
         cv[17].destination = &s->sctp_max_streams;
@@ -161,68 +144,6 @@ static int config_insert(server *srv) {
 
 }
 
-#if 0
-#define PATCH(x) con->conf.x = s->x
-int config_setup_connection(server *srv, connection *con) {
-    specific_config *s = &srv->config_storage[0];
-
-    PATCH(document_root);
-#ifdef HAVE_LSTAT
-    PATCH(follow_symlink);
-#endif
-    PATCH(kbytes_per_second);
-    PATCH(global_kbytes_per_second);
-    PATCH(global_bytes_per_second_cnt);
-
-    con->conf.global_bytes_per_second_cnt_ptr = &s->global_bytes_per_second_cnt;
-    buffer_copy_string_buffer(con->server_name, s->server_name);
-
-    return 0;
-}
-
-int config_patch_connection(server *srv, connection *con, comp_key_t comp) {
-    size_t i, j;
-
-    con->conditional_is_valid[comp] = 1;
-
-    /* skip the first, the global context */
-    for (i = 1; i < srv->config_context->used; i++) {
-        data_config *dc = (data_config *)srv->config_context->data[i];
-        specific_config *s = &srv->config_storage[i];
-
-        /* not our stage */
-        if (comp != dc->comp) continue;
-
-        /* condition didn't match */
-        if (!config_check_cond(srv, con, dc)) continue;
-
-        /* merge config */
-        for (j = 0; j < dc->value->used; j++) {
-            data_unset *du = dc->value->data[j];
-
-            if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.document-root"))) {
-                PATCH(document_root);
-#ifdef HAVE_LSTAT
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.follow-symlink"))) {
-                PATCH(follow_symlink);
-#endif
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.name"))) {
-                buffer_copy_string_buffer(con->server_name, s->server_name);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("connection.kbytes-per-second"))) {
-                PATCH(kbytes_per_second);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.kbytes-per-second"))) {
-                PATCH(global_kbytes_per_second);
-                PATCH(global_bytes_per_second_cnt);
-                con->conf.global_bytes_per_second_cnt_ptr = &s->global_bytes_per_second_cnt;
-            }
-        }
-    }
-
-    return 0;
-}
-#undef PATCH
-#endif
-
 typedef struct {
     int foo;
     int bar;
@@ -239,44 +160,6 @@ typedef struct {
     int in_brace;
     int in_cond;
 } tokenizer_t;
-
-#if 0
-static int tokenizer_open(server *srv, tokenizer_t *t, conf_buffer *basedir, const char *fn) {
-    if (buffer_is_empty(basedir) &&
-            (fn[0] == '/' || fn[0] == '\\') &&
-            (fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\'))) {
-        t->file = buffer_init_string(fn);
-    } else {
-        t->file = buffer_init_buffer(basedir);
-        buffer_append_string(t->file, fn);
-    }
-
-    if (0 != stream_open(&(t->s), t->file->ptr)) {
-        log_error_write(srv, __FILE__, __LINE__, "sbss",
-                "opening configfile ", t->file, "failed:", strerror(errno));
-        buffer_free(t->file);
-        return -1;
-    }
-
-    t->input = t->s.start;
-    t->offset = 0;
-    t->size = t->s.size;
-    t->line = 1;
-    t->line_pos = 1;
-
-    t->in_key = 1;
-    t->in_brace = 0;
-    t->in_cond = 0;
-    return 0;
-}
-
-static int tokenizer_close(server *srv, tokenizer_t *t) {
-    UNUSED(srv);
-
-    buffer_free(t->file);
-    return stream_close(&(t->s));
-}
-#endif
 
 /**
  * skip any newline (unix, windows, mac style)
@@ -653,12 +536,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
 
     if (tid) {
         *token_id = tid;
-#if 0
-        log_error_write(srv, __FILE__, __LINE__, "sbsdsdbdd",
-                "source:", t->source,
-                "line:", t->line, "pos:", t->line_pos,
-                token, token->used - 1, tid);
-#endif
 
         return 1;
     } else if (t->offset < t->size) {
@@ -918,10 +795,6 @@ int config_read(server *srv, const char *fn) {
 
 int config_set_defaults(server *srv) {
     specific_config *s = &srv->config_storage[0];
-#if 0
-    size_t i;
-    struct stat st1, st2;
-#endif
 
     if (buffer_is_empty(s->document_root)) {
         log_error_write(srv, __FILE__, __LINE__, "s",
@@ -929,45 +802,6 @@ int config_set_defaults(server *srv) {
 
         return -1;
     }
-
-#if 0
-    buffer_copy_string_buffer(srv->tmp_buf, s->document_root);
-
-    buffer_to_lower(srv->tmp_buf);
-
-    if (0 == stat(srv->tmp_buf->ptr, &st1)) {
-        int is_lower = 0;
-
-        is_lower = buffer_is_equal(srv->tmp_buf, s->document_root);
-
-        /* lower-case existed, check upper-case */
-        buffer_copy_string_buffer(srv->tmp_buf, s->document_root);
-
-        buffer_to_upper(srv->tmp_buf);
-
-        /* we have to handle the special case that upper and lower-casing results in the same filename
-         * as in server.document-root = "/" or "/12345/" */
-
-        if (is_lower && buffer_is_equal(srv->tmp_buf, s->document_root)) {
-            /* lower-casing and upper-casing didn't result in
-             * an other filename, no need to stat(),
-             * just assume it is case-sensitive. */
-
-            s->force_lowercase_filenames = 0;
-        } else if (0 == stat(srv->tmp_buf->ptr, &st2)) {
-
-            /* upper case exists too, doesn't the FS handle this ? */
-
-            /* upper and lower have the same inode -> case-insensitve FS */
-
-            if (st1.st_ino == st2.st_ino) {
-                /* upper and lower have the same inode -> case-insensitve FS */
-
-                s->force_lowercase_filenames = 1;
-            }
-        }
-    }
-#endif
 
     if (srv->srvconf.port == 0) {
         srv->srvconf.port = FENG_DEFAULT_PORT;
