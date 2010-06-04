@@ -94,7 +94,7 @@ void buffer_reset(conf_buffer *b) {
 
 #define BUFFER_PIECE_SIZE 64
 
-int buffer_prepare_copy(conf_buffer *b, size_t size) {
+static int buffer_prepare_copy(conf_buffer *b, size_t size) {
     if (!b) return -1;
 
     if ((0 == b->size) ||
