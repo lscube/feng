@@ -44,7 +44,7 @@
 # include <syslog.h>
 #endif
 
-gboolean accesslog_init()
+void accesslog_init()
 {
     size_t i;
 
@@ -57,7 +57,7 @@ gboolean accesslog_init()
             continue;
 #else
             fnc_log(FNC_LOG_ERR, "Unable to use syslog for access log");
-            return false;
+            exit(1);
 #endif
         }
 
@@ -66,10 +66,9 @@ gboolean accesslog_init()
 
         if (NULL == (feng_srv.config_storage[i].access_log_fp = fopen(access_log_filename, "a"))) {
             fnc_perror("fopen");
-            return false;
+            exit(1);
         }
     }
-    return true;
 }
 
 #ifdef CLEANUP_DESTRUCTOR

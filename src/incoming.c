@@ -294,14 +294,14 @@ static gboolean feng_bind_port(const char *host, const char *port,
     return false;
 }
 
-gboolean feng_bind_ports()
+void feng_bind_ports()
 {
     size_t i;
 
     if (!feng_bind_port(feng_srv.srvconf.bindhost,
                         feng_srv.srvconf.bindport,
                         &feng_srv.config_storage[0]))
-        return false;
+        exit(1);
 
    /* check for $SERVER["socket"] */
     for (i = 1; i < feng_srv.config_context->used; i++) {
@@ -314,7 +314,7 @@ gboolean feng_bind_ports()
 
         if (dc->cond != CONFIG_COND_EQ) {
             fnc_log(FNC_LOG_ERR,"only == is allowed for $SERVER[\"socket\"].");
-            return false;
+            exit(1);
         }
         /* check if we already know this socket,
          * if yes, don't init it */
@@ -325,7 +325,7 @@ gboolean feng_bind_ports()
         if (!port) {
             fnc_log(FNC_LOG_ERR,"Cannot parse \"%s\" as host:port",
                                 dc->string->ptr);
-            return false;
+            exit(1);
         }
 
         port[0] = '\0';
@@ -339,8 +339,6 @@ gboolean feng_bind_ports()
         port++;
 
         if (!feng_bind_port(host, port, s))
-            return false;
+            exit(1);
     }
-
-    return true;
 }

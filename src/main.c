@@ -195,7 +195,7 @@ static gboolean show_version(ATTR_UNUSED const gchar *option_name,
   exit(0);
 }
 
-static gboolean command_environment(int argc, char **argv)
+static void command_environment(int argc, char **argv)
 {
     gchar *config_file = NULL;
     gboolean quiet = FALSE, verbose = FALSE, syslog = FALSE;
@@ -223,7 +223,7 @@ static gboolean command_environment(int argc, char **argv)
 
     if ( error != NULL ) {
         g_critical("%s\n", error->message);
-        return false;
+        exit(1);
     }
 
     if (!quiet) fncheader();
@@ -234,7 +234,7 @@ static gboolean command_environment(int argc, char **argv)
     if (config_read(config_file)) {
         g_critical("unable to read configuration file '%s'\n", config_file);
         g_free(config_file);
-        return false;
+        exit(1);
     }
     g_free(config_file);
 
@@ -258,8 +258,6 @@ static gboolean command_environment(int argc, char **argv)
                      feng_srv.srvconf.loglevel,
                      progname);
     }
-
-    return true;
 }
 
 int main(int argc, char **argv)
@@ -269,19 +267,16 @@ int main(int argc, char **argv)
     feng_srv.config_context = array_init();
 
     /* parses the command line and initializes the log*/
-    if ( !command_environment(argc, argv) )
-        return 1;
+    command_environment(argc, argv);
 
     /* This goes before feng_bind_ports */
     feng_loop = ev_default_loop(0);
 
     feng_handle_signals();
 
-    if ( !feng_bind_ports() )
-        return 1;
+    feng_bind_ports();
 
-    if ( !accesslog_init() )
-        return 1;
+    accesslog_init();
 
     feng_drop_privs();
 

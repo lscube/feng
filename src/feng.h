@@ -109,12 +109,12 @@ typedef struct Feng_Listener {
 #define MAX_CONNECTION    feng_srv.srvconf.max_conns   /*! rtsp connection */
 #define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS)) /*! rtsp connection for one fork */
 
-gboolean feng_bind_ports();
+void feng_bind_ports();
 
 struct RTSP_Client;
 struct RFC822_Response;
 
-gboolean accesslog_init();
+void accesslog_init();
 void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response);
 
 #endif // FN_SERVER_H
