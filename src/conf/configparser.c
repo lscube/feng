@@ -861,7 +861,7 @@ static void yy_reduce(
       case 27:
 {
   data_config *dc;
-  dc = (data_config *)array_get_element(ctx->srv->config_context, "global");
+  dc = (data_config *)array_get_element(feng_srv->config_context, "global");
   assert(dc);
   configparser_push(ctx, dc, 0);
 }

@@ -110,22 +110,26 @@ typedef struct Feng_Listener {
     socklen_t sa_len;
     struct sockaddr *local_sa;
     char *local_host;
-    feng *srv;
     specific_config *specific;
     ev_io io;
 } Feng_Listener;
 
 typedef feng server;
 
+/**
+ * @brief Global instance for feng settings
+ */
+extern struct feng *feng_srv;
+
 #define MAX_PROCESS    1    /*! number of fork */
-#define MAX_CONNECTION    srv->srvconf.max_conns   /*! rtsp connection */
+#define MAX_CONNECTION    feng_srv->srvconf.max_conns   /*! rtsp connection */
 #define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS)) /*! rtsp connection for one fork */
 
 struct RTSP_Client;
 struct RFC822_Response;
 
-gboolean accesslog_init(feng *srv);
-void accesslog_uninit(feng *srv);
+gboolean accesslog_init();
+void accesslog_uninit();
 void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response);
 
 #endif // FN_SERVER_H

@@ -108,11 +108,10 @@ static void CLEANUP_DESTRUCTOR feng_ports_cleanup()
 /**
  * @brief Bind a socket to a given address information
  *
- * @param srv Server object for feng
  * @param ai Address to bind the socket to
  * @param s The specific vhost configuration to bind for
  */
-static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
+static gboolean feng_bind_addr(struct addrinfo *ai,
                                specific_config *s)
 {
     int sock;
@@ -194,7 +193,6 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
 
     listener->fd = sock;
     listener->specific = s;
-    listener->srv = srv;
 
     listener->sa_len = sa_len;
     listener->local_sa = g_slice_copy(sa_len, &sa);
@@ -205,7 +203,7 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
     io = &listener->io;
     io->data = listener;
     ev_io_init(io, rtsp_client_incoming_cb, sock, EV_READ);
-    ev_io_start(srv->loop, io);
+    ev_io_start(feng_srv->loop, io);
 
 #ifdef CLEANUP_DESTRUCTOR
     listening = g_slist_prepend(listening, listener);
@@ -221,7 +219,6 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
 /**
  * Bind to the defined listening port
  *
- * @param srv The server instance to bind ports for
  * @param host The hostname to bind ports on
  * @param port The port to bind
  * @param s The specific configuration from @ref feng::config_storage
@@ -229,7 +226,7 @@ static gboolean feng_bind_addr(feng *srv, struct addrinfo *ai,
  * @retval true Binding complete
  * @retval false Error during binding
  */
-static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
+static gboolean feng_bind_port(const char *host, const char *port,
                                specific_config *s)
 {
     gboolean is_sctp = !!s->is_sctp;
@@ -266,7 +263,7 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
 
         it = res;
         do
-            if ( !feng_bind_addr(srv, it, s) )
+            if ( !feng_bind_addr(it, s) )
                 goto error;
         while ( (it = it->ai_next) != NULL );
 
@@ -281,7 +278,7 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
 
     it = res;
     do
-        if ( !feng_bind_addr(srv, it, s) )
+        if ( !feng_bind_addr(it, s) )
             goto error;
     while ( (it = it->ai_next) != NULL );
 
@@ -294,22 +291,22 @@ static gboolean feng_bind_port(feng *srv, const char *host, const char *port,
     return false;
 }
 
-gboolean feng_bind_ports(feng *srv)
+gboolean feng_bind_ports()
 {
     size_t i;
-    char *host = srv->srvconf.bindhost;
+    char *host = feng_srv->srvconf.bindhost;
     char port[6] = { 0, };
 
-    snprintf(port, sizeof(port), "%d", srv->srvconf.port);
+    snprintf(port, sizeof(port), "%d", feng_srv->srvconf.port);
 
-    if (!feng_bind_port(srv, host, port,
-                        &srv->config_storage[0]))
+    if (!feng_bind_port(host, port,
+                        &feng_srv->config_storage[0]))
         return false;
 
    /* check for $SERVER["socket"] */
-    for (i = 1; i < srv->config_context->used; i++) {
-        data_config *dc = (data_config *)srv->config_context->data[i];
-        specific_config *s = &srv->config_storage[i];
+    for (i = 1; i < feng_srv->config_context->used; i++) {
+        data_config *dc = (data_config *)feng_srv->config_context->data[i];
+        specific_config *s = &feng_srv->config_storage[i];
         char *port, *host;
 
         /* not our stage */
@@ -341,7 +338,7 @@ gboolean feng_bind_ports(feng *srv)
 
         port++;
 
-        if (!feng_bind_port(srv, host, port, s))
+        if (!feng_bind_port(host, port, s))
             return false;
     }
 

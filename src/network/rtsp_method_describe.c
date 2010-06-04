@@ -187,7 +187,6 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
 /**
  * @brief Create description for an SDP session
  *
- * @param srv Pointer to the server-specific data instance.
  * @param uri URI of the resource to describe
  *
  * @return A new GString containing the complete description of the
@@ -196,7 +195,6 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
  */
 static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
 {
-    struct feng *srv = rtsp->srv;
     URI *uri = req->uri;
     GString *descr = NULL;
     double duration;
@@ -212,7 +210,7 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
     int inet_family = rtsp->local_sock->local_sa->sa_family;
 
     fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s", path);
-    if ( !(resource = r_open(srv, path)) ) {
+    if ( !(resource = r_open(path)) ) {
         fnc_log(FNC_LOG_ERR, "[SDP] %s not found", path);
         g_free(path);
         return NULL;

@@ -27,6 +27,6 @@
 
 struct feng;
 
-gboolean feng_bind_ports(struct feng *srv);
+gboolean feng_bind_ports();
 
 #endif

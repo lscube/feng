@@ -46,6 +46,8 @@
 #include "network/rtsp.h"
 #include <glib.h>
 
+struct feng *feng_srv;
+
 #ifdef CLEANUP_DESTRUCTOR
 /**
  * @brief Program name to clean up
@@ -71,10 +73,10 @@ static void sigint_cb (struct ev_loop *loop,
 /**
  * Drop privs to a specified user
  */
-static void feng_drop_privs(feng *srv)
+static void feng_drop_privs()
 {
-    const char *wanted_group = srv->srvconf.groupname;
-    const char *wanted_user = srv->srvconf.username;
+    const char *wanted_group = feng_srv->srvconf.groupname;
+    const char *wanted_user = feng_srv->srvconf.username;
 
     errno = 0;
     if ( wanted_group != NULL ) {
@@ -108,15 +110,15 @@ static void feng_drop_privs(feng *srv)
 static ev_signal signal_watcher_int;
 static ev_signal signal_watcher_term;
 
-static void feng_handle_signals(feng *srv)
+static void feng_handle_signals()
 {
     sigset_t block_set;
     ev_signal *sig = &signal_watcher_int;
     ev_signal_init (sig, sigint_cb, SIGINT);
-    ev_signal_start (srv->loop, sig);
+    ev_signal_start (feng_srv->loop, sig);
     sig = &signal_watcher_term;
     ev_signal_init (sig, sigint_cb, SIGTERM);
-    ev_signal_start (srv->loop, sig);
+    ev_signal_start (feng_srv->loop, sig);
 
     /* block PIPE signal */
     sigemptyset(&block_set);
@@ -141,7 +143,7 @@ static gboolean show_version(ATTR_UNUSED const gchar *option_name,
   exit(0);
 }
 
-static gboolean command_environment(feng *srv, int argc, char **argv)
+static gboolean command_environment(int argc, char **argv)
 {
     gchar *config_file = NULL;
     gboolean quiet = FALSE, verbose = FALSE, syslog = FALSE;
@@ -177,7 +179,7 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
     if ( config_file == NULL )
         config_file = g_strdup(FENG_CONF_PATH_DEFAULT_STR);
 
-    if (config_read(srv, config_file)) {
+    if (config_read(config_file)) {
         g_critical("unable to read configuration file '%s'\n", config_file);
         g_free(config_file);
         return false;
@@ -199,9 +201,9 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
         else
             view_log = FNC_LOG_FILE;
 
-        fnc_log_init(srv->srvconf.errorlog_file,
+        fnc_log_init(feng_srv->srvconf.errorlog_file,
                      view_log,
-                     srv->srvconf.loglevel,
+                     feng_srv->srvconf.loglevel,
                      progname);
     }
 
@@ -209,30 +211,7 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
 }
 
 /**
- * allocates a new instance variable
- * @return the new instance or NULL on failure
- */
-
-static feng *feng_alloc(void)
-{
-    struct feng *srv = g_new0(server, 1);
-
-    if (!srv) return NULL;
-
-#define CLEAN(x) \
-    srv->x = array_init();
-    CLEAN(config_context);
-    CLEAN(config_touched);
-#undef CLEAN
-    srv->clients = NULL;
-
-    return srv;
-}
-
-/**
  * @brief Free the feng server object
- *
- * @param srv The object to free
  *
  * This function frees the resources connected to the server object;
  * this function is empty when debug is disabled since it's unneeded
@@ -243,84 +222,90 @@ static feng *feng_alloc(void)
  * tools like valgrind that expect a complete freeing of all
  * resources.
  */
-static void feng_free(feng* srv)
+static void feng_free()
 {
 #ifndef NDEBUG
     unsigned int i;
 
-    g_free(srv->srvconf.bindhost);
-    g_free(srv->srvconf.errorlog_file);
-    g_free(srv->srvconf.username);
-    g_free(srv->srvconf.groupname);
-    g_free(srv->srvconf.twin);
+    g_free(feng_srv->srvconf.bindhost);
+    g_free(feng_srv->srvconf.errorlog_file);
+    g_free(feng_srv->srvconf.username);
+    g_free(feng_srv->srvconf.groupname);
+    g_free(feng_srv->srvconf.twin);
 
-    if ( srv->config_storage != NULL ) {
-        for(i = 0; i < srv->config_context->used; i++) {
-            g_free(srv->config_storage[i].document_root);
+    if ( feng_srv->config_storage != NULL ) {
+        for(i = 0; i < feng_srv->config_context->used; i++) {
+            g_free(feng_srv->config_storage[i].document_root);
 
-            g_free(srv->config_storage[i].access_log_file);
+            g_free(feng_srv->config_storage[i].access_log_file);
         }
 
-        free(srv->config_storage);
+        free(feng_srv->config_storage);
     }
 
 #define CLEAN(x) \
-    array_free(srv->x)
+    array_free(feng_srv->x)
     CLEAN(config_context);
     CLEAN(config_touched);
 #undef CLEAN
 
-    g_slist_free(srv->clients);
+    g_slist_free(feng_srv->clients);
 
-    g_free(srv);
+    g_free(feng_srv);
 
 #endif /* NDEBUG */
 }
 
 int main(int argc, char **argv)
 {
-    feng *srv;
     int res = 0;
 
     if (!g_thread_supported ()) g_thread_init (NULL);
 
-    if (! (srv = feng_alloc()) ) {
+    if (! (feng_srv = g_new0(struct feng, 1)) ) {
         res = 1;
         goto end;
     }
+
+#define CLEAN(x) \
+    feng_srv->x = array_init();
+    CLEAN(config_context);
+    CLEAN(config_touched);
+#undef CLEAN
+    feng_srv->clients = NULL;
 
     /* parses the command line and initializes the log*/
-    if ( !command_environment(srv, argc, argv) ) {
+    if ( !command_environment(argc, argv) ) {
         res = 1;
         goto end;
     }
 
-    config_set_defaults(srv);
+    config_set_defaults();
 
     /* This goes before feng_bind_ports */
-    srv->loop = ev_default_loop(0);
+    feng_srv->loop = ev_default_loop(0);
 
-    feng_handle_signals(srv);
+    feng_handle_signals();
 
-    if (!feng_bind_ports(srv)) {
+    if (!feng_bind_ports()) {
         res = 1;
         goto end;
     }
 
-    if ( !accesslog_init(srv) ) {
+    if ( !accesslog_init() ) {
         res = 1;
         goto end;
     }
 
-    feng_drop_privs(srv);
+    feng_drop_privs();
 
     http_tunnel_initialise();
 
-    ev_loop (srv->loop, 0);
+    ev_loop (feng_srv->loop, 0);
 
  end:
-    accesslog_uninit(srv);
-    feng_free(srv);
+    accesslog_uninit();
+    feng_free();
 
     return res;
 }

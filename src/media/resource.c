@@ -174,7 +174,7 @@ static const Demuxer *r_find_demuxer(const char *filename)
 
 
 static Resource*
-r_open_direct(struct feng *srv, gchar *mrl, const Demuxer *dmx)
+r_open_direct(gchar *mrl, const Demuxer *dmx)
 {
     Resource *r;
     struct stat filestat;
@@ -199,7 +199,6 @@ r_open_direct(struct feng *srv, gchar *mrl, const Demuxer *dmx)
     r->info->seekable = (dmx->seek != NULL);
 
     r->demuxer = dmx;
-    r->srv = srv;
 
     if (r->demuxer->init(r)) {
         r_free_cb(r, NULL);
@@ -214,7 +213,7 @@ r_open_direct(struct feng *srv, gchar *mrl, const Demuxer *dmx)
 }
 #ifdef LIVE_STREAMING
 static Resource*
-r_open_hashed(struct feng *srv, gchar *mrl, const Demuxer *dmx)
+r_open_hashed(gchar *mrl, const Demuxer *dmx)
 {
     Resource *r;
     static gsize created_mutex = false;
@@ -231,7 +230,7 @@ r_open_hashed(struct feng *srv, gchar *mrl, const Demuxer *dmx)
      * otherwise we stored it for later usage!
      */
     if (!r) {
-        if ( (r = r_open_direct(srv, mrl, dmx)) != NULL )
+        if ( (r = r_open_direct(mrl, dmx)) != NULL )
             g_hash_table_insert(shared_resources, mrl, r);
         else
             g_free(mrl);
@@ -248,19 +247,18 @@ r_open_hashed(struct feng *srv, gchar *mrl, const Demuxer *dmx)
 /**
  * @brief Open a new resource and create a new instance
  *
- * @param srv The server object for the vhost requesting the resource
  * @param inner_path The path, relative to the avroot, for the
  *                   resource
  *
  * @return A new Resource object
  * @retval NULL Error while opening resource
  */
-Resource *r_open(struct feng *srv, const char *inner_path)
+Resource *r_open(const char *inner_path)
 {
     Resource *r = NULL;
     const Demuxer *dmx;
     gchar *mrl = g_strjoin ("/",
-                            srv->config_storage[0].document_root,
+                            feng_srv->config_storage[0].document_root,
                             inner_path,
                             NULL);
 
@@ -283,11 +281,11 @@ Resource *r_open(struct feng *srv, const char *inner_path)
     switch(dmx->info->source) {
 #ifdef LIVE_STREAMING
         case LIVE_SOURCE:
-            r = r_open_hashed(srv, mrl, dmx);
+            r = r_open_hashed(mrl, dmx);
             break;
 #endif
         case STORED_SOURCE:
-            r = r_open_direct(srv, mrl, dmx);
+            r = r_open_direct(mrl, dmx);
             break;
         default:
             g_assert_not_reached();

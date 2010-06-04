@@ -30,13 +30,13 @@
 void stats_account_read(RTSP_Client *rtsp, size_t bytes)
 {
     rtsp->bytes_read += bytes;
-    rtsp->srv->total_read += bytes;
+    feng_srv->total_read += bytes;
 }
 
 void stats_account_sent(RTSP_Client *rtsp, size_t bytes)
 {
     rtsp->bytes_sent += bytes;
-    rtsp->srv->total_sent += bytes;
+    feng_srv->total_sent += bytes;
 }
 
 /**
@@ -78,21 +78,20 @@ void feng_send_statistics(RTSP_Client *rtsp)
         rfc822_response_new(rtsp->pending_request, RTSP_Ok);
     json_object *stats = json_object_new_object();
     json_object *clients_stats = json_object_new_array();
-    feng *srv = rtsp->srv;
 
     json_object_object_add(stats, "clients",
-        json_object_new_int(g_slist_length(srv->clients)-1));
+        json_object_new_int(g_slist_length(feng_srv->clients)-1));
 
     json_object_object_add(stats, "bytes_sent",
-        json_object_new_int(srv->total_sent));
+        json_object_new_int(feng_srv->total_sent));
 
     json_object_object_add(stats, "bytes_read",
-        json_object_new_int(srv->total_read));
+        json_object_new_int(feng_srv->total_read));
 
     json_object_object_add(stats, "uptime",
         json_object_new_int(0));
 
-    g_slist_foreach(srv->clients, client_stats, clients_stats);
+    g_slist_foreach(feng_srv->clients, client_stats, clients_stats);
 
     json_object_object_add(stats, "per_client", clients_stats);
 

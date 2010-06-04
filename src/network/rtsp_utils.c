@@ -98,7 +98,6 @@ RTSP_session *rtsp_session_new(RTSP_Client *rtsp)
 {
     RTSP_session *new = rtsp->session = g_slice_new0(RTSP_session);
 
-    new->srv = rtsp->srv;
     new->session_id = g_strdup_printf("%08x%08x",
                                       g_random_int(),
                                       g_random_int());

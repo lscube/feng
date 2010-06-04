@@ -32,7 +32,6 @@
 
 #include "rfc822proto.h"
 
-struct feng;
 struct Resource;
 
 /**
@@ -88,7 +87,6 @@ typedef struct RTSP_session {
     // mediathread resource
     struct Resource *resource;
     char *resource_uri;
-    struct feng *srv;
 
     /**
      * @brief List of playback requests (of type @ref RTSP_Range)
@@ -171,7 +169,6 @@ typedef struct RTSP_Client {
 
     // Run-Time
     RTSP_session *session;
-    struct feng *srv;
 
     rtsp_write_data write_data;
 
@@ -197,7 +194,7 @@ typedef struct RTSP_Client {
     socklen_t peer_len;
 } RTSP_Client;
 
-RTSP_Client *rtsp_client_new(struct feng *srv);
+RTSP_Client *rtsp_client_new();
 
 void rtsp_write_string(RTSP_Client *client, GString *str);
 

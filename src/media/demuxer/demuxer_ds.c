@@ -124,7 +124,6 @@ static int ds_init(Resource * r)
     Resource *resource;
     GList *edl_head = NULL;
     edl_item_elem *item;
-    feng *srv = r->srv;
 
     fnc_log(FNC_LOG_DEBUG, "[ds] EDL init function");
     fd = fopen(r->info->mrl, "r");
@@ -142,7 +141,7 @@ static int ds_init(Resource * r)
         /* Init Resources required by the EDitList
          * (modifying default behaviour to manipulate timescale)
          * */
-        if (!(resource = r_open(srv, mrl))) {
+        if (!(resource = r_open(mrl))) {
             goto err_alloc;
         }
 	item = g_new0(edl_item_elem, 1);

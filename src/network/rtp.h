@@ -97,7 +97,6 @@ typedef struct RTP_session {
      */
     BufferQueue_Consumer *consumer;
 
-    struct feng *srv;
     struct RTSP_Client *client;
 
     uint32_t octet_count;

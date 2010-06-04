@@ -112,7 +112,6 @@ typedef struct Resource {
     int num_tracks;
     int eor;
     void *private_data; /* Demuxer private data */
-    struct feng *srv;
 } Resource;
 
 typedef struct Trackinfo_s {
@@ -201,7 +200,7 @@ typedef struct Demuxer {
 
 // --- functions --- //
 
-Resource *r_open(struct feng *srv, const char *inner_path);
+Resource *r_open(const char *inner_path);
 
 int r_read(Resource *resource);
 int r_seek(Resource *resource, double time);

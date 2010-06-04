@@ -57,16 +57,15 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
 {
     RTSP_Client *rtsp = (RTSP_Client*)w->data;
     GString *outbuf = NULL;
-    feng *srv = rtsp->srv;
 
-    ev_io_stop(srv->loop, &rtsp->ev_io_read);
-    ev_io_stop(srv->loop, &rtsp->ev_io_write);
-    ev_async_stop(srv->loop, &rtsp->ev_sig_disconnect);
-    ev_timer_stop(srv->loop, &rtsp->ev_timeout);
+    ev_io_stop(feng_srv->loop, &rtsp->ev_io_read);
+    ev_io_stop(feng_srv->loop, &rtsp->ev_io_write);
+    ev_async_stop(feng_srv->loop, &rtsp->ev_sig_disconnect);
+    ev_timer_stop(feng_srv->loop, &rtsp->ev_timeout);
 
     close(rtsp->sd);
     g_free(rtsp->remote_host);
-    srv->connection_count--;
+    feng_srv->connection_count--;
 
     rtsp_session_free(rtsp->session);
 
@@ -83,7 +82,7 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
 
     g_byte_array_free(rtsp->input, true);
 
-    srv->clients = g_slist_remove(srv->clients, rtsp);
+    feng_srv->clients = g_slist_remove(feng_srv->clients, rtsp);
 
     g_slice_free(RFC822_Request, rtsp->pending_request);
 
@@ -115,7 +114,7 @@ static void check_if_any_rtp_session_timedout(gpointer element,
      */
     if ((now - session->last_packet_send_time) >= STREAM_TIMEOUT) {
         fnc_log(FNC_LOG_INFO, "[client] Stream Timeout, client kicked off!");
-        ev_async_send(session->srv->loop, &session->client->ev_sig_disconnect);
+        ev_async_send(feng_srv->loop, &session->client->ev_sig_disconnect);
     }
 }
 
@@ -129,14 +128,13 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w,
     ev_timer_again (loop, w);
 }
 
-RTSP_Client *rtsp_client_new(feng *srv)
+RTSP_Client *rtsp_client_new()
 {
     RTSP_Client *rtsp = g_slice_new0(RTSP_Client);
 
     rtsp->input = g_byte_array_new();
-    rtsp->srv = srv;
 
-    srv->clients = g_slist_append(srv->clients, rtsp);
+    feng_srv->clients = g_slist_append(feng_srv->clients, rtsp);
 
     return rtsp;
 }
@@ -168,7 +166,6 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
                              ATTR_UNUSED int revents)
 {
     Feng_Listener *listen = w->data;
-    feng *srv = listen->srv;
     int client_sd = -1;
     struct sockaddr_storage sa;
     socklen_t sa_len = sizeof(struct sockaddr_storage);
@@ -184,7 +181,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     }
 
 // Paranoid safeguard
-    if (srv->connection_count >= ONE_FORK_MAX_CONNECTION*2) {
+    if (feng_srv->connection_count >= ONE_FORK_MAX_CONNECTION*2) {
         close(client_sd);
         return;
     }
@@ -192,7 +189,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     fnc_log(FNC_LOG_INFO, "Incoming connection accepted on socket: %d",
             client_sd);
 
-    rtsp = rtsp_client_new(srv);
+    rtsp = rtsp_client_new();
     rtsp->sd = client_sd;
 
     if ( ! listen->specific->is_sctp ) {
@@ -228,21 +225,21 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     rtsp->peer_len = sa_len;
     rtsp->peer_sa = g_slice_copy(rtsp->peer_len, &sa);
 
-    srv->connection_count++;
+    feng_srv->connection_count++;
 
-    ev_io_start(srv->loop, &rtsp->ev_io_read);
+    ev_io_start(feng_srv->loop, &rtsp->ev_io_read);
 
     async = &rtsp->ev_sig_disconnect;
     async->data = rtsp;
     ev_async_init(async, client_ev_disconnect_handler);
-    ev_async_start(srv->loop, async);
+    ev_async_start(feng_srv->loop, async);
 
     timer = &rtsp->ev_timeout;
     timer->data = rtsp;
     ev_init(timer, client_ev_timeout);
     timer->repeat = STREAM_TIMEOUT;
 
-    fnc_log(FNC_LOG_INFO, "Connection reached: %d", srv->connection_count);
+    fnc_log(FNC_LOG_INFO, "Connection reached: %d", feng_srv->connection_count);
 }
 
 /**
