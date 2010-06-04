@@ -58,10 +58,10 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
     RTSP_Client *rtsp = (RTSP_Client*)w->data;
     GString *outbuf = NULL;
 
-    ev_io_stop(feng_srv.loop, &rtsp->ev_io_read);
-    ev_io_stop(feng_srv.loop, &rtsp->ev_io_write);
-    ev_async_stop(feng_srv.loop, &rtsp->ev_sig_disconnect);
-    ev_timer_stop(feng_srv.loop, &rtsp->ev_timeout);
+    ev_io_stop(feng_loop, &rtsp->ev_io_read);
+    ev_io_stop(feng_loop, &rtsp->ev_io_write);
+    ev_async_stop(feng_loop, &rtsp->ev_sig_disconnect);
+    ev_timer_stop(feng_loop, &rtsp->ev_timeout);
 
     close(rtsp->sd);
     g_free(rtsp->remote_host);
@@ -114,7 +114,7 @@ static void check_if_any_rtp_session_timedout(gpointer element,
      */
     if ((now - session->last_packet_send_time) >= STREAM_TIMEOUT) {
         fnc_log(FNC_LOG_INFO, "[client] Stream Timeout, client kicked off!");
-        ev_async_send(feng_srv.loop, &session->client->ev_sig_disconnect);
+        ev_async_send(feng_loop, &session->client->ev_sig_disconnect);
     }
 }
 
@@ -227,12 +227,12 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 
     feng_srv.connection_count++;
 
-    ev_io_start(feng_srv.loop, &rtsp->ev_io_read);
+    ev_io_start(feng_loop, &rtsp->ev_io_read);
 
     async = &rtsp->ev_sig_disconnect;
     async->data = rtsp;
     ev_async_init(async, client_ev_disconnect_handler);
-    ev_async_start(feng_srv.loop, async);
+    ev_async_start(feng_loop, async);
 
     timer = &rtsp->ev_timeout;
     timer->data = rtsp;

@@ -62,6 +62,11 @@
  */
 struct feng feng_srv;
 
+/**
+ * @brief Feng server eventloop
+ */
+struct ev_loop *feng_loop;
+
 #ifdef CLEANUP_DESTRUCTOR
 /**
  * @brief Program name to clean up
@@ -129,10 +134,10 @@ static void feng_handle_signals()
     sigset_t block_set;
     ev_signal *sig = &signal_watcher_int;
     ev_signal_init (sig, sigint_cb, SIGINT);
-    ev_signal_start (feng_srv.loop, sig);
+    ev_signal_start (feng_loop, sig);
     sig = &signal_watcher_term;
     ev_signal_init (sig, sigint_cb, SIGTERM);
-    ev_signal_start (feng_srv.loop, sig);
+    ev_signal_start (feng_loop, sig);
 
     /* block PIPE signal */
     sigemptyset(&block_set);
@@ -287,7 +292,7 @@ int main(int argc, char **argv)
     config_set_defaults();
 
     /* This goes before feng_bind_ports */
-    feng_srv.loop = ev_default_loop(0);
+    feng_loop = ev_default_loop(0);
 
     feng_handle_signals();
 
@@ -305,7 +310,7 @@ int main(int argc, char **argv)
 
     http_tunnel_initialise();
 
-    ev_loop (feng_srv.loop, 0);
+    ev_loop (feng_loop, 0);
 
  end:
     accesslog_uninit();

@@ -87,8 +87,6 @@ typedef struct feng {
 
     server_config srvconf;
 
-    struct ev_loop *loop;       //!< event loop
-
     /**
      * @brief Number of active connections
      *
@@ -105,6 +103,7 @@ typedef struct feng {
 } feng;
 
 extern struct feng feng_srv;
+struct ev_loop *feng_loop;
 
 typedef struct Feng_Listener {
     int fd;

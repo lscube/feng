@@ -203,7 +203,7 @@ static gboolean feng_bind_addr(struct addrinfo *ai,
     io = &listener->io;
     io->data = listener;
     ev_io_init(io, rtsp_client_incoming_cb, sock, EV_READ);
-    ev_io_start(feng_srv.loop, io);
+    ev_io_start(feng_loop, io);
 
 #ifdef CLEANUP_DESTRUCTOR
     listening = g_slist_prepend(listening, listener);
