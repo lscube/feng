@@ -46,8 +46,6 @@
 #include "feng.h"
 //#include "log.h"
 
-#define log_error_write(...) {}
-
 #include "stream.h"
 //#include "plugin.h"
 #include "network/rtp.h" // defaults
@@ -189,11 +187,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
 
                     tid = TK_ARRAY_ASSIGN;
                 } else {
-                    log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                            "source:", t->source,
-                            "line:", t->line, "pos:", t->line_pos,
-                            "use => for assignments in arrays");
-
                     return -1;
                 }
             } else if (t->in_cond) {
@@ -210,10 +203,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
 
                     tid = TK_MATCH;
                 } else {
-                    log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                            "source:", t->source,
-                            "line:", t->line, "pos:", t->line_pos,
-                            "only =~ and == are allowed in the condition");
                     return -1;
                 }
                 t->in_key = 1;
@@ -226,10 +215,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
                 t->offset++;
                 t->line_pos++;
             } else {
-                log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                        "source:", t->source,
-                        "line:", t->line, "pos:", t->line_pos,
-                        "unexpected equal-sign: =");
                 return -1;
             }
 
@@ -249,19 +234,11 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
 
                     tid = TK_NOMATCH;
                 } else {
-                    log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                            "source:", t->source,
-                            "line:", t->line, "pos:", t->line_pos,
-                            "only !~ and != are allowed in the condition");
                     return -1;
                 }
                 t->in_key = 1;
                 t->in_cond = 0;
             } else {
-                log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                        "source:", t->source,
-                        "line:", t->line, "pos:", t->line_pos,
-                        "unexpected exclamation-marks: !");
                 return -1;
             }
 
@@ -347,11 +324,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
 
             if (t->input[t->offset + i] == '\0') {
                 /* ERROR */
-
-                log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                        "source:", t->source,
-                        "line:", t->line, "pos:", t->line_pos,
-                        "missing closing quote");
 
                 return -1;
             }
@@ -452,10 +424,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
                     t->line_pos += i;
                 } else {
                     /* ERROR */
-                    log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                            "source:", t->source,
-                            "line:", t->line, "pos:", t->line_pos,
-                            "invalid character in condition");
                     return -1;
                 }
             } else if (isdigit((unsigned char)c)) {
@@ -499,10 +467,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
                     t->line_pos += i;
                 } else {
                     /* ERROR */
-                    log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                            "source:", t->source,
-                            "line:", t->line, "pos:", t->line_pos,
-                            "invalid character in variable name");
                     return -1;
                 }
             }
@@ -553,16 +517,9 @@ static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
     }
     configparserFree(pParser, free);
 
-    if (ret == -1) {
-        log_error_write(srv, __FILE__, __LINE__, "sb",
-                "configfile parser failed at:", lasttoken);
-    } else if (context->ok == 0) {
-        log_error_write(srv, __FILE__, __LINE__, "sbsdsdsb",
-                "source:", t->source,
-                "line:", t->line, "pos:", t->line_pos,
-                "parser failed somehow near here:", lasttoken);
+    if (context->ok == 0)
         ret = -1;
-    }
+
     buffer_free(lasttoken);
 
     return ret == -1 ? -1 : 0;
@@ -615,8 +572,6 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
             /* the file was empty, nothing to parse */
             ret = 0;
         } else {
-            log_error_write(srv, __FILE__, __LINE__, "sbss",
-                    "opening configfile ", filename, "failed:", strerror(errno));
             ret = -1;
         }
     } else {
@@ -643,8 +598,6 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
     char oldpwd[PATH_MAX];
 
     if (NULL == getcwd(oldpwd, sizeof(oldpwd))) {
-        log_error_write(srv, __FILE__, __LINE__, "s",
-                "cannot get cwd", strerror(errno));
         return -1;
     }
 
@@ -656,8 +609,6 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
     }
 
     if (0 != proc_open_buffer(&proc, cmd, NULL, out, NULL)) {
-        log_error_write(srv, __FILE__, __LINE__, "sbss",
-                "opening", source, "failed:", strerror(errno));
         ret = -1;
     } else {
         tokenizer_init(&t, source, out->ptr, out->used);
@@ -772,12 +723,8 @@ int config_read(server *srv, const char *fn) {
 int config_set_defaults(server *srv) {
     specific_config *s = &srv->config_storage[0];
 
-    if (buffer_is_empty(s->document_root)) {
-        log_error_write(srv, __FILE__, __LINE__, "s",
-                "a default document-root has to be set");
-
+    if (buffer_is_empty(s->document_root))
         return -1;
-    }
 
     if (srv->srvconf.port == 0) {
         srv->srvconf.port = FENG_DEFAULT_PORT;
