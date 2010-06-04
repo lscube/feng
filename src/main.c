@@ -77,6 +77,46 @@ static void CLEANUP_DESTRUCTOR main_cleanup()
 {
     g_free(progname);
 }
+
+/**
+ * @brief Free the feng server object
+ *
+ * This function frees the resources connected to the server object;
+ * this function is empty when debug is disabled since it's unneeded
+ * for actual production use, exiting the project will free them just
+ * as fine.
+ *
+ * What this is useful for during debug is to avoid false positives in
+ * tools like valgrind that expect a complete freeing of all
+ * resources.
+ */
+static void CLEANUP_DESTRUCTOR feng_free()
+{
+    unsigned int i;
+
+    g_free(feng_srv.srvconf.bindhost);
+    g_free(feng_srv.srvconf.errorlog_file);
+    g_free(feng_srv.srvconf.username);
+    g_free(feng_srv.srvconf.groupname);
+    g_free(feng_srv.srvconf.twin);
+
+    if ( feng_srv.config_storage != NULL ) {
+        for(i = 0; i < feng_srv.config_context->used; i++) {
+            g_free(feng_srv.config_storage[i].document_root);
+
+            g_free(feng_srv.config_storage[i].access_log_file);
+        }
+
+        free(feng_srv.config_storage);
+    }
+
+#define CLEAN(x) \
+    array_free(feng_srv.x)
+    CLEAN(config_context);
+#undef CLEAN
+
+    g_slist_free(feng_srv.clients);
+}
 #endif
 
 /**
@@ -244,48 +284,6 @@ static void config_set_defaults() {
     if (feng_srv.srvconf.buffered_frames == 0)
         feng_srv.srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
 }
-
-#ifdef CLEANUP_DESTRUCTOR
-/**
- * @brief Free the feng server object
- *
- * This function frees the resources connected to the server object;
- * this function is empty when debug is disabled since it's unneeded
- * for actual production use, exiting the project will free them just
- * as fine.
- *
- * What this is useful for during debug is to avoid false positives in
- * tools like valgrind that expect a complete freeing of all
- * resources.
- */
-static void CLEANUP_DESTRUCTOR feng_free()
-{
-    unsigned int i;
-
-    g_free(feng_srv.srvconf.bindhost);
-    g_free(feng_srv.srvconf.errorlog_file);
-    g_free(feng_srv.srvconf.username);
-    g_free(feng_srv.srvconf.groupname);
-    g_free(feng_srv.srvconf.twin);
-
-    if ( feng_srv.config_storage != NULL ) {
-        for(i = 0; i < feng_srv.config_context->used; i++) {
-            g_free(feng_srv.config_storage[i].document_root);
-
-            g_free(feng_srv.config_storage[i].access_log_file);
-        }
-
-        free(feng_srv.config_storage);
-    }
-
-#define CLEAN(x) \
-    array_free(feng_srv.x)
-    CLEAN(config_context);
-#undef CLEAN
-
-    g_slist_free(feng_srv.clients);
-}
-#endif /* CLEANUP_DESTRUCTOR */
 
 int main(int argc, char **argv)
 {
