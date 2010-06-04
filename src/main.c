@@ -110,7 +110,7 @@ static void CLEANUP_DESTRUCTOR feng_free()
         free(feng_srv.config_storage);
     }
 
-    array_free(feng_srv.config_context)
+    array_free(feng_srv.config_context);
 
     g_slist_free(feng_srv.clients);
 }
