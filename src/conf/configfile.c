@@ -76,7 +76,7 @@ static int config_insert() {
     size_t i;
     int ret = 0;
 
-    config_values_t cv[] = {
+    static config_values_t cv[] = {
         { "server.bind", &feng_srv.srvconf.bindhost, T_CONFIG_STRING },      /* 0 */
         { "server.errorlog", &feng_srv.srvconf.errorlog_file, T_CONFIG_STRING },      /* 1 */
         { "server.username", &feng_srv.srvconf.username, T_CONFIG_STRING },      /* 2 */
