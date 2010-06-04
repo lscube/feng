@@ -46,7 +46,6 @@ void configparser(void *yyp, int yymajor, conf_buffer *yyminor, config_t *ctx);
 int config_parse_file(config_t *context, const char *fn);
 int config_parse_cmd(config_t *context, const char *cmd);
 int config_read(const char *fn);
-int config_set_defaults();
 //void config_cond_cache_reset(server *srv, connection *con);
 //void config_cond_cache_reset_item(server *srv, connection *con, comp_key_t item);
 
