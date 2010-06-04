@@ -71,12 +71,12 @@ typedef struct feng {
 
 typedef struct Feng_Listener {
     int fd;
+    socklen_t sa_len;
+    struct sockaddr *local_sa;
     char *local_host;
     feng *srv;
     specific_config *specific;
     ev_io io;
-    struct sockaddr *local_sa;
-    socklen_t sa_len;
 } Feng_Listener;
 
 typedef feng server;
