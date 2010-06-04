@@ -329,7 +329,6 @@ int main(int argc, char **argv)
     ev_loop (feng_loop, 0);
 
  end:
-    accesslog_uninit();
 #ifdef CLEANUP_DESTRUCTOR
     feng_free();
 #endif

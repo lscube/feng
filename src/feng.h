@@ -117,7 +117,6 @@ struct RTSP_Client;
 struct RFC822_Response;
 
 gboolean accesslog_init();
-void accesslog_uninit();
 void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response);
 
 #endif // FN_SERVER_H

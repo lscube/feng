@@ -72,7 +72,8 @@ gboolean accesslog_init()
     return true;
 }
 
-void accesslog_uninit()
+#ifdef CLEANUP_DESTRUCTOR
+static void CLEANUP_DESTRUCTOR accesslog_uninit()
 {
     size_t i;
 
@@ -82,6 +83,7 @@ void accesslog_uninit()
                  feng_srv.config_storage[i].access_log_fp != NULL )
                 fclose(feng_srv.config_storage[i].access_log_fp);
 }
+#endif
 
 #define PRINT_STRING \
     "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",\
