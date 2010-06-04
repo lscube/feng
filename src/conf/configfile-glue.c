@@ -50,10 +50,6 @@
 
 #include "configfile.h"
 
-#define log_error_write(...) {}
-
-
-
 /* handle global options */
 
 /** parse config array */
@@ -89,16 +85,10 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
 
                         array_insert_unique(cv[i].destination, (data_unset *)ds);
                     } else {
-                        log_error_write(srv, __FILE__, __LINE__, "sssd",
-                                "the key of an array can only be a string or a integer, variable:",
-                                cv[i].key, "type:", da->value->data[j]->type);
-
                         return -1;
                     }
                 }
             } else {
-                log_error_write(srv, __FILE__, __LINE__, "ss", cv[i].key, "should have been a array of strings like ... = ( \"...\" )");
-
                 return -1;
             }
             break;
@@ -108,8 +98,6 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
 
                 buffer_copy_string_buffer(cv[i].destination, ds->value);
             } else {
-                log_error_write(srv, __FILE__, __LINE__, "ssss", cv[i].key, "should have been a string like ... = \"...\"");
-
                 return -1;
             }
             break;
@@ -122,14 +110,9 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
                 break;
             }
             case TYPE_STRING: {
-                //data_string *ds = (data_string *)du;
-
-                //log_error_write(srv, __FILE__, __LINE__, "ssb", "got a string but expected a short:", cv[i].key, ds->value);
-
                 return -1;
             }
             default:
-                log_error_write(srv, __FILE__, __LINE__, "ssds", "unexpected type for key:", cv[i].key, du->type, "expected a integer, range 0 ... 65535");
                 return -1;
             }
             break;
@@ -142,13 +125,9 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
                 } else if (buffer_is_equal_string(ds->value, CONST_STR_LEN("disable"))) {
                     *((unsigned short *)(cv[i].destination)) = 0;
                 } else {
-                    log_error_write(srv, __FILE__, __LINE__, "ssbs", "ERROR: unexpected value for key:", cv[i].key, ds->value, "(enable|disable)");
-
                     return -1;
                 }
             } else {
-                log_error_write(srv, __FILE__, __LINE__, "ssss", "ERROR: unexpected type for key:", cv[i].key, "(string)", "\"(enable|disable)\"");
-
                 return -1;
             }
             break;
@@ -156,16 +135,8 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
         case T_CONFIG_UNSET:
             break;
         case T_CONFIG_UNSUPPORTED:
-            log_error_write(srv, __FILE__, __LINE__, "ssss", "ERROR: found unsupported key:", cv[i].key, "-", (char *)(cv[i].destination));
-
-//            srv->config_unsupported = 1;
-
             break;
         case T_CONFIG_DEPRECATED:
-            log_error_write(srv, __FILE__, __LINE__, "ssss", "ERROR: found deprecated key:", cv[i].key, "-", (char *)(cv[i].destination));
-
-//            srv->config_deprecated = 1;
-
             break;
         }
     }
@@ -218,15 +189,6 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 
     /* check parent first */
     if (dc->parent && dc->parent->context_ndx) {
-        /**
-         * a nested conditional
-         *
-         * if the parent is not decided yet or false, we can't be true either
-         */
-        if (con->conf.log_condition_handling) {
-            log_error_write(srv, __FILE__, __LINE__,  "sb", "go parent", dc->parent->key);
-        }
-
         switch (config_check_cond_cached(srv, con, dc->parent)) {
         case COND_RESULT_FALSE:
             return COND_RESULT_FALSE;
@@ -238,16 +200,6 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
     }
 
     if (dc->prev) {
-        /**
-         * a else branch
-         *
-         * we can only be executed, if all of our previous brothers
-         * are false
-         */
-        if (con->conf.log_condition_handling) {
-            log_error_write(srv, __FILE__, __LINE__,  "sb", "go prev", dc->prev->key);
-        }
-
         /* make sure prev is checked first */
         config_check_cond_cached(srv, con, dc->prev);
 
@@ -261,13 +213,6 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
     }
 
     if (!con->conditional_is_valid[dc->comp]) {
-        if (con->conf.log_condition_handling) {
-            log_error_write(srv, __FILE__, __LINE__,  "dss",
-                dc->comp,
-                dc->key->ptr,
-                con->conditional_is_valid[dc->comp] ? "yeah" : "nej");
-        }
-
         return COND_RESULT_UNSET;
     }
 
@@ -335,35 +280,22 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
             char *err;
             struct in_addr val_inp;
 
-            if (*(nm_slash+1) == '\0') {
-                log_error_write(srv, __FILE__, __LINE__, "sb", "ERROR: no number after / ", dc->string);
-
+            if (*(nm_slash+1) == '\0')
                 return COND_RESULT_FALSE;
-            }
 
             nm_bits = strtol(nm_slash + 1, &err, 10);
 
-            if (*err) {
-                log_error_write(srv, __FILE__, __LINE__, "sbs", "ERROR: non-digit found in netmask:", dc->string, err);
-
-                return COND_RESULT_FALSE;
-            }
+            if (*err)
 
             /* take IP convert to the native */
             buffer_copy_string_len(srv->cond_check_buf, dc->string->ptr, nm_slash - dc->string->ptr);
 #ifdef __WIN32
-            if (INADDR_NONE == (val_inp.s_addr = inet_addr(srv->cond_check_buf->ptr))) {
-                log_error_write(srv, __FILE__, __LINE__, "sb", "ERROR: ip addr is invalid:", srv->cond_check_buf);
-
+            if (INADDR_NONE == (val_inp.s_addr = inet_addr(srv->cond_check_buf->ptr)))
                 return COND_RESULT_FALSE;
-            }
 
 #else
-            if (0 == inet_aton(srv->cond_check_buf->ptr, &val_inp)) {
-                log_error_write(srv, __FILE__, __LINE__, "sb", "ERROR: ip addr is invalid:", srv->cond_check_buf);
-
+            if (0 == inet_aton(srv->cond_check_buf->ptr, &val_inp))
                 return COND_RESULT_FALSE;
-            }
 #endif
 
             /* build netmask */
@@ -425,17 +357,9 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
     }
 
     if (NULL == l) {
-        if (con->conf.log_condition_handling) {
-            log_error_write(srv, __FILE__, __LINE__,  "bsbs", dc->comp_key,
-                    "(", l, ") compare to NULL");
-        }
         return COND_RESULT_FALSE;
     }
 
-    if (con->conf.log_condition_handling) {
-        log_error_write(srv, __FILE__, __LINE__,  "bsbsb", dc->comp_key,
-                "(", l, ") compare to ", dc->string);
-    }
     switch(dc->cond) {
     case CONFIG_COND_NE:
     case CONFIG_COND_EQ:
@@ -484,30 +408,12 @@ static cond_result_t config_check_cond_cached(server *srv, connection *con, data
         if (COND_RESULT_TRUE == (caches[dc->context_ndx].result = config_check_cond_nocache(srv, con, dc))) {
             if (dc->next) {
                 data_config *c;
-                if (con->conf.log_condition_handling) {
-                    log_error_write(srv, __FILE__, __LINE__, "s",
-                            "setting remains of chaining to false");
-                }
                 for (c = dc->next; c; c = c->next) {
                     caches[c->context_ndx].result = COND_RESULT_FALSE;
                 }
             }
         }
         caches[dc->context_ndx].comp_type = dc->comp;
-
-        if (con->conf.log_condition_handling) {
-            log_error_write(srv, __FILE__, __LINE__, "dss", dc->context_ndx,
-                    "(uncached) result:",
-                    caches[dc->context_ndx].result == COND_RESULT_UNSET ? "unknown" :
-                        (caches[dc->context_ndx].result == COND_RESULT_TRUE ? "true" : "false"));
-        }
-    } else {
-        if (con->conf.log_condition_handling) {
-            log_error_write(srv, __FILE__, __LINE__, "dss", dc->context_ndx,
-                    "(cached) result:",
-                    caches[dc->context_ndx].result == COND_RESULT_UNSET ? "unknown" :
-                        (caches[dc->context_ndx].result == COND_RESULT_TRUE ? "true" : "false"));
-        }
     }
     return caches[dc->context_ndx].result;
 }
@@ -544,9 +450,6 @@ void config_cond_cache_reset(server *srv, connection *con) {
 }
 
 int config_check_cond(server *srv, connection *con, data_config *dc) {
-    if (con->conf.log_condition_handling) {
-        log_error_write(srv, __FILE__, __LINE__,  "s",  "=== start of condition block ===");
-    }
     return (config_check_cond_cached(srv, con, dc) == COND_RESULT_TRUE);
 }
 
