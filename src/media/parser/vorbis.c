@@ -60,7 +60,7 @@ static int encode_header(uint8_t *data, int len, vorbis_priv *priv)
     uint8_t *header_start[3];
     int header_len[3];
     int hash[4];
-    uint8_t comment[26] =
+    static const uint8_t comment[26] =
         /*quite minimal comment */
     { 3, 'v', 'o', 'r', 'b', 'i', 's',
         10, 0, 0, 0,

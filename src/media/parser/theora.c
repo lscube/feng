@@ -98,7 +98,7 @@ static int encode_header(uint8_t *data, int len, theora_priv *priv)
     uint8_t *header_start[3];
     int header_len[3];
     int hash[4];
-    uint8_t comment[] =
+    static const uint8_t comment[] =
         /*quite minimal comment */
     { 0x81,'t','h','e','o','r','a',
       10,0,0,0,
