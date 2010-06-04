@@ -46,6 +46,20 @@
 #include "network/rtsp.h"
 #include <glib.h>
 
+/**
+ * @brief Global structure for feng configuration
+ *
+ * This strucutre holds (part of) the global settings for the feng
+ * process.
+ *
+ * @todo Break this up so that each piece of code takes care of
+ * handling its own global state.
+ *
+ * @note Using a structure to aggregate the state might seem smart,
+ *       but forces the same memory area for all the information to be
+ *       in the same cacheline, as well as disallowing the linker from
+ *       reordering the variables for best performance.
+ */
 struct feng feng_srv;
 
 #ifdef CLEANUP_DESTRUCTOR
