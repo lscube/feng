@@ -623,37 +623,23 @@ int config_parse_cmd(config_t *context, const char *cmd) {
 }
 
 /**
- * init context
- */
-
-static void context_init(config_t *context) {
-    context->ok = 1;
-    context->configs_stack = array_init();
-    context->configs_stack->is_weakref = 1;
-    context->basedir = buffer_init();
-}
-
-/**
- * free context
- */
-
-static void context_free(config_t *context) {
-    array_free(context->configs_stack);
-    buffer_free(context->basedir);
-}
-
-/**
  * load configuration for global
  * sets the module list.
  */
 
 int config_read(const char *fn) {
-    config_t context;
     data_config *dc;
     int ret;
     char *pos;
 
-    context_init(&context);
+    config_t context = {
+        .ok = 1,
+        .configs_stack = array_init(),
+        .basedir = buffer_init()
+    };
+
+    context.configs_stack->is_weakref = 1;
+
     context.all_configs = feng_srv.config_context;
 
     pos = strrchr(fn,
@@ -680,7 +666,8 @@ int config_read(const char *fn) {
 
     /* remains nothing if parser is ok */
     assert(!(0 == ret && context.ok && 0 != context.configs_stack->used));
-    context_free(&context);
+    array_free(context.configs_stack);
+    buffer_free(context.basedir);
 
     if (0 != ret) {
         return ret;
