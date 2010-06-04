@@ -77,7 +77,7 @@ static int h263_parse(Track *tr, uint8_t *data, size_t len)
 {
     size_t cur = 0, payload, header_len;
     int found_gob = 0;
-    uint8_t dst[DEFAULT_MTU];
+    uint8_t *dst = g_slice_alloc0(DEFAULT_MTU);
     h263_header *header = (h263_header *) dst;
 
     if (len >= 3 && *data == '\0' && *(data + 1) == '\0'
@@ -107,6 +107,7 @@ static int h263_parse(Track *tr, uint8_t *data, size_t len)
         cur += payload;
     }
 
+    g_slice_free1(DEFAULT_MTU, dst);
     return 0;
 }
 

@@ -113,7 +113,7 @@ typedef struct
 
 static int amr_parse(Track *tr, uint8_t *data, size_t len)
 {
-    uint8_t packet[DEFAULT_MTU] = {0};
+    uint8_t *packet = g_slice_alloc0(DEFAULT_MTU);
     amr_header *header = (amr_header *) packet;
     static const uint32_t packet_size[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0};
     /*1(toc size) +  unit size of frame body{12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0}*/
@@ -157,6 +157,7 @@ static int amr_parse(Track *tr, uint8_t *data, size_t len)
                              packet, off);
     }
 
+    g_slice_free1(DEFAULT_MTU, packet);
     return 0;
 }
 

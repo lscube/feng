@@ -87,7 +87,7 @@ static int aac_parse(Track *tr, uint8_t *data, size_t len)
     //XXX handle the last packet on EOF
     int off = 0;
     uint32_t payload = DEFAULT_MTU - AU_HEADER_SIZE;
-    uint8_t *packet = g_malloc0(DEFAULT_MTU);
+    uint8_t *packet = g_slice_alloc0(DEFAULT_MTU);
 
     if(!packet) return -1;
 
@@ -123,7 +123,7 @@ static int aac_parse(Track *tr, uint8_t *data, size_t len)
                          1,
                          packet, len + AU_HEADER_SIZE);
 
-    g_free(packet);
+    g_slice_free1(DEFAULT_MTU, packet);
     return 0;
 }
 
