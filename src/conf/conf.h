@@ -73,8 +73,6 @@ typedef struct {
 
     conf_buffer *username;
     conf_buffer *groupname;
-
-    array *upload_tempdirs;
 } server_config;
 
 typedef struct specific_config {
