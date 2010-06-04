@@ -41,8 +41,8 @@ typedef struct {
     conf_buffer *basedir;
 } config_t;
 
-void *configparserAlloc(void *(*mallocProc)(size_t));
-void configparserFree(void *p, void (*freeProc)(void*));
+void *configparserAlloc();
+void configparserFree(void *p);
 void configparser(void *yyp, int yymajor, conf_buffer *yyminor, config_t *ctx);
 int config_parse_file(config_t *context, const char *fn);
 int config_parse_cmd(config_t *context, const char *cmd);

@@ -5,6 +5,8 @@
 ** in the input file. */
 #include <stdio.h>
 
+#include <glib.h>
+
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -333,13 +335,9 @@ typedef struct yyParser yyParser;
 ** A pointer to a parser.  This pointer is used in subsequent calls
 ** to configparser and configparserFree.
 */
-void *configparserAlloc(void *(*mallocProc)(size_t)){
-  yyParser *pParser;
-  pParser = (yyParser*)(*mallocProc)( (size_t)sizeof(yyParser) );
-  if( pParser ){
-    pParser->yyidx = -1;
-  }
-  return pParser;
+void *configparserAlloc(){
+    yyParser *pParser = g_malloc0(sizeof(yyParser));
+    return pParser;
 }
 
 /* The following function deletes the value associated with a
@@ -443,13 +441,12 @@ static int yy_pop_parser_stack(yyParser *pParser){
 ** </ul>
 */
 void configparserFree(
-  void *p,                    /* The parser to be deleted */
-  void (*freeProc)(void*)     /* Function used to reclaim memory */
+  void *p                    /* The parser to be deleted */
 ){
   yyParser *pParser = (yyParser*)p;
   if( pParser==0 ) return;
   while( pParser->yyidx>=0 ) yy_pop_parser_stack(pParser);
-  (*freeProc)((void*)pParser);
+  g_free(pParser);
 }
 
 /*

@@ -499,7 +499,7 @@ static int config_parse(config_t *context, tokenizer_t *t) {
     conf_buffer *token, *lasttoken;
     int ret;
 
-    pParser = configparserAlloc( malloc );
+    pParser = configparserAlloc();
     lasttoken = buffer_init();
     token = buffer_init();
     while((1 == (ret = config_tokenizer(t, &token_id, token))) && context->ok) {
@@ -517,7 +517,7 @@ static int config_parse(config_t *context, tokenizer_t *t) {
             configparser(pParser, 0, NULL, context);
         }
     }
-    configparserFree(pParser, free);
+    configparserFree(pParser);
 
     if (context->ok == 0)
         ret = -1;
