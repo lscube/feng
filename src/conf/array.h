@@ -32,9 +32,6 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#ifdef HAVE_PCRE_H
-# include <pcre.h>
-#endif
 #include "buffer.h"
 
 #define DATA_IS_STRING(x) (x->type == TYPE_STRING)
@@ -138,10 +135,6 @@ struct _data_config {
     data_config *next;
 
     conf_buffer *string;
-#ifdef HAVE_PCRE_H
-    pcre   *regex;
-    pcre_extra *regex_study;
-#endif
 };
 
 data_config *data_config_init(void);
