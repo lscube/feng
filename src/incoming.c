@@ -228,7 +228,11 @@ static gboolean feng_bind_addr(struct addrinfo *ai,
 static gboolean feng_bind_port(const char *host, const char *port,
                                specific_config *s)
 {
+#if ENABLE_SCTP
     gboolean is_sctp = !!s->is_sctp;
+#else
+    static const gboolean is_sctp = false;
+#endif
     int n;
 
     struct addrinfo *res, *it;

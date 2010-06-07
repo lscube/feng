@@ -192,7 +192,9 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     rtsp = rtsp_client_new();
     rtsp->sd = client_sd;
 
+#if ENABLE_SCTP
     if ( ! listen->specific->is_sctp ) {
+#endif
         rtsp->socktype = RTSP_TCP;
         rtsp->out_queue = g_queue_new();
         rtsp->write_data = rtsp_write_data_queue;
@@ -205,18 +207,16 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         io = &rtsp->ev_io_read;
         io->data = rtsp;
         ev_io_init(io, rtsp_tcp_read_cb, rtsp->sd, EV_READ);
+#if ENABLE_SCTP
     } else {
-#ifdef ENABLE_SCTP
         rtsp->socktype = RTSP_SCTP;
         rtsp->write_data = rtsp_sctp_send_rtsp;
 
         io = &rtsp->ev_io_read;
         io->data = rtsp;
         ev_io_init(io, rtsp_sctp_read_cb, rtsp->sd, EV_READ);
-#else
-        g_assert_not_reached();
-#endif
     }
+#endif
 
     rtsp->local_sock = listen;
 

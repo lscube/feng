@@ -30,6 +30,8 @@
  * Main configuration parsing functions
  */
 
+#include <config.h>
+
 #include <glib.h>
 
 #include <sys/stat.h>
@@ -108,8 +110,11 @@ static int config_insert() {
             { "server.use-ipv6", &s->use_ipv6, T_CONFIG_BOOLEAN }, /* 5 */
 
             { "server.document-root", &s->document_root, T_CONFIG_STRING },  /* 6 */
+
+#if ENABLE_SCTP
             { "sctp.protocol", &s->is_sctp, T_CONFIG_BOOLEAN },
             { "sctp.max_streams", &s->sctp_max_streams, T_CONFIG_SHORT },
+#endif
 
             { "accesslog.filename", &s->access_log_file, T_CONFIG_STRING }, /* 11 */
             { "accesslog.use-syslog", &s->access_log_syslog, T_CONFIG_BOOLEAN },
@@ -117,8 +122,10 @@ static int config_insert() {
         };
 
         s->use_ipv6      = 0;
+#if ENABLE_SCTP
         s->is_sctp       = 0;
         s->sctp_max_streams = 16;
+#endif
         s->access_log_syslog = 1;
 
         if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[i])->value, vhost_cv))
