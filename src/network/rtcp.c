@@ -27,6 +27,12 @@
 #include <stdbool.h>
 #include <netinet/in.h>
 
+#if HAVE_CLOCK_GETTIME
+# include <time.h>
+#else /* use gettimeofday() */
+# include <sys/time.h>
+#endif
+
 #include "rtp.h"
 #include "rtsp.h"
 #include "feng.h"
