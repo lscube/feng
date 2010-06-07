@@ -20,6 +20,13 @@
  *
  * */
 
+/**
+ * Maximum number of threads to use for resource close/cleanup
+ *
+ * @todo This should be configurable at runtime via the config file.
+ */
+#define MAX_RESOURCE_CLOSE_THREADS 8
+
 #include <glib.h>
 #include <stdbool.h>
 #include <string.h>
@@ -434,7 +441,8 @@ void r_close(Resource *resource)
     static gsize created_pool = false;
     if ( g_once_init_enter(&created_pool) ) {
         closing_pool = g_thread_pool_new(r_free_cb, NULL,
-                                         -1, false, NULL);
+                                         MAX_RESOURCE_CLOSE_THREADS,
+                                         false, NULL);
 
         g_once_init_leave(&created_pool, true);
     }
