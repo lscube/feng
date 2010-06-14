@@ -474,18 +474,16 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp,
     rtp_s->ssrc = g_random_int();
 
     do {
-        struct ParsedTransport *transport = (struct ParsedTransport *)transports->data;
-
-        static const rtp_transport_init_cb rtp_transport_init[_RTP_PROTOCOL_MAX] = {
-            [RTP_UDP] = rtp_udp_transport,
-            [RTP_TCP] = rtp_interleaved_transport,
+        struct ParsedTransport *transport = transports->data;
+        static const rtp_transport_init_cb
+            rtp_transport_init[_RTP_PROTOCOL_MAX] = {
+                [RTP_UDP] = rtp_udp_transport,
+                [RTP_TCP] = rtp_interleaved_transport,
 #ifdef ENABLE_SCTP
-            [RTP_SCTP] = rtp_sctp_transport
+                [RTP_SCTP] = rtp_sctp_transport
 #endif
         };
-
-        rtp_transport_init[transport->protocol]
-            (rtsp, rtp_s, transport);
+        rtp_transport_init[transport->protocol](rtsp, rtp_s, transport);
     } while ( rtp_s->transport_data == NULL &&
               (transports = g_slist_next(transports)) != NULL );
 
