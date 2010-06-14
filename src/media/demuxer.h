@@ -225,6 +225,7 @@ Resource *r_open(const char *inner_path);
 int r_read(Resource *resource);
 int r_seek(Resource *resource, double time);
 
+int r_count(Resource *resource);
 void r_close(Resource *resource);
 
 Track *r_find_track(Resource *, const char *);

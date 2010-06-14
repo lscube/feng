@@ -422,6 +422,28 @@ int r_read(Resource *resource)
 }
 
 /**
+ * @brief Tell the resource reference count
+ *
+ * @param resource The Resource
+ *
+ * @return The actual count
+ *
+ * @note This function will lock the @ref shared_resources_lock.
+ */
+
+int r_count(Resource *resource) {
+    int res;
+
+    g_mutex_lock(shared_resources_lock);
+
+    res = resource->count;
+
+    g_mutex_unlock(shared_resources_lock);
+
+    return res;
+}
+
+/**
  * @brief Request closing of a resource
  *
  * @param resource The resource to close
