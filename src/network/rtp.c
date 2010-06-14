@@ -39,9 +39,12 @@
 
 static void rtp_fill_pool_free(RTP_session *session)
 {
-    GThreadPool *pool = session->fill_pool;
-    session->fill_pool = NULL;
-    g_thread_pool_free(pool, true, true);
+    Resource *resource = session->track->parent;
+    GThreadPool *pool = resource->fill_pool;
+    if (resource->fill_pool) {
+        resource->fill_pool = NULL;
+        g_thread_pool_free(pool, true, true);
+    }
 }
 
 /**
@@ -67,8 +70,7 @@ static void rtp_session_free(gpointer session_gen,
 
     session->close_transport(session);
 
-    if (session->fill_pool)
-        rtp_fill_pool_free(session);
+    rtp_fill_pool_free(session);
 
     /* Remove the consumer */
     bq_consumer_free(session->consumer);
@@ -98,7 +100,7 @@ void rtp_session_gslist_free(GSList *sessions_list) {
  *
  *
  * @internal This function is used to initialize @ref
- *           RTP_session::fill_pool.
+ *           Resource::fill_pool.
  */
 static void rtp_session_fill_cb(ATTR_UNUSED gpointer unused_data,
                                 gpointer session_p)
@@ -112,7 +114,7 @@ static void rtp_session_fill_cb(ATTR_UNUSED gpointer unused_data,
     while ( g_atomic_int_get(&resource->eor) == 0 &&
             ((unseen = bq_consumer_unseen(consumer)) < buffered_frames ||
              resource->demuxer->info->source == LIVE_SOURCE) &&
-            session->fill_pool != NULL ) {
+            resource->fill_pool != NULL ) {
 #if 0
         fprintf(stderr, "calling read_packet from %p for %p[%s] (%u/%d)\n",
                 session,
@@ -144,8 +146,10 @@ static void rtp_session_fill_cb(ATTR_UNUSED gpointer unused_data,
  */
 static void rtp_session_fill(RTP_session *session)
 {
+    Resource *resource = session->track->parent;
+
     if ( g_atomic_int_get(&session->track->parent->eor) == 0 )
-        g_thread_pool_push(session->fill_pool,
+        g_thread_pool_push(resource->fill_pool,
                            GINT_TO_POINTER(-1), NULL);
 }
 
@@ -172,6 +176,7 @@ static void rtp_session_fill(RTP_session *session)
 static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     RTP_session *session = (RTP_session*)session_gen;
     RTSP_Range *range = (RTSP_Range*)range_gen;
+    Resource *resource = session->track->parent;
 
     fnc_log(FNC_LOG_VERBOSE, "Resuming session %p", session);
 
@@ -182,7 +187,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     session->last_packet_send_time = time(NULL);
 
     /* Create the new thread pool for the read requests */
-    session->fill_pool = g_thread_pool_new(rtp_session_fill_cb, session,
+    resource->fill_pool = g_thread_pool_new(rtp_session_fill_cb, session,
                                            1, true, NULL);
 
     /* Prefetch frames */
@@ -224,8 +229,7 @@ static void rtp_session_pause(gpointer session_gen,
 
     /* We should assert its presence, we cannot pause a non-running
      * session! */
-    if (session->fill_pool)
-        rtp_fill_pool_free(session);
+    rtp_fill_pool_free(session);
 
     ev_periodic_stop(feng_loop, &session->rtp_writer);
 }

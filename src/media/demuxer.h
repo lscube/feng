@@ -103,6 +103,26 @@ typedef struct Resource {
     const struct Demuxer *demuxer;
     ResourceInfo *info;
 
+   /**
+     * @brief Pool of one thread for filling up data for the session
+     *
+     * This is a pool consisting of exactly one thread that is used to
+     * fill up the session with data when it's running low.
+     *
+     * Since we do want to do this asynchronously but we don't really
+     * want race conditions (and they would anyway just end up waiting
+     * on the same lock), there is no need to allow multiple threads
+     * to do the same thing here.
+     *
+     * Please note that this is created during @ref rtp_session_resume
+     * rather than during @ref rtp_session_new, and deleted during
+     * @ref rtp_session_pause (and eventually during @ref
+     * rtp_session_free), so that we don't have reading threads to go
+     * around during seeks.
+     */
+
+    GThreadPool *fill_pool;
+
     /* Timescale fixer callback function for meta-demuxers */
     double (*timescaler)(struct Resource *, double);
     /* EDL specific data */
