@@ -41,6 +41,13 @@ static void rtp_fill_pool_free(RTP_session *session)
 {
     Resource *resource = session->track->parent;
     GThreadPool *pool = resource->fill_pool;
+
+    if (session->track->properties.media_source == LIVE_SOURCE) {
+        if (r_count(resource) > 1) {
+            // do nothing
+            return;
+        }
+    }
     if (resource->fill_pool) {
         resource->fill_pool = NULL;
         g_thread_pool_free(pool, true, true);
@@ -187,12 +194,15 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     session->last_packet_send_time = time(NULL);
 
     /* Create the new thread pool for the read requests */
-    resource->fill_pool = g_thread_pool_new(rtp_session_fill_cb, session,
-                                           1, true, NULL);
+    if (session->track->properties.media_source != LIVE_SOURCE ||
+        r_count(resource) == 1) {
 
-    /* Prefetch frames */
-    rtp_session_fill(session);
+        resource->fill_pool = g_thread_pool_new(rtp_session_fill_cb, session,
+                                               1, true, NULL);
 
+        /* Prefetch frames */
+        rtp_session_fill(session);
+    }
     ev_periodic_set(&session->rtp_writer,
                     range->playback_time - 0.05,
                     0, NULL);
@@ -229,6 +239,7 @@ static void rtp_session_pause(gpointer session_gen,
 
     /* We should assert its presence, we cannot pause a non-running
      * session! */
+
     rtp_fill_pool_free(session);
 
     ev_periodic_stop(feng_loop, &session->rtp_writer);
@@ -442,7 +453,8 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
     ev_periodic_set(w, next_time, 0, NULL);
     ev_periodic_again(loop, w);
 
-    rtp_session_fill(session);
+    if (session->track->properties.media_source != LIVE_SOURCE)
+        rtp_session_fill(session);
 }
 
 typedef void (*rtp_transport_init_cb)(RTSP_Client *rtsp,
