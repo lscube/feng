@@ -26,6 +26,7 @@
 #include "network/rtsp.h"
 #include "media/demuxer.h"
 #include "json.h"
+#include <time.h>
 
 /**
  * @brief Produce per client statistics
@@ -78,7 +79,7 @@ void feng_send_statistics(RTSP_Client *rtsp)
         json_object_new_int(srv->total_read));
 
     json_object_object_add(stats, "uptime",
-        json_object_new_int(0));
+        json_object_new_int(time(NULL) - srv->start_time));
 
     g_slist_foreach(srv->clients, client_stats, clients_stats);
 
