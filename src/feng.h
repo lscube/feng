@@ -118,6 +118,10 @@ struct RFC822_Response;
 void accesslog_init();
 void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response);
 
+#if HAVE_JSON
 void stats_init();
+#else
+#define stats_init()
+#endif
 
 #endif // FN_SERVER_H
