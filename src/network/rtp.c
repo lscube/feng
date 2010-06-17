@@ -31,29 +31,6 @@
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 
-/*
- * Make sure all the threads get collected
- *
- * @param session rtp session to be cleaned
- */
-
-static void rtp_fill_pool_free(RTP_session *session)
-{
-    Resource *resource = session->track->parent;
-    GThreadPool *pool = resource->fill_pool;
-
-    if (session->track->properties.media_source == LIVE_SOURCE) {
-        if (r_count(resource) > 1) {
-            // do nothing
-            return;
-        }
-    }
-    if (resource->fill_pool) {
-        resource->fill_pool = NULL;
-        g_thread_pool_free(pool, true, true);
-    }
-}
-
 /**
  * Deallocates an RTP session, closing its tracks and transports
  *
@@ -77,7 +54,7 @@ static void rtp_session_free(gpointer session_gen,
 
     session->close_transport(session);
 
-    rtp_fill_pool_free(session);
+    r_pause(session->track->parent);
 
     /* Remove the consumer */
     bq_consumer_free(session->consumer);
@@ -98,68 +75,6 @@ static void rtp_session_free(gpointer session_gen,
 void rtp_session_gslist_free(GSList *sessions_list) {
     g_slist_foreach(sessions_list, rtp_session_free, NULL);
 }
-
-/**
- * @brief Do the work of filling an RTP session with data
- *
- * @param unused_data Unused
- * @param session_p The session parameter from rtp_session_fill
- *
- *
- * @internal This function is used to initialize @ref
- *           Resource::fill_pool.
- */
-static void rtp_session_fill_cb(ATTR_UNUSED gpointer unused_data,
-                                gpointer session_p)
-{
-    RTP_session *session = (RTP_session*)session_p;
-    Resource *resource = session->track->parent;
-    BufferQueue_Consumer *consumer = session->consumer;
-    gulong unseen;
-    const gulong buffered_frames = feng_srv.srvconf.buffered_frames;
-
-    while ( g_atomic_int_get(&resource->eor) == 0 &&
-            ((unseen = bq_consumer_unseen(consumer)) < buffered_frames ||
-             resource->demuxer->info->source == LIVE_SOURCE) &&
-            resource->fill_pool != NULL ) {
-#if 0
-        fprintf(stderr, "calling read_packet from %p for %p[%s] (%u/%d)\n",
-                session,
-                resource, resource->info->mrl,
-                unseen, buffered_frames);
-#endif
-
-        if ( r_read(resource) != RESOURCE_OK )
-            break;
-    }
-}
-
-/**
- * @brief Request filling an RTP session with data
- *
- * @param session The session to fill with data
- *
- * This function takes care of filling with data the bufferqueue of
- * the session, by asking to the resource to read more.
- *
- * Previously this was implemented mostly on the Resource side, but
- * given we need more information from the session than the resource
- * it was moved here.
- *
- * This function should be called while holding locks to the session,
- * but not to the resource.
- *
- * @see rtp_session_fill_cb
- */
-static void rtp_session_fill(RTP_session *session)
-{
-    Resource *resource = session->track->parent;
-
-    if ( g_atomic_int_get(&session->track->parent->eor) == 0 )
-        g_thread_pool_push(resource->fill_pool,
-                           GINT_TO_POINTER(-1), NULL);
-}
-
 
 /**
  * @brief Resume (or start) an RTP session
@@ -193,16 +108,9 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     session->send_time = 0.0;
     session->last_packet_send_time = time(NULL);
 
-    /* Create the new thread pool for the read requests */
-    if (session->track->properties.media_source != LIVE_SOURCE ||
-        r_count(resource) == 1) {
+    r_resume(resource);
+    r_fill(resource, session->consumer);
 
-        resource->fill_pool = g_thread_pool_new(rtp_session_fill_cb, session,
-                                               1, true, NULL);
-
-        /* Prefetch frames */
-        rtp_session_fill(session);
-    }
     ev_periodic_set(&session->rtp_writer,
                     range->playback_time - 0.05,
                     0, NULL);
@@ -236,11 +144,12 @@ void rtp_session_gslist_resume(GSList *sessions_list, RTSP_Range *range) {
 static void rtp_session_pause(gpointer session_gen,
                               ATTR_UNUSED gpointer user_data) {
     RTP_session *session = (RTP_session *)session_gen;
+    Resource *resource = session->track->parent;
 
     /* We should assert its presence, we cannot pause a non-running
      * session! */
 
-    rtp_fill_pool_free(session);
+    r_pause(resource);
 
     ev_periodic_stop(feng_loop, &session->rtp_writer);
 }
@@ -453,8 +362,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
     ev_periodic_set(w, next_time, 0, NULL);
     ev_periodic_again(loop, w);
 
-    if (session->track->properties.media_source != LIVE_SOURCE)
-        rtp_session_fill(session);
+    r_fill(resource, session->consumer);
 }
 
 typedef void (*rtp_transport_init_cb)(RTSP_Client *rtsp,

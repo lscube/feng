@@ -99,7 +99,7 @@ typedef struct ResourceInfo_s {
 
 typedef struct Resource {
     GMutex *lock;
-    guint count;
+    gint count;
     const struct Demuxer *demuxer;
     ResourceInfo *info;
 
@@ -225,8 +225,10 @@ Resource *r_open(const char *inner_path);
 int r_read(Resource *resource);
 int r_seek(Resource *resource, double time);
 
-int r_count(Resource *resource);
 void r_close(Resource *resource);
+void r_pause(Resource *resource);
+void r_resume(Resource *resource);
+void r_fill(Resource *resource, BufferQueue_Consumer *consumer);
 
 Track *r_find_track(Resource *, const char *);
 

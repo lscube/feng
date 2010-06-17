@@ -70,6 +70,16 @@ extern Demuxer fnc_demuxer_avf;
  * @{
  */
 
+static void r_stop_fill(Resource *resource)
+{
+    GThreadPool *pool;
+
+    if ( (pool = resource->fill_pool) ) {
+        g_atomic_pointer_set(&resource->fill_pool, NULL);
+        g_thread_pool_free(pool, true, true);
+    }
+}
+
 /**
  * @brief Free a resource object
  *
@@ -93,6 +103,8 @@ static void r_free_cb(gpointer resource_p,
     Resource *resource = (Resource *)resource_p;
     if (!resource)
         return;
+
+    r_stop_fill(resource);
 
     if (resource->lock)
         g_mutex_free(resource->lock);
@@ -234,7 +246,22 @@ r_open_hashed(gchar *mrl, const Demuxer *dmx)
     } else
         g_free(mrl);
 
-    if (r) r->count++;
+    if ( r ) {
+        g_mutex_lock(r->lock);
+
+        r->count++;
+
+        /* the resource doesn't have a fill pool, we'll create one by
+           resuming, then we alsopush a single thread to read */
+        if ( r->fill_pool == NULL ) {
+            r_resume(r);
+            g_thread_pool_push(r->fill_pool,
+                               GINT_TO_POINTER(-1), NULL);
+        }
+
+        g_mutex_unlock(r->lock);
+    }
+
     g_mutex_unlock(shared_resources_lock);
 
     return r;
@@ -349,7 +376,8 @@ static void r_track_producer_reset_queue(gpointer element,
                                          ATTR_UNUSED gpointer user_data) {
     Track *t = (Track*)element;
 
-    bq_producer_reset_queue(t->producer);
+    if ( t->producer )
+        bq_producer_reset_queue(t->producer);
 }
 
 /**
@@ -376,20 +404,32 @@ int r_seek(Resource *resource, double time) {
     return res;
 }
 
-/**
- * @brief Read data from a resource (unlocked)
- *
- * @param resouce The resource to read from
- *
- * @return The same return value as read_packet
- */
-int r_read(Resource *resource)
+static void r_read_cb(gpointer consumer_p,
+                      gpointer resource_p)
 {
-    int ret = RESOURCE_EOF;
+    Resource *resource = (Resource*)resource_p;
+    BufferQueue_Consumer *consumer = (BufferQueue_Consumer*)consumer_p;
+    const gboolean live = resource->demuxer->info->source == LIVE_SOURCE;
+    const gulong buffered_frames = feng_srv.srvconf.buffered_frames;
 
-    g_mutex_lock(resource->lock);
-    if (!resource->eor)
-        switch( (ret = resource->demuxer->read_packet(resource)) ) {
+    g_assert( (live && consumer == GINT_TO_POINTER(-1)) || (!live && consumer != GINT_TO_POINTER(-1)) );
+
+    do {
+        /* setting this to NULL with an atomic, non-locking operation
+           is our "stop" signal. */
+        if ( g_atomic_pointer_get(&resource->fill_pool) == NULL )
+            return;
+
+        /* Only check for enough buffered frames if we're not doing
+           live; otherwise keep on filling; we also assume that
+           consumer will be NULL in that case. */
+        if ( !live && bq_consumer_unseen(consumer) >= buffered_frames )
+            return;
+
+        //        fprintf(stderr, "r_read_cb(%p)\n", resource);
+
+        g_mutex_lock(resource->lock);
+        switch( resource->demuxer->read_packet(resource) ) {
         case RESOURCE_OK:
         case RESOURCE_AGAIN:
             break;
@@ -403,34 +443,11 @@ int r_read(Resource *resource)
             fnc_log(FNC_LOG_FATAL,
                     "r_read_unlocked: %s read_packet() error.",
                     resource->info->mrl);
+            resource->eor = true;
             break;
         }
-
-    g_mutex_unlock(resource->lock);
-
-    return ret;
-}
-
-/**
- * @brief Tell the resource reference count
- *
- * @param resource The Resource
- *
- * @return The actual count
- *
- * @note This function will lock the @ref shared_resources_lock.
- */
-
-int r_count(Resource *resource) {
-    int res;
-
-    g_mutex_lock(shared_resources_lock);
-
-    res = resource->count;
-
-    g_mutex_unlock(shared_resources_lock);
-
-    return res;
+        g_mutex_unlock(resource->lock);
+    } while ( g_atomic_int_get(&resource->eor) == 0 );
 }
 
 /**
@@ -445,31 +462,92 @@ int r_count(Resource *resource) {
  */
 void r_close(Resource *resource)
 {
-    /* This will never be freed but we don't care since we're going to
-     * need it till the very end of the process.
-     */
-    static GThreadPool *closing_pool;
-
-    static gsize created_pool = false;
-    if ( g_once_init_enter(&created_pool) ) {
-        closing_pool = g_thread_pool_new(r_free_cb, NULL,
-                                         MAX_RESOURCE_CLOSE_THREADS,
-                                         false, NULL);
-
-        g_once_init_leave(&created_pool, true);
-    }
-
 #ifdef LIVE_STREAMING
     if (resource->demuxer->info->source == LIVE_SOURCE) {
         g_mutex_lock(shared_resources_lock);
-        if (!--resource->count)
-            g_hash_table_remove(shared_resources, resource->info->mrl);
+
+        if ( g_atomic_int_dec_and_test(&resource->count) ) {
+            r_stop_fill(resource);
+            g_list_foreach(resource->tracks, r_track_producer_reset_queue, NULL);
+        }
+
         g_mutex_unlock(shared_resources_lock);
-        if (resource->count) return;
+
+        // if ( g_atomic_int_get(&resource->count) > 0 )
+            return;
     }
 #endif
 
-    g_thread_pool_push(closing_pool, resource, NULL);
+    {
+        /* This will never be freed but we don't care since we're going to
+         * need it till the very end of the process.
+         */
+        static GThreadPool *closing_pool;
+
+        static gsize created_pool = false;
+        if ( g_once_init_enter(&created_pool) ) {
+            closing_pool = g_thread_pool_new(r_free_cb, NULL,
+                                             MAX_RESOURCE_CLOSE_THREADS,
+                                             false, NULL);
+
+            g_once_init_leave(&created_pool, true);
+        }
+
+        g_thread_pool_push(closing_pool, resource, NULL);
+    }
+}
+
+void r_pause(Resource *resource)
+{
+    GThreadPool *pool;
+
+    /* Don't even try to pause a live source! */
+    if ( resource->demuxer->info->source == LIVE_SOURCE )
+        return;
+
+    /* we paused already */
+    if ( resource->fill_pool == NULL )
+        return;
+
+    g_mutex_lock(resource->lock);
+
+    pool = resource->fill_pool;
+    g_atomic_pointer_set(&resource->fill_pool, NULL);
+    g_thread_pool_free(pool, true, true);
+
+    g_mutex_unlock(resource->lock);
+}
+
+void r_resume(Resource *resource)
+{
+    GThreadPool *pool;
+
+    /* running already */
+    if ( g_atomic_pointer_get(&resource->fill_pool) != NULL )
+        return;
+
+    pool = g_thread_pool_new(r_read_cb, resource,
+                             1, true, NULL);
+
+    g_atomic_pointer_set(&resource->fill_pool, pool);
+}
+
+void r_fill(Resource *resource, BufferQueue_Consumer *consumer)
+{
+    /* Don't even try to fill a live source! */
+    if ( resource->demuxer->info->source == LIVE_SOURCE )
+        return;
+
+    g_mutex_lock(resource->lock);
+
+    if ( resource->fill_pool == NULL )
+        goto end;
+
+    g_thread_pool_push(resource->fill_pool,
+                       consumer, NULL);
+
+ end:
+    g_mutex_unlock(resource->lock);
 }
 
 /**
