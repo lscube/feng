@@ -181,9 +181,7 @@ static const Demuxer *r_find_demuxer(const char *filename)
     return NULL;
 }
 
-
-static Resource*
-r_open_direct(gchar *mrl, const Demuxer *dmx)
+static Resource *r_open_direct(gchar *mrl, const Demuxer *dmx)
 {
     Resource *r;
     struct stat filestat;
@@ -220,9 +218,9 @@ r_open_direct(gchar *mrl, const Demuxer *dmx)
 
     return r;
 }
+
 #ifdef LIVE_STREAMING
-static Resource*
-r_open_hashed(gchar *mrl, const Demuxer *dmx)
+static Resource *r_open_hashed(gchar *mrl, const Demuxer *dmx)
 {
     Resource *r;
     static gsize created_mutex = false;
