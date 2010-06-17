@@ -44,6 +44,7 @@
 #include "network/rtp.h"
 #include "network/rtsp.h"
 #include <glib.h>
+#include <time.h>
 
 /**
  * @brief Global structure for feng configuration
@@ -277,6 +278,8 @@ int main(int argc, char **argv)
     feng_bind_ports();
 
     accesslog_init();
+
+    stats_init();
 
     feng_drop_privs();
 

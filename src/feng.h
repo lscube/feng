@@ -73,6 +73,7 @@ typedef struct specific_config {
 typedef struct feng_stats {
     size_t total_sent;
     size_t total_received;
+    time_t start_time;
     //add_more
 } feng_stats;
 
@@ -116,5 +117,7 @@ struct RFC822_Response;
 
 void accesslog_init();
 void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response);
+
+void stats_init();
 
 #endif // FN_SERVER_H

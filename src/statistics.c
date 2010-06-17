@@ -26,9 +26,22 @@
 #include "network/rtsp.h"
 #include "media/demuxer.h"
 #include "json.h"
+#include <time.h>
 
 static size_t stats_total_bytes_sent;
 static size_t stats_total_bytes_read;
+static time_t stats_start_time;
+
+/**
+ * @brief Initialize the statistics
+ *
+ * Set @ref stats_start_time to the current time.
+ */
+
+void stats_init()
+{
+    stats_start_time = time(NULL);
+}
 
 void stats_account_read(RTSP_Client *rtsp, size_t bytes)
 {
@@ -92,7 +105,7 @@ void feng_send_statistics(RTSP_Client *rtsp)
         json_object_new_int(stats_total_bytes_read));
 
     json_object_object_add(stats, "uptime",
-        json_object_new_int(0));
+        json_object_new_int(time(NULL) - stats_start_time));
 
     g_slist_foreach(feng_srv.clients, client_stats, clients_stats);
 
