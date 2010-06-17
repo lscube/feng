@@ -97,9 +97,28 @@ typedef struct ResourceInfo_s {
     gboolean seekable;
 } ResourceInfo;
 
+/**
+ * @brief Descriptor structure of a resource
+ * @ingroup resources
+ *
+ * This structure contains the basic parameters used by the media
+ * backend code to access a resource; it connects to the demuxer used,
+ * to the tracks found on the resource, and can be either private to a
+ * client or shared among many (live streaming).
+ */
 typedef struct Resource {
     GMutex *lock;
+
+    /**
+     * @brief Reference counter for the clients using the resource
+     *
+     * This variable keeps count of the number of clients that are
+     * connected to a given resource, it is supposed to keep at 1 for
+     * non-live resources, and to vary between 0 and the number of
+     * clients when it is a live resource.
+     */
     gint count;
+
     const struct Demuxer *demuxer;
     ResourceInfo *info;
 
@@ -107,20 +126,21 @@ typedef struct Resource {
      * @brief Pool of one thread for filling up data for the session
      *
      * This is a pool consisting of exactly one thread that is used to
-     * fill up the session with data when it's running low.
+     * fill up the resource's tracks' @ref BufferQueue_Producer with
+     * data when it's running low.
      *
      * Since we do want to do this asynchronously but we don't really
      * want race conditions (and they would anyway just end up waiting
      * on the same lock), there is no need to allow multiple threads
      * to do the same thing here.
      *
-     * Please note that this is created during @ref rtp_session_resume
-     * rather than during @ref rtp_session_new, and deleted during
-     * @ref rtp_session_pause (and eventually during @ref
-     * rtp_session_free), so that we don't have reading threads to go
-     * around during seeks.
+     * Please note that this is created, for non-live resources,
+     * during the resume phase (@ref r_resume), and stopped during
+     * either the pause phase (@ref r_pause) or during the final free
+     * (@ref r_free_cb). For live resources, this will be created by
+     * @ref r_open_hashed when the first client connects, and
+     * destroyed by @ref r_close when the last client disconnects.
      */
-
     GThreadPool *fill_pool;
 
     /* Timescale fixer callback function for meta-demuxers */

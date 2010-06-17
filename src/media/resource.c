@@ -39,7 +39,17 @@
 // global demuxer modules:
 #ifdef LIVE_STREAMING
 extern Demuxer fnc_demuxer_sd;
+#endif
+extern Demuxer fnc_demuxer_ds;
+extern Demuxer fnc_demuxer_avf;
 
+/**
+ * @defgroup resources Media backend resources handling
+ *
+ * @{
+ */
+
+#ifdef LIVE_STREAMING
 /**
  * @brief Global lock
  *
@@ -57,18 +67,6 @@ static GMutex *shared_resources_lock;
 static GHashTable *shared_resources;
 #endif
 
-extern Demuxer fnc_demuxer_ds;
-extern Demuxer fnc_demuxer_avf;
-
-
-
-
-/**
- * @defgroup resources
- * @brief Resource handling functions
- *
- * @{
- */
 
 /**
  * @brief Stop the fill thread of a resource
