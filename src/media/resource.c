@@ -94,16 +94,6 @@ static void r_free_cb(gpointer resource_p,
     if (!resource)
         return;
 
-#ifdef LIVE_STREAMING
-    if (resource->demuxer->info->source == LIVE_SOURCE) {
-        g_mutex_lock(shared_resources_lock);
-        if (!--resource->count)
-            g_hash_table_remove(shared_resources, resource->info->mrl);
-        g_mutex_unlock(shared_resources_lock);
-        if (resource->count) return;
-    }
-#endif
-
     if (resource->lock)
         g_mutex_free(resource->lock);
 
@@ -468,6 +458,16 @@ void r_close(Resource *resource)
 
         g_once_init_leave(&created_pool, true);
     }
+
+#ifdef LIVE_STREAMING
+    if (resource->demuxer->info->source == LIVE_SOURCE) {
+        g_mutex_lock(shared_resources_lock);
+        if (!--resource->count)
+            g_hash_table_remove(shared_resources, resource->info->mrl);
+        g_mutex_unlock(shared_resources_lock);
+        if (resource->count) return;
+    }
+#endif
 
     g_thread_pool_push(closing_pool, resource, NULL);
 }
