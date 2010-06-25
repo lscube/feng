@@ -97,11 +97,51 @@ typedef struct ResourceInfo_s {
     gboolean seekable;
 } ResourceInfo;
 
+/**
+ * @brief Descriptor structure of a resource
+ * @ingroup resources
+ *
+ * This structure contains the basic parameters used by the media
+ * backend code to access a resource; it connects to the demuxer used,
+ * to the tracks found on the resource, and can be either private to a
+ * client or shared among many (live streaming).
+ */
 typedef struct Resource {
     GMutex *lock;
-    guint count;
+
+    /**
+     * @brief Reference counter for the clients using the resource
+     *
+     * This variable keeps count of the number of clients that are
+     * connected to a given resource, it is supposed to keep at 1 for
+     * non-live resources, and to vary between 0 and the number of
+     * clients when it is a live resource.
+     */
+    gint count;
+
     const struct Demuxer *demuxer;
     ResourceInfo *info;
+
+   /**
+     * @brief Pool of one thread for filling up data for the session
+     *
+     * This is a pool consisting of exactly one thread that is used to
+     * fill up the resource's tracks' @ref BufferQueue_Producer with
+     * data when it's running low.
+     *
+     * Since we do want to do this asynchronously but we don't really
+     * want race conditions (and they would anyway just end up waiting
+     * on the same lock), there is no need to allow multiple threads
+     * to do the same thing here.
+     *
+     * Please note that this is created, for non-live resources,
+     * during the resume phase (@ref r_resume), and stopped during
+     * either the pause phase (@ref r_pause) or during the final free
+     * (@ref r_free_cb). For live resources, this will be created by
+     * @ref r_open_hashed when the first client connects, and
+     * destroyed by @ref r_close when the last client disconnects.
+     */
+    GThreadPool *fill_pool;
 
     /* Timescale fixer callback function for meta-demuxers */
     double (*timescaler)(struct Resource *, double);
@@ -112,7 +152,6 @@ typedef struct Resource {
     int num_tracks;
     int eor;
     void *private_data; /* Demuxer private data */
-    struct feng *srv;
 } Resource;
 
 typedef struct Trackinfo_s {
@@ -162,7 +201,7 @@ typedef struct Track {
     GMutex *lock;
     TrackInfo *info;
     double start_time;
-    struct MediaParser *parser;
+    const struct MediaParser *parser;
     /*feng*/
     BufferQueue_Producer *producer;
     Resource *parent;
@@ -201,12 +240,15 @@ typedef struct Demuxer {
 
 // --- functions --- //
 
-Resource *r_open(struct feng *srv, const char *inner_path);
+Resource *r_open(const char *inner_path);
 
 int r_read(Resource *resource);
 int r_seek(Resource *resource, double time);
 
 void r_close(Resource *resource);
+void r_pause(Resource *resource);
+void r_resume(Resource *resource);
+void r_fill(Resource *resource, BufferQueue_Consumer *consumer);
 
 Track *r_find_track(Resource *, const char *);
 

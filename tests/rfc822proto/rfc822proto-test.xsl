@@ -23,7 +23,7 @@ static RFC822_Protocol rfc822_protocol_str_to_enum(const char *str) {
     int cs;
 
 %%{
-    machine rfc822_protocoL_tokenizer;
+    machine rfc822_protocol_tokenizer;
 
     include RFC822Proto "rfc822proto-statemachine.rl";
 

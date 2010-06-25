@@ -66,7 +66,6 @@ conf_buffer* buffer_init_string(const char *str);
 void buffer_free(conf_buffer *b);
 void buffer_reset(conf_buffer *b);
 
-int buffer_prepare_copy(conf_buffer *b, size_t size);
 int buffer_prepare_append(conf_buffer *b, size_t size);
 
 int buffer_copy_string(conf_buffer *b, const char *s);

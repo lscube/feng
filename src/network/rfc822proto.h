@@ -26,8 +26,10 @@
 struct RTSP_Client;
 
 #include <glib.h>
-#include <netembryo/url.h>
+#include <string.h>
 #include "rfc822proto-constants.h"
+
+struct URI;
 
 /**
  * @brif State constant for the RFC822 protocol parser
@@ -75,6 +77,9 @@ typedef struct RFC822_Request {
     /** Object of the request */
     char *object;
 
+    /** Parsed object of the request */
+    struct URI *uri;
+
     /** Protocol of the request (string) */
     char *protocol_str;
 
@@ -88,7 +93,6 @@ typedef struct RFC822_Request {
     GHashTable *headers;
 } RFC822_Request;
 
-gboolean rfc822_request_get_url(struct RTSP_Client *client, RFC822_Request *req, Url *url);
 gboolean rfc822_request_check_url(struct RTSP_Client *client, RFC822_Request *req);
 
 typedef struct RFC822_Response {

@@ -20,6 +20,10 @@
  *
  * */
 
+#include <config.h>
+
+#include <string.h>
+
 #include "fnc_log.h"
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
@@ -52,11 +56,10 @@ typedef struct {
  *  +---------------+
  */
 
-static void frag_fu_a(uint8_t *nal, int fragsize, int mtu,
-                      Track *tr)
+static void frag_fu_a(uint8_t *nal, int fragsize, Track *tr)
 {
     int start = 1, fraglen;
-    uint8_t fu_header, buf[mtu];
+    uint8_t fu_header, buf[DEFAULT_MTU];
     fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
 //                p = data + index;
     buf[0] = (nal[0] & 0xe0) | 28; // fu_indicator
@@ -69,7 +72,7 @@ static void frag_fu_a(uint8_t *nal, int fragsize, int mtu,
             start = 0;
             buf[1] = fu_header | (1<<7);
         }
-        fraglen = MIN(mtu-2, fragsize);
+        fraglen = MIN(DEFAULT_MTU-2, fragsize);
         if (fraglen == fragsize) {
             buf[1] = fu_header | (1<<6);
         }
@@ -206,11 +209,10 @@ static int h264_init(Track *track)
 {
     h264_priv *priv;
     char *sprop = NULL;
-    int err = ERR_ALLOC;
 
     if (track->properties.extradata_len == 0) {
-        fnc_log(FNC_LOG_WARN, "[h264] No Extradata, unsupported\n");
-        return ERR_UNSUPPORTED_PT;
+        fnc_log(FNC_LOG_WARN, "[h264] No Extradata, unsupported");
+        return -1;
     }
 
     priv = g_slice_new(h264_priv);
@@ -235,11 +237,11 @@ static int h264_init(Track *track)
 
     track->private_data = priv;
 
-    return ERR_NOERROR;
+    return 0;
 
  err_alloc:
     g_slice_free(h264_priv, priv);
-    return err;
+    return -1;
 }
 
 // h264 has provisions for
@@ -281,7 +283,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
             // single NAL, to be fragmented, FU-A;
-                frag_fu_a(data + index, nalsize, DEFAULT_MTU, tr);
+                frag_fu_a(data + index, nalsize, tr);
             }
             index += nalsize;
         }
@@ -292,7 +294,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
                 break;
             }
         }
-        if (p >= data + len) return ERR_PARSE;
+        if (p >= data + len) return -1;
 
         while (1) {
         //seek to the next startcode [0 0 1]
@@ -316,7 +318,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
             } else {
                 //FU-A
                 fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
-                frag_fu_a(p, q - p, DEFAULT_MTU, tr);
+                frag_fu_a(p, q - p, tr);
             }
 
             p = q;
@@ -335,12 +337,12 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
         } else {
             //FU-A
             fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
-            frag_fu_a(p, len - (p - data), DEFAULT_MTU, tr);
+            frag_fu_a(p, len - (p - data), tr);
         }
     }
 
     fnc_log(FNC_LOG_VERBOSE, "[h264] Frame completed");
-    return ERR_NOERROR;
+    return 0;
 }
 
 static void h264_uninit(Track *tr)

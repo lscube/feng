@@ -20,9 +20,17 @@
  *
  * */
 
+/**
+ * Maximum number of threads to use for resource close/cleanup
+ *
+ * @todo This should be configurable at runtime via the config file.
+ */
+#define MAX_RESOURCE_CLOSE_THREADS 8
+
 #include <glib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <errno.h>
 
 #include "demuxer.h"
 #include "feng.h"
@@ -31,7 +39,17 @@
 // global demuxer modules:
 #ifdef LIVE_STREAMING
 extern Demuxer fnc_demuxer_sd;
+#endif
+extern Demuxer fnc_demuxer_ds;
+extern Demuxer fnc_demuxer_avf;
 
+/**
+ * @defgroup resources Media backend resources handling
+ *
+ * @{
+ */
+
+#ifdef LIVE_STREAMING
 /**
  * @brief Global lock
  *
@@ -49,18 +67,27 @@ static GMutex *shared_resources_lock;
 static GHashTable *shared_resources;
 #endif
 
-extern Demuxer fnc_demuxer_ds;
-extern Demuxer fnc_demuxer_avf;
-
-
-
 
 /**
- * @defgroup resources
- * @brief Resource handling functions
+ * @brief Stop the fill thread of a resource
  *
- * @{
+ * @param resource The resource to stop the fill thread of
+ *
+ * This function takes care of stopping the fill thread for a
+ * resource, either for pausing it or before freeing it. It's
+ * accomplished by first setting @ref Resource::fill_pool attribute to
+ * NULL, then it stops the pool, dropping further threads and waiting
+ * for the last one to complete.
  */
+static void r_stop_fill(Resource *resource)
+{
+    GThreadPool *pool;
+
+    if ( (pool = resource->fill_pool) ) {
+        g_atomic_pointer_set(&resource->fill_pool, NULL);
+        g_thread_pool_free(pool, true, true);
+    }
+}
 
 /**
  * @brief Free a resource object
@@ -86,15 +113,7 @@ static void r_free_cb(gpointer resource_p,
     if (!resource)
         return;
 
-#ifdef LIVE_STREAMING
-    if (resource->demuxer->info->source == LIVE_SOURCE) {
-        g_mutex_lock(shared_resources_lock);
-        if (!--resource->count)
-            g_hash_table_remove(shared_resources, resource->info->mrl);
-        g_mutex_unlock(shared_resources_lock);
-        if (resource->count) return;
-    }
-#endif
+    r_stop_fill(resource);
 
     if (resource->lock)
         g_mutex_free(resource->lock);
@@ -171,27 +190,24 @@ static const Demuxer *r_find_demuxer(const char *filename)
     return NULL;
 }
 
-
-static Resource*
-r_open_direct(struct feng *srv, gchar *mrl, const Demuxer *dmx)
+/**
+ * @brief Open a new resource descriptor function
+ *
+ * @param mrl The filesystem path of the resource.
+ * @param dmx The demuxer to use to open the resource.
+ */
+static Resource *r_open_direct(gchar *mrl, const Demuxer *dmx)
 {
     Resource *r;
     struct stat filestat;
 
-    if (stat(mrl, &filestat) == -1 ) {
-        switch(errno) {
-        case ENOENT:
-            fnc_log(FNC_LOG_ERR,"%s: file not found\n", mrl);
-            break;
-        default:
-            fnc_log(FNC_LOG_ERR,"Cannot stat file %s\n", mrl);
-            break;
-        }
+    if (stat(mrl, &filestat) < 0 ) {
+        fnc_perror("stat");
         return NULL;
     }
 
     if ( S_ISFIFO(filestat.st_mode) ) {
-        fnc_log(FNC_LOG_ERR, "%s: not a file\n");
+        fnc_log(FNC_LOG_ERR, "%s: not a file");
         return NULL;
     }
 
@@ -205,7 +221,6 @@ r_open_direct(struct feng *srv, gchar *mrl, const Demuxer *dmx)
     r->info->seekable = (dmx->seek != NULL);
 
     r->demuxer = dmx;
-    r->srv = srv;
 
     if (r->demuxer->init(r)) {
         r_free_cb(r, NULL);
@@ -218,9 +233,32 @@ r_open_direct(struct feng *srv, gchar *mrl, const Demuxer *dmx)
 
     return r;
 }
+
 #ifdef LIVE_STREAMING
-static Resource*
-r_open_hashed(struct feng *srv, gchar *mrl, const Demuxer *dmx)
+/**
+ * @brief Open a shared resource from the shared resources hash
+ *
+ * @param mrl The filesystem path of the resource.
+ * @param dmx The demuxer to use to open the resource.
+ *
+ * This function uses a shared hash table to access a resource
+ * descriptor shared among multiple clients, and is used for live
+ * streaming.
+ *
+ * During live streaming all the clients will receive the same
+ * content, fed by the same thread. Using a shared resource reduces
+ * the amount of memory (and threads) required for the clients.
+ *
+ * If no resource for the given mrl is found, a new one will be opened
+ * (via @ref r_open_direct).
+ *
+ * If the resoruce doesn't have a running "fill thread", it'll be
+ * created and started.
+ *
+ * @note This function will lock the @ref shared_resources_lock mutex.
+ * @note This function may lock the @ref Resource::lock mutex.
+ */
+static Resource *r_open_hashed(gchar *mrl, const Demuxer *dmx)
 {
     Resource *r;
     static gsize created_mutex = false;
@@ -237,14 +275,29 @@ r_open_hashed(struct feng *srv, gchar *mrl, const Demuxer *dmx)
      * otherwise we stored it for later usage!
      */
     if (!r) {
-        if ( (r = r_open_direct(srv, mrl, dmx)) != NULL )
+        if ( (r = r_open_direct(mrl, dmx)) != NULL )
             g_hash_table_insert(shared_resources, mrl, r);
         else
             g_free(mrl);
     } else
         g_free(mrl);
 
-    if (r) r->count++;
+    if ( r ) {
+        g_mutex_lock(r->lock);
+
+        r->count++;
+
+        /* the resource doesn't have a fill pool, we'll create one by
+           resuming, then we alsopush a single thread to read */
+        if ( r->fill_pool == NULL ) {
+            r_resume(r);
+            g_thread_pool_push(r->fill_pool,
+                               GINT_TO_POINTER(-1), NULL);
+        }
+
+        g_mutex_unlock(r->lock);
+    }
+
     g_mutex_unlock(shared_resources_lock);
 
     return r;
@@ -254,19 +307,18 @@ r_open_hashed(struct feng *srv, gchar *mrl, const Demuxer *dmx)
 /**
  * @brief Open a new resource and create a new instance
  *
- * @param srv The server object for the vhost requesting the resource
  * @param inner_path The path, relative to the avroot, for the
  *                   resource
  *
  * @return A new Resource object
  * @retval NULL Error while opening resource
  */
-Resource *r_open(struct feng *srv, const char *inner_path)
+Resource *r_open(const char *inner_path)
 {
     Resource *r = NULL;
     const Demuxer *dmx;
     gchar *mrl = g_strjoin ("/",
-                            srv->config_storage[0].document_root->ptr,
+                            feng_srv.config_storage[0].document_root,
                             inner_path,
                             NULL);
 
@@ -289,11 +341,11 @@ Resource *r_open(struct feng *srv, const char *inner_path)
     switch(dmx->info->source) {
 #ifdef LIVE_STREAMING
         case LIVE_SOURCE:
-            r = r_open_hashed(srv, mrl, dmx);
+            r = r_open_hashed(mrl, dmx);
             break;
 #endif
         case STORED_SOURCE:
-            r = r_open_direct(srv, mrl, dmx);
+            r = r_open_direct(mrl, dmx);
             break;
         default:
             g_assert_not_reached();
@@ -340,7 +392,7 @@ Track *r_find_track(Resource *resource, const char *track_name) {
                                       r_find_track_cmp_name);
 
     if ( !track ) {
-        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s\n",
+        fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s",
                 track_name, resource->info->mrl);
         return NULL;
     }
@@ -360,7 +412,8 @@ static void r_track_producer_reset_queue(gpointer element,
                                          ATTR_UNUSED gpointer user_data) {
     Track *t = (Track*)element;
 
-    bq_producer_reset_queue(t->producer);
+    if ( t->producer )
+        bq_producer_reset_queue(t->producer);
 }
 
 /**
@@ -388,19 +441,49 @@ int r_seek(Resource *resource, double time) {
 }
 
 /**
- * @brief Read data from a resource (unlocked)
+ * @brief Callback for the queue filling for the resource
  *
- * @param resouce The resource to read from
+ * @param consumer_p A generic pointer to the consumer for non-live queues
+ * @param resource_p A generic pointer to the resource to fill the queue of
  *
- * @return The same return value as read_packet
+ * This function takes care of reading the data from the demuxer (via
+ * @ref Demuxer::read_packet); it will executed repeatedly until
+ * either the resources ends (@ref Resource::eor becomes non-zero),
+ * the thread is requested to stop (@ref Resource::fill_pool becomes
+ * NULL), or, for non-live resources only, when the @ref consumer_p
+ * queue is long enough for the client to receive data.
+ *
+ * @note For live streams, the @ref consume_p pointer should have the
+ *       value -1 to indicate that it shouldn't be used.
+ *
+ * @note This function will lock the @ref Resource::lock mutex
+ *       (repeatedly).
  */
-int r_read(Resource *resource)
+static void r_read_cb(gpointer consumer_p, gpointer resource_p)
 {
-    int ret = RESOURCE_EOF;
+    Resource *resource = (Resource*)resource_p;
+    BufferQueue_Consumer *consumer = (BufferQueue_Consumer*)consumer_p;
+    const gboolean live = resource->demuxer->info->source == LIVE_SOURCE;
+    const gulong buffered_frames = feng_srv.srvconf.buffered_frames;
 
-    g_mutex_lock(resource->lock);
-    if (!resource->eor)
-        switch( (ret = resource->demuxer->read_packet(resource)) ) {
+    g_assert( (live && consumer == GINT_TO_POINTER(-1)) || (!live && consumer != GINT_TO_POINTER(-1)) );
+
+    do {
+        /* setting this to NULL with an atomic, non-locking operation
+           is our "stop" signal. */
+        if ( g_atomic_pointer_get(&resource->fill_pool) == NULL )
+            return;
+
+        /* Only check for enough buffered frames if we're not doing
+           live; otherwise keep on filling; we also assume that
+           consumer will be NULL in that case. */
+        if ( !live && bq_consumer_unseen(consumer) >= buffered_frames )
+            return;
+
+        //        fprintf(stderr, "r_read_cb(%p)\n", resource);
+
+        g_mutex_lock(resource->lock);
+        switch( resource->demuxer->read_packet(resource) ) {
         case RESOURCE_OK:
         case RESOURCE_AGAIN:
             break;
@@ -414,12 +497,11 @@ int r_read(Resource *resource)
             fnc_log(FNC_LOG_FATAL,
                     "r_read_unlocked: %s read_packet() error.",
                     resource->info->mrl);
+            resource->eor = true;
             break;
         }
-
-    g_mutex_unlock(resource->lock);
-
-    return ret;
+        g_mutex_unlock(resource->lock);
+    } while ( g_atomic_int_get(&resource->eor) == 0 );
 }
 
 /**
@@ -430,24 +512,137 @@ int r_read(Resource *resource)
  * This function only pushes a close request on the resource closing
  * pool; the actual closing will happen asynchronously.
  *
+ * For live streaming, closing the resource will not actually free
+ * resources; instead the fill thread will be stopped and the producer
+ * queue reset (with its buffers freed) waiting for the next client.
+ *
  * @see r_free_cb
  */
 void r_close(Resource *resource)
 {
-    /* This will never be freed but we don't care since we're going to
-     * need it till the very end of the process.
-     */
-    static GThreadPool *closing_pool;
+#ifdef LIVE_STREAMING
+    if (resource->demuxer->info->source == LIVE_SOURCE) {
+        g_mutex_lock(shared_resources_lock);
 
-    static gsize created_pool = false;
-    if ( g_once_init_enter(&created_pool) ) {
-        closing_pool = g_thread_pool_new(r_free_cb, NULL,
-                                         -1, false, NULL);
+        if ( g_atomic_int_dec_and_test(&resource->count) ) {
+            r_stop_fill(resource);
+            g_list_foreach(resource->tracks, r_track_producer_reset_queue, NULL);
+        }
 
-        g_once_init_leave(&created_pool, true);
+        g_mutex_unlock(shared_resources_lock);
+
+        // if ( g_atomic_int_get(&resource->count) > 0 )
+            return;
     }
+#endif
 
-    g_thread_pool_push(closing_pool, resource, NULL);
+    {
+        /* This will never be freed but we don't care since we're going to
+         * need it till the very end of the process.
+         */
+        static GThreadPool *closing_pool;
+
+        static gsize created_pool = false;
+        if ( g_once_init_enter(&created_pool) ) {
+            closing_pool = g_thread_pool_new(r_free_cb, NULL,
+                                             MAX_RESOURCE_CLOSE_THREADS,
+                                             false, NULL);
+
+            g_once_init_leave(&created_pool, true);
+        }
+
+        g_thread_pool_push(closing_pool, resource, NULL);
+    }
+}
+
+/**
+ * @brief Pause a running non-live resource
+ *
+ * @param resource The resource to pause
+ *
+ * This function stops the "fill thread" for the resource, when it is
+ * not shared among clients (i.e.: it's not a live resource).
+ *
+ * It removes @ref Resource::fill_pool and sets it to NULL to stop the
+ * thread running.
+ *
+ * @note This function will lock the @ref Resource::lock mutex.
+ */
+void r_pause(Resource *resource)
+{
+    GThreadPool *pool;
+
+    /* Don't even try to pause a live source! */
+    if ( resource->demuxer->info->source == LIVE_SOURCE )
+        return;
+
+    /* we paused already */
+    if ( resource->fill_pool == NULL )
+        return;
+
+    g_mutex_lock(resource->lock);
+
+    pool = resource->fill_pool;
+    g_atomic_pointer_set(&resource->fill_pool, NULL);
+    g_thread_pool_free(pool, true, true);
+
+    g_mutex_unlock(resource->lock);
+}
+
+/**
+ * @brief Resume a paused (or non-standard) non-live resource
+ *
+ * @param resource The resource to resume
+ *
+ * This functions creates a new instance for @ref Resource::fill_pool,
+ * and sets it into the resource so that it can be used to fill the
+ * queue.
+ */
+void r_resume(Resource *resource)
+{
+    GThreadPool *pool;
+
+    /* running already */
+    if ( g_atomic_pointer_get(&resource->fill_pool) != NULL )
+        return;
+
+    pool = g_thread_pool_new(r_read_cb, resource,
+                             1, true, NULL);
+
+    g_atomic_pointer_set(&resource->fill_pool, pool);
+}
+
+/**
+ * @brief Fill the queue for a non-live resource
+ *
+ * @param resource The resource to fill the queue for
+ * @param consumer The consumer of the queue to fill
+ *
+ * This function will create a new thread (or push a new one to be
+ * executed afterwars) so that the consumer gets enough frames to send
+ * the client.
+ *
+ * @note This function is no-op for live streams as they take care of
+ *       the filling themselves.
+ *
+ * @note This function will lock the @ref Resource::lock mutex.
+ */
+void r_fill(Resource *resource, BufferQueue_Consumer *consumer)
+{
+    /* Don't even try to fill a live source! */
+    if ( resource->demuxer->info->source == LIVE_SOURCE )
+        return;
+
+    g_mutex_lock(resource->lock);
+
+    if ( resource->fill_pool == NULL )
+        goto end;
+
+    g_thread_pool_push(resource->fill_pool,
+                       consumer, NULL);
+
+ end:
+    g_mutex_unlock(resource->lock);
 }
 
 /**

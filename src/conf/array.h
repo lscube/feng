@@ -32,9 +32,6 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#ifdef HAVE_PCRE_H
-# include <pcre.h>
-#endif
 #include "buffer.h"
 
 #define DATA_IS_STRING(x) (x->type == TYPE_STRING)
@@ -71,12 +68,6 @@ typedef struct {
 typedef struct {
     DATA_UNSET;
 
-    int count;
-} data_count;
-
-typedef struct {
-    DATA_UNSET;
-
     conf_buffer *value;
 } data_string;
 
@@ -96,9 +87,7 @@ data_array *data_array_init(void);
 typedef enum {
     CONFIG_COND_UNSET,
     CONFIG_COND_EQ,      /** == */
-    CONFIG_COND_MATCH,   /** =~ */
     CONFIG_COND_NE,      /** != */
-    CONFIG_COND_NOMATCH  /** !~ */
 } config_cond_t;
 
 /**
@@ -107,13 +96,6 @@ typedef enum {
 typedef enum {
     COMP_UNSET,
     COMP_SERVER_SOCKET,
-    COMP_HTTP_URL,
-    COMP_HTTP_HOST,
-    COMP_HTTP_REFERER,
-    COMP_HTTP_USERAGENT,
-    COMP_HTTP_COOKIE,
-    COMP_HTTP_REMOTEIP,
-    COMP_HTTP_QUERYSTRING,
 
     COMP_LAST_ELEMENT
 } comp_key_t;
@@ -144,10 +126,6 @@ struct _data_config {
     data_config *next;
 
     conf_buffer *string;
-#ifdef HAVE_PCRE_H
-    pcre   *regex;
-    pcre_extra *regex_study;
-#endif
 };
 
 data_config *data_config_init(void);

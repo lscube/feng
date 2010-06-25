@@ -26,7 +26,6 @@
 #include <math.h>
 
 #include "feng.h"
-#include "feng_utils.h"
 #include "fnc_log.h"
 
 #include "media/demuxer_module.h"
@@ -125,7 +124,6 @@ static int ds_init(Resource * r)
     Resource *resource;
     GList *edl_head = NULL;
     edl_item_elem *item;
-    feng *srv = r->srv;
 
     fnc_log(FNC_LOG_DEBUG, "[ds] EDL init function");
     fd = fopen(r->info->mrl, "r");
@@ -143,7 +141,7 @@ static int ds_init(Resource * r)
         /* Init Resources required by the EDitList
          * (modifying default behaviour to manipulate timescale)
          * */
-        if (!(resource = r_open(srv, mrl))) {
+        if (!(resource = r_open(mrl))) {
             goto err_alloc;
         }
 	item = g_new0(edl_item_elem, 1);
@@ -179,14 +177,14 @@ static int ds_init(Resource * r)
     fnc_log(FNC_LOG_DEBUG, "[ds] duration=%f", r_offset);
     ((edl_priv_data *) r->private_data)->head = g_list_reverse(edl_head);
 
-    return RESOURCE_OK;
+    return 0;
 err_alloc:
     if (edl_head) {
         g_list_foreach(edl_head, destroy_list_data, NULL);
         g_list_free(edl_head);
         r->private_data = NULL;
     }
-    return ERR_ALLOC;
+    return -1;
 }
 
 /*

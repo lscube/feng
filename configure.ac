@@ -50,9 +50,13 @@ AM_CONDITIONAL([AVOID_TABLES], [test "x$enable_tables" = "xno"])
 
 dnl Checks used by feng itself
 AC_CHECK_HEADERS_ONCE([syslog.h])
+AC_CHECK_FUNCS_ONCE([inet_ntop])
+
+AC_FUNC_STRERROR_R
 
 AC_SEARCH_LIBS([clock_gettime], [rt],
-  [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define this if you have clock_gettime])])
+  [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define this if you have clock_gettime])],
+  [AC_MSG_WARN([POSIX realtime features not available])])
 
 CC_ATTRIBUTE_DESTRUCTOR
 
@@ -67,7 +71,6 @@ AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 
 dnl Checks used by conf/*
 dnl AC_CHECK_HEADERS([pcre.h fam.h])
-dnl AC_CHECK_FUNCS([lstat])
 
 CHECK_RAGEL_AM([src/network/ragel_range.c], [6.6])
 
@@ -83,15 +86,6 @@ dnl the -uninstalled variant of feng.conf to use sctp if enabled.
 AS_IF([test "x$have_sctp" = "xyes"],
   [AC_SUBST([ENABLE_SCTP], [""])],
   [AC_SUBST([ENABLE_SCTP], ["#"])])
-
-AS_IF([test "x$have_sctp" = "xyes"],
-  [LIBNETEMBRYO_REQUIRES="libnetembryo-sctp >= 0.1.2"],
-  [LIBNETEMBRYO_REQUIRES="libnetembryo >= 0.1.2"])
-
-PKG_CHECK_MODULES(LIBNETEMBRYO,[$LIBNETEMBRYO_REQUIRES])
-AC_SUBST(LIBNETEMBRYO_REQUIRES)
-CPPFLAGS="$CPPFLAGS $LIBNETEMBRYO_CFLAGS"
-LIBS="$LIBS $LIBNETEMBRYO_LIBS"
 
 dnl Check for prerequisites to enable live streaming with flux.
 AS_IF([test "x$live_streaming" = "xyes"],
@@ -195,7 +189,7 @@ AC_DEFINE_UNQUOTED(FENG_AVROOT_DIR_DEFAULT_STR,
                     "$feng_avroot_dir",
                     [Define default directory string for Feng A/V resources])
 
-AC_DEFINE_UNQUOTED(FENG_DEFAULT_PORT, $feng_rtsp_port, [Define default listening port])
+AC_DEFINE_UNQUOTED(FENG_DEFAULT_PORT, "$feng_rtsp_port", [Define default listening port])
 
 AC_DEFINE_UNQUOTED(FENG_CONF_FILE_DEFAULT,
                     $feng_conf_file,

@@ -23,7 +23,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "feng_utils.h"
 #include "fnc_log.h"
 
 #include "media/demuxer_module.h"
@@ -242,12 +241,12 @@ static int avf_init(Resource * r)
         fnc_log(FNC_LOG_DEBUG, "[avf] duration %f", r->info->duration);
         r->private_data = priv;
         r->timescaler = avf_timescaler;
-        return RESOURCE_OK;
+        return 0;
     }
 
 err_alloc:
     av_freep(&priv);
-    return ERR_PARSE;
+    return -1;
 }
 
 static int avf_read_packet(Resource * r)

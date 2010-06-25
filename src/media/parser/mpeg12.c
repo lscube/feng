@@ -20,11 +20,12 @@
  *
  * */
 
+#include <config.h>
+
 #include <string.h>
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"
-#include "feng_utils.h"
 
 static const MediaParserInfo info = {
     "MPV",
@@ -66,7 +67,7 @@ static uint8_t *find_start_code(uint8_t *p, uint8_t *end, uint32_t *state)
 
 static int mpv_init(ATTR_UNUSED Track *track)
 {
-    return ERR_NOERROR;
+    return 0;
 }
 
 /* Source code taken from ff_rtp_send_mpegvideo (ffmpeg libavformat) and
@@ -77,7 +78,7 @@ static int mpv_parse(Track *tr, uint8_t *data, size_t len)
     int h, b = 1, e = 0 , ffc = 0, ffv = 0, fbv = 0, bfc = 0;
     int frame_type = 0, temporal_reference = 0, begin_of_sequence = 0;
     long rem = len, payload;
-    uint8_t dst[DEFAULT_MTU];
+    uint8_t *dst = g_slice_alloc0(DEFAULT_MTU);
     uint8_t *q = dst;
     uint8_t *r, *r1 = data;
     uint8_t *end = data + len;
@@ -178,7 +179,9 @@ static int mpv_parse(Track *tr, uint8_t *data, size_t len)
             begin_of_sequence = 0;
         } else rem = 0;
     }
-    return ERR_NOERROR;
+
+    g_slice_free1(DEFAULT_MTU, dst);
+    return 0;
 }
 
 #define mpv_uninit NULL

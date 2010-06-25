@@ -20,11 +20,14 @@
  *
  * */
 
+#include <config.h>
+
+#include <string.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"
 #include "fnc_log.h"
-#include "feng_utils.h"
 
 static const MediaParserInfo info = {
     "amr",
@@ -43,7 +46,7 @@ static int amr_init(Track *track)
     {
         config = extradata2config(&track->properties);
         if (!config)
-            return ERR_PARSE;
+            return -1;
 
         sdp_value = g_strdup_printf("octet-align=1; config=%s", config);
         g_free(config);
@@ -59,7 +62,7 @@ static int amr_init(Track *track)
                                          track->properties.clock_rate,
                                          track->properties.audio_channels));
 
-    return ERR_NOERROR;
+    return 0;
 }
 
 /* AMR Payload Header (RFC3267)
@@ -110,9 +113,9 @@ typedef struct
 
 static int amr_parse(Track *tr, uint8_t *data, size_t len)
 {
-    uint8_t packet[DEFAULT_MTU] = {0};
+    uint8_t *packet = g_slice_alloc0(DEFAULT_MTU);
     amr_header *header = (amr_header *) packet;
-    const uint32_t packet_size[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0};
+    static const uint32_t packet_size[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0};
     /*1(toc size) +  unit size of frame body{12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0}*/
 
     header->cmr = 0xf;
@@ -154,7 +157,8 @@ static int amr_parse(Track *tr, uint8_t *data, size_t len)
                              packet, off);
     }
 
-    return ERR_NOERROR;
+    g_slice_free1(DEFAULT_MTU, packet);
+    return 0;
 }
 
 

@@ -41,7 +41,7 @@ extern MediaParser fnc_mediaparser_h263;
 extern MediaParser fnc_mediaparser_amr;
 
 // static array containing all the available media parsers:
-static MediaParser *media_parsers[] = {
+static const MediaParser *const media_parsers[] = {
     &fnc_mediaparser_mpv,
     &fnc_mediaparser_mpa,
     &fnc_mediaparser_h264,
@@ -56,20 +56,20 @@ static MediaParser *media_parsers[] = {
     NULL
 };
 
-MediaParser *mparser_find(const char *encoding_name)
+const MediaParser *mparser_find(const char *encoding_name)
 {
     int i;
 
     for(i=0; media_parsers[i]; i++) {
         if ( !g_ascii_strcasecmp(encoding_name,
                                  media_parsers[i]->info->encoding_name) ) {
-            fnc_log(FNC_LOG_DEBUG, "[MT] Found Media Parser for %s\n",
+            fnc_log(FNC_LOG_DEBUG, "[MT] Found Media Parser for %s",
                     encoding_name);
             return media_parsers[i];
         }
     }
 
-    fnc_log(FNC_LOG_DEBUG, "[MT] Media Parser for %s not found\n",
+    fnc_log(FNC_LOG_DEBUG, "[MT] Media Parser for %s not found",
             encoding_name);
     return NULL;
 }

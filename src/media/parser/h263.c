@@ -20,6 +20,10 @@
  *
  * */
 
+#include <config.h>
+
+#include <string.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"
@@ -66,14 +70,14 @@ static int h263_init(Track *track)
                         g_strdup_printf ("H263-1998/%d",
                                          track->properties.clock_rate));
 
-    return ERR_NOERROR;
+    return 0;
 }
 
 static int h263_parse(Track *tr, uint8_t *data, size_t len)
 {
     size_t cur = 0, payload, header_len;
     int found_gob = 0;
-    uint8_t dst[DEFAULT_MTU];
+    uint8_t *dst = g_slice_alloc0(DEFAULT_MTU);
     h263_header *header = (h263_header *) dst;
 
     if (len >= 3 && *data == '\0' && *(data + 1) == '\0'
@@ -103,7 +107,8 @@ static int h263_parse(Track *tr, uint8_t *data, size_t len)
         cur += payload;
     }
 
-    return ERR_NOERROR;
+    g_slice_free1(DEFAULT_MTU, dst);
+    return 0;
 }
 
 #define h263_uninit NULL

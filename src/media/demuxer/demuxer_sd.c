@@ -20,15 +20,19 @@
  *
  * */
 
-#include "config.h"
+#include <config.h>
 
 #include <stdbool.h>
 #include <time.h>
 #include <mqueue.h>
 #include <fcntl.h> /* for mq_open's O_* options */
+#include <errno.h>
+#include <unistd.h> /* for usleep() */
+#include <string.h>
+#include <math.h>
+#include <ctype.h> /* for tolower */
 
 #include "feng.h"
-#include "feng_utils.h"
 #include "fnc_log.h"
 
 #include "media/demuxer_module.h"
@@ -52,7 +56,7 @@ static void demuxer_sd_fake_mediaparser_uninit(Track *tr) {
  * This object is used to free the slice in Track::private_data as a
  * mqd_t object.
  */
-static MediaParser demuxer_sd_fake_mediaparser = {
+static const MediaParser demuxer_sd_fake_mediaparser = {
     .info = NULL,
     .init = NULL,
     .parse = NULL,
@@ -243,12 +247,12 @@ static int sd_init(Resource * r)
     if ((separator = strrchr(r->info->mrl, G_DIR_SEPARATOR))) {
         size_t len = separator - r->info->mrl + 1;
         if (len >= sizeof(content_base)) {
-            fnc_log(FNC_LOG_ERR, "[sd] content base string too long\n");
+            fnc_log(FNC_LOG_ERR, "[sd] content base string too long");
             fclose(fd);
-            return ERR_GENERIC;
+            return -1;
         } else {
             strncpy(content_base, r->info->mrl, len);
-            fnc_log(FNC_LOG_DEBUG, "[sd] content base: %s\n", content_base);
+            fnc_log(FNC_LOG_DEBUG, "[sd] content base: %s", content_base);
         }
     }
 
@@ -281,7 +285,7 @@ static int sd_init(Resource * r)
 
                 separator = strstr(track_file, "://");
                 if (separator == NULL) {
-                    fnc_log(FNC_LOG_ERR, "[sd] missing valid protocol in %s entry\n", SD_FILENAME);
+                    fnc_log(FNC_LOG_ERR, "[sd] missing valid protocol in %s entry", SD_FILENAME);
                     trackinfo.mrl = NULL;
                     break;
                 }
@@ -368,7 +372,7 @@ static int sd_init(Resource * r)
             continue;
 
         if (!(track = add_track(r, &trackinfo, &props_hints))) {
-            err = ERR_ALLOC;
+            err = -1;
             break;
         }
 
@@ -471,7 +475,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
 
         package_version = *((unsigned int*)msg_buffer);
         if (package_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
-            fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d\n",
+            fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d",
                                    tr->info->mrl, REQUIRED_FLUX_PROTOCOL_VERSION, package_version);
             return RESOURCE_DAMAGED;
         }

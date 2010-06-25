@@ -26,6 +26,34 @@
 #include "network/rtsp.h"
 #include "media/demuxer.h"
 #include "json.h"
+#include <time.h>
+
+static size_t stats_total_bytes_sent;
+static size_t stats_total_bytes_read;
+static time_t stats_start_time;
+
+/**
+ * @brief Initialize the statistics
+ *
+ * Set @ref stats_start_time to the current time.
+ */
+
+void stats_init()
+{
+    stats_start_time = time(NULL);
+}
+
+void stats_account_read(RTSP_Client *rtsp, size_t bytes)
+{
+    rtsp->bytes_read += bytes;
+    stats_total_bytes_sent += bytes;
+}
+
+void stats_account_sent(RTSP_Client *rtsp, size_t bytes)
+{
+    rtsp->bytes_sent += bytes;
+    stats_total_bytes_read += bytes;
+}
 
 /**
  * @brief Produce per client statistics
@@ -46,9 +74,9 @@ static void client_stats(gpointer c, gpointer s)
     json_object_object_add(stats, "user_agent",
         json_object_new_string("missing"/*client->stats->user_agent*/));
     json_object_object_add(stats, "remote_host",
-        json_object_new_string(client->sock->remote_host));
+        json_object_new_string(client->remote_host));
     json_object_object_add(stats, "remote_host",
-        json_object_new_string(client->sock->remote_host));
+        json_object_new_string(client->remote_host));
     json_object_object_add(stats, "bytes_sent",
         json_object_new_int(client->bytes_sent));
     json_object_object_add(stats, "bytes_read",
@@ -66,21 +94,20 @@ void feng_send_statistics(RTSP_Client *rtsp)
         rfc822_response_new(rtsp->pending_request, RTSP_Ok);
     json_object *stats = json_object_new_object();
     json_object *clients_stats = json_object_new_array();
-    feng *srv = rtsp->srv;
 
     json_object_object_add(stats, "clients",
-        json_object_new_int(g_slist_length(srv->clients)-1));
+        json_object_new_int(g_slist_length(feng_srv.clients)-1));
 
     json_object_object_add(stats, "bytes_sent",
-        json_object_new_int(srv->total_sent));
+        json_object_new_int(stats_total_bytes_sent));
 
     json_object_object_add(stats, "bytes_read",
-        json_object_new_int(srv->total_read));
+        json_object_new_int(stats_total_bytes_read));
 
     json_object_object_add(stats, "uptime",
-        json_object_new_int(0));
+        json_object_new_int(time(NULL) - stats_start_time));
 
-    g_slist_foreach(srv->clients, client_stats, clients_stats);
+    g_slist_foreach(feng_srv.clients, client_stats, clients_stats);
 
     json_object_object_add(stats, "per_client", clients_stats);
 

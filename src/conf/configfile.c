@@ -30,6 +30,8 @@
  * Main configuration parsing functions
  */
 
+#include <config.h>
+
 #include <glib.h>
 
 #include <sys/stat.h>
@@ -46,205 +48,95 @@
 #include "feng.h"
 //#include "log.h"
 
-#define log_error_write(...) {}
-
 #include "stream.h"
 //#include "plugin.h"
 #include "network/rtp.h" // defaults
 #include "configparser.h"
 #include "configfile.h"
-#include "proc_open.h"
+
+typedef enum { T_CONFIG_UNSET,
+                T_CONFIG_STRING,
+                T_CONFIG_SHORT,
+                T_CONFIG_BOOLEAN
+} config_values_type_t;
+
+typedef struct {
+        const char *key;
+        void *destination;
+
+        config_values_type_t type;
+} config_values_t;
+
+static int config_insert_values_internal(array *ca, const config_values_t cv[]);
 
 /**
  * Insert the main configuration keys and their defaults
  */
 
-static int config_insert(server *srv) {
+static int config_insert() {
     size_t i;
-    int ret = 0;
 
-    config_values_t cv[] = {
-        { "server.bind", srv->srvconf.bindhost, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 0 */
-        { "server.errorlog", srv->srvconf.errorlog_file, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 1 */
-//        { "server.errorfile-prefix",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 2 */
-//        { "server.chroot",               NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 3 */
-        { "server.username", srv->srvconf.username, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 2 */
-        { "server.groupname", srv->srvconf.groupname, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 3 */
-        { "server.port", &srv->srvconf.port, T_CONFIG_SHORT,  T_CONFIG_SCOPE_SERVER },      /* 4 */
-//        { "server.tag",                  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 6 */
-        { "server.use-ipv6",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 5 */
-
-        { "server.document-root", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 6 */
-        { "server.name",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 7 */
-
-        { "server.max-fds", &srv->srvconf.max_fds, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 8 */
-#if 0 // HAVE_LSTAT
-        { "server.follow-symlink",       NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },
-#else
-        { "server.follow-symlink",
-          (void *)"Unsupported for now",
-          T_CONFIG_UNSUPPORTED, T_CONFIG_SCOPE_UNSET }, /* 9 */
-#endif
-//        { "server.kbytes-per-second",    NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 25 */
-//        { "connection.kbytes-per-second", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },  /* 26 */
-        { "ssl.pemfile",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 10 */
-
-        { "ssl.engine",                  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 11 */
-
-        { "ssl.ca-file",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 12 */
-
-        { "server.errorlog-use-syslog", &srv->srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 13 */
-        { "server.max-connections", &srv->srvconf.max_conns, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 14 */
-//        { "server.upload-dirs",          NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },   /* 44 */
-        { "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 15 */
-        { "sctp.protocol",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },
-        { "sctp.max_streams",            NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
-
-        { "accesslog.filename",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 18 */
-        { "accesslog.use-syslog",           NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },
-        { "accesslog.format",               NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
-
-        { "server.first_udp_port",  &srv->srvconf.first_udp_port, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
-        { "server.buffered_frames", &srv->srvconf.buffered_frames, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
-        { "server.loglevel", &srv->srvconf.loglevel, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },
-        { "server.twin", srv->srvconf.twin, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
-        { NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
+    static const config_values_t global_cv[] = {
+        { "server.bind", &feng_srv.srvconf.bindhost, T_CONFIG_STRING },      /* 0 */
+        { "server.errorlog", &feng_srv.srvconf.errorlog_file, T_CONFIG_STRING },      /* 1 */
+        { "server.username", &feng_srv.srvconf.username, T_CONFIG_STRING },      /* 2 */
+        { "server.groupname", &feng_srv.srvconf.groupname, T_CONFIG_STRING },      /* 3 */
+        { "server.port", &feng_srv.srvconf.bindport, T_CONFIG_STRING },      /* 4 */
+        { "server.errorlog-use-syslog", &feng_srv.srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN },     /* 7 */
+        { "server.max-connections", &feng_srv.srvconf.max_conns, T_CONFIG_SHORT },       /* 8 */
+        { "server.buffered_frames", &feng_srv.srvconf.buffered_frames, T_CONFIG_SHORT },
+        { "server.loglevel", &feng_srv.srvconf.loglevel, T_CONFIG_SHORT },
+        { "server.twin", &feng_srv.srvconf.twin, T_CONFIG_STRING },
+        { NULL,                          NULL, T_CONFIG_UNSET }
     };
 
-    srv->config_storage = calloc(srv->config_context->used, sizeof(specific_config));
+    feng_srv.config_storage = calloc(feng_srv.config_context->used, sizeof(specific_config));
 
-    assert(srv->config_storage);
+    assert(feng_srv.config_storage);
 
-    for (i = 0; i < srv->config_context->used; i++) {
-        specific_config *s = &srv->config_storage[i];
+    if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[0])->value, global_cv))
+        return -1;
 
-        s->document_root = buffer_init();
-        s->server_name   = buffer_init();
-        s->ssl_pemfile   = buffer_init();
-        s->ssl_ca_file   = buffer_init();
-        s->ssl_cipher_list = buffer_init();
+    if (feng_srv.srvconf.max_conns == 0)
+        feng_srv.srvconf.max_conns = 100;
+
+    if (feng_srv.srvconf.buffered_frames == 0)
+        feng_srv.srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
+
+    for (i = 0; i < feng_srv.config_context->used; i++) {
+        specific_config *s = &feng_srv.config_storage[i];
+
+        const config_values_t vhost_cv[] = {
+            { "server.use-ipv6", &s->use_ipv6, T_CONFIG_BOOLEAN }, /* 5 */
+
+            { "server.document-root", &s->document_root, T_CONFIG_STRING },  /* 6 */
+
+#if ENABLE_SCTP
+            { "sctp.protocol", &s->is_sctp, T_CONFIG_BOOLEAN },
+            { "sctp.max_streams", &s->sctp_max_streams, T_CONFIG_SHORT },
+#endif
+
+            { "accesslog.filename", &s->access_log_file, T_CONFIG_STRING }, /* 11 */
+            { "accesslog.use-syslog", &s->access_log_syslog, T_CONFIG_BOOLEAN },
+            { NULL,                          NULL, T_CONFIG_UNSET }
+        };
+
         s->use_ipv6      = 0;
-        s->is_ssl        = 0;
+#if ENABLE_SCTP
         s->is_sctp       = 0;
         s->sctp_max_streams = 16;
-        s->access_log_file = buffer_init();
+#endif
         s->access_log_syslog = 1;
 
-#ifdef HAVE_LSTAT
-        s->follow_symlink = 1;
-#endif
-/*        s->kbytes_per_second = 0;
-        s->global_kbytes_per_second = 0;
-        s->global_bytes_per_second_cnt = 0;
-        s->global_bytes_per_second_cnt_ptr = &s->global_bytes_per_second_cnt;
-*/
-        cv[5].destination = &s->use_ipv6;
+        if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[i])->value, vhost_cv))
+            return -1;
 
-        cv[6].destination = s->document_root;
-        cv[7].destination = s->server_name;
-        /* 9 -> max-fds */
-#ifdef HAVE_LSTAT
-        cv[9].destination = &s->follow_symlink;
-#endif
-//        cv[25].destination = &(s->global_kbytes_per_second);
-//        cv[26].destination = &(s->kbytes_per_second);
-        cv[10].destination = s->ssl_pemfile;
-
-        cv[11].destination = &s->is_ssl;
-        cv[12].destination = s->ssl_ca_file;
-        cv[15].destination = s->ssl_cipher_list;
-
-        cv[16].destination = &s->is_sctp;
-        cv[17].destination = &s->sctp_max_streams;
-
-        cv[18].destination = s->access_log_file;
-        cv[19].destination = &s->access_log_syslog;
-
-        if (0 != (ret = config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv))) {
-            break;
-        }
-
-    }
-
-    return ret;
-
-}
-
-#if 0
-#define PATCH(x) con->conf.x = s->x
-int config_setup_connection(server *srv, connection *con) {
-    specific_config *s = &srv->config_storage[0];
-
-    PATCH(document_root);
-#ifdef HAVE_LSTAT
-    PATCH(follow_symlink);
-#endif
-    PATCH(kbytes_per_second);
-    PATCH(global_kbytes_per_second);
-    PATCH(global_bytes_per_second_cnt);
-
-    con->conf.global_bytes_per_second_cnt_ptr = &s->global_bytes_per_second_cnt;
-    buffer_copy_string_buffer(con->server_name, s->server_name);
-
-    PATCH(is_ssl);
-
-    PATCH(ssl_pemfile);
-    PATCH(ssl_ca_file);
-    PATCH(ssl_cipher_list);
-
-    return 0;
-}
-
-int config_patch_connection(server *srv, connection *con, comp_key_t comp) {
-    size_t i, j;
-
-    con->conditional_is_valid[comp] = 1;
-
-    /* skip the first, the global context */
-    for (i = 1; i < srv->config_context->used; i++) {
-        data_config *dc = (data_config *)srv->config_context->data[i];
-        specific_config *s = &srv->config_storage[i];
-
-        /* not our stage */
-        if (comp != dc->comp) continue;
-
-        /* condition didn't match */
-        if (!config_check_cond(srv, con, dc)) continue;
-
-        /* merge config */
-        for (j = 0; j < dc->value->used; j++) {
-            data_unset *du = dc->value->data[j];
-
-            if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.document-root"))) {
-                PATCH(document_root);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.pemfile"))) {
-                PATCH(ssl_pemfile);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.ca-file"))) {
-                PATCH(ssl_ca_file);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.cipher-list"))) {
-                PATCH(ssl_cipher_list);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.engine"))) {
-                PATCH(is_ssl);
-#ifdef HAVE_LSTAT
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.follow-symlink"))) {
-                PATCH(follow_symlink);
-#endif
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.name"))) {
-                buffer_copy_string_buffer(con->server_name, s->server_name);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("connection.kbytes-per-second"))) {
-                PATCH(kbytes_per_second);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.kbytes-per-second"))) {
-                PATCH(global_kbytes_per_second);
-                PATCH(global_bytes_per_second_cnt);
-                con->conf.global_bytes_per_second_cnt_ptr = &s->global_bytes_per_second_cnt;
-            }
-        }
+        if ( i == 0 && s->document_root == NULL )
+            return -1;
     }
 
     return 0;
 }
-#undef PATCH
-#endif
 
 typedef struct {
     int foo;
@@ -262,44 +154,6 @@ typedef struct {
     int in_brace;
     int in_cond;
 } tokenizer_t;
-
-#if 0
-static int tokenizer_open(server *srv, tokenizer_t *t, conf_buffer *basedir, const char *fn) {
-    if (buffer_is_empty(basedir) &&
-            (fn[0] == '/' || fn[0] == '\\') &&
-            (fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\'))) {
-        t->file = buffer_init_string(fn);
-    } else {
-        t->file = buffer_init_buffer(basedir);
-        buffer_append_string(t->file, fn);
-    }
-
-    if (0 != stream_open(&(t->s), t->file->ptr)) {
-        log_error_write(srv, __FILE__, __LINE__, "sbss",
-                "opening configfile ", t->file, "failed:", strerror(errno));
-        buffer_free(t->file);
-        return -1;
-    }
-
-    t->input = t->s.start;
-    t->offset = 0;
-    t->size = t->s.size;
-    t->line = 1;
-    t->line_pos = 1;
-
-    t->in_key = 1;
-    t->in_brace = 0;
-    t->in_cond = 0;
-    return 0;
-}
-
-static int tokenizer_close(server *srv, tokenizer_t *t) {
-    UNUSED(srv);
-
-    buffer_free(t->file);
-    return stream_close(&(t->s));
-}
-#endif
 
 /**
  * skip any newline (unix, windows, mac style)
@@ -335,7 +189,7 @@ static int config_skip_comment(tokenizer_t *t) {
  * Break the configuration in tokens
  */
 
-static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buffer *token) {
+static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
     int tid = 0;
     size_t i;
 
@@ -353,11 +207,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
 
                     tid = TK_ARRAY_ASSIGN;
                 } else {
-                    log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                            "source:", t->source,
-                            "line:", t->line, "pos:", t->line_pos,
-                            "use => for assignments in arrays");
-
                     return -1;
                 }
             } else if (t->in_cond) {
@@ -367,17 +216,7 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
                     buffer_copy_string(token, "==");
 
                     tid = TK_EQ;
-                } else if (t->input[t->offset + 1] == '~') {
-                    t->offset += 2;
-
-                    buffer_copy_string(token, "=~");
-
-                    tid = TK_MATCH;
                 } else {
-                    log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                            "source:", t->source,
-                            "line:", t->line, "pos:", t->line_pos,
-                            "only =~ and == are allowed in the condition");
                     return -1;
                 }
                 t->in_key = 1;
@@ -390,10 +229,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
                 t->offset++;
                 t->line_pos++;
             } else {
-                log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                        "source:", t->source,
-                        "line:", t->line, "pos:", t->line_pos,
-                        "unexpected equal-sign: =");
                 return -1;
             }
 
@@ -406,26 +241,12 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
                     buffer_copy_string(token, "!=");
 
                     tid = TK_NE;
-                } else if (t->input[t->offset + 1] == '~') {
-                    t->offset += 2;
-
-                    buffer_copy_string(token, "!~");
-
-                    tid = TK_NOMATCH;
                 } else {
-                    log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                            "source:", t->source,
-                            "line:", t->line, "pos:", t->line_pos,
-                            "only !~ and != are allowed in the condition");
                     return -1;
                 }
                 t->in_key = 1;
                 t->in_cond = 0;
             } else {
-                log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                        "source:", t->source,
-                        "line:", t->line, "pos:", t->line_pos,
-                        "unexpected exclamation-marks: !");
                 return -1;
             }
 
@@ -511,11 +332,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
 
             if (t->input[t->offset + i] == '\0') {
                 /* ERROR */
-
-                log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                        "source:", t->source,
-                        "line:", t->line, "pos:", t->line_pos,
-                        "missing closing quote");
 
                 return -1;
             }
@@ -616,10 +432,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
                     t->line_pos += i;
                 } else {
                     /* ERROR */
-                    log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                            "source:", t->source,
-                            "line:", t->line, "pos:", t->line_pos,
-                            "invalid character in condition");
                     return -1;
                 }
             } else if (isdigit((unsigned char)c)) {
@@ -649,8 +461,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
 
                     if (strcmp(token->ptr, "include") == 0) {
                         tid = TK_INCLUDE;
-                    } else if (strcmp(token->ptr, "include_shell") == 0) {
-                        tid = TK_INCLUDE_SHELL;
                     } else if (strcmp(token->ptr, "global") == 0) {
                         tid = TK_GLOBAL;
                     } else if (strcmp(token->ptr, "else") == 0) {
@@ -663,10 +473,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
                     t->line_pos += i;
                 } else {
                     /* ERROR */
-                    log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-                            "source:", t->source,
-                            "line:", t->line, "pos:", t->line_pos,
-                            "invalid character in variable name");
                     return -1;
                 }
             }
@@ -676,12 +482,6 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
 
     if (tid) {
         *token_id = tid;
-#if 0
-        log_error_write(srv, __FILE__, __LINE__, "sbsdsdbdd",
-                "source:", t->source,
-                "line:", t->line, "pos:", t->line_pos,
-                token, token->used - 1, tid);
-#endif
 
         return 1;
     } else if (t->offset < t->size) {
@@ -697,16 +497,16 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, conf_buf
  * @return 0 on success, -1 on failure
  */
 
-static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
+static int config_parse(config_t *context, tokenizer_t *t) {
     void *pParser;
     int token_id;
     conf_buffer *token, *lasttoken;
     int ret;
 
-    pParser = configparserAlloc( malloc );
+    pParser = configparserAlloc();
     lasttoken = buffer_init();
     token = buffer_init();
-    while((1 == (ret = config_tokenizer(srv, t, &token_id, token))) && context->ok) {
+    while((1 == (ret = config_tokenizer(t, &token_id, token))) && context->ok) {
         buffer_copy_string_buffer(lasttoken, token);
         configparser(pParser, token_id, token, context);
 
@@ -721,18 +521,11 @@ static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
             configparser(pParser, 0, NULL, context);
         }
     }
-    configparserFree(pParser, free);
+    configparserFree(pParser);
 
-    if (ret == -1) {
-        log_error_write(srv, __FILE__, __LINE__, "sb",
-                "configfile parser failed at:", lasttoken);
-    } else if (context->ok == 0) {
-        log_error_write(srv, __FILE__, __LINE__, "sbsdsdsb",
-                "source:", t->source,
-                "line:", t->line, "pos:", t->line_pos,
-                "parser failed somehow near here:", lasttoken);
+    if (context->ok == 0)
         ret = -1;
-    }
+
     buffer_free(lasttoken);
 
     return ret == -1 ? -1 : 0;
@@ -765,7 +558,7 @@ static int tokenizer_init(tokenizer_t *t, const conf_buffer *source, const char 
  * @return -1 on failure
  */
 
-int config_parse_file(server *srv, config_t *context, const char *fn) {
+int config_parse_file(config_t *context, const char *fn) {
     tokenizer_t t;
     stream s;
     int ret;
@@ -785,13 +578,11 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
             /* the file was empty, nothing to parse */
             ret = 0;
         } else {
-            log_error_write(srv, __FILE__, __LINE__, "sbss",
-                    "opening configfile ", filename, "failed:", strerror(errno));
             ret = -1;
         }
     } else {
         tokenizer_init(&t, filename, s.start, s.size);
-        ret = config_parse(srv, context, &t);
+        ret = config_parse(context, &t);
     }
 
     stream_close(&s);
@@ -800,82 +591,24 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
 }
 
 /**
- * read configuration from output of a command
- * @return -1 on failure, 0 on success
- */
-
-int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
-    proc_handler_t proc;
-    tokenizer_t t;
-    int ret;
-    conf_buffer *source;
-    conf_buffer *out;
-    char oldpwd[PATH_MAX];
-
-    if (NULL == getcwd(oldpwd, sizeof(oldpwd))) {
-        log_error_write(srv, __FILE__, __LINE__, "s",
-                "cannot get cwd", strerror(errno));
-        return -1;
-    }
-
-    source = buffer_init_string(cmd);
-    out = buffer_init();
-
-    if (!buffer_is_empty(context->basedir)) {
-        chdir(context->basedir->ptr);
-    }
-
-    if (0 != proc_open_buffer(&proc, cmd, NULL, out, NULL)) {
-        log_error_write(srv, __FILE__, __LINE__, "sbss",
-                "opening", source, "failed:", strerror(errno));
-        ret = -1;
-    } else {
-        tokenizer_init(&t, source, out->ptr, out->used);
-        ret = config_parse(srv, context, &t);
-    }
-
-    buffer_free(source);
-    buffer_free(out);
-    chdir(oldpwd);
-    return ret;
-}
-
-/**
- * init context
- */
-
-static void context_init(server *srv, config_t *context) {
-    context->srv = srv;
-    context->ok = 1;
-    context->configs_stack = array_init();
-    context->configs_stack->is_weakref = 1;
-    context->basedir = buffer_init();
-}
-
-/**
- * free context
- */
-
-static void context_free(config_t *context) {
-    array_free(context->configs_stack);
-    buffer_free(context->basedir);
-}
-
-/**
  * load configuration for global
  * sets the module list.
  */
 
-int config_read(server *srv, const char *fn) {
-    config_t context;
+int config_read(const char *fn) {
     data_config *dc;
-    data_integer *dpid;
-    data_string *dcwd;
     int ret;
     char *pos;
 
-    context_init(srv, &context);
-    context.all_configs = srv->config_context;
+    config_t context = {
+        .ok = 1,
+        .configs_stack = array_init(),
+        .basedir = buffer_init()
+    };
+
+    context.configs_stack->is_weakref = 1;
+
+    context.all_configs = feng_srv.config_context;
 
     pos = strrchr(fn,
 #ifdef __WIN32
@@ -897,128 +630,85 @@ int config_read(server *srv, const char *fn) {
     array_insert_unique(context.all_configs, (data_unset *)dc);
     context.current = dc;
 
-    /* default context */
-    srv->config = dc->value;
-    dpid = data_integer_init();
-    dpid->value = getpid();
-    buffer_copy_string(dpid->key, "var.PID");
-    array_insert_unique(srv->config, (data_unset *)dpid);
-
-    dcwd = data_string_init();
-    buffer_prepare_copy(dcwd->value, 1024);
-    if (NULL != getcwd(dcwd->value->ptr, dcwd->value->size - 1)) {
-        dcwd->value->used = strlen(dcwd->value->ptr) + 1;
-        buffer_copy_string(dcwd->key, "var.CWD");
-        array_insert_unique(srv->config, (data_unset *)dcwd);
-    }
-
-    ret = config_parse_file(srv, &context, fn);
+    ret = config_parse_file(&context, fn);
 
     /* remains nothing if parser is ok */
     assert(!(0 == ret && context.ok && 0 != context.configs_stack->used));
-    context_free(&context);
+    array_free(context.configs_stack);
+    buffer_free(context.basedir);
 
     if (0 != ret) {
         return ret;
     }
 
-    if (NULL != (dc = (data_config *)array_get_element(srv->config_context, "global"))) {
-        srv->config = dc->value;
-    } else {
-        return -1;
-    }
-
-    if (0 != config_insert(srv)) {
-        return -1;
-    }
-
-    return 0;
+    return config_insert();
 }
 
-/**
- * set defaults
- */
-
-int config_set_defaults(server *srv) {
-    specific_config *s = &srv->config_storage[0];
-#if 0
+static int config_insert_values_internal(array *ca, const config_values_t cv[]) {
     size_t i;
-    struct stat st1, st2;
-#endif
+    data_unset *du;
 
-    if (buffer_is_empty(s->document_root)) {
-        log_error_write(srv, __FILE__, __LINE__, "s",
-                "a default document-root has to be set");
+    for (i = 0; cv[i].key; i++) {
 
-        return -1;
-    }
+        if (NULL == (du = array_get_element(ca, cv[i].key))) {
+            /* no found */
 
-#if 0
-    buffer_copy_string_buffer(srv->tmp_buf, s->document_root);
+            continue;
+        }
 
-    buffer_to_lower(srv->tmp_buf);
+        switch (cv[i].type) {
+        case T_CONFIG_STRING:
+            switch(du->type) {
+            case TYPE_INTEGER: {
+                data_integer *di = (data_integer *)du;
+                char **dst = (char**)cv[i].destination;
 
-    if (0 == stat(srv->tmp_buf->ptr, &st1)) {
-        int is_lower = 0;
-
-        is_lower = buffer_is_equal(srv->tmp_buf, s->document_root);
-
-        /* lower-case existed, check upper-case */
-        buffer_copy_string_buffer(srv->tmp_buf, s->document_root);
-
-        buffer_to_upper(srv->tmp_buf);
-
-        /* we have to handle the special case that upper and lower-casing results in the same filename
-         * as in server.document-root = "/" or "/12345/" */
-
-        if (is_lower && buffer_is_equal(srv->tmp_buf, s->document_root)) {
-            /* lower-casing and upper-casing didn't result in
-             * an other filename, no need to stat(),
-             * just assume it is case-sensitive. */
-
-            s->force_lowercase_filenames = 0;
-        } else if (0 == stat(srv->tmp_buf->ptr, &st2)) {
-
-            /* upper case exists too, doesn't the FS handle this ? */
-
-            /* upper and lower have the same inode -> case-insensitve FS */
-
-            if (st1.st_ino == st2.st_ino) {
-                /* upper and lower have the same inode -> case-insensitve FS */
-
-                s->force_lowercase_filenames = 1;
+                *dst = g_strdup_printf("%d", di->value);
+                break;
             }
+            case TYPE_STRING: {
+                data_string *ds = (data_string *)du;
+                char **dst = (char**)cv[i].destination;
+
+                /* if the string is empty */
+                if ( ds->value->used < 2 )
+                    *dst = NULL;
+                else
+                    *dst = g_strdup(ds->value->ptr);
+                break;
+            }
+            default:
+                return -1;
+            }
+            break;
+        case T_CONFIG_SHORT:
+            switch(du->type) {
+            case TYPE_INTEGER: {
+                data_integer *di = (data_integer *)du;
+
+                *((unsigned short *)(cv[i].destination)) = di->value;
+                break;
+            }
+            default:
+                return -1;
+            }
+            break;
+        case T_CONFIG_BOOLEAN:
+            if (du->type == TYPE_STRING) {
+                data_string *ds = (data_string *)du;
+
+                if (buffer_is_equal_string(ds->value, CONST_STR_LEN("enable"))) {
+                    *((unsigned short *)(cv[i].destination)) = 1;
+                } else if (buffer_is_equal_string(ds->value, CONST_STR_LEN("disable"))) {
+                    *((unsigned short *)(cv[i].destination)) = 0;
+                } else {
+                    return -1;
+                }
+            } else {
+                return -1;
+            }
+            break;
         }
-    }
-#endif
-
-    if (srv->srvconf.port == 0) {
-        srv->srvconf.port = s->is_ssl ? 322 : FENG_DEFAULT_PORT;
-    }
-
-    if (srv->srvconf.max_conns == 0)
-        srv->srvconf.max_conns = 100;
-
-    if (srv->srvconf.first_udp_port == 0)
-        srv->srvconf.first_udp_port = RTP_DEFAULT_PORT;
-    if (srv->srvconf.buffered_frames == 0)
-        srv->srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
-
-    if (s->is_ssl) {
-        if (buffer_is_empty(s->ssl_pemfile)) {
-            /* PEM file is require */
-
-            log_error_write(srv, __FILE__, __LINE__, "s",
-                    "ssl.pemfile has to be set");
-            return -1;
-        }
-
-#ifndef USE_OPENSSL
-        log_error_write(srv, __FILE__, __LINE__, "s",
-                "ssl support is missing, recompile with --with-openssl");
-
-        return -1;
-#endif
     }
 
     return 0;

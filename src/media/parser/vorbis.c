@@ -20,11 +20,14 @@
  *
  * */
 
+#include <config.h>
+
+#include <string.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"
 #include "fnc_log.h"
-#include "feng_utils.h"
 
 #include <libavutil/md5.h>
 
@@ -57,7 +60,7 @@ static int encode_header(uint8_t *data, int len, vorbis_priv *priv)
     uint8_t *header_start[3];
     int header_len[3];
     int hash[4];
-    uint8_t comment[26] =
+    static const uint8_t comment[26] =
         /*quite minimal comment */
     { 3, 'v', 'o', 'r', 'b', 'i', 's',
         10, 0, 0, 0,
@@ -150,7 +153,7 @@ static int vorbis_init(Track *track)
     char *buf;
 
     if(track->properties.extradata_len == 0)
-        return ERR_ALLOC;
+        return -1;
 
     priv = g_slice_new(vorbis_priv);
 
@@ -171,13 +174,13 @@ static int vorbis_init(Track *track)
 
     track->private_data = priv;
 
-    return ERR_NOERROR;
+    return 0;
 
  err_alloc:
     g_free(priv->conf);
     g_free(priv->packet);
     g_slice_free(vorbis_priv, priv);
-    return ERR_ALLOC;
+    return -1;
 }
 
 #define XIPH_HEADER_SIZE 6
@@ -187,9 +190,9 @@ static int vorbis_parse(Track *tr, uint8_t *data, size_t len)
     vorbis_priv *priv = tr->private_data;
     int frag, off = 0;
     uint32_t payload = DEFAULT_MTU - XIPH_HEADER_SIZE;
-    uint8_t *packet = g_malloc0(DEFAULT_MTU);
+    uint8_t *packet = g_slice_alloc0(DEFAULT_MTU);
 
-    if(!packet) return ERR_ALLOC;
+    if(!packet) return -1;
 
     // the ident is always the same
     packet[0] = (priv->ident>>16)& 0xff;
@@ -233,8 +236,8 @@ static int vorbis_parse(Track *tr, uint8_t *data, size_t len)
                          1,
                          packet, len + XIPH_HEADER_SIZE);
 
-    g_free(packet);
-    return ERR_NOERROR;
+    g_slice_free1(DEFAULT_MTU, packet);
+    return 0;
 }
 
 
