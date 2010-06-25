@@ -66,7 +66,6 @@ typedef struct feng {
 #ifdef HAVE_JSON
     size_t total_sent;
     size_t total_read;
-    time_t start_time;
 #endif
 } feng;
 

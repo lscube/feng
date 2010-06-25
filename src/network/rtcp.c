@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <netinet/in.h>
-#include <poll.h>
 
 #ifdef ENABLE_SCTP
 # include <netinet/sctp.h>
@@ -140,16 +139,23 @@ typedef struct {
  */
 static gboolean rtcp_send_direct(RTP_session * session, GByteArray *buffer)
 {
+    fd_set wset;
+    struct timeval t;
     Sock *rtcp_sock = session->transport.rtcp_sock;
-    struct pollfd p = {Sock_fd(rtcp_sock) , POLLOUT, 0};
 
-    if (poll(&p, 1, 1) < 0) {
-        fnc_perror("poll");
+    /*---------------SEE eventloop/rtsp_server.c-------*/
+    FD_ZERO(&wset);
+    t.tv_sec = 0;
+    t.tv_usec = 1000;
+
+    FD_SET(Sock_fd(rtcp_sock), &wset);
+    if (select(Sock_fd(rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
+        fnc_log(FNC_LOG_ERR, "select error: %s\n", strerror(errno));
         g_byte_array_free(buffer, true);
         return false;
     }
 
-    if (p.revents & POLLOUT) {
+    if (FD_ISSET(Sock_fd(rtcp_sock), &wset)) {
         if (Sock_write(rtcp_sock, buffer->data,
             buffer->len, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
             fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");

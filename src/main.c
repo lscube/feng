@@ -44,7 +44,6 @@
 #include "network/rtp.h"
 #include "network/rtsp.h"
 #include <glib.h>
-#include <time.h>
 
 #ifdef CLEANUP_DESTRUCTOR
 /**
@@ -250,8 +249,6 @@ static feng *feng_alloc(void)
     CLEAN(config_touched);
 #undef CLEAN
     srv->clients = NULL;
-
-    srv->start_time = time(NULL);
 
     return srv;
 }
