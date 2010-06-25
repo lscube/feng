@@ -56,11 +56,10 @@ typedef struct {
  *  +---------------+
  */
 
-static void frag_fu_a(uint8_t *nal, int fragsize, int mtu,
-                      Track *tr)
+static void frag_fu_a(uint8_t *nal, int fragsize, Track *tr)
 {
     int start = 1, fraglen;
-    uint8_t fu_header, buf[mtu];
+    uint8_t fu_header, buf[DEFAULT_MTU];
     fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
 //                p = data + index;
     buf[0] = (nal[0] & 0xe0) | 28; // fu_indicator
@@ -73,7 +72,7 @@ static void frag_fu_a(uint8_t *nal, int fragsize, int mtu,
             start = 0;
             buf[1] = fu_header | (1<<7);
         }
-        fraglen = MIN(mtu-2, fragsize);
+        fraglen = MIN(DEFAULT_MTU-2, fragsize);
         if (fraglen == fragsize) {
             buf[1] = fu_header | (1<<6);
         }
@@ -284,7 +283,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
             // single NAL, to be fragmented, FU-A;
-                frag_fu_a(data + index, nalsize, DEFAULT_MTU, tr);
+                frag_fu_a(data + index, nalsize, tr);
             }
             index += nalsize;
         }
@@ -319,7 +318,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
             } else {
                 //FU-A
                 fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
-                frag_fu_a(p, q - p, DEFAULT_MTU, tr);
+                frag_fu_a(p, q - p, tr);
             }
 
             p = q;
@@ -338,7 +337,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
         } else {
             //FU-A
             fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
-            frag_fu_a(p, len - (p - data), DEFAULT_MTU, tr);
+            frag_fu_a(p, len - (p - data), tr);
         }
     }
 
