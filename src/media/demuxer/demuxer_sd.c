@@ -430,6 +430,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     uint8_t *packet;
     ssize_t msg_len;
     int marker;
+    uint16_t seq_no;
 
     if ( *mpd == (mqd_t)-1 &&
          (*mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN,
@@ -502,6 +503,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     tr->properties.frame_duration = package_duration/((double)tr->properties.clock_rate);
     timestamp = package_timestamp/((double)tr->properties.clock_rate);
     marker = (packet[1]>>7);
+    seq_no = ((unsigned)packet[2] << 8) | ((unsigned)packet[3]);
 
 #if 0
     fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
@@ -512,10 +514,12 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
             ev_time() - (package_start_time + delivery));
 #endif
 
-    mparser_buffer_write(tr,
+    mparser_live_buffer_write(tr,
                          timestamp,
+			 package_timestamp,
                          package_start_time + delivery,
                          tr->properties.frame_duration,
+                         seq_no,
                          marker,
                          packet+12, msg_len-12);
 

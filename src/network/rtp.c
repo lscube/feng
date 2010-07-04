@@ -379,9 +379,19 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     const size_t packet_size = sizeof(RTP_packet) + buffer->data_size;
     RTP_packet *packet = g_malloc0(packet_size);
     Track *tr = session->track;
-    const uint32_t timestamp = RTP_calc_rtptime(session,
-                                                tr->properties.clock_rate,
-                                                buffer);
+    uint32_t timestamp;
+    
+    if (session->track->properties.media_source == LIVE_SOURCE) {
+    	timestamp = buffer->timestamp;
+	session->seq_no = buffer->seq_no;
+    }
+    else {
+        timestamp = RTP_calc_rtptime(session,
+                                     tr->properties.clock_rate,
+                                     buffer);
+	++session->seq_no;
+    }
+
     gboolean sent = false;
 
     packet->version = 2;
@@ -390,7 +400,7 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     packet->csrc_len = 0;
     packet->marker = buffer->marker & 0x1;
     packet->payload = tr->properties.payload_type & 0x7f;
-    packet->seq_no = htons(++session->seq_no);
+    packet->seq_no = htons(session->seq_no);
     packet->timestamp = htonl(timestamp);
     packet->ssrc = htonl(session->ssrc);
 

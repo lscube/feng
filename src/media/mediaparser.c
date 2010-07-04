@@ -97,10 +97,36 @@ void mparser_buffer_write(Track *tr,
     MParserBuffer *buffer = g_malloc(sizeof(MParserBuffer) + data_size);
 
     buffer->timestamp = presentation;
+    buffer->rtp_timestamp = 0;
     buffer->delivery = delivery;
     buffer->duration = duration;
     buffer->marker = marker;
     buffer->data_size = data_size;
+    buffer->seq_no = 0;
+
+    memcpy(buffer->data, data, data_size);
+
+    bq_producer_put(track_get_producer(tr), buffer);
+}
+
+void mparser_live_buffer_write(Track *tr,
+                               double presentation,
+                               uint32_t rtp_timestamp,
+                               double delivery,
+                               double duration,
+                               uint16_t seq_no,
+                               gboolean marker,
+                               uint8_t *data, size_t data_size)
+{
+    MParserBuffer *buffer = g_malloc(sizeof(MParserBuffer) + data_size);
+
+    buffer->timestamp = presentation;
+    buffer->rtp_timestamp = rtp_timestamp;
+    buffer->delivery = delivery;
+    buffer->duration = duration;
+    buffer->marker = marker;
+    buffer->data_size = data_size;
+    buffer->seq_no = seq_no;
 
     memcpy(buffer->data, data, data_size);
 
