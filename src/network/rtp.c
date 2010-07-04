@@ -230,20 +230,13 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     GByteArray *outbuf = g_byte_array_sized_new(packet_size);
     RTP_packet *packet = (RTP_packet*)(outbuf->data);
     Track *tr = session->track;
-    uint32_t timestamp;
-    
-    if (session->track->properties.media_source == LIVE_SOURCE) {
-    	timestamp = buffer->timestamp;
-	session->seq_no = buffer->seq_no;
-    }
-    else {
-        timestamp = RTP_calc_rtptime(session,
-                                     tr->properties.clock_rate,
-                                     buffer);
-	++session->seq_no;
-    }
+    uint32_t timestamp = rtptime(session, tr->properties.clock_rate, buffer);
 
-    gboolean sent = false;
+    if (session->track->properties.media_source == LIVE_SOURCE)
+	session->seq_no = buffer->seq_no;
+    else
+        ++session->seq_no;
+
     outbuf->len = packet_size;
 
     packet->version = 2;
