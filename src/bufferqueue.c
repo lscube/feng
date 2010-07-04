@@ -22,6 +22,8 @@
 
 #define G_LOG_DOMAIN "bufferqueue"
 
+#include <config.h>
+
 #include "bufferqueue.h"
 
 #include <stdbool.h>
@@ -706,7 +708,8 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     return ( consumer->current_element_pointer != NULL );
 }
 
-static void bq_decrement_seen_on_free(gpointer elem, gpointer unused)
+static void bq_decrement_seen_on_free(gpointer elem,
+                                      ATTR_UNUSED gpointer unused)
 {
     BufferQueue_Element *const element = elem;
     element->seen--;

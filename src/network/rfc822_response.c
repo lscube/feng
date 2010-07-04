@@ -97,7 +97,7 @@ RFC822_Response *rfc822_response_new(const RFC822_Request *req, int status_code)
 {
     static const char server_header[] = PACKAGE "/" VERSION;
     RFC822_Response *response = g_slice_new0(RFC822_Response);
-    char *hdr;
+    const char *hdr;
 
     response->proto = req->proto;
     response->request = req;

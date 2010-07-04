@@ -35,7 +35,6 @@
 
 #include "feng.h"
 #include "fnc_log.h"
-#include "feng_utils.h"
 #include "network/rtsp.h"
 
 #include <stdio.h>
@@ -45,45 +44,49 @@
 # include <syslog.h>
 #endif
 
-gboolean accesslog_init(feng *srv)
+void accesslog_init()
 {
     size_t i;
 
-    for(i = 0; i < srv->config_context->used; i++) {
-        if (srv->config_storage[i].access_log_syslog) {
+    for(i = 0; i < feng_srv.config_context->used; i++) {
+        char *access_log_filename = feng_srv.config_storage[i].access_log_file;
+
+        if (feng_srv.config_storage[i].access_log_syslog) {
 #if HAVE_SYSLOG_H
             /* ignore the next checks */
             continue;
 #else
             fnc_log(FNC_LOG_ERR, "Unable to use syslog for access log");
-            return false;
+            exit(1);
 #endif
         }
 
-        if (srv->config_storage[i].access_log_file->used < 2) continue;
+        if ( access_log_filename == NULL )
+            continue;
 
-        if (NULL == (srv->config_storage[i].access_log_fp = fopen(srv->config_storage[i].access_log_file->ptr, "a"))) {
-            fnc_log(FNC_LOG_ERR, "Unable to open access log %s", srv->config_storage[i].access_log_file->ptr);
-            return false;
+        if (NULL == (feng_srv.config_storage[i].access_log_fp = fopen(access_log_filename, "a"))) {
+            fnc_perror("fopen");
+            exit(1);
         }
     }
-    return true;
 }
 
-void accesslog_uninit(feng *srv)
+#ifdef CLEANUP_DESTRUCTOR
+static void CLEANUP_DESTRUCTOR accesslog_uninit()
 {
     size_t i;
 
-    if ( srv->config_storage )
-        for(i = 0; i < srv->config_context->used; i++)
-            if ( !srv->config_storage[i].access_log_syslog &&
-                 srv->config_storage[i].access_log_fp != NULL )
-                fclose(srv->config_storage[i].access_log_fp);
+    if ( feng_srv.config_storage )
+        for(i = 0; i < feng_srv.config_context->used; i++)
+            if ( !feng_srv.config_storage[i].access_log_syslog &&
+                 feng_srv.config_storage[i].access_log_fp != NULL )
+                fclose(feng_srv.config_storage[i].access_log_fp);
 }
+#endif
 
 #define PRINT_STRING \
     "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",\
-        client->sock->remote_host,\
+        client->remote_host,\
         rfc822_headers_lookup(response->headers, RFC822_Header_Date),\
         response->request->method_str, response->request->object,\
         response->request->protocol_str,\
@@ -100,12 +103,12 @@ void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response)
 
     /** @TODO Support VHOST */
 #if HAVE_SYSLOG_H
-    if (client->srv->config_storage[0].access_log_syslog)
+    if (feng_srv.config_storage[0].access_log_syslog)
         syslog(LOG_INFO, "Access " PRINT_STRING);
     else
 #endif
     {
-        FILE *fp = client->srv->config_storage[0].access_log_fp;
+        FILE *fp = feng_srv.config_storage[0].access_log_fp;
         fprintf(fp, PRINT_STRING);
         fflush(fp);
     }

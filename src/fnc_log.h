@@ -33,7 +33,7 @@ enum {  FNC_LOG_OUT,
 
 	//level
 enum {
-    FNC_LOG_FATAL = -2, //!< Fatal error
+    FNC_LOG_FATAL,      //!< Fatal error
     FNC_LOG_ERR,        //!< Recoverable error
     FNC_LOG_WARN,       //!< Warning
     FNC_LOG_INFO,       //!< Informative message
@@ -42,15 +42,17 @@ enum {
     FNC_LOG_VERBOSE,    //!< Overly verbose debug
 };
 
-typedef void (*fnc_log_t)(int, const char*, va_list);
-
 void fnc_log(int level, const char *fmt, ...);
 
 #ifdef TRACE
-#define fnc_log(level, fmt, string...) \
+#define fnc_log(level, fmt, string...)                              \
     fnc_log(level, "[%s - %d]" fmt, __FILE__, __LINE__ , ## string)
 #endif
 
-fnc_log_t fnc_log_init(char *file, int out, int level, char *name);
+void _fnc_perror(int errno_val, const char *function, const char *comment);
+
+#define fnc_perror(comment) _fnc_perror(errno, __func__, comment)
+
+void fnc_log_init(char *file, int out, int level, char *name);
 
 #endif // FN_FNC_LOG_H

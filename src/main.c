@@ -32,6 +32,7 @@
 #include <grp.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #include "conf/buffer.h"
 #include "conf/array.h"
@@ -40,10 +41,31 @@
 #include "feng.h"
 #include "bufferqueue.h"
 #include "fnc_log.h"
-#include "incoming.h"
 #include "network/rtp.h"
 #include "network/rtsp.h"
 #include <glib.h>
+#include <time.h>
+
+/**
+ * @brief Global structure for feng configuration
+ *
+ * This strucutre holds (part of) the global settings for the feng
+ * process.
+ *
+ * @todo Break this up so that each piece of code takes care of
+ * handling its own global state.
+ *
+ * @note Using a structure to aggregate the state might seem smart,
+ *       but forces the same memory area for all the information to be
+ *       in the same cacheline, as well as disallowing the linker from
+ *       reordering the variables for best performance.
+ */
+struct feng feng_srv;
+
+/**
+ * @brief Feng server eventloop
+ */
+struct ev_loop *feng_loop;
 
 #ifdef CLEANUP_DESTRUCTOR
 /**
@@ -51,9 +73,45 @@
  */
 static char *progname;
 
+/**
+ * @brief Cleanup the data structures used by main()
+ *
+ * This function frees the resources that are allocated during the
+ * initialisation of the server, and used by the main() function
+ * directly.
+ *
+ * @note This si a cleanup destructure, which means that in non-debug
+ *       builds it will not be compiled, while in debug builds will
+ *       free the resources before exiting. This trick is useful to
+ *       avoid false positives in tools like valgrind that expect
+ *       resources to be completely freed at the end of the process.
+ */
 static void CLEANUP_DESTRUCTOR main_cleanup()
 {
+    unsigned int i;
+
     g_free(progname);
+
+    g_free(feng_srv.srvconf.bindhost);
+    g_free(feng_srv.srvconf.bindport);
+    g_free(feng_srv.srvconf.errorlog_file);
+    g_free(feng_srv.srvconf.username);
+    g_free(feng_srv.srvconf.groupname);
+    g_free(feng_srv.srvconf.twin);
+
+    if ( feng_srv.config_storage != NULL ) {
+        for(i = 0; i < feng_srv.config_context->used; i++) {
+            g_free(feng_srv.config_storage[i].document_root);
+
+            g_free(feng_srv.config_storage[i].access_log_file);
+        }
+
+        free(feng_srv.config_storage);
+    }
+
+    array_free(feng_srv.config_context);
+
+    g_slist_free(feng_srv.clients);
 }
 #endif
 
@@ -70,37 +128,31 @@ static void sigint_cb (struct ev_loop *loop,
 /**
  * Drop privs to a specified user
  */
-static void feng_drop_privs(feng *srv)
+static void feng_drop_privs()
 {
-    char *id = srv->srvconf.groupname->ptr;
+    const char *wanted_group = feng_srv.srvconf.groupname;
+    const char *wanted_user = feng_srv.srvconf.username;
 
-    if (id) {
-        struct group *gr = getgrnam(id);
-        if (gr) {
-            if (setgid(gr->gr_gid) < 0)
-                fnc_log(FNC_LOG_WARN,
-                    "Cannot setgid to user %s, %s",
-                    id, strerror(errno));
-        } else {
-            fnc_log(FNC_LOG_WARN,
-                    "Cannot get group %s id, %s",
-                    id, strerror(errno));
-        }
+    errno = 0;
+    if ( wanted_group != NULL ) {
+        struct group *gr = getgrnam(wanted_group);
+        if ( errno != 0 )
+            fnc_perror("getgrnam");
+        else if ( gr == NULL )
+            fnc_log(FNC_LOG_ERR, "%s: group %s not found", __func__, wanted_group);
+        else if ( setgid(gr->gr_gid) < 0 )
+            fnc_perror("setgid");
     }
 
-    id = srv->srvconf.username->ptr;
-    if (id) {
-        struct passwd *pw = getpwnam(id);
-        if (pw) {
-            if (setuid(pw->pw_uid) < 0)
-                fnc_log(FNC_LOG_WARN,
-                    "Cannot setuid to user %s, %s",
-                    id, strerror(errno));
-        } else {
-            fnc_log(FNC_LOG_WARN,
-                    "Cannot get user %s id, %s",
-                    id, strerror(errno));
-        }
+    errno = 0;
+    if ( wanted_user != NULL ) {
+        struct passwd *pw = getpwnam(wanted_user);
+        if ( errno != 0 )
+            fnc_perror("getpwnam");
+        else if ( pw == NULL )
+            fnc_log(FNC_LOG_ERR, "%s: user %s not found", __func__, wanted_user);
+        else if ( setuid(pw->pw_uid) < 0 )
+            fnc_perror("setuid");
     }
 }
 
@@ -113,15 +165,15 @@ static void feng_drop_privs(feng *srv)
 static ev_signal signal_watcher_int;
 static ev_signal signal_watcher_term;
 
-static void feng_handle_signals(feng *srv)
+static void feng_handle_signals()
 {
     sigset_t block_set;
     ev_signal *sig = &signal_watcher_int;
     ev_signal_init (sig, sigint_cb, SIGINT);
-    ev_signal_start (srv->loop, sig);
+    ev_signal_start (feng_loop, sig);
     sig = &signal_watcher_term;
     ev_signal_init (sig, sigint_cb, SIGTERM);
-    ev_signal_start (srv->loop, sig);
+    ev_signal_start (feng_loop, sig);
 
     /* block PIPE signal */
     sigemptyset(&block_set);
@@ -132,9 +184,7 @@ static void feng_handle_signals(feng *srv)
 
 static void fncheader()
 {
-    printf("\n%s - Feng %s\n LScube Project - Politecnico di Torino\n",
-            PACKAGE,
-            VERSION);
+    printf("\n"PACKAGE" - Feng "VERSION"\n LScube Project - Politecnico di Torino\n");
 }
 
 static gboolean show_version(ATTR_UNUSED const gchar *option_name,
@@ -146,7 +196,7 @@ static gboolean show_version(ATTR_UNUSED const gchar *option_name,
   exit(0);
 }
 
-static gboolean command_environment(feng *srv, int argc, char **argv)
+static void command_environment(int argc, char **argv)
 {
     gchar *config_file = NULL;
     gboolean quiet = FALSE, verbose = FALSE, syslog = FALSE;
@@ -174,7 +224,7 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
 
     if ( error != NULL ) {
         g_critical("%s\n", error->message);
-        return false;
+        exit(1);
     }
 
     if (!quiet) fncheader();
@@ -182,10 +232,10 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
     if ( config_file == NULL )
         config_file = g_strdup(FENG_CONF_PATH_DEFAULT_STR);
 
-    if (config_read(srv, config_file)) {
+    if (config_read(config_file)) {
         g_critical("unable to read configuration file '%s'\n", config_file);
         g_free(config_file);
-        return false;
+        exit(1);
     }
     g_free(config_file);
 
@@ -193,7 +243,6 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
 #ifndef CLEANUP_DESTRUCTOR
         gchar *progname;
 #endif
-        fnc_log_t fn;
         int view_log;
 
         progname = g_path_get_basename(argv[0]);
@@ -205,146 +254,38 @@ static gboolean command_environment(feng *srv, int argc, char **argv)
         else
             view_log = FNC_LOG_FILE;
 
-        fn = fnc_log_init(srv->srvconf.errorlog_file->ptr,
-                          view_log,
-                          srv->srvconf.loglevel,
-                          progname);
-
-        Sock_init(fn);
+        fnc_log_init(feng_srv.srvconf.errorlog_file,
+                     view_log,
+                     feng_srv.srvconf.loglevel,
+                     progname);
     }
-
-    return true;
-}
-
-/**
- * allocates a new instance variable
- * @return the new instance or NULL on failure
- */
-
-static feng *feng_alloc(void)
-{
-    struct feng *srv = g_new0(server, 1);
-
-    if (!srv) return NULL;
-
-#define CLEAN(x) \
-    srv->srvconf.x = buffer_init();
-    CLEAN(bindhost);
-    CLEAN(errorlog_file);
-    CLEAN(username);
-    CLEAN(groupname);
-    CLEAN(twin);
-#undef CLEAN
-
-#define CLEAN(x) \
-    srv->x = array_init();
-    CLEAN(config_context);
-    CLEAN(config_touched);
-#undef CLEAN
-
-    return srv;
-}
-
-/**
- * @brief Free the feng server object
- *
- * @param srv The object to free
- *
- * This function frees the resources connected to the server object;
- * this function is empty when debug is disabled since it's unneeded
- * for actual production use, exiting the project will free them just
- * as fine.
- *
- * What this is useful for during debug is to avoid false positives in
- * tools like valgrind that expect a complete freeing of all
- * resources.
- */
-static void feng_free(feng* srv)
-{
-#ifndef NDEBUG
-    unsigned int i;
-
-#define CLEAN(x) \
-    buffer_free(srv->srvconf.x)
-    CLEAN(bindhost);
-    CLEAN(errorlog_file);
-    CLEAN(username);
-    CLEAN(groupname);
-    CLEAN(twin);
-#undef CLEAN
-
-    if ( srv->config_storage != NULL ) {
-        for(i = 0; i < srv->config_context->used; i++) {
-            buffer_free(srv->config_storage[i].document_root);
-            buffer_free(srv->config_storage[i].server_name);
-            buffer_free(srv->config_storage[i].ssl_pemfile);
-            buffer_free(srv->config_storage[i].ssl_ca_file);
-            buffer_free(srv->config_storage[i].ssl_cipher_list);
-
-            buffer_free(srv->config_storage[i].access_log_file);
-        }
-
-        free(srv->config_storage);
-    }
-
-#define CLEAN(x) \
-    array_free(srv->x)
-    CLEAN(config_context);
-    CLEAN(config_touched);
-#undef CLEAN
-
-    g_free(srv);
-
-#endif /* NDEBUG */
 }
 
 int main(int argc, char **argv)
 {
-    feng *srv;
-    int res = 0;
-
     if (!g_thread_supported ()) g_thread_init (NULL);
 
-    if (! (srv = feng_alloc()) ) {
-        res = 1;
-        goto end;
-    }
+    feng_srv.config_context = array_init();
 
     /* parses the command line and initializes the log*/
-    if ( !command_environment(srv, argc, argv) ) {
-        res = 1;
-        goto end;
-    }
-
-    config_set_defaults(srv);
+    command_environment(argc, argv);
 
     /* This goes before feng_bind_ports */
-    srv->loop = ev_default_loop(0);
+    feng_loop = ev_default_loop(0);
 
-    feng_handle_signals(srv);
+    feng_handle_signals();
 
-    if (!feng_bind_ports(srv)) {
-        res = 1;
-        goto end;
-    }
+    feng_bind_ports();
 
-    if ( !accesslog_init(srv) ) {
-        res = 1;
-        goto end;
-    }
+    accesslog_init();
 
-    feng_drop_privs(srv);
+    stats_init();
 
-    /* puts in the global variable port_pool[MAX_SESSION] all the RTP usable
-     * ports from RTP_DEFAULT_PORT = 5004 to 5004 + MAX_SESSION */
+    feng_drop_privs();
 
     http_tunnel_initialise();
 
-    ev_loop (srv->loop, 0);
+    ev_loop (feng_loop, 0);
 
- end:
-    accesslog_uninit(srv);
-    feng_free(srv);
-
-    return res;
+    return 0;
 }

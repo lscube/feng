@@ -27,8 +27,10 @@
 #include <stdbool.h>
 #include <netinet/in.h>
 
-#ifdef ENABLE_SCTP
-# include <netinet/sctp.h>
+#if HAVE_CLOCK_GETTIME
+# include <time.h>
+#else /* use gettimeofday() */
+# include <sys/time.h>
 #endif
 
 #include "rtp.h"
@@ -134,68 +136,18 @@ typedef struct {
     } payload;
 } RTCP_SR_Compound;
 
-/**
- * Send the given RTCP packet directly to the RTCP socket
- */
-static gboolean rtcp_send_direct(RTP_session * session, GByteArray *buffer)
-{
-    fd_set wset;
-    struct timeval t;
-    Sock *rtcp_sock = session->transport.rtcp_sock;
-
-    /*---------------SEE eventloop/rtsp_server.c-------*/
-    FD_ZERO(&wset);
-    t.tv_sec = 0;
-    t.tv_usec = 1000;
-
-    FD_SET(Sock_fd(rtcp_sock), &wset);
-    if (select(Sock_fd(rtcp_sock) + 1, 0, &wset, 0, &t) < 0) {
-        fnc_log(FNC_LOG_ERR, "select error: %s\n", strerror(errno));
-        g_byte_array_free(buffer, true);
-        return false;
-    }
-
-    if (FD_ISSET(Sock_fd(rtcp_sock), &wset)) {
-        if (Sock_write(rtcp_sock, buffer->data,
-            buffer->len, NULL, MSG_EOR | MSG_DONTWAIT) < 0)
-            fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
-        fnc_log(FNC_LOG_VERBOSE, "OUT RTCP\n");
-    }
-
-    g_byte_array_free(buffer, true);
-    return true;
+#if HAVE_CLOCK_GETTIME
+static double gettimeinseconds(struct timespec *now) {
+    clock_gettime(CLOCK_REALTIME, now);
+    return (double)now->tv_sec + (double)now->tv_nsec * .000000001;
 }
-
-/**
- * Send the given RTCP packet through the interleaved RTSP protocol
- */
-static gboolean rtcp_send_interleaved(RTP_session *session, GByteArray *buffer)
-{
-    RTSP_Client *rtsp = session->client;
-    uint16_t ne_n = htons((uint16_t)buffer->len);
-    uint8_t interleaved_preamble[4] = { '$', session->transport.rtcp_ch, 0, 0 };
-
-    g_byte_array_prepend(buffer, interleaved_preamble, 4);
-    memcpy(&buffer->data[2], &ne_n, sizeof(uint16_t));
-
-    rtsp->write_data(rtsp, buffer);
-
-    return true;
-}
-
-#ifdef ENABLE_SCTP
-static gboolean rtcp_send_sctp(RTP_session *session, GByteArray *buffer)
-{
-    struct sctp_sndrcvinfo sctp_info = {
-        .sinfo_stream = session->transport.rtcp_ch
-    };
-
-    if ( Sock_write(session->client->sock, buffer->data, buffer->len,
-                    &sctp_info, MSG_EOR | MSG_DONTWAIT ) < 0 )
-        fnc_log(FNC_LOG_VERBOSE, "RTCP Packet Lost\n");
-
-    g_byte_array_free(buffer, true);
-    return true;
+#else
+static double gettimeinseconds(struct timespec *now) {
+    struct timeval tmp;
+    gettimeofday(&tmp, NULL);
+    now->tv_sec = tmp.tv_sec;
+    now->tv_nsec = tmp.tv_usec * 1000;
+    return (double)tmp.tv_sec + (double)tmp.tv_usec * .000001;
 }
 #endif
 
@@ -242,8 +194,7 @@ static GByteArray *rtcp_pkt_sr_sdes(RTP_session *session)
     RTCP_SR_Compound *outpkt;
     GByteArray *outpkt_buffer;
 
-    const char *name = session->client->sock->local_host ?
-        session->client->sock->local_host : "::";
+    const char *name = session->client->local_sock->local_host;
     const size_t name_len = strlen(name);
     size_t sdes_size = sizeof(RTCP_header) + sizeof(RTCP_header_SDES) +
         name_len;
@@ -358,19 +309,7 @@ gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type)
 
     g_assert(outpkt != NULL);
 
-    switch ( session->transport.protocol ) {
-    case RTP_UDP:
-        return rtcp_send_direct(session, outpkt);
-    case RTP_TCP:
-        return rtcp_send_interleaved(session, outpkt);
-#ifdef ENABLE_SCTP
-    case RTP_SCTP:
-        return rtcp_send_sctp(session, outpkt);
-#endif
-    }
-
-    g_assert_not_reached();
-    return false;
+    return session->send_rtcp(session, outpkt);
 }
 
 
@@ -385,8 +324,7 @@ gboolean rtcp_send_sr(RTP_session *session, rtcp_pkt_type type)
  * @brief parse Receiver Reports and update the statistics accordingly
  */
 
-static void parse_receiver_report(RTP_session *session,
-                                  uint8_t *packet, int count)
+static void parse_receiver_report(uint8_t *packet, int count)
 {
     int ssrc = ntohl(((RTCP_header_RR*)packet)->ssrc);
     fnc_log(FNC_LOG_VERBOSE, "[RTCP] Receiver report for %u", ssrc);
@@ -432,7 +370,7 @@ void rtcp_handle(RTP_session *session, uint8_t *packet, size_t len)
         switch (rtcp->pt) {
             case SR:
             case RR:
-                parse_receiver_report(session, packet+4, rtcp->count);
+                parse_receiver_report(packet+4, rtcp->count);
             case SDES:
             default:
                 break;

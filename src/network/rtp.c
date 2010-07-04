@@ -24,30 +24,12 @@
 
 #include <stdbool.h>
 
-#ifdef ENABLE_SCTP
-# include <netinet/in.h>
-# include <netinet/sctp.h>
-#endif
-
 #include "feng.h"
 #include "rtp.h"
 #include "rtsp.h"
 #include "fnc_log.h"
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-
-/*
- * Make sure all the threads get collected
- *
- * @param session rtp session to be cleaned
- */
-
-static void rtp_fill_pool_free(RTP_session *session)
-{
-    GThreadPool *pool = session->fill_pool;
-    session->fill_pool = NULL;
-    g_thread_pool_free(pool, true, true);
-}
 
 /**
  * Deallocates an RTP session, closing its tracks and transports
@@ -68,28 +50,11 @@ static void rtp_session_free(gpointer session_gen,
      * to ensure that we're paused before doing this but doesn't
      * matter now.
      */
-    ev_periodic_stop(session->srv->loop, &session->transport.rtp_writer);
+    ev_periodic_stop(feng_loop, &session->rtp_writer);
 
-    switch (session->transport.protocol) {
-    case RTP_UDP:
-        {
-            ev_io_stop(session->srv->loop, &session->transport.rtcp_reader);
+    session->close_transport(session);
 
-            Sock_close(session->transport.rtp_sock);
-            Sock_close(session->transport.rtcp_sock);
-        }
-        break;
-    case RTP_TCP:
-    case RTP_SCTP:
-        break;
-
-    default:
-        g_assert_not_reached();
-        break;
-    }
-
-    if (session->fill_pool)
-        rtp_fill_pool_free(session);
+    r_pause(session->track->parent);
 
     /* Remove the consumer */
     bq_consumer_free(session->consumer);
@@ -110,65 +75,6 @@ static void rtp_session_free(gpointer session_gen,
 void rtp_session_gslist_free(GSList *sessions_list) {
     g_slist_foreach(sessions_list, rtp_session_free, NULL);
 }
-
-/**
- * @brief Do the work of filling an RTP session with data
- *
- * @param unued_data Unused
- * @param session_p The session parameter from rtp_session_fill
- *
- *
- * @internal This function is used to initialize @ref
- *           RTP_session::fill_pool.
- */
-static void rtp_session_fill_cb(ATTR_UNUSED gpointer unused_data,
-                                gpointer session_p)
-{
-    RTP_session *session = (RTP_session*)session_p;
-    Resource *resource = session->track->parent;
-    BufferQueue_Consumer *consumer = session->consumer;
-    gulong unseen;
-    const gulong buffered_frames = resource->srv->srvconf.buffered_frames;
-
-    while ( g_atomic_int_get(&resource->eor) == 0 &&
-            (unseen = bq_consumer_unseen(consumer)) < buffered_frames &&
-            session->fill_pool != NULL ) {
-#if 0
-        fprintf(stderr, "calling read_packet from %p for %p[%s] (%u/%d)\n",
-                session,
-                resource, resource->info->mrl,
-                unseen, buffered_frames);
-#endif
-
-        if ( r_read(resource) != RESOURCE_OK )
-            break;
-    }
-}
-
-/**
- * @brief Request filling an RTP session with data
- *
- * @param session The session to fill with data
- *
- * This function takes care of filling with data the bufferqueue of
- * the session, by asking to the resource to read more.
- *
- * Previously this was implemented mostly on the Resource side, but
- * given we need more information from the session than the resource
- * it was moved here.
- *
- * This function should be called while holding locks to the session,
- * but not to the resource.
- *
- * @see rtp_session_fill_cb
- */
-static void rtp_session_fill(RTP_session *session)
-{
-    if ( g_atomic_int_get(&session->track->parent->eor) == 0 )
-        g_thread_pool_push(session->fill_pool,
-                           GINT_TO_POINTER(-1), NULL);
-}
-
 
 /**
  * @brief Resume (or start) an RTP session
@@ -192,8 +98,9 @@ static void rtp_session_fill(RTP_session *session)
 static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     RTP_session *session = (RTP_session*)session_gen;
     RTSP_Range *range = (RTSP_Range*)range_gen;
+    Resource *resource = session->track->parent;
 
-    fnc_log(FNC_LOG_VERBOSE, "Resuming session %p\n", session);
+    fnc_log(FNC_LOG_VERBOSE, "Resuming session %p", session);
 
     session->range = range;
     session->start_seq = 1 + session->seq_no;
@@ -201,30 +108,13 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     session->send_time = 0.0;
     session->last_packet_send_time = time(NULL);
 
-    /* Create the new thread pool for the read requests */
-    session->fill_pool = g_thread_pool_new(rtp_session_fill_cb, session,
-                                           1, true, NULL);
+    r_resume(resource);
+    r_fill(resource, session->consumer);
 
-    /* Prefetch frames */
-    rtp_session_fill(session);
-
-    ev_periodic_set(&session->transport.rtp_writer,
+    ev_periodic_set(&session->rtp_writer,
                     range->playback_time - 0.05,
                     0, NULL);
-    ev_periodic_start(session->srv->loop, &session->transport.rtp_writer);
-    switch (session->transport.protocol) {
-    case RTP_UDP:
-        ev_io_start(session->srv->loop, &session->transport.rtcp_reader);
-        break;
-
-    case RTP_TCP:
-    case RTP_SCTP:
-        break;
-
-    default:
-        g_assert_not_reached();
-        break;
-    }
+    ev_periodic_start(feng_loop, &session->rtp_writer);
 }
 
 /**
@@ -254,13 +144,14 @@ void rtp_session_gslist_resume(GSList *sessions_list, RTSP_Range *range) {
 static void rtp_session_pause(gpointer session_gen,
                               ATTR_UNUSED gpointer user_data) {
     RTP_session *session = (RTP_session *)session_gen;
+    Resource *resource = session->track->parent;
 
     /* We should assert its presence, we cannot pause a non-running
      * session! */
-    if (session->fill_pool)
-        rtp_fill_pool_free(session);
 
-    ev_periodic_stop(session->srv->loop, &session->transport.rtp_writer);
+    r_pause(resource);
+
+    ev_periodic_stop(feng_loop, &session->rtp_writer);
 }
 
 /**
@@ -283,9 +174,8 @@ void rtp_session_gslist_pause(GSList *sessions_list) {
  * @param buffer Buffer of which calculate timestamp
  * @return RTP Timestamp (in local endianess)
  */
-static inline uint32_t RTP_calc_rtptime(RTP_session *session,
-                                        int clock_rate,
-                                        MParserBuffer *buffer)
+static inline
+uint32_t rtptime(RTP_session *session, int clock_rate, MParserBuffer *buffer)
 {
     uint32_t calc_rtptime =
         (buffer->timestamp - session->range->begin_time) * clock_rate;
@@ -325,46 +215,6 @@ typedef struct {
     uint8_t data[]; /**< Variable-sized data payload */
 } RTP_packet;
 
-static gboolean rtp_packet_send_direct(RTP_session *session, RTP_packet *packet,
-                                       size_t packet_size)
-{
-    return Sock_write(session->transport.rtp_sock, packet,
-                      packet_size, NULL, MSG_DONTWAIT
-                      | MSG_EOR) == packet_size;
-}
-
-static gboolean rtp_packet_send_interleaved(RTP_session *session, RTP_packet *packet,
-                                            size_t packet_size)
-{
-    RTSP_Client *rtsp = session->client;
-    uint16_t ne_n = htons((uint16_t)packet_size);
-
-    GByteArray *outpkt = g_byte_array_sized_new(packet_size + 4);
-    g_byte_array_set_size(outpkt, packet_size + 4);
-
-    outpkt->data[0] = '$';
-    outpkt->data[1] = session->transport.rtp_ch;
-
-    memcpy(&outpkt->data[2], &ne_n, sizeof(uint16_t));
-    memcpy(&outpkt->data[4], packet, packet_size);
-
-    rtsp->write_data(rtsp, outpkt);
-
-    return true;
-}
-
-#ifdef ENABLE_SCTP
-static gboolean rtp_packet_send_sctp(RTP_session *session, RTP_packet *packet,
-                                     size_t packet_size)
-{
-    struct sctp_sndrcvinfo sctp_info = {
-        .sinfo_stream = session->transport.rtp_ch
-    };
-    return Sock_write(session->client->sock, packet, packet_size,
-                      &sctp_info, MSG_DONTWAIT | MSG_EOR) == packet_size;
-}
-#endif
-
 /**
  * @brief Send the actual buffer as an RTP packet to the client
  *
@@ -377,7 +227,8 @@ static gboolean rtp_packet_send_sctp(RTP_session *session, RTP_packet *packet,
 static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
 {
     const size_t packet_size = sizeof(RTP_packet) + buffer->data_size;
-    RTP_packet *packet = g_malloc0(packet_size);
+    GByteArray *outbuf = g_byte_array_sized_new(packet_size);
+    RTP_packet *packet = (RTP_packet*)(outbuf->data);
     Track *tr = session->track;
     uint32_t timestamp;
     
@@ -393,6 +244,7 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     }
 
     gboolean sent = false;
+    outbuf->len = packet_size;
 
     packet->version = 2;
     packet->padding = 0;
@@ -408,32 +260,15 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
 
     memcpy(packet->data, buffer->data, buffer->data_size);
 
-    switch ( session->transport.protocol ) {
-    case RTP_UDP:
-        sent = rtp_packet_send_direct(session, packet, packet_size);
-        break;
-    case RTP_TCP:
-        sent = rtp_packet_send_interleaved(session, packet, packet_size);
-        break;
-#ifdef ENABLE_SCTP
-    case RTP_SCTP:
-        sent = rtp_packet_send_sctp(session, packet, packet_size);
-        break;
-#endif
-    default:
-        g_assert_not_reached();
-    }
-
-    if (!sent) {
-        fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost\n");
-    } else {
+    if (session->send_rtp(session, outbuf)) {
         session->last_timestamp = buffer->timestamp;
         session->pkt_count++;
         session->octet_count += buffer->data_size;
 
         session->last_packet_send_time = time(NULL);
+    } else {
+        fnc_log(FNC_LOG_DEBUG, "RTP Packet Lost");
     }
-    g_free(packet);
 }
 
 /**
@@ -538,56 +373,59 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
     ev_periodic_set(w, next_time, 0, NULL);
     ev_periodic_again(loop, w);
 
-    rtp_session_fill(session);
+    r_fill(resource, session->consumer);
 }
 
-/**
- * @brief Read incoming RTCP packets from the socket
- */
-static void rtcp_read_cb(ATTR_UNUSED struct ev_loop *loop,
-                         ev_io *w,
-                         ATTR_UNUSED int revents)
-{
-    uint8_t buffer[RTP_DEFAULT_MTU*2] = { 0, }; //FIXME just a quick hack...
-    RTP_session *session = w->data;
-    int n = Sock_read(session->transport.rtcp_sock, buffer,
-                      RTP_DEFAULT_MTU*2, NULL, MSG_DONTWAIT);
-    if (n>0)
-        rtcp_handle(session, buffer, n);
-}
-
+typedef void (*rtp_transport_init_cb)(RTSP_Client *rtsp,
+                                      RTP_session *rtp_s,
+                                      struct ParsedTransport *parsed);
 /**
  * @brief Create a new RTP session object.
  *
  * @param rtsp The buffer for which to generate the session
- * @param rtsp_s The RTSP session
  * @param uri The URI for the current RTP session
- * @param transport The transport used by the session
  * @param tr The track that will be sent over the session
+ * @param transports A singly-linked list of transports that the
+ *        client suggested.
  *
  * @return A pointer to a newly-allocated RTP_session, that needs to
  *         be freed with @ref rtp_session_free.
  *
  * @see rtp_session_free
  */
-RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
-                             RTP_transport *transport, const char *uri,
-                             Track *tr) {
-    feng *srv = rtsp->srv;
+RTP_session *rtp_session_new(RTSP_Client *rtsp,
+                             const char *uri, Track *tr,
+                             GSList *transports) {
     RTP_session *rtp_s;
-    ev_io *io;
     ev_periodic *periodic;
 
     rtp_s = g_slice_new0(RTP_session);
-    io = &rtp_s->transport.rtcp_reader;
-    periodic = &rtp_s->transport.rtp_writer;
+    periodic = &rtp_s->rtp_writer;
+
+    rtp_s->ssrc = g_random_int();
+
+    do {
+        struct ParsedTransport *transport = transports->data;
+        static const rtp_transport_init_cb
+            rtp_transport_init[_RTP_PROTOCOL_MAX] = {
+                [RTP_UDP] = rtp_udp_transport,
+                [RTP_TCP] = rtp_interleaved_transport,
+#ifdef ENABLE_SCTP
+                [RTP_SCTP] = rtp_sctp_transport
+#endif
+        };
+        rtp_transport_init[transport->protocol](rtsp, rtp_s, transport);
+    } while ( rtp_s->transport_data == NULL &&
+              (transports = g_slist_next(transports)) != NULL );
+
+    if ( transports == NULL )
+        goto cleanup;
 
     /* Make sure we start paused since we have to wait for parameters
      * given by @ref rtp_session_resume.
      */
     rtp_s->uri = g_strdup(uri);
 
-    memcpy(&rtp_s->transport, transport, sizeof(RTP_transport));
     rtp_s->start_rtptime = g_random_int();
     rtp_s->start_seq = g_random_int_range(0, G_MAXUINT16);
     rtp_s->seq_no = rtp_s->start_seq - 1;
@@ -597,45 +435,14 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp, RTSP_session *rtsp_s,
     rtp_s->track = tr;
     rtp_s->consumer = bq_consumer_new(track_get_producer(tr));
 
-    rtp_s->srv = srv;
-    rtp_s->ssrc = g_random_int();
     rtp_s->client = rtsp;
 
     periodic->data = rtp_s;
     ev_periodic_init(periodic, rtp_write_cb, 0, 0, NULL);
 
-    switch (rtp_s->transport.protocol) {
-    case RTP_UDP:
-        io->data = rtp_s;
-        ev_io_init(io, rtcp_read_cb,
-                   Sock_fd(rtp_s->transport.rtcp_sock), EV_READ);
-        break;
-    case RTP_TCP:
-    case RTP_SCTP:
-        if ( rtsp->channels == NULL )
-            rtsp->channels = g_hash_table_new_full(g_direct_hash, g_direct_equal,
-                                                   NULL, NULL);
-
-        g_hash_table_insert(rtsp->channels, GINT_TO_POINTER(transport->rtcp_ch),
-                            rtp_s);
-
-        /* Keep the following commented out until we actually need to
-         * _read_ rtp data
-         */
-#if 0
-        g_hash_table_insert(rtsp->channels, GINT_TO_POINTER(transport->rtp_ch),
-                            rtp_s);
-
-#endif
-        break;
-
-    default:
-        g_assert_not_reached();
-        break;
-    }
-
-    // Setup the RTP session
-    rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
-
     return rtp_s;
+
+ cleanup:
+    g_slice_free(RTP_session, rtp_s);
+    return NULL;
 }

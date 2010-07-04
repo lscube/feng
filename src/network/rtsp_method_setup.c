@@ -34,140 +34,7 @@
 #include "rtsp.h"
 #include "fnc_log.h"
 #include "media/demuxer.h"
-
-/**
- * bind&connect the socket
- */
-static RTSP_ResponseCode unicast_transport(RTSP_Client *rtsp,
-                                           RTP_transport *transport,
-                                           uint16_t rtp_port, uint16_t rtcp_port)
-{
-    char port_buffer[8];
-    uint16_t port = rtsp->srv->srvconf.first_udp_port;
-
-    /* Set this to whenever we want to stop trying to get ports;
-       probably to configure */
-    static const uint16_t port_upper_bound = 65535;
-
-    /*
-     * RFC 3550 Section 11 describe the choice of port numbers for RTP
-     * applications; since we're delievering RTP as part of an RTSP
-     * stream, we fall in the latest case described. We thus *may*
-     * avoid using the next-available port but we'll try our best to.
-     */
-
-    //UDP bind for outgoing RTP packets
-    while ( transport->rtp_sock == NULL ) {
-        if ( port >= port_upper_bound )
-            goto err_rtp_sock;
-
-        snprintf(port_buffer, 8, "%d", port);
-        transport->rtp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
-
-        /* Try to keep an even RTP port, at least */
-        port += 2;
-    }
-
-    //UDP connection for outgoing RTP packets
-    snprintf(port_buffer, 8, "%d", rtp_port);
-    if ( Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                       transport->rtp_sock, UDP, NULL) == NULL )
-        goto err_rtcp_sock;
-
-    //UDP bind for outgoing RTCP packets
-    while ( transport->rtcp_sock == NULL ) {
-        if ( port >= port_upper_bound )
-            goto err_rtcp_sock;
-
-        snprintf(port_buffer, 8, "%d", port);
-        transport->rtcp_sock = Sock_bind(rtsp->sock->local_host, port_buffer, NULL, UDP, NULL);
-        port++;
-    }
-
-    //UDP connection for outgoing RTCP packets
-    snprintf(port_buffer, 8, "%d", rtcp_port);
-    if ( Sock_connect (get_remote_host(rtsp->sock), port_buffer,
-                       transport->rtcp_sock, UDP, NULL) == NULL )
-        goto err_connect;
-
-    return RTSP_Ok;
-
- err_connect:
-    Sock_close(transport->rtcp_sock);
- err_rtcp_sock:
-    Sock_close(transport->rtp_sock);
- err_rtp_sock:
-    return RTSP_UnsupportedTransport;
-}
-
-static gboolean interleaved_setup_transport(RTP_transport *transport,
-                                            int rtp_ch, int rtcp_ch) {
-
-    if ( rtp_ch > 255 || rtcp_ch > 255 ) {
-        fnc_log(FNC_LOG_ERR,
-                "Interleaved channel number already reached max\n");
-        return false;
-    }
-
-    transport->rtp_ch = rtp_ch;
-    transport->rtcp_ch = rtcp_ch;
-
-    return true;
-}
-
-/**
- * @brief Check the value parsed out of a transport specification.
- *
- * @param rtsp Client from which the request arrived
- * @param rtp_t The transport instance to set up with the parsed parameters
- * @param transport Structure containing the transport's parameters
- */
-gboolean check_parsed_transport(RTSP_Client *rtsp, RTP_transport *rtp_t,
-                                struct ParsedTransport *transport)
-{
-    rtp_t->protocol = transport->protocol;
-    switch ( transport->protocol ) {
-    case RTP_UDP:
-        if ( transport->mode == TransportUnicast ) {
-            return ( unicast_transport(rtsp, rtp_t,
-                                       transport->rtp_channel,
-                                       transport->rtcp_channel)
-                     == RTSP_Ok );
-        } else { /* Multicast */
-            return false;
-        }
-    case RTP_TCP:
-        if ( transport->rtp_channel &&
-             !transport->rtcp_channel )
-            transport->rtcp_channel = transport->rtp_channel + 1;
-
-        if ( !transport->rtp_channel ) {
-            /** @todo This part was surely broken before, so needs to be
-             * written from scratch */
-        }
-
-
-        return interleaved_setup_transport(rtp_t,
-                                           transport->rtp_channel,
-                                           transport->rtcp_channel);
-    case RTP_SCTP:
-        if ( transport->rtp_channel &&
-             !transport->rtcp_channel )
-            transport->rtcp_channel = transport->rtp_channel + 1;
-
-        if ( !transport->rtp_channel ) {
-            /** @todo This part was surely broken before, so needs to be
-             * written from scratch */
-        }
-
-        return interleaved_setup_transport(rtp_t,
-                                           transport->rtp_channel,
-                                           transport->rtcp_channel);
-
-    default:
-        return false;
-    }
-}
+#include "uri.h"
 
 /**
  * Gets the track requested for the object
@@ -181,7 +48,6 @@ gboolean check_parsed_transport(RTSP_Client *rtsp, RTP_transport *rtp_t,
  */
 static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, RTSP_session *rtsp_s)
 {
-    feng *srv = rtsp_s->srv;
     char *trackname = NULL;
     Track *selected_track = NULL;
 
@@ -198,7 +64,6 @@ static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, R
     if ( !rtsp_s->resource ) {
         /* Here we don't know the URL and we have to find it out, we
          * check for the presence of the SDP_TRACK_URI_SEPARATOR */
-        Url url;
         char *path;
 
         char *separator = strstr(req->object, SDP_TRACK_URI_SEPARATOR);
@@ -216,12 +81,19 @@ static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, R
          * have to dupe it here. */
         rtsp_s->resource_uri = g_strndup(req->object, separator - req->object);
 
-        Url_init(&url, rtsp_s->resource_uri);
-        path = g_uri_unescape_string(url.path, "/");
-        Url_destroy(&url);
+        path = g_uri_unescape_string(req->uri->path, "/");
 
-        if (!(rtsp_s->resource = r_open(srv, path))) {
-            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found\n", path);
+        separator = strstr(path, SDP_TRACK_URI_SEPARATOR);
+
+        if ( separator != NULL )
+            *separator = '\0';
+        else
+            fnc_log(FNC_LOG_ERR, "Mismatch! uri path %s vs %s",
+                    path,
+                    rtsp_s->resource_uri);
+
+        if (!(rtsp_s->resource = r_open(path))) {
+            fnc_log(FNC_LOG_DEBUG, "Resource for %s not found", path);
 
             g_free(path);
             g_free(rtsp_s->resource_uri);
@@ -274,53 +146,13 @@ static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, R
 static void send_setup_reply(RTSP_Client *rtsp, RFC822_Request *req, RTSP_session * session, RTP_session * rtp_s)
 {
     RFC822_Response *response = rfc822_response_new(req, RTSP_Ok);
-    GString *transport = g_string_new("");
-
-    switch ( rtp_s->transport.protocol ) {
-    case RTP_UDP:
-        /*
-          if (Sock_flags(rtp_s->transport.rtp_sock)== IS_MULTICAST) {
-	  g_string_append_printf(reply,
-				 "RTP/AVP;multicast;ttl=%d;destination=%s;port=",
-				 // session->resource->info->ttl,
-				 DEFAULT_TTL,
-				 session->resource->info->multicast);
-                 } else */
-        { // XXX handle TLS here
-            g_string_append_printf(transport,
-                    "RTP/AVP;unicast;source=%s;"
-                    "client_port=%d-%d;server_port=",
-                    get_local_host(rtsp->sock),
-                    get_remote_port(rtp_s->transport.rtp_sock),
-                    get_remote_port(rtp_s->transport.rtcp_sock));
-        }
-
-        g_string_append_printf(transport, "%d-%d",
-                               get_local_port(rtp_s->transport.rtp_sock),
-                               get_local_port(rtp_s->transport.rtcp_sock));
-
-        break;
-    case RTP_TCP:
-        g_string_append_printf(transport,
-                               "RTP/AVP/TCP;interleaved=%d-%d",
-                               rtp_s->transport.rtp_ch,
-                               rtp_s->transport.rtcp_ch);
-        break;
-    case RTP_SCTP:
-        g_string_append_printf(transport,
-                               "RTP/AVP/SCTP;server_streams=%d-%d",
-                               rtp_s->transport.rtp_ch,
-                               rtp_s->transport.rtcp_ch);
-        break;
-    default:
-        g_assert_not_reached();
-        break;
-    }
-    g_string_append_printf(transport, ";ssrc=%08X", rtp_s->ssrc);
 
     rfc822_headers_set(response->headers,
                      RTSP_Header_Transport,
-                     g_string_free(transport, false));
+                     rtp_s->transport_string);
+
+    /* We can forget about it it here since we now used it */
+    rtp_s->transport_string = NULL;
 
     /* We add the Session here since it was not added by rtsp_response_new (the
      * incoming request had no session).
@@ -332,6 +164,12 @@ static void send_setup_reply(RTSP_Client *rtsp, RFC822_Request *req, RTSP_sessio
     rfc822_response_send(rtsp, response);
 }
 
+static void parsed_transport_free(gpointer transport_gen,
+                                  ATTR_UNUSED gpointer unused)
+{
+    g_slice_free(struct ParsedTransport, transport_gen);
+}
+
 /**
  * RTSP SETUP method handler
  * @param rtsp the buffer for which to handle the method
@@ -340,16 +178,13 @@ static void send_setup_reply(RTSP_Client *rtsp, RFC822_Request *req, RTSP_sessio
 void RTSP_setup(RTSP_Client *rtsp, RFC822_Request *req)
 {
     const char *transport_header = NULL;
-    RTP_transport transport;
+    GSList *transports;
 
     Track *req_track = NULL;
 
     //mediathread pointers
     RTP_session *rtp_s = NULL;
     RTSP_session *rtsp_s;
-
-    // init
-    memset(&transport, 0, sizeof(transport));
 
     if ( !rfc822_request_check_url(rtsp, req) )
         return;
@@ -364,11 +199,13 @@ void RTSP_setup(RTSP_Client *rtsp, RFC822_Request *req)
      */
     transport_header = rfc822_headers_lookup(req->headers, RTSP_Header_Transport);
     if ( transport_header == NULL ||
-         !ragel_parse_transport_header(rtsp, &transport, transport_header) ) {
-
+         (transports = ragel_parse_transport_header(transport_header)) == NULL ) {
         rtsp_quick_response(rtsp, req, RTSP_UnsupportedTransport);
         return;
     }
+
+    fnc_log(FNC_LOG_INFO, "got %d transport options",
+            g_slist_length(transports));
 
     /* Here we'd be adding a new session if we supported more than
      * one, and the user didn't provide one. */
@@ -382,13 +219,19 @@ void RTSP_setup(RTSP_Client *rtsp, RFC822_Request *req)
     if ( (req_track = select_requested_track(rtsp, req, rtsp_s)) == NULL )
         return;
 
-    if ( !(rtp_s = rtp_session_new(rtsp, rtsp_s, &transport, req->object, req_track)) ) {
-        rtsp_quick_response(rtsp, req, RTSP_InternalServerError);
-        return;
+    if ( !(rtp_s = rtp_session_new(rtsp, req->object, req_track, transports)) ) {
+        rtsp_quick_response(rtsp, req, RTSP_UnsupportedTransport);
+        goto cleanup;
     }
+
+    rtsp_s->rtp_sessions = g_slist_append(rtsp_s->rtp_sessions, rtp_s);
 
     send_setup_reply(rtsp, req, rtsp_s, rtp_s);
 
     if ( rtsp_s->cur_state == RTSP_SERVER_INIT )
         rtsp_s->cur_state = RTSP_SERVER_READY;
+
+ cleanup:
+    g_slist_foreach(transports, parsed_transport_free, NULL);
+    g_slist_free(transports);
 }

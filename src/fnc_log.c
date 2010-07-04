@@ -49,6 +49,16 @@ static int log_level = FNC_LOG_WARN;
  */
 static void fnc_errlog(int level, const char *fmt, va_list args)
 {
+    static const char *const log_prefix[] = {
+        [FNC_LOG_FATAL] = "[fatal error] ",
+        [FNC_LOG_ERR] = "[error] ",
+        [FNC_LOG_WARN] = "[warning] ",
+        [FNC_LOG_INFO] = "",
+        [FNC_LOG_CLIENT] = "[client] ",
+        [FNC_LOG_DEBUG] = "[debug] ",
+        [FNC_LOG_VERBOSE] = "[verbose debug] "
+    };
+
     time_t now;
     char date[MAX_LEN_DATE];
     const struct tm *tm;
@@ -59,31 +69,7 @@ static void fnc_errlog(int level, const char *fmt, va_list args)
     tm = localtime(&now);
     strftime(date, MAX_LEN_DATE, ERR_FORMAT, tm);
 
-    switch (level) {
-        case FNC_LOG_FATAL:
-            fprintf(fd, "[%s] [fatal error] ", date);
-            break;
-        case FNC_LOG_ERR:
-            fprintf(fd, "[%s] [error] ", date);
-            break;
-        case FNC_LOG_WARN:
-            fprintf(fd, "[%s] [warning] ", date);
-            break;
-        case FNC_LOG_DEBUG:
-            fprintf(fd, "[%s] [debug] ", date);
-            break;
-        case FNC_LOG_VERBOSE:
-            fprintf(fd, "[%s] [verbose debug] ", date);
-            break;
-        case FNC_LOG_CLIENT:
-            fprintf(fd, "[%s] [client] ", date);
-            break;
-        default:
-        case FNC_LOG_INFO:
-            fprintf(fd, "[%s] ", date);
-            break;
-    }
-
+    fprintf(fd, "[%s] %s", date, log_prefix[level]);
     vfprintf(fd, fmt, args);
     fprintf(fd, "\n");
     fflush(fd);
@@ -92,48 +78,31 @@ static void fnc_errlog(int level, const char *fmt, va_list args)
 #if HAVE_SYSLOG_H
 static void fnc_syslog(int level, const char *fmt, va_list args)
 {
-    int l = LOG_ERR;
+    static const int fnc_to_syslog_level[] = {
+        [FNC_LOG_FATAL] = LOG_CRIT,
+        [FNC_LOG_ERR] = LOG_ERR,
+        [FNC_LOG_WARN] = LOG_WARNING,
+        [FNC_LOG_INFO] = LOG_INFO,
+        [FNC_LOG_CLIENT] = LOG_INFO,
+        [FNC_LOG_DEBUG] = LOG_DEBUG,
+        [FNC_LOG_VERBOSE] = LOG_DEBUG
+    };
 
     if (level > log_level) return;
 
-    switch (level) {
-        case FNC_LOG_FATAL:
-            l = LOG_CRIT;
-            break;
-        case FNC_LOG_ERR:
-            l = LOG_ERR;
-            break;
-        case FNC_LOG_WARN:
-            l = LOG_WARNING;
-            break;
-        case FNC_LOG_DEBUG:
-            l = LOG_DEBUG;
-            break;
-        case FNC_LOG_VERBOSE:
-            l = LOG_DEBUG;
-            break;
-        case FNC_LOG_CLIENT:
-            l = LOG_INFO;
-            break;
-        default:
-            l = LOG_INFO;
-            break;
-    }
-    vsyslog(l, fmt, args);
+    vsyslog(fnc_to_syslog_level[level], fmt, args);
 }
 #endif
 
 static void (*fnc_vlog)(int, const char*, va_list) = fnc_errlog;
 
 /**
- * Set the logger and returns the function pointer to be feed to the
- * Sock_init
+ * Initialize the logger.
  * @param file path to the logfile
  * @param out specifies the logger function
  * @param name specifies the application name
- * @return the logger currently in use
  * */
-fnc_log_t fnc_log_init(char *file, int out, int level, char *name)
+void fnc_log_init(char *file, int out, int level, char *name)
 {
     fd = stderr;
     log_level = level;
@@ -150,7 +119,6 @@ fnc_log_t fnc_log_init(char *file, int out, int level, char *name)
         case FNC_LOG_OUT:
             break;
     }
-    return fnc_vlog;
 }
 
 /**
@@ -164,4 +132,32 @@ void fnc_log(int level, const char *fmt, ...) {
     va_start(vl, fmt);
     fnc_vlog(level, fmt, vl);
     va_end(vl);
+}
+
+/**
+ * @brief Wrapper function to simulate perror() on the fnc_log
+ *
+ * @param errno_val The value of errno to call this for
+ * @param function The function this error occurred on
+ * @param comment An optional comment on where this happened (use "" for none)
+ */
+void _fnc_perror(int errno_val, const char *function, const char *comment)
+{
+    char errbuffer[512];
+#if STRERROR_R_CHAR_P
+    char *strerr = strerror_r(errno_val, errbuffer, sizeof(errbuffer)-1);
+    static const int res = 0;
+#else
+    int res = strerror_r(errno_val, errbuffer, sizeof(errbuffer)-1);
+    char *const strerr = errbuffer;
+#endif
+
+    if ( res == 0 )
+        fnc_log(FNC_LOG_ERR, "%s%s%s: %s", function,
+                *comment ? " " : "", comment,
+                strerr);
+    else
+        fnc_log(FNC_LOG_ERR, "%s%s%s: Unknown error %d", function,
+                *comment ?  " " : "", comment,
+                errno_val);
 }

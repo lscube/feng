@@ -30,7 +30,6 @@
  * RTSP OPTIONS method handler
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
- * @return ERR_NOERROR
  */
 void RTSP_options(RTSP_Client *rtsp, RFC822_Request *req)
 {

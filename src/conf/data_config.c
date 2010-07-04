@@ -26,10 +26,6 @@ static void data_config_free(data_unset *d) {
 	array_free(ds->childs);
 
 	if (ds->string) buffer_free(ds->string);
-#ifdef HAVE_PCRE_H
-	if (ds->regex) pcre_free(ds->regex);
-	if (ds->regex_study) pcre_free(ds->regex_study);
-#endif
 
 	free(d);
 }

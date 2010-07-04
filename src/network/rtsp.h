@@ -25,20 +25,14 @@
 
 #include <time.h>
 #include <config.h>
+#include <netinet/in.h>
 
 #include <glib.h>
 #include <ev.h>
 
-#include "feng_utils.h"
-#include <netembryo/wsocket.h>
-#include <netembryo/url.h>
-
 #include "rfc822proto.h"
-#include "rtp.h"
 
-struct feng;
 struct Resource;
-struct RTP_transport;
 
 /**
  * @addtogroup RTSP
@@ -93,7 +87,6 @@ typedef struct RTSP_session {
     // mediathread resource
     struct Resource *resource;
     char *resource_uri;
-    struct feng *srv;
 
     /**
      * @brief List of playback requests (of type @ref RTSP_Range)
@@ -134,7 +127,12 @@ struct HTTP_Tunnel_Pair;
 typedef void (*rtsp_write_data)(struct RTSP_Client *client, GByteArray *data);
 
 typedef struct RTSP_Client {
-    Sock *sock;
+    /**
+     * @brief Socket descriptor for the main connection of the client
+     */
+    int sd;
+
+    enum { RTSP_TCP, RTSP_SCTP } socktype;
 
     /**
      * @brief Input buffer
@@ -164,9 +162,13 @@ typedef struct RTSP_Client {
      */
     GHashTable *channels;
 
+    /**
+     * @brief First channel free for interleaved and SCTP
+     */
+    int first_free_channel;
+
     // Run-Time
     RTSP_session *session;
-    struct feng *srv;
 
     rtsp_write_data write_data;
 
@@ -178,9 +180,21 @@ typedef struct RTSP_Client {
 
     ev_io ev_io_read;
     ev_io ev_io_write;
+
+    char *remote_host;
+
+#ifdef HAVE_JSON //stats
+    char *user_agent;
+    size_t bytes_read;
+    size_t bytes_sent;
+#endif
+
+    struct Feng_Listener *local_sock;
+    struct sockaddr *peer_sa;
+    socklen_t peer_len;
 } RTSP_Client;
 
-RTSP_Client *rtsp_client_new(struct feng *srv);
+RTSP_Client *rtsp_client_new();
 
 void rtsp_write_string(RTSP_Client *client, GString *str);
 
@@ -231,10 +245,16 @@ gboolean rtsp_check_invalid_state(RTSP_Client *client,
 
 gboolean rtsp_connection_limit(RTSP_Client *rtsp, RFC822_Request *req);
 
-void rtsp_write_cb(struct ev_loop *, ev_io *, int);
-void rtsp_read_cb(struct ev_loop *, ev_io *, int);
+#ifdef ENABLE_SCTP
+void rtsp_sctp_send_rtsp(RTSP_Client *client, GByteArray *data);
+void rtsp_sctp_read_cb(struct ev_loop *, ev_io *, int);
+#endif
 
-void rtsp_interleaved(RTSP_Client *rtsp, int channel, uint8_t *data, size_t len);
+void rtsp_tcp_read_cb(struct ev_loop *, ev_io *, int);
+void rtsp_write_data_queue(RTSP_Client *client, GByteArray *data);
+void rtsp_tcp_write_cb(struct ev_loop *, ev_io *, int);
+
+void rtsp_interleaved_receive(RTSP_Client *rtsp, int channel, uint8_t *data, size_t len);
 
 RTSP_session *rtsp_session_new(RTSP_Client *rtsp);
 void rtsp_session_free(RTSP_session *session);
@@ -262,27 +282,7 @@ void rtsp_do_pause(RTSP_Client *rtsp);
  * @{
  */
 
-/**
- * @brief Structure filled by the ragel parser of the transport header.
- *
- * @internal
- */
-struct ParsedTransport {
-    RTP_Protocol protocol;
-    //! Mode for UDP transmission, here is easier to access
-    enum { TransportUnicast, TransportMulticast } mode;
-    unsigned rtp_channel;
-    unsigned rtcp_channel;
-};
-
-gboolean check_parsed_transport(struct RTSP_Client *rtsp,
-                                struct RTP_transport *rtp_t,
-                                struct ParsedTransport *transport);
-
-
-gboolean ragel_parse_transport_header(struct RTSP_Client *rtsp,
-                                      struct RTP_transport *rtp_t,
-                                      const char *header);
+GSList *ragel_parse_transport_header(const char *header);
 /**
  *@}
  */
@@ -317,6 +317,14 @@ gboolean HTTP_handle_content(RTSP_Client *rtsp);
 gboolean HTTP_handle_idle(RTSP_Client *rtsp);
 void http_tunnel_initialise();
 
+#ifdef HAVE_JSON
+void stats_account_read(RTSP_Client *rtsp, size_t bytes);
+void stats_account_sent(RTSP_Client *rtsp, size_t bytes);
+void feng_send_statistics(RTSP_Client *rtsp);
+#else
+#define stats_account_read(a, b)
+#define stats_account_sent(a, b)
+#endif
 /**
  * @}
  */

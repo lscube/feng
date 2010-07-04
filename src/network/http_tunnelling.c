@@ -34,6 +34,13 @@ typedef struct HTTP_Tunnel_Pair {
 
 static GHashTable *http_tunnel_pairs;
 
+#ifdef CLEANUP_DESTRUCTOR
+static void CLEANUP_DESTRUCTOR http_tunnel_cleanup()
+{
+    g_hash_table_destroy(http_tunnel_pairs);
+}
+#endif
+
 /**
  * @brief Write data to the hidden HTTP socket of the client
  *
@@ -69,8 +76,10 @@ static gboolean http_tunnel_create_pair(RTSP_Client *client, RFC822_Request *req
     pair = g_slice_new0(HTTP_Tunnel_Pair);
     pair->http_client = client;
 
-    pair->rtsp_client = rtsp_client_new(client->srv);
-    pair->rtsp_client->sock = client->sock;
+    pair->rtsp_client = rtsp_client_new();
+    pair->rtsp_client->sd = -1;
+    pair->rtsp_client->local_sock = client->local_sock;
+    pair->rtsp_client->remote_host = client->remote_host;
     pair->rtsp_client->write_data = rtsp_write_data_http;
     pair->rtsp_client->pair = pair;
     memcpy(&pair->rtsp_client->ev_sig_disconnect, &client->ev_sig_disconnect, sizeof(client->ev_sig_disconnect));
@@ -135,6 +144,14 @@ gboolean HTTP_handle_headers(RTSP_Client *rtsp)
     if (!rtsp_connection_limit(rtsp, rtsp->pending_request))
         return false;
 
+#ifdef HAVE_JSON
+    if ( rtsp->pending_request->method_id == HTTP_Method_GET &&
+         strstr(rtsp->pending_request->object, "stats") ) {
+
+        feng_send_statistics(rtsp);
+        return false;
+    }
+#endif
     if ( rtsp->pending_request->method_id == HTTP_Method_POST ) {
         const char *http_session = rfc822_headers_lookup(rtsp->pending_request->headers, HTTP_Header_x_sessioncookie);
 
@@ -184,7 +201,7 @@ gboolean HTTP_handle_content(RTSP_Client *rtsp)
     return false;
 }
 
-gboolean HTTP_handle_idle(RTSP_Client *rtsp)
+gboolean HTTP_handle_idle(ATTR_UNUSED RTSP_Client *rtsp)
 {
     return false;
 }

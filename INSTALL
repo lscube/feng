@@ -8,8 +8,11 @@ In order to build feng you need:
 - gnu toolchain (gcc >= 3.4 , make >= 3.80, libtool >= 1.5.20) [1]
 - glib-2 >= 2.10 [2]
 - ffmpeg >= 0.5 [3]
-- netembryo >= 0.1.0 [4]
-- libev >= 3.48 [5]
+- libev >= 3.48 [4]
+
+Optionally we additionally use:
+
+- json-c [5] to provide realtime statistics
 
 + Build instructions
 
@@ -54,6 +57,7 @@ The standard build instruction applies form this step.
 + Links
 
 [0] http://lscube.org                           -- LScube main website
+    http://cgit.lscube.org                      -- LScube git repository
 
 [1] http://www.gnu.org/software/gcc/            -- GNU Compiler collection
     http://www.gnu.org/software/libtool/        -- GNU Libtool
@@ -63,9 +67,9 @@ The standard build instruction applies form this step.
 
 [3] http://ffmpeg.org                           -- FFmpeg
 
-[4] http://cgit.lscube.org                      -- LScube git repository
+[4] http://software.schmorp.de/pkg/libev.html   -- Libev
 
-[5] http://software.schmorp.de/pkg/libev.html   -- Libev
+[5] http://oss.metaparadigm.com/json-c/         -- A JSON implementation in C
 
 [6] http://git.or.cz                            -- Git Version Control System
 

@@ -24,13 +24,16 @@
  * @brief Contains DESCRIBE method and reply handlers
  */
 
+#include <config.h>
+
 #include <stdbool.h>
+#include <math.h>
 
 #include "fnc_log.h"
 #include "rtsp.h"
+#include "feng.h"
 #include "media/demuxer.h"
-#include <netembryo/wsocket.h>
-#include <netembryo/url.h>
+#include "uri.h"
 
 #define SDP_EL "\r\n"
 #define DEFAULT_TTL 32
@@ -184,15 +187,15 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
 /**
  * @brief Create description for an SDP session
  *
- * @param srv Pointer to the server-specific data instance.
- * @param url Url of the resource to describe
+ * @param uri URI of the resource to describe
  *
  * @return A new GString containing the complete description of the
  *         session or NULL if the resource was not found or no demuxer
  *         was found to handle it.
  */
-static GString *sdp_session_descr(struct feng *srv, const Url *url)
+static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
 {
+    URI *uri = req->uri;
     GString *descr = NULL;
     double duration;
 
@@ -202,10 +205,12 @@ static GString *sdp_session_descr(struct feng *srv, const Url *url)
     Resource *resource;
     ResourceInfo *res_info;
 
-    char *path = g_uri_unescape_string(url->path, "/");
+    char *path = g_uri_unescape_string(uri->path, "/");
+
+    int inet_family = rtsp->local_sock->local_sa->sa_family;
 
     fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s", path);
-    if ( !(resource = r_open(srv, path)) ) {
+    if ( !(resource = r_open(path)) ) {
         fnc_log(FNC_LOG_ERR, "[SDP] %s not found", path);
         g_free(path);
         return NULL;
@@ -225,8 +230,10 @@ static GString *sdp_session_descr(struct feng *srv, const Url *url)
         resname = "RTSP Session";
 
     /* Network type: Internet; Address type: IP4. */
-    g_string_append_printf(descr, "o=- %.0f %.0f IN IP4 %s"SDP_EL,
-                           currtime_float, restime_float, url->hostname);
+    g_string_append_printf(descr, "o=- %.0f %.0f IN %s %s"SDP_EL,
+                           currtime_float, restime_float,
+                           inet_family == AF_INET6 ? "IP6" : "IP4",
+                           uri->host);
 
     g_string_append_printf(descr, "s=%s"SDP_EL,
                            resname);
@@ -247,7 +254,8 @@ static GString *sdp_session_descr(struct feng *srv, const Url *url)
     // c=
     /* Network type: Internet. */
     /* Address type: IP4. */
-    g_string_append(descr, "c=IN IP4 ");
+    g_string_append_printf(descr, "c=IN %s ",
+                           inet_family == AF_INET6 ? "IP6" : "IP4");
 
     if(res_info->multicast[0]) {
         g_string_append_printf(descr, "%s/",
@@ -261,7 +269,8 @@ static GString *sdp_session_descr(struct feng *srv, const Url *url)
             g_string_append_printf(descr, "%d"SDP_EL,
                                    DEFAULT_TTL);
     } else
-        g_string_append(descr, "0.0.0.0"SDP_EL);
+        g_string_append_printf(descr, "%s"SDP_EL,
+                               inet_family == AF_INET6 ? "::" : "0.0.0.0");
 
     // b=
     // t=
@@ -295,31 +304,19 @@ static GString *sdp_session_descr(struct feng *srv, const Url *url)
 }
 
 /**
- * Sends the reply for the describe method
- * @param req The client request for the method
- * @param descr the description string to send
- */
-static void send_describe_reply(RFC822_Request *req, GString *descr)
-{
-}
-
-/**
  * RTSP DESCRIBE method handler
  * @param rtsp the buffer for which to handle the method
  * @param req The client request for the method
  */
 void RTSP_describe(RTSP_Client *rtsp, RFC822_Request *req)
 {
-    Url url;
     GString *descr;
 
-    if ( !rfc822_request_get_url(rtsp, req, &url) )
+    if ( !rfc822_request_check_url(rtsp, req) )
         return;
 
     // Get Session Description
-    descr = sdp_session_descr(rtsp->srv, &url);
-
-    Url_destroy(&url);
+    descr = sdp_session_descr(rtsp, req);
 
     /* The only error we may have here is when the file does not exist
        or if a demuxer is not available for the given file */

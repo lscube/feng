@@ -20,15 +20,21 @@
  *
  * */
 
-#include "feng.h"
-#include "network/rtsp.h"
-#include "network/rtp.h"
-#include "fnc_log.h"
-#include "media/demuxer.h"
+#include <config.h>
 
 #include <sys/time.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <errno.h>
+
 #include <ev.h>
+
+#include "feng.h"
+#include "network/rtsp.h"
+#include "network/rtp.h"
+#include "network/netembryo.h"
+#include "fnc_log.h"
+#include "media/demuxer.h"
 
 #define LIVE_STREAM_BYE_TIMEOUT 6
 #define STREAM_TIMEOUT 12 /* This one must be big enough to permit to VLC to switch to another
@@ -51,15 +57,15 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
 {
     RTSP_Client *rtsp = (RTSP_Client*)w->data;
     GString *outbuf = NULL;
-    feng *srv = rtsp->srv;
 
-    ev_io_stop(srv->loop, &rtsp->ev_io_read);
-    ev_io_stop(srv->loop, &rtsp->ev_io_write);
-    ev_async_stop(srv->loop, &rtsp->ev_sig_disconnect);
-    ev_timer_stop(srv->loop, &rtsp->ev_timeout);
+    ev_io_stop(feng_loop, &rtsp->ev_io_read);
+    ev_io_stop(feng_loop, &rtsp->ev_io_write);
+    ev_async_stop(feng_loop, &rtsp->ev_sig_disconnect);
+    ev_timer_stop(feng_loop, &rtsp->ev_timeout);
 
-    Sock_close(rtsp->sock);
-    srv->connection_count--;
+    close(rtsp->sd);
+    g_free(rtsp->remote_host);
+    feng_srv.connection_count--;
 
     rtsp_session_free(rtsp->session);
 
@@ -67,12 +73,20 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
         g_hash_table_destroy(rtsp->channels);
 
     /* Remove the output queue */
-    while( (outbuf = g_queue_pop_tail(rtsp->out_queue)) )
-        g_string_free(outbuf, TRUE);
+    if ( rtsp->out_queue ) {
+        while( (outbuf = g_queue_pop_tail(rtsp->out_queue)) )
+            g_string_free(outbuf, TRUE);
 
-    g_queue_free(rtsp->out_queue);
+        g_queue_free(rtsp->out_queue);
+    }
 
     g_byte_array_free(rtsp->input, true);
+
+    feng_srv.clients = g_slist_remove(feng_srv.clients, rtsp);
+
+    g_slice_free(RFC822_Request, rtsp->pending_request);
+
+    g_slice_free1(rtsp->peer_len, rtsp->peer_sa);
 
     g_slice_free(RTSP_Client, rtsp);
 
@@ -100,7 +114,7 @@ static void check_if_any_rtp_session_timedout(gpointer element,
      */
     if ((now - session->last_packet_send_time) >= STREAM_TIMEOUT) {
         fnc_log(FNC_LOG_INFO, "[client] Stream Timeout, client kicked off!");
-        ev_async_send(session->srv->loop, &session->client->ev_sig_disconnect);
+        ev_async_send(feng_loop, &session->client->ev_sig_disconnect);
     }
 }
 
@@ -114,28 +128,13 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w,
     ev_timer_again (loop, w);
 }
 
-/**
- * @brief Write data to the RTSP socket of the client
- *
- * @param client The client to write the data to
- * @param data The GByteArray object to queue for sending
- *
- * @note after calling this function, the @p data object should no
- * longer be referenced by the code path.
- */
-static void rtsp_write_data_direct(RTSP_Client *client, GByteArray *data)
-{
-    g_queue_push_head(client->out_queue, data);
-    ev_io_start(client->srv->loop, &client->ev_io_write);
-}
-
-RTSP_Client *rtsp_client_new(feng *srv)
+RTSP_Client *rtsp_client_new()
 {
     RTSP_Client *rtsp = g_slice_new0(RTSP_Client);
 
     rtsp->input = g_byte_array_new();
-    rtsp->srv = srv;
-    rtsp->write_data = rtsp_write_data_direct;
+
+    feng_srv.clients = g_slist_append(feng_srv.clients, rtsp);
 
     return rtsp;
 }
@@ -166,54 +165,81 @@ RTSP_Client *rtsp_client_new(feng *srv)
 void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
                              ATTR_UNUSED int revents)
 {
-    Sock *sock = w->data;
-    feng *srv = sock->data;
-    Sock *client_sock = NULL;
+    Feng_Listener *listen = w->data;
+    int client_sd = -1;
+    struct sockaddr_storage sa;
+    socklen_t sa_len = sizeof(struct sockaddr_storage);
+
     ev_io *io;
     ev_async *async;
     ev_timer *timer;
     RTSP_Client *rtsp;
 
-    if ( (client_sock = Sock_accept(sock, NULL)) == NULL )
-        return;
-
-// Paranoid safeguard
-    if (srv->connection_count >= ONE_FORK_MAX_CONNECTION*2) {
-        Sock_close(client_sock);
+    if ( (client_sd = accept(listen->fd, (struct sockaddr*)&sa, &sa_len)) < 0 ) {
+        fnc_perror("accept failed");
         return;
     }
 
-    fnc_log(FNC_LOG_INFO, "Incoming connection accepted on socket: %d\n",
-            Sock_fd(client_sock));
+// Paranoid safeguard
+    if (feng_srv.connection_count >= ONE_FORK_MAX_CONNECTION*2) {
+        close(client_sd);
+        return;
+    }
 
-    rtsp = rtsp_client_new(srv);
-    rtsp->sock = client_sock;
-    rtsp->out_queue = g_queue_new();
+    fnc_log(FNC_LOG_INFO, "Incoming connection accepted on socket: %d",
+            client_sd);
 
-    srv->connection_count++;
-    rtsp->sock->data = srv;
+    rtsp = rtsp_client_new();
+    rtsp->sd = client_sd;
 
-    io = &rtsp->ev_io_read;
-    io->data = rtsp;
-    ev_io_init(io, rtsp_read_cb, Sock_fd(rtsp->sock), EV_READ);
-    ev_io_start(srv->loop, io);
+#if ENABLE_SCTP
+    if ( ! listen->specific->is_sctp ) {
+#endif
+        rtsp->socktype = RTSP_TCP;
+        rtsp->out_queue = g_queue_new();
+        rtsp->write_data = rtsp_write_data_queue;
 
-    /* to be started/stopped when necessary */
-    io = &rtsp->ev_io_write;
-    io->data = rtsp;
-    ev_io_init(io, rtsp_write_cb, Sock_fd(rtsp->sock), EV_WRITE);
+        /* to be started/stopped when necessary */
+        io = &rtsp->ev_io_write;
+        io->data = rtsp;
+        ev_io_init(io, rtsp_tcp_write_cb, rtsp->sd, EV_WRITE);
+
+        io = &rtsp->ev_io_read;
+        io->data = rtsp;
+        ev_io_init(io, rtsp_tcp_read_cb, rtsp->sd, EV_READ);
+#if ENABLE_SCTP
+    } else {
+        rtsp->socktype = RTSP_SCTP;
+        rtsp->write_data = rtsp_sctp_send_rtsp;
+
+        io = &rtsp->ev_io_read;
+        io->data = rtsp;
+        ev_io_init(io, rtsp_sctp_read_cb, rtsp->sd, EV_READ);
+    }
+#endif
+
+    rtsp->local_sock = listen;
+
+    rtsp->remote_host = neb_sa_get_host((struct sockaddr*)&sa);
+
+    rtsp->peer_len = sa_len;
+    rtsp->peer_sa = g_slice_copy(rtsp->peer_len, &sa);
+
+    feng_srv.connection_count++;
+
+    ev_io_start(feng_loop, &rtsp->ev_io_read);
 
     async = &rtsp->ev_sig_disconnect;
     async->data = rtsp;
     ev_async_init(async, client_ev_disconnect_handler);
-    ev_async_start(srv->loop, async);
+    ev_async_start(feng_loop, async);
 
     timer = &rtsp->ev_timeout;
     timer->data = rtsp;
     ev_init(timer, client_ev_timeout);
     timer->repeat = STREAM_TIMEOUT;
 
-    fnc_log(FNC_LOG_INFO, "Connection reached: %d\n", srv->connection_count);
+    fnc_log(FNC_LOG_INFO, "Connection reached: %d", feng_srv.connection_count);
 }
 
 /**

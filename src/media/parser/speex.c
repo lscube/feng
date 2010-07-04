@@ -20,12 +20,11 @@
  *
  * */
 
-#include <stdio.h>
-#include <string.h>
+#include <config.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "media/mediaparser_module.h"
-#include "feng_utils.h"
 
 static const MediaParserInfo info = {
     "speex",
@@ -34,13 +33,13 @@ static const MediaParserInfo info = {
 
 static int speex_init(ATTR_UNUSED Track *track)
 {
-    return ERR_NOERROR;
+    return 0;
 }
 
 static int speex_parse(Track *tr, uint8_t *data, size_t len)
 {
     if (len > DEFAULT_MTU)
-        return ERR_ALLOC;
+        return -1;
 
     mparser_buffer_write(tr,
                          tr->properties.pts,
@@ -49,7 +48,7 @@ static int speex_parse(Track *tr, uint8_t *data, size_t len)
                          1,
                          data, len);
 
-    return ERR_NOERROR;
+    return 0;
 }
 
 #define speex_uninit NULL

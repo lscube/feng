@@ -34,7 +34,8 @@ RAGEL_SOURCES = \
 	src/network/ragel_request_line.c \
 	src/network/ragel_transport.c \
 	src/network/ragel_range.c \
-	src/network/ragel_headers.c
+	src/network/ragel_headers.c \
+	src/network/ragel_uri.c
 
 BUILT_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rfc822proto.c \
@@ -51,31 +52,27 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/accesslog.c \
 	src/bufferqueue.c src/bufferqueue.h \
 	src/fnc_log.c src/fnc_log.h \
-	src/incoming.c src/incoming.h \
+	src/incoming.c \
 	src/feng.h \
-	src/feng_utils.h \
 	src/main.c \
 	src/conf/array.c \
 	src/conf/array.h \
 	src/conf/buffer.c \
 	src/conf/buffer.h \
-	src/conf/conf.h \
 	src/conf/stream.c \
 	src/conf/stream.h \
 	src/conf/configparser.c \
 	src/conf/configparser.h \
-	src/conf/proc_open.c \
-	src/conf/proc_open.h \
-	src/conf/configfile-glue.c \
 	src/conf/configfile.c \
 	src/conf/configfile.h \
 	src/conf/data_array.c \
-	src/conf/data_count.c \
 	src/conf/data_integer.c \
 	src/conf/data_config.c \
 	src/conf/data_string.c \
 	src/conf/settings.h \
 	\
+	src/network/netembryo.h \
+	src/network/neb_sockaddr.c \
 	src/network/ragel_parsers.h \
 	src/network/rfc822proto.c \
 	src/network/rfc822proto-constants.h \
@@ -95,6 +92,8 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rtsp_state_machine.c \
 	src/network/rtsp_utils.c \
 	src/network/http_tunnelling.c \
+	src/network/rtsp_interleaved.c \
+	src/network/uri.c src/network/uri.h \
 	\
 	src/media/demuxer.c \
 	src/media/demuxer.h \
@@ -123,6 +122,14 @@ endif
 
 if LIVE_STREAMING
 dist_feng_SOURCES += src/media/demuxer/demuxer_sd.c
+endif
+
+if HAVE_JSON
+dist_feng_SOURCES += src/statistics.c
+endif
+
+if ENABLE_SCTP
+dist_feng_SOURCES += src/network/rtsp_sctp.c
 endif
 
 if AVOID_TABLES
@@ -169,7 +176,7 @@ check_PROGRAMS = $(TESTS)
 BUILT_SOURCES += tests/gtestmain.c \
 	tests/rfc822proto/rfc822proto-test.c
 
-tests/gtestmain.c: $(tests_testsuite_SOURCES) Makefile.am
+tests/gtestmain.c: $(tests_testsuite_SOURCES) $(srcdir)/tests/genmain.awk Makefile.am
 	@$(mkdir_p) $(dir $@)
 	$(AM_V_GEN)$(EXUBERANT_CTAGS) -f - --file-scope=no $(filter %.c,$^) | \
 		sort -k 2 | $(EGREP) '^test_' | \
@@ -181,6 +188,9 @@ tests_testsuite_SOURCES = \
 	src/bufferqueue.c \
 	src/network/ragel_request_line.c \
 	src/network/ragel_headers.c \
+	src/network/ragel_transport.c \
+	src/network/ragel_uri.c \
+	src/network/uri.c \
 	tests/bufferqueue/test-1.c \
 	tests/bufferqueue/test-2.c \
 	tests/bufferqueue/test-3.c \
@@ -188,7 +198,10 @@ tests_testsuite_SOURCES = \
 	tests/bufferqueue/test-5.c \
 	tests/rfc822proto/rfc822proto-test.c \
 	tests/rfc822proto/request_line.c \
-	tests/rfc822proto/headers.c
+	tests/rfc822proto/headers.c \
+	tests/rfc822proto/transport_header.c \
+	tests/uri.c \
+	tests/gtest-extra.h
 
 # tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG
 

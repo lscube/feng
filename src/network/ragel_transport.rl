@@ -7,12 +7,12 @@
 
 %% machine ragel_transport_header;
 
-gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
-                                      RTP_transport *rtp_t,
-                                      const char *header) {
-    struct ParsedTransport transport;
+GSList *ragel_parse_transport_header(const char *header)
+{
+    GSList *transports = NULL;
+    struct ParsedTransport *transport = NULL;
     int cs;
-    const char *p = header, *pe = p + strlen(p) +1;
+    const char *p = header, *pe = p + strlen(p) +1, *eof = pe;
     uint32_t portval = 0; uint16_t chanval = 0;
 
     %%{
@@ -45,8 +45,8 @@ gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
         Port = digit{,5} >start_port @count_port %check_port;
         Channel = digit{,3} >start_channel @count_channel %check_channel;
 
-        Unicast = ";unicast" %{transport.mode = TransportUnicast;};
-        Multicast = ";multicast" %{transport.mode = TransportMulticast;};
+        Unicast = ";unicast" %{transport->mode = TransportUnicast;};
+        Multicast = ";multicast" %{transport->mode = TransportMulticast;};
 
         TransportParamName = ( alnum | '_' )+;
         TransportParamValue = (print - ('=' | ';' ))+;
@@ -54,8 +54,8 @@ gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
         TransportParam = ";" . TransportParamName . ( '=' . TransportParamValue )?;
 
         ClientPort = ";client_port=" .
-            Port%{transport.rtp_channel = portval;} .
-            ( "-" . Port%{transport.rtcp_channel = portval;} );
+            Port%{transport->rtp_channel = portval;} .
+            ( "-" . Port%{transport->rtcp_channel = portval;} );
 
         UnicastUDPParams = Unicast . ( ClientPort | TransportParam )+;
         MulticastUDPParams = Multicast . TransportParam+;
@@ -63,33 +63,46 @@ gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
         UDPParams = ( UnicastUDPParams | MulticastUDPParams );
 
         Interleaved = ";interleaved=" .
-            Channel%{transport.rtp_channel = chanval;} .
-            ( "-" . Channel%{transport.rtcp_channel = chanval;} );
+            Channel%{transport->rtp_channel = chanval;} .
+            ( "-" . Channel%{transport->rtcp_channel = chanval;} );
 
         TCPParams = ( Interleaved | TransportParam)+;
 
         Streams = ";streams=" .
-            Channel%{transport.rtp_channel = chanval;} .
-            ( "-" . Channel%{transport.rtcp_channel = chanval;} );
+            Channel%{transport->rtp_channel = chanval;} .
+            ( "-" . Channel%{transport->rtcp_channel = chanval;} );
 
         SCTPParams = ( Streams | TransportParam)+;
 
-        TransportUDP = ("/UDP")? %{transport.protocol = RTP_UDP; }
+        TransportUDP = ("/UDP")? %{transport->protocol = RTP_UDP; }
             . UDPParams;
-        TransportTCP = "/TCP" %{transport.protocol = RTP_TCP; }
+        TransportTCP = "/TCP" %{transport->protocol = RTP_TCP; }
             . TCPParams;
-        TransportSCTP = "/SCTP" %{transport.protocol = RTP_SCTP; }
+        TransportSCTP = "/SCTP" %{transport->protocol = RTP_SCTP; }
             . SCTPParams;
 
-        action check_transport {
-            /* If the transport is valid, our work is done */
-            if ( check_parsed_transport(rtsp, rtp_t, &transport) )
-                return true;
+        action start_transport {
+            if ( transport != NULL )
+                transports = g_slist_append(transports, transport);
+
+            transport = g_slice_new0(struct ParsedTransport);
+            transport->rtp_channel = transport->rtcp_channel = -1;
         }
 
-        TransportSpec = "RTP/AVP" . ( TransportUDP|TransportTCP|TransportSCTP )
-            > { memset(&transport, 0, sizeof(transport)); }
-            % check_transport;
+        action error_transport {
+            const char *next_transport = strchr(p, ',');
+
+            g_slice_free(struct ParsedTransport, transport);
+            transport = NULL;
+
+            p = (next_transport == NULL) ? pe : (next_transport + 1);
+
+            fhold; fgoto main;
+        }
+
+        TransportSpec = ( "RTP/AVP" . ( TransportUDP|TransportTCP|TransportSCTP ) )
+            >(start_transport)
+            <err(error_transport);
 
         main := TransportSpec . ( ',' . TransportSpec )* . 0;
 
@@ -98,7 +111,8 @@ gboolean ragel_parse_transport_header(RTSP_Client *rtsp,
         write exec;
     }%%
 
-    cs = ragel_transport_header_en_main;
+    if ( transport != NULL )
+        transports = g_slist_append(transports, transport);
 
-    return false;
+    return transports;
 }

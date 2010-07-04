@@ -9,6 +9,8 @@ server.port         = 8554
 # bind to name (defaults to all interfaces)
 # server.bind         = "live.host.tld"
 
+server.use_ipv6 = 1
+
 # use sctp instead of tcp
 @ENABLE_SCTP@$SERVER["socket"] == "localhost:8554" {
 @ENABLE_SCTP@   sctp.protocol       = "enable"
@@ -18,7 +20,9 @@ server.port         = 8554
 server.username      = "feng"
 server.groupname     = "feng"
 server.max-connections = @feng_max_session@
-server.loglevel      = 1
+server.loglevel      = 5
 server.document-root = "@abs_top_srcdir@/avroot"
 server.errorlog      = var.logdir  + "/error.log"
+server.errorlog-use-syslog = "disable"
 accesslog.filename   = var.logdir + "/access.log"
+accesslog.use-syslog = "disable"

@@ -29,24 +29,59 @@
 #define FN_SERVER_H
 
 #include <glib.h>
-#include <netembryo/wsocket.h>
 #include <ev.h>
 #include <pwd.h>
+#include <stdio.h> /* for FILE* */
+#include <netinet/in.h>
 
 #include "conf/array.h"
-#include "conf/conf.h"
+
+typedef struct server_config {
+    short buffered_frames;
+    short loglevel;
+
+    int errorlog_use_syslog;
+
+    unsigned short max_conns;
+
+    char *bindhost;
+    char *bindport;
+
+    char *errorlog_file;
+
+    char *twin;
+
+    char *username;
+    char *groupname;
+} server_config;
+
+typedef struct specific_config {
+    gboolean use_ipv6;
+    gboolean access_log_syslog;
+
+#if ENABLE_SCTP
+    gboolean is_sctp;
+    unsigned short sctp_max_streams;
+#endif
+
+    char *document_root;
+
+    char *access_log_file;
+    FILE *access_log_fp;
+} specific_config;
+
+typedef struct feng_stats {
+    size_t total_sent;
+    size_t total_received;
+    time_t start_time;
+    //add_more
+} feng_stats;
 
 typedef struct feng {
-
-    array *config;
-    array *config_touched;
-
     array *config_context;
     specific_config *config_storage;
 
     server_config srvconf;
-
-    struct ev_loop *loop;       //!< event loop
 
     /**
      * @brief Number of active connections
@@ -56,21 +91,37 @@ typedef struct feng {
      */
     size_t connection_count;
 
-    GMutex *lock;        //!< lock to access live_mq
-    GHashTable *live_mq; //!< keeps the association producer/mq
+    GSList *clients; //!< All the currently connected clients
 } feng;
 
-typedef feng server;
+extern struct feng feng_srv;
+extern struct ev_loop *feng_loop;
+
+typedef struct Feng_Listener {
+    int fd;
+    socklen_t sa_len;
+    struct sockaddr *local_sa;
+    char *local_host;
+    specific_config *specific;
+    ev_io io;
+} Feng_Listener;
 
 #define MAX_PROCESS    1    /*! number of fork */
-#define MAX_CONNECTION    srv->srvconf.max_conns   /*! rtsp connection */
+#define MAX_CONNECTION    feng_srv.srvconf.max_conns   /*! rtsp connection */
 #define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS)) /*! rtsp connection for one fork */
+
+void feng_bind_ports();
 
 struct RTSP_Client;
 struct RFC822_Response;
 
-gboolean accesslog_init(feng *srv);
-void accesslog_uninit(feng *srv);
+void accesslog_init();
 void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response);
+
+#if HAVE_JSON
+void stats_init();
+#else
+#define stats_init()
+#endif
 
 #endif // FN_SERVER_H

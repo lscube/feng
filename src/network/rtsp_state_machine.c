@@ -31,6 +31,7 @@
 #include "rtp.h"
 #include "fnc_log.h"
 #include "feng.h"
+#include "uri.h"
 
 /**
  * @brief Free a request structure as parsed by rtsp_parse_request().
@@ -43,6 +44,7 @@ static void rfc822_free_request(RFC822_Request *req)
         return;
 
     rfc822_headers_destroy(req->headers);
+    uri_free(req->uri);
     g_free(req->method_str);
     g_free(req->object);
     g_free(req->protocol_str);
@@ -160,6 +162,7 @@ static void rtsp_handle_request(RTSP_Client *client, RFC822_Request *req)
 
  error:
     rfc822_free_request(req);
+    client->pending_request = NULL;
 }
 
 static gboolean RTSP_handle_interleaved(RTSP_Client *rtsp) {
@@ -177,8 +180,8 @@ static gboolean RTSP_handle_interleaved(RTSP_Client *rtsp) {
     if ( rtsp->input->len < (length + 4) )
         return false;
 
-    rtsp_interleaved(rtsp, rtsp->input->data[1],
-                     rtsp->input->data+4, length);
+    rtsp_interleaved_receive(rtsp, rtsp->input->data[1],
+                             rtsp->input->data+4, length);
 
     g_byte_array_remove_range(rtsp->input, 0, length+4);
     rtsp->status = RFC822_State_Begin;
@@ -199,22 +202,20 @@ static gboolean RTSP_handle_interleaved(RTSP_Client *rtsp) {
 
 gboolean rtsp_connection_limit(RTSP_Client *rtsp, RFC822_Request *req)
 {
-    if (rtsp->srv->connection_count > rtsp->srv->srvconf.max_conns) {
+    if (feng_srv.connection_count > feng_srv.srvconf.max_conns) {
+        const char *twin = feng_srv.srvconf.twin;
         fnc_log(FNC_LOG_INFO, "Max connection reached");
-        if (rtsp->srv->srvconf.twin->ptr) {
-            Url url;
+        if (twin) {
             char *redir;
-            char *hostname = rtsp->srv->srvconf.twin->ptr;
             RFC822_Response *response = rfc822_response_new(req, RTSP_Found);
 
-            Url_init(&url, req->object);
             switch(req->proto) {
                 case RFC822_Protocol_HTTP10:
                 case RFC822_Protocol_HTTP11:
-                    redir = g_strdup_printf("http://%s/%s", hostname, url.path);
+                    redir = g_strdup_printf("http://%s/%s", twin, req->uri->path);
                 break;
                 default:
-                    redir = g_strdup_printf("rtsp://%s/%s", hostname, url.path);
+                    redir = g_strdup_printf("rtsp://%s/%s", twin, req->uri->path);
                 break;
             }
 
@@ -225,7 +226,6 @@ gboolean rtsp_connection_limit(RTSP_Client *rtsp, RFC822_Request *req)
                                RFC822_Header_Location,
                                strdup(redir));
             rfc822_response_send(rtsp, response);
-            Url_destroy(&url);
             g_free(redir);
         } else {
             rtsp_quick_response(rtsp, req, RTSP_NotEnoughBandwidth);
@@ -317,6 +317,16 @@ static gboolean RTSP_handle_headers(RTSP_Client *rtsp) {
     }
 
     g_byte_array_remove_range(rtsp->input, 0, parsed_headers);
+
+    /* try parsing the URI already, since we'll most likely need it,
+       and the new parser is fast enough */
+    if ( rtsp->pending_request->object ) {
+        char *decoded_url = g_uri_unescape_string(rtsp->pending_request->object, NULL);
+
+        rtsp->pending_request->uri = uri_parse(rtsp->pending_request->object);
+
+        g_free(decoded_url);
+    }
 
     if ( headers_res == 0 )
         return false;

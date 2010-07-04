@@ -26,7 +26,6 @@
 #include <stdint.h>
 
 #include "demuxer.h"
-#include "feng_utils.h"
 
 struct Track;
 
@@ -62,7 +61,7 @@ typedef struct MediaParser {
     void (*uninit)(Track *track);
 } MediaParser;
 
-MediaParser *mparser_find(const char *);
+const MediaParser *mparser_find(const char *);
 
 char *extradata2config(MediaProperties *properties);
 

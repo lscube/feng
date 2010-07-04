@@ -165,8 +165,12 @@ void track_add_sdp_field(Track *track, sdp_field_type type, char *value)
  */
 BufferQueue_Producer *track_get_producer(Track *tr)
 {
+    g_mutex_lock(tr->lock);
+
     if ( tr->producer == NULL )
         tr->producer = bq_producer_new(g_free);
+
+    g_mutex_unlock(tr->lock);
 
     return tr->producer;
 }
