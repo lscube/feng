@@ -283,19 +283,24 @@ static Resource *r_open_hashed(gchar *mrl, const Demuxer *dmx)
         g_free(mrl);
 
     if ( r ) {
-        g_mutex_lock(r->lock);
-
-        r->count++;
+        g_atomic_int_inc(&r->count);
 
         /* the resource doesn't have a fill pool, we'll create one by
            resuming, then we alsopush a single thread to read */
         if ( r->fill_pool == NULL ) {
-            r_resume(r);
-            g_thread_pool_push(r->fill_pool,
-                               GINT_TO_POINTER(-1), NULL);
-        }
+            g_mutex_lock(r->lock);
 
-        g_mutex_unlock(r->lock);
+            /* check again to make sure that nobody created this while
+               we were waiting for the lock (we should only ever lock
+               between two r_open_hashed calls). */
+            if ( r->fill_pool == NULL ) {
+                r_resume(r);
+                g_thread_pool_push(r->fill_pool,
+                                   GINT_TO_POINTER(-1), NULL);
+            }
+
+            g_mutex_unlock(r->lock);
+        }
     }
 
     g_mutex_unlock(shared_resources_lock);
