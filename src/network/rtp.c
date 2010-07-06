@@ -233,7 +233,7 @@ static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
     uint32_t timestamp = rtptime(session, tr->properties.clock_rate, buffer);
 
     if (session->track->properties.media_source == LIVE_SOURCE)
-	session->seq_no = buffer->seq_no;
+        session->seq_no = buffer->seq_no;
     else
         ++session->seq_no;
 

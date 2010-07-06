@@ -82,7 +82,7 @@ typedef struct {
 } MParserBuffer;
 
 void mparser_buffer_write(struct Track *tr,
-                          double presentation, 
+                          double presentation,
                           double delivery,
                           double duration,
                           gboolean marker,
@@ -95,7 +95,7 @@ void mparser_live_buffer_write(struct Track *tr,
                           double duration,
                           uint16_t seq_no,
                           gboolean marker,
-                          uint8_t *data, size_t data_size); 
+                          uint8_t *data, size_t data_size);
 
 
 #define DEFAULT_MTU 1440
