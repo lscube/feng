@@ -499,10 +499,10 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
                 tr->info->mrl, delta, package_start_time, package_start_dts, package_dts);
 #endif
 
-        if (delta > 600.5f)
+        if (delta > 0.5f)
             fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f, discarding..", tr->info->mrl, delta);
 
-    } while(delta > 600.5f);
+    } while(delta > 0.5f);
 
     tr->properties.frame_duration = package_duration/((double)tr->properties.clock_rate);
     timestamp = package_timestamp/((double)tr->properties.clock_rate);

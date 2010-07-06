@@ -317,7 +317,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
         }
 
         if (session->track->properties.frame_duration > 0)
-            sleep_for = session->track->properties.frame_duration * 3; // assumed to be enough
+            sleep_for = session->track->properties.frame_duration; // assumed to be enough
 
         next_time += sleep_for;
         fnc_log(FNC_LOG_INFO, "[%s] nothing to read, waiting %f...",
@@ -346,7 +346,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
             }
         } else {
             /* Wait a bit of time to recover from buffer underrun */
-            double sleep_for = duration ? duration * 3 : 0.1;
+            double sleep_for = duration ? duration : 0.1;
 
             next_time += sleep_for;
             fnc_log(FNC_LOG_INFO, "[%s] next packet not available, waiting %f...",
