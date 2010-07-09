@@ -180,7 +180,7 @@ static const RTP_static_payload RTP_payload[] ={
 #define SD_TITLE            "title"
 #define SD_CREATOR          "creator"
 
-static const DemuxerInfo info = {
+static const DemuxerInfo sd_info = {
     "Live Source Description",
     "sd",
     "LScube Team",

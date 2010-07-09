@@ -30,7 +30,7 @@
 
 #include "media/demuxer_module.h"
 
-static const DemuxerInfo info = {
+static const DemuxerInfo ds_info = {
     "Dynamic Edit List",
     "sd",
     "BPP Team",

@@ -29,7 +29,7 @@
 
 #include <libavformat/avformat.h>
 
-static const DemuxerInfo info = {
+static const DemuxerInfo avf_info = {
 	"Avformat Demuxer",
 	"avf",
 	"LScube Team",

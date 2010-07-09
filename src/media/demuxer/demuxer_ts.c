@@ -22,7 +22,7 @@
 
 #include "demuxer_module.h"
 
-static const DemuxerInfo info = {
+static const DemuxerInfo ts_info = {
     "MPEG TS non-demuxer",
     "mpegts",
     "LScube Team",

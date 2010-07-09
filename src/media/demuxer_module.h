@@ -28,7 +28,7 @@
 
 #define FNC_LIB_DEMUXER(x) const Demuxer fnc_demuxer_##x =\
 {\
-	&info, \
+	&x##_info, \
 	x##_probe, \
 	x##_init, \
 	x##_read_packet, \

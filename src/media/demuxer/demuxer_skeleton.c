@@ -22,7 +22,7 @@
 
 #include "demuxer_module.h"
 
-static const DemuxerInfo info = {
+static const DemuxerInfo skel_info = {
     "Skeleton demuxer_module",
     "skel",
     "LScube Team",
