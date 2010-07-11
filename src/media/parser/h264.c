@@ -149,55 +149,85 @@ static char *encode_avc1_header(uint8_t *p, unsigned int len, int packet_mode)
     return NULL;
 }
 
+//Ripped directly from ffmpeg...
+
+static const uint8_t *find_startcode_internal(const uint8_t *p,
+                                             const uint8_t *end)
+{
+        const uint8_t *a = p + 4 - ((intptr_t)p & 3);
+
+    for (end -= 3; p < a && p < end; p++) {
+        if (p[0] == 0 && p[1] == 0 && p[2] == 1)
+            return p;
+    }
+
+    for (end -= 3; p < end; p += 4) {
+        uint32_t x = *(const uint32_t*)p;
+//      if ((x - 0x01000100) & (~x) & 0x80008000) // little endian
+//      if ((x - 0x00010001) & (~x) & 0x00800080) // big endian
+        if ((x - 0x01010101) & (~x) & 0x80808080) { // generic
+            if (p[1] == 0) {
+                if (p[0] == 0 && p[2] == 1)
+                    return p;
+                if (p[2] == 0 && p[3] == 1)
+                    return p+1;
+            }
+            if (p[3] == 0) {
+                if (p[2] == 0 && p[4] == 1)
+                    return p+2;
+                if (p[4] == 0 && p[5] == 1)
+                    return p+3;
+            }
+        }
+    }
+
+    for (end += 3; p < end; p++) {
+        if (p[0] == 0 && p[1] == 0 && p[2] == 1)
+            return p;
+    }
+
+    return end + 3;
+}
+
+const uint8_t *find_startcode(const uint8_t *p, const uint8_t *end){
+    const uint8_t *out = find_startcode_internal(p, end);
+    if(p<out && out<end && !out[-1]) out--;
+    return out;
+}
+
 static char *encode_header(uint8_t *p, unsigned int len, int packet_mode)
 {
-    uint8_t *q, *end = p + len;
+    uint8_t *end = p + len;
     char *sprop = NULL, *out, *buf = NULL;
+    const uint8_t *r = find_startcode(p, end);
 
-    for (q = p; q < end - 3; q++) {
-        if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
-            break;
+    while (r < end) {
+        const uint8_t *r1;
+        uint8_t nal_type;
+
+        while (!*(r++));
+        nal_type = *r & 0x1f;
+        r1 = find_startcode(r, end);
+        if (nal_type != 7 && nal_type != 8) { /* Only output SPS and PPS */
+            r = r1;
+            continue;
         }
-    }
-
-    if (q >= end - 3)
-        return NULL;
-
-    p = q; // sps start;
-
-    for (; q < end - 3; q++) {
-        if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
-            // sps end;
-            break;
+        if (buf == NULL) {
+            // profile-level-id aka the first 3 bytes from sps
+            out = g_strdup_printf("profile-level-id=%02x%02x%02x; "
+                                  "packetization-mode=%d; ",
+                                  r[0], r[1], r[2], packet_mode);
+            buf = g_base64_encode(r, r1-r);
+            sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
+            g_free(out);
+            g_free(buf);
+        } else {
+            buf = g_base64_encode(r, r1-r);
+            out = g_strdup_printf("%s,%s",sprop, buf);
+            g_free(sprop);
+            g_free(buf);
+            sprop = out;
         }
-    }
-
-    //FIXME I'm abusing memory
-    // profile-level-id aka the first 3 bytes from sps
-    out = g_strdup_printf("profile-level-id=%02x%02x%02x; "
-                          "packetization-mode=%d; ",
-                            p[0], p[1], p[2], packet_mode);
-
-    buf = g_base64_encode(p, q-p);
-
-    sprop = g_strdup_printf("%ssprop-parameter-sets=%s", out, buf);
-    g_free(out);
-    g_free(buf);
-    p = q;
-
-    while (p < end - 3) {
-        //seek to the next startcode [0 0 1]
-        for (q = p; q < end; q++)
-            if (end - q <= 3) continue; // last nal
-            if (q[0] == 0 && q[1] == 0 && q[2] == 1) {
-                break;
-            }
-        buf = g_base64_encode(p, q - p);
-        out = g_strdup_printf("%s,%s",sprop, buf);
-        g_free(sprop);
-	g_free(buf);
-        sprop = out;
-        p = q;
     }
 
     return sprop;
