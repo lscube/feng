@@ -174,6 +174,8 @@ static int avf_init(Resource * r)
     strncpy(trackinfo.author, avfc->author, 80);
 
     r->info->duration = (double)avfc->duration /AV_TIME_BASE;
+    // make sure we can seek.
+    r->info->seekable = !av_seek_frame(avfc, -1, 0, 0);
 
     for(i=0; i<avfc->nb_streams; i++) {
         AVStream *st= avfc->streams[i];
