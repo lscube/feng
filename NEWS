@@ -1,5 +1,13 @@
 + Feng changelog
 
+  07 Jul 2010 Alessandro Molina <amol.wrk@gmail.com>:
+  Miscellaneus improvements in buffering in order to accomodate delays
+  due network issues.
+
+  25 Jun 2010 Diego Elio 'Flameeyes' Pettenò <flameeyes@gmail.com>:
+  Merge the shared-filler branch, now the live resource will have a single
+  filling thread per resource.
+
   23 Feb 2010; Luca Barbato <lu_zero@gentoo.org>:
   Merge Diego's new parser and new interleave infrastructure,
   http-tunneling a la Quicktime now supported
