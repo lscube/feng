@@ -58,6 +58,7 @@ static const id_tag id_tags[] = {
    { CODEC_ID_MPEG4, 96, "MP4V-ES" },
    { CODEC_ID_H263, 96, "H263P" },
    { CODEC_ID_AMR_NB, 96, "AMR" },
+   { CODEC_ID_VP8, 96, "VP8" },
    { CODEC_ID_NONE, 0, "NONE"} //XXX ...
 };
 

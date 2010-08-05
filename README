@@ -16,6 +16,7 @@ Feng supports the following encoding standards:
           o MPEG 4 Visual (MPEG-4 Part 2) (rfc3016)
           o H.264 (MPEG-4 Part 10) (rfc3984)
           o H.263 / H.263+ (rfc4629)
+          o VP8 (draft)
           o Theora (draft)
 
 The main characteristics of Feng are the container support, the ability to handle seeking, also used internally for the compositor metademuxer, and the modular structure focused on easing the extension of codec and protocol support.

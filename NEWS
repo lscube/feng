@@ -1,5 +1,8 @@
 + Feng changelog
 
+  05 Aug 2010 Luca Barbato <lu_zero@gentoo.org>:
+  VP8 support, tested with ffmpeg.
+
   07 Jul 2010 Alessandro Molina <amol.wrk@gmail.com>:
   Miscellaneus improvements in buffering in order to accomodate delays
   due network issues.

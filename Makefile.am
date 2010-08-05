@@ -117,6 +117,7 @@ dist_feng_SOURCES += src/media/parser/h264.c \
 		     src/media/parser/speex.c \
 		     src/media/parser/h263.c \
 		     src/media/parser/amr.c \
+		     src/media/parser/vp8.c \
 		     src/media/demuxer/demuxer_avf.c
 endif
 

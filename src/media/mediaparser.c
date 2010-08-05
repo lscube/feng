@@ -39,6 +39,7 @@ extern MediaParser fnc_mediaparser_speex;
 extern MediaParser fnc_mediaparser_mp2t;
 extern MediaParser fnc_mediaparser_h263;
 extern MediaParser fnc_mediaparser_amr;
+extern MediaParser fnc_mediaparser_vp8;
 
 // static array containing all the available media parsers:
 static const MediaParser *const media_parsers[] = {
@@ -53,6 +54,7 @@ static const MediaParser *const media_parsers[] = {
     &fnc_mediaparser_mp2t,
     &fnc_mediaparser_h263,
     &fnc_mediaparser_amr,
+    &fnc_mediaparser_vp8,
     NULL
 };
 
