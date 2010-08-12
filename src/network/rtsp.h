@@ -179,7 +179,6 @@ typedef struct RTSP_Client {
 
     ev_timer ev_timeout;
 
-    ev_io ev_io_read;
     ev_io ev_io_write;
 
     char *remote_host;

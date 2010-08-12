@@ -218,31 +218,26 @@ static void client_loop(gpointer client_p,
     GString *outbuf = NULL;
 
     struct ev_loop *loop = client->loop;
-    ev_io *io;
+    ev_io *io_write_p = &client->ev_io_write, io_read = { .data = client };
     ev_async *async;
     ev_timer *timer;
 
     switch(client->socktype) {
     case RTSP_TCP:
         /* to be started/stopped when necessary */
-        io = &client->ev_io_write;
-        io->data = client;
-        ev_io_init(io, rtsp_tcp_write_cb, client->sd, EV_WRITE);
+        io_write_p->data = client;
+        ev_io_init(io_write_p, rtsp_tcp_write_cb, client->sd, EV_WRITE);
 
-        io = &client->ev_io_read;
-        io->data = client;
-        ev_io_init(io, rtsp_tcp_read_cb, client->sd, EV_READ);
+        ev_io_init(&io_read, rtsp_tcp_read_cb, client->sd, EV_READ);
         break;
 #if ENABLE_SCTP
     case RTSP_SCTP:
-        io = &client->ev_io_read;
-        io->data = client;
-        ev_io_init(io, rtsp_sctp_read_cb, client->sd, EV_READ);
+        ev_io_init(&io_read, rtsp_sctp_read_cb, client->sd, EV_READ);
         break;
 #endif
     }
 
-    ev_io_start(loop, &client->ev_io_read);
+    ev_io_start(loop, &io_read);
 
     timer = &client->ev_timeout;
     timer->data = client;
@@ -260,8 +255,9 @@ static void client_loop(gpointer client_p,
 
         ev_loop(loop, 0);
 
-        ev_io_stop(loop, &client->ev_io_read);
-        ev_io_stop(loop, &client->ev_io_write);
+        ev_io_stop(loop, &io_read);
+        ev_io_stop(loop, io_write_p);
+
         ev_timer_stop(loop, &client->ev_timeout);
 
         /* As soon as we're out of here, remove the client from the list! */
