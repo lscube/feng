@@ -153,27 +153,19 @@ void clients_each(GFunc func, gpointer user_data)
  * @brief Handle client disconnection and free resources
  *
  * @param loop The event loop where the event was issued
- * @param w The async event object
+ * @param w The async event object (Unused)
  * @param revents Unused
  *
- * This event is triggered when a client disconnects or is forcefully
- * disconnected. It stops the other events from running, and frees all
- * the remaining resources for the client itself.
+ * This event is triggered when disconnecting clients at shutdown, and
+ * simply stops the loop from proceeding.
  */
-static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
-                                         ev_async *w,
+static void client_ev_disconnect_handler(struct ev_loop *loop,
+                                         ATTR_UNUSED ev_async *w,
                                          ATTR_UNUSED int revents)
 {
-    RTSP_Client *rtsp = (RTSP_Client*)w->data;
-
-    ev_io_stop(rtsp->loop, &rtsp->ev_io_read);
-    ev_io_stop(rtsp->loop, &rtsp->ev_io_write);
-    ev_async_stop(rtsp->loop, &rtsp->ev_sig_disconnect);
-    ev_timer_stop(rtsp->loop, &rtsp->ev_timeout);
-
     fnc_log(FNC_LOG_INFO, "[client] Client disconnected");
 
-    ev_unloop(rtsp->loop, EVUNLOOP_ONE);
+    ev_unloop(loop, EVUNLOOP_ONE);
 }
 
 static void check_if_any_rtp_session_timedout(gpointer element,
@@ -197,7 +189,7 @@ static void check_if_any_rtp_session_timedout(gpointer element,
      */
     if ((now - session->last_packet_send_time) >= STREAM_TIMEOUT) {
         fnc_log(FNC_LOG_INFO, "[client] Stream Timeout, client kicked off!");
-        ev_async_send(session->client->loop, &session->client->ev_sig_disconnect);
+        ev_unloop(session->client->loop, EVUNLOOP_ONE);
     }
 }
 
@@ -253,7 +245,6 @@ static void client_loop(gpointer client_p,
     ev_io_start(loop, &client->ev_io_read);
 
     async = &client->ev_sig_disconnect;
-    async->data = client;
     ev_async_init(async, client_ev_disconnect_handler);
     ev_async_start(loop, async);
 
@@ -272,6 +263,11 @@ static void client_loop(gpointer client_p,
         g_mutex_unlock(clients_list_lock);
 
         ev_loop(loop, 0);
+
+        ev_io_stop(loop, &client->ev_io_read);
+        ev_io_stop(loop, &client->ev_io_write);
+        ev_async_stop(loop, &client->ev_sig_disconnect);
+        ev_timer_stop(loop, &client->ev_timeout);
 
         /* As soon as we're out of here, remove the client from the list! */
         g_mutex_lock(clients_list_lock);

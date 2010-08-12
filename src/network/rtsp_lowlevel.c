@@ -339,7 +339,7 @@ void rtsp_tcp_read_cb(struct ev_loop *loop, ev_io *w,
     goto disconnect;
 
  disconnect:
-    ev_async_send(loop, &rtsp->ev_sig_disconnect);
+    ev_unloop(loop, EVUNLOOP_ONE);
 }
 
 void rtsp_tcp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
