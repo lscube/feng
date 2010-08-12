@@ -149,25 +149,6 @@ void clients_each(GFunc func, gpointer user_data)
     g_mutex_unlock(clients_list_lock);
 }
 
-/**
- * @brief Handle client disconnection and free resources
- *
- * @param loop The event loop where the event was issued
- * @param w The async event object (Unused)
- * @param revents Unused
- *
- * This event is triggered when disconnecting clients at shutdown, and
- * simply stops the loop from proceeding.
- */
-static void client_ev_disconnect_handler(struct ev_loop *loop,
-                                         ATTR_UNUSED ev_async *w,
-                                         ATTR_UNUSED int revents)
-{
-    fnc_log(FNC_LOG_INFO, "[client] Client disconnected");
-
-    ev_unloop(loop, EVUNLOOP_ONE);
-}
-
 static void check_if_any_rtp_session_timedout(gpointer element,
                                               ATTR_UNUSED gpointer user_data)
 {
@@ -323,7 +304,7 @@ RTSP_Client *rtsp_client_new()
  * @li creates and sets up the @ref RTSP_Client object.
  *
  * The newly created instance is deleted by @ref
- * client_ev_disconnect_handler.
+ * client_loop at the end of the processing
  *
  * @internal This function should be used as callback for an ev_io
  *           listener.
