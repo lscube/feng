@@ -329,4 +329,17 @@ void feng_send_statistics(RTSP_Client *rtsp);
  * @}
  */
 
+/**
+ * @defgroup clients Clients-handling functions
+ *
+ * @{
+ */
+void clients_init();
+void clients_cleanup();
+void clients_each(GFunc func, gpointer user_data);
+unsigned int clients_count();
+/**
+ * @}
+ */
+
 #endif // FN_RTSP_H

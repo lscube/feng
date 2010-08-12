@@ -41,6 +41,53 @@
                              transmission protocol and must be a multiple of LIVE_STREAM_BYE_TIMEOUT */
 
 /**
+ * @brief List of clients connected to the server
+ *
+ * Access to this list is limited to @ref rtsp_client.c, which
+ * provides a couple of wrapper functions for common situations.
+ */
+static GSList *clients_list;
+
+/**
+ * @brief Initialise the clients-handling code
+ */
+void clients_init()
+{
+}
+
+/**
+ * @brief Disconnect and cleanup clients
+ */
+void clients_cleanup()
+{
+#ifdef CLEANUP_DESTRUCTOR
+    g_slist_free(clients_list);
+#endif
+}
+
+/**
+ * @brief Execute a function for each of the clients
+ *
+ * @param func The function to execute
+ * @param user_data The value to pass as second parameter to each
+ *                  call.
+ *
+ * This is a simple wrapper around g_slist_foreach.
+ */
+void clients_each(GFunc func, gpointer user_data)
+{
+    g_slist_foreach(clients_list, func, user_data);
+}
+
+/**
+ * @brief Reports the number of connected clients
+ */
+unsigned int clients_count()
+{
+    return g_slist_length(clients_list);
+}
+
+/**
  * @brief Handle client disconnection and free resources
  *
  * @param loop The event loop where the event was issued
@@ -82,7 +129,7 @@ static void client_ev_disconnect_handler(ATTR_UNUSED struct ev_loop *loop,
 
     g_byte_array_free(rtsp->input, true);
 
-    feng_srv.clients = g_slist_remove(feng_srv.clients, rtsp);
+    clients_list = g_slist_remove(clients_list, rtsp);
 
     g_slice_free(RFC822_Request, rtsp->pending_request);
 
@@ -134,7 +181,7 @@ RTSP_Client *rtsp_client_new()
 
     rtsp->input = g_byte_array_new();
 
-    feng_srv.clients = g_slist_append(feng_srv.clients, rtsp);
+    clients_list = g_slist_append(clients_list, rtsp);
 
     return rtsp;
 }
