@@ -525,6 +525,9 @@ static void r_read_cb(gpointer consumer_p, gpointer resource_p)
  */
 void r_close(Resource *resource)
 {
+    if ( resource == NULL )
+        return;
+
 #ifdef LIVE_STREAMING
     if (resource->demuxer->info->source == LIVE_SOURCE) {
         g_mutex_lock(shared_resources_lock);
