@@ -373,21 +373,21 @@ static void avf_uninit(gpointer rgen)
     Resource *r = rgen;
     lavf_priv_t* priv = r->private_data;
 
-// avf stuff
-    if (priv) {
-        if (priv->avfc) {
-            init_mutex();
+    if ( priv == NULL )
+        return;
 
-            g_mutex_lock(ffmpeg_lock);
-            av_close_input_file(priv->avfc);
-            g_mutex_unlock(ffmpeg_lock);
+    if (priv->avfc) {
+        init_mutex();
 
-            priv->avfc = NULL;
-        }
-        url_fclose(priv->pb);
-        av_freep(&priv);
-        r->private_data = NULL;
+        g_mutex_lock(ffmpeg_lock);
+        av_close_input_file(priv->avfc);
+        g_mutex_unlock(ffmpeg_lock);
     }
+
+    if ( priv->pb )
+        url_fclose(priv->pb);
+
+    av_free(priv);
 }
 
 FNC_LIB_DEMUXER(avf);
