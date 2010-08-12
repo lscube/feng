@@ -66,6 +66,24 @@ static GMutex *clients_list_lock;
  */
 static GThreadPool *client_threads;
 
+/**
+ * @brief Per-client-thread error status for libev
+ *
+ * Since libev does not support checking for error conditions, we've
+ * got to work it around by providing our own "error flag" to turn on
+ * if something goes wrong in the libev initialisation.
+ *
+ * Something will go wrong if you try to accept more connections than
+ * your file descriptors count will allow you to.
+ */
+static __thread int client_ev_init_errors;
+
+static void libev_syserr(const char *msg)
+{
+    fnc_perror(msg);
+    client_ev_init_errors = 1;
+}
+
 static void client_loop(gpointer client_p,
                         gpointer user_data);
 
@@ -78,6 +96,8 @@ void clients_init()
     client_threads = g_thread_pool_new(client_loop, NULL,
                                        -1, /** @TODO link it to the max number of clients */
                                        false, NULL);
+
+    ev_set_syserr_cb(libev_syserr);
 }
 
 /**
@@ -127,57 +147,6 @@ void clients_each(GFunc func, gpointer user_data)
     g_mutex_lock(clients_list_lock);
     g_slist_foreach(clients_list, func, user_data);
     g_mutex_unlock(clients_list_lock);
-}
-
-/**
- * @brief Threadpool callback for each client
- *
- * @brief client_p The client to execute the loop for
- * @brief user_data unused
- *
- * @note This function will lock the @ref clients_list_lock mutex.
- */
-static void client_loop(gpointer client_p,
-                        ATTR_UNUSED gpointer user_data)
-{
-    RTSP_Client *client = (RTSP_Client *)client_p;
-    GString *outbuf = NULL;
-
-    ev_loop(client->loop, 0);
-
-    /* As soon as we're out of here, remove the client from the list! */
-    g_mutex_lock(clients_list_lock);
-    clients_list = g_slist_remove(clients_list, client);
-    g_mutex_unlock(clients_list_lock);
-
-    close(client->sd);
-    g_free(client->remote_host);
-    feng_srv.connection_count--;
-
-    rtsp_session_free(client->session);
-
-    if ( client->channels )
-        g_hash_table_destroy(client->channels);
-
-    /* Remove the output queue */
-    if ( client->out_queue ) {
-        while( (outbuf = g_queue_pop_tail(client->out_queue)) )
-            g_string_free(outbuf, TRUE);
-
-        g_queue_free(client->out_queue);
-    }
-
-    g_byte_array_free(client->input, true);
-
-    g_slice_free(RFC822_Request, client->pending_request);
-
-    g_slice_free1(client->peer_len, client->peer_sa);
-
-    ev_loop_destroy(client->loop);
-
-    g_slice_free(RTSP_Client, client);
-
-    fnc_log(FNC_LOG_INFO, "[client] Client removed");
 }
 
 /**
@@ -242,15 +211,109 @@ static void client_ev_timeout(struct ev_loop *loop, ev_timer *w,
     ev_timer_again (loop, w);
 }
 
+/**
+ * @brief Threadpool callback for each client
+ *
+ * @brief client_p The client to execute the loop for
+ * @brief user_data unused
+ *
+ * @note This function will lock the @ref clients_list_lock mutex.
+ */
+static void client_loop(gpointer client_p,
+                        ATTR_UNUSED gpointer user_data)
+{
+    RTSP_Client *client = (RTSP_Client *)client_p;
+    GString *outbuf = NULL;
+
+    struct ev_loop *loop = client->loop;
+    ev_io *io;
+    ev_async *async;
+    ev_timer *timer;
+
+    switch(client->socktype) {
+    case RTSP_TCP:
+        /* to be started/stopped when necessary */
+        io = &client->ev_io_write;
+        io->data = client;
+        ev_io_init(io, rtsp_tcp_write_cb, client->sd, EV_WRITE);
+
+        io = &client->ev_io_read;
+        io->data = client;
+        ev_io_init(io, rtsp_tcp_read_cb, client->sd, EV_READ);
+        break;
+#if ENABLE_SCTP
+    case RTSP_SCTP:
+        io = &client->ev_io_read;
+        io->data = client;
+        ev_io_init(io, rtsp_sctp_read_cb, client->sd, EV_READ);
+        break;
+#endif
+    }
+
+    ev_io_start(loop, &client->ev_io_read);
+
+    async = &client->ev_sig_disconnect;
+    async->data = client;
+    ev_async_init(async, client_ev_disconnect_handler);
+    ev_async_start(loop, async);
+
+    timer = &client->ev_timeout;
+    timer->data = client;
+    ev_init(timer, client_ev_timeout);
+    timer->repeat = STREAM_TIMEOUT;
+
+    /* if there were no errors during libev initialisation, proceed to
+     * run the loop, otherwise, start cleaning up already. We could
+     * try to send something to the clients to let them know that we
+     * failed, but ... it's going to be difficult at this point. */
+    if ( client_ev_init_errors == 0 ) {
+        g_mutex_lock(clients_list_lock);
+        clients_list = g_slist_append(clients_list, client);
+        g_mutex_unlock(clients_list_lock);
+
+        ev_loop(loop, 0);
+
+        /* As soon as we're out of here, remove the client from the list! */
+        g_mutex_lock(clients_list_lock);
+        clients_list = g_slist_remove(clients_list, client);
+        g_mutex_unlock(clients_list_lock);
+    }
+
+    close(client->sd);
+    g_free(client->remote_host);
+    feng_srv.connection_count--;
+
+    rtsp_session_free(client->session);
+
+    if ( client->channels )
+        g_hash_table_destroy(client->channels);
+
+    /* Remove the output queue */
+    if ( client->out_queue ) {
+        while( (outbuf = g_queue_pop_tail(client->out_queue)) )
+            g_string_free(outbuf, TRUE);
+
+        g_queue_free(client->out_queue);
+    }
+
+    g_byte_array_free(client->input, true);
+
+    g_slice_free(RFC822_Request, client->pending_request);
+
+    g_slice_free1(client->peer_len, client->peer_sa);
+
+    ev_loop_destroy(loop);
+
+    g_slice_free(RTSP_Client, client);
+
+    fnc_log(FNC_LOG_INFO, "[client] Client removed");
+}
+
 RTSP_Client *rtsp_client_new()
 {
     RTSP_Client *rtsp = g_slice_new0(RTSP_Client);
 
     rtsp->input = g_byte_array_new();
-
-    g_mutex_lock(clients_list_lock);
-    clients_list = g_slist_append(clients_list, rtsp);
-    g_mutex_unlock(clients_list_lock);
 
     return rtsp;
 }
@@ -286,9 +349,6 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     struct sockaddr_storage sa;
     socklen_t sa_len = sizeof(struct sockaddr_storage);
 
-    ev_io *io;
-    ev_async *async;
-    ev_timer *timer;
     RTSP_Client *rtsp;
 
     if ( (client_sd = accept(listen->fd, (struct sockaddr*)&sa, &sa_len)) < 0 ) {
@@ -316,23 +376,10 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         rtsp->socktype = RTSP_TCP;
         rtsp->out_queue = g_queue_new();
         rtsp->write_data = rtsp_write_data_queue;
-
-        /* to be started/stopped when necessary */
-        io = &rtsp->ev_io_write;
-        io->data = rtsp;
-        ev_io_init(io, rtsp_tcp_write_cb, rtsp->sd, EV_WRITE);
-
-        io = &rtsp->ev_io_read;
-        io->data = rtsp;
-        ev_io_init(io, rtsp_tcp_read_cb, rtsp->sd, EV_READ);
 #if ENABLE_SCTP
     } else {
         rtsp->socktype = RTSP_SCTP;
         rtsp->write_data = rtsp_sctp_send_rtsp;
-
-        io = &rtsp->ev_io_read;
-        io->data = rtsp;
-        ev_io_init(io, rtsp_sctp_read_cb, rtsp->sd, EV_READ);
     }
 #endif
 
@@ -344,18 +391,6 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     rtsp->peer_sa = g_slice_copy(rtsp->peer_len, &sa);
 
     feng_srv.connection_count++;
-
-    ev_io_start(rtsp->loop, &rtsp->ev_io_read);
-
-    async = &rtsp->ev_sig_disconnect;
-    async->data = rtsp;
-    ev_async_init(async, client_ev_disconnect_handler);
-    ev_async_start(rtsp->loop, async);
-
-    timer = &rtsp->ev_timeout;
-    timer->data = rtsp;
-    ev_init(timer, client_ev_timeout);
-    timer->repeat = STREAM_TIMEOUT;
 
     g_thread_pool_push(client_threads, rtsp, NULL);
 
