@@ -22,12 +22,34 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "fnc_log.h"
 
 #include "media/demuxer_module.h"
 
 #include <libavformat/avformat.h>
+
+/**
+ * @brief Mutex to protect usage of the FFmpeg functions.
+ *
+ * The avcodec_open() and avcodec_close() functions are not thread
+ * safe, and needs lock-protection; the (various) libavformat
+ * functions we call for probile the files and getting data out of
+ * them call these functions indirectly, and needs thus to be
+ * protected.
+ */
+GMutex *ffmpeg_lock;
+
+static void init_mutex()
+{
+    static gsize inited;
+    if ( g_once_init_enter(&inited) ) {
+        ffmpeg_lock = g_mutex_new();
+
+        g_once_init_leave(&inited, true);
+    }
+}
 
 static const DemuxerInfo avf_info = {
 	"Avformat Demuxer",
@@ -116,10 +138,13 @@ static int avf_probe(const char *filename)
 
     av_register_all();
 
-    if ( (avif = av_probe_input_format(&avpd, 1)) == NULL )
-        return RESOURCE_DAMAGED;
+    init_mutex();
 
-    return RESOURCE_OK;
+    g_mutex_lock(ffmpeg_lock);
+    avif = av_probe_input_format(&avpd, 1);
+    g_mutex_unlock(ffmpeg_lock);
+
+    return avif ? RESOURCE_OK : RESOURCE_DAMAGED;
 }
 
 static double avf_timescaler (ATTR_UNUSED Resource *r, double res_time) {
@@ -137,6 +162,8 @@ static int avf_init(Resource * r)
     int pt = 96;
     unsigned int i;
 
+    init_mutex();
+
     memset(&ap, 0, sizeof(AVFormatParameters));
     memset(&trackinfo, 0, sizeof(TrackInfo));
 
@@ -147,14 +174,22 @@ static int avf_init(Resource * r)
 
     url_fopen(&priv->pb, r->info->mrl, URL_RDONLY);
 
-    if (av_open_input_file(&avfc, r->info->mrl, NULL, 0, &ap)) {
+    g_mutex_lock(ffmpeg_lock);
+    i = av_open_input_file(&avfc, r->info->mrl, NULL, 0, &ap);
+    g_mutex_unlock(ffmpeg_lock);
+
+    if ( i != 0 ) {
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot open %s", r->info->mrl);
         goto err_alloc;
     }
 
     priv->avfc = avfc;
 
-    if(av_find_stream_info(avfc) < 0){
+    g_mutex_lock(ffmpeg_lock);
+    i = av_find_stream_info(avfc);
+    g_mutex_unlock(ffmpeg_lock);
+
+    if(i < 0){
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot find streams in file %s",
                 r->info->mrl);
         goto err_alloc;
@@ -341,7 +376,12 @@ static void avf_uninit(gpointer rgen)
 // avf stuff
     if (priv) {
         if (priv->avfc) {
+            init_mutex();
+
+            g_mutex_lock(ffmpeg_lock);
             av_close_input_file(priv->avfc);
+            g_mutex_unlock(ffmpeg_lock);
+
             priv->avfc = NULL;
         }
         url_fclose(priv->pb);
