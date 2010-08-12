@@ -48,6 +48,17 @@
  */
 static GSList *clients_list;
 
+/**
+ * @brief Lock for accessing the clients' list
+ *
+ * Adding, removing or iterating over the list of clients require that
+ * their operation is asynchronous; this means that the operation
+ * needs to be properly locked.
+ *
+ * Even though this seem to call for a R/W mutex rather than a simple
+ * lock, the overhead is high enough that it makes no sense to
+ * actually use one.
+ */
 static GMutex *clients_list_lock;
 
 /**
