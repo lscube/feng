@@ -87,7 +87,6 @@ static const id_tag id_tags[] = {
 typedef struct lavf_priv{
     AVInputFormat *avif;
     AVFormatContext *avfc;
-    ByteIOContext *pb;
 //    int audio_streams;
 //    int video_streams;
     int64_t last_pts; //Use it or not?
@@ -171,8 +170,6 @@ static int avf_init(Resource * r)
     ap.prealloced_context = 1;
 
     avfc->flags |= AVFMT_FLAG_GENPTS;
-
-    url_fopen(&priv->pb, r->info->mrl, URL_RDONLY);
 
     g_mutex_lock(ffmpeg_lock);
     i = av_open_input_file(&avfc, r->info->mrl, NULL, 0, &ap);
@@ -383,9 +380,6 @@ static void avf_uninit(gpointer rgen)
         av_close_input_file(priv->avfc);
         g_mutex_unlock(ffmpeg_lock);
     }
-
-    if ( priv->pb )
-        url_fclose(priv->pb);
 
     av_free(priv);
 }
