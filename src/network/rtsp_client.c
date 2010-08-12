@@ -111,7 +111,7 @@ static void client_disconnect(gpointer element,
 {
     RTSP_Client *client = (RTSP_Client*)element;
 
-    ev_async_send(client->loop, &client->ev_sig_disconnect);
+    ev_unloop(client->loop, EVUNLOOP_ONE);
 }
 
 /**
@@ -244,10 +244,6 @@ static void client_loop(gpointer client_p,
 
     ev_io_start(loop, &client->ev_io_read);
 
-    async = &client->ev_sig_disconnect;
-    ev_async_init(async, client_ev_disconnect_handler);
-    ev_async_start(loop, async);
-
     timer = &client->ev_timeout;
     timer->data = client;
     ev_init(timer, client_ev_timeout);
@@ -266,7 +262,6 @@ static void client_loop(gpointer client_p,
 
         ev_io_stop(loop, &client->ev_io_read);
         ev_io_stop(loop, &client->ev_io_write);
-        ev_async_stop(loop, &client->ev_sig_disconnect);
         ev_timer_stop(loop, &client->ev_timeout);
 
         /* As soon as we're out of here, remove the client from the list! */

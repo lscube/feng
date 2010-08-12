@@ -177,7 +177,6 @@ typedef struct RTSP_Client {
     //Events
     struct ev_loop *loop;
 
-    ev_async ev_sig_disconnect;
     ev_timer ev_timeout;
 
     ev_io ev_io_read;
