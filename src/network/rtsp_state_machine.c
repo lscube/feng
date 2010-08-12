@@ -318,18 +318,13 @@ static gboolean RTSP_handle_headers(RTSP_Client *rtsp) {
 
     g_byte_array_remove_range(rtsp->input, 0, parsed_headers);
 
-    /* try parsing the URI already, since we'll most likely need it,
-       and the new parser is fast enough */
-    if ( rtsp->pending_request->object ) {
-        char *decoded_url = g_uri_unescape_string(rtsp->pending_request->object, NULL);
-
-        rtsp->pending_request->uri = uri_parse(rtsp->pending_request->object);
-
-        g_free(decoded_url);
-    }
-
     if ( headers_res == 0 )
         return false;
+
+    /* try parsing the URI already, since we'll most likely need it,
+       and the new parser is fast enough */
+    if ( rtsp->pending_request->object )
+        rtsp->pending_request->uri = uri_parse(rtsp->pending_request->object);
 
     rtsp->status = RFC822_State_RTSP_Content;
     return rtsp_connection_limit(rtsp, rtsp->pending_request);
