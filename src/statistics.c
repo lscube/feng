@@ -95,9 +95,6 @@ void feng_send_statistics(RTSP_Client *rtsp)
     json_object *stats = json_object_new_object();
     json_object *clients_stats = json_object_new_array();
 
-    json_object_object_add(stats, "clients",
-        json_object_new_int(clients_count()-1));
-
     json_object_object_add(stats, "bytes_sent",
         json_object_new_int(stats_total_bytes_sent));
 
@@ -108,6 +105,9 @@ void feng_send_statistics(RTSP_Client *rtsp)
         json_object_new_int(time(NULL) - stats_start_time));
 
     clients_each(client_stats, clients_stats);
+
+    json_object_object_add(stats, "clients",
+                           json_object_new_int(json_object_array_length(clients_stats)));
 
     json_object_object_add(stats, "per_client", clients_stats);
 

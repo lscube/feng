@@ -80,14 +80,6 @@ void clients_each(GFunc func, gpointer user_data)
 }
 
 /**
- * @brief Reports the number of connected clients
- */
-unsigned int clients_count()
-{
-    return g_slist_length(clients_list);
-}
-
-/**
  * @brief Handle client disconnection and free resources
  *
  * @param loop The event loop where the event was issued
