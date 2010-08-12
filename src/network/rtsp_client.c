@@ -134,8 +134,6 @@ static void client_loop(gpointer client_p,
 
     ev_loop(client->loop, 0);
 
-    ev_loop_destroy(client->loop);
-
     /* As soon as we're out of here, remove the client from the list! */
     g_mutex_lock(clients_list_lock);
     clients_list = g_slist_remove(clients_list, client);
@@ -163,6 +161,8 @@ static void client_loop(gpointer client_p,
     g_slice_free(RFC822_Request, client->pending_request);
 
     g_slice_free1(client->peer_len, client->peer_sa);
+
+    ev_loop_destroy(client->loop);
 
     g_slice_free(RTSP_Client, client);
 
