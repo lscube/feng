@@ -44,13 +44,14 @@ static void rtp_session_free(gpointer session_gen,
                              ATTR_UNUSED gpointer unused)
 {
     RTP_session *session = (RTP_session*)session_gen;
+    RTSP_Client *client = session->client;
 
     /* Close the transport first, so that all the reading thread will
      * stop before continuing to free resources; another way should be
      * to ensure that we're paused before doing this but doesn't
      * matter now.
      */
-    ev_periodic_stop(feng_loop, &session->rtp_writer);
+    ev_periodic_stop(client->loop, &session->rtp_writer);
 
     session->close_transport(session);
 
@@ -97,6 +98,7 @@ void rtp_session_gslist_free(GSList *sessions_list) {
  */
 static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     RTP_session *session = (RTP_session*)session_gen;
+    RTSP_Client *client = session->client;
     RTSP_Range *range = (RTSP_Range*)range_gen;
     Resource *resource = session->track->parent;
 
@@ -114,7 +116,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     ev_periodic_set(&session->rtp_writer,
                     range->playback_time - 0.05,
                     0, NULL);
-    ev_periodic_start(feng_loop, &session->rtp_writer);
+    ev_periodic_start(client->loop, &session->rtp_writer);
 }
 
 /**
@@ -144,6 +146,7 @@ void rtp_session_gslist_resume(GSList *sessions_list, RTSP_Range *range) {
 static void rtp_session_pause(gpointer session_gen,
                               ATTR_UNUSED gpointer user_data) {
     RTP_session *session = (RTP_session *)session_gen;
+    RTSP_Client *client = session->client;
     Resource *resource = session->track->parent;
 
     /* We should assert its presence, we cannot pause a non-running
@@ -151,7 +154,7 @@ static void rtp_session_pause(gpointer session_gen,
 
     r_pause(resource);
 
-    ev_periodic_stop(feng_loop, &session->rtp_writer);
+    ev_periodic_stop(client->loop, &session->rtp_writer);
 }
 
 /**

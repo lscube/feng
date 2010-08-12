@@ -46,7 +46,7 @@ void rtsp_do_pause(RTSP_Client *rtsp)
 
     rtp_session_gslist_pause(rtsp_sess->rtp_sessions);
 
-    ev_timer_stop(feng_loop, &rtsp->ev_timeout);
+    ev_timer_stop(rtsp->loop, &rtsp->ev_timeout);
 
     rtsp_sess->cur_state = RTSP_SERVER_READY;
 }

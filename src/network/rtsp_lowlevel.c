@@ -95,7 +95,7 @@ static void rtp_udp_close_transport(RTP_session *rtp)
 {
     RTP_UDP_Transport *transport = rtp->transport_data;
 
-    ev_io_stop(feng_loop, &transport->rtcp_reader);
+    ev_io_stop(rtp->client->loop, &transport->rtcp_reader);
 
     close(transport->rtp_sd);
     close(transport->rtcp_sd);
@@ -300,7 +300,7 @@ void rtp_udp_transport(RTSP_Client *rtsp,
 void rtsp_write_data_queue(RTSP_Client *client, GByteArray *data)
 {
     g_queue_push_head(client->out_queue, data);
-    ev_io_start(feng_loop, &client->ev_io_write);
+    ev_io_start(client->loop, &client->ev_io_write);
 }
 
 void rtsp_tcp_read_cb(struct ev_loop *loop, ev_io *w,
@@ -350,7 +350,7 @@ void rtsp_tcp_write_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     size_t written = 0;
 
     if (outpkt == NULL) {
-        ev_io_stop(feng_loop, &rtsp->ev_io_write);
+        ev_io_stop(loop, &rtsp->ev_io_write);
         return;
     }
     written = send(rtsp->sd, outpkt->data, outpkt->len, MSG_DONTWAIT);
