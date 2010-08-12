@@ -134,6 +134,8 @@ static void client_loop(gpointer client_p,
 
     ev_loop(client->loop, 0);
 
+    ev_loop_destroy(client->loop);
+
     /* As soon as we're out of here, remove the client from the list! */
     g_mutex_lock(clients_list_lock);
     clients_list = g_slist_remove(clients_list, client);
