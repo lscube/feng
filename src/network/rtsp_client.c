@@ -46,7 +46,7 @@
  * Access to this list is limited to @ref rtsp_client.c, which
  * provides a couple of wrapper functions for common situations.
  */
-static GSList *clients_list;
+static GPtrArray *clients_list;
 
 /**
  * @brief Lock for accessing the clients' list
@@ -92,6 +92,8 @@ static void client_loop(gpointer client_p,
  */
 void clients_init()
 {
+    clients_list = g_ptr_array_sized_new(ONE_FORK_MAX_CONNECTION);
+
     clients_list_lock = g_mutex_new();
     client_threads = g_thread_pool_new(client_loop, NULL,
                                        -1, /** @TODO link it to the max number of clients */
@@ -127,7 +129,7 @@ void clients_cleanup()
     clients_each(client_disconnect, NULL);
 
 #ifdef CLEANUP_DESTRUCTOR
-    g_slist_free(clients_list);
+    g_ptr_array_free(clients_list, true);
 #endif
 }
 
@@ -138,14 +140,14 @@ void clients_cleanup()
  * @param user_data The value to pass as second parameter to each
  *                  call.
  *
- * This is a simple wrapper around g_slist_foreach.
+ * This is a simple wrapper around g_ptr_array_foreach.
  *
  * @note This function will lock the @ref clients_list_lock mutex.
  */
 void clients_each(GFunc func, gpointer user_data)
 {
     g_mutex_lock(clients_list_lock);
-    g_slist_foreach(clients_list, func, user_data);
+    g_ptr_array_foreach(clients_list, func, user_data);
     g_mutex_unlock(clients_list_lock);
 }
 
@@ -231,7 +233,7 @@ static void client_loop(gpointer client_p,
      * failed, but ... it's going to be difficult at this point. */
     if ( client_ev_init_errors == 0 ) {
         g_mutex_lock(clients_list_lock);
-        clients_list = g_slist_append(clients_list, client);
+        g_ptr_array_add(clients_list, client);
         g_mutex_unlock(clients_list_lock);
 
         ev_loop(loop, 0);
@@ -243,7 +245,7 @@ static void client_loop(gpointer client_p,
 
         /* As soon as we're out of here, remove the client from the list! */
         g_mutex_lock(clients_list_lock);
-        clients_list = g_slist_remove(clients_list, client);
+        g_ptr_array_remove_fast(clients_list, client);
         g_mutex_unlock(clients_list_lock);
     }
 
