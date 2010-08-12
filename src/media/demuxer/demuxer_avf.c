@@ -84,14 +84,6 @@ static const id_tag id_tags[] = {
    { CODEC_ID_NONE, 0, "NONE"} //XXX ...
 };
 
-typedef struct lavf_priv{
-    AVInputFormat *avif;
-    AVFormatContext *avfc;
-//    int audio_streams;
-//    int video_streams;
-    int64_t last_pts; //Use it or not?
-} lavf_priv_t;
-
 static const char *tag_from_id(int id)
 {
     const id_tag *tags = id_tags;
@@ -154,7 +146,6 @@ static int avf_init(Resource * r)
 {
     AVFormatContext *avfc;
     AVFormatParameters ap;
-    lavf_priv_t *priv =  av_mallocz(sizeof(lavf_priv_t));
     MediaProperties props;
     Track *track = NULL;
     TrackInfo trackinfo;
@@ -179,8 +170,6 @@ static int avf_init(Resource * r)
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot open %s", r->info->mrl);
         goto err_alloc;
     }
-
-    priv->avfc = avfc;
 
     g_mutex_lock(ffmpeg_lock);
     i = av_find_stream_info(avfc);
@@ -274,13 +263,12 @@ static int avf_init(Resource * r)
 
     if (track) {
         fnc_log(FNC_LOG_DEBUG, "[avf] duration %f", r->info->duration);
-        r->private_data = priv;
+        r->private_data = avfc;
         r->timescaler = avf_timescaler;
         return 0;
     }
 
 err_alloc:
-    av_freep(&priv);
     return -1;
 }
 
@@ -290,10 +278,10 @@ static int avf_read_packet(Resource * r)
     TrackList tr_it;
     AVPacket pkt;
     AVStream *stream;
-    lavf_priv_t *priv = r->private_data;
+    AVFormatContext *avfc = r->private_data;
 
 // get a packet
-    if(av_read_frame(priv->avfc, &pkt) < 0)
+    if(av_read_frame(avfc, &pkt) < 0)
         return RESOURCE_EOF; //FIXME
     for (tr_it = g_list_first(r->tracks);
          tr_it !=NULL;
@@ -301,7 +289,7 @@ static int avf_read_packet(Resource * r)
         Track *tr = (Track*)tr_it->data;
         if (pkt.stream_index == tr->info->id) {
 // push it to the framer
-            stream = priv->avfc->streams[tr->info->id];
+            stream = avfc->streams[tr->info->id];
             fnc_log(FNC_LOG_VERBOSE, "[avf] Parsing track %s",
                     tr->info->name);
             if(pkt.dts != AV_NOPTS_VALUE) {
@@ -356,7 +344,7 @@ static int avf_seek(Resource * r, double time_sec)
 {
     int flags = 0;
     int64_t time_msec = time_sec * AV_TIME_BASE;
-    AVFormatContext *fc = ((lavf_priv_t *)r->private_data)->avfc;
+    AVFormatContext *fc = r->private_data;
 
     fnc_log(FNC_LOG_DEBUG, "Seeking to %f", time_sec);
     if (fc->start_time != AV_NOPTS_VALUE)
@@ -368,20 +356,16 @@ static int avf_seek(Resource * r, double time_sec)
 static void avf_uninit(gpointer rgen)
 {
     Resource *r = rgen;
-    lavf_priv_t* priv = r->private_data;
+    AVFormatContext *avfc = r->private_data;
 
-    if ( priv == NULL )
+    if ( avfc == NULL )
         return;
 
-    if (priv->avfc) {
-        init_mutex();
+    init_mutex();
 
-        g_mutex_lock(ffmpeg_lock);
-        av_close_input_file(priv->avfc);
-        g_mutex_unlock(ffmpeg_lock);
-    }
-
-    av_free(priv);
+    g_mutex_lock(ffmpeg_lock);
+    av_close_input_file(avfc);
+    g_mutex_unlock(ffmpeg_lock);
 }
 
 FNC_LIB_DEMUXER(avf);
