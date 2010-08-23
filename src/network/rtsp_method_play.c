@@ -310,7 +310,7 @@ void RTSP_play(RTSP_Client *rtsp, RFC822_Request *req)
 
     send_play_reply(rtsp, req, rtsp_sess);
 
-    ev_timer_again (feng_loop, &rtsp->ev_timeout);
+    ev_timer_again (rtsp->loop, &rtsp->ev_timeout);
 
     return;
 

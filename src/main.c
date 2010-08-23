@@ -110,8 +110,6 @@ static void CLEANUP_DESTRUCTOR main_cleanup()
     }
 
     array_free(feng_srv.config_context);
-
-    g_slist_free(feng_srv.clients);
 }
 #endif
 
@@ -285,7 +283,12 @@ int main(int argc, char **argv)
 
     http_tunnel_initialise();
 
+    clients_init();
+
     ev_loop (feng_loop, 0);
+
+    /* This is explicit to send disconnections! */
+    clients_cleanup();
 
     return 0;
 }

@@ -93,7 +93,6 @@ static void r_stop_fill(Resource *resource)
  * @brief Free a resource object
  *
  * @param resource The resource to free
- * @param user_data Unused
  *
  * @internal Please note that this function will execute the freeing
  *           in the currently running thread, synchronously. It should
@@ -102,14 +101,9 @@ static void r_stop_fill(Resource *resource)
  *
  * @note Nobody may hold the @ref Resource::lock mutex when calling
  *       this function.
- *
- * @note This function uses two parameters because it's used as
- *       interface for the closing thread pool.
  */
-static void r_free_cb(gpointer resource_p,
-                      ATTR_UNUSED gpointer user_data)
+static void r_free(Resource *resource)
 {
-    Resource *resource = (Resource *)resource_p;
     if (!resource)
         return;
 
@@ -223,7 +217,7 @@ static Resource *r_open_direct(gchar *mrl, const Demuxer *dmx)
     r->demuxer = dmx;
 
     if (r->demuxer->init(r)) {
-        r_free_cb(r, NULL);
+        r_free(r);
         return NULL;
     }
     /* Now that we have opened the actual resource we can proceed with
@@ -514,14 +508,11 @@ static void r_read_cb(gpointer consumer_p, gpointer resource_p)
  *
  * @param resource The resource to close
  *
- * This function only pushes a close request on the resource closing
- * pool; the actual closing will happen asynchronously.
- *
  * For live streaming, closing the resource will not actually free
  * resources; instead the fill thread will be stopped and the producer
  * queue reset (with its buffers freed) waiting for the next client.
  *
- * @see r_free_cb
+ * @see r_free
  */
 void r_close(Resource *resource)
 {
@@ -541,26 +532,9 @@ void r_close(Resource *resource)
 
         // if ( g_atomic_int_get(&resource->count) > 0 )
             return;
-    }
+    } else
 #endif
-
-    {
-        /* This will never be freed but we don't care since we're going to
-         * need it till the very end of the process.
-         */
-        static GThreadPool *closing_pool;
-
-        static gsize created_pool = false;
-        if ( g_once_init_enter(&created_pool) ) {
-            closing_pool = g_thread_pool_new(r_free_cb, NULL,
-                                             MAX_RESOURCE_CLOSE_THREADS,
-                                             false, NULL);
-
-            g_once_init_leave(&created_pool, true);
-        }
-
-        g_thread_pool_push(closing_pool, resource, NULL);
-    }
+        r_free(resource);
 }
 
 /**

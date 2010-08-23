@@ -175,10 +175,10 @@ typedef struct RTSP_Client {
     struct HTTP_Tunnel_Pair *pair;
 
     //Events
-    ev_async ev_sig_disconnect;
+    struct ev_loop *loop;
+
     ev_timer ev_timeout;
 
-    ev_io ev_io_read;
     ev_io ev_io_write;
 
     char *remote_host;
@@ -325,6 +325,18 @@ void feng_send_statistics(RTSP_Client *rtsp);
 #define stats_account_read(a, b)
 #define stats_account_sent(a, b)
 #endif
+/**
+ * @}
+ */
+
+/**
+ * @defgroup clients Clients-handling functions
+ *
+ * @{
+ */
+void clients_init();
+void clients_cleanup();
+void clients_each(GFunc func, gpointer user_data);
 /**
  * @}
  */

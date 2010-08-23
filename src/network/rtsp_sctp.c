@@ -198,5 +198,5 @@ void rtsp_sctp_read_cb(struct ev_loop *loop, ev_io *w,
 
  disconnect:
     g_byte_array_free(buffer, TRUE);
-    ev_async_send(loop, &rtsp->ev_sig_disconnect);
+    ev_unloop(loop, EVUNLOOP_ONE);
 }

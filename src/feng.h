@@ -90,8 +90,6 @@ typedef struct feng {
      * to a twin if available
      */
     size_t connection_count;
-
-    GSList *clients; //!< All the currently connected clients
 } feng;
 
 extern struct feng feng_srv;
