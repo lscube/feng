@@ -138,7 +138,7 @@ void rtp_udp_transport(RTSP_Client *rtsp,
         .rtcp_sa = NULL
     };
     ev_io *io = &transport.rtcp_reader;
-
+    char *source = NULL;
     struct sockaddr_storage sa;
     socklen_t sa_len = sizeof(sa);
     struct sockaddr *sa_p = (struct sockaddr*) &sa;
@@ -157,6 +157,7 @@ void rtp_udp_transport(RTSP_Client *rtsp,
      * stream, we fall in the latest case described. We thus *can*
      * avoid using the even-odd adjacent ports pair for RTP-RTCP.
      */
+
     neb_sa_set_port(sa_p, 0);
 
     if ( (firstsd = socket(sa_p->sa_family, SOCK_DGRAM, 0)) < 0 ) {
@@ -265,13 +266,18 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     rtp_s->send_rtcp = rtp_udp_send_rtcp;
     rtp_s->close_transport = rtp_udp_close_transport;
 
-    rtp_s->transport_string = g_strdup_printf("RTP/AVP;unicast;source=%s;client_port=%d-%d;server_port=%d-%d;ssrc=%08X",
-                                              rtsp->local_sock->local_host,
+    source = neb_sa_get_host((struct sockaddr*) &sa);
+
+    rtp_s->transport_string = g_strdup_printf("RTP/AVP;unicast%s%s;client_port=%d-%d;server_port=%d-%d;ssrc=%08X",
+                                              source? ";source=": "",
+                                              source?  source   : "",
                                               parsed->rtp_channel,
                                               parsed->rtcp_channel,
                                               rtp_port,
                                               rtcp_port,
                                               rtp_s->ssrc);
+
+    free(source);
 
     return;
 
