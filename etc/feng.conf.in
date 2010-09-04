@@ -9,11 +9,14 @@ var.statedir = "@feng_statedir@"
 # bind to name (defaults to all interfaces)
 # server.bind         = "live.host.tld"
 
+@ENABLE_IPV6@server.use-ipv6 = 1
+
 # use sctp instead of tcp (you may use the same port)
-# $SERVER["socket"] == "localhost:@feng_rtsp_port@" {
-#   sctp.protocol       = "enable"
-#   sctp.max_streams    = 16
-# }
+@ENABLE_SCTP@$SERVER["socket"] == ":@feng_rtsp_port@" {
+@ENABLE_SCTP@   sctp.protocol       = "enable"
+@ENABLE_SCTP@   sctp.max_streams    = 16
+@ENABLE_SCTP@@ENABLE_IPV6@   server.use-ipv6 = 1
+@ENABLE_SCTP@}
 
 server.username      = "feng"
 server.groupname     = "feng"

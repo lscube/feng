@@ -9,13 +9,14 @@ server.port         = 8554
 # bind to name (defaults to all interfaces)
 # server.bind         = "live.host.tld"
 
-server.use_ipv6 = 1
+@ENABLE_IPV6@server.use-ipv6 = 1
 
-# use sctp instead of tcp
-@ENABLE_SCTP@$SERVER["socket"] == "localhost:8554" {
+# use sctp instead of tcp (you may use the same port)
+@ENABLE_SCTP@$SERVER["socket"] == ":8554" {
 @ENABLE_SCTP@   sctp.protocol       = "enable"
 @ENABLE_SCTP@   sctp.max_streams    = 16
-@ENABLE_SCTP@ }
+@ENABLE_SCTP@@ENABLE_IPV6@   server.use-ipv6 = 1
+@ENABLE_SCTP@}
 
 server.username      = "feng"
 server.groupname     = "feng"
