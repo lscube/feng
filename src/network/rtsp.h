@@ -201,6 +201,7 @@ void rtsp_write_string(RTSP_Client *client, GString *str);
 void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents);
 
 void RTSP_handler(RTSP_Client * rtsp);
+gboolean rtsp_process_complete(RTSP_Client *rtsp);
 
 /**
  * RTSP high level functions, mapping to the actual RTSP methods

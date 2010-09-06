@@ -362,3 +362,25 @@ void RTSP_handler(RTSP_Client * rtsp)
 
     while ( handlers[rtsp->status](rtsp) );
 }
+
+/**
+ * @brief Process a complete RTSP request
+ *
+ * In SCTP (and UDP) each message carries a complete request, and
+ * there is no need to keep an actual state machine. But since we
+ * share the same code for both the incremental and complete
+ * processing, we have to pay some bit of attention that the states
+ * don't roam outside their area.
+ */
+gboolean rtsp_process_complete(RTSP_Client *rtsp)
+{
+    /* We start from no request or we're in a bad state already */
+    return ( rtsp->status == RFC822_State_Begin &&
+             RTSP_handle_new(rtsp) &&
+             rtsp->status != RFC822_State_RTSP_Headers &&
+             RTSP_handle_headers(rtsp) &&
+             rtsp->status != RFC822_State_RTSP_Content &&
+             RTSP_handle_content(rtsp) &&
+             rtsp->status != RFC822_State_Begin
+             );
+}

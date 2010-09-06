@@ -142,6 +142,8 @@ void rtsp_sctp_read_cb(struct ev_loop *loop, ev_io *w,
     struct sctp_sndrcvinfo sctp_info;
     guint size = 0;
 
+    int disconnect = 0;
+
     /* start with an acceptable dimension, 1KiB; we can extend further
        in 1KiB increments if it's needed; alternatively we can decide
        to go with PAGE_SIZE chunks. */
@@ -159,10 +161,12 @@ void rtsp_sctp_read_cb(struct ev_loop *loop, ev_io *w,
 
         if ( partial == 0 ) {
             fnc_log(FNC_LOG_INFO, "SCTP RTSP connection closed by the client.");
-            goto disconnect;
+            disconnect = 1;
+            goto end;
         } else if ( partial < 0 ) {
             fnc_perror("sctp_recvmsg");
-            goto disconnect;
+            disconnect = 1;
+            goto end;
         }
 
         size += partial;
@@ -182,21 +186,17 @@ void rtsp_sctp_read_cb(struct ev_loop *loop, ev_io *w,
     if ( sctp_info.sinfo_stream == 0 ) {
         /* Stream 0 is always the RTSP control stream */
         rtsp->input = buffer;
-        RTSP_handler(rtsp);
 
-        /* Assert that the whole buffer was consumed here */
-        g_assert_cmpuint(buffer->len, ==, 0);
-
-        rtsp->input = NULL;
+        disconnect = !rtsp_process_complete(rtsp);
     } else {
         rtsp_interleaved_receive(rtsp, sctp_info.sinfo_stream,
                                  buffer->data, buffer->len);
     }
 
+ end:
+    rtsp->input = NULL;
     g_byte_array_free(buffer, TRUE);
-    return;
 
- disconnect:
-    g_byte_array_free(buffer, TRUE);
-    ev_unloop(loop, EVUNLOOP_ONE);
+    if ( disconnect )
+        ev_unloop(loop, EVUNLOOP_ONE);
 }
