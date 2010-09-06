@@ -60,8 +60,10 @@ AC_SEARCH_LIBS([clock_gettime], [rt],
 
 CC_ATTRIBUTE_DESTRUCTOR
 
-AX_TLS([],
-  [AC_MSG_ERROR([Unable to find TLS class])])
+AX_TLS([], [
+  AC_CHECK_FUNCS([pthread_set_specific pthread_get_specific], [],
+    [AC_MSG_ERROR([Unable to find either Thread-Local Storage support or POSIX thread-specific data management functions])])
+])
 
 AH_BOTTOM([#if !defined(NDEBUG) && defined(SUPPORT_ATTRIBUTE_DESTRUCTOR)
 	   # define CLEANUP_DESTRUCTOR __attribute__((__destructor__))

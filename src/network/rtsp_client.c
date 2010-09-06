@@ -66,6 +66,7 @@ static GMutex *clients_list_lock;
  */
 static GThreadPool *client_threads;
 
+#ifdef TLS
 /**
  * @brief Per-client-thread error status for libev
  *
@@ -76,12 +77,27 @@ static GThreadPool *client_threads;
  * Something will go wrong if you try to accept more connections than
  * your file descriptors count will allow you to.
  */
-static __thread int client_ev_init_errors;
+static TLS int client_ev_init_errors;
+#else
+pthread_key_t client_ev_init_errors_key;
+
+static int client_ev_init_errors_func()
+{
+    return GPOINTER_TO_INT(pthread_getspecific(client_ev_init_errors_key));
+}
+
+# define client_ev_init_errors client_ev_init_errors_func()
+
+#endif
 
 static void libev_syserr(const char *msg)
 {
     fnc_perror(msg);
+#ifdef TLS
     client_ev_init_errors = 1;
+#else
+    pthread_setspecific(client_ev_init_errors_key, (GINT_TO_POINTER)1);
+#endif
 }
 
 static void client_loop(gpointer client_p,
@@ -100,6 +116,13 @@ void clients_init()
                                        false, NULL);
 
     ev_set_syserr_cb(libev_syserr);
+
+#ifndef TLS
+    if ( pthread_key_create(&client_ev_init_errors_key, NULL) ) {
+        perror();
+        exit(1);
+    }
+#endif
 }
 
 /**
