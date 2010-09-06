@@ -79,6 +79,9 @@ static GThreadPool *client_threads;
  */
 static TLS int client_ev_init_errors;
 #else
+
+#include <pthread.h>
+
 pthread_key_t client_ev_init_errors_key;
 
 static int client_ev_init_errors_func()
