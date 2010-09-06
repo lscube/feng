@@ -61,7 +61,7 @@ AC_SEARCH_LIBS([clock_gettime], [rt],
 CC_ATTRIBUTE_DESTRUCTOR
 
 AX_TLS([], [
-  AC_CHECK_FUNCS([pthread_set_specific pthread_get_specific], [],
+  AC_CHECK_FUNCS([pthread_key_create pthread_setspecific pthread_getspecific], [],
     [AC_MSG_ERROR([Unable to find either Thread-Local Storage support or POSIX thread-specific data management functions])])
 ])
 
