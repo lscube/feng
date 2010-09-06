@@ -122,7 +122,7 @@ void clients_init()
 
 #ifndef TLS
     if ( pthread_key_create(&client_ev_init_errors_key, NULL) ) {
-        perror();
+        perror("pthread_key_create");
         exit(1);
     }
 #endif
