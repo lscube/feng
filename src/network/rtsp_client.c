@@ -225,7 +225,6 @@ static void client_loop(gpointer client_p,
 
     struct ev_loop *loop = client->loop;
     ev_io *io_write_p = &client->ev_io_write, io_read = { .data = client };
-    ev_async *async;
     ev_timer *timer;
 
     switch(client->socktype) {
