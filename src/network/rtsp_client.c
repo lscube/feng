@@ -96,7 +96,7 @@ static void libev_syserr(const char *msg)
 #ifdef TLS
     client_ev_init_errors = 1;
 #else
-    pthread_setspecific(client_ev_init_errors_key, (GINT_TO_POINTER)1);
+    pthread_setspecific(client_ev_init_errors_key, GINT_TO_POINTER(1));
 #endif
 }
 
