@@ -207,6 +207,27 @@ static int avf_init(Resource * r)
         trackinfo.id = i;
 
         if (id) {
+            if (codec->codec_id == CODEC_ID_AAC &&
+                !codec->extradata_size) {
+                AVPacket pkt;
+                st->codec->opaque = av_bitstream_filter_init("aac_adtstoasc");
+                if (!st->codec->opaque)
+                    goto err_alloc;
+                while((av_read_frame(avfc, &pkt) >= 0) && !codec->extradata_size) {
+                    uint8_t *data;
+                    int size;
+                    if(pkt.stream_index != i)
+                        continue;
+                    av_bitstream_filter_filter(st->codec->opaque, codec, NULL,
+                                       &data, &size,
+                                       pkt.data, pkt.size,
+                                       pkt.flags & AV_PKT_FLAG_KEY);
+                    break;
+                }
+                av_seek_frame(avfc, -1, 0, 0);
+                if (!codec->extradata_size)
+                    goto err_alloc;
+            }
             memset(&props, 0, sizeof(MediaProperties));
             props.clock_rate = 90000; //Default
             props.extradata = codec->extradata;
@@ -278,6 +299,7 @@ static int avf_read_packet(Resource * r)
     TrackList tr_it;
     AVPacket pkt;
     AVStream *stream;
+    AVBitStreamFilterContext *bsfc;
     AVFormatContext *avfc = r->private_data;
 
 // get a packet
@@ -330,7 +352,18 @@ static int avf_read_packet(Resource * r)
             fnc_log(FNC_LOG_VERBOSE, "[avf] packet duration %f",
                 tr->properties.frame_duration);
 
-            ret = tr->parser->parse(tr, pkt.data, pkt.size);
+            bsfc = stream->codec->opaque;
+            if (bsfc) {
+                uint8_t *data = NULL;
+                int size = 0;
+                av_bitstream_filter_filter(bsfc, stream->codec, NULL,
+                                           &data, &size,
+                                           pkt.data, pkt.size,
+                                           pkt.flags & AV_PKT_FLAG_KEY);
+                ret = tr->parser->parse(tr, pkt.data, pkt.size);
+            } else {
+                ret = tr->parser->parse(tr, pkt.data, pkt.size);
+            }
             break;
         }
     }
