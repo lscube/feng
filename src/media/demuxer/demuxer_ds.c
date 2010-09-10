@@ -85,10 +85,8 @@ static double edl_timescaler (Resource * r, double res_time) {
 
 static int ds_init(Resource * r)
 {
-    char line[256], mrl[256];
-    double begin, end, r_offset = 0.0;
-    int n;
     FILE *fd;
+    double r_offset = 0;
     Resource *resource;
     GList *edl_head = NULL;
     edl_item_elem *item;
@@ -96,57 +94,62 @@ static int ds_init(Resource * r)
     fnc_log(FNC_LOG_DEBUG, "[ds] EDL init function");
     fd = fopen(r->info->mrl, "r");
 
-    do {
-        begin = 0.0;
-        end = HUGE_VAL;
-        fgets(line, sizeof(line), fd);
-        if (feof(fd))
-            break;
-        n = sscanf(line, "%s%lf%lf", mrl, &begin, &end);
-        if (n < 1 || line[0] == '#')
-            continue; // skip comments and empty lines
+    while(!feof(fd)) {
+        double begin = 0.0, end = HUGE_VAL;
+        char mrl[256];
+
+        int n = fscanf(fd, "%255s %lf %lf\n", mrl, &begin, &end);
+        if (n < 3 || mrl[0] == '#')
+            continue; // skip comments and malformed lines
 
         /* Init Resources required by the EDitList
          * (modifying default behaviour to manipulate timescale)
          * */
-        if (!(resource = r_open(mrl))) {
+        if (!(resource = r_open(mrl)))
             goto err_alloc;
-        }
-	item = g_new0(edl_item_elem, 1);
+
+        item = g_new0(edl_item_elem, 1);
+
         // set edl timescaler
         resource->timescaler = edl_timescaler;
         resource->edl = r;
+
         // set edl properties
         item->r = resource;
         item->begin = begin;
         item->first_ts = 1;
         item->end = end;
         item->offset = r_offset;
+
         if (resource->info->duration > 0 && end > resource->info->duration) {
             r_offset += resource->info->duration - begin;
         } else {
             r_offset += end - begin;
         }
+
         fnc_log(FNC_LOG_DEBUG, "[ds] r_offset=%f", r_offset);
-        //seek to begin
-        if (begin)
+
+        /* seek to the start of the resource */
+        if (begin > 0)
             resource->demuxer->seek(resource, begin);
         edl_head = g_list_prepend(edl_head, item);
-        // Use first resource for tracks
+
+        /* Use first resource to identify tracks */
         if(!r->tracks) {
             r->tracks = resource->tracks;
         }
-    g_list_foreach(resource->tracks, change_track_parent, r);
-    } while (!feof(fd));
+
+        g_list_foreach(resource->tracks, change_track_parent, r);
+    }
 
     r->private_data = g_new0(edl_priv_data, 1);
 
-//    r->info->duration = r_offset;
     fnc_log(FNC_LOG_DEBUG, "[ds] duration=%f", r_offset);
     ((edl_priv_data *) r->private_data)->head = g_list_reverse(edl_head);
 
     return 0;
-err_alloc:
+
+ err_alloc:
     if (edl_head) {
         g_list_foreach(edl_head, destroy_list_data, NULL);
         g_list_free(edl_head);
