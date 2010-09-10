@@ -158,7 +158,6 @@ typedef struct Trackinfo_s {
     char *mrl;
     char name[256];
     int id; // should it more generic?
-    int rtp_port;
     //start CC
     char commons_deed[256];
     char rdf_page[256];

@@ -115,11 +115,11 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
      * printf-like interfaces.
      */
     static const char *const sdp_media_types[] = {
-        [MP_audio] = "m=audio ",
-        [MP_video] = "m=video ",
-        [MP_application] = "m=application ",
-        [MP_data] = "m=data ",
-        [MP_control] = "m=control "
+        [MP_audio] = "m=audio",
+        [MP_video] = "m=video",
+        [MP_application] = "m=application",
+        [MP_data] = "m=data",
+        [MP_control] = "m=control"
     };
 
     type = track->properties.media_type;
@@ -127,16 +127,14 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
     /* MP_undef is the only case we don't handle. */
     g_assert(type != MP_undef);
 
-    g_string_append(descr, sdp_media_types[type]);
-
-    /// @TODO shawill: probably the transport should not be hard coded,
-    /// but obtained in some way
-    g_string_append_printf(descr, "%d RTP/AVP",
-                           t_info->rtp_port);
-
-    /* We assume a single payload type, it might not be the correct
+    /*
+     * @TODO shawill: probably the transport should not be hard coded,
+     * but obtained in some way
+     *
+     * We assume a single payload type, it might not be the correct
      * handling, but since we currently lack some better structure. */
-    g_string_append_printf(descr, " %u",
+    g_string_append_printf(descr, "%s 0 RTP/AVP %u",
+                           sdp_media_types[type],
                            track->properties.payload_type);
 
     g_string_append(descr, SDP_EL);
