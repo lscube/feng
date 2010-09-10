@@ -61,13 +61,6 @@ typedef GList *SelList;
 
 struct MediaParser;
 
-typedef enum {fmtp, rtpmap} sdp_field_type;
-
-typedef struct {
-	sdp_field_type type;
-	char *field;
-} sdp_field;
-
 typedef struct ResourceInfo_s {
     char *mrl;
     char *name;
@@ -206,8 +199,7 @@ typedef struct Track {
     Resource *parent;
 
     void *private_data; /* private data of media parser */
-
-    GSList *sdp_fields;
+    GString *attributes;
 
     MediaProperties properties;
 } Track;
@@ -256,7 +248,13 @@ Track *r_find_track(Resource *, const char *);
 Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 void free_track(gpointer element, gpointer user_data);
 
-void track_add_sdp_field(Track *track, sdp_field_type type, char *value);
+static inline void track_add_attribute(Track *track,
+                                       const char *attribute,
+                                       const char *value)
+{
+    g_string_append_printf(track->attributes, "%s:%s\r\n",
+                           attribute, value);
+}
 
 BufferQueue_Producer *track_get_producer(Track *tr);
 

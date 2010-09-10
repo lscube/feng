@@ -260,10 +260,17 @@ static int h264_init(Track *track)
         if (sprop == NULL) goto err_alloc;
     }
 
-    track_add_sdp_field(track, fmtp, sprop);
+    g_string_append_printf(track->attributes,
+                           "a=fmtp:%u %s\r\n"
+                           "a=rtpmap:%u H264/%d\r\n",
 
-    track_add_sdp_field(track, rtpmap,
-                        g_strdup_printf ("H264/%d",track->properties.clock_rate));
+                           /* fmtp */
+                           track->properties.payload_type,
+                           sprop,
+
+                           /* rtpmap */
+                           track->properties.payload_type,
+                           track->properties.clock_rate);
 
     track->private_data = priv;
 

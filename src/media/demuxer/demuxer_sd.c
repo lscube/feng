@@ -367,31 +367,35 @@ static int sd_init(Resource * r)
         *((mqd_t*)(track->private_data)) = (mqd_t)(-1);
 
         if ( fmtp_val ) {
-            track_add_sdp_field(track, fmtp, fmtp_val);
+            g_string_append_printf(track->attributes,
+                                   "a=fmtp:%u %s",
+                                   props_hints.payload_type,
+                                   fmtp_val);
             fmtp_val = NULL;
         }
 
         if (props_hints.payload_type >= 96)
         {
-            char *sdp_value = NULL;
             switch (props_hints.media_type) {
                 case MP_audio:
-                    sdp_value = g_strdup_printf ("%s/%d/%d",
-                                                 props_hints.encoding_name,
-                                                 props_hints.clock_rate,
-                                                 props_hints.audio_channels);
+                    g_string_append_printf(track->attributes,
+                                           "a=rtpmap:%u %s/%d/%d\r\n",
+                                           props_hints.payload_type,
+                                           props_hints.encoding_name,
+                                           props_hints.clock_rate,
+                                           props_hints.audio_channels);
                     break;
                 case MP_video:
-                    sdp_value = g_strdup_printf ("%s/%d",
-                                                 props_hints.encoding_name,
-                                                 props_hints.clock_rate);
+                    g_string_append_printf(track->attributes,
+                                           "a=rtpmap:%u %s/%d\r\n",
+                                           props_hints.payload_type,
+                                           props_hints.encoding_name,
+                                           props_hints.clock_rate);
                     break;
                 default:
                     g_assert_not_reached();
                     break;
             }
-
-            track_add_sdp_field(track, rtpmap, sdp_value);
         }
 
         r->info->media_source = props_hints.media_source;

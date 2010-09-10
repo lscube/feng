@@ -39,13 +39,17 @@ static int mp4ves_init(Track *track)
     if ( (config = extradata2config(&track->properties)) == NULL )
         return -1;
 
-    track_add_sdp_field(track, fmtp,
-                        g_strdup_printf("profile-level-id=1;config=%s;",
-                                        config));
+    g_string_append_printf(track->attributes,
+                           "a=fmtp:%u profile-level-id=1;config=%s;\r\n"
+                           "a=rtpmap:%u MP4V-ES/%d\r\n",
 
-    track_add_sdp_field(track, rtpmap,
-                        g_strdup_printf ("MP4V-ES/%d",
-                                         track->properties.clock_rate));
+                           /* fmtp */
+                           track->properties.payload_type,
+                           config,
+
+                           /* rtpmap */
+                           track->properties.payload_type,
+                           track->properties.clock_rate);
 
     g_free(config);
 

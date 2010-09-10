@@ -66,9 +66,10 @@ typedef struct
 
 static int h263_init(Track *track)
 {
-    track_add_sdp_field(track, rtpmap,
-                        g_strdup_printf ("H263-1998/%d",
-                                         track->properties.clock_rate));
+    g_string_append_printf(track->attributes,
+                           "a=rtpmap:%u H263-1998/%d\r\n",
+                           track->properties.payload_type,
+                           track->properties.clock_rate);
 
     return 0;
 }

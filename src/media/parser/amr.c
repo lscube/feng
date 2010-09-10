@@ -39,28 +39,27 @@ static const MediaParserInfo info = {
 static int amr_init(Track *track)
 {
     char *config = NULL;
-    char *sdp_value;
 
-    /*get config content if has*/
-    if(track->properties.extradata_len)
-    {
-        config = extradata2config(&track->properties);
-        if (!config)
-            return -1;
-
-        sdp_value = g_strdup_printf("octet-align=1; config=%s", config);
-        g_free(config);
-    } else {
-        sdp_value =  g_strdup_printf("octet-align=1");
-    }
-
-    track_add_sdp_field(track, fmtp, sdp_value);
+    /* get config content if has any */
+    if ( track->properties.extradata_len &&
+         (config = extradata2config(&track->properties)) == NULL )
+        return -1;
 
     track->properties.clock_rate = 8000;
-    track_add_sdp_field(track, rtpmap,
-                        g_strdup_printf ("AMR/%d/%d",
-                                         track->properties.clock_rate,
-                                         track->properties.audio_channels));
+
+    g_string_append_printf(track->attributes,
+                           "a=fmtp:%u octet-align=1%s%s\r\n"
+                           "a=rtpmap:%u AMR/%d/%d\r\n",
+
+                           /* fmtp */
+                           track->properties.payload_type,
+                           config ? "; config=" : "",
+                           config ? config : "",
+
+                           /* rtpmap */
+                           track->properties.payload_type,
+                           track->properties.clock_rate,
+                           track->properties.audio_channels);
 
     return 0;
 }

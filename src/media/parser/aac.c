@@ -39,21 +39,25 @@ static const MediaParserInfo info = {
 static int aac_init(Track *track)
 {
     char *config;
-    char *sdp_value;
 
     if ( (config = extradata2config(&track->properties)) == NULL )
         return -1;
 
-    sdp_value = g_strdup_printf("streamtype=5;profile-level-id=1;"
-                                "mode=AAC-hbr;sizeLength=13;indexLength=3;"
-                                "indexDeltaLength=3; config=%s;", config);
+    g_string_append_printf(track->attributes,
+                           "a=fmtp:%u streamtype=5;profile-level-id=1;"
+                           "mode=AAC-hbr;sizeLength=13;indexLength=3;"
+                           "indexDeltaLength=3; config=%s;\r\n"
+
+                           "a=rtpmap:%u mpeg4-generic/%d\r\n",
+
+                           /* fmtp */
+                           track->properties.payload_type,
+                           config,
+
+                           /* rtpmap */
+                           track->properties.payload_type,
+                           track->properties.clock_rate);
     g_free(config);
-
-    track_add_sdp_field(track, fmtp, sdp_value);
-
-    sdp_value = g_strdup_printf ("mpeg4-generic/%d",
-                                 track->properties.clock_rate);
-    track_add_sdp_field(track, rtpmap, sdp_value);
 
     return 0;
 }

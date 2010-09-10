@@ -37,11 +37,12 @@ static const MediaParserInfo info = {
 
 static int vp8_init(Track *track)
 {
-    char *sdp_value;
+    g_string_append_printf(track->attributes,
+                           "a=rtpmap:%u VP8/%d\r\n",
 
-    sdp_value = g_strdup_printf ("VP8/%d",
-                                 track->properties.clock_rate);
-    track_add_sdp_field(track, rtpmap, sdp_value);
+                           /* rtpmap */
+                           track->properties.payload_type,
+                           track->properties.clock_rate);
 
     return 0;
 }

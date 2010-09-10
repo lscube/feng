@@ -41,48 +41,6 @@
 #define NTP_time(t) ((float)t + 2208988800U)
 
 /**
- * @brief Simple pair for compound parameters in foreach functions
- *
- * This data structure is used to pass parameters along with foreach
- * functions, like @ref sdp_mdescr_private_append.
- */
-typedef struct {
-    /** The string to append the SDP description to */
-    GString *descr;
-    /** The currently-described Track object */
-    Track *track;
-} sdp_mdescr_append_pair;
-
-/**
- * @brief Append media private field information to an SDP string
- *
- * @param element An sdp_field object in the list
- * @param user_data An sdp_mdescr_append_pair object
- *
- * @internal This function is only to be called by g_list_foreach().
- */
-static void sdp_track_private_append(gpointer element, gpointer user_data)
-{
-    sdp_field *private = (sdp_field *)element;
-    sdp_mdescr_append_pair *pair = (sdp_mdescr_append_pair *)user_data;
-
-    switch (private->type) {
-    case fmtp:
-        g_string_append_printf(pair->descr, "a=fmtp:%u %s"SDP_EL,
-                               pair->track->properties.payload_type,
-                               private->field);
-        break;
-    case rtpmap:
-        g_string_append_printf(pair->descr, "a=rtpmap:%u %s"SDP_EL,
-                               pair->track->properties.payload_type,
-                               private->field);
-        break;
-    default: /* Ignore other private fields */
-        break;
-    }
-}
-
-/**
  * @brief Append the description for a given track to an SDP
  *        description.
  *
@@ -151,17 +109,7 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
         g_string_append_printf(descr, "a=framerate:%f"SDP_EL,
                                frame_rate);
 
-    /* We assume a single private list, it might not be the correct
-     * handling, but since we currently lack some better structure. */
-    {
-        sdp_mdescr_append_pair pair = {
-            .descr = descr,
-            .track = track
-        };
-        g_slist_foreach(track->sdp_fields,
-                        sdp_track_private_append,
-                        &pair);
-    }
+    g_string_append(descr, track->attributes->str);
 
     // CC licenses *
     if ( t_info->commons_deed[0] )

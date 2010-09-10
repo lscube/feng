@@ -30,25 +30,6 @@
 #include "mediaparser.h"
 #include "fnc_log.h"
 
-static void free_sdp_field(sdp_field *sdp,
-                           ATTR_UNUSED void *unused)
-{
-    if (!sdp)
-        return;
-
-    g_free(sdp->field);
-    g_slice_free(sdp_field, sdp);
-}
-
-static void sdp_fields_free(GSList *fields)
-{
-    if ( fields == NULL )
-        return;
-
-    g_slist_foreach(fields, (GFunc)free_sdp_field, NULL);
-    g_slist_free(fields);
-}
-
 /**
  * @brief Frees the resources of a Track object
  *
@@ -71,7 +52,7 @@ void free_track(gpointer element,
     g_free(track->info->mrl);
     g_slice_free(TrackInfo, track->info);
 
-    sdp_fields_free(track->sdp_fields);
+    g_string_free(track->attributes, true);
 
     if ( track->parser && track->parser->uninit )
         track->parser->uninit(track);
@@ -110,6 +91,8 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     t->info = g_slice_new0(TrackInfo);
     memcpy(t->info, info, sizeof(TrackInfo));
 
+    t->attributes = g_string_new("");
+
     memcpy(&t->properties, prop_hints, sizeof(MediaProperties));
 
     switch (t->properties.media_source) {
@@ -141,22 +124,6 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     return NULL;
 }
 #undef ADD_TRACK_ERROR
-
-/**
- * @brief Append an SDP field to the track
- *
- * @param track The track to add the fields to
- * @param type The type of the field to add
- * @param value The value of the field to add (already duped)
- */
-void track_add_sdp_field(Track *track, sdp_field_type type, char *value)
-{
-    sdp_field *field = g_slice_new(sdp_field);
-    field->type = type;
-    field->field = value;
-
-    track->sdp_fields = g_slist_prepend(track->sdp_fields, field);
-}
 
 /**
  * @brief Get the producer for the track
