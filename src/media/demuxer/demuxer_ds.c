@@ -32,10 +32,10 @@
 
 static const DemuxerInfo ds_info = {
     "Dynamic Edit List",
-    "sd",
+    "ds",
     "BPP Team",
     "",
-    "sd",
+    "ds",
     STORED_SOURCE
 };
 
