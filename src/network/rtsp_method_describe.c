@@ -67,10 +67,6 @@ static void sdp_track_private_append(gpointer element, gpointer user_data)
     sdp_mdescr_append_pair *pair = (sdp_mdescr_append_pair *)user_data;
 
     switch (private->type) {
-    case empty_field:
-        g_string_append_printf(pair->descr, "%s"SDP_EL,
-                               private->field);
-        break;
     case fmtp:
         g_string_append_printf(pair->descr, "a=fmtp:%u %s"SDP_EL,
                                pair->track->properties.payload_type,

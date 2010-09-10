@@ -61,7 +61,7 @@ typedef GList *SelList;
 
 struct MediaParser;
 
-typedef enum {empty_field, fmtp, rtpmap} sdp_field_type;
+typedef enum {fmtp, rtpmap} sdp_field_type;
 
 typedef struct {
 	sdp_field_type type;
