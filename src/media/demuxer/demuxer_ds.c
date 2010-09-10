@@ -24,6 +24,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include "feng.h"
 #include "fnc_log.h"
@@ -47,27 +49,13 @@ typedef struct {
 
 static int ds_probe(const char *filename)
 {
-    static const char magic_string[] = "Version1";
-    char buffer[sizeof(magic_string)-1];
-    char *ext;
-    FILE *fp;
-    size_t rsize;
-
-    if (!((ext = strrchr(filename, '.')) && (!strcmp(ext, ".ds"))))
+    if ( ! g_str_has_suffix(filename, ".ds") )
         return RESOURCE_DAMAGED;
 
-    fp = fopen(filename, "r");
-    if ( !fp )
-        return RESOURCE_DAMAGED;
-
-    rsize = fread(&buffer, 1, sizeof(buffer), fp);
-    fclose(fp);
-
-    if ( rsize <= sizeof(magic_string) )
-        return RESOURCE_DAMAGED;
-
-    if ( memcmp(buffer, magic_string, sizeof(buffer)) != 0 )
-        return RESOURCE_DAMAGED;
+    if ( access(filename, R_OK) != 0 ) {
+        fnc_perror("access");
+        return RESOURCE_NOT_FOUND;
+    }
 
     return RESOURCE_OK;
 }
