@@ -22,9 +22,9 @@
 
 #include "media/demuxer.h"
 
-static int skel_probe(InputStream * i_stream)
+static gboolean skel_probe(const char *filename)
 {
-    return RESOURCE_NOT_FOUND;
+    return g_str_has_suffix(filename, ".skl");
 }
 
 static int skel_init(Resource * r)
@@ -48,7 +48,6 @@ static int skel_uninit(Resource * r)
 }
 
 static const char skel_name[] = "Skeleton demuxer module";
-static const char *skel_extensions[] = { "skl" };
 
 FENG_DEMUXER(skel, STORED_SOURCE);
 
