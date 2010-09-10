@@ -152,36 +152,12 @@ static const Demuxer *r_find_demuxer(const char *filename)
     };
 
     int i;
-    const char *res_ext;
-
-    /* First of all try that with matching extension: we use extension as a
-     * hint of resource type.
-     */
-    if ( (res_ext = strrchr(filename, '.')) && *(res_ext++) ) {
-        for (i=0; demuxers[i]; i++) {
-            size_t j;
-
-            for (j = 0; j < demuxers[i]->extensions_count; j++) {
-                const char *dmx_ext = demuxers[i]->extensions[j];
-
-                if (g_ascii_strcasecmp(dmx_ext, res_ext) != 0)
-                    continue;
-
-                fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\" "
-                        "matches \"%s\" demuxer\n", res_ext,
-                        demuxers[i]->name);
-
-                if (demuxers[i]->probe(filename))
-                    return demuxers[i];
-            }
-        }
-    }
 
     for (i=0; demuxers[i]; i++)
         if (demuxers[i]->probe(filename))
-            return demuxers[i];
+            break;
 
-    return NULL;
+    return demuxers[i];
 }
 
 /**

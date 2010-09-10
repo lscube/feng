@@ -557,6 +557,5 @@ static void sd_uninit(ATTR_UNUSED gpointer ptr)
 }
 
 static const char sd_name[] = "Live Source Description";
-static const char *sd_extensions[] = { "sd" };
 
 FENG_DEMUXER(sd, LIVE_SOURCE);

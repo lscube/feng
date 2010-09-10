@@ -216,8 +216,6 @@ typedef struct Track {
 #define FENG_DEMUXER(shortname, source)                                   \
     const Demuxer fnc_demuxer_##shortname = {                             \
         shortname##_name,                                                 \
-        shortname##_extensions,                                           \
-        sizeof(shortname##_extensions)/sizeof(shortname##_extensions[0]), \
         source,                                                           \
         shortname##_probe,                                                \
         shortname##_init,                                                 \
@@ -229,11 +227,6 @@ typedef struct Track {
 typedef struct Demuxer {
    /** name of demuxer module*/
     const char *name;
-
-    /** served file extensions */
-    const char **extensions;
-    /** Size of Demuxer::extensions array */
-    size_t extensions_count;
 
     /** demuxer source type */
     MediaSource source;

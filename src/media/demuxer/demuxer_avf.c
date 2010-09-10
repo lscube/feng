@@ -394,7 +394,6 @@ static void avf_uninit(gpointer rgen)
 }
 
 static const char avf_name[] = "libavformat Demuxer";
-static const char* avf_extensions[] = { "mov", "nut", "mkv", "mxf" };
 
 FENG_DEMUXER(avf, STORED_SOURCE);
 
