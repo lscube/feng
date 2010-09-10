@@ -47,8 +47,8 @@ static int skel_uninit(Resource * r)
     return RESOURCE_OK;
 }
 
-FENG_DEMUXER(skel,
-             "Skeleton demuxer module"
-             "skl",
-             STORED_SOURCE);
+static const char skel_name[] = "Skeleton demuxer module";
+static const char *skel_extensions[] = { "skl" };
+
+FENG_DEMUXER(skel, STORED_SOURCE);
 

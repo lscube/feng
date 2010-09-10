@@ -252,8 +252,7 @@ static void ds_uninit(gpointer rgen)
     r->tracks = NULL; //Unlink local copy of first resource tracks
 }
 
-FENG_DEMUXER(ds,
-             "Dynamic Edit List",
-             "ds",
-             STORED_SOURCE);
+static const char ds_name[] = "Dynamic Edit List";
+static const char *ds_extensions[] = { "ds" };
 
+FENG_DEMUXER(ds, STORED_SOURCE);

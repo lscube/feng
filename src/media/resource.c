@@ -158,13 +158,12 @@ static const Demuxer *r_find_demuxer(const char *filename)
      */
     if ( (res_ext = strrchr(filename, '.')) && *(res_ext++) ) {
         for (i=0; demuxers[i]; i++) {
-            char exts[128], *tkn; /* temp string containing extension
-                                   * served by probing demuxer.
-                                   */
-            strncpy(exts, demuxers[i]->extensions, sizeof(exts)-1);
+            size_t j;
 
-            for (tkn=strtok(exts, ","); tkn; tkn=strtok(NULL, ",")) {
-                if (strcmp(tkn, res_ext) == 0)
+            for (j = 0; j < demuxers[i]->extensions_count; j++) {
+                const char *dmx_ext = demuxers[i]->extensions[j];
+
+                if (strcmp(dmx_ext, res_ext) == 0)
                     continue;
 
                 fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\" "

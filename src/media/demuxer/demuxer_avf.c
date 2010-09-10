@@ -393,8 +393,8 @@ static void avf_uninit(gpointer rgen)
     g_mutex_unlock(ffmpeg_lock);
 }
 
-FENG_DEMUXER(avf,
-             "libavformat Demuxer",
-             "mov, nut, mkv, mxf",
-             STORED_SOURCE);
+static const char avf_name[] = "libavformat Demuxer";
+static const char* avf_extensions[] = { "mov", "nut", "mkv", "mxf" };
+
+FENG_DEMUXER(avf, STORED_SOURCE);
 

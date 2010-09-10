@@ -217,7 +217,7 @@ static void mpegts_uninit(Resource * r)
     }
 }
 
-FENG_DEMUXER(mpegts,
-             "MPEG TS demuxer",
-             "ts",
-             STORED_SOURCE);
+static const char mpegts_name[] = "MPEG TS demuxer";
+static const char *mpegts_extensions = { "ts" };
+
+FENG_DEMUXER(mpegts, STORED_SOURCE);

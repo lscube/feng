@@ -213,23 +213,28 @@ typedef struct Track {
     MediaProperties properties;
 } Track;
 
-#define FENG_DEMUXER(shortname, name, extensions, source) \
-    const Demuxer fnc_demuxer_##shortname = {             \
-        name,                                             \
-        extensions,                                       \
-        source,                                           \
-        shortname##_probe,                                \
-        shortname##_init,                                 \
-        shortname##_read_packet,                          \
-        shortname##_seek,                                 \
-        shortname##_uninit                                \
+#define FENG_DEMUXER(shortname, source)                                   \
+    const Demuxer fnc_demuxer_##shortname = {                             \
+        shortname##_name,                                                 \
+        shortname##_extensions,                                           \
+        sizeof(shortname##_extensions)/sizeof(shortname##_extensions[0]), \
+        source,                                                           \
+        shortname##_probe,                                                \
+        shortname##_init,                                                 \
+        shortname##_read_packet,                                          \
+        shortname##_seek,                                                 \
+        shortname##_uninit                                                \
     }
 
 typedef struct Demuxer {
    /** name of demuxer module*/
     const char *name;
+
     /** served file extensions */
-    const char *extensions; // coma separated list of extensions (w/o '.')
+    const char **extensions;
+    /** Size of Demuxer::extensions array */
+    size_t extensions_count;
+
     /** demuxer source type */
     MediaSource source;
 
