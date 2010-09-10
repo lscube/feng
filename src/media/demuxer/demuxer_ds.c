@@ -45,12 +45,9 @@ typedef struct {
     int move_to_next;
 } edl_priv_data;
 
-static int ds_probe(const char *filename)
+static gboolean ds_probe(const char *filename)
 {
-    if ( ! g_str_has_suffix(filename, ".ds") )
-        return RESOURCE_DAMAGED;
-
-    return RESOURCE_OK;
+    return g_str_has_suffix(filename, ".ds");
 }
 
 static inline edl_item_elem *edl_active_res (void *private_data) {

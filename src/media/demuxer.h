@@ -238,7 +238,7 @@ typedef struct Demuxer {
     /** demuxer source type */
     MediaSource source;
 
-    int (*probe)(const char *filename);
+    gboolean (*probe)(const char *filename);
     int (*init)(Resource *);
     int (*read_packet)(Resource *);
     int (*seek)(Resource *, double time_sec);

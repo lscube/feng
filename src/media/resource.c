@@ -171,14 +171,14 @@ static const Demuxer *r_find_demuxer(const char *filename)
                         "matches \"%s\" demuxer\n", res_ext,
                         demuxers[i]->name);
 
-                if (demuxers[i]->probe(filename) == RESOURCE_OK)
+                if (demuxers[i]->probe(filename))
                     return demuxers[i];
             }
         }
     }
 
     for (i=0; demuxers[i]; i++)
-        if ((demuxers[i]->probe(filename) == RESOURCE_OK))
+        if (demuxers[i]->probe(filename))
             return demuxers[i];
 
     return NULL;

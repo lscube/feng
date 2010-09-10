@@ -100,7 +100,7 @@ static int pt_from_id(int id)
 
 #define PROBE_BUF_SIZE 2048
 
-static int avf_probe(const char *filename)
+static gboolean avf_probe(const char *filename)
 {
     AVProbeData avpd = {
         .filename = filename
@@ -127,7 +127,7 @@ static int avf_probe(const char *filename)
     avif = av_probe_input_format(&avpd, 1);
     g_mutex_unlock(ffmpeg_lock);
 
-    return avif ? RESOURCE_OK : RESOURCE_DAMAGED;
+    return !!avif;
 }
 
 static double avf_timescaler (ATTR_UNUSED Resource *r, double res_time) {

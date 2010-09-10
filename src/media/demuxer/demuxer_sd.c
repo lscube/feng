@@ -194,10 +194,7 @@ static const RTP_static_payload * probe_stream_info(char const *codec_name)
 
 static int sd_probe(const char *filename)
 {
-    if ( ! g_str_has_suffix(filename, ".sd") )
-        return RESOURCE_DAMAGED;
-
-    return RESOURCE_OK;
+    return g_str_has_suffix(filename, ".sd");
 }
 
 //Sets payload type and probes media type from payload type
