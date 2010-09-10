@@ -194,9 +194,7 @@ static const RTP_static_payload * probe_stream_info(char const *codec_name)
 
 static int sd_probe(const char *filename)
 {
-    char *ext;
-
-    if (!((ext = strrchr(filename, '.')) && (!strcmp(ext, ".sd"))))
+    if ( ! g_str_has_suffix(filename, ".sd") )
         return RESOURCE_DAMAGED;
 
     return RESOURCE_OK;
