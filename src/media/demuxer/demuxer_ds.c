@@ -24,8 +24,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <unistd.h>
-#include <errno.h>
 
 #include "feng.h"
 #include "fnc_log.h"
@@ -51,11 +49,6 @@ static int ds_probe(const char *filename)
 {
     if ( ! g_str_has_suffix(filename, ".ds") )
         return RESOURCE_DAMAGED;
-
-    if ( access(filename, R_OK) != 0 ) {
-        fnc_perror("access");
-        return RESOURCE_NOT_FOUND;
-    }
 
     return RESOURCE_OK;
 }

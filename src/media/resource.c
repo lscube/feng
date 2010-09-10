@@ -30,6 +30,7 @@
 #include <glib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <unistd.h>
 #include <errno.h>
 
 #include "demuxer.h"
@@ -320,12 +321,20 @@ Resource *r_open(const char *inner_path)
                             inner_path,
                             NULL);
 
+    /* Since right now we don't support any non-file-backed file, we
+     * can check here if the file exists and if not simply return,
+     * rather than passing through all the other code.
+     */
+    if ( access(mrl, R_OK) != 0 ) {
+        fnc_perror("access");
+        goto error;
+    }
+
     if ( (dmx = r_find_demuxer(mrl)) == NULL ) {
         fnc_log(FNC_LOG_DEBUG,
                 "[MT] Could not find a valid demuxer for resource %s\n",
                 mrl);
-        g_free(mrl);
-        return NULL;
+        goto error;
     }
 
     /* From here on, we don't care any more of the doom of the mrl
@@ -351,6 +360,9 @@ Resource *r_open(const char *inner_path)
     }
 
     return r;
+ error:
+    g_free(mrl);
+    return NULL;
 }
 
 /**
