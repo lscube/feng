@@ -163,7 +163,7 @@ static const Demuxer *r_find_demuxer(const char *filename)
             for (j = 0; j < demuxers[i]->extensions_count; j++) {
                 const char *dmx_ext = demuxers[i]->extensions[j];
 
-                if (g_ascii_strcasecmp(dmx_ext, res_ext) == 0)
+                if (g_ascii_strcasecmp(dmx_ext, res_ext) != 0)
                     continue;
 
                 fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\" "
