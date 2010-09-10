@@ -26,7 +26,8 @@
 
 #include "fnc_log.h"
 
-#include "media/demuxer_module.h"
+#include "media/demuxer.h"
+#include "media/mediaparser.h"
 
 #include <libavformat/avformat.h>
 
@@ -50,15 +51,6 @@ static void init_mutex()
         g_once_init_leave(&inited, true);
     }
 }
-
-static const DemuxerInfo avf_info = {
-	"Avformat Demuxer",
-	"avf",
-	"LScube Team",
-	"",
-	"mov, nut, mkv, mxf",
-        STORED_SOURCE
-};
 
 typedef struct id_tag {
     const int id;
@@ -401,5 +393,8 @@ static void avf_uninit(gpointer rgen)
     g_mutex_unlock(ffmpeg_lock);
 }
 
-FNC_LIB_DEMUXER(avf);
+FENG_DEMUXER(avf,
+             "libavformat Demuxer",
+             "mov, nut, mkv, mxf",
+             STORED_SOURCE);
 

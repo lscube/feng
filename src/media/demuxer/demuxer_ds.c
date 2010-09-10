@@ -28,17 +28,7 @@
 #include "feng.h"
 #include "fnc_log.h"
 
-#include "media/demuxer_module.h"
-
-static const DemuxerInfo ds_info = {
-    "Dynamic Edit List",
-    "ds",
-    "BPP Team",
-    "",
-    "ds",
-    STORED_SOURCE
-};
-
+#include "media/demuxer.h"
 
 typedef struct {
     Resource *r;
@@ -262,5 +252,8 @@ static void ds_uninit(gpointer rgen)
     r->tracks = NULL; //Unlink local copy of first resource tracks
 }
 
-FNC_LIB_DEMUXER(ds);
+FENG_DEMUXER(ds,
+             "Dynamic Edit List",
+             "ds",
+             STORED_SOURCE);
 

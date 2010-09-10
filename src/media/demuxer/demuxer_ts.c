@@ -20,15 +20,7 @@
  *
  * */
 
-#include "demuxer_module.h"
-
-static const DemuxerInfo ts_info = {
-    "MPEG TS non-demuxer",
-    "mpegts",
-    "LScube Team",
-    "",
-    "ts"
-};
+#include "media/demuxer.h"
 
 typedef struct {
     double first_clock;
@@ -225,5 +217,7 @@ static void mpegts_uninit(Resource * r)
     }
 }
 
-FNC_LIB_DEMUXER(mpegts);
-
+FENG_DEMUXER(mpegts,
+             "MPEG TS demuxer",
+             "ts",
+             STORED_SOURCE);

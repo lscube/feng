@@ -20,17 +20,7 @@
  *
  * */
 
-#include "demuxer_module.h"
-
-static const DemuxerInfo skel_info = {
-    "Skeleton demuxer_module",
-    "skel",
-    "LScube Team",
-    "",
-    "skl",
-    STORED_SOURCE
-};
-
+#include "media/demuxer.h"
 
 static int skel_probe(InputStream * i_stream)
 {
@@ -57,5 +47,8 @@ static int skel_uninit(Resource * r)
     return RESOURCE_OK;
 }
 
-FNC_LIB_DEMUXER(skel);
+FENG_DEMUXER(skel,
+             "Skeleton demuxer module"
+             "skl",
+             STORED_SOURCE);
 

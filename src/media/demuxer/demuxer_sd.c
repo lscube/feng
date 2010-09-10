@@ -35,7 +35,7 @@
 #include "feng.h"
 #include "fnc_log.h"
 
-#include "media/demuxer_module.h"
+#include "media/demuxer.h"
 #include "media/mediaparser.h"
 
 #define REQUIRED_FLUX_PROTOCOL_VERSION 4
@@ -179,15 +179,6 @@ static const RTP_static_payload RTP_payload[] ={
 #define SD_RDF              "verify"
 #define SD_TITLE            "title"
 #define SD_CREATOR          "creator"
-
-static const DemuxerInfo sd_info = {
-    "Live Source Description",
-    "sd",
-    "LScube Team",
-    "",
-    "sd",
-    LIVE_SOURCE
-};
 
 //Probe informations from RTPPTDEFS table form codec_name
 static const RTP_static_payload * probe_stream_info(char const *codec_name)
@@ -570,5 +561,8 @@ static void sd_uninit(ATTR_UNUSED gpointer ptr)
     return;
 }
 
-FNC_LIB_DEMUXER(sd);
+FENG_DEMUXER(sd,
+             "Live Source Description",
+             "sd",
+             LIVE_SOURCE);
 

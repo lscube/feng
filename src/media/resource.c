@@ -161,7 +161,7 @@ static const Demuxer *r_find_demuxer(const char *filename)
             char exts[128], *tkn; /* temp string containing extension
                                    * served by probing demuxer.
                                    */
-            strncpy(exts, demuxers[i]->info->extensions, sizeof(exts)-1);
+            strncpy(exts, demuxers[i]->extensions, sizeof(exts)-1);
 
             for (tkn=strtok(exts, ","); tkn; tkn=strtok(NULL, ",")) {
                 if (strcmp(tkn, res_ext) == 0)
@@ -169,7 +169,7 @@ static const Demuxer *r_find_demuxer(const char *filename)
 
                 fnc_log(FNC_LOG_DEBUG, "[MT] probing demuxer: \"%s\" "
                         "matches \"%s\" demuxer\n", res_ext,
-                        demuxers[i]->info->name);
+                        demuxers[i]->name);
 
                 if (demuxers[i]->probe(filename) == RESOURCE_OK)
                     return demuxers[i];
@@ -335,9 +335,9 @@ Resource *r_open(const char *inner_path)
      */
 
     fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource"
-                               "\"%s\"\n", dmx->info->name, mrl);
+                               "\"%s\"\n", dmx->name, mrl);
 
-    switch(dmx->info->source) {
+    switch(dmx->source) {
 #ifdef LIVE_STREAMING
         case LIVE_SOURCE:
             r = r_open_hashed(mrl, dmx);
@@ -462,7 +462,7 @@ static void r_read_cb(gpointer consumer_p, gpointer resource_p)
 {
     Resource *resource = (Resource*)resource_p;
     BufferQueue_Consumer *consumer = (BufferQueue_Consumer*)consumer_p;
-    const gboolean live = resource->demuxer->info->source == LIVE_SOURCE;
+    const gboolean live = resource->demuxer->source == LIVE_SOURCE;
     const gulong buffered_frames = feng_srv.srvconf.buffered_frames;
 
     g_assert( (live && consumer == GINT_TO_POINTER(-1)) || (!live && consumer != GINT_TO_POINTER(-1)) );
@@ -520,7 +520,7 @@ void r_close(Resource *resource)
         return;
 
 #ifdef LIVE_STREAMING
-    if (resource->demuxer->info->source == LIVE_SOURCE) {
+    if (resource->demuxer->source == LIVE_SOURCE) {
         g_mutex_lock(shared_resources_lock);
 
         if ( g_atomic_int_dec_and_test(&resource->count) ) {
@@ -555,7 +555,7 @@ void r_pause(Resource *resource)
     GThreadPool *pool;
 
     /* Don't even try to pause a live source! */
-    if ( resource->demuxer->info->source == LIVE_SOURCE )
+    if ( resource->demuxer->source == LIVE_SOURCE )
         return;
 
     /* we paused already */
@@ -612,7 +612,7 @@ void r_resume(Resource *resource)
 void r_fill(Resource *resource, BufferQueue_Consumer *consumer)
 {
     /* Don't even try to fill a live source! */
-    if ( resource->demuxer->info->source == LIVE_SOURCE )
+    if ( resource->demuxer->source == LIVE_SOURCE )
         return;
 
     g_mutex_lock(resource->lock);

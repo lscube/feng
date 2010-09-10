@@ -97,7 +97,6 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	\
 	src/media/demuxer.c \
 	src/media/demuxer.h \
-	src/media/demuxer_module.h \
 	src/media/mediaparser.c \
 	src/media/mediaparser.h \
 	src/media/mediaparser_module.h \
