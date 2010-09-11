@@ -147,16 +147,31 @@ typedef struct Resource {
     void *private_data; /* Demuxer private data */
 } Resource;
 
+/**
+ * @defgroup SDP_FORMAT_MACROS SDP attributes format macros
+ *
+ * This is a list of standard format macros that can be used to append
+ * standard extra attributes to an SDP reply. They are listed all
+ * together so that the code uses them consistently; they are macros
+ * rather than string arrays because they can be combined into a
+ * single format at once.
+ *
+ * @{
+ */
+
+#define SDP_F_COMMONS_DEED "a=uriLicense:%s\r\n"
+#define SDP_F_RDF_PAGE     "a=urimetadata:%s\r\n"
+#define SDP_F_TITLE        "a=title:%s\r\n"
+#define SDP_F_AUTHOR       "a=author:%s\r\n"
+
+/**
+ * @}
+ */
+
 typedef struct Trackinfo_s {
     char *mrl;
     char name[256];
     int id; // should it more generic?
-    //start CC
-    char commons_deed[256];
-    char rdf_page[256];
-    char title[256];
-    char author[256];
-    //end CC
 } TrackInfo;
 
 typedef struct MediaProperties {
@@ -247,14 +262,6 @@ Track *r_find_track(Resource *, const char *);
 // Tracks
 Track *add_track(Resource *, TrackInfo *, MediaProperties *);
 void free_track(gpointer element, gpointer user_data);
-
-static inline void track_add_attribute(Track *track,
-                                       const char *attribute,
-                                       const char *value)
-{
-    g_string_append_printf(track->attributes, "%s:%s\r\n",
-                           attribute, value);
-}
 
 BufferQueue_Producer *track_get_producer(Track *tr);
 

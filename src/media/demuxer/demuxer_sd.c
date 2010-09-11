@@ -223,6 +223,10 @@ static int sd_init(Resource * r)
 
     MediaProperties props_hints;
     TrackInfo trackinfo;
+    char commons_deed[256] = { 0, };
+    char rdf_page[256] = { 0, };
+    char title[256] = { 0, };
+    char author[256] = { 0, };
 
     memset(&props_hints, 0, sizeof(MediaProperties));
     memset(&trackinfo, 0, sizeof(TrackInfo));
@@ -322,10 +326,10 @@ static int sd_init(Resource * r)
 
                 /*******START CC********/
                 // SD_LICENSE
-                sscanf(line, "%*s%255s", trackinfo.commons_deed);
+                sscanf(line, "%*s%255s", commons_deed);
             } else if (!g_ascii_strcasecmp(keyword, SD_RDF)) {
                 // SD_RDF
-                sscanf(line, "%*s%255s", trackinfo.rdf_page);
+                sscanf(line, "%*s%255s", rdf_page);
             } else if (!g_ascii_strcasecmp(keyword, SD_TITLE)) {
                 // SD_TITLE
                 int i = 0;
@@ -335,10 +339,10 @@ static int sd_init(Resource * r)
                 p += strlen(SD_TITLE);
 
                 while (p[i] != '\n' && i < 255) {
-                    trackinfo.title[i] = p[i];
+                    title[i] = p[i];
                     i++;
                 }
-                trackinfo.title[i] = '\0';
+                title[i] = '\0';
             } else if (!g_ascii_strcasecmp(keyword, SD_CREATOR)) {
                 // SD_CREATOR
                 int i = 0;
@@ -347,10 +351,10 @@ static int sd_init(Resource * r)
                 p += strlen(SD_CREATOR);
 
                 while (p[i] != '\n' && i < 255) {
-                    trackinfo.author[i] = p[i];
+                    author[i] = p[i];
                     i++;
                 }
-                trackinfo.author[i] = '\0';
+                author[i] = '\0';
             }
         }        /*end while !STREAM_END or eof */
 
@@ -361,6 +365,16 @@ static int sd_init(Resource * r)
             err = -1;
             break;
         }
+
+        g_string_append_printf(track->attributes,
+                               SDP_F_COMMONS_DEED
+                               SDP_F_RDF_PAGE
+                               SDP_F_TITLE
+                               SDP_F_AUTHOR,
+                               commons_deed,
+                               rdf_page,
+                               title,
+                               author);
 
         track->parser = &demuxer_sd_fake_mediaparser;
         track->private_data = g_slice_new0(mqd_t);

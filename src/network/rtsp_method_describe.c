@@ -110,20 +110,6 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
                                frame_rate);
 
     g_string_append(descr, track->attributes->str);
-
-    // CC licenses *
-    if ( t_info->commons_deed[0] )
-        g_string_append_printf(descr, "a=uriLicense:%s"SDP_EL,
-                               t_info->commons_deed);
-    if ( t_info->rdf_page[0] )
-        g_string_append_printf(descr, "a=uriMetadata:%s"SDP_EL,
-                               t_info->rdf_page);
-    if ( t_info->title[0] )
-        g_string_append_printf(descr, "a=title:%s"SDP_EL,
-                               t_info->title);
-    if ( t_info->author[0] )
-        g_string_append_printf(descr, "a=author:%s"SDP_EL,
-                               t_info->author);
 }
 
 /**

@@ -173,20 +173,6 @@ static int avf_init(Resource * r)
         goto err_alloc;
     }
 
-/* throw it in the sdp?
-    if(avfc->title    [0])
-    if(avfc->author   [0])
-    if(avfc->copyright[0])
-    if(avfc->comment  [0])
-    if(avfc->album    [0])
-    if(avfc->year        )
-    if(avfc->track       )
-    if(avfc->genre    [0]) */
-
-    // make them pointers?
-    strncpy(trackinfo.title, avfc->title, 80);
-    strncpy(trackinfo.author, avfc->author, 80);
-
     r->info->duration = (double)avfc->duration /AV_TIME_BASE;
     // make sure we can seek.
     r->info->seekable = !av_seek_frame(avfc, -1, 0, 0);
@@ -272,6 +258,11 @@ static int avf_init(Resource * r)
                 fnc_log(FNC_LOG_DEBUG, "[avf] codec type unsupported");
             break;
         }
+
+        g_string_append_printf(track->attributes,
+                               SDP_F_TITLE SDP_F_AUTHOR,
+                               avfc->title,
+                               avfc->author);
     }
 
     if (track) {
