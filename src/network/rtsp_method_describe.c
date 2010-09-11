@@ -137,7 +137,7 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
                            uri->host);
 
     /* We might want to provide a better name */
-    g_string_append(descr, "n=RTSP Session");
+    g_string_append(descr, "n=RTSP Session\r\n");
 
     if ( inet_family == AF_INET6 )
         g_string_append(descr,
