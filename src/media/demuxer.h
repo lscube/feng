@@ -214,6 +214,17 @@ typedef struct Track {
     Resource *parent;
 
     void *private_data; /* private data of media parser */
+
+    /**
+     * @brief SDP attributes for the track
+     *
+     * This string is used to append attributes that have to be sent
+     * with the SDP description of the track by the DESCRIBE method
+     * (see @ref sdp_track_descr).
+     *
+     * Simply append them, newline-terminated, to this string and
+     * they'll be copied straight to the SDP description.
+     */
     GString *attributes;
 
     MediaProperties properties;
