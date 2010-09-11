@@ -38,8 +38,6 @@ struct feng;
 #define RESOURCE_NOT_PARSEABLE -5
 #define RESOURCE_EOF -6
 
-#define MAX_SEL_TRACKS 5
-
 typedef enum {
     MP_undef = -1,
     MP_audio,
@@ -56,7 +54,6 @@ typedef enum {
 
 //! typedefs that give convenient names to GLists used
 typedef GList *TrackList;
-typedef GList *SelList;
 
 struct MediaParser;
 
