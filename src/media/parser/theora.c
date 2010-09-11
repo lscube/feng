@@ -26,7 +26,6 @@
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-#include "media/mediaparser_module.h"
 #include "fnc_log.h"
 
 #include <libavutil/md5.h>
@@ -68,12 +67,6 @@ static int ff_split_xiph_headers(uint8_t *extradata, int extradata_size,
     return 0;
 }
 #endif
-
-
-static const MediaParserInfo info = {
-    "theora",
-    MP_video
-};
 
 typedef struct {
     int stacksize;
@@ -252,6 +245,4 @@ static int theora_parse(Track *tr, uint8_t *data, size_t len)
     return 0;
 }
 
-
-FNC_LIB_MEDIAPARSER(theora);
-
+FENG_MEDIAPARSER(theora, "theora", MP_video);

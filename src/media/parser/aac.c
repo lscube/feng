@@ -26,13 +26,7 @@
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-#include "media/mediaparser_module.h"
 #include "fnc_log.h"
-
-static const MediaParserInfo info = {
-    "aac",
-    MP_audio
-};
 
 #define aac_uninit NULL
 
@@ -131,6 +125,4 @@ static int aac_parse(Track *tr, uint8_t *data, size_t len)
     return 0;
 }
 
-
-FNC_LIB_MEDIAPARSER(aac);
-
+FENG_MEDIAPARSER(aac, "aac", MP_audio);

@@ -26,12 +26,6 @@
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-#include "media/mediaparser_module.h"
-
-static const MediaParserInfo info = {
-    "H263P",
-    MP_video
-};
 
 /* H263-1998 FRAGMENT Header (RFC4629)
     0                   1
@@ -114,5 +108,4 @@ static int h263_parse(Track *tr, uint8_t *data, size_t len)
 
 #define h263_uninit NULL
 
-FNC_LIB_MEDIAPARSER(h263);
-
+FENG_MEDIAPARSER(h263, "H263P", MP_video);

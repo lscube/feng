@@ -27,13 +27,7 @@
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-#include "media/mediaparser_module.h"
 #include "fnc_log.h"
-
-static const MediaParserInfo info = {
-    "MP2T",
-    MP_video
-};
 
 typedef struct {
     double first_clock;
@@ -123,4 +117,4 @@ static void mp2t_uninit(Track *track)
     g_slice_free(mp2t_priv, track->private_data);
 }
 
-FNC_LIB_MEDIAPARSER(mp2t);
+FENG_MEDIAPARSER(mp2t, "MP2T", MP_video);

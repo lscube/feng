@@ -22,13 +22,7 @@
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-#include "media/mediaparser_module.h"
 #include "fnc_log.h"
-
-static const MediaParserInfo info = {
-    "mp4v-es",
-    MP_video
-};
 
 #define mp4ves_uninit NULL
 
@@ -85,4 +79,4 @@ static int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
     return 0;
 }
 
-FNC_LIB_MEDIAPARSER(mp4ves);
+FENG_MEDIAPARSER(mp4ves, "mp4v-es", MP_video);

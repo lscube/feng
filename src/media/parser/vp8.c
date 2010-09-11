@@ -25,13 +25,7 @@
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-#include "media/mediaparser_module.h"
 #include "fnc_log.h"
-
-static const MediaParserInfo info = {
-    "vp8",
-    MP_video
-};
 
 #define vp8_uninit NULL
 
@@ -100,5 +94,4 @@ static int vp8_parse(Track *tr, uint8_t *data, size_t len)
     return 0;
 }
 
-FNC_LIB_MEDIAPARSER(vp8);
-
+FENG_MEDIAPARSER(vp8, "vp8", MP_video);

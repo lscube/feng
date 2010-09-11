@@ -25,12 +25,6 @@
 #include <string.h>
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-#include "media/mediaparser_module.h"
-
-static const MediaParserInfo info = {
-    "MPV",
-    MP_video
-};
 
 #if 1
 // Stolen from ffmpeg (mpegvideo.c)
@@ -186,4 +180,4 @@ static int mpv_parse(Track *tr, uint8_t *data, size_t len)
 
 #define mpv_uninit NULL
 
-FNC_LIB_MEDIAPARSER(mpv);
+FENG_MEDIAPARSER(mpv, "MPV", MP_video);

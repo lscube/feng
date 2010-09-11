@@ -27,12 +27,6 @@
 #include "fnc_log.h"
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-#include "media/mediaparser_module.h"
-
-static const MediaParserInfo info = {
-    "H264",
-    MP_video
-};
 
 typedef struct {
     int is_avc;
@@ -387,5 +381,4 @@ static void h264_uninit(Track *tr)
     g_slice_free(h264_priv, tr->private_data);
 }
 
-FNC_LIB_MEDIAPARSER(h264);
-
+FENG_MEDIAPARSER(h264, "H264", MP_video);

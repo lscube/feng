@@ -113,7 +113,7 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
                             t->properties.encoding_name);
 
-        t->properties.media_type = t->parser->info->media_type;
+        t->properties.media_type = t->parser->media_type;
         break;
 
     case LIVE_SOURCE:

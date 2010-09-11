@@ -26,13 +26,7 @@
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-#include "media/mediaparser_module.h"
 #include "fnc_log.h"
-
-static const MediaParserInfo info = {
-    "amr",
-    MP_audio
-};
 
 #define amr_uninit NULL
 
@@ -160,7 +154,4 @@ static int amr_parse(Track *tr, uint8_t *data, size_t len)
     return 0;
 }
 
-
-FNC_LIB_MEDIAPARSER(amr);
-
-
+FENG_MEDIAPARSER(amr, "amr", MP_audio);

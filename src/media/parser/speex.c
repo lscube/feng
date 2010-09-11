@@ -24,12 +24,6 @@
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-#include "media/mediaparser_module.h"
-
-static const MediaParserInfo info = {
-    "speex",
-    MP_audio
-};
 
 static int speex_init(ATTR_UNUSED Track *track)
 {
@@ -53,5 +47,4 @@ static int speex_parse(Track *tr, uint8_t *data, size_t len)
 
 #define speex_uninit NULL
 
-FNC_LIB_MEDIAPARSER(speex);
-
+FENG_MEDIAPARSER(speex, "speex", MP_audio);

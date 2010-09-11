@@ -33,31 +33,43 @@ struct Track;
 #define MP_PKT_TOO_SMALL -101
 #define MP_NOT_FULL_FRAME -102
 
-typedef struct {
-    const char *encoding_name; /*i.e. MPV, MPA ...*/
-    const MediaType media_type;
-} MediaParserInfo;
+#define FENG_MEDIAPARSER(shortname, encoding, type)         \
+    const MediaParser fnc_mediaparser_##shortname = {       \
+        encoding,                                           \
+        type,                                               \
+        shortname##_init,                                   \
+        shortname##_parse,                                  \
+        shortname##_uninit                                  \
+    }
 
 typedef struct MediaParser {
-    const MediaParserInfo *info;
-/*! init: inizialize the module
- *
- *  @param properties: pointer of allocated struct to fill with properties
- *  @param private_data: private data of parser will be, if needed, linked to this pointer (double)
- *  @return: 0 on success, non-zero otherwise.
- * */
+    /** Encoding name */
+    const char *encoding_name;
+
+    const MediaType media_type;
+
+    /**
+     * @brief Initialisation callback for the parser
+     */
     int (*init)(Track *track);
 
-/*! parse: take a single elementary unit of the codec stream and prepare the rtp payload out of it.
- *
- *  @param track: track whose feng should be filled,
- *  @param data: packet from the demuxer layer,
- *  @param len: packet length,
- *  @return: 0 on success, non zero otherwise.
- * */
+    /**
+     * @brief Actual parser callback
+     *
+     * Take a single elementary unit of the codec stream and prepare
+     * the rtp payload out of it.
+     *
+     * @param track Track object on which to work
+     * @param data Packet coming from the demuxer layer,
+     * @param len Length of @p data byte array
+     *
+     * @return: 0 on success, non zero otherwise.
+     */
     int (*parse)(Track *track, uint8_t *data, size_t len);
 
-    /** Uninit function to free the private data */
+    /**
+     * @brief Uninit function to free the private data
+     */
     void (*uninit)(Track *track);
 } MediaParser;
 

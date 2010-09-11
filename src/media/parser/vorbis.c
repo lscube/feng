@@ -26,15 +26,9 @@
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-#include "media/mediaparser_module.h"
 #include "fnc_log.h"
 
 #include <libavutil/md5.h>
-
-static const MediaParserInfo info = {
-    "vorbis",
-    MP_audio
-};
 
 typedef struct {
     int stacksize;
@@ -244,6 +238,4 @@ static int vorbis_parse(Track *tr, uint8_t *data, size_t len)
     return 0;
 }
 
-
-FNC_LIB_MEDIAPARSER(vorbis);
-
+FENG_MEDIAPARSER(vorbis, "vorbis", MP_audio);

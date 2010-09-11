@@ -25,13 +25,7 @@
 #include <netinet/in.h>
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
-#include "media/mediaparser_module.h"
 #include "fnc_log.h"
-
-static const MediaParserInfo info = {
-    "MPA",
-    MP_audio
-};
 
 static int mpa_init(ATTR_UNUSED Track *track)
 {
@@ -80,5 +74,4 @@ static int mpa_parse(Track *tr, uint8_t *data, size_t len)
 
 #define mpa_uninit NULL
 
-FNC_LIB_MEDIAPARSER(mpa);
-
+FENG_MEDIAPARSER(mpa, "MPA", MP_audio);

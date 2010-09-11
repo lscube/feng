@@ -64,7 +64,8 @@ static void demuxer_sd_fake_mediaparser_uninit(Track *tr) {
  * mqd_t object.
  */
 static const MediaParser demuxer_sd_fake_mediaparser = {
-    .info = NULL,
+    .encoding_name = NULL,
+    .media_type = MP_undef,
     .init = NULL,
     .parse = NULL,
     .uninit = demuxer_sd_fake_mediaparser_uninit
