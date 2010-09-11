@@ -233,8 +233,6 @@ static int avf_init(Resource * r)
         props.extradata = codec->extradata;
         props.extradata_len = codec->extradata_size;
         strncpy(props.encoding_name, id, 11);
-        props.codec_id = codec->codec_id;
-        props.codec_sub_id = codec->sub_id;
         props.payload_type = pt_from_id(codec->codec_id);
         if (props.payload_type >= 96)
             props.payload_type = pt++;
@@ -245,23 +243,15 @@ static int avf_init(Resource * r)
             case CODEC_TYPE_AUDIO:
                 props.media_type     = MP_audio;
                 // Some properties, add more?
-                props.bit_rate       = codec->bit_rate;
                 props.audio_channels = codec->channels;
                 // Make props an int...
-                props.sample_rate    = codec->sample_rate;
                 props.frame_duration       = (double)1 / codec->sample_rate;
-                props.bit_per_sample   = codec->bits_per_coded_sample;
                 break;
 
             case CODEC_TYPE_VIDEO:
                 props.media_type   = MP_video;
-                props.bit_rate     = codec->bit_rate;
                 frame_rate         = av_q2d(st->r_frame_rate);
                 props.frame_duration     = (double)1 / frame_rate;
-                props.AspectRatio  = codec->width *
-                                      codec->sample_aspect_ratio.num /
-                                      (float)(codec->height *
-                                              codec->sample_aspect_ratio.den);
                 break;
 
             default:
@@ -352,7 +342,7 @@ static int avf_read_packet(Resource * r)
         case CODEC_ID_MP2:
         case CODEC_ID_MP3:
             tr->properties.frame_duration = 1152.0/
-                tr->properties.sample_rate;
+                stream->codec->sample_rate;
             break;
         default: break;
         }

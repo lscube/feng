@@ -183,30 +183,15 @@ typedef struct Resource {
 #define SDP_TRACK_URI_SEPARATOR "/" SDP_TRACK_SEPARATOR
 
 typedef struct MediaProperties {
-    int bit_rate; /*!< average if VBR or -1 is not useful*/
     int payload_type;
     unsigned int clock_rate;
     char encoding_name[11];
     MediaType media_type;
     MediaSource media_source;
-    int codec_id; /*!< Codec ID as defined by ffmpeg */
-    int codec_sub_id; /*!< Subcodec ID as defined by ffmpeg */
     double pts;             //time is in seconds
     double dts;             //time is in seconds
     double frame_duration;  //time is in seconds
-    float sample_rate;/*!< SamplingFrequency*/
-    float OutputSamplingFrequency;
     int audio_channels;
-    int bit_per_sample;/*!< BitDepth*/
-    int FlagInterlaced;
-    unsigned int PixelWidth;
-    unsigned int PixelHeight;
-    unsigned int DisplayWidth;
-    unsigned int DisplayHeight;
-    unsigned int DisplayUnit;
-    unsigned int AspectRatio;
-    uint8_t *ColorSpace;
-    float GammaValue;
     uint8_t *extradata;
     size_t extradata_len;
 } MediaProperties;
