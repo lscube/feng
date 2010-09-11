@@ -200,6 +200,7 @@ static int avf_init(Resource * r)
         AVStream *st= priv.avfc->streams[j];
         AVCodecContext *codec= st->codec;
         const char *id = tag_from_id(codec->codec_id);
+        float frame_rate = 0;
 
         if( id == NULL ) {
             fnc_log(FNC_LOG_DEBUG, "[avf] Cannot map stream id %d", j);
@@ -255,8 +256,8 @@ static int avf_init(Resource * r)
             case CODEC_TYPE_VIDEO:
                 props.media_type   = MP_video;
                 props.bit_rate     = codec->bit_rate;
-                props.frame_rate   = av_q2d(st->r_frame_rate);
-                props.frame_duration     = (double)1 / props.frame_rate;
+                frame_rate         = av_q2d(st->r_frame_rate);
+                props.frame_duration     = (double)1 / frame_rate;
                 props.AspectRatio  = codec->width *
                                       codec->sample_aspect_ratio.num /
                                       (float)(codec->height *
@@ -277,6 +278,11 @@ static int avf_init(Resource * r)
                                SDP_F_TITLE SDP_F_AUTHOR,
                                priv.avfc->title,
                                priv.avfc->author);
+
+        if ( frame_rate != 0 )
+            g_string_append_printf(track->attributes,
+                                   "a=framerate:%f\r\n",
+                                   frame_rate);
     }
 
     if (track) {

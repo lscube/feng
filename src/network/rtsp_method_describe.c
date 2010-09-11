@@ -60,7 +60,6 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
      * twice.
      */
     MediaType type;
-    float frame_rate;
 
     /* Associative-array of media types and their SDP strings.
      *
@@ -102,11 +101,6 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
     g_string_append_printf(descr, "a=control:"SDP_TRACK_SEPARATOR"%s"SDP_EL,
                            encoded_media_name);
     g_free(encoded_media_name);
-
-    if ( (frame_rate = track->properties.frame_rate)
-         && type == MP_video)
-        g_string_append_printf(descr, "a=framerate:%f"SDP_EL,
-                               frame_rate);
 
     g_string_append(descr, track->attributes->str);
 }

@@ -184,7 +184,6 @@ typedef struct MediaProperties {
     float OutputSamplingFrequency;
     int audio_channels;
     int bit_per_sample;/*!< BitDepth*/
-    float frame_rate;
     int FlagInterlaced;
     unsigned int PixelWidth;
     unsigned int PixelHeight;
