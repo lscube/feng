@@ -216,7 +216,7 @@ typedef struct Track {
     /**
      * @brief Track name
      *
-     * This stirng is used to access the track within the resource,
+     * This string is used to access the track within the resource,
      * and is reported to the client for identification.
      *
      * It should be set to an instance-bound string (duplicated) to be
