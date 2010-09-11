@@ -248,13 +248,11 @@ static int avf_init(Resource * r)
                 // extradata
                 if (!(track = add_track(r, &trackinfo, &props)))
                     goto err_alloc;
-            break;
-            case CODEC_TYPE_DATA:
-            case CODEC_TYPE_UNKNOWN:
-            case CODEC_TYPE_SUBTITLE: //XXX import subtitle work!
+                break;
+
             default:
                 fnc_log(FNC_LOG_DEBUG, "[avf] codec type unsupported");
-            break;
+                continue;
         }
 
         track->name = g_strdup_printf("%d", i);
