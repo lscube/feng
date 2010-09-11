@@ -95,7 +95,6 @@ static char *http_timestamp() {
  */
 RFC822_Response *rfc822_response_new(const RFC822_Request *req, int status_code)
 {
-    static const char server_header[] = PACKAGE "/" VERSION;
     RFC822_Response *response = g_slice_new0(RFC822_Response);
     const char *hdr;
 
@@ -106,7 +105,7 @@ RFC822_Response *rfc822_response_new(const RFC822_Request *req, int status_code)
     response->body = NULL;
 
     rfc822_headers_set(response->headers,
-                       RFC822_Header_Server, g_strdup(server_header));
+                       RFC822_Header_Server, g_strdup(feng_signature));
     rfc822_headers_set(response->headers,
                        RFC822_Header_Date, http_timestamp());
 

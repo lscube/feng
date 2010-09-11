@@ -36,6 +36,8 @@
 
 #include "conf/array.h"
 
+extern const char feng_signature[];
+
 typedef struct server_config {
     short buffered_frames;
     short loglevel;

@@ -47,6 +47,11 @@
 #include <time.h>
 
 /**
+ * @brief Version string to use to report feng's signature
+ */
+const char feng_signature[] = PACKAGE "/" VERSION;
+
+/**
  * @brief Global structure for feng configuration
  *
  * This strucutre holds (part of) the global settings for the feng

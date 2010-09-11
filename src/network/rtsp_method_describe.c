@@ -151,9 +151,9 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
     // type attribute. We offer only broadcast
     g_string_append(descr, "a=type:broadcast"SDP_EL);
 
-    // tool attribute. Feng promo
-    g_string_append_printf(descr, "a=tool:%s %s Streaming Server"SDP_EL,
-                           PACKAGE, VERSION);
+    /* Server signature; the same as the Server: header */
+    g_string_append_printf(descr, "a=tool:%s"SDP_EL,
+                           feng_signature);
 
     // control attribute. We should look if aggregate metod is supported?
     g_string_append(descr, "a=control:*"SDP_EL);
