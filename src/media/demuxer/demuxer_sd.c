@@ -229,14 +229,6 @@ static int sd_init(Resource * r)
 
     FILE *fd;
 
-    MediaProperties props_hints;
-    char commons_deed[256] = { 0, };
-    char rdf_page[256] = { 0, };
-    char title[256] = { 0, };
-    char author[256] = { 0, };
-
-    memset(&props_hints, 0, sizeof(MediaProperties));
-
     fnc_log(FNC_LOG_DEBUG, "[sd] SD init function");
     fd = fopen(r->info->mrl, "r");
 
@@ -260,6 +252,13 @@ static int sd_init(Resource * r)
 
         sd_private_data priv = { NULL, (mqd_t)-1 };
 
+        MediaProperties props_hints;
+        char commons_deed[256] = { 0, };
+        char rdf_page[256] = { 0, };
+        char title[256] = { 0, };
+        char author[256] = { 0, };
+
+        memset(&props_hints, 0, sizeof(MediaProperties));
         props_hints.media_source = LIVE_SOURCE;
 
         *keyword = '\0';
