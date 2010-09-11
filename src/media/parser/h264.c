@@ -260,7 +260,7 @@ static int h264_init(Track *track)
         if (sprop == NULL) goto err_alloc;
     }
 
-    g_string_append_printf(track->attributes,
+    g_string_append_printf(track->sdp_description,
                            "a=fmtp:%u %s\r\n"
                            "a=rtpmap:%u H264/%d\r\n",
 

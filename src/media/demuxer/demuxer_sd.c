@@ -355,17 +355,16 @@ static int sd_init(Resource * r)
             }
         }        /*end while !STREAM_END or eof */
 
-        if (!(track = add_track(r, &props_hints))) {
+        if (!(track = add_track(r, name, &props_hints))) {
             err = -1;
             g_free(priv.mrl);
             break;
         }
 
-        track->name = name;
         track->parser = &demuxer_sd_fake_mediaparser;
         track->private_data = g_memdup(&priv, sizeof(priv));
 
-        g_string_append_printf(track->attributes,
+        g_string_append_printf(track->sdp_description,
                                SDP_F_COMMONS_DEED
                                SDP_F_RDF_PAGE
                                SDP_F_TITLE
@@ -376,7 +375,7 @@ static int sd_init(Resource * r)
                                author);
 
         if ( fmtp_val ) {
-            g_string_append_printf(track->attributes,
+            g_string_append_printf(track->sdp_description,
                                    "a=fmtp:%u %s",
                                    props_hints.payload_type,
                                    fmtp_val);
@@ -387,7 +386,7 @@ static int sd_init(Resource * r)
         {
             switch (props_hints.media_type) {
                 case MP_audio:
-                    g_string_append_printf(track->attributes,
+                    g_string_append_printf(track->sdp_description,
                                            "a=rtpmap:%u %s/%d/%d\r\n",
                                            props_hints.payload_type,
                                            props_hints.encoding_name,
@@ -395,7 +394,7 @@ static int sd_init(Resource * r)
                                            props_hints.audio_channels);
                     break;
                 case MP_video:
-                    g_string_append_printf(track->attributes,
+                    g_string_append_printf(track->sdp_description,
                                            "a=rtpmap:%u %s/%d\r\n",
                                            props_hints.payload_type,
                                            props_hints.encoding_name,

@@ -39,7 +39,7 @@ static int mp4ves_init(Track *track)
     if ( (config = extradata2config(&track->properties)) == NULL )
         return -1;
 
-    g_string_append_printf(track->attributes,
+    g_string_append_printf(track->sdp_description,
                            "a=fmtp:%u profile-level-id=1;config=%s;\r\n"
                            "a=rtpmap:%u MP4V-ES/%d\r\n",
 

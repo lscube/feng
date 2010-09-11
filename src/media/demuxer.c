@@ -49,7 +49,7 @@ void free_track(gpointer element,
     if ( track-> producer )
         bq_producer_unref(track->producer);
 
-    g_string_free(track->attributes, true);
+    g_string_free(track->sdp_description, true);
 
     if ( track->parser && track->parser->uninit )
         track->parser->uninit(track);
@@ -64,28 +64,47 @@ void free_track(gpointer element,
         goto error; \
     }
 
-/*! Add track to resource tree.  This function adds a new track data struct to
- * resource tree. It used by specific demuxer function in order to obtain the
- * struct to fill.
- * @param r pointer to resource.
+/**
+ * @brief Add track to resource tree.
+ *
+ * This function adds a new track data struct to resource tree. It
+ * used by specific demuxer function in order to obtain the struct to
+ * fill.
+ *
+ * @param r Resource to add the Track to
+ * @param name Name of the track to use (will be g_free'd)
+ *
  * @return pointer to newly allocated track struct.
- * */
+ *
+ * @TODO Right now we escape the name before adding it to the
+ *       a=control SDP attribute; this is only done because of
+ *       demuxer_sd, as in the case of stored tracks read with
+ *       demuxer_avf we only use numbers to refer to them. It would be
+ *       a good idea to simply refuse special characters in the track
+ *       names as read in demuxer_sd and avoid doing the extra work
+ *       here.
+ **/
 
-Track *add_track(Resource *r, MediaProperties *prop_hints)
+Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
 {
     Track *t;
-    // TODO: search first of all in exclusive tracks
+    char *encoded_media_name; /* Should be moved to demuxer_sd */
 
     if(r->num_tracks>=MAX_TRACKS)
         return NULL;
 
     t = g_slice_new0(Track);
 
-    t->lock = g_mutex_new();
+    t->lock            = g_mutex_new();
+    t->parent          = r;
+    t->name            = name;
+    t->sdp_description = g_string_new("");
 
-    t->parent = r;
-
-    t->attributes = g_string_new("");
+    encoded_media_name = g_uri_escape_string(name, NULL, false);
+    g_string_append_printf(t->sdp_description,
+                           "a=control:"SDP_TRACK_SEPARATOR"%s\r\n",
+                           encoded_media_name);
+    g_free(encoded_media_name);
 
     memcpy(&t->properties, prop_hints, sizeof(MediaProperties));
 

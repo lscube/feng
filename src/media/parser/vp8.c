@@ -37,7 +37,7 @@ static const MediaParserInfo info = {
 
 static int vp8_init(Track *track)
 {
-    g_string_append_printf(track->attributes,
+    g_string_append_printf(track->sdp_description,
                            "a=rtpmap:%u VP8/%d\r\n",
 
                            /* rtpmap */

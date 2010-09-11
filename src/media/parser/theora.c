@@ -171,7 +171,7 @@ static int theora_init(Track *track)
          (buf = g_base64_encode(priv->conf, priv->conf_len)) == NULL )
         goto err_alloc;
 
-    g_string_append_printf(track->attributes,
+    g_string_append_printf(track->sdp_description,
                            "a=fmtp:%u delivery-method=in_band; configuration=%s;\r\n"
                            "a=rtpmap%u theora/%d\r\n",
 

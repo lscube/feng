@@ -47,7 +47,7 @@ static int amr_init(Track *track)
 
     track->properties.clock_rate = 8000;
 
-    g_string_append_printf(track->attributes,
+    g_string_append_printf(track->sdp_description,
                            "a=fmtp:%u octet-align=1%s%s\r\n"
                            "a=rtpmap:%u AMR/%d/%d\r\n",
 

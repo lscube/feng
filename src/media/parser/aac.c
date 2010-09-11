@@ -43,7 +43,7 @@ static int aac_init(Track *track)
     if ( (config = extradata2config(&track->properties)) == NULL )
         return -1;
 
-    g_string_append_printf(track->attributes,
+    g_string_append_printf(track->sdp_description,
                            "a=fmtp:%u streamtype=5;profile-level-id=1;"
                            "mode=AAC-hbr;sizeLength=13;indexLength=3;"
                            "indexDeltaLength=3; config=%s;\r\n"

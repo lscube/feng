@@ -269,18 +269,16 @@ static int avf_init(Resource * r)
                 continue;
         }
 
-        if ( !(track = priv.tracks[j] = add_track(r, &props)) )
+        if ( !(track = priv.tracks[j] = add_track(r, g_strdup_printf("%d", j), &props)) )
             goto err_alloc;
 
-        track->name = g_strdup_printf("%d", j);
-
-        g_string_append_printf(track->attributes,
+        g_string_append_printf(track->sdp_description,
                                SDP_F_TITLE SDP_F_AUTHOR,
                                priv.avfc->title,
                                priv.avfc->author);
 
         if ( frame_rate != 0 )
-            g_string_append_printf(track->attributes,
+            g_string_append_printf(track->sdp_description,
                                    "a=framerate:%f\r\n",
                                    frame_rate);
     }

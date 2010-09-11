@@ -168,6 +168,25 @@ typedef struct Resource {
  * @}
  */
 
+/**
+ * @brief Separator for the track ID on presentation URLs
+ *
+ * This string separates the resource URL from the track name in a
+ * presentation URL, for SETUP requests for instance.
+ *
+ * It is represented as a preprocessor macro to be easily used both to
+ * glue together the names and to use it to find the track name.
+ */
+#define SDP_TRACK_SEPARATOR "TrackID="
+
+/**
+ * @brief Convenience macro for the track separator in URLs
+ *
+ * Since outside of the SDP code we need to check for a '/' prefix,
+ * just write it here once.
+ */
+#define SDP_TRACK_URI_SEPARATOR "/" SDP_TRACK_SEPARATOR
+
 typedef struct MediaProperties {
     int bit_rate; /*!< average if VBR or -1 is not useful*/
     int payload_type;
@@ -219,7 +238,7 @@ typedef struct Track {
     char *name;
 
     /**
-     * @brief SDP attributes for the track
+     * @brief SDP description for the track
      *
      * This string is used to append attributes that have to be sent
      * with the SDP description of the track by the DESCRIBE method
@@ -228,7 +247,7 @@ typedef struct Track {
      * Simply append them, newline-terminated, to this string and
      * they'll be copied straight to the SDP description.
      */
-    GString *attributes;
+    GString *sdp_description;
 
     MediaProperties properties;
 } Track;
@@ -274,7 +293,7 @@ void r_fill(Resource *resource, BufferQueue_Consumer *consumer);
 Track *r_find_track(Resource *, const char *);
 
 // Tracks
-Track *add_track(Resource *, MediaProperties *);
+Track *add_track(Resource *, char *name, MediaProperties *);
 void free_track(gpointer element, gpointer user_data);
 
 BufferQueue_Producer *track_get_producer(Track *tr);

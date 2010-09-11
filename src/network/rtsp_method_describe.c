@@ -53,7 +53,6 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
 {
     Track *track = (Track *)element;
     GString *descr = (GString *)user_data;
-    char *encoded_media_name;
 
     /* The following variables are used to read the data out of the
      * track pointer, without calling the same inline function
@@ -91,18 +90,7 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
 
     g_string_append(descr, SDP_EL);
 
-    // i=*
-    // c=*
-    // b=*
-    // k=*
-    // a=*
-    encoded_media_name = g_uri_escape_string(track->name, NULL, false);
-
-    g_string_append_printf(descr, "a=control:"SDP_TRACK_SEPARATOR"%s"SDP_EL,
-                           encoded_media_name);
-    g_free(encoded_media_name);
-
-    g_string_append(descr, track->attributes->str);
+    g_string_append(descr, track->sdp_description->str);
 }
 
 /**
