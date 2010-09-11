@@ -194,7 +194,7 @@ static int avf_init(Resource * r)
     // make sure we can seek.
     r->seekable = !av_seek_frame(priv.avfc, -1, 0, 0);
 
-    priv.tracks = g_new(Track*, priv.avfc->nb_streams);
+    priv.tracks = g_new0(Track*, priv.avfc->nb_streams);
 
     for(j=0; j<priv.avfc->nb_streams; j++) {
         AVStream *st= priv.avfc->streams[j];
