@@ -32,6 +32,24 @@
 #include <libavformat/avformat.h>
 
 /**
+ * @brief Simple structure for libavformat demuxer private data
+ */
+typedef struct avf_private_data {
+    AVFormatContext *avfc;
+
+    /**
+     * @brief Array of tracks
+     *
+     * The size of this array is the same as avfc->nb_streams as
+     * that's what it is indexed on. This causes a little
+     * overallocation if there are tracks that are ignored, but should
+     * be acceptable rather than running over all of them when reading
+     * packets.
+     */
+    Track **tracks;
+} avf_private_data;
+
+/**
  * @brief Mutex to protect usage of the FFmpeg functions.
  *
  * The avcodec_open() and avcodec_close() functions are not thread
@@ -136,26 +154,27 @@ static double avf_timescaler (ATTR_UNUSED Resource *r, double res_time) {
 
 static int avf_init(Resource * r)
 {
-    AVFormatContext *avfc;
     AVFormatParameters ap;
     MediaProperties props;
     Track *track = NULL;
     TrackInfo trackinfo;
-    int pt = 96;
-    unsigned int i;
+    int pt = 96, i;
+    unsigned int j;
+
+    avf_private_data priv = { NULL, NULL };
 
     init_mutex();
 
     memset(&ap, 0, sizeof(AVFormatParameters));
     memset(&trackinfo, 0, sizeof(TrackInfo));
 
-    avfc = avformat_alloc_context();
+    priv.avfc = avformat_alloc_context();
     ap.prealloced_context = 1;
 
-    avfc->flags |= AVFMT_FLAG_GENPTS;
+    priv.avfc->flags |= AVFMT_FLAG_GENPTS;
 
     g_mutex_lock(ffmpeg_lock);
-    i = av_open_input_file(&avfc, r->info->mrl, NULL, 0, &ap);
+    i = av_open_input_file(&priv.avfc, r->info->mrl, NULL, 0, &ap);
     g_mutex_unlock(ffmpeg_lock);
 
     if ( i != 0 ) {
@@ -164,7 +183,7 @@ static int avf_init(Resource * r)
     }
 
     g_mutex_lock(ffmpeg_lock);
-    i = av_find_stream_info(avfc);
+    i = av_find_stream_info(priv.avfc);
     g_mutex_unlock(ffmpeg_lock);
 
     if(i < 0){
@@ -173,55 +192,56 @@ static int avf_init(Resource * r)
         goto err_alloc;
     }
 
-    r->info->duration = (double)avfc->duration /AV_TIME_BASE;
+    r->info->duration = (double)priv.avfc->duration /AV_TIME_BASE;
     // make sure we can seek.
-    r->info->seekable = !av_seek_frame(avfc, -1, 0, 0);
+    r->info->seekable = !av_seek_frame(priv.avfc, -1, 0, 0);
 
-    for(i=0; i<avfc->nb_streams; i++) {
-        AVStream *st= avfc->streams[i];
+    priv.tracks = g_new(Track*, priv.avfc->nb_streams);
+
+    for(j=0; j<priv.avfc->nb_streams; j++) {
+        AVStream *st= priv.avfc->streams[j];
         AVCodecContext *codec= st->codec;
         const char *id = tag_from_id(codec->codec_id);
 
-        trackinfo.id = i;
-
-        if (id) {
-            if (codec->codec_id == CODEC_ID_AAC &&
-                !codec->extradata_size) {
-                AVPacket pkt;
-                st->codec->opaque = av_bitstream_filter_init("aac_adtstoasc");
-                if (!st->codec->opaque)
-                    goto err_alloc;
-                while((av_read_frame(avfc, &pkt) >= 0) && !codec->extradata_size) {
-                    uint8_t *data;
-                    int size;
-                    if(pkt.stream_index != i)
-                        continue;
-                    av_bitstream_filter_filter(st->codec->opaque, codec, NULL,
-                                       &data, &size,
-                                       pkt.data, pkt.size,
-                                       pkt.flags & AV_PKT_FLAG_KEY);
-                    break;
-                }
-                av_seek_frame(avfc, -1, 0, 0);
-                if (!codec->extradata_size)
-                    goto err_alloc;
-            }
-            memset(&props, 0, sizeof(MediaProperties));
-            props.clock_rate = 90000; //Default
-            props.extradata = codec->extradata;
-            props.extradata_len = codec->extradata_size;
-            strncpy(props.encoding_name, id, 11);
-            props.codec_id = codec->codec_id;
-            props.codec_sub_id = codec->sub_id;
-            props.payload_type = pt_from_id(codec->codec_id);
-            if (props.payload_type >= 96)
-                props.payload_type = pt++;
-            fnc_log(FNC_LOG_DEBUG, "[avf] Parsing AVStream %s",
-                    props.encoding_name);
-        } else {
-            fnc_log(FNC_LOG_DEBUG, "[avf] Cannot map stream id %d", i);
+        if( id == NULL ) {
+            fnc_log(FNC_LOG_DEBUG, "[avf] Cannot map stream id %d", j);
             continue;
         }
+
+        if (codec->codec_id == CODEC_ID_AAC &&
+            !codec->extradata_size) {
+            AVPacket pkt;
+            st->codec->opaque = av_bitstream_filter_init("aac_adtstoasc");
+            if (!st->codec->opaque)
+                goto err_alloc;
+            while((av_read_frame(priv.avfc, &pkt) >= 0) && !codec->extradata_size) {
+                uint8_t *data;
+                int size;
+                if(pkt.stream_index != j)
+                    continue;
+                av_bitstream_filter_filter(st->codec->opaque, codec, NULL,
+                                           &data, &size,
+                                           pkt.data, pkt.size,
+                                           pkt.flags & AV_PKT_FLAG_KEY);
+                break;
+            }
+            av_seek_frame(priv.avfc, -1, 0, 0);
+            if (!codec->extradata_size)
+                goto err_alloc;
+        }
+        memset(&props, 0, sizeof(MediaProperties));
+        props.clock_rate = 90000; //Default
+        props.extradata = codec->extradata;
+        props.extradata_len = codec->extradata_size;
+        strncpy(props.encoding_name, id, 11);
+        props.codec_id = codec->codec_id;
+        props.codec_sub_id = codec->sub_id;
+        props.payload_type = pt_from_id(codec->codec_id);
+        if (props.payload_type >= 96)
+            props.payload_type = pt++;
+        fnc_log(FNC_LOG_DEBUG, "[avf] Parsing AVStream %s",
+                props.encoding_name);
+
         switch(codec->codec_type){
             case CODEC_TYPE_AUDIO:
                 props.media_type     = MP_audio;
@@ -232,9 +252,8 @@ static int avf_init(Resource * r)
                 props.sample_rate    = codec->sample_rate;
                 props.frame_duration       = (double)1 / codec->sample_rate;
                 props.bit_per_sample   = codec->bits_per_coded_sample;
-                if (!(track = add_track(r, &trackinfo, &props)))
-                    goto err_alloc;
-            break;
+                break;
+
             case CODEC_TYPE_VIDEO:
                 props.media_type   = MP_video;
                 props.bit_rate     = codec->bit_rate;
@@ -244,10 +263,6 @@ static int avf_init(Resource * r)
                                       codec->sample_aspect_ratio.num /
                                       (float)(codec->height *
                                               codec->sample_aspect_ratio.den);
-                // addtrack must init the parser, the parser may need the
-                // extradata
-                if (!(track = add_track(r, &trackinfo, &props)))
-                    goto err_alloc;
                 break;
 
             default:
@@ -255,98 +270,106 @@ static int avf_init(Resource * r)
                 continue;
         }
 
-        track->name = g_strdup_printf("%d", i);
+        if ( !(track = priv.tracks[j] = add_track(r, &trackinfo, &props)) )
+            goto err_alloc;
+
+        track->name = g_strdup_printf("%d", j);
 
         g_string_append_printf(track->attributes,
                                SDP_F_TITLE SDP_F_AUTHOR,
-                               avfc->title,
-                               avfc->author);
+                               priv.avfc->title,
+                               priv.avfc->author);
     }
 
     if (track) {
         fnc_log(FNC_LOG_DEBUG, "[avf] duration %f", r->info->duration);
-        r->private_data = avfc;
+        r->private_data = g_memdup(&priv, sizeof(priv));
         r->timescaler = avf_timescaler;
         return 0;
     }
 
-err_alloc:
+ err_alloc:
+    for(j = 0; j < priv.avfc->nb_streams; j++)
+        if ( priv.tracks[j] )
+            free_track(priv.tracks[j], NULL);
+
+    g_mutex_lock(ffmpeg_lock);
+    av_close_input_file(priv.avfc);
+    g_mutex_unlock(ffmpeg_lock);
+
     return -1;
 }
 
 static int avf_read_packet(Resource * r)
 {
     int ret = RESOURCE_OK;
-    TrackList tr_it;
     AVPacket pkt;
     AVStream *stream;
     AVBitStreamFilterContext *bsfc;
-    AVFormatContext *avfc = r->private_data;
+    avf_private_data *priv = r->private_data;
+    Track *tr;
 
 // get a packet
-    if(av_read_frame(avfc, &pkt) < 0)
+    if(av_read_frame(priv->avfc, &pkt) < 0)
         return RESOURCE_EOF; //FIXME
-    for (tr_it = g_list_first(r->tracks);
-         tr_it !=NULL;
-         tr_it = g_list_next(tr_it)) {
-        Track *tr = (Track*)tr_it->data;
-        if (pkt.stream_index == tr->info->id) {
-// push it to the framer
-            stream = avfc->streams[tr->info->id];
-            fnc_log(FNC_LOG_VERBOSE, "[avf] Parsing track %s",
-                    tr->name);
-            if(pkt.dts != AV_NOPTS_VALUE) {
-                tr->properties.dts = r->timescaler (r,
-                    pkt.dts * av_q2d(stream->time_base));
-                fnc_log(FNC_LOG_VERBOSE,
-                        "[avf] delivery timestamp %f",
-                        tr->properties.dts);
-            } else {
-                fnc_log(FNC_LOG_VERBOSE,
-                        "[avf] missing delivery timestamp");
-            }
 
-            if(pkt.pts != AV_NOPTS_VALUE) {
-                tr->properties.pts = r->timescaler (r,
-                    pkt.pts * av_q2d(stream->time_base));
-                fnc_log(FNC_LOG_VERBOSE,
-                        "[avf] presentation timestamp %f",
-                        tr->properties.pts);
-            } else {
-                fnc_log(FNC_LOG_VERBOSE, "[avf] missing presentation timestamp");
-            }
+    if ( (tr = priv->tracks[pkt.stream_index]) == NULL )
+        return RESOURCE_DAMAGED;
 
-            if (pkt.duration) {
-                tr->properties.frame_duration = pkt.duration *
-                    av_q2d(stream->time_base);
-            } else { // welcome to the wonderland ehm, hackland...
-                switch (stream->codec->codec_id) {
-                    case CODEC_ID_MP2:
-                    case CODEC_ID_MP3:
-                        tr->properties.frame_duration = 1152.0/
-                                tr->properties.sample_rate;
-                        break;
-                    default: break;
-                }
-            }
+    // push it to the framer
+    stream = priv->avfc->streams[pkt.stream_index];
 
-            fnc_log(FNC_LOG_VERBOSE, "[avf] packet duration %f",
-                tr->properties.frame_duration);
+    fnc_log(FNC_LOG_VERBOSE, "[avf] Parsing track %s",
+            tr->name);
+    if(pkt.dts != AV_NOPTS_VALUE) {
+        tr->properties.dts = r->timescaler (r,
+                                            pkt.dts * av_q2d(stream->time_base));
+        fnc_log(FNC_LOG_VERBOSE,
+                "[avf] delivery timestamp %f",
+                tr->properties.dts);
+    } else {
+        fnc_log(FNC_LOG_VERBOSE,
+                "[avf] missing delivery timestamp");
+    }
 
-            bsfc = stream->codec->opaque;
-            if (bsfc) {
-                uint8_t *data = NULL;
-                int size = 0;
-                av_bitstream_filter_filter(bsfc, stream->codec, NULL,
-                                           &data, &size,
-                                           pkt.data, pkt.size,
-                                           pkt.flags & AV_PKT_FLAG_KEY);
-                ret = tr->parser->parse(tr, pkt.data, pkt.size);
-            } else {
-                ret = tr->parser->parse(tr, pkt.data, pkt.size);
-            }
+    if(pkt.pts != AV_NOPTS_VALUE) {
+        tr->properties.pts = r->timescaler (r,
+                                            pkt.pts * av_q2d(stream->time_base));
+        fnc_log(FNC_LOG_VERBOSE,
+                "[avf] presentation timestamp %f",
+                tr->properties.pts);
+    } else {
+        fnc_log(FNC_LOG_VERBOSE, "[avf] missing presentation timestamp");
+    }
+
+    if (pkt.duration) {
+        tr->properties.frame_duration = pkt.duration *
+            av_q2d(stream->time_base);
+    } else { // welcome to the wonderland ehm, hackland...
+        switch (stream->codec->codec_id) {
+        case CODEC_ID_MP2:
+        case CODEC_ID_MP3:
+            tr->properties.frame_duration = 1152.0/
+                tr->properties.sample_rate;
             break;
+        default: break;
         }
+    }
+
+    fnc_log(FNC_LOG_VERBOSE, "[avf] packet duration %f",
+            tr->properties.frame_duration);
+
+    bsfc = stream->codec->opaque;
+    if (bsfc) {
+        uint8_t *data = NULL;
+        int size = 0;
+        av_bitstream_filter_filter(bsfc, stream->codec, NULL,
+                                   &data, &size,
+                                   pkt.data, pkt.size,
+                                   pkt.flags & AV_PKT_FLAG_KEY);
+        ret = tr->parser->parse(tr, pkt.data, pkt.size);
+    } else {
+        ret = tr->parser->parse(tr, pkt.data, pkt.size);
     }
 
     av_free_packet(&pkt);
@@ -358,27 +381,27 @@ static int avf_seek(Resource * r, double time_sec)
 {
     int flags = 0;
     int64_t time_msec = time_sec * AV_TIME_BASE;
-    AVFormatContext *fc = r->private_data;
+    avf_private_data *priv = r->private_data;
 
     fnc_log(FNC_LOG_DEBUG, "Seeking to %f", time_sec);
-    if (fc->start_time != AV_NOPTS_VALUE)
-        time_msec += fc->start_time;
+    if (priv->avfc->start_time != AV_NOPTS_VALUE)
+        time_msec += priv->avfc->start_time;
     if (time_msec < 0) flags = AVSEEK_FLAG_BACKWARD;
-    return av_seek_frame(fc, -1, time_msec, flags);
+    return av_seek_frame(priv->avfc, -1, time_msec, flags);
 }
 
 static void avf_uninit(gpointer rgen)
 {
     Resource *r = rgen;
-    AVFormatContext *avfc = r->private_data;
+    avf_private_data *priv = r->private_data;
 
-    if ( avfc == NULL )
+    if ( priv == NULL || priv->avfc == NULL )
         return;
 
     init_mutex();
 
     g_mutex_lock(ffmpeg_lock);
-    av_close_input_file(avfc);
+    av_close_input_file(priv->avfc);
     g_mutex_unlock(ffmpeg_lock);
 }
 

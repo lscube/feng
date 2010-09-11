@@ -170,7 +170,6 @@ typedef struct Resource {
 
 typedef struct Trackinfo_s {
     char *mrl;
-    int id; // should it more generic?
 } TrackInfo;
 
 typedef struct MediaProperties {
