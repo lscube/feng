@@ -354,7 +354,7 @@ Resource *r_open(const char *inner_path)
  */
 static gint r_find_track_cmp_name(gconstpointer a, gconstpointer b)
 {
-    return strcmp( ((Track *)a)->info->name, (const char *)b);
+    return strcmp( ((Track *)a)->name, (const char *)b);
 }
 
 /**

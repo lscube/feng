@@ -170,7 +170,6 @@ typedef struct Resource {
 
 typedef struct Trackinfo_s {
     char *mrl;
-    char name[256];
     int id; // should it more generic?
 } TrackInfo;
 
@@ -214,6 +213,17 @@ typedef struct Track {
     Resource *parent;
 
     void *private_data; /* private data of media parser */
+
+    /**
+     * @brief Track name
+     *
+     * This stirng is used to access the track within the resource,
+     * and is reported to the client for identification.
+     *
+     * It should be set to an instance-bound string (duplicated) to be
+     * freed by g_free.
+     */
+    char *name;
 
     /**
      * @brief SDP attributes for the track

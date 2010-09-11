@@ -52,7 +52,6 @@
 static void sdp_track_descr(gpointer element, gpointer user_data)
 {
     Track *track = (Track *)element;
-    TrackInfo *t_info = track->info;
     GString *descr = (GString *)user_data;
     char *encoded_media_name;
 
@@ -98,7 +97,7 @@ static void sdp_track_descr(gpointer element, gpointer user_data)
     // b=*
     // k=*
     // a=*
-    encoded_media_name = g_uri_escape_string(t_info->name, NULL, false);
+    encoded_media_name = g_uri_escape_string(track->name, NULL, false);
 
     g_string_append_printf(descr, "a=control:"SDP_TRACK_SEPARATOR"%s"SDP_EL,
                            encoded_media_name);

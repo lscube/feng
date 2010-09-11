@@ -232,7 +232,6 @@ static int avf_init(Resource * r)
                 props.sample_rate    = codec->sample_rate;
                 props.frame_duration       = (double)1 / codec->sample_rate;
                 props.bit_per_sample   = codec->bits_per_coded_sample;
-                snprintf(trackinfo.name, sizeof(trackinfo.name), "%d", i);
                 if (!(track = add_track(r, &trackinfo, &props)))
                     goto err_alloc;
             break;
@@ -247,9 +246,8 @@ static int avf_init(Resource * r)
                                               codec->sample_aspect_ratio.den);
                 // addtrack must init the parser, the parser may need the
                 // extradata
-                snprintf(trackinfo.name,sizeof(trackinfo.name),"%d",i);
                 if (!(track = add_track(r, &trackinfo, &props)))
-		    goto err_alloc;
+                    goto err_alloc;
             break;
             case CODEC_TYPE_DATA:
             case CODEC_TYPE_UNKNOWN:
@@ -258,6 +256,8 @@ static int avf_init(Resource * r)
                 fnc_log(FNC_LOG_DEBUG, "[avf] codec type unsupported");
             break;
         }
+
+        track->name = g_strdup_printf("%d", i);
 
         g_string_append_printf(track->attributes,
                                SDP_F_TITLE SDP_F_AUTHOR,
@@ -296,7 +296,7 @@ static int avf_read_packet(Resource * r)
 // push it to the framer
             stream = avfc->streams[tr->info->id];
             fnc_log(FNC_LOG_VERBOSE, "[avf] Parsing track %s",
-                    tr->info->name);
+                    tr->name);
             if(pkt.dts != AV_NOPTS_VALUE) {
                 tr->properties.dts = r->timescaler (r,
                     pkt.dts * av_q2d(stream->time_base));

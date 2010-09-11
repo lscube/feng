@@ -218,6 +218,7 @@ static int sd_init(Resource * r)
     Track *track;
     char content_base[256] = "", *separator, track_file[256];
     char *fmtp_val = NULL;
+    char *name;
 
     FILE *fd;
 
@@ -282,7 +283,7 @@ static int sd_init(Resource * r)
                 else {
                     trackinfo.mrl = g_strdup(track_file);
                     separator = strrchr(track_file, G_DIR_SEPARATOR);
-                    g_strlcpy(trackinfo.name, separator + 1, sizeof(trackinfo.name));
+                    name = g_strdup(separator +1);
                 }
             } else if (!g_ascii_strcasecmp(keyword, SD_ENCODING_NAME)) {
                 const RTP_static_payload *info;
@@ -376,6 +377,7 @@ static int sd_init(Resource * r)
                                title,
                                author);
 
+        track->name = name;
         track->parser = &demuxer_sd_fake_mediaparser;
         track->private_data = g_slice_new0(mqd_t);
         *((mqd_t*)(track->private_data)) = (mqd_t)(-1);
