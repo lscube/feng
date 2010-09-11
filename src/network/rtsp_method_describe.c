@@ -108,7 +108,6 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
     GString *descr = NULL;
     double duration;
 
-    const char *resname;
     float currtime_float, restime_float;
 
     Resource *resource;
@@ -131,65 +130,31 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
     currtime_float = NTP_time(time(NULL));
     restime_float = resource->mtime ? NTP_time(resource->mtime) : currtime_float;
 
-    if ( (resname = resource->description) == NULL )
-        resname = "RTSP Session";
-
     /* Network type: Internet; Address type: IP4. */
     g_string_append_printf(descr, "o=- %.0f %.0f IN %s %s"SDP_EL,
                            currtime_float, restime_float,
                            inet_family == AF_INET6 ? "IP6" : "IP4",
                            uri->host);
 
-    g_string_append_printf(descr, "s=%s"SDP_EL,
-                           resname);
-    // u=
-    if (resource->descrURI)
-        g_string_append_printf(descr, "u=%s"SDP_EL,
-                               resource->descrURI);
+    /* We might want to provide a better name */
+    g_string_append(descr, "n=RTSP Session");
 
-    // e=
-    if (resource->email)
-        g_string_append_printf(descr, "e=%s"SDP_EL,
-                               resource->email);
-    // p=
-    if (resource->phone)
-        g_string_append_printf(descr, "p=%s"SDP_EL,
-                               resource->phone);
+    if ( inet_family == AF_INET6 )
+        g_string_append(descr,
+                        "c=IN IP6 ::"SDP_EL);
+    else
+        g_string_append(descr,
+                        "c=IN IP4 0.0.0.0"SDP_EL);
 
-    // c=
-    /* Network type: Internet. */
-    /* Address type: IP4. */
-    g_string_append_printf(descr, "c=IN %s ",
-                           inet_family == AF_INET6 ? "IP6" : "IP4");
-
-    if(resource->multicast[0]) {
-        g_string_append_printf(descr, "%s/",
-                               resource->multicast);
-        if (resource->ttl[0])
-            g_string_append_printf(descr, "%s"SDP_EL,
-                                   resource->ttl);
-        else
-            /* @TODO the possibility to change ttl.
-             * See multicast.h, RTSP_setup.c, send_setup_reply.c*/
-            g_string_append_printf(descr, "%d"SDP_EL,
-                                   DEFAULT_TTL);
-    } else
-        g_string_append_printf(descr, "%s"SDP_EL,
-                               inet_family == AF_INET6 ? "::" : "0.0.0.0");
-
-    // b=
-    // t=
     g_string_append(descr, "t=0 0"SDP_EL);
-    // r=
-    // z=
-    // k=
-    // a=
+
     // type attribute. We offer only broadcast
     g_string_append(descr, "a=type:broadcast"SDP_EL);
+
     // tool attribute. Feng promo
-    /// @TODO choose a better session description
     g_string_append_printf(descr, "a=tool:%s %s Streaming Server"SDP_EL,
                            PACKAGE, VERSION);
+
     // control attribute. We should look if aggregate metod is supported?
     g_string_append(descr, "a=control:*"SDP_EL);
 

@@ -84,18 +84,9 @@ typedef struct Resource {
     gint count;
 
     char *mrl;
-    char *name;
-    char *description;
-    char *descrURI;
-    char *email;
-    char *phone;
     time_t mtime;
     double duration;
     MediaSource media_source;
-    char twin[256];
-    char multicast[16];
-    int port;
-    char ttl[4];
 
     /**
      * @brief Seekable resource flag
@@ -155,6 +146,11 @@ typedef struct Resource {
  *
  * @{
  */
+
+#define SDP_F_NAME         "n=%s\r\n"
+#define SDP_F_DESCRURI     "u=%s\r\n"
+#define SDP_F_EMAIL        "e=%s\r\n"
+#define SDP_F_PHONE        "p=%s\r\n"
 
 #define SDP_F_COMMONS_DEED "a=uriLicense:%s\r\n"
 #define SDP_F_RDF_PAGE     "a=urimetadata:%s\r\n"

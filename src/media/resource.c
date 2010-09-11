@@ -114,7 +114,6 @@ static void r_free(Resource *resource)
         g_mutex_free(resource->lock);
 
     g_free(resource->mrl);
-    g_free(resource->name);
 
     resource->demuxer->uninit(resource);
 
@@ -183,7 +182,6 @@ static Resource *r_open_direct(gchar *mrl, const Demuxer *dmx)
 
     r->mrl = mrl;
     r->mtime = filestat.st_mtime;
-    r->name = g_path_get_basename(mrl);
     r->seekable = (dmx->seek != NULL);
 
     r->demuxer = dmx;
