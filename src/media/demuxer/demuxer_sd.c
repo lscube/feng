@@ -223,7 +223,7 @@ static int sd_init(Resource * r)
     int err = RESOURCE_OK;
     char keyword[80], line[1024], sparam[256];
     Track *track;
-    char content_base[256] = "", *separator, track_file[256];
+    char *separator, track_file[256];
     char *fmtp_val = NULL;
     char *name;
 
@@ -231,18 +231,6 @@ static int sd_init(Resource * r)
 
     fnc_log(FNC_LOG_DEBUG, "[sd] SD init function");
     fd = fopen(r->info->mrl, "r");
-
-    if ((separator = strrchr(r->info->mrl, G_DIR_SEPARATOR))) {
-        size_t len = separator - r->info->mrl + 1;
-        if (len >= sizeof(content_base)) {
-            fnc_log(FNC_LOG_ERR, "[sd] content base string too long");
-            fclose(fd);
-            return -1;
-        } else {
-            strncpy(content_base, r->info->mrl, len);
-            fnc_log(FNC_LOG_DEBUG, "[sd] content base: %s", content_base);
-        }
-    }
 
     r->info->duration = HUGE_VAL;
 
