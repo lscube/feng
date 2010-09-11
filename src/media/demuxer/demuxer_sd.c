@@ -429,7 +429,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
         if (package_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
             fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d",
                                    priv->mrl, REQUIRED_FLUX_PROTOCOL_VERSION, package_version);
-            return RESOURCE_DAMAGED;
+            return RESOURCE_ERR;
         }
 
         package_start_time = *((double*)(msg_buffer+sizeof(unsigned int)));
@@ -498,7 +498,7 @@ static int sd_read_packet(Resource * r)
     TrackList tr_it;
 
     if (r->media_source != LIVE_SOURCE)
-        return RESOURCE_NOT_PARSEABLE;
+        return RESOURCE_ERR;
 
     for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {
         int ret;

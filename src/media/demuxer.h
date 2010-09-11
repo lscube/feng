@@ -31,12 +31,8 @@
 struct feng;
 
 #define RESOURCE_OK 0
-#define RESOURCE_NOT_FOUND -1
-#define RESOURCE_DAMAGED -2
-#define RESOURCE_AGAIN -3
-#define RESOURCE_TRACK_NOT_FOUND -4
-#define RESOURCE_NOT_PARSEABLE -5
-#define RESOURCE_EOF -6
+#define RESOURCE_ERR -1
+#define RESOURCE_EOF -2
 
 typedef enum {
     MP_undef = -1,

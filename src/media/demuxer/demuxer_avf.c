@@ -129,7 +129,7 @@ static gboolean avf_probe(const char *filename)
 
     FILE *fp = fopen(filename, "r");
     if ( !fp )
-        return RESOURCE_DAMAGED;
+        return RESOURCE_ERR;
 
     rsize = fread(&buffer, 1, sizeof(buffer), fp);
     fclose(fp);
@@ -306,7 +306,7 @@ static int avf_read_packet(Resource * r)
         return RESOURCE_EOF; //FIXME
 
     if ( (tr = priv->tracks[pkt.stream_index]) == NULL )
-        return RESOURCE_DAMAGED;
+        return RESOURCE_ERR;
 
     // push it to the framer
     stream = priv->avfc->streams[pkt.stream_index];

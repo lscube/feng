@@ -465,7 +465,6 @@ static void r_read_cb(gpointer consumer_p, gpointer resource_p)
         g_mutex_lock(resource->lock);
         switch( resource->demuxer->read_packet(resource) ) {
         case RESOURCE_OK:
-        case RESOURCE_AGAIN:
             break;
         case RESOURCE_EOF:
             fnc_log(FNC_LOG_INFO,
