@@ -157,7 +157,6 @@ static int avf_init(Resource * r)
     AVFormatParameters ap;
     MediaProperties props;
     Track *track = NULL;
-    TrackInfo trackinfo;
     int pt = 96, i;
     unsigned int j;
 
@@ -166,7 +165,6 @@ static int avf_init(Resource * r)
     init_mutex();
 
     memset(&ap, 0, sizeof(AVFormatParameters));
-    memset(&trackinfo, 0, sizeof(TrackInfo));
 
     priv.avfc = avformat_alloc_context();
     ap.prealloced_context = 1;
@@ -270,7 +268,7 @@ static int avf_init(Resource * r)
                 continue;
         }
 
-        if ( !(track = priv.tracks[j] = add_track(r, &trackinfo, &props)) )
+        if ( !(track = priv.tracks[j] = add_track(r, &props)) )
             goto err_alloc;
 
         track->name = g_strdup_printf("%d", j);

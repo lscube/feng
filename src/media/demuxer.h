@@ -168,10 +168,6 @@ typedef struct Resource {
  * @}
  */
 
-typedef struct Trackinfo_s {
-    char *mrl;
-} TrackInfo;
-
 typedef struct MediaProperties {
     int bit_rate; /*!< average if VBR or -1 is not useful*/
     int payload_type;
@@ -204,7 +200,6 @@ typedef struct MediaProperties {
 
 typedef struct Track {
     GMutex *lock;
-    TrackInfo *info;
     double start_time;
     const struct MediaParser *parser;
     /*feng*/
@@ -280,7 +275,7 @@ void r_fill(Resource *resource, BufferQueue_Consumer *consumer);
 Track *r_find_track(Resource *, const char *);
 
 // Tracks
-Track *add_track(Resource *, TrackInfo *, MediaProperties *);
+Track *add_track(Resource *, MediaProperties *);
 void free_track(gpointer element, gpointer user_data);
 
 BufferQueue_Producer *track_get_producer(Track *tr);

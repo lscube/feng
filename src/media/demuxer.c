@@ -49,9 +49,6 @@ void free_track(gpointer element,
     if ( track-> producer )
         bq_producer_unref(track->producer);
 
-    g_free(track->info->mrl);
-    g_slice_free(TrackInfo, track->info);
-
     g_string_free(track->attributes, true);
 
     if ( track->parser && track->parser->uninit )
@@ -74,7 +71,7 @@ void free_track(gpointer element,
  * @return pointer to newly allocated track struct.
  * */
 
-Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
+Track *add_track(Resource *r, MediaProperties *prop_hints)
 {
     Track *t;
     // TODO: search first of all in exclusive tracks
@@ -87,9 +84,6 @@ Track *add_track(Resource *r, TrackInfo *info, MediaProperties *prop_hints)
     t->lock = g_mutex_new();
 
     t->parent = r;
-
-    t->info = g_slice_new0(TrackInfo);
-    memcpy(t->info, info, sizeof(TrackInfo));
 
     t->attributes = g_string_new("");
 

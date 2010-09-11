@@ -40,6 +40,11 @@
 
 #define REQUIRED_FLUX_PROTOCOL_VERSION 4
 
+typedef struct sd_private_data {
+    char *mrl;
+    mqd_t queue;
+} sd_private_data;
+
 /**
  * @brief Uninitialisation function for the demuxer_sd fake parser
  *
@@ -47,7 +52,9 @@
  * mqd_t object.
  */
 static void demuxer_sd_fake_mediaparser_uninit(Track *tr) {
-    g_slice_free(mqd_t, tr->private_data);
+    sd_private_data *priv = tr->private_data;
+    g_free(priv->mrl);
+    g_free(priv);
 }
 
 /**
@@ -223,14 +230,12 @@ static int sd_init(Resource * r)
     FILE *fd;
 
     MediaProperties props_hints;
-    TrackInfo trackinfo;
     char commons_deed[256] = { 0, };
     char rdf_page[256] = { 0, };
     char title[256] = { 0, };
     char author[256] = { 0, };
 
     memset(&props_hints, 0, sizeof(MediaProperties));
-    memset(&trackinfo, 0, sizeof(TrackInfo));
 
     fnc_log(FNC_LOG_DEBUG, "[sd] SD init function");
     fd = fopen(r->info->mrl, "r");
@@ -252,6 +257,8 @@ static int sd_init(Resource * r)
     do {
         int payload_type_forced = 0;
         int clock_rate_forced = 0;
+
+        sd_private_data priv = { NULL, (mqd_t)-1 };
 
         props_hints.media_source = LIVE_SOURCE;
 
@@ -277,11 +284,10 @@ static int sd_init(Resource * r)
                 separator = strstr(track_file, "://");
                 if (separator == NULL) {
                     fnc_log(FNC_LOG_ERR, "[sd] missing valid protocol in %s entry", SD_FILENAME);
-                    trackinfo.mrl = NULL;
                     break;
                 }
                 else {
-                    trackinfo.mrl = g_strdup(track_file);
+                    priv.mrl = g_strdup(track_file);
                     separator = strrchr(track_file, G_DIR_SEPARATOR);
                     name = g_strdup(separator +1);
                 }
@@ -359,13 +365,15 @@ static int sd_init(Resource * r)
             }
         }        /*end while !STREAM_END or eof */
 
-        if (!trackinfo.mrl)
-            continue;
-
-        if (!(track = add_track(r, &trackinfo, &props_hints))) {
+        if (!(track = add_track(r, &props_hints))) {
             err = -1;
+            g_free(priv.mrl);
             break;
         }
+
+        track->name = name;
+        track->parser = &demuxer_sd_fake_mediaparser;
+        track->private_data = g_memdup(&priv, sizeof(priv));
 
         g_string_append_printf(track->attributes,
                                SDP_F_COMMONS_DEED
@@ -376,11 +384,6 @@ static int sd_init(Resource * r)
                                rdf_page,
                                title,
                                author);
-
-        track->name = name;
-        track->parser = &demuxer_sd_fake_mediaparser;
-        track->private_data = g_slice_new0(mqd_t);
-        *((mqd_t*)(track->private_data)) = (mqd_t)(-1);
 
         if ( fmtp_val ) {
             g_string_append_printf(track->attributes,
@@ -434,7 +437,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     double delta;
 
     struct mq_attr attr;
-    mqd_t *mpd = tr->private_data;
+    sd_private_data *priv = tr->private_data;
 
     uint8_t *msg_buffer;
     uint8_t *packet;
@@ -442,20 +445,20 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     int marker;
     uint16_t seq_no;
 
-    if ( *mpd == (mqd_t)-1 &&
-         (*mpd = mq_open(tr->info->mrl+FNC_LIVE_PROTOCOL_LEN,
+    if ( priv->queue == (mqd_t)-1 &&
+         (priv->queue = mq_open(priv->mrl+FNC_LIVE_PROTOCOL_LEN,
                          O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) == (mqd_t)-1) {
         fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
-                tr->info->mrl, strerror(errno));
+                priv->mrl, strerror(errno));
         return RESOURCE_OK;
     }
 
-    mq_getattr(*mpd, &attr);
+    mq_getattr(priv->queue, &attr);
 
     /* Check if there are available packets, if it is empty flux might have recreated it */
     if (!attr.mq_curmsgs) {
-        mq_close(*mpd);
-        *mpd = (mqd_t)-1;
+        mq_close(priv->queue);
+        priv->queue = (mqd_t)-1;
         usleep(30);
         return RESOURCE_OK;
     }
@@ -468,14 +471,14 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
         unsigned int package_dts;
         double package_insertion_time;
 
-        if ( (msg_len = mq_receive(*mpd, (char*)msg_buffer,
+        if ( (msg_len = mq_receive(priv->queue, (char*)msg_buffer,
                                    attr.mq_msgsize, NULL)) < 0 ) {
             fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
-                    tr->info->mrl, strerror(errno));
+                    priv->mrl, strerror(errno));
             g_free(msg_buffer);
 
-            mq_close(*mpd);
-            *mpd = (mqd_t)-1;
+            mq_close(priv->queue);
+            priv->queue = (mqd_t)-1;
 
             return RESOURCE_OK;
         }
@@ -483,7 +486,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
         package_version = *((unsigned int*)msg_buffer);
         if (package_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
             fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d",
-                                   tr->info->mrl, REQUIRED_FLUX_PROTOCOL_VERSION, package_version);
+                                   priv->mrl, REQUIRED_FLUX_PROTOCOL_VERSION, package_version);
             return RESOURCE_DAMAGED;
         }
 
@@ -502,11 +505,11 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
 
 #if 0
         fprintf(stderr, "[%s] read (%5.4f) BEGIN:%5.4f START_DTS:%u DTS:%u\n",
-                tr->info->mrl, delta, package_start_time, package_start_dts, package_dts);
+                priv->mrl, delta, package_start_time, package_start_dts, package_dts);
 #endif
 
         if (delta > 0.5f)
-            fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f, discarding..", tr->info->mrl, delta);
+            fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f, discarding..", priv->mrl, delta);
 
     } while(delta > 0.5f);
 
@@ -528,7 +531,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
 
 #if 0
     fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
-            tr->info->mrl,
+            priv->mrl,
             timestamp,
             delivery,
             package_start_time + delivery,
