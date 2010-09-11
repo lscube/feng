@@ -38,7 +38,6 @@ struct feng;
 #define RESOURCE_NOT_PARSEABLE -5
 #define RESOURCE_EOF -6
 
-#define MAX_TRACKS 20
 #define MAX_SEL_TRACKS 5
 
 typedef enum {
@@ -130,7 +129,6 @@ typedef struct Resource {
     struct Resource *edl;
     /* Multiformat related things */
     TrackList tracks;
-    int num_tracks;
     int eor;
     void *private_data; /* Demuxer private data */
 } Resource;

@@ -90,9 +90,6 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
     Track *t;
     char *encoded_media_name; /* Should be moved to demuxer_sd */
 
-    if(r->num_tracks>=MAX_TRACKS)
-        return NULL;
-
     t = g_slice_new0(Track);
 
     t->lock            = g_mutex_new();
@@ -128,7 +125,6 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
     }
 
     r->tracks = g_list_append(r->tracks, t);
-    r->num_tracks++;
 
     return t;
 
