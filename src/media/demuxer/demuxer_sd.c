@@ -221,11 +221,6 @@ static void set_payload_type(MediaProperties *mprops, int payload_type)
 static int sd_init(Resource * r)
 {
     int err = RESOURCE_OK;
-    char keyword[80], line[1024], sparam[256];
-    Track *track;
-    char *separator, track_file[256];
-    char *fmtp_val = NULL;
-    char *name;
 
     FILE *fd;
 
@@ -240,11 +235,18 @@ static int sd_init(Resource * r)
 
         sd_private_data priv = { NULL, (mqd_t)-1 };
 
-        MediaProperties props_hints;
+        Track *track;
+        char keyword[80], line[1024];
+        char *separator, track_file[256];
+        char *name;
+        char *fmtp_val = NULL;
+
         char commons_deed[256] = { 0, };
         char rdf_page[256] = { 0, };
         char title[256] = { 0, };
         char author[256] = { 0, };
+
+        MediaProperties props_hints;
 
         memset(&props_hints, 0, sizeof(MediaProperties));
         props_hints.media_source = LIVE_SOURCE;
@@ -304,6 +306,7 @@ static int sd_init(Resource * r)
                 // SD_AUDIO_CHANNELS
                 sscanf(line, "%*s %d\n", &props_hints.audio_channels);
             } else if (!g_ascii_strcasecmp(keyword, SD_MEDIA_TYPE)) {
+                char sparam[256];
                 // SD_MEDIA_TYPE
                 sscanf(line, "%*s%10s", sparam);
                 if (g_ascii_strcasecmp(sparam, "AUDIO") == 0)
