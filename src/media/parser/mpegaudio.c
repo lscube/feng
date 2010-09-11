@@ -27,11 +27,6 @@
 #include "media/mediaparser.h"
 #include "fnc_log.h"
 
-static int mpa_init(ATTR_UNUSED Track *track)
-{
-    return 0;
-}
-
 static int mpa_parse(Track *tr, uint8_t *data, size_t len)
 {
     int32_t offset;
@@ -72,6 +67,7 @@ static int mpa_parse(Track *tr, uint8_t *data, size_t len)
     return 0;
 }
 
+#define mpa_init   NULL
 #define mpa_uninit NULL
 
 FENG_MEDIAPARSER(mpa, "MPA", MP_audio);

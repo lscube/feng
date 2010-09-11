@@ -59,11 +59,6 @@ static uint8_t *find_start_code(uint8_t *p, uint8_t *end, uint32_t *state)
 }
 #endif
 
-static int mpv_init(ATTR_UNUSED Track *track)
-{
-    return 0;
-}
-
 /* Source code taken from ff_rtp_send_mpegvideo (ffmpeg libavformat) and
  * modified to be fully rfc 2250 compliant
  */
@@ -178,6 +173,7 @@ static int mpv_parse(Track *tr, uint8_t *data, size_t len)
     return 0;
 }
 
+#define mpv_init   NULL
 #define mpv_uninit NULL
 
 FENG_MEDIAPARSER(mpv, "MPV", MP_video);

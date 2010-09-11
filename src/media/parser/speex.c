@@ -25,11 +25,6 @@
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 
-static int speex_init(ATTR_UNUSED Track *track)
-{
-    return 0;
-}
-
 static int speex_parse(Track *tr, uint8_t *data, size_t len)
 {
     if (len > DEFAULT_MTU)
@@ -45,6 +40,7 @@ static int speex_parse(Track *tr, uint8_t *data, size_t len)
     return 0;
 }
 
+#define speex_init   NULL
 #define speex_uninit NULL
 
 FENG_MEDIAPARSER(speex, "speex", MP_audio);

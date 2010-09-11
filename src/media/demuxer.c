@@ -109,9 +109,6 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
     case STORED_SOURCE:
         if ( !(t->parser = mparser_find(t->properties.encoding_name)) )
             ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
-        if (t->parser->init(t))
-            ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
-                            t->properties.encoding_name);
 
         t->properties.media_type = t->parser->media_type;
         break;
@@ -123,6 +120,10 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
         g_assert_not_reached();
         break;
     }
+
+    if (t->parser->init && t->parser->init(t) == false)
+        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
+                        t->properties.encoding_name);
 
     r->tracks = g_list_append(r->tracks, t);
 
