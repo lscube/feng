@@ -100,6 +100,14 @@ typedef struct Resource {
      */
     gboolean seekable;
 
+    /**
+     * @brief End-of-resource indication
+     *
+     * @note Do note change this to gboolean because it is used
+     *       through g_atomic_int_get/g_atomic_int_set.
+     */
+    int eor;
+
     const struct Demuxer *demuxer;
 
    /**
@@ -129,7 +137,6 @@ typedef struct Resource {
     struct Resource *edl;
     /* Multiformat related things */
     TrackList tracks;
-    int eor;
     void *private_data; /* Demuxer private data */
 } Resource;
 
