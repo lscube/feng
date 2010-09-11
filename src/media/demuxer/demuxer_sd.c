@@ -225,9 +225,9 @@ static int sd_init(Resource * r)
     FILE *fd;
 
     fnc_log(FNC_LOG_DEBUG, "[sd] SD init function");
-    fd = fopen(r->info->mrl, "r");
+    fd = fopen(r->mrl, "r");
 
-    r->info->duration = HUGE_VAL;
+    r->duration = HUGE_VAL;
 
     do {
         int payload_type_forced = 0;
@@ -406,7 +406,7 @@ static int sd_init(Resource * r)
             }
         }
 
-        r->info->media_source = props_hints.media_source;
+        r->media_source = props_hints.media_source;
 
     } while (!feof(fd));
 
@@ -544,7 +544,7 @@ static int sd_read_packet(Resource * r)
 {
     TrackList tr_it;
 
-    if (r->info->media_source != LIVE_SOURCE)
+    if (r->media_source != LIVE_SOURCE)
         return RESOURCE_NOT_PARSEABLE;
 
     for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {

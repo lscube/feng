@@ -172,11 +172,11 @@ static int avf_init(Resource * r)
     priv.avfc->flags |= AVFMT_FLAG_GENPTS;
 
     g_mutex_lock(ffmpeg_lock);
-    i = av_open_input_file(&priv.avfc, r->info->mrl, NULL, 0, &ap);
+    i = av_open_input_file(&priv.avfc, r->mrl, NULL, 0, &ap);
     g_mutex_unlock(ffmpeg_lock);
 
     if ( i != 0 ) {
-        fnc_log(FNC_LOG_DEBUG, "[avf] Cannot open %s", r->info->mrl);
+        fnc_log(FNC_LOG_DEBUG, "[avf] Cannot open %s", r->mrl);
         goto err_alloc;
     }
 
@@ -186,13 +186,13 @@ static int avf_init(Resource * r)
 
     if(i < 0){
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot find streams in file %s",
-                r->info->mrl);
+                r->mrl);
         goto err_alloc;
     }
 
-    r->info->duration = (double)priv.avfc->duration /AV_TIME_BASE;
+    r->duration = (double)priv.avfc->duration /AV_TIME_BASE;
     // make sure we can seek.
-    r->info->seekable = !av_seek_frame(priv.avfc, -1, 0, 0);
+    r->seekable = !av_seek_frame(priv.avfc, -1, 0, 0);
 
     priv.tracks = g_new(Track*, priv.avfc->nb_streams);
 
@@ -284,7 +284,7 @@ static int avf_init(Resource * r)
     }
 
     if (track) {
-        fnc_log(FNC_LOG_DEBUG, "[avf] duration %f", r->info->duration);
+        fnc_log(FNC_LOG_DEBUG, "[avf] duration %f", r->duration);
         r->private_data = g_memdup(&priv, sizeof(priv));
         r->timescaler = avf_timescaler;
         return 0;

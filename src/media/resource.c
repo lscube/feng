@@ -113,11 +113,9 @@ static void r_free(Resource *resource)
     if (resource->lock)
         g_mutex_free(resource->lock);
 
-    g_free(resource->info->mrl);
-    g_free(resource->info->name);
-    g_slice_free(ResourceInfo, resource->info);
+    g_free(resource->mrl);
+    g_free(resource->name);
 
-    resource->info = NULL;
     resource->demuxer->uninit(resource);
 
     if (resource->tracks) {
@@ -183,12 +181,10 @@ static Resource *r_open_direct(gchar *mrl, const Demuxer *dmx)
 
     r = g_slice_new0(Resource);
 
-    r->info = g_slice_new0(ResourceInfo);
-
-    r->info->mrl = mrl;
-    r->info->mtime = filestat.st_mtime;
-    r->info->name = g_path_get_basename(mrl);
-    r->info->seekable = (dmx->seek != NULL);
+    r->mrl = mrl;
+    r->mtime = filestat.st_mtime;
+    r->name = g_path_get_basename(mrl);
+    r->seekable = (dmx->seek != NULL);
 
     r->demuxer = dmx;
 
@@ -379,7 +375,7 @@ Track *r_find_track(Resource *resource, const char *track_name) {
 
     if ( !track ) {
         fnc_log(FNC_LOG_DEBUG, "Track %s not present in resource %s",
-                track_name, resource->info->mrl);
+                track_name, resource->mrl);
         return NULL;
     }
 
@@ -476,13 +472,13 @@ static void r_read_cb(gpointer consumer_p, gpointer resource_p)
         case RESOURCE_EOF:
             fnc_log(FNC_LOG_INFO,
                     "r_read_unlocked: %s read_packet() end of file.",
-                    resource->info->mrl);
+                    resource->mrl);
             resource->eor = true;
             break;
         default:
             fnc_log(FNC_LOG_FATAL,
                     "r_read_unlocked: %s read_packet() error.",
-                    resource->info->mrl);
+                    resource->mrl);
             resource->eor = true;
             break;
         }

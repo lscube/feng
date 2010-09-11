@@ -61,7 +61,28 @@ typedef GList *SelList;
 
 struct MediaParser;
 
-typedef struct ResourceInfo_s {
+/**
+ * @brief Descriptor structure of a resource
+ * @ingroup resources
+ *
+ * This structure contains the basic parameters used by the media
+ * backend code to access a resource; it connects to the demuxer used,
+ * to the tracks found on the resource, and can be either private to a
+ * client or shared among many (live streaming).
+ */
+typedef struct Resource {
+    GMutex *lock;
+
+    /**
+     * @brief Reference counter for the clients using the resource
+     *
+     * This variable keeps count of the number of clients that are
+     * connected to a given resource, it is supposed to keep at 1 for
+     * non-live resources, and to vary between 0 and the number of
+     * clients when it is a live resource.
+     */
+    gint count;
+
     char *mrl;
     char *name;
     char *description;
@@ -88,32 +109,8 @@ typedef struct ResourceInfo_s {
      * seekable) resource.
      */
     gboolean seekable;
-} ResourceInfo;
-
-/**
- * @brief Descriptor structure of a resource
- * @ingroup resources
- *
- * This structure contains the basic parameters used by the media
- * backend code to access a resource; it connects to the demuxer used,
- * to the tracks found on the resource, and can be either private to a
- * client or shared among many (live streaming).
- */
-typedef struct Resource {
-    GMutex *lock;
-
-    /**
-     * @brief Reference counter for the clients using the resource
-     *
-     * This variable keeps count of the number of clients that are
-     * connected to a given resource, it is supposed to keep at 1 for
-     * non-live resources, and to vary between 0 and the number of
-     * clients when it is a live resource.
-     */
-    gint count;
 
     const struct Demuxer *demuxer;
-    ResourceInfo *info;
 
    /**
      * @brief Pool of one thread for filling up data for the session

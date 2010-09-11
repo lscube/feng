@@ -92,7 +92,7 @@ static int ds_init(Resource * r)
     edl_item_elem *item;
 
     fnc_log(FNC_LOG_DEBUG, "[ds] EDL init function");
-    fd = fopen(r->info->mrl, "r");
+    fd = fopen(r->mrl, "r");
 
     while(!feof(fd)) {
         double begin = 0.0, end = HUGE_VAL;
@@ -121,8 +121,8 @@ static int ds_init(Resource * r)
         item->end = end;
         item->offset = r_offset;
 
-        if (resource->info->duration > 0 && end > resource->info->duration) {
-            r_offset += resource->info->duration - begin;
+        if (resource->duration > 0 && end > resource->duration) {
+            r_offset += resource->duration - begin;
         } else {
             r_offset += end - begin;
         }

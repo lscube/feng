@@ -112,7 +112,6 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
     float currtime_float, restime_float;
 
     Resource *resource;
-    ResourceInfo *res_info;
 
     char *path = g_uri_unescape_string(uri->path, "/");
 
@@ -126,16 +125,13 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
     }
     g_free(path);
 
-    res_info = resource->info;
-    g_assert(res_info != NULL);
-
     descr = g_string_new("v=0"SDP_EL);
 
     /* Near enough approximation to run it now */
     currtime_float = NTP_time(time(NULL));
-    restime_float = res_info->mtime ? NTP_time(res_info->mtime) : currtime_float;
+    restime_float = resource->mtime ? NTP_time(resource->mtime) : currtime_float;
 
-    if ( (resname = res_info->description) == NULL )
+    if ( (resname = resource->description) == NULL )
         resname = "RTSP Session";
 
     /* Network type: Internet; Address type: IP4. */
@@ -147,18 +143,18 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
     g_string_append_printf(descr, "s=%s"SDP_EL,
                            resname);
     // u=
-    if (res_info->descrURI)
+    if (resource->descrURI)
         g_string_append_printf(descr, "u=%s"SDP_EL,
-                               res_info->descrURI);
+                               resource->descrURI);
 
     // e=
-    if (res_info->email)
+    if (resource->email)
         g_string_append_printf(descr, "e=%s"SDP_EL,
-                               res_info->email);
+                               resource->email);
     // p=
-    if (res_info->phone)
+    if (resource->phone)
         g_string_append_printf(descr, "p=%s"SDP_EL,
-                               res_info->phone);
+                               resource->phone);
 
     // c=
     /* Network type: Internet. */
@@ -166,12 +162,12 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
     g_string_append_printf(descr, "c=IN %s ",
                            inet_family == AF_INET6 ? "IP6" : "IP4");
 
-    if(res_info->multicast[0]) {
+    if(resource->multicast[0]) {
         g_string_append_printf(descr, "%s/",
-                               res_info->multicast);
-        if (res_info->ttl[0])
+                               resource->multicast);
+        if (resource->ttl[0])
             g_string_append_printf(descr, "%s"SDP_EL,
-                                   res_info->ttl);
+                                   resource->ttl);
         else
             /* @TODO the possibility to change ttl.
              * See multicast.h, RTSP_setup.c, send_setup_reply.c*/
@@ -197,7 +193,7 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
     // control attribute. We should look if aggregate metod is supported?
     g_string_append(descr, "a=control:*"SDP_EL);
 
-    if ((duration = res_info->duration) > 0 &&
+    if ((duration = resource->duration) > 0 &&
         duration != HUGE_VAL)
         g_string_append_printf(descr, "a=range:npt=0-%f"SDP_EL, duration);
 
