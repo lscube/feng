@@ -275,6 +275,7 @@ static void client_loop(gpointer client_p,
     }
 
     close(client->sd);
+    g_free(client->local_host);
     g_free(client->remote_host);
     feng_srv.connection_count--;
 
@@ -296,6 +297,7 @@ static void client_loop(gpointer client_p,
     g_slice_free(RFC822_Request, client->pending_request);
 
     g_slice_free1(client->peer_len, client->peer_sa);
+    g_slice_free1(client->local_len, client->local_sa);
 
     ev_loop_destroy(loop);
 
@@ -343,6 +345,8 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     int client_sd = -1;
     struct sockaddr_storage sa;
     socklen_t sa_len = sizeof(struct sockaddr_storage);
+    struct sockaddr_storage sa_bound;
+    socklen_t sa_bound_len = sizeof(struct sockaddr_storage);
 
     RTSP_Client *rtsp;
 
@@ -351,11 +355,13 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         return;
     }
 
-// Paranoid safeguard
-    if (feng_srv.connection_count >= ONE_FORK_MAX_CONNECTION*2) {
-        close(client_sd);
-        return;
+    if ( getsockname(client_sd, (struct sockaddr*)&sa_bound, &sa_len) < 0 ) {
+        fnc_perror("getsockname");
+        goto error;
     }
+
+    if (feng_srv.connection_count >= ONE_FORK_MAX_CONNECTION*2)
+        goto error;
 
     fnc_log(FNC_LOG_INFO, "Incoming connection accepted on socket: %d",
             client_sd);
@@ -378,18 +384,26 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     }
 #endif
 
-    rtsp->local_sock = listen;
+    rtsp->specific = listen->specific;
 
+    rtsp->local_host = neb_sa_get_host((struct sockaddr*)&sa_bound);
     rtsp->remote_host = neb_sa_get_host((struct sockaddr*)&sa);
 
     rtsp->peer_len = sa_len;
     rtsp->peer_sa = g_slice_copy(rtsp->peer_len, &sa);
+
+    rtsp->local_len = sa_bound_len;
+    rtsp->local_sa = g_slice_copy(rtsp->peer_len, &sa_bound);
 
     feng_srv.connection_count++;
 
     g_thread_pool_push(client_threads, rtsp, NULL);
 
     fnc_log(FNC_LOG_INFO, "Connection reached: %d", feng_srv.connection_count);
+    return;
+
+ error:
+    close(client_sd);
 }
 
 /**

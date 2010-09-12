@@ -194,7 +194,7 @@ static GByteArray *rtcp_pkt_sr_sdes(RTP_session *session)
     RTCP_SR_Compound *outpkt;
     GByteArray *outpkt_buffer;
 
-    const char *name = session->client->local_sock->local_host;
+    const char *name = session->client->local_host;
     const size_t name_len = strlen(name);
     size_t sdes_size = sizeof(RTCP_header) + sizeof(RTCP_header_SDES) +
         name_len;

@@ -140,13 +140,12 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     ev_io *io = &transport.rtcp_reader;
     char *source = NULL;
     struct sockaddr_storage sa;
-    socklen_t sa_len = sizeof(sa);
+    socklen_t sa_len = rtsp->local_len;
     struct sockaddr *sa_p = (struct sockaddr*) &sa;
     int firstsd;
     in_port_t firstport, rtp_port, rtcp_port;
 
-    /* Fetch the local IP address that the client has connected to */
-    getsockname(rtsp->sd, (struct sockaddr*) &sa, &sa_len);
+    memcpy(sa_p, &rtsp->local_sa, sa_len);
 
     /* The client will not provide ports for us, obviously, let's
      * just ask the kernel for one, and try it to use for RTP/RTCP
@@ -268,9 +267,8 @@ void rtp_udp_transport(RTSP_Client *rtsp,
 
     source = neb_sa_get_host((struct sockaddr*) &sa);
 
-    rtp_s->transport_string = g_strdup_printf("RTP/AVP;unicast%s%s;client_port=%d-%d;server_port=%d-%d;ssrc=%08X",
-                                              source? ";source=": "",
-                                              source?  source   : "",
+    rtp_s->transport_string = g_strdup_printf("RTP/AVP;unicast;source=%s;client_port=%d-%d;server_port=%d-%d;ssrc=%08X",
+                                              rtsp->local_host,
                                               parsed->rtp_channel,
                                               parsed->rtcp_channel,
                                               rtp_port,

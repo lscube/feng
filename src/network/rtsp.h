@@ -162,17 +162,30 @@ typedef struct RTSP_Client {
 
     ev_io ev_io_write;
 
+    struct specific_config *specific;
+
+    /**
+     * @brief Local host bound to the socket
+     *
+     * This string is *not* the same as the one in the received @ref
+     * Feng_Listener object, as that's the one that is bound by bind()
+     * wile this is what the client actually connected to.
+     */
+    char *local_host;
+
     char *remote_host;
+
+    struct sockaddr *local_sa;
+    socklen_t local_len;
+
+    struct sockaddr *peer_sa;
+    socklen_t peer_len;
 
 #ifdef HAVE_JSON //stats
     char *user_agent;
     size_t bytes_read;
     size_t bytes_sent;
 #endif
-
-    struct Feng_Listener *local_sock;
-    struct sockaddr *peer_sa;
-    socklen_t peer_len;
 } RTSP_Client;
 
 RTSP_Client *rtsp_client_new();

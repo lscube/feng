@@ -112,9 +112,9 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
 
     Resource *resource;
 
-    char *path = g_uri_unescape_string(uri->path, "/");
+    char *path = g_uri_unescape_string(uri->path, "/"), *source_address;
 
-    int inet_family = rtsp->local_sock->local_sa->sa_family;
+    const char *const inet_family = rtsp->peer_sa->sa_family == AF_INET6 ? "IP6" : "IP4";
 
     fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s", path);
     if ( !(resource = r_open(path)) ) {
@@ -133,18 +133,16 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
     /* Network type: Internet; Address type: IP4. */
     g_string_append_printf(descr, "o=- %.0f %.0f IN %s %s"SDP_EL,
                            currtime_float, restime_float,
-                           inet_family == AF_INET6 ? "IP6" : "IP4",
+                           inet_family,
                            uri->host);
 
     /* We might want to provide a better name */
     g_string_append(descr, "s=RTSP Session\r\n");
 
-    if ( inet_family == AF_INET6 )
-        g_string_append(descr,
-                        "c=IN IP6 ::"SDP_EL);
-    else
-        g_string_append(descr,
-                        "c=IN IP4 0.0.0.0"SDP_EL);
+    g_string_append_printf(descr,
+                           "c=IN %s %s"SDP_EL,
+                           inet_family,
+                           rtsp->local_host);
 
     g_string_append(descr, "t=0 0"SDP_EL);
 
