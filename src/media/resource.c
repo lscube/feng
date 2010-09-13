@@ -177,7 +177,7 @@ static Resource *r_open_direct(gchar *mrl, const Demuxer *dmx)
     }
 
     if ( S_ISFIFO(filestat.st_mode) ) {
-        fnc_log(FNC_LOG_ERR, "%s: not a file");
+        fnc_log(FNC_LOG_ERR, "%s: not a file", mrl);
         return NULL;
     }
 
