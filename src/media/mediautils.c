@@ -29,13 +29,12 @@
 
 // Ripped from ffmpeg, see sdp.c
 
-static void digit_to_char(char *dst, uint8_t src)
+static inline char digit_to_char(uint8_t src)
 {
-    if (src < 10) {
-        *dst = '0' + src;
-    } else {
-        *dst = 'A' + src - 10;
-    }
+    if (src < 10)
+        return '0' + src;
+    else
+        return 'A' + src - 10;
 }
 
 char *extradata2config(MediaProperties *properties)
@@ -54,8 +53,8 @@ char *extradata2config(MediaProperties *properties)
         return NULL;
 
     for(i = 0; i < properties->extradata_len; i++) {
-        digit_to_char(config + 2 * i, properties->extradata[i] >> 4);
-        digit_to_char(config + 2 * i + 1, properties->extradata[i] & 0xF);
+        config[2*i] = digit_to_char(properties->extradata[i] >> 4);
+        config[2*i+1] = digit_to_char(properties->extradata[i] & 0xF);
     }
 
     config[config_len-1] = '\0';
