@@ -255,16 +255,16 @@ static int h264_init(Track *track)
     }
 
     g_string_append_printf(track->sdp_description,
-                           "a=fmtp:%u %s\r\n"
-                           "a=rtpmap:%u H264/%d\r\n",
-
-                           /* fmtp */
-                           track->properties.payload_type,
-                           sprop,
+                           "a=rtpmap:%u H264/%d\r\n"
+                           "a=fmtp:%u %s\r\n",
 
                            /* rtpmap */
                            track->properties.payload_type,
-                           track->properties.clock_rate);
+                           track->properties.clock_rate,
+
+                           /* fmtp */
+                           track->properties.payload_type,
+                           sprop);
 
     track->private_data = priv;
 

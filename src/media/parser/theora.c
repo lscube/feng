@@ -165,16 +165,16 @@ static int theora_init(Track *track)
         goto err_alloc;
 
     g_string_append_printf(track->sdp_description,
-                           "a=fmtp:%u delivery-method=in_band; configuration=%s;\r\n"
-                           "a=rtpmap%u theora/%d\r\n",
-
-                           /* fmtp */
-                           track->properties.payload_type,
-                           buf,
+                           "a=rtpmap%u theora/%d\r\n"
+                           "a=fmtp:%u delivery-method=in_band; configuration=%s;\r\n",
 
                            /* rtpmap */
                            track->properties.payload_type,
-                           track->properties.clock_rate);
+                           track->properties.clock_rate,
+
+                           /* fmtp */
+                           track->properties.payload_type,
+                           buf);
     g_free(buf);
 
     track->private_data = priv;

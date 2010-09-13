@@ -42,18 +42,18 @@ static int amr_init(Track *track)
     track->properties.clock_rate = 8000;
 
     g_string_append_printf(track->sdp_description,
-                           "a=fmtp:%u octet-align=1%s%s\r\n"
-                           "a=rtpmap:%u AMR/%d/%d\r\n",
-
-                           /* fmtp */
-                           track->properties.payload_type,
-                           config ? "; config=" : "",
-                           config ? config : "",
+                           "a=rtpmap:%u AMR/%d/%d\r\n"
+                           "a=fmtp:%u octet-align=1%s%s\r\n",
 
                            /* rtpmap */
                            track->properties.payload_type,
                            track->properties.clock_rate,
-                           track->properties.audio_channels);
+                           track->properties.audio_channels,
+
+                           /* fmtp */
+                           track->properties.payload_type,
+                           config ? "; config=" : "",
+                           config ? config : "");
 
     return 0;
 }

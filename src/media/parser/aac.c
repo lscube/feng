@@ -38,19 +38,19 @@ static int aac_init(Track *track)
         return -1;
 
     g_string_append_printf(track->sdp_description,
+                           "a=rtpmap:%u mpeg4-generic/%d\r\n"
+
                            "a=fmtp:%u streamtype=5;profile-level-id=1;"
                            "mode=AAC-hbr;sizeLength=13;indexLength=3;"
-                           "indexDeltaLength=3; config=%s;\r\n"
-
-                           "a=rtpmap:%u mpeg4-generic/%d\r\n",
-
-                           /* fmtp */
-                           track->properties.payload_type,
-                           config,
+                           "indexDeltaLength=3; config=%s;\r\n",
 
                            /* rtpmap */
                            track->properties.payload_type,
-                           track->properties.clock_rate);
+                           track->properties.clock_rate,
+
+                           /* fmtp */
+                           track->properties.payload_type,
+                           config);
     g_free(config);
 
     return 0;
