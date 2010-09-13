@@ -28,24 +28,22 @@
 
 static int mp4ves_init(Track *track)
 {
-    char *config;
-
-    if ( (config = extradata2config(&track->properties)) == NULL )
+    if ( track->properties.extradata_len == 0 )
         return -1;
 
     g_string_append_printf(track->sdp_description,
                            "a=rtpmap:%u MP4V-ES/%d\r\n"
-                           "a=fmtp:%u profile-level-id=1;config=%s;\r\n",
+                           "a=fmtp:%u profile-level-id=1;",
 
                            /* rtpmap */
                            track->properties.payload_type,
                            track->properties.clock_rate,
 
                            /* fmtp */
-                           track->properties.payload_type,
-                           config);
+                           track->properties.payload_type);
 
-    g_free(config);
+    sdp_descr_append_config(track);
+    g_string_append(track->sdp_description, "\r\n");
 
     return 0;
 }

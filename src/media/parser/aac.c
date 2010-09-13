@@ -32,9 +32,7 @@
 
 static int aac_init(Track *track)
 {
-    char *config;
-
-    if ( (config = extradata2config(&track->properties)) == NULL )
+    if ( track->properties.extradata_len == 0 )
         return -1;
 
     g_string_append_printf(track->sdp_description,
@@ -42,16 +40,17 @@ static int aac_init(Track *track)
 
                            "a=fmtp:%u streamtype=5;profile-level-id=1;"
                            "mode=AAC-hbr;sizeLength=13;indexLength=3;"
-                           "indexDeltaLength=3; config=%s;\r\n",
+                           "indexDeltaLength=3; ",
 
                            /* rtpmap */
                            track->properties.payload_type,
                            track->properties.clock_rate,
 
                            /* fmtp */
-                           track->properties.payload_type,
-                           config);
-    g_free(config);
+                           track->properties.payload_type);
+
+    sdp_descr_append_config(track);
+    g_string_append(track->sdp_description, "\r\n");
 
     return 0;
 }

@@ -32,18 +32,11 @@
 
 static int amr_init(Track *track)
 {
-    char *config = NULL;
-
-    /* get config content if has any */
-    if ( track->properties.extradata_len &&
-         (config = extradata2config(&track->properties)) == NULL )
-        return -1;
-
     track->properties.clock_rate = 8000;
 
     g_string_append_printf(track->sdp_description,
                            "a=rtpmap:%u AMR/%d/%d\r\n"
-                           "a=fmtp:%u octet-align=1%s%s\r\n",
+                           "a=fmtp:%u octet-align=1;",
 
                            /* rtpmap */
                            track->properties.payload_type,
@@ -51,9 +44,12 @@ static int amr_init(Track *track)
                            track->properties.audio_channels,
 
                            /* fmtp */
-                           track->properties.payload_type,
-                           config ? "; config=" : "",
-                           config ? config : "");
+                           track->properties.payload_type);
+
+    if ( track->properties.extradata_len > 0 )
+        sdp_descr_append_config(track);
+
+    g_string_append(track->sdp_description, "\r\n");
 
     return 0;
 }

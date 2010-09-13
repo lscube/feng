@@ -37,27 +37,32 @@ static inline char digit_to_char(uint8_t src)
         return 'A' + src - 10;
 }
 
-char *extradata2config(MediaProperties *properties)
+void sdp_descr_append_config(Track *track)
 {
-    size_t config_len;
-    char *config;
-    size_t i;
+    GString *descr = track->sdp_description;
+    size_t len = track->properties.extradata_len, i, oldlen = descr->len;
+    uint8_t *data = (uint8_t*)(track->properties.extradata);
+    char *out;
 
-    if ( properties->extradata_len == 0 )
-        return NULL;
+    if ( len == 0 )
+        return;
 
-    config_len = properties->extradata_len * 2 + 1;
-    config = g_malloc(config_len);
+    /* enlarge the string to the needed size; the final NULL byte is
+       taken care of by GString. */
+    g_string_set_size(descr, descr->len + (len*2) + strlen("config=;"));
 
-    if (config == NULL)
-        return NULL;
+    /* First char to start converting the content to */
+    out = &descr->str[oldlen];
 
-    for(i = 0; i < properties->extradata_len; i++) {
-        config[2*i] = digit_to_char(properties->extradata[i] >> 4);
-        config[2*i+1] = digit_to_char(properties->extradata[i] & 0xF);
+    *out = '\0';
+
+    g_strlcat(descr->str, "config=", descr->len);
+    out += strlen("config=");
+
+    for ( i = 0; i < len; i++, data++ ) {
+        *out++ = digit_to_char(*data >> 4);
+        *out++ = digit_to_char(*data & 0xF);
     }
 
-    config[config_len-1] = '\0';
-
-    return config;
+    g_strlcat(descr->str, ";", descr->len);
 }
