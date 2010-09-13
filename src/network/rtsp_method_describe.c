@@ -112,7 +112,7 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
 
     Resource *resource;
 
-    char *path = g_uri_unescape_string(uri->path, "/"), *source_address;
+    char *path = g_uri_unescape_string(uri->path, "/");
 
     const char *const inet_family = rtsp->peer_sa->sa_family == AF_INET6 ? "IP6" : "IP4";
 
