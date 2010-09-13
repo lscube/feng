@@ -99,9 +99,6 @@ extern struct ev_loop *feng_loop;
 
 typedef struct Feng_Listener {
     int fd;
-    socklen_t sa_len;
-    struct sockaddr *local_sa;
-    char *local_host;
     specific_config *specific;
     ev_io io;
 } Feng_Listener;

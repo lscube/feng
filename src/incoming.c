@@ -73,9 +73,6 @@ static void feng_bound_socket_close(gpointer element,
     Feng_Listener *listener = element;
 
     close(listener->fd);
-    free(listener->local_host);
-
-    g_slice_free1(listener->sa_len, listener->local_sa);
 
     g_slice_free(Feng_Listener, listener);
 }
@@ -192,12 +189,6 @@ static gboolean feng_bind_addr(struct addrinfo *ai,
 
     listener->fd = sock;
     listener->specific = s;
-
-    listener->sa_len = sa_len;
-    listener->local_sa = g_slice_copy(sa_len, &sa);
-    listener->local_host = neb_sa_get_host(listener->local_sa);
-    if ( listener->local_host == NULL )
-        listener->local_host = strdup(ai->ai_family == AF_INET6 ? "::" : "0.0.0.0");
 
     io = &listener->io;
     io->data = listener;
