@@ -127,20 +127,26 @@ static const RTP_static_payload RTP_payload[96] ={
 /**
  * @defgroup sd2keys SD2 format keys
  *
+ * @note These are defined as constant arrays of characters rather
+ *       than as literal macros. This is because they are never
+ *       injected directly in other literals, and having them this way
+ *       can warn if support for them is mistakenly removed from the
+ *       logic code.
+ *
  * @{
  */
-#define SD2_KEY_MRL            "mrl"
-#define SD2_KEY_CLOCK_RATE     "clock_rate"
-#define SD2_KEY_PAYLOAD_TYPE   "payload_type"
-#define SD2_KEY_ENCODING_NAME  "encoding_name"
-#define SD2_KEY_MEDIA_TYPE     "media_type"
-#define SD2_KEY_AUDIO_CHANNELS "audio_channels"
-#define SD2_KEY_FMTP           "fmtp"
+static const char SD2_KEY_MRL            [] = "mrl";
+static const char SD2_KEY_CLOCK_RATE     [] = "clock_rate";
+static const char SD2_KEY_PAYLOAD_TYPE   [] = "payload_type";
+static const char SD2_KEY_ENCODING_NAME  [] = "encoding_name";
+static const char SD2_KEY_MEDIA_TYPE     [] = "media_type";
+static const char SD2_KEY_AUDIO_CHANNELS [] = "audio_channels";
+static const char SD2_KEY_FMTP           [] = "fmtp";
 
-#define SD2_KEY_LICENSE        "license"
-#define SD2_KEY_RDF_PAGE       "rdf_page"
-#define SD2_KEY_TITLE          "title"
-#define SD2_KEY_CREATOR        "creator"
+static const char SD2_KEY_LICENSE        [] = "license";
+static const char SD2_KEY_RDF_PAGE       [] = "rdf_page";
+static const char SD2_KEY_TITLE          [] = "title";
+static const char SD2_KEY_CREATOR        [] = "creator";
 /**
  * @}
  */
