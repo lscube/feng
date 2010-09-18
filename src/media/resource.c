@@ -39,7 +39,7 @@
 
 // global demuxer modules:
 #ifdef LIVE_STREAMING
-extern Demuxer fnc_demuxer_sd;
+extern Demuxer fnc_demuxer_sd2;
 #endif
 extern Demuxer fnc_demuxer_ds;
 extern Demuxer fnc_demuxer_avf;
@@ -141,7 +141,7 @@ static const Demuxer *r_find_demuxer(const char *filename)
 {
     static const Demuxer *const demuxers[] = {
 #ifdef LIVE_STREAMING
-        &fnc_demuxer_sd,
+        &fnc_demuxer_sd2,
 #endif
         &fnc_demuxer_ds,
         &fnc_demuxer_avf,

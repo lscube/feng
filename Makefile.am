@@ -120,7 +120,7 @@ dist_feng_SOURCES += src/media/parser/h264.c \
 endif
 
 if LIVE_STREAMING
-dist_feng_SOURCES += src/media/demuxer/demuxer_sd.c
+dist_feng_SOURCES += src/media/demuxer/demuxer_sd2.c
 endif
 
 if HAVE_JSON
