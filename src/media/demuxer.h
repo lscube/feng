@@ -159,25 +159,6 @@ typedef struct Resource {
  * @}
  */
 
-/**
- * @brief Separator for the track ID on presentation URLs
- *
- * This string separates the resource URL from the track name in a
- * presentation URL, for SETUP requests for instance.
- *
- * It is represented as a preprocessor macro to be easily used both to
- * glue together the names and to use it to find the track name.
- */
-#define SDP_TRACK_SEPARATOR "TrackID="
-
-/**
- * @brief Convenience macro for the track separator in URLs
- *
- * Since outside of the SDP code we need to check for a '/' prefix,
- * just write it here once.
- */
-#define SDP_TRACK_URI_SEPARATOR "/" SDP_TRACK_SEPARATOR
-
 typedef struct MediaProperties {
     int payload_type;
     unsigned int clock_rate;

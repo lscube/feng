@@ -57,13 +57,6 @@ void free_track(gpointer element,
     g_slice_free(Track, track);
 }
 
-
-#define ADD_TRACK_ERROR(level, ...) \
-    { \
-        fnc_log(level, __VA_ARGS__); \
-        goto error; \
-    }
-
 /**
  * @brief Add track to resource tree.
  *
@@ -91,15 +84,17 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
     t->sdp_description = g_string_new("");
 
     g_string_append_printf(t->sdp_description,
-                           "a=control:"SDP_TRACK_SEPARATOR"%s\r\n",
+                           "a=control:%s\r\n",
                            name);
 
     memcpy(&t->properties, prop_hints, sizeof(MediaProperties));
 
     switch (t->properties.media_source) {
     case STORED_SOURCE:
-        if ( !(t->parser = mparser_find(t->properties.encoding_name)) )
-            ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not find a valid parser\n");
+        if ( !(t->parser = mparser_find(t->properties.encoding_name)) ) {
+            fnc_log(FNC_LOG_FATAL, "Could not find a valid parser\n");
+            goto error;
+        }
 
         t->properties.media_type = t->parser->media_type;
         break;
@@ -112,9 +107,11 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
         break;
     }
 
-    if (t->parser->init && t->parser->init(t) != 0)
-        ADD_TRACK_ERROR(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
-                        t->properties.encoding_name);
+    if (t->parser->init && t->parser->init(t) != 0) {
+        fnc_log(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
+                t->properties.encoding_name);
+        goto error;
+    }
 
     r->tracks = g_list_append(r->tracks, t);
 
@@ -124,7 +121,6 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
     free_track(t, NULL);
     return NULL;
 }
-#undef ADD_TRACK_ERROR
 
 /**
  * @brief Get the producer for the track

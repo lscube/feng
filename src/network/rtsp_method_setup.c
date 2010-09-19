@@ -59,22 +59,20 @@ static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, R
     /* Check if the requested URL is valid. If we already have a
      * session open, the resource URL has to be the same; otherwise,
      * we have to check if we're given a propr presentation URL
-     * (having the SDP_TRACK_SEPARATOR string in it).
+     * (having the track name in it).
      */
     if ( !rtsp_s->resource ) {
         /* Here we don't know the URL and we have to find it out, we
-         * check for the presence of the SDP_TRACK_URI_SEPARATOR */
+         * check for the presence of the final '/' */
         char *path;
 
-        char *separator = strstr(req->object, SDP_TRACK_URI_SEPARATOR);
+        char *separator = strrchr(req->object, '/');
 
         /* If we found no separator it's a resource URI */
-        if ( separator == NULL ) {
-            rtsp_quick_response(client, req, RTSP_AggregateOnly);
-            return NULL;
-        }
+        if ( separator == NULL )
+            goto error;
 
-        trackname = separator + strlen(SDP_TRACK_URI_SEPARATOR);
+        trackname = separator + 1;
 
         /* Here we set the base resource URI, which is different from
          * the path; since the object is going to be used and freed we
@@ -83,7 +81,7 @@ static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, R
 
         path = g_uri_unescape_string(req->uri->path, "/");
 
-        separator = strstr(path, SDP_TRACK_URI_SEPARATOR);
+        separator = strrchr(path, '/');
 
         if ( separator != NULL )
             *separator = '\0';
@@ -107,33 +105,37 @@ static Track *select_requested_track(RTSP_Client *client, RFC822_Request *req, R
     } else {
         /* We know the URL already */
         const size_t resource_uri_length = strlen(rtsp_s->resource_uri);
-
-        /* Check that it starts with the correct resource URI */
-        if ( strncmp(req->object, rtsp_s->resource_uri, resource_uri_length) != 0 ) {
-            rtsp_quick_response(client, req, RTSP_AggregateNotAllowed);
-            return NULL;
-        }
-
-        /* Now make sure that we got a presentation URL, rather than a
-         * resource URL
-         */
-        if ( strncmp(req->object + resource_uri_length,
-                     SDP_TRACK_URI_SEPARATOR,
-                     strlen(SDP_TRACK_URI_SEPARATOR)) != 0 ) {
-            rtsp_quick_response(client, req, RTSP_AggregateOnly);
-            return NULL;
-        }
+        const size_t req_object_length = strlen(req->object);
 
         trackname = req->object
             + resource_uri_length
-            + strlen(SDP_TRACK_URI_SEPARATOR);
+            + 1; /* the slash */
+
+        if (
+            /* Needs at least two extra characters: '/' and the track identifier */
+            req_object_length < resource_uri_length + 2 ||
+            /* Check that it starts with the correct resource URI */
+            strncmp(req->object, rtsp_s->resource_uri, resource_uri_length) != 0 ||
+            /* Now make sure that we got a presentation URL, rather
+               than a resource URL */
+            req->object[resource_uri_length] != '/'
+            )
+            goto error;
     }
+
+    /* Finally, make sure that the trackname is properly non-special */
+    if ( !feng_str_is_unreserved(trackname) )
+        goto error;
 
     if ( (selected_track = r_find_track(rtsp_s->resource, trackname))
          == NULL )
         rtsp_quick_response(client, req, RTSP_NotFound);
 
     return selected_track;
+
+ error:
+    rtsp_quick_response(client, req, RTSP_AggregateOnly);
+    return NULL;
 }
 
 /**

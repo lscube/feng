@@ -259,7 +259,7 @@ static int avf_init(Resource * r)
                 continue;
         }
 
-        if ( !(track = priv.tracks[j] = add_track(r, g_strdup_printf("%d", j), &props)) )
+        if ( !(track = priv.tracks[j] = add_track(r, g_strdup_printf("Track_%d", j), &props)) )
             goto err_alloc;
 
         g_string_append_printf(track->sdp_description,
