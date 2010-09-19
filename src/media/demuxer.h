@@ -75,10 +75,13 @@ typedef struct Resource {
      */
     gint count;
 
-    char *mrl;
-    time_t mtime;
-    double duration;
-    MediaSource media_source;
+    /**
+     * @brief End-of-resource indication
+     *
+     * @note Do note change this to gboolean because it is used
+     *       through g_atomic_int_get/g_atomic_int_set.
+     */
+    int eor;
 
     /**
      * @brief Seekable resource flag
@@ -93,13 +96,11 @@ typedef struct Resource {
      */
     gboolean seekable;
 
-    /**
-     * @brief End-of-resource indication
-     *
-     * @note Do note change this to gboolean because it is used
-     *       through g_atomic_int_get/g_atomic_int_set.
-     */
-    int eor;
+    MediaSource media_source;
+
+    char *mrl;
+    time_t mtime;
+    double duration;
 
     const struct Demuxer *demuxer;
 
@@ -162,13 +163,13 @@ typedef struct Resource {
 typedef struct MediaProperties {
     int payload_type;
     unsigned int clock_rate;
-    char encoding_name[11];
+    char encoding_name[12];
     MediaType media_type;
     MediaSource media_source;
+    int audio_channels;
     double pts;             //time is in seconds
     double dts;             //time is in seconds
     double frame_duration;  //time is in seconds
-    int audio_channels;
     uint8_t *extradata;
     size_t extradata_len;
 } MediaProperties;
