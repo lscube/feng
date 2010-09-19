@@ -10,9 +10,19 @@
     <xsl:text><![CDATA[
 /* Automatically-generated code, do not modify! */
 
+#include "config.h"
 #include <glib.h>
 #include "rfc822proto.h"
 
+/* When building PIC code, avoid tables here */
+#if __PIC__ && !defined(AVOID_TABLES)
+# define AVOID_TABLES 1
+#endif
+
+]]></xsl:text>
+
+    <xsl:text><![CDATA[
+#if !AVOID_TABLES
 const char *rfc822_header_to_string(RFC822_Header hdr)
 {
     static const char *const header_names[] = {
@@ -120,6 +130,109 @@ const char *rfc822_response_reason(RFC822_Protocol proto, int code)
     g_assert_not_reached();
     return NULL;
 }
+
+#else /* AVOID_TABLES */
+
+const char *rfc822_header_to_string(RFC822_Header hdr)
+{
+    switch(hdr) {
+]]></xsl:text>
+
+    <xsl:for-each select="//supportedheader[not(.=preceding::supportedheader)]">
+      <xsl:text>        case </xsl:text>
+      <xsl:value-of select="../@name" />
+      <xsl:text>_Header_</xsl:text>
+      <xsl:value-of select="translate(., '-', '_')" />
+      <xsl:text>: return "</xsl:text>
+      <xsl:value-of select="." />
+      <xsl:text><![CDATA[";
+]]></xsl:text>
+    </xsl:for-each>
+
+    <xsl:text><![CDATA[
+        default: g_assert_not_reached();
+    }
+
+    return NULL;
+}
+
+]]></xsl:text>
+
+    <xsl:for-each select="//supportedproto">
+      <xsl:variable name="loname" select="translate(@name, $uppercase, $lowercase)" />
+
+      <xsl:text>const char *</xsl:text>
+      <xsl:value-of select="$loname" />
+      <xsl:text><![CDATA[_response_reason(int code) {
+    switch(code) {
+]]></xsl:text>
+
+      <xsl:for-each select="response">
+	<xsl:text>        case </xsl:text>
+	<xsl:value-of select="@code" />
+	<xsl:text>: return "</xsl:text>
+	<xsl:value-of select="." />
+	<xsl:text><![CDATA[";
+]]></xsl:text>
+      </xsl:for-each>
+
+    <xsl:text><![CDATA[
+        default: g_assert_not_reached();
+    }
+
+    return NULL;
+}
+
+]]></xsl:text>
+
+    </xsl:for-each>
+
+    <xsl:text><![CDATA[
+const char *rfc822_response_reason(RFC822_Protocol proto, int code)
+{
+    switch(code) {
+]]></xsl:text>
+
+    <xsl:for-each select="./response">
+      <xsl:text>        case </xsl:text>
+      <xsl:value-of select="@code" />
+      <xsl:text>: return "</xsl:text>
+      <xsl:value-of select="." />
+      <xsl:text><![CDATA[";
+]]></xsl:text>
+    </xsl:for-each>
+
+    <xsl:text><![CDATA[
+    };
+
+    switch(proto)
+    {
+]]></xsl:text>
+
+    <xsl:for-each select="//supportedproto">
+      <xsl:for-each select="supportedversion">
+	<xsl:text>    case RFC822_Protocol_</xsl:text>
+	<xsl:value-of select="../@name" />
+	<xsl:value-of select="translate(., '.', '')" />
+	<xsl:text><![CDATA[:
+]]></xsl:text>
+      </xsl:for-each>
+      <xsl:text>    case RFC822_Protocol_</xsl:text>
+      <xsl:value-of select="@name" />
+      <xsl:text><![CDATA[_UnsupportedVersion:
+]]></xsl:text>
+      <xsl:text>        return </xsl:text>
+      <xsl:value-of select="translate(@name, $uppercase, $lowercase)" />
+      <xsl:text>_response_reason(code);</xsl:text>
+    </xsl:for-each>
+
+    <xsl:text><![CDATA[
+    };
+
+    g_assert_not_reached();
+    return NULL;
+}
+#endif /* AVOID_TABLES */
 ]]></xsl:text>
 
     <xsl:text><![CDATA[

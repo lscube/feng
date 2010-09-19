@@ -132,13 +132,8 @@ if ENABLE_SCTP
 dist_feng_SOURCES += src/network/rtsp_sctp.c
 endif
 
-if AVOID_TABLES
-src/network/rfc822proto.c: src/network/rfc822proto-source-switch.xsl src/network/rfc822proto.xml
+src/network/rfc822proto.c: src/network/rfc822proto-source.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
-else
-src/network/rfc822proto.c: src/network/rfc822proto-source-table.xsl src/network/rfc822proto.xml
-	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
-endif
 
 src/network/rfc822proto-constants.h: src/network/rfc822proto-header.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^

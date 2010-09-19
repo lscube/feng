@@ -46,7 +46,9 @@ AC_ARG_ENABLE(trace,
 AC_ARG_ENABLE([tables],
     AS_HELP_STRING([--disable-tables], [disable big build-time tables (for embedded)]))
 
-AM_CONDITIONAL([AVOID_TABLES], [test "x$enable_tables" = "xno"])
+AS_IF([test "x$enable_tables" = "xno"], [
+  AC_DEFINE([AVOID_TABLES], [1], [Define to 1 if tables should be avoided])
+])
 
 dnl Checks used by feng itself
 AC_CHECK_HEADERS_ONCE([syslog.h])
