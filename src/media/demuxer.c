@@ -72,23 +72,16 @@ void free_track(gpointer element,
  * fill.
  *
  * @param r Resource to add the Track to
- * @param name Name of the track to use (will be g_free'd)
+ * @param name Name of the track to use (will be g_free'd); make sure
+ *             to use @ref feng_str_is_unreseved before passing an
+ *             user-provided string to this function.
  *
  * @return pointer to newly allocated track struct.
- *
- * @TODO Right now we escape the name before adding it to the
- *       a=control SDP attribute; this is only done because of
- *       demuxer_sd, as in the case of stored tracks read with
- *       demuxer_avf we only use numbers to refer to them. It would be
- *       a good idea to simply refuse special characters in the track
- *       names as read in demuxer_sd and avoid doing the extra work
- *       here.
  **/
 
 Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
 {
     Track *t;
-    char *encoded_media_name; /* Should be moved to demuxer_sd */
 
     t = g_slice_new0(Track);
 
@@ -97,11 +90,9 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
     t->name            = name;
     t->sdp_description = g_string_new("");
 
-    encoded_media_name = g_uri_escape_string(name, NULL, false);
     g_string_append_printf(t->sdp_description,
                            "a=control:"SDP_TRACK_SEPARATOR"%s\r\n",
-                           encoded_media_name);
-    g_free(encoded_media_name);
+                           name);
 
     memcpy(&t->properties, prop_hints, sizeof(MediaProperties));
 

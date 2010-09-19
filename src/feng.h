@@ -121,4 +121,14 @@ void stats_init();
 #define stats_init()
 #endif
 
+/**
+ * @defgroup utils Utility functions
+ *
+ * @{
+ */
+gboolean feng_str_is_unreserved(const char *string);
+/**
+ * @}
+ */
+
 #endif // FN_SERVER_H

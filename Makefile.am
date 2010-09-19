@@ -55,6 +55,7 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/incoming.c \
 	src/feng.h \
 	src/main.c \
+	src/utilities.c \
 	src/conf/array.c \
 	src/conf/array.h \
 	src/conf/buffer.c \
@@ -190,6 +191,7 @@ tests_testsuite_SOURCES = \
 	src/network/ragel_transport.c \
 	src/network/ragel_uri.c \
 	src/network/uri.c \
+	src/utilities.c \
 	tests/bufferqueue/test-1.c \
 	tests/bufferqueue/test-2.c \
 	tests/bufferqueue/test-3.c \
@@ -200,6 +202,7 @@ tests_testsuite_SOURCES = \
 	tests/rfc822proto/headers.c \
 	tests/rfc822proto/transport_header.c \
 	tests/uri.c \
+	tests/utils.c \
 	tests/gtest-extra.h
 
 # tests_testsuite_CFLAGS = -DFENG_BQ_DEBUG

@@ -213,10 +213,11 @@ static int sd2_init(Resource * r)
 
         gchar *track_mrl, *media_type, *encoding_name, *tmpstr;
 
-        /**
-         * @TODO We should check that the track name is composed only
-         * of unreserved characters, and if it's not, refuse it.
-         */
+        if ( !feng_str_is_unreserved(currtrack) ) {
+            fnc_log(FNC_LOG_ERR, "[sd2] invalid track name '%s' for '%s'",
+                    currtrack, r->mrl);
+            goto corrupted_track;
+        }
 
         track_mrl = g_key_file_get_string(file, currtrack,
                                           SD2_KEY_MRL,
