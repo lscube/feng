@@ -43,8 +43,6 @@ typedef struct {
     struct sockaddr *rtp_sa;
     /** RTCP remote socket address */
     struct sockaddr *rtcp_sa;
-    /* Length of the sockaddr structures above */
-    socklen_t sa_len;
     ev_io rtcp_reader;
 } RTP_UDP_Transport;
 
@@ -94,14 +92,15 @@ static gboolean rtp_udp_send_rtcp(RTP_session *rtp, GByteArray *buffer)
 static void rtp_udp_close_transport(RTP_session *rtp)
 {
     RTP_UDP_Transport *transport = rtp->transport_data;
+    RTSP_Client *client = rtp->client;
 
-    ev_io_stop(rtp->client->loop, &transport->rtcp_reader);
+    ev_io_stop(client->loop, &transport->rtcp_reader);
 
     close(transport->rtp_sd);
     close(transport->rtcp_sd);
 
-    g_slice_free1(transport->sa_len, transport->rtp_sa);
-    g_slice_free1(transport->sa_len, transport->rtcp_sa);
+    g_slice_free1(client->sa_len, transport->rtp_sa);
+    g_slice_free1(client->sa_len, transport->rtcp_sa);
     g_slice_free(RTP_UDP_Transport, transport);
 }
 
@@ -140,7 +139,7 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     ev_io *io = &transport.rtcp_reader;
     char *source = NULL;
     struct sockaddr_storage sa;
-    socklen_t sa_len = rtsp->local_len;
+    socklen_t sa_len = rtsp->sa_len;
     struct sockaddr *sa_p = (struct sockaddr*) &sa;
     int firstsd;
     in_port_t firstport, rtp_port, rtcp_port;
@@ -234,24 +233,22 @@ void rtp_udp_transport(RTSP_Client *rtsp,
         break;
     }
 
-    transport.sa_len = rtsp->peer_len;
-
-    transport.rtp_sa = g_slice_copy(transport.sa_len, rtsp->peer_sa);
+    transport.rtp_sa = g_slice_copy(sa_len, rtsp->peer_sa);
     neb_sa_set_port(transport.rtp_sa, parsed->rtp_channel);
 
     if ( connect(transport.rtp_sd,
                  transport.rtp_sa,
-                 transport.sa_len) < 0 ) {
+                 sa_len) < 0 ) {
         fnc_perror("connect 1");
         goto error;
     }
 
-    transport.rtcp_sa = g_slice_copy(transport.sa_len, rtsp->peer_sa);
+    transport.rtcp_sa = g_slice_copy(sa_len, rtsp->peer_sa);
     neb_sa_set_port(transport.rtcp_sa, parsed->rtcp_channel);
 
     if ( connect(transport.rtcp_sd,
                  transport.rtcp_sa,
-                 transport.sa_len) < 0 ) {
+                 sa_len) < 0 ) {
         fnc_perror("connect 2");
         goto error;
     }
@@ -281,9 +278,9 @@ void rtp_udp_transport(RTSP_Client *rtsp,
 
  error:
     if ( transport.rtp_sa != NULL )
-        g_slice_free1(transport.sa_len, transport.rtp_sa);
+        g_slice_free1(sa_len, transport.rtp_sa);
     if ( transport.rtcp_sa != NULL )
-        g_slice_free1(transport.sa_len, transport.rtcp_sa);
+        g_slice_free1(sa_len, transport.rtcp_sa);
     if ( firstsd >= 0 )
         close(firstsd);
     if ( transport.rtp_sd >= 0 )

@@ -296,8 +296,8 @@ static void client_loop(gpointer client_p,
 
     g_slice_free(RFC822_Request, client->pending_request);
 
-    g_slice_free1(client->peer_len, client->peer_sa);
-    g_slice_free1(client->local_len, client->local_sa);
+    g_slice_free1(client->sa_len, client->peer_sa);
+    g_slice_free1(client->sa_len, client->local_sa);
 
     ev_loop_destroy(loop);
 
@@ -343,22 +343,23 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 {
     Feng_Listener *listen = w->data;
     int client_sd = -1;
-    struct sockaddr_storage sa;
-    socklen_t sa_len = sizeof(struct sockaddr_storage);
-    struct sockaddr_storage sa_bound;
-    socklen_t sa_bound_len = sizeof(struct sockaddr_storage);
+    struct sockaddr_storage peer, bound;
+    socklen_t peer_len = sizeof(struct sockaddr_storage),
+        bound_len = sizeof(struct sockaddr_storage);
 
     RTSP_Client *rtsp;
 
-    if ( (client_sd = accept(listen->fd, (struct sockaddr*)&sa, &sa_len)) < 0 ) {
+    if ( (client_sd = accept(listen->fd, (struct sockaddr*)&peer, &peer_len)) < 0 ) {
         fnc_perror("accept failed");
         return;
     }
 
-    if ( getsockname(client_sd, (struct sockaddr*)&sa_bound, &sa_len) < 0 ) {
+    if ( getsockname(client_sd, (struct sockaddr*)&bound, &bound_len) < 0 ) {
         fnc_perror("getsockname");
         goto error;
     }
+
+    feng_assert_or_goto(peer_len == bound_len, error);
 
     if (feng_srv.connection_count >= ONE_FORK_MAX_CONNECTION*2)
         goto error;
@@ -386,14 +387,12 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 
     rtsp->specific = listen->specific;
 
-    rtsp->local_host = neb_sa_get_host((struct sockaddr*)&sa_bound);
-    rtsp->remote_host = neb_sa_get_host((struct sockaddr*)&sa);
+    rtsp->local_host = neb_sa_get_host((struct sockaddr*)&bound);
+    rtsp->remote_host = neb_sa_get_host((struct sockaddr*)&peer);
 
-    rtsp->peer_len = sa_len;
-    rtsp->peer_sa = g_slice_copy(rtsp->peer_len, &sa);
-
-    rtsp->local_len = sa_bound_len;
-    rtsp->local_sa = g_slice_copy(rtsp->peer_len, &sa_bound);
+    rtsp->sa_len = peer_len;
+    rtsp->peer_sa = g_slice_copy(peer_len, &peer);
+    rtsp->local_sa = g_slice_copy(peer_len, &bound);
 
     feng_srv.connection_count++;
 

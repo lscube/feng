@@ -175,12 +175,9 @@ typedef struct RTSP_Client {
 
     char *remote_host;
 
+    socklen_t sa_len;
     struct sockaddr *local_sa;
-    socklen_t local_len;
-
     struct sockaddr *peer_sa;
-    socklen_t peer_len;
-
 #ifdef HAVE_JSON //stats
     char *user_agent;
     size_t bytes_read;
