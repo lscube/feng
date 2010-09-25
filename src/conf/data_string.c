@@ -48,13 +48,6 @@ static int data_string_insert_dup(data_unset *dst, data_unset *src) {
 	return 0;
 }
 
-static void data_string_print(const data_unset *d, ATTR_UNUSED int depth) {
-	data_string *ds = (data_string *)d;
-
-	fprintf(stdout, "\"%s\"", ds->value->str);
-}
-
-
 data_string *data_string_init(void) {
 	data_string *ds;
 
@@ -68,7 +61,6 @@ data_string *data_string_init(void) {
 	ds->free = data_string_free;
 	ds->reset = data_string_reset;
 	ds->insert_dup = data_string_insert_dup;
-	ds->print = data_string_print;
 	ds->type = TYPE_STRING;
 
 	return ds;
