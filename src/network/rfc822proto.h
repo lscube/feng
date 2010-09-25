@@ -43,14 +43,10 @@ typedef enum RFC822_Parser_State {
     RFC822_State_RTSP_Headers,
     /** RTSP request with content, reading content */
     RFC822_State_RTSP_Content,
-    /** RTSP request read, handling */
-    RFC822_State_RTSP_Handler,
     /** HTTP request line found, reading headers */
     RFC822_State_HTTP_Headers,
     /** HTTP headers read, reading content */
     RFC822_State_HTTP_Content,
-    /** HTTP request read, handling */
-    RFC822_State_HTTP_Handler,
     /** HTTP GET request read, idling (output only) */
     RFC822_State_HTTP_Idle
 } RFC822_Parser_State;
