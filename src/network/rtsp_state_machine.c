@@ -250,7 +250,7 @@ static gboolean RTSP_handle_new(RTSP_Client *rtsp) {
             .proto = RFC822_Protocol_Invalid
         };
 
-        request_line_len = ragel_parse_request_line(rtsp->input->data,
+        request_line_len = ragel_parse_request_line((char*)rtsp->input->data,
                                                     rtsp->input->len,
                                                     &tmpreq);
 
@@ -307,7 +307,7 @@ static gboolean RTSP_handle_headers(RTSP_Client *rtsp) {
         rtsp->pending_request->headers = rfc822_headers_new();
 
     headers_res = ragel_read_rtsp_headers(rtsp->pending_request->headers,
-                                          rtsp->input->data,
+                                          (char*)rtsp->input->data,
                                           rtsp->input->len,
                                           &parsed_headers);
 

@@ -128,7 +128,7 @@ gboolean HTTP_handle_headers(RTSP_Client *rtsp)
         rtsp->pending_request->headers = rfc822_headers_new();
 
     headers_res = ragel_read_http_headers(rtsp->pending_request->headers,
-                                          rtsp->input->data,
+                                          (char*)rtsp->input->data,
                                           rtsp->input->len,
                                           &parsed_headers);
 
@@ -188,7 +188,7 @@ gboolean HTTP_handle_content(RTSP_Client *rtsp)
     /* This way if it's empty it'll be allocated */
     outbuf = decoded_input->data + prev_size;
 
-    actual_decoded_length = g_base64_decode_step(rtsp->input->data,
+    actual_decoded_length = g_base64_decode_step((gchar*)rtsp->input->data,
                                                  rtsp->input->len,
                                                  outbuf,
                                                  &rtsp->pair->base64_state,
