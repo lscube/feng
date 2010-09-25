@@ -25,7 +25,7 @@ static void data_config_free(data_unset *d) {
 	array_free(ds->value);
 	array_free(ds->childs);
 
-	if (ds->string) buffer_free(ds->string);
+	buffer_free(ds->string);
 
 	free(d);
 }

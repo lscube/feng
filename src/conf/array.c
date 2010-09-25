@@ -77,8 +77,8 @@ void array_free(array *a) {
         }
     }
 
-    if (a->data) free(a->data);
-    if (a->sorted) free(a->sorted);
+    free(a->data);
+    free(a->sorted);
 
     free(a);
 }
