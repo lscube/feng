@@ -116,17 +116,22 @@ typedef struct RTSP_Client {
     enum { RTSP_TCP, RTSP_SCTP } socktype;
 
     /**
+     * @brief First channel free for interleaved and SCTP
+     */
+    int first_free_channel;
+
+    /**
+     * @brief Status of the connected client for the parser
+     */
+    RFC822_Parser_State status;
+
+    /**
      * @brief Input buffer
      *
      * This is the input buffer as read straight from the sock socket;
      * GByteArray allows for automatic sizing of the array.
      */
     GByteArray *input;
-
-    /**
-     * @brief Status of the connected client for the parser
-     */
-    RFC822_Parser_State status;
 
     /**
      * @brief Current request being parsed
@@ -142,11 +147,6 @@ typedef struct RTSP_Client {
      * @brief Hash table for interleaved and SCTP channels
      */
     GHashTable *channels;
-
-    /**
-     * @brief First channel free for interleaved and SCTP
-     */
-    int first_free_channel;
 
     // Run-Time
     RTSP_session *session;
