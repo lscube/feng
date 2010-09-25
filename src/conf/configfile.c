@@ -35,6 +35,7 @@
 #include <glib.h>
 
 #include <sys/stat.h>
+#include <sys/mman.h>
 
 #include <stdlib.h>
 #include <fcntl.h>
@@ -45,10 +46,17 @@
 #include <ctype.h>
 #include <assert.h>
 
+#ifndef MAP_FAILED
+#define MAP_FAILED -1
+#endif
+
+#ifndef O_BINARY
+# define O_BINARY 0
+#endif
+
 #include "feng.h"
 //#include "log.h"
 
-#include "stream.h"
 //#include "plugin.h"
 #include "network/rtp.h" // defaults
 #include "configparser.h"
@@ -560,9 +568,10 @@ static int tokenizer_init(tokenizer_t *t, const conf_buffer *source, const char 
 
 int config_parse_file(config_t *context, const char *fn) {
     tokenizer_t t;
-    stream s;
-    int ret;
+    int ret = -1, fd = -1;
     conf_buffer *filename;
+    char *confstream = NULL;
+    struct stat st;
 
     if (buffer_is_empty(context->basedir) &&
             (fn[0] == '/' || fn[0] == '\\') &&
@@ -573,19 +582,35 @@ int config_parse_file(config_t *context, const char *fn) {
         buffer_append_string(filename, fn);
     }
 
-    if (0 != stream_open(&s, filename->ptr)) {
-        if (s.size == 0) {
-            /* the file was empty, nothing to parse */
-            ret = 0;
-        } else {
-            ret = -1;
-        }
-    } else {
-        tokenizer_init(&t, filename, s.start, s.size);
-        ret = config_parse(context, &t);
+    if (-1 == stat(fn, &st)) {
+        ret = -1;
+        goto error;
     }
 
-    stream_close(&s);
+    if (st.st_size == 0) {
+        ret = -1;
+        goto error;
+    }
+
+    if (-1 == (fd = open(filename->ptr, O_RDONLY | O_BINARY))) {
+        ret = -1;
+        goto error;
+    }
+
+    if ( (confstream = mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0)) == MAP_FAILED )
+        goto error;
+
+    close(fd); fd = -1;
+
+    tokenizer_init(&t, filename, confstream, st.st_size);
+    ret = config_parse(context, &t);
+
+ error:
+    if ( confstream != NULL )
+        munmap(confstream, st.st_size);
+
+    if ( fd != -1 ) close(fd);
+
     buffer_free(filename);
     return ret;
 }

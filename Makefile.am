@@ -60,8 +60,6 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/conf/array.h \
 	src/conf/buffer.c \
 	src/conf/buffer.h \
-	src/conf/stream.c \
-	src/conf/stream.h \
 	src/conf/configparser.c \
 	src/conf/configparser.h \
 	src/conf/configfile.c \
