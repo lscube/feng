@@ -35,7 +35,6 @@
 #include <glib.h>
 
 #include <sys/stat.h>
-#include <sys/mman.h>
 
 #include <stdlib.h>
 #include <fcntl.h>
@@ -46,15 +45,8 @@
 #include <ctype.h>
 #include <assert.h>
 
-#ifndef MAP_FAILED
-#define MAP_FAILED -1
-#endif
-
-#ifndef O_BINARY
-# define O_BINARY 0
-#endif
-
 #include "feng.h"
+#include "fnc_log.h"
 //#include "log.h"
 
 //#include "plugin.h"
@@ -151,7 +143,7 @@ typedef struct {
     int bar;
 
     const conf_buffer *source;
-    const char *input;
+    gchar *input;
     size_t offset;
     size_t size;
 
@@ -557,10 +549,9 @@ int config_parse_file(config_t *context, const char *fn) {
         .in_brace = 0,
         .in_cond = 0
     };
-    int ret = -1, fd = -1;
+    int ret = -1;
     conf_buffer *filename;
-    char *confstream = NULL;
-    struct stat st;
+    GError *err;
 
     if (buffer_is_empty(context->basedir) &&
             (fn[0] == '/' || fn[0] == '\\') &&
@@ -571,38 +562,21 @@ int config_parse_file(config_t *context, const char *fn) {
         buffer_append_string(filename, fn);
     }
 
-    if (-1 == stat(fn, &st)) {
-        ret = -1;
+    if ( !g_file_get_contents(filename->ptr,
+                              &t.input,
+                              &t.size,
+                              &err) ) {
+        fnc_log(FNC_LOG_FATAL, "unable to parse configuration file: %s",
+                err->message);
         goto error;
     }
-
-    if (st.st_size == 0) {
-        ret = -1;
-        goto error;
-    }
-
-    if (-1 == (fd = open(filename->ptr, O_RDONLY | O_BINARY))) {
-        ret = -1;
-        goto error;
-    }
-
-    if ( (confstream = mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0)) == MAP_FAILED )
-        goto error;
-
-    close(fd); fd = -1;
 
     t.source = filename;
-    t.input = confstream;
-    t.size = st.st_size;
 
     ret = config_parse(context, &t);
 
  error:
-    if ( confstream != NULL )
-        munmap(confstream, st.st_size);
-
-    if ( fd != -1 ) close(fd);
-
+    g_free(t.input);
     buffer_free(filename);
     return ret;
 }
