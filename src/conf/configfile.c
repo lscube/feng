@@ -537,10 +537,12 @@ int config_parse_file(config_t *context, const char *fn) {
     };
     int ret = -1;
     GError *err;
-    const char *filename = fn;
+    const char *filename;
 
-    if ( *filename != '/' || g_str_has_prefix(filename, "./") )
-        filename = g_strjoin("/", context->basedir->ptr, fn, NULL);
+    if ( g_path_is_absolute(fn) )
+        filename = fn;
+    else
+        filename = g_build_path(context->basedir, fn, NULL);
 
     if ( !g_file_get_contents(filename,
                               &t.input,
@@ -569,29 +571,26 @@ int config_parse_file(config_t *context, const char *fn) {
 int config_read(const char *fn) {
     data_config *dc;
     int ret;
-    char *pos;
+    const char *filename;
 
     config_t context = {
         .ok = 1,
         .configs_stack = array_init(),
-        .basedir = buffer_init()
     };
 
     context.configs_stack->is_weakref = 1;
 
     context.all_configs = feng_srv.config_context;
 
-    pos = strrchr(fn,
-#ifdef __WIN32
-            '\\'
-#else
-            '/'
-#endif
-            );
-    if (pos) {
-        buffer_copy_string_len(context.basedir, fn, pos - fn + 1);
-        fn = pos + 1;
+    if ( g_path_is_absolute(fn) )
+        filename = fn;
+    else {
+        char *cwd = g_get_current_dir();
+        filename = g_build_path(cwd, fn, NULL);
+        g_free(cwd);
     }
+
+    context.basedir = g_path_get_dirname(filename);
 
     dc = data_config_init();
     buffer_copy_string(dc->key, "global");
@@ -606,7 +605,10 @@ int config_read(const char *fn) {
     /* remains nothing if parser is ok */
     assert(!(0 == ret && context.ok && 0 != context.configs_stack->used));
     array_free(context.configs_stack);
-    buffer_free(context.basedir);
+
+    g_free(context.basedir);
+    if ( filename != fn )
+        g_free((char*)filename);
 
     if (0 != ret) {
         return ret;

@@ -37,7 +37,7 @@ typedef struct {
     array  *all_configs;
     array  *configs_stack; /* to parse nested block */
     data_config *current; /* current started with { */
-    conf_buffer *basedir;
+    char *basedir;
 } config_t;
 
 void *configparserAlloc();
