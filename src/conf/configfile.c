@@ -540,25 +540,6 @@ static int config_parse(config_t *context, tokenizer_t *t) {
 }
 
 /**
- * tokenizer initial state
- */
-
-static int tokenizer_init(tokenizer_t *t, const conf_buffer *source, const char *input, size_t size) {
-
-    t->source = source;
-    t->input = input;
-    t->size = size;
-    t->offset = 0;
-    t->line = 1;
-    t->line_pos = 1;
-
-    t->in_key = 1;
-    t->in_brace = 0;
-    t->in_cond = 0;
-    return 0;
-}
-
-/**
  * Parse a configuration file
  * @param srv instance variable
  * @param context configuration context
@@ -567,7 +548,15 @@ static int tokenizer_init(tokenizer_t *t, const conf_buffer *source, const char 
  */
 
 int config_parse_file(config_t *context, const char *fn) {
-    tokenizer_t t;
+    tokenizer_t t = {
+        .offset = 0,
+        .line = 1,
+        .line_pos = 1,
+
+        .in_key = 1,
+        .in_brace = 0,
+        .in_cond = 0
+    };
     int ret = -1, fd = -1;
     conf_buffer *filename;
     char *confstream = NULL;
@@ -602,7 +591,10 @@ int config_parse_file(config_t *context, const char *fn) {
 
     close(fd); fd = -1;
 
-    tokenizer_init(&t, filename, confstream, st.st_size);
+    t.source = filename;
+    t.input = confstream;
+    t.size = st.st_size;
+
     ret = config_parse(context, &t);
 
  error:
