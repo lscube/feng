@@ -127,6 +127,32 @@ void stats_init();
  * @{
  */
 gboolean feng_str_is_unreserved(const char *string);
+
+#ifdef DOXYGEN
+void feng_assert_or_goto(gboolean condition, label label_name);
+void feng_assert_or_return(gboolean condition);
+void feng_assert_or_retval(gboolean condition, int retval);
+#elif defined(NDEBUG)
+# define feng_assert_or_goto(assertion, label) \
+    do {                                       \
+        if ( !(assertion) )                    \
+            goto label;                        \
+    } while(0)
+# define feng_assert_or_return(assertion)      \
+    do {                                       \
+        if ( !(assertion) )                    \
+            return;                            \
+    } while(0)
+# define feng_assert_or_retval(assertion, retval)   \
+    do {                                            \
+        if ( !(assertion) )                         \
+            return retval;                          \
+    } while(0)
+#else
+# define feng_assert_or_goto(assertion, label) g_assert(assertion)
+# define feng_assert_or_return(assertion, label) g_assert(assertion)
+# define feng_assert_or_retval(assertion, label) g_assert(assertion)
+#endif
 /**
  * @}
  */
