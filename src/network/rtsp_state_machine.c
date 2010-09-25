@@ -346,8 +346,49 @@ static gboolean RTSP_handle_content(RTSP_Client *rtsp) {
     return true;
 }
 
+/**
+ * @brief Process an incremental RTSP request
+ *
+ * @param rtsp The RTSP client object the request is coming from
+ *
+ * @note This function is written in two forms, one for non-PIC (fixed
+ *       address) builds, and one for PIC/PIE builds. The reason is
+ *       that the function table for the states on PIE systems will
+ *       require relocations and would be slower than the jump table
+ *       created by the switch.
+ * @note Make sure to always update both sides of the function!
+ */
 void RTSP_handler(RTSP_Client * rtsp)
 {
+#if __PIC__ || PIC
+    gboolean ret;
+
+    do {
+        switch(rtsp->status) {
+        case RFC822_State_Begin:
+            ret = RTSP_handle_new(rtsp);
+            break;
+        case RFC822_State_RTSP_Headers:
+            ret = RTSP_handle_headers(rtsp);
+            break;
+        case RFC822_State_RTSP_Content:
+            ret = RTSP_handle_content(rtsp);
+            break;
+        case RFC822_State_Interleaved:
+            ret = RTSP_handle_interleaved(rtsp);
+            break;
+        case RFC822_State_HTTP_Headers:
+            ret = HTTP_handle_headers(rtsp);
+            break;
+        case RFC822_State_HTTP_Content:
+            ret = HTTP_handle_content(rtsp);
+            break;
+        case RFC822_State_HTTP_Idle:
+            ret = HTTP_handle_idle(rtsp);
+            break;
+        }
+    } while(ret);
+#else
     typedef gboolean (*state_machine_handler)(RTSP_Client *);
 
     static const state_machine_handler handlers[] = {
@@ -361,6 +402,7 @@ void RTSP_handler(RTSP_Client * rtsp)
     };
 
     while ( handlers[rtsp->status](rtsp) );
+#endif /* PIC */
 }
 
 /**
