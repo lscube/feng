@@ -142,7 +142,6 @@ typedef struct {
     int foo;
     int bar;
 
-    const conf_buffer *source;
     gchar *input;
     size_t offset;
     size_t size;
@@ -537,19 +536,13 @@ int config_parse_file(config_t *context, const char *fn) {
         .in_cond = 0
     };
     int ret = -1;
-    conf_buffer *filename;
     GError *err;
+    const char *filename = fn;
 
-    if (buffer_is_empty(context->basedir) &&
-            (fn[0] == '/' || fn[0] == '\\') &&
-            (fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\'))) {
-        filename = buffer_init_string(fn);
-    } else {
-        filename = buffer_init_buffer(context->basedir);
-        buffer_append_string(filename, fn);
-    }
+    if ( *filename != '/' || g_str_has_prefix(filename, "./") )
+        filename = g_strjoin("/", context->basedir->ptr, fn, NULL);
 
-    if ( !g_file_get_contents(filename->ptr,
+    if ( !g_file_get_contents(filename,
                               &t.input,
                               &t.size,
                               &err) ) {
@@ -558,13 +551,13 @@ int config_parse_file(config_t *context, const char *fn) {
         goto error;
     }
 
-    t.source = filename;
-
     ret = config_parse(context, &t);
 
  error:
+    if ( filename != fn )
+        g_free((char*)filename);
+
     g_free(t.input);
-    buffer_free(filename);
     return ret;
 }
 
