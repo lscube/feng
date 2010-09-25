@@ -160,14 +160,12 @@ typedef struct {
  * a comment starts with an # and last till a newline
  */
 
-static int config_skip_comment(tokenizer_t *t) {
-    int i;
-    assert(t->input[t->offset] == '#');
-    for (i = 1; t->input[t->offset + i] &&
-         (t->input[t->offset + i] != '\n');
-         i++);
-    t->offset += i;
-    return i;
+static void config_skip_comment(tokenizer_t *t) {
+    char *nextline = strchr(t->input + t->offset, '\n');
+    if ( nextline )
+        t->offset = nextline - t->input + 1;
+    else
+        t->offset = t->size;
 }
 
 /**
@@ -254,7 +252,9 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
                         break;
 
                     case '#':
-                        t->line_pos += config_skip_comment(t);
+                        config_skip_comment(t);
+                        t->line_pos = 1;
+                        t->line++;
                         break;
 
                     case '\t':
@@ -400,7 +400,9 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
 
             break;
         case '#':
-            t->line_pos += config_skip_comment(t);
+            config_skip_comment(t);
+            t->line_pos = 1;
+            t->line++;
 
             break;
         default:
