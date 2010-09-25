@@ -156,21 +156,6 @@ typedef struct {
 } tokenizer_t;
 
 /**
- * skip any newline (unix, windows, mac style)
- */
-
-static int config_skip_newline(tokenizer_t *t) {
-    int skipped = 1;
-    assert(t->input[t->offset] == '\r' || t->input[t->offset] == '\n');
-    if (t->input[t->offset] == '\r' && t->input[t->offset + 1] == '\n') {
-        skipped ++;
-        t->offset ++;
-    }
-    t->offset ++;
-    return skipped;
-}
-
-/**
  * Skip comments
  * a comment starts with an # and last till a newline
  */
@@ -179,7 +164,7 @@ static int config_skip_comment(tokenizer_t *t) {
     int i;
     assert(t->input[t->offset] == '#');
     for (i = 1; t->input[t->offset + i] &&
-         (t->input[t->offset + i] != '\n' && t->input[t->offset + i] != '\r');
+         (t->input[t->offset + i] != '\n');
          i++);
     t->offset += i;
     return i;
@@ -252,19 +237,18 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
 
             break;
         case '\t':
+        case '\r':
         case ' ':
             t->offset++;
             t->line_pos++;
             break;
         case '\n':
-        case '\r':
             if (t->in_brace == 0) {
                 int done = 0;
                 while (!done && t->offset < t->size) {
                     switch (t->input[t->offset]) {
-                    case '\r':
                     case '\n':
-                        config_skip_newline(t);
+                        t->offset++;
                         t->line_pos = 1;
                         t->line++;
                         break;
@@ -274,6 +258,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
                         break;
 
                     case '\t':
+                    case '\r':
                     case ' ':
                         t->offset++;
                         t->line_pos++;
@@ -287,7 +272,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
                 tid = TK_EOL;
                 buffer_copy_string(token, "(EOL)");
             } else {
-                config_skip_newline(t);
+                t->offset++;
                 t->line_pos = 1;
                 t->line++;
             }
