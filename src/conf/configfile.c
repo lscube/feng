@@ -36,6 +36,7 @@
 
 #include <sys/stat.h>
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -171,7 +172,7 @@ static void config_skip_comment(tokenizer_t *t) {
  * Break the configuration in tokens
  */
 
-static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
+static int config_tokenizer(tokenizer_t *t, int *token_id, GString *token) {
     int tid = 0;
     size_t i;
 
@@ -185,7 +186,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
                 if (t->input[t->offset + 1] == '>') {
                     t->offset += 2;
 
-                    buffer_copy_string(token, "=>");
+                    g_string_assign(token, "=>");
 
                     tid = TK_ARRAY_ASSIGN;
                 } else {
@@ -195,7 +196,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
                 if (t->input[t->offset + 1] == '=') {
                     t->offset += 2;
 
-                    buffer_copy_string(token, "==");
+                    g_string_assign(token, "==");
 
                     tid = TK_EQ;
                 } else {
@@ -206,7 +207,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
             } else if (t->in_key) {
                 tid = TK_ASSIGN;
 
-                buffer_copy_string_len(token, t->input + t->offset, 1);
+                g_string_append_len(token, t->input + t->offset, 1);
 
                 t->offset++;
                 t->line_pos++;
@@ -220,7 +221,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
                 if (t->input[t->offset + 1] == '=') {
                     t->offset += 2;
 
-                    buffer_copy_string(token, "!=");
+                    g_string_assign(token, "!=");
 
                     tid = TK_NE;
                 } else {
@@ -269,7 +270,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
                 }
                 t->in_key = 1;
                 tid = TK_EOL;
-                buffer_copy_string(token, "(EOL)");
+                g_string_assign(token, "(EOL)");
             } else {
                 t->offset++;
                 t->line_pos = 1;
@@ -280,7 +281,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
             if (t->in_brace > 0) {
                 tid = TK_COMMA;
 
-                buffer_copy_string(token, "(COMMA)");
+                g_string_assign(token, "(COMMA)");
             }
 
             t->offset++;
@@ -289,13 +290,13 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
         case '"':
             /* search for the terminating " */
             start = t->input + t->offset + 1;
-            buffer_copy_string(token, "");
+            g_string_assign(token, "");
 
             for (i = 1; t->input[t->offset + i]; i++) {
                 if (t->input[t->offset + i] == '\\' &&
                     t->input[t->offset + i + 1] == '"') {
 
-                    buffer_append_string_len(token, start, t->input + t->offset + i - start);
+                    g_string_append_len(token, start, t->input + t->offset + i - start);
 
                     start = t->input + t->offset + i + 1;
 
@@ -308,7 +309,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
                 if (t->input[t->offset + i] == '"') {
                     tid = TK_STRING;
 
-                    buffer_append_string_len(token, start, t->input + t->offset + i - start);
+                    g_string_append_len(token, start, t->input + t->offset + i - start);
 
                     break;
                 }
@@ -330,7 +331,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
 
             tid = TK_LPARAN;
 
-            buffer_copy_string(token, "(");
+            g_string_assign(token, "(");
             break;
         case ')':
             t->offset++;
@@ -338,7 +339,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
 
             tid = TK_RPARAN;
 
-            buffer_copy_string(token, ")");
+            g_string_assign(token, ")");
             break;
         case '$':
             t->offset++;
@@ -347,19 +348,19 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
             t->in_cond = 1;
             t->in_key = 0;
 
-            buffer_copy_string(token, "$");
+            g_string_assign(token, "$");
 
             break;
 
         case '+':
             if (t->input[t->offset + 1] == '=') {
                 t->offset += 2;
-                buffer_copy_string(token, "+=");
+                g_string_assign(token, "+=");
                 tid = TK_APPEND;
             } else {
                 t->offset++;
                 tid = TK_PLUS;
-                buffer_copy_string(token, "+");
+                g_string_assign(token, "+");
             }
             break;
 
@@ -368,7 +369,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
 
             tid = TK_LCURLY;
 
-            buffer_copy_string(token, "{");
+            g_string_assign(token, "{");
 
             break;
 
@@ -377,7 +378,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
 
             tid = TK_RCURLY;
 
-            buffer_copy_string(token, "}");
+            g_string_assign(token, "}");
 
             break;
 
@@ -386,7 +387,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
 
             tid = TK_LBRACKET;
 
-            buffer_copy_string(token, "[");
+            g_string_assign(token, "[");
 
             break;
 
@@ -395,7 +396,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
 
             tid = TK_RBRACKET;
 
-            buffer_copy_string(token, "]");
+            g_string_assign(token, "]");
 
             break;
         case '#':
@@ -412,7 +413,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
 
                 if (i && t->input[t->offset + i]) {
                     tid = TK_SRVVARNAME;
-                    buffer_copy_string_len(token, t->input + t->offset, i);
+                    g_string_append_len(token, t->input + t->offset, i);
 
                     t->offset += i;
                     t->line_pos += i;
@@ -428,7 +429,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
                 if (i) {
                     tid = TK_INTEGER;
 
-                    buffer_copy_string_len(token, t->input + t->offset, i);
+                    g_string_append_len(token, t->input + t->offset, i);
 
                     t->offset += i;
                     t->line_pos += i;
@@ -443,13 +444,13 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
                       ); i++);
 
                 if (i && t->input[t->offset + i]) {
-                    buffer_copy_string_len(token, t->input + t->offset, i);
+                    g_string_append_len(token, t->input + t->offset, i);
 
-                    if (strcmp(token->ptr, "include") == 0) {
+                    if (strcmp(token->str, "include") == 0) {
                         tid = TK_INCLUDE;
-                    } else if (strcmp(token->ptr, "global") == 0) {
+                    } else if (strcmp(token->str, "global") == 0) {
                         tid = TK_GLOBAL;
-                    } else if (strcmp(token->ptr, "else") == 0) {
+                    } else if (strcmp(token->str, "else") == 0) {
                         tid = TK_ELSE;
                     } else {
                         tid = TK_LKEY;
@@ -473,7 +474,7 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
     } else if (t->offset < t->size) {
         fprintf(stderr, "%s.%d: %d, %s\n",
             __FILE__, __LINE__,
-            tid, token->ptr);
+            tid, token->str);
     }
     return 0;
 }
@@ -486,23 +487,23 @@ static int config_tokenizer(tokenizer_t *t, int *token_id, conf_buffer *token) {
 static int config_parse(config_t *context, tokenizer_t *t) {
     void *pParser;
     int token_id;
-    conf_buffer *token, *lasttoken;
+    GString *token, *lasttoken;
     int ret;
 
     pParser = configparserAlloc();
-    lasttoken = buffer_init();
-    token = buffer_init();
+    lasttoken = g_string_new("");
+    token = g_string_new("");
     while((1 == (ret = config_tokenizer(t, &token_id, token))) && context->ok) {
-        buffer_copy_string_buffer(lasttoken, token);
+        g_string_assign(lasttoken, token->str);
         configparser(pParser, token_id, token, context);
 
-        token = buffer_init();
+        token = g_string_new("");
     }
-    buffer_free(token);
+    g_string_free(token, true);
 
     if (ret != -1 && context->ok) {
         /* add an EOL at EOF, better than say sorry */
-        configparser(pParser, TK_EOL, buffer_init_string("(EOL)"), context);
+        configparser(pParser, TK_EOL, g_string_new("(EOL)"), context);
         if (context->ok) {
             configparser(pParser, 0, NULL, context);
         }
@@ -512,7 +513,7 @@ static int config_parse(config_t *context, tokenizer_t *t) {
     if (context->ok == 0)
         ret = -1;
 
-    buffer_free(lasttoken);
+    g_string_free(lasttoken, true);
 
     return ret == -1 ? -1 : 0;
 }
@@ -593,7 +594,7 @@ int config_read(const char *fn) {
     context.basedir = g_path_get_dirname(filename);
 
     dc = data_config_init();
-    buffer_copy_string(dc->key, "global");
+    g_string_assign(dc->key, "global");
 
     assert(context.all_configs->used == 0);
     dc->context_ndx = context.all_configs->used;
@@ -644,10 +645,10 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
                 char **dst = (char**)cv[i].destination;
 
                 /* if the string is empty */
-                if ( ds->value->used < 2 )
+                if ( ds->value->len < 2 )
                     *dst = NULL;
                 else
-                    *dst = g_strdup(ds->value->ptr);
+                    *dst = g_strdup(ds->value->str);
                 break;
             }
             default:
@@ -670,9 +671,9 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]) 
             if (du->type == TYPE_STRING) {
                 data_string *ds = (data_string *)du;
 
-                if (buffer_is_equal_string(ds->value, CONST_STR_LEN("enable"))) {
+                if (strcmp(ds->value->str, "enable") == 0) {
                     *((unsigned short *)(cv[i].destination)) = 1;
-                } else if (buffer_is_equal_string(ds->value, CONST_STR_LEN("disable"))) {
+                } else if (strcmp(ds->value->str, "disable") == 0) {
                     *((unsigned short *)(cv[i].destination)) = 0;
                 } else {
                     return -1;

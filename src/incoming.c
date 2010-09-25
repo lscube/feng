@@ -315,11 +315,11 @@ void feng_bind_ports()
          * if yes, don't init it */
 
         /* split the host:port line */
-        host = dc->string->ptr;
+        host = dc->string->str;
         port = strrchr(host, ':');
         if (!port) {
             fnc_log(FNC_LOG_ERR,"Cannot parse \"%s\" as host:port",
-                                dc->string->ptr);
+                                dc->string->str);
             exit(1);
         }
 

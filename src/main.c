@@ -34,7 +34,6 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-#include "conf/buffer.h"
 #include "conf/array.h"
 #include "conf/configfile.h"
 

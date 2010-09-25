@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -8,8 +9,8 @@ static data_unset *data_config_copy(const data_unset *s) {
 	data_config *src = (data_config *)s;
 	data_config *ds = data_config_init();
 
-	buffer_copy_string_buffer(ds->key, src->key);
-	buffer_copy_string_buffer(ds->comp_key, src->comp_key);
+    g_string_assign(ds->key, src->key->str);
+    g_string_assign(ds->comp_key, src->comp_key->str);
 	array_free(ds->value);
 	ds->value = array_init_array(src->value);
 	return (data_unset *)ds;
@@ -18,14 +19,13 @@ static data_unset *data_config_copy(const data_unset *s) {
 static void data_config_free(data_unset *d) {
 	data_config *ds = (data_config *)d;
 
-	buffer_free(ds->key);
-	buffer_free(ds->op);
-	buffer_free(ds->comp_key);
+    g_string_free(ds->key, true);
+    g_string_free(ds->op, true);
+    g_string_free(ds->comp_key, true);
+    g_string_free(ds->string, true);
 
 	array_free(ds->value);
 	array_free(ds->childs);
-
-	buffer_free(ds->string);
 
 	free(d);
 }
@@ -34,14 +34,12 @@ static void data_config_reset(data_unset *d) {
 	data_config *ds = (data_config *)d;
 
 	/* reused array elements */
-	buffer_reset(ds->key);
-	buffer_reset(ds->comp_key);
+    g_string_assign(ds->key, "");
+    g_string_assign(ds->comp_key, "");
 	array_reset(ds->value);
 }
 
-static int data_config_insert_dup(data_unset *dst, data_unset *src) {
-	UNUSED(dst);
-
+static int data_config_insert_dup(ATTR_UNUSED data_unset *dst, data_unset *src) {
 	src->free(src);
 
 	return 0;
@@ -58,7 +56,7 @@ static void data_config_print(const data_unset *d, int depth) {
 	}
 	else {
 		fprintf(stdout, "$%s %s \"%s\" {\n",
-				ds->comp_key->ptr, ds->op->ptr, ds->string->ptr);
+				ds->comp_key->str, ds->op->str, ds->string->str);
 		array_print_indent(depth + 1);
 		fprintf(stdout, "# block %d\n", ds->context_ndx);
 	}
@@ -67,11 +65,11 @@ static void data_config_print(const data_unset *d, int depth) {
 	maxlen = array_get_max_key_length(a);
 	for (i = 0; i < a->used; i ++) {
 		data_unset *du = a->data[i];
-		size_t len = strlen(du->key->ptr);
+		size_t len = strlen(du->key->str);
 		size_t j;
 
 		array_print_indent(depth);
-		fprintf(stdout, "%s", du->key->ptr);
+		fprintf(stdout, "%s", du->key->str);
 		for (j = maxlen - len; j > 0; j --) {
 			fprintf(stdout, " ");
 		}
@@ -100,7 +98,7 @@ static void data_config_print(const data_unset *d, int depth) {
 	fprintf(stdout, "}");
 	if (0 != ds->context_ndx) {
 		fprintf(stdout, " # end of $%s %s \"%s\"",
-				ds->comp_key->ptr, ds->op->ptr, ds->string->ptr);
+				ds->comp_key->str, ds->op->str, ds->string->str);
 	}
 
 	if (ds->next) {
@@ -116,9 +114,9 @@ data_config *data_config_init(void) {
 
 	ds = calloc(1, sizeof(*ds));
 
-	ds->key = buffer_init();
-	ds->op = buffer_init();
-	ds->comp_key = buffer_init();
+	ds->key = g_string_new("");
+	ds->op = g_string_new("");
+	ds->comp_key = g_string_new("");
 	ds->value = array_init();
 	ds->childs = array_init();
 	ds->childs->is_weakref = 1;

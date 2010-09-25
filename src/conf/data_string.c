@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -9,8 +10,8 @@ static data_unset *data_string_copy(const data_unset *s) {
 	data_string *src = (data_string *)s;
 	data_string *ds = data_string_init();
 
-	buffer_copy_string_buffer(ds->key, src->key);
-	buffer_copy_string_buffer(ds->value, src->value);
+    g_string_assign(ds->key, src->key->str);
+    g_string_assign(ds->value, src->value->str);
 	ds->is_index_key = src->is_index_key;
 	return (data_unset *)ds;
 }
@@ -18,8 +19,8 @@ static data_unset *data_string_copy(const data_unset *s) {
 static void data_string_free(data_unset *d) {
 	data_string *ds = (data_string *)d;
 
-	buffer_free(ds->key);
-	buffer_free(ds->value);
+    g_string_free(ds->key, true);
+    g_string_free(ds->value, true);
 
 	free(d);
 }
@@ -28,19 +29,18 @@ static void data_string_reset(data_unset *d) {
 	data_string *ds = (data_string *)d;
 
 	/* reused array elements */
-	buffer_reset(ds->key);
-	buffer_reset(ds->value);
+    g_string_assign(ds->key, "");
+    g_string_assign(ds->value, "");
 }
 
 static int data_string_insert_dup(data_unset *dst, data_unset *src) {
 	data_string *ds_dst = (data_string *)dst;
 	data_string *ds_src = (data_string *)src;
 
-	if (ds_dst->value->used) {
-		buffer_append_string(ds_dst->value, ", ");
-		buffer_append_string_buffer(ds_dst->value, ds_src->value);
+	if (ds_dst->value->len) {
+        g_string_append_printf(ds_dst->value, ", %s", ds_src->value->str);
 	} else {
-		buffer_copy_string_buffer(ds_dst->value, ds_src->value);
+        g_string_assign(ds_dst->value, ds_src->value->str);
 	}
 
 	src->free(src);
@@ -48,11 +48,10 @@ static int data_string_insert_dup(data_unset *dst, data_unset *src) {
 	return 0;
 }
 
-static void data_string_print(const data_unset *d, int depth) {
+static void data_string_print(const data_unset *d, ATTR_UNUSED int depth) {
 	data_string *ds = (data_string *)d;
-	UNUSED(depth);
 
-	fprintf(stdout, "\"%s\"", ds->value->used ? ds->value->ptr : "");
+	fprintf(stdout, "\"%s\"", ds->value->str);
 }
 
 
@@ -62,8 +61,8 @@ data_string *data_string_init(void) {
 	ds = calloc(1, sizeof(*ds));
 	assert(ds);
 
-	ds->key = buffer_init();
-	ds->value = buffer_init();
+	ds->key = g_string_new("");
+	ds->value = g_string_new("");
 
 	ds->copy = data_string_copy;
 	ds->free = data_string_free;

@@ -8,11 +8,11 @@
 #include <glib.h>
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <config.h>
 #include "configfile.h"
-#include "buffer.h"
 #include "array.h"
 
 static void configparser_push(config_t *ctx, data_config *dc, int isnew) {
@@ -34,12 +34,12 @@ static data_config *configparser_pop(config_t *ctx) {
 }
 
 /* return a copied variable */
-static data_unset *configparser_get_variable(config_t *ctx, const conf_buffer *key) {
+static data_unset *configparser_get_variable(config_t *ctx, const GString *key) {
   data_unset *du;
   data_config *dc;
 
   for (dc = ctx->current; dc; dc = dc->parent) {
-    if (NULL != (du = array_get_element(dc->value, key->ptr))) {
+    if (NULL != (du = array_get_element(dc->value, key->str))) {
       return du->copy(du);
     }
   }
@@ -54,12 +54,13 @@ static data_unset *configparser_merge_data(data_unset *op1, const data_unset *op
   if (op1->type != op2->type) {
     if (op1->type == TYPE_STRING && op2->type == TYPE_INTEGER) {
       data_string *ds = (data_string *)op1;
-      buffer_append_long(ds->value, ((data_integer*)op2)->value);
+      g_string_append_printf(ds->value, "%d", ((data_integer*)op2)->value);
       return op1;
     } else if (op1->type == TYPE_INTEGER && op2->type == TYPE_STRING) {
       data_string *ds = data_string_init();
-      buffer_append_long(ds->value, ((data_integer*)op1)->value);
-      buffer_append_string_buffer(ds->value, ((data_string*)op2)->value);
+      g_string_append_printf(ds->value, "%d%s",
+                             ((data_integer*)op1)->value,
+                             ((data_string*)op2)->value->str);
       op1->free(op1);
       return (data_unset *)ds;
     } else {
@@ -71,8 +72,8 @@ static data_unset *configparser_merge_data(data_unset *op1, const data_unset *op
 
   switch (op1->type) {
     case TYPE_STRING:
-      buffer_append_string_buffer(((data_string *)op1)->value, ((data_string *)op2)->value);
-      break;
+        g_string_append(((data_string *)op1)->value, ((data_string *)op2)->value->str);
+        break;
     case TYPE_INTEGER:
       ((data_integer *)op1)->value += ((data_integer *)op2)->value;
       break;
@@ -150,13 +151,13 @@ static data_unset *configparser_merge_data(data_unset *op1, const data_unset *op
 #define YYCODETYPE unsigned char
 #define YYNOCODE 48
 #define YYACTIONTYPE unsigned char
-#define configparserTOKENTYPE conf_buffer *
+#define configparserTOKENTYPE GString *
 typedef union {
   configparserTOKENTYPE yy0;
   config_cond_t yy27;
   array * yy40;
   data_unset * yy41;
-  conf_buffer * yy43;
+  GString * yy43;
   data_config * yy78;
   int yy95;
 } YYMINORTYPE;
@@ -382,7 +383,7 @@ static void yy_destructor(YYCODETYPE yymajor, YYMINORTYPE *yypminor){
     case 23:
     case 24:
     case 25:
-{ buffer_free((yypminor->yy0)); }
+        { g_string_free((yypminor->yy0), true); }
       break;
     case 35:
 { (yypminor->yy41)->free((yypminor->yy41)); }
@@ -400,10 +401,10 @@ static void yy_destructor(YYCODETYPE yymajor, YYMINORTYPE *yypminor){
 { array_free((yypminor->yy40)); }
       break;
     case 41:
-{ buffer_free((yypminor->yy43)); }
+    { g_string_free((yypminor->yy43), true); }
       break;
     case 42:
-{ buffer_free((yypminor->yy43)); }
+    { g_string_free((yypminor->yy43), true); }
       break;
     default:  break;   /* If no destructor action specified: do nothing */
   }
@@ -642,24 +643,24 @@ static void yy_reduce(
         break;
       case 9:
 {
-  buffer_copy_string_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
-  if (strncmp(yymsp[-2].minor.yy43->ptr, "env.", sizeof("env.") - 1) == 0) {
+  g_string_assign(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43->str);
+  if (strcmp(yymsp[-2].minor.yy43->str, "env.") == 0) {
     fprintf(stderr, "Setting env variable is not supported in conditional %d %s: %s\n",
         ctx->current->context_ndx,
-        ctx->current->key->ptr, yymsp[-2].minor.yy43->ptr);
+        ctx->current->key->str, yymsp[-2].minor.yy43->str);
     ctx->ok = 0;
-  } else if (NULL == array_get_element(ctx->current->value, yymsp[0].minor.yy41->key->ptr)) {
+  } else if (NULL == array_get_element(ctx->current->value, yymsp[0].minor.yy41->key->str)) {
     array_insert_unique(ctx->current->value, yymsp[0].minor.yy41);
     yymsp[0].minor.yy41 = NULL;
   } else {
     fprintf(stderr, "Duplicate config variable in conditional %d %s: %s\n",
             ctx->current->context_ndx,
-            ctx->current->key->ptr, yymsp[0].minor.yy41->key->ptr);
+            ctx->current->key->str, yymsp[0].minor.yy41->key->str);
     ctx->ok = 0;
     yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
     yymsp[0].minor.yy41 = NULL;
   }
-  buffer_free(yymsp[-2].minor.yy43);
+  g_string_free(yymsp[-2].minor.yy43, true);
   yymsp[-2].minor.yy43 = NULL;
 }
   yy_destructor(2,&yymsp[-1].minor);
@@ -669,19 +670,19 @@ static void yy_reduce(
   array *vars = ctx->current->value;
   data_unset *du;
 
-  if (strncmp(yymsp[-2].minor.yy43->ptr, "env.", sizeof("env.") - 1) == 0) {
+  if (strcmp(yymsp[-2].minor.yy43->str, "env.") == 0) {
     fprintf(stderr, "Appending env variable is not supported in conditional %d %s: %s\n",
         ctx->current->context_ndx,
-        ctx->current->key->ptr, yymsp[-2].minor.yy43->ptr);
+        ctx->current->key->str, yymsp[-2].minor.yy43->str);
     ctx->ok = 0;
-  } else if (NULL != (du = array_get_element(vars, yymsp[-2].minor.yy43->ptr))) {
+  } else if (NULL != (du = array_get_element(vars, yymsp[-2].minor.yy43->str))) {
     /* exists in current block */
     du = configparser_merge_data(du, yymsp[0].minor.yy41);
     if (NULL == du) {
       ctx->ok = 0;
     }
     else {
-      buffer_copy_string_buffer(du->key, yymsp[-2].minor.yy43);
+      g_string_assign(du->key, yymsp[-2].minor.yy43->str);
       array_replace(vars, du);
     }
     yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
@@ -691,15 +692,15 @@ static void yy_reduce(
       ctx->ok = 0;
     }
     else {
-      buffer_copy_string_buffer(du->key, yymsp[-2].minor.yy43);
+      g_string_assign(du->key, yymsp[-2].minor.yy43->str);
       array_insert_unique(ctx->current->value, du);
     }
     yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
   } else {
-    buffer_copy_string_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
+    g_string_assign(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43->str);
     array_insert_unique(ctx->current->value, yymsp[0].minor.yy41);
   }
-  buffer_free(yymsp[-2].minor.yy43);
+  g_string_free(yymsp[-2].minor.yy43, true);
   yymsp[-2].minor.yy43 = NULL;
   yymsp[0].minor.yy41 = NULL;
 }
@@ -707,10 +708,10 @@ static void yy_reduce(
         break;
       case 11:
 {
-  if (strchr(yymsp[0].minor.yy0->ptr, '.') == NULL) {
-    yygotominor.yy43 = buffer_init_string("var.");
-    buffer_append_string_buffer(yygotominor.yy43, yymsp[0].minor.yy0);
-    buffer_free(yymsp[0].minor.yy0);
+  if (strchr(yymsp[0].minor.yy0->str, '.') == NULL) {
+    yygotominor.yy43 = g_string_new("");
+    g_string_printf(yygotominor.yy43, "var.%s", yymsp[0].minor.yy0->str);
+    g_string_free(yymsp[0].minor.yy0, true);
     yymsp[0].minor.yy0 = NULL;
   } else {
     yygotominor.yy43 = yymsp[0].minor.yy0;
@@ -739,44 +740,44 @@ static void yy_reduce(
       case 14:
 {
   yygotominor.yy41 = NULL;
-  if (strncmp(yymsp[0].minor.yy43->ptr, "env.", sizeof("env.") - 1) == 0) {
+  if (strcmp(yymsp[0].minor.yy43->str, "env.") == 0) {
     char *env;
 
-    if (NULL != (env = getenv(yymsp[0].minor.yy43->ptr + 4))) {
+    if (NULL != (env = getenv(yymsp[0].minor.yy43->str + 4))) {
       data_string *ds;
       ds = data_string_init();
-      buffer_append_string(ds->value, env);
+      g_string_append(ds->value, env);
       yygotominor.yy41 = (data_unset *)ds;
     }
     else {
-      fprintf(stderr, "Undefined env variable: %s\n", yymsp[0].minor.yy43->ptr + 4);
+      fprintf(stderr, "Undefined env variable: %s\n", yymsp[0].minor.yy43->str + 4);
       ctx->ok = 0;
     }
   } else if (NULL == (yygotominor.yy41 = configparser_get_variable(ctx, yymsp[0].minor.yy43))) {
-    fprintf(stderr, "Undefined config variable: %s\n", yymsp[0].minor.yy43->ptr);
+    fprintf(stderr, "Undefined config variable: %s\n", yymsp[0].minor.yy43->str);
     ctx->ok = 0;
   }
   if (!yygotominor.yy41) {
     /* make a dummy so it won't crash */
     yygotominor.yy41 = (data_unset *)data_string_init();
   }
-  buffer_free(yymsp[0].minor.yy43);
+  g_string_free(yymsp[0].minor.yy43, true);
   yymsp[0].minor.yy43 = NULL;
 }
         break;
       case 15:
 {
   yygotominor.yy41 = (data_unset *)data_string_init();
-  buffer_copy_string_buffer(((data_string *)(yygotominor.yy41))->value, yymsp[0].minor.yy0);
-  buffer_free(yymsp[0].minor.yy0);
+  g_string_assign(((data_string *)(yygotominor.yy41))->value, yymsp[0].minor.yy0->str);
+  g_string_free(yymsp[0].minor.yy0, true);
   yymsp[0].minor.yy0 = NULL;
 }
         break;
       case 16:
 {
   yygotominor.yy41 = (data_unset *)data_integer_init();
-  ((data_integer *)(yygotominor.yy41))->value = strtol(yymsp[0].minor.yy0->ptr, NULL, 10);
-  buffer_free(yymsp[0].minor.yy0);
+  ((data_integer *)(yygotominor.yy41))->value = strtol(yymsp[0].minor.yy0->str, NULL, 10);
+  g_string_free(yymsp[0].minor.yy0, true);
   yymsp[0].minor.yy0 = NULL;
 }
         break;
@@ -805,13 +806,13 @@ static void yy_reduce(
         break;
       case 20:
 {
-  if (buffer_is_empty(yymsp[0].minor.yy41->key) ||
-      NULL == array_get_element(yymsp[-2].minor.yy40, yymsp[0].minor.yy41->key->ptr)) {
+  if (yymsp[0].minor.yy41->key->len == 0 ||
+      NULL == array_get_element(yymsp[-2].minor.yy40, yymsp[0].minor.yy41->key->str)) {
     array_insert_unique(yymsp[-2].minor.yy40, yymsp[0].minor.yy41);
     yymsp[0].minor.yy41 = NULL;
   } else {
     fprintf(stderr, "Duplicate array-key: %s\n",
-            yymsp[0].minor.yy41->key->ptr);
+            yymsp[0].minor.yy41->key->str);
     ctx->ok = 0;
     yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
     yymsp[0].minor.yy41 = NULL;
@@ -844,8 +845,8 @@ static void yy_reduce(
         break;
       case 24:
 {
-  buffer_copy_string_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
-  buffer_free(yymsp[-2].minor.yy43);
+  g_string_assign(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43->str);
+  g_string_free(yymsp[-2].minor.yy43, true);
   yymsp[-2].minor.yy43 = NULL;
 
   yygotominor.yy41 = yymsp[0].minor.yy41;
@@ -920,78 +921,64 @@ static void yy_reduce(
       case 32:
 {
   data_config *dc;
-  conf_buffer *b, *rvalue, *op;
+  GString *b, *rvalue, *op;
 
   if (ctx->ok && yymsp[0].minor.yy41->type != TYPE_STRING) {
     fprintf(stderr, "rvalue must be string");
     ctx->ok = 0;
   }
 
+  rvalue = ((data_string*)yymsp[0].minor.yy41)->value;
+
   switch(yymsp[-1].minor.yy27) {
   case CONFIG_COND_NE:
-    op = buffer_init_string("!=");
+    op = g_string_new("!=");
     break;
   case CONFIG_COND_EQ:
-    op = buffer_init_string("==");
+    op = g_string_new("==");
     break;
   default:
     assert(0);
     return;
   }
 
-  b = buffer_init();
-  buffer_copy_string_buffer(b, ctx->current->key);
-  buffer_append_string(b, "/");
-  buffer_append_string_buffer(b, yymsp[-5].minor.yy0);
-  buffer_append_string_buffer(b, yymsp[-3].minor.yy43);
-  buffer_append_string_buffer(b, op);
-  rvalue = ((data_string*)yymsp[0].minor.yy41)->value;
-  buffer_append_string_buffer(b, rvalue);
+  b = g_string_new("");
+  g_string_printf(b, "%s/%s%s%s%s",
+                  ctx->current->key->str,
+                  yymsp[-5].minor.yy0->str,
+                  yymsp[-3].minor.yy43->str,
+                  op->str,
+                  ((data_string*)yymsp[0].minor.yy41)->value->str
+                  );
 
-  if (NULL != (dc = (data_config *)array_get_element(ctx->all_configs, b->ptr))) {
+  if (NULL != (dc = (data_config *)array_get_element(ctx->all_configs, b->str))) {
     configparser_push(ctx, dc, 0);
   } else {
-    static const struct {
-      comp_key_t comp;
-      char comp_key[20];
-      size_t len;
-    } comps[] = {
-      { COMP_SERVER_SOCKET,      CONST_STR_LEN("SERVER[\"socket\"]"   ) },
-      { COMP_UNSET, "", 0 },
-    };
-    size_t i;
-
     dc = data_config_init();
 
-    buffer_copy_string_buffer(dc->key, b);
-    buffer_copy_string_buffer(dc->op, op);
-    buffer_copy_string_buffer(dc->comp_key, yymsp[-5].minor.yy0);
-    buffer_append_string_len(dc->comp_key, CONST_STR_LEN("[\""));
-    buffer_append_string_buffer(dc->comp_key, yymsp[-3].minor.yy43);
-    buffer_append_string_len(dc->comp_key, CONST_STR_LEN("\"]"));
+    g_string_assign(dc->key, b->str);
+    g_string_assign(dc->op, op->str);
+    g_string_printf(dc->comp_key, "%s[\"%s\"]",
+                    yymsp[-5].minor.yy0->str,
+                    yymsp[-3].minor.yy43->str);
     dc->cond = yymsp[-1].minor.yy27;
 
-    for (i = 0; comps[i].len; i ++) {
-      if (buffer_is_equal_string(
-            dc->comp_key, comps[i].comp_key, comps[i].len)) {
-        dc->comp = comps[i].comp;
-        break;
-      }
-    }
-    if (COMP_UNSET == dc->comp) {
-      fprintf(stderr, "error comp_key %s", dc->comp_key->ptr);
+    if ( strcmp(dc->comp_key->str, "SERVER[\"socket\"]") == 0 ) {
+        dc->comp = COMP_SERVER_SOCKET;
+    } else {
+      fprintf(stderr, "error comp_key %s", dc->comp_key->str);
       ctx->ok = 0;
     }
 
     switch(yymsp[-1].minor.yy27) {
     case CONFIG_COND_NE:
     case CONFIG_COND_EQ:
-      dc->string = buffer_init_buffer(rvalue);
-      break;
+        dc->string = g_string_new(rvalue->str);
+        break;
 
     default:
       fprintf(stderr, "unknown condition for $%s[%s]\n",
-                      yymsp[-5].minor.yy0->ptr, yymsp[-3].minor.yy43->ptr);
+                      yymsp[-5].minor.yy0->str, yymsp[-3].minor.yy43->str);
       ctx->ok = 0;
       break;
     }
@@ -999,11 +986,11 @@ static void yy_reduce(
     configparser_push(ctx, dc, 1);
   }
 
-  buffer_free(b);
-  buffer_free(op);
-  buffer_free(yymsp[-5].minor.yy0);
+  g_string_free(b, true);
+  g_string_free(op, true);
+  g_string_free(yymsp[-5].minor.yy0, true);
   yymsp[-5].minor.yy0 = NULL;
-  buffer_free(yymsp[-3].minor.yy43);
+  g_string_free(yymsp[-3].minor.yy43, true);
   yymsp[-3].minor.yy43 = NULL;
   yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
   yymsp[0].minor.yy41 = NULL;
@@ -1029,10 +1016,10 @@ static void yy_reduce(
   yygotominor.yy43 = NULL;
   if (ctx->ok) {
     if (yymsp[0].minor.yy41->type == TYPE_STRING) {
-      yygotominor.yy43 = buffer_init_buffer(((data_string*)yymsp[0].minor.yy41)->value);
+        yygotominor.yy43 = g_string_new(((data_string*)yymsp[0].minor.yy41)->value->str);
     } else if (yymsp[0].minor.yy41->type == TYPE_INTEGER) {
-      yygotominor.yy43 = buffer_init();
-      buffer_copy_long(yygotominor.yy43, ((data_integer *)yymsp[0].minor.yy41)->value);
+      yygotominor.yy43 = g_string_new("");
+      g_string_printf(yygotominor.yy43, "%d", ((data_integer *)yymsp[0].minor.yy41)->value);
     } else {
       fprintf(stderr, "operand must be string");
       ctx->ok = 0;
@@ -1045,10 +1032,10 @@ static void yy_reduce(
       case 38:
 {
   if (ctx->ok) {
-    if (0 != config_parse_file(ctx, yymsp[0].minor.yy43->ptr)) {
+    if (0 != config_parse_file(ctx, yymsp[0].minor.yy43->str)) {
       ctx->ok = 0;
     }
-    buffer_free(yymsp[0].minor.yy43);
+    g_string_free(yymsp[0].minor.yy43, true);
     yymsp[0].minor.yy43 = NULL;
   }
 }

@@ -29,7 +29,6 @@
 #define FN_CONFIG_PARSER_H
 
 #include "array.h"
-#include "buffer.h"
 #include "feng.h"
 
 typedef struct {
@@ -42,7 +41,7 @@ typedef struct {
 
 void *configparserAlloc();
 void configparserFree(void *p);
-void configparser(void *yyp, int yymajor, conf_buffer *yyminor, config_t *ctx);
+void configparser(void *yyp, int yymajor, GString *yyminor, config_t *ctx);
 int config_parse_file(config_t *context, const char *fn);
 int config_read(const char *fn);
 

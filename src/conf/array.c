@@ -33,8 +33,9 @@
 #include <errno.h>
 #include <assert.h>
 
+#include <glib.h>
+
 #include "array.h"
-#include "buffer.h"
 
 array *array_init(void) {
     array *a;
@@ -108,7 +109,7 @@ data_unset *array_pop(array *a) {
     return du;
 }
 
-static int array_get_index(array *a, const char *key, size_t keylen, int *rndx) {
+static int array_get_index(array *a, const char *key, int *rndx) {
     int ndx = -1;
     int i, pos = 0;
 
@@ -123,7 +124,7 @@ static int array_get_index(array *a, const char *key, size_t keylen, int *rndx) 
         } else if (pos >= (int)a->used) {
             pos -= i;
         } else {
-            cmp = buffer_caseless_compare(key, keylen, a->data[a->sorted[pos]]->key->ptr, a->data[a->sorted[pos]]->key->used);
+            cmp = g_ascii_strcasecmp(key, a->data[a->sorted[pos]]->key->str);
 
             if (cmp == 0) {
                 /* found */
@@ -146,7 +147,7 @@ static int array_get_index(array *a, const char *key, size_t keylen, int *rndx) 
 data_unset *array_get_element(array *a, const char *key) {
     int ndx;
 
-    if (-1 != (ndx = array_get_index(a, key, strlen(key) + 1, NULL))) {
+    if (-1 != (ndx = array_get_index(a, key, NULL))) {
         /* found, leave here */
 
         return a->data[ndx];
@@ -159,7 +160,7 @@ data_unset *array_get_element(array *a, const char *key) {
 data_unset *array_replace(array *a, data_unset *du) {
     int ndx;
 
-    if (-1 == (ndx = array_get_index(a, du->key->ptr, du->key->used, NULL))) {
+    if (-1 == (ndx = array_get_index(a, du->key->str, NULL))) {
         array_insert_unique(a, du);
         return NULL;
     } else {
@@ -175,13 +176,13 @@ int array_insert_unique(array *a, data_unset *str) {
     size_t j;
 
     /* generate unique index if neccesary */
-    if (str->key->used == 0 || str->is_index_key) {
-        buffer_copy_long(str->key, a->unique_ndx++);
+    if (str->key->len == 0 || str->is_index_key) {
+        g_string_printf(str->key, "%zu", a->unique_ndx++);
         str->is_index_key = 1;
     }
 
     /* try to find the string */
-    if (-1 != (ndx = array_get_index(a, str->key->ptr, str->key->used, &pos))) {
+    if (-1 != (ndx = array_get_index(a, str->key->str, &pos))) {
         /* found, leave here */
         if (a->data[ndx]->type == str->type) {
             str->insert_dup(a->data[ndx], str);
@@ -220,7 +221,7 @@ int array_insert_unique(array *a, data_unset *str) {
 
     if (pos != ndx &&
         ((pos < 0) ||
-         buffer_caseless_compare(str->key->ptr, str->key->used, a->data[a->sorted[pos]]->key->ptr, a->data[a->sorted[pos]]->key->used) > 0)) {
+         g_ascii_strcasecmp(str->key->str, a->data[a->sorted[pos]]->key->str) > 0)) {
         pos++;
     }
 
@@ -250,7 +251,7 @@ size_t array_get_max_key_length(array *a) {
     maxlen = 0;
     for (i = 0; i < a->used; i ++) {
         data_unset *du = a->data[i];
-        size_t len = strlen(du->key->ptr);
+        size_t len = strlen(du->key->str);
 
         if (len > maxlen) {
             maxlen = len;
@@ -308,8 +309,8 @@ int array_print(array *a, int depth) {
                 fprintf(stdout, "# %zd\n", i);
                 array_print_indent(depth + 1);
             }
-            fprintf(stdout, "\"%s\"", du->key->ptr);
-            for (j = maxlen - strlen(du->key->ptr); j > 0; j --) {
+            fprintf(stdout, "\"%s\"", du->key->str);
+            for (j = maxlen - du->key->len; j > 0; j --) {
                 fprintf(stdout, " ");
             }
             fprintf(stdout, " => ");
