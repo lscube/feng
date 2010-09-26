@@ -46,9 +46,6 @@ typedef struct server_config {
 
     unsigned short max_conns;
 
-    char *bindhost;
-    char *bindport;
-
     char *errorlog_file;
 
     char *twin;
@@ -60,6 +57,9 @@ typedef struct server_config {
 } server_config;
 
 typedef struct specific_config {
+    char *host;
+    char *port;
+
     gboolean use_ipv6;
     gboolean access_log_syslog;
 
@@ -81,7 +81,8 @@ typedef struct feng_stats {
 
 typedef struct feng {
     array *config_context;
-    specific_config *config_storage;
+
+    GSList *sockets;
 
     server_config srvconf;
 
@@ -107,12 +108,12 @@ typedef struct Feng_Listener {
 #define MAX_CONNECTION    feng_srv.srvconf.max_conns   /*! rtsp connection */
 #define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS)) /*! rtsp connection for one fork */
 
-void feng_bind_ports();
+void feng_bind_socket(gpointer socket_p, gpointer user_data);
 
 struct RTSP_Client;
 struct RFC822_Response;
 
-void accesslog_init();
+void accesslog_init(gpointer socket_p, gpointer user_data);
 void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response);
 
 #if HAVE_JSON

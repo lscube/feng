@@ -49,7 +49,7 @@
  * This is an array of ev_io objects allocated with the g_new0()
  * function (which this need to be freed with g_free()).
  *
- * The indexes are the same as for @ref feng::config_storage.
+ * The indexes are the same as for @ref feng::vhosts
  *
  * @note Part of the cleanup destructors code, not compiled in
  *       production use.
@@ -207,18 +207,15 @@ static gboolean feng_bind_addr(struct addrinfo *ai,
 }
 
 /**
- * Bind to the defined listening port
+ * Bind to a socket
  *
- * @param host The hostname to bind ports on
- * @param port The port to bind
- * @param s The specific configuration from @ref feng::config_storage
- *
- * @retval true Binding complete
- * @retval false Error during binding
+ * @param socket_p Generic pointer to the specific_config structure
+ * @param user_data Unused
  */
-static gboolean feng_bind_port(const char *host, const char *port,
-                               specific_config *s)
+void feng_bind_socket(gpointer socket_p, ATTR_UNUSED gpointer user_data)
 {
+    specific_config *s = socket_p;
+
 #if ENABLE_SCTP
     gboolean is_sctp = !!s->is_sctp;
 #else
@@ -238,25 +235,17 @@ static gboolean feng_bind_port(const char *host, const char *port,
         .ai_flags = AI_PASSIVE
     };
 
-    /* if host is empty, make it NULL */
-    if ( host != NULL && *host == '\0' )
-        host = NULL;
-
-    /* if there is no port, default to the build default */
-    if ( port == NULL )
-        port = FENG_DEFAULT_PORT;
-
     fnc_log(FNC_LOG_INFO, "Listening to port %s (%s/%s) on %s",
-            port,
+            s->port,
             (is_sctp? "SCTP" : "TCP"),
             (s->use_ipv6? "ipv6" : "ipv4"),
-            ((host == NULL)? "all interfaces" : host));
+            ((s->host == NULL)? "all interfaces" : s->host));
 
     if ( s->use_ipv6 ) {
-        if ( (n = getaddrinfo(host, port, &hints_ipv6, &res)) < 0 ) {
+        if ( (n = getaddrinfo(s->host, s->port, &hints_ipv6, &res)) < 0 ) {
             fnc_log(FNC_LOG_ERR, "unable to resolve %s:%s (%s)",
-                    host, port, gai_strerror(n));
-            return false;
+                    s->host, s->port, gai_strerror(n));
+            exit(1);
         }
 
         it = res;
@@ -268,10 +257,10 @@ static gboolean feng_bind_port(const char *host, const char *port,
         freeaddrinfo(res);
     }
 
-    if ( (n = getaddrinfo(host, port, &hints_ipv4, &res)) < 0 ) {
+    if ( (n = getaddrinfo(s->host, s->port, &hints_ipv4, &res)) < 0 ) {
         fnc_log(FNC_LOG_ERR, "unable to resolve %s:%s (%s)",
-                host, port, gai_strerror(n));
-        return false;
+                s->host, s->port, gai_strerror(n));
+        exit(1);
     }
 
     it = res;
@@ -282,58 +271,9 @@ static gboolean feng_bind_port(const char *host, const char *port,
 
     freeaddrinfo(res);
 
-    return true;
+    return;
 
  error:
     freeaddrinfo(res);
-    return false;
-}
-
-void feng_bind_ports()
-{
-    size_t i;
-
-    if (!feng_bind_port(feng_srv.srvconf.bindhost,
-                        feng_srv.srvconf.bindport,
-                        &feng_srv.config_storage[0]))
-        exit(1);
-
-   /* check for $SERVER["socket"] */
-    for (i = 1; i < feng_srv.config_context->used; i++) {
-        data_config *dc = (data_config *)feng_srv.config_context->data[i];
-        specific_config *s = &feng_srv.config_storage[i];
-        char *port, *host;
-
-        /* not our stage */
-        if (COMP_SERVER_SOCKET != dc->comp) continue;
-
-        if (dc->cond != CONFIG_COND_EQ) {
-            fnc_log(FNC_LOG_ERR,"only == is allowed for $SERVER[\"socket\"].");
-            exit(1);
-        }
-        /* check if we already know this socket,
-         * if yes, don't init it */
-
-        /* split the host:port line */
-        host = dc->string->str;
-        port = strrchr(host, ':');
-        if (!port) {
-            fnc_log(FNC_LOG_ERR,"Cannot parse \"%s\" as host:port",
-                                dc->string->str);
-            exit(1);
-        }
-
-        port[0] = '\0';
-
-        if (host[0] == '[' && port[-1] == ']') {
-            port[-1] = '\0';
-            host++;
-            s->use_ipv6 = 1; //XXX
-        }
-
-        port++;
-
-        if (!feng_bind_port(host, port, s))
-            exit(1);
-    }
+    exit(1);
 }

@@ -92,26 +92,13 @@ static char *progname;
  */
 static void CLEANUP_DESTRUCTOR main_cleanup()
 {
-    unsigned int i;
-
     g_free(progname);
 
-    g_free(feng_srv.srvconf.bindhost);
-    g_free(feng_srv.srvconf.bindport);
     g_free(feng_srv.srvconf.errorlog_file);
     g_free(feng_srv.srvconf.username);
     g_free(feng_srv.srvconf.groupname);
     g_free(feng_srv.srvconf.twin);
     g_free(feng_srv.srvconf.document_root);
-
-    if ( feng_srv.config_storage != NULL ) {
-        for(i = 0; i < feng_srv.config_context->used; i++) {
-
-            g_free(feng_srv.config_storage[i].access_log_file);
-        }
-
-        free(feng_srv.config_storage);
-    }
 
     array_free(feng_srv.config_context);
 }
@@ -277,9 +264,8 @@ int main(int argc, char **argv)
 
     feng_handle_signals();
 
-    feng_bind_ports();
-
-    accesslog_init();
+    g_slist_foreach(feng_srv.sockets, feng_bind_socket, NULL);
+    g_slist_foreach(feng_srv.sockets, accesslog_init, NULL);
 
     stats_init();
 

@@ -44,45 +44,29 @@
 # include <syslog.h>
 #endif
 
-void accesslog_init()
+/**
+ * @brief Initialise access log for a socket
+ *
+ * @param socket_p Generic pointer to @ref specific_config object
+ * @param user_data Unused
+ *
+ * @TODO this should actually be moved to vhosts, not sockets
+ */
+void accesslog_init(gpointer socket_p, ATTR_UNUSED gpointer user_data)
 {
-    size_t i;
+    specific_config *socket = socket_p;
 
-    for(i = 0; i < feng_srv.config_context->used; i++) {
-        char *access_log_filename = feng_srv.config_storage[i].access_log_file;
+    if (socket->access_log_syslog)
+        return;
 
-        if (feng_srv.config_storage[i].access_log_syslog) {
-#if HAVE_SYSLOG_H
-            /* ignore the next checks */
-            continue;
-#else
-            fnc_log(FNC_LOG_ERR, "Unable to use syslog for access log");
-            exit(1);
-#endif
-        }
+    if (socket->access_log_file == NULL )
+        return;
 
-        if ( access_log_filename == NULL )
-            continue;
-
-        if (NULL == (feng_srv.config_storage[i].access_log_fp = fopen(access_log_filename, "a"))) {
-            fnc_perror("fopen");
-            exit(1);
-        }
+    if ((socket->access_log_fp = fopen(socket->access_log_file, "a")) == NULL) {
+        fnc_perror("fopen");
+        exit(1);
     }
 }
-
-#ifdef CLEANUP_DESTRUCTOR
-static void CLEANUP_DESTRUCTOR accesslog_uninit()
-{
-    size_t i;
-
-    if ( feng_srv.config_storage )
-        for(i = 0; i < feng_srv.config_context->used; i++)
-            if ( !feng_srv.config_storage[i].access_log_syslog &&
-                 feng_srv.config_storage[i].access_log_fp != NULL )
-                fclose(feng_srv.config_storage[i].access_log_fp);
-}
-#endif
 
 #define PRINT_STRING \
     "%s - - [%s], \"%s %s %s\" %d %s %s %s\n",\
@@ -101,14 +85,13 @@ void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response)
     char *response_length = response->body ?
         g_strdup_printf("%zd", response->body->len) : NULL;
 
-    /** @TODO Support VHOST */
 #if HAVE_SYSLOG_H
-    if (feng_srv.config_storage[0].access_log_syslog)
+    if (client->specific->access_log_syslog)
         syslog(LOG_INFO, "Access " PRINT_STRING);
     else
 #endif
     {
-        FILE *fp = feng_srv.config_storage[0].access_log_fp;
+        FILE *fp = client->specific->access_log_fp;
         fprintf(fp, PRINT_STRING);
         fflush(fp);
     }

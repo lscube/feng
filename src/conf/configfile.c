@@ -76,13 +76,15 @@ static int config_insert_values_internal(array *ca, const config_values_t cv[]);
 
 static int config_insert() {
     size_t i;
+    char *bindhost = NULL;
+    char *bindport = NULL;
 
-    static const config_values_t global_cv[] = {
-        { "server.bind", &feng_srv.srvconf.bindhost, T_CONFIG_STRING },      /* 0 */
+    const config_values_t global_cv[] = {
+        { "server.bind", &bindhost, T_CONFIG_STRING },      /* 0 */
         { "server.errorlog", &feng_srv.srvconf.errorlog_file, T_CONFIG_STRING },      /* 1 */
         { "server.username", &feng_srv.srvconf.username, T_CONFIG_STRING },      /* 2 */
         { "server.groupname", &feng_srv.srvconf.groupname, T_CONFIG_STRING },      /* 3 */
-        { "server.port", &feng_srv.srvconf.bindport, T_CONFIG_STRING },      /* 4 */
+        { "server.port", &bindport, T_CONFIG_STRING },      /* 4 */
         { "server.errorlog-use-syslog", &feng_srv.srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN },     /* 7 */
         { "server.max-connections", &feng_srv.srvconf.max_conns, T_CONFIG_SHORT },       /* 8 */
         { "server.buffered_frames", &feng_srv.srvconf.buffered_frames, T_CONFIG_SHORT },
@@ -91,10 +93,6 @@ static int config_insert() {
         { "server.document-root", &feng_srv.srvconf.document_root, T_CONFIG_STRING },
         { NULL,                          NULL, T_CONFIG_UNSET }
     };
-
-    feng_srv.config_storage = calloc(feng_srv.config_context->used, sizeof(specific_config));
-
-    assert(feng_srv.config_storage);
 
     if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[0])->value, global_cv))
         return -1;
@@ -109,33 +107,97 @@ static int config_insert() {
         feng_srv.srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
 
     for (i = 0; i < feng_srv.config_context->used; i++) {
-        specific_config *s = &feng_srv.config_storage[i];
+        specific_config s = {
+#if ENABLE_SCTP
+            .sctp_max_streams = 16,
+#endif
+            .access_log_syslog = 1
+        };
+
+        size_t hostlen;
 
         const config_values_t vhost_cv[] = {
-            { "server.use-ipv6", &s->use_ipv6, T_CONFIG_BOOLEAN }, /* 5 */
+            { "server.use-ipv6", &s.use_ipv6, T_CONFIG_BOOLEAN }, /* 5 */
 
 #if ENABLE_SCTP
-            { "sctp.protocol", &s->is_sctp, T_CONFIG_BOOLEAN },
-            { "sctp.max_streams", &s->sctp_max_streams, T_CONFIG_SHORT },
+            { "sctp.protocol", &s.is_sctp, T_CONFIG_BOOLEAN },
+            { "sctp.max_streams", &s.sctp_max_streams, T_CONFIG_SHORT },
 #endif
-            { "accesslog.filename", &s->access_log_file, T_CONFIG_STRING }, /* 11 */
-            { "accesslog.use-syslog", &s->access_log_syslog, T_CONFIG_BOOLEAN },
+            { "accesslog.filename", &s.access_log_file, T_CONFIG_STRING }, /* 11 */
+#if HAVE_SYSLOG_H
+            { "accesslog.use-syslog", &s.access_log_syslog, T_CONFIG_BOOLEAN },
+#endif
             { NULL,                          NULL, T_CONFIG_UNSET }
         };
 
-        s->use_ipv6      = 0;
-#if ENABLE_SCTP
-        s->is_sctp       = 0;
-        s->sctp_max_streams = 16;
-#endif
-        s->access_log_syslog = 1;
-
         if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[i])->value, vhost_cv))
             return -1;
+
+        /* The first entry is the global scope, so use the temporary values read before */
+        if ( i == 0 ) {
+            s.host = bindhost;
+            s.port = bindport ? bindport : g_strdup(FENG_DEFAULT_PORT);
+        } else {
+            char *socketstr = g_strdup(((data_config *)feng_srv.config_context->data[i])->string->str);
+            char *port = strrchr(socketstr, ':');
+            if ( port == NULL ) {
+                s.host = g_strdup(socketstr);
+                s.port = g_strdup(FENG_DEFAULT_PORT);
+            } else {
+                s.host = g_strndup(socketstr, port-socketstr);
+                s.port = g_strdup(port+1);
+            }
+        }
+
+        if ( s.host ) {
+            if ( s.host[0] == '\0' ) {
+                g_free(s.host);
+                s.host = NULL;
+            } else if ( strcmp(s.host, "0.0.0.0") == 0 ) {
+                g_free(s.host);
+                s.host = NULL;
+            } else if ( strcmp(s.host, "[::]") == 0 ) {
+                g_free(s.host);
+                s.host = NULL;
+                s.use_ipv6 = 1;
+            } else {
+                hostlen = strlen(s.host);
+                if ( s.host[0] == '[' &&
+                     s.host[hostlen-1] == ']' ) {
+                    s.use_ipv6 = 1;
+                    memmove(s.host, s.host+1, hostlen-2);
+                    s.host[hostlen-2] = '\0';
+                }
+            }
+        }
+
+        feng_srv.sockets = g_slist_prepend(feng_srv.sockets, g_slice_dup(specific_config, &s));
     }
 
     return 0;
 }
+
+#ifdef CLEANUP_DESTRUCTOR
+static void sockets_cleanup(gpointer socket_p, ATTR_UNUSED gpointer user_data)
+{
+    specific_config *socket = socket_p;
+
+    if ( socket->access_log_fp != NULL )
+        fclose(socket->access_log_fp);
+
+    g_free(socket->host);
+    g_free(socket->port);
+    g_free(socket->access_log_file);
+
+    g_slice_free(specific_config, socket);
+}
+
+static void CLEANUP_DESTRUCTOR config_cleanup()
+{
+    g_slist_foreach(feng_srv.sockets, sockets_cleanup, NULL);
+    g_slist_free(feng_srv.sockets);
+}
+#endif
 
 typedef struct {
     int foo;
