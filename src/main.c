@@ -102,10 +102,10 @@ static void CLEANUP_DESTRUCTOR main_cleanup()
     g_free(feng_srv.srvconf.username);
     g_free(feng_srv.srvconf.groupname);
     g_free(feng_srv.srvconf.twin);
+    g_free(feng_srv.srvconf.document_root);
 
     if ( feng_srv.config_storage != NULL ) {
         for(i = 0; i < feng_srv.config_context->used; i++) {
-            g_free(feng_srv.config_storage[i].document_root);
 
             g_free(feng_srv.config_storage[i].access_log_file);
         }

@@ -88,6 +88,7 @@ static int config_insert() {
         { "server.buffered_frames", &feng_srv.srvconf.buffered_frames, T_CONFIG_SHORT },
         { "server.loglevel", &feng_srv.srvconf.loglevel, T_CONFIG_SHORT },
         { "server.twin", &feng_srv.srvconf.twin, T_CONFIG_STRING },
+        { "server.document-root", &feng_srv.srvconf.document_root, T_CONFIG_STRING },
         { NULL,                          NULL, T_CONFIG_UNSET }
     };
 
@@ -96,6 +97,9 @@ static int config_insert() {
     assert(feng_srv.config_storage);
 
     if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[0])->value, global_cv))
+        return -1;
+
+    if (feng_srv.srvconf.document_root == NULL)
         return -1;
 
     if (feng_srv.srvconf.max_conns == 0)
@@ -110,13 +114,10 @@ static int config_insert() {
         const config_values_t vhost_cv[] = {
             { "server.use-ipv6", &s->use_ipv6, T_CONFIG_BOOLEAN }, /* 5 */
 
-            { "server.document-root", &s->document_root, T_CONFIG_STRING },  /* 6 */
-
 #if ENABLE_SCTP
             { "sctp.protocol", &s->is_sctp, T_CONFIG_BOOLEAN },
             { "sctp.max_streams", &s->sctp_max_streams, T_CONFIG_SHORT },
 #endif
-
             { "accesslog.filename", &s->access_log_file, T_CONFIG_STRING }, /* 11 */
             { "accesslog.use-syslog", &s->access_log_syslog, T_CONFIG_BOOLEAN },
             { NULL,                          NULL, T_CONFIG_UNSET }
@@ -130,9 +131,6 @@ static int config_insert() {
         s->access_log_syslog = 1;
 
         if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[i])->value, vhost_cv))
-            return -1;
-
-        if ( i == 0 && s->document_root == NULL )
             return -1;
     }
 

@@ -55,6 +55,8 @@ typedef struct server_config {
 
     char *username;
     char *groupname;
+
+    char *document_root;
 } server_config;
 
 typedef struct specific_config {
@@ -65,8 +67,6 @@ typedef struct specific_config {
     gboolean is_sctp;
     unsigned short sctp_max_streams;
 #endif
-
-    char *document_root;
 
     char *access_log_file;
     FILE *access_log_fp;
