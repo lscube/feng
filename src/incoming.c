@@ -227,14 +227,14 @@ void feng_bind_socket(gpointer socket_p, ATTR_UNUSED gpointer user_data)
         .ai_flags = AI_PASSIVE
     };
 
-    fnc_log(FNC_LOG_INFO, "Listening to port %s (%s/%sipv4) on %s",
+    fnc_log(FNC_LOG_INFO, "Listening to port %s (%sTCP/%sipv4) on %s",
             s->port,
 #if ENABLE_SCTP
-            (s->is_sctp? "SCTP" : "TCP"),
+            (s->is_sctp? "SCTP+" : ""),
 #else
-            "TCP",
+            "",
 #endif
-            (s->use_ipv6? "ipv6 & " : ""),
+            (s->use_ipv6? "ipv6+" : ""),
             ((s->host == NULL)? "all interfaces" : s->host));
 
     if ( s->use_ipv6 ) {
