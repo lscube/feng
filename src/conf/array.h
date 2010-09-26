@@ -146,6 +146,5 @@ int array_insert_unique(array *a, data_unset *str);
 data_unset *array_pop(array *a);
 data_unset *array_get_element(array *a, const char *key);
 data_unset *array_replace(array *a, data_unset *du);
-int array_strcasecmp(const char *a, size_t a_len, const char *b, size_t b_len);
 
 #endif // FN_ARRAY_H
