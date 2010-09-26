@@ -54,13 +54,6 @@ typedef struct specific_config {
     FILE *access_log_fp;
 } specific_config;
 
-typedef struct feng_stats {
-    size_t total_sent;
-    size_t total_received;
-    time_t start_time;
-    //add_more
-} feng_stats;
-
 typedef struct feng {
     array *config_context;
 
