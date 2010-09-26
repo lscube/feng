@@ -22,6 +22,7 @@
 
 #include <config.h>
 
+#include <stdlib.h>
 #include <strings.h>
 #include <stdbool.h>
 #include <unistd.h>

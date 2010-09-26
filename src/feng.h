@@ -34,8 +34,6 @@
 #include <stdio.h> /* for FILE* */
 #include <netinet/in.h>
 
-#include "conf/array.h"
-
 extern const char feng_signature[];
 
 typedef struct feng_socket {

@@ -20,13 +20,16 @@
  *
  * */
 
+#include <config.h>
+
 #include <stdbool.h>
+#include <time.h>
+
+#include <json.h>
 
 #include "feng.h"
 #include "network/rtsp.h"
 #include "media/demuxer.h"
-#include "json.h"
-#include <time.h>
 
 static size_t stats_total_bytes_sent;
 static size_t stats_total_bytes_read;
