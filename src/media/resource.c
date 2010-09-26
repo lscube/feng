@@ -287,7 +287,7 @@ Resource *r_open(const char *inner_path)
     Resource *r = NULL;
     const Demuxer *dmx;
     gchar *mrl = g_strjoin ("/",
-                            feng_srv.srvconf.document_root,
+                            feng_srv.document_root,
                             inner_path,
                             NULL);
 
@@ -444,7 +444,7 @@ static void r_read_cb(gpointer consumer_p, gpointer resource_p)
     Resource *resource = (Resource*)resource_p;
     BufferQueue_Consumer *consumer = (BufferQueue_Consumer*)consumer_p;
     const gboolean live = resource->demuxer->source == LIVE_SOURCE;
-    const gulong buffered_frames = feng_srv.srvconf.buffered_frames;
+    const gulong buffered_frames = feng_srv.buffered_frames;
 
     g_assert( (live && consumer == GINT_TO_POINTER(-1)) || (!live && consumer != GINT_TO_POINTER(-1)) );
 

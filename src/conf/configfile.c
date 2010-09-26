@@ -81,30 +81,30 @@ static int config_insert() {
 
     const config_values_t global_cv[] = {
         { "server.bind", &bindhost, T_CONFIG_STRING },      /* 0 */
-        { "server.errorlog", &feng_srv.srvconf.errorlog_file, T_CONFIG_STRING },      /* 1 */
-        { "server.username", &feng_srv.srvconf.username, T_CONFIG_STRING },      /* 2 */
-        { "server.groupname", &feng_srv.srvconf.groupname, T_CONFIG_STRING },      /* 3 */
+        { "server.errorlog", &feng_srv.errorlog_file, T_CONFIG_STRING },      /* 1 */
+        { "server.username", &feng_srv.username, T_CONFIG_STRING },      /* 2 */
+        { "server.groupname", &feng_srv.groupname, T_CONFIG_STRING },      /* 3 */
         { "server.port", &bindport, T_CONFIG_STRING },      /* 4 */
-        { "server.errorlog-use-syslog", &feng_srv.srvconf.errorlog_use_syslog, T_CONFIG_BOOLEAN },     /* 7 */
-        { "server.max-connections", &feng_srv.srvconf.max_conns, T_CONFIG_SHORT },       /* 8 */
-        { "server.buffered_frames", &feng_srv.srvconf.buffered_frames, T_CONFIG_SHORT },
-        { "server.loglevel", &feng_srv.srvconf.loglevel, T_CONFIG_SHORT },
-        { "server.twin", &feng_srv.srvconf.twin, T_CONFIG_STRING },
-        { "server.document-root", &feng_srv.srvconf.document_root, T_CONFIG_STRING },
+        { "server.errorlog-use-syslog", &feng_srv.errorlog_use_syslog, T_CONFIG_BOOLEAN },     /* 7 */
+        { "server.max-connections", &feng_srv.max_conns, T_CONFIG_SHORT },       /* 8 */
+        { "server.buffered_frames", &feng_srv.buffered_frames, T_CONFIG_SHORT },
+        { "server.loglevel", &feng_srv.loglevel, T_CONFIG_SHORT },
+        { "server.twin", &feng_srv.twin, T_CONFIG_STRING },
+        { "server.document-root", &feng_srv.document_root, T_CONFIG_STRING },
         { NULL,                          NULL, T_CONFIG_UNSET }
     };
 
     if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[0])->value, global_cv))
         return -1;
 
-    if (feng_srv.srvconf.document_root == NULL)
+    if (feng_srv.document_root == NULL)
         return -1;
 
-    if (feng_srv.srvconf.max_conns == 0)
-        feng_srv.srvconf.max_conns = 100;
+    if (feng_srv.max_conns == 0)
+        feng_srv.max_conns = 100;
 
-    if (feng_srv.srvconf.buffered_frames == 0)
-        feng_srv.srvconf.buffered_frames = BUFFERED_FRAMES_DEFAULT;
+    if (feng_srv.buffered_frames == 0)
+        feng_srv.buffered_frames = BUFFERED_FRAMES_DEFAULT;
 
     for (i = 0; i < feng_srv.config_context->used; i++) {
         specific_config s = {

@@ -38,24 +38,6 @@
 
 extern const char feng_signature[];
 
-typedef struct server_config {
-    short buffered_frames;
-    short loglevel;
-
-    int errorlog_use_syslog;
-
-    unsigned short max_conns;
-
-    char *errorlog_file;
-
-    char *twin;
-
-    char *username;
-    char *groupname;
-
-    char *document_root;
-} server_config;
-
 typedef struct specific_config {
     char *host;
     char *port;
@@ -84,7 +66,21 @@ typedef struct feng {
 
     GSList *sockets;
 
-    server_config srvconf;
+    short buffered_frames;
+    short loglevel;
+
+    int errorlog_use_syslog;
+
+    unsigned short max_conns;
+
+    char *errorlog_file;
+
+    char *twin;
+
+    char *username;
+    char *groupname;
+
+    char *document_root;
 
     /**
      * @brief Number of active connections
@@ -105,7 +101,7 @@ typedef struct Feng_Listener {
 } Feng_Listener;
 
 #define MAX_PROCESS    1    /*! number of fork */
-#define MAX_CONNECTION    feng_srv.srvconf.max_conns   /*! rtsp connection */
+#define MAX_CONNECTION    feng_srv.max_conns   /*! rtsp connection */
 #define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS)) /*! rtsp connection for one fork */
 
 void feng_bind_socket(gpointer socket_p, gpointer user_data);

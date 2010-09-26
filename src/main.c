@@ -94,11 +94,11 @@ static void CLEANUP_DESTRUCTOR main_cleanup()
 {
     g_free(progname);
 
-    g_free(feng_srv.srvconf.errorlog_file);
-    g_free(feng_srv.srvconf.username);
-    g_free(feng_srv.srvconf.groupname);
-    g_free(feng_srv.srvconf.twin);
-    g_free(feng_srv.srvconf.document_root);
+    g_free(feng_srv.errorlog_file);
+    g_free(feng_srv.username);
+    g_free(feng_srv.groupname);
+    g_free(feng_srv.twin);
+    g_free(feng_srv.document_root);
 
     array_free(feng_srv.config_context);
 }
@@ -119,8 +119,8 @@ static void sigint_cb (struct ev_loop *loop,
  */
 static void feng_drop_privs()
 {
-    const char *wanted_group = feng_srv.srvconf.groupname;
-    const char *wanted_user = feng_srv.srvconf.username;
+    const char *wanted_group = feng_srv.groupname;
+    const char *wanted_user = feng_srv.username;
 
     errno = 0;
     if ( wanted_group != NULL ) {
@@ -243,9 +243,9 @@ static void command_environment(int argc, char **argv)
         else
             view_log = FNC_LOG_FILE;
 
-        fnc_log_init(feng_srv.srvconf.errorlog_file,
+        fnc_log_init(feng_srv.errorlog_file,
                      view_log,
-                     feng_srv.srvconf.loglevel,
+                     feng_srv.loglevel,
                      progname);
     }
 }
