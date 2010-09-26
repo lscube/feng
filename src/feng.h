@@ -38,42 +38,17 @@
 
 extern const char feng_signature[];
 
-typedef struct specific_config {
+typedef struct feng_socket {
     char *host;
     char *port;
 
     gboolean use_ipv6;
-    gboolean access_log_syslog;
-
 #if ENABLE_SCTP
     gboolean is_sctp;
     unsigned short sctp_max_streams;
 #endif
 
-    char *access_log_file;
-    FILE *access_log_fp;
-} specific_config;
-
-typedef struct feng {
-    array *config_context;
-
-    GSList *sockets;
-
-    short buffered_frames;
-    short loglevel;
-
-    int errorlog_use_syslog;
-
     unsigned short max_conns;
-
-    char *errorlog_file;
-
-    char *twin;
-
-    char *username;
-    char *groupname;
-
-    char *document_root;
 
     /**
      * @brief Number of active connections
@@ -81,21 +56,46 @@ typedef struct feng {
      * Once it reaches the maximum the server is supposed to redirect
      * to a twin if available
      */
-    size_t connection_count;
+    int connection_count;
+} feng_socket;
+
+typedef struct feng_socket_listener {
+    int fd;
+    feng_socket *config;
+    ev_io io;
+} feng_socket_listener;
+
+typedef struct feng_vhost {
+    short buffered_frames;
+
+    gboolean access_log_syslog;
+    char *access_log_file;
+    FILE *access_log_fp;
+
+    char *document_root;
+
+    char *twin;
+} feng_vhost;
+
+typedef struct feng {
+    array *config_context;
+
+    GSList *sockets;
+
+    feng_vhost vhost;
+
+    short loglevel;
+
+    int errorlog_use_syslog;
+
+    char *errorlog_file;
+
+    char *username;
+    char *groupname;
 } feng;
 
 extern struct feng feng_srv;
 extern struct ev_loop *feng_loop;
-
-typedef struct Feng_Listener {
-    int fd;
-    specific_config *specific;
-    ev_io io;
-} Feng_Listener;
-
-#define MAX_PROCESS    1    /*! number of fork */
-#define MAX_CONNECTION    feng_srv.max_conns   /*! rtsp connection */
-#define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS)) /*! rtsp connection for one fork */
 
 void feng_bind_socket(gpointer socket_p, gpointer user_data);
 

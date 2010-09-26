@@ -44,22 +44,9 @@
 
 #ifdef CLEANUP_DESTRUCTOR
 /**
- * @brief libev listeners for incoming connections on opened ports
+ * @brief Free socket configurations in the @ref feng_srv::sockets array
  *
- * This is an array of ev_io objects allocated with the g_new0()
- * function (which this need to be freed with g_free()).
- *
- * The indexes are the same as for @ref feng::vhosts
- *
- * @note Part of the cleanup destructors code, not compiled in
- *       production use.
- */
-static GSList *listening;
-
-/**
- * @brief Close sockets in the listening_sockets array
- *
- * @param element The Sock object to close
+ * @param socket_p The feng_socket object to close
  * @param user_data Unused
  *
  * This function is used to close the opened software during cleanup.
@@ -67,21 +54,52 @@ static GSList *listening;
  * @note Part of the cleanup destructors code, not compiled in
  *       production use.
  */
-static void feng_bound_socket_close(gpointer element,
-                                    ATTR_UNUSED gpointer user_data)
+static void sockets_cleanup(gpointer socket_p, ATTR_UNUSED gpointer user_data)
 {
-    Feng_Listener *listener = element;
+    feng_socket *socket = socket_p;
 
-    close(listener->fd);
+    g_free(socket->host);
+    g_free(socket->port);
 
-    g_slice_free(Feng_Listener, listener);
+    g_slice_free(feng_socket, socket);
 }
 
 /**
- * @brief Cleanup function for the @ref listening array
+ * @brief List of created @ref feng_socket_listener objects to be cleaned up
  *
- * This function is used to free the @ref listening array that was
- * allocated in @ref feng_bind_ports; note that this function is
+ * This is an array of feng_socket_listener objects allocated
+ * with the g_slice_new() function (which this need to be freed with
+ * g_slice_free()).
+ *
+ * @note Part of the cleanup destructors code, not compiled in
+ *       production use.
+ */
+static GSList *listeners;
+
+/**
+ * @brief Free socket configurations in the @ref feng_srv::sockets array
+ *
+ * @param socket_p The feng_socket object to close
+ * @param user_data Unused
+ *
+ * This function is used to close the opened software during cleanup.
+ *
+ * @note Part of the cleanup destructors code, not compiled in
+ *       production use.
+ */
+static void listeners_cleanup(gpointer listener_p, ATTR_UNUSED gpointer user_data)
+{
+    feng_socket_listener *listener = listener_p;
+
+    close(listener->fd);
+    g_slice_free(feng_socket_listener, listener);
+}
+
+/**
+ * @brief Cleanup function for the @ref feng_srv::sockets array
+ *
+ * This function is used to free the @ref feng_srv::sockets array that
+ * was allocated in @ref config_insert; note that this function is
  * called automatically as a destructur when the compiler supports it,
  * and debug is not disabled.
  *
@@ -92,12 +110,15 @@ static void feng_bound_socket_close(gpointer element,
  * @note Part of the cleanup destructors code, not compiled in
  *       production use.
  */
-static void CLEANUP_DESTRUCTOR feng_ports_cleanup()
+static void CLEANUP_DESTRUCTOR feng_sockets_cleanup()
 {
-    if ( listening == NULL ) return;
+    if ( feng_srv.sockets == NULL )
+        return;
 
-    g_slist_foreach(listening, feng_bound_socket_close, NULL);
-    g_slist_free(listening);
+    g_slist_foreach(listeners, listeners_cleanup, NULL);
+    g_slist_free(listeners);
+    g_slist_foreach(feng_srv.sockets, sockets_cleanup, NULL);
+    g_slist_free(feng_srv.sockets);
 }
 #endif
 
@@ -108,20 +129,13 @@ static void CLEANUP_DESTRUCTOR feng_ports_cleanup()
  * @param s The specific vhost configuration to bind for
  */
 static gboolean feng_bind_addr(struct addrinfo *ai,
-                               specific_config *s)
+                               feng_socket *s,
+                               int ipproto)
 {
     int sock;
     static const int on = 1;
-    Feng_Listener *listener = NULL;
-    struct sockaddr_storage sa;
-    socklen_t sa_len = sizeof(struct sockaddr_storage);
+    feng_socket_listener *listener = NULL;
     ev_io *io;
-
-#if ENABLE_SCTP
-    const int ipproto = s->is_sctp ? IPPROTO_SCTP : IPPROTO_TCP;
-#else
-    static const int ipproto = IPPROTO_TCP;
-#endif
 
     if ( (sock = socket(ai->ai_family, SOCK_STREAM, ipproto)) < 0 ) {
         fnc_perror("opening socket");
@@ -129,7 +143,7 @@ static gboolean feng_bind_addr(struct addrinfo *ai,
     }
 
 #if ENABLE_SCTP
-    if ( s->is_sctp ) {
+    if ( ipproto == IPPROTO_SCTP ) {
         const struct sctp_initmsg initparams = {
             .sinit_max_instreams = s->sctp_max_streams,
             .sinit_num_ostreams = s->sctp_max_streams,
@@ -154,16 +168,6 @@ static gboolean feng_bind_addr(struct addrinfo *ai,
     }
 #endif
 
-    /* For IPv6 sockets, we make sure to only bind the v6 address, and
-       we'll then be binding the v4 later on. */
-
-    if ( ai->ai_family == AF_INET6 &&
-         setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
-                    &on, sizeof(on)) < 0 ) {
-        fnc_perror("setsockopt(IPV6_V6ONLY)");
-        goto open_error;
-    }
-
     if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
                     &on, sizeof(on)) < 0 ) {
         fnc_perror("setsockopt(SO_REUSEADDR)");
@@ -180,23 +184,17 @@ static gboolean feng_bind_addr(struct addrinfo *ai,
         goto open_error;
     }
 
-    if ( getsockname(sock, (struct sockaddr *)(&sa), &sa_len) < 0 ) {
-        fnc_perror("getsockname");
-        goto open_error;
-    }
-
-    listener = g_slice_new0(Feng_Listener);
-
+    listener = g_slice_new0(feng_socket_listener);
     listener->fd = sock;
-    listener->specific = s;
-
+    listener->config = s;
     io = &listener->io;
+
     io->data = listener;
     ev_io_init(io, rtsp_client_incoming_cb, sock, EV_READ);
     ev_io_start(feng_loop, io);
 
 #ifdef CLEANUP_DESTRUCTOR
-    listening = g_slist_prepend(listening, listener);
+    listeners = g_slist_prepend(listeners, listener);
 #endif
 
     return true;
@@ -214,31 +212,29 @@ static gboolean feng_bind_addr(struct addrinfo *ai,
  */
 void feng_bind_socket(gpointer socket_p, ATTR_UNUSED gpointer user_data)
 {
-    specific_config *s = socket_p;
-
-#if ENABLE_SCTP
-    gboolean is_sctp = !!s->is_sctp;
-#else
-    static const gboolean is_sctp = false;
-#endif
+    feng_socket *s = socket_p;
     int n;
 
     struct addrinfo *res, *it;
     static const struct addrinfo hints_ipv4 = {
-        .ai_family = AF_INET,
+        .ai_family = AF_INET, /* IPv4 ONLY */
         .ai_socktype = SOCK_STREAM,
         .ai_flags = AI_PASSIVE
     };
     static const struct addrinfo hints_ipv6 = {
-        .ai_family = AF_INET6,
+        .ai_family = AF_INET6, /* IPv6 and IPv4 in dual-stack */
         .ai_socktype = SOCK_STREAM,
         .ai_flags = AI_PASSIVE
     };
 
-    fnc_log(FNC_LOG_INFO, "Listening to port %s (%s/%s) on %s",
+    fnc_log(FNC_LOG_INFO, "Listening to port %s (%s/%sipv4) on %s",
             s->port,
-            (is_sctp? "SCTP" : "TCP"),
-            (s->use_ipv6? "ipv6" : "ipv4"),
+#if ENABLE_SCTP
+            (s->is_sctp? "SCTP" : "TCP"),
+#else
+            "TCP",
+#endif
+            (s->use_ipv6? "ipv6 & " : ""),
             ((s->host == NULL)? "all interfaces" : s->host));
 
     if ( s->use_ipv6 ) {
@@ -247,27 +243,25 @@ void feng_bind_socket(gpointer socket_p, ATTR_UNUSED gpointer user_data)
                     s->host, s->port, gai_strerror(n));
             exit(1);
         }
-
-        it = res;
-        do
-            if ( !feng_bind_addr(it, s) )
-                goto error;
-        while ( (it = it->ai_next) != NULL );
-
-        freeaddrinfo(res);
-    }
-
-    if ( (n = getaddrinfo(s->host, s->port, &hints_ipv4, &res)) < 0 ) {
-        fnc_log(FNC_LOG_ERR, "unable to resolve %s:%s (%s)",
-                s->host, s->port, gai_strerror(n));
-        exit(1);
+    } else {
+        if ( (n = getaddrinfo(s->host, s->port, &hints_ipv4, &res)) < 0 ) {
+            fnc_log(FNC_LOG_ERR, "unable to resolve %s:%s (%s)",
+                    s->host, s->port, gai_strerror(n));
+            exit(1);
+        }
     }
 
     it = res;
-    do
-        if ( !feng_bind_addr(it, s) )
+    do {
+        if ( !feng_bind_addr(it, s, IPPROTO_TCP) )
             goto error;
-    while ( (it = it->ai_next) != NULL );
+#if ENABLE_SCTP
+        /* Only enable SCTP following TCP, otherwise Linux can become
+           messed up and tries to feed TCP connections via SCTP */
+        if ( s->is_sctp && !feng_bind_addr(it, s, IPPROTO_SCTP) )
+            goto error;
+#endif
+    } while ( (it = it->ai_next) != NULL );
 
     freeaddrinfo(res);
 

@@ -77,7 +77,7 @@ void rtp_sctp_transport(RTSP_Client *rtsp,
                         RTP_session *rtp_s,
                         struct ParsedTransport *parsed)
 {
-    const int max_streams = rtsp->specific->sctp_max_streams;
+    const int max_streams = rtsp->socket->sctp_max_streams;
 
     if ( parsed->rtp_channel == -1 )
         parsed->rtp_channel = ++rtsp->first_free_channel;

@@ -111,7 +111,7 @@ static void client_loop(gpointer client_p,
  */
 void clients_init()
 {
-    clients_list = g_ptr_array_sized_new(ONE_FORK_MAX_CONNECTION);
+    clients_list = g_ptr_array_new();
 
     clients_list_lock = g_mutex_new();
     client_threads = g_thread_pool_new(client_loop, NULL,
@@ -277,7 +277,7 @@ static void client_loop(gpointer client_p,
     close(client->sd);
     g_free(client->local_host);
     g_free(client->remote_host);
-    feng_srv.connection_count--;
+    client->socket->connection_count--;
 
     rtsp_session_free(client->session);
 
@@ -341,8 +341,9 @@ RTSP_Client *rtsp_client_new()
 void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
                              ATTR_UNUSED int revents)
 {
-    Feng_Listener *listen = w->data;
-    int client_sd = -1;
+    feng_socket_listener *listen = w->data;
+    feng_socket *s = listen->config;
+    int client_sd = -1, sock_proto;
     struct sockaddr_storage peer, bound;
     socklen_t peer_len = sizeof(struct sockaddr_storage),
         bound_len = sizeof(struct sockaddr_storage);
@@ -361,7 +362,17 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 
     feng_assert_or_goto(peer_len == bound_len, error);
 
-    if (feng_srv.connection_count >= ONE_FORK_MAX_CONNECTION*2)
+#if ENABLE_SCTP
+    bound_len = sizeof(int);
+    if ( getsockopt(client_sd, SOL_SOCKET, SO_PROTOCOL, &sock_proto, &bound_len) < 0 ) {
+        fnc_perror("getsockopt");
+        goto error;
+    }
+#else
+    sock_proto = IPPROTO_TCP;
+#endif
+
+    if (s->connection_count >= s->max_conns*2)
         goto error;
 
     fnc_log(FNC_LOG_INFO, "Incoming connection accepted on socket: %d",
@@ -372,20 +383,24 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
 
     rtsp->loop = ev_loop_new(EVFLAG_AUTO);
 
-#if ENABLE_SCTP
-    if ( ! listen->specific->is_sctp ) {
-#endif
+    switch (sock_proto) {
+    case IPPROTO_TCP:
         rtsp->socktype = RTSP_TCP;
         rtsp->out_queue = g_queue_new();
         rtsp->write_data = rtsp_write_data_queue;
+        break;
 #if ENABLE_SCTP
-    } else {
+    case IPPROTO_SCTP:
         rtsp->socktype = RTSP_SCTP;
         rtsp->write_data = rtsp_sctp_send_rtsp;
-    }
+        break;
 #endif
+    default:
+        fnc_log(FNC_LOG_ERR, "Invalid socket protocol: %d", sock_proto);
+    }
 
-    rtsp->specific = listen->specific;
+    rtsp->socket = s;
+    rtsp->vhost = &feng_srv.vhost;
 
     rtsp->local_host = neb_sa_get_host((struct sockaddr*)&bound);
     rtsp->remote_host = neb_sa_get_host((struct sockaddr*)&peer);
@@ -394,11 +409,11 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     rtsp->peer_sa = g_slice_copy(peer_len, &peer);
     rtsp->local_sa = g_slice_copy(peer_len, &bound);
 
-    feng_srv.connection_count++;
+    rtsp->socket->connection_count++;
 
     g_thread_pool_push(client_threads, rtsp, NULL);
 
-    fnc_log(FNC_LOG_INFO, "Connection reached: %d", feng_srv.connection_count);
+    fnc_log(FNC_LOG_INFO, "Connection reached: %d", rtsp->socket->connection_count);
     return;
 
  error:

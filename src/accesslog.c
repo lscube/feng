@@ -52,17 +52,17 @@
  *
  * @TODO this should actually be moved to vhosts, not sockets
  */
-void accesslog_init(gpointer socket_p, ATTR_UNUSED gpointer user_data)
+void accesslog_init(gpointer vhost_p, ATTR_UNUSED gpointer user_data)
 {
-    specific_config *socket = socket_p;
+    feng_vhost *vhost = vhost_p;
 
-    if (socket->access_log_syslog)
+    if (vhost->access_log_syslog)
         return;
 
-    if (socket->access_log_file == NULL )
+    if (vhost->access_log_file == NULL )
         return;
 
-    if ((socket->access_log_fp = fopen(socket->access_log_file, "a")) == NULL) {
+    if ((vhost->access_log_fp = fopen(vhost->access_log_file, "a")) == NULL) {
         fnc_perror("fopen");
         exit(1);
     }
@@ -86,12 +86,12 @@ void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response)
         g_strdup_printf("%zd", response->body->len) : NULL;
 
 #if HAVE_SYSLOG_H
-    if (client->specific->access_log_syslog)
+    if (client->vhost->access_log_syslog)
         syslog(LOG_INFO, "Access " PRINT_STRING);
     else
 #endif
     {
-        FILE *fp = client->specific->access_log_fp;
+        FILE *fp = client->vhost->access_log_fp;
         fprintf(fp, PRINT_STRING);
         fflush(fp);
     }

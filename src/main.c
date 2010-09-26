@@ -94,11 +94,15 @@ static void CLEANUP_DESTRUCTOR main_cleanup()
 {
     g_free(progname);
 
+    if ( feng_srv.vhost.access_log_fp )
+        fclose(feng_srv.vhost.access_log_fp);
+
     g_free(feng_srv.errorlog_file);
     g_free(feng_srv.username);
     g_free(feng_srv.groupname);
-    g_free(feng_srv.twin);
-    g_free(feng_srv.document_root);
+    g_free(feng_srv.vhost.twin);
+    g_free(feng_srv.vhost.document_root);
+    g_free(feng_srv.vhost.access_log_file);
 
     array_free(feng_srv.config_context);
 }
@@ -265,7 +269,7 @@ int main(int argc, char **argv)
     feng_handle_signals();
 
     g_slist_foreach(feng_srv.sockets, feng_bind_socket, NULL);
-    g_slist_foreach(feng_srv.sockets, accesslog_init, NULL);
+    accesslog_init(&feng_srv.vhost, NULL);
 
     stats_init();
 

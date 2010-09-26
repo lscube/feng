@@ -80,52 +80,49 @@ static int config_insert() {
     char *bindport = NULL;
 
     const config_values_t global_cv[] = {
-        { "server.bind", &bindhost, T_CONFIG_STRING },      /* 0 */
-        { "server.errorlog", &feng_srv.errorlog_file, T_CONFIG_STRING },      /* 1 */
-        { "server.username", &feng_srv.username, T_CONFIG_STRING },      /* 2 */
-        { "server.groupname", &feng_srv.groupname, T_CONFIG_STRING },      /* 3 */
-        { "server.port", &bindport, T_CONFIG_STRING },      /* 4 */
-        { "server.errorlog-use-syslog", &feng_srv.errorlog_use_syslog, T_CONFIG_BOOLEAN },     /* 7 */
-        { "server.max-connections", &feng_srv.max_conns, T_CONFIG_SHORT },       /* 8 */
-        { "server.buffered_frames", &feng_srv.buffered_frames, T_CONFIG_SHORT },
+        { "server.bind", &bindhost, T_CONFIG_STRING },
+        { "server.errorlog", &feng_srv.errorlog_file, T_CONFIG_STRING },
+        { "server.username", &feng_srv.username, T_CONFIG_STRING },
+        { "server.groupname", &feng_srv.groupname, T_CONFIG_STRING },
+        { "server.port", &bindport, T_CONFIG_STRING },
+        { "server.buffered_frames", &feng_srv.vhost.buffered_frames, T_CONFIG_SHORT },
         { "server.loglevel", &feng_srv.loglevel, T_CONFIG_SHORT },
-        { "server.twin", &feng_srv.twin, T_CONFIG_STRING },
-        { "server.document-root", &feng_srv.document_root, T_CONFIG_STRING },
+        { "server.twin", &feng_srv.vhost.twin, T_CONFIG_STRING },
+        { "server.document-root", &feng_srv.vhost.document_root, T_CONFIG_STRING },
+        { "accesslog.filename", &feng_srv.vhost.access_log_file, T_CONFIG_STRING },
+#if HAVE_SYSLOG_H
+        { "accesslog.use-syslog", &feng_srv.vhost.access_log_syslog, T_CONFIG_BOOLEAN },
+        { "server.errorlog-use-syslog", &feng_srv.errorlog_use_syslog, T_CONFIG_BOOLEAN },
+#endif
         { NULL,                          NULL, T_CONFIG_UNSET }
     };
 
     if (config_insert_values_internal(((data_config *)feng_srv.config_context->data[0])->value, global_cv))
         return -1;
 
-    if (feng_srv.document_root == NULL)
+    if (feng_srv.vhost.document_root == NULL)
         return -1;
 
-    if (feng_srv.max_conns == 0)
-        feng_srv.max_conns = 100;
-
-    if (feng_srv.buffered_frames == 0)
-        feng_srv.buffered_frames = BUFFERED_FRAMES_DEFAULT;
+    if (feng_srv.vhost.buffered_frames == 0)
+        feng_srv.vhost.buffered_frames = BUFFERED_FRAMES_DEFAULT;
 
     for (i = 0; i < feng_srv.config_context->used; i++) {
-        specific_config s = {
+        feng_socket s = {
 #if ENABLE_SCTP
             .sctp_max_streams = 16,
 #endif
-            .access_log_syslog = 1
+            .max_conns = 100,
         };
 
         size_t hostlen;
 
         const config_values_t vhost_cv[] = {
+            { "server.max-connections", &s.max_conns, T_CONFIG_SHORT },
             { "server.use-ipv6", &s.use_ipv6, T_CONFIG_BOOLEAN }, /* 5 */
 
 #if ENABLE_SCTP
             { "sctp.protocol", &s.is_sctp, T_CONFIG_BOOLEAN },
             { "sctp.max_streams", &s.sctp_max_streams, T_CONFIG_SHORT },
-#endif
-            { "accesslog.filename", &s.access_log_file, T_CONFIG_STRING }, /* 11 */
-#if HAVE_SYSLOG_H
-            { "accesslog.use-syslog", &s.access_log_syslog, T_CONFIG_BOOLEAN },
 #endif
             { NULL,                          NULL, T_CONFIG_UNSET }
         };
@@ -171,33 +168,11 @@ static int config_insert() {
             }
         }
 
-        feng_srv.sockets = g_slist_prepend(feng_srv.sockets, g_slice_dup(specific_config, &s));
+        feng_srv.sockets = g_slist_prepend(feng_srv.sockets, g_slice_dup(feng_socket, &s));
     }
 
     return 0;
 }
-
-#ifdef CLEANUP_DESTRUCTOR
-static void sockets_cleanup(gpointer socket_p, ATTR_UNUSED gpointer user_data)
-{
-    specific_config *socket = socket_p;
-
-    if ( socket->access_log_fp != NULL )
-        fclose(socket->access_log_fp);
-
-    g_free(socket->host);
-    g_free(socket->port);
-    g_free(socket->access_log_file);
-
-    g_slice_free(specific_config, socket);
-}
-
-static void CLEANUP_DESTRUCTOR config_cleanup()
-{
-    g_slist_foreach(feng_srv.sockets, sockets_cleanup, NULL);
-    g_slist_free(feng_srv.sockets);
-}
-#endif
 
 typedef struct {
     int foo;

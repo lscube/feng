@@ -37,7 +37,8 @@ static GHashTable *http_tunnel_pairs;
 #ifdef CLEANUP_DESTRUCTOR
 static void CLEANUP_DESTRUCTOR http_tunnel_cleanup()
 {
-    g_hash_table_destroy(http_tunnel_pairs);
+    if ( http_tunnel_pairs )
+        g_hash_table_destroy(http_tunnel_pairs);
 }
 #endif
 
@@ -80,7 +81,8 @@ static gboolean http_tunnel_create_pair(RTSP_Client *client, RFC822_Request *req
     pair->rtsp_client->loop = client->loop;
     pair->rtsp_client->sd = -1;
     pair->rtsp_client->local_host = client->local_host;
-    pair->rtsp_client->specific = client->specific;
+    pair->rtsp_client->socket = client->socket;
+    pair->rtsp_client->vhost = client->vhost;
     pair->rtsp_client->remote_host = client->remote_host;
     pair->rtsp_client->write_data = rtsp_write_data_http;
     pair->rtsp_client->pair = pair;
