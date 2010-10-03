@@ -39,7 +39,7 @@ AC_DEFUN([CC_CHECK_CFLAGS_SILENT], [
   AC_CACHE_VAL(AS_TR_SH([cc_cv_cflags_$1]),
     [ac_save_CFLAGS="$CFLAGS"
      CFLAGS="$CFLAGS $1"
-     AC_LINK_IFELSE([int main() { return 0; }],
+     AC_LINK_IFELSE([AC_LANG_SOURCE([int main() { return 0; }])],
        [eval "AS_TR_SH([cc_cv_cflags_$1])='yes'"],
        [eval "AS_TR_SH([cc_cv_cflags_$1])='no'"])
      CFLAGS="$ac_save_CFLAGS"
@@ -89,7 +89,7 @@ AC_DEFUN([CC_CHECK_LDFLAGS], [
     AS_TR_SH([cc_cv_ldflags_$1]),
     [ac_save_LDFLAGS="$LDFLAGS"
      LDFLAGS="$LDFLAGS $1"
-     AC_LINK_IFELSE([int main() { return 1; }],
+     AC_LINK_IFELSE([AC_LANG_SOURCE([int main() { return 1; }]]],
        [eval "AS_TR_SH([cc_cv_ldflags_$1])='yes'"],
        [eval "AS_TR_SH([cc_cv_ldflags_$1])="])
      LDFLAGS="$ac_save_LDFLAGS"
@@ -122,7 +122,7 @@ AC_DEFUN([CC_CHECK_ATTRIBUTE], [
     AS_TR_SH([cc_cv_attribute_$1]),
     [ac_save_CFLAGS="$CFLAGS"
      CFLAGS="$CFLAGS $cc_cv_werror"
-     AC_COMPILE_IFELSE([$3],
+     AC_COMPILE_IFELSE([AC_LANG_SOURCE([$3])],
        [eval "AS_TR_SH([cc_cv_attribute_$1])='yes'"],
        [eval "AS_TR_SH([cc_cv_attribute_$1])='no'"])
      CFLAGS="$ac_save_CFLAGS"
