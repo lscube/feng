@@ -40,7 +40,7 @@ void rtsp_do_pause(RTSP_Client *rtsp)
     /* Get the first range, so that we can record the pause point */
     RTSP_Range *range = g_queue_peek_head(rtsp_sess->play_requests);
 
-    range->begin_time = ev_now(feng_loop) -
+    range->begin_time = ev_now(rtsp->loop) -
                         range->playback_time;
     range->playback_time = -0.1;
 
