@@ -33,11 +33,8 @@ AC_ARG_ENABLE(live-streaming,
     AS_HELP_STRING([--enable-live-streaming], [enable support for live streaming (default=yes)]),,
         live_streaming="yes")
 
-AC_CHECK_HEADERS([ev.h], [
-  AC_CHECK_LIB([ev], [ev_io_start],, [have_libev=no])], [have_libev=no])
-
-AS_IF([test "x$have_libev" = "xno"],
-      [AC_MSG_ERROR([libev not found, feng requires libev])])
+AX_CHECK_LIBRARY([LIBEV], [ev.h], [ev], [],
+   [AC_MSG_ERROR([libev not found, feng requires libev])])
 
 AC_ARG_ENABLE(trace,
     AS_HELP_STRING([--enable-trace], [enable additional informations in log [[default=no]]]),,
