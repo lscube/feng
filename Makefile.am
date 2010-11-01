@@ -47,6 +47,10 @@ $(top_srcdir)/.version:
 dist-hook:
 	echo $(VERSION) > $(distdir)/.tarball-version
 
+feng_CPPFLAGS = $(AM_CPPFLAGS) $(LIBEV_CPPFLAGS)
+feng_LDFLAGS = $(AM_LDFLAGS) $(LIBEV_LDFLAGS)
+feng_LDADD = -lev
+
 dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	\
 	src/accesslog.c \
