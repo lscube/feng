@@ -107,6 +107,8 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     session->range = range;
     session->start_seq = 1 + session->seq_no;
     session->send_time = 0.0;
+    session->start_rtptime += (time(NULL) - session->last_packet_send_time) *
+                              session->track->properties.clock_rate;
     session->last_packet_send_time = time(NULL);
 
     r_resume(resource);
