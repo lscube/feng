@@ -32,22 +32,39 @@
 #include <libavformat/avformat.h>
 
 /**
- * @brief Mutex to protect usage of the FFmpeg functions.
+ * @brief Mutex management for ffmpeg
  *
  * The avcodec_open() and avcodec_close() functions are not thread
- * safe, and needs lock-protection; the (various) libavformat
- * functions we call for probile the files and getting data out of
- * them call these functions indirectly, and needs thus to be
- * protected.
+ * safe, and needs lock-protection;
  */
-GMutex *ffmpeg_lock;
+
+int fc_lock_manager(void **mutex, enum AVLockOp op)
+{
+    switch (op) {
+        case AV_LOCK_CREATE:  ///< Create a mutex
+            *mutex = g_mutex_new();
+        break;
+        case AV_LOCK_OBTAIN:  ///< Lock the mutex
+            g_mutex_lock(*mutex);
+        break;
+        case AV_LOCK_RELEASE: ///< Unlock the mutex
+            g_mutex_unlock(*mutex);
+        break;
+        case AV_LOCK_DESTROY: ///< Free mutex resources
+            g_mutex_free(*mutex);
+        break;
+        default:
+            break;
+    }
+    return 0;
+}
 
 static void init_mutex()
 {
     static gsize inited;
     if ( g_once_init_enter(&inited) ) {
-        ffmpeg_lock = g_mutex_new();
-
+        av_register_all();
+        av_lockmgr_register(fc_lock_manager);
         g_once_init_leave(&inited, true);
     }
 }
@@ -123,9 +140,7 @@ static gboolean avf_probe(const char *filename)
 
     init_mutex();
 
-    g_mutex_lock(ffmpeg_lock);
     avif = av_probe_input_format(&avpd, 1);
-    g_mutex_unlock(ffmpeg_lock);
 
     return !!avif;
 }
@@ -154,18 +169,14 @@ static int avf_init(Resource * r)
 
     avfc->flags |= AVFMT_FLAG_GENPTS;
 
-    g_mutex_lock(ffmpeg_lock);
     i = av_open_input_file(&avfc, r->info->mrl, NULL, 0, &ap);
-    g_mutex_unlock(ffmpeg_lock);
 
     if ( i != 0 ) {
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot open %s", r->info->mrl);
         goto err_alloc;
     }
 
-    g_mutex_lock(ffmpeg_lock);
     i = av_find_stream_info(avfc);
-    g_mutex_unlock(ffmpeg_lock);
 
     if(i < 0){
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot find streams in file %s",
@@ -388,9 +399,7 @@ static void avf_uninit(gpointer rgen)
 
     init_mutex();
 
-    g_mutex_lock(ffmpeg_lock);
     av_close_input_file(avfc);
-    g_mutex_unlock(ffmpeg_lock);
 }
 
 static const char avf_name[] = "libavformat Demuxer";
