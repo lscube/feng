@@ -101,15 +101,16 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     RTSP_Client *client = session->client;
     RTSP_Range *range = (RTSP_Range*)range_gen;
     Resource *resource = session->track->parent;
+    time_t cur_time = time(NULL);
 
     fnc_log(FNC_LOG_VERBOSE, "Resuming session %p", session);
 
     session->range = range;
     session->start_seq = 1 + session->seq_no;
     session->send_time = 0.0;
-    session->start_rtptime += (time(NULL) - session->last_packet_send_time) *
+    session->start_rtptime += (cur_time - session->last_packet_send_time) *
                               session->track->properties.clock_rate;
-    session->last_packet_send_time = time(NULL);
+    session->last_packet_send_time = cur_time;
 
     r_resume(resource);
     r_fill(resource, session->consumer);
