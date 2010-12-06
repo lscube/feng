@@ -1,5 +1,5 @@
 # ===========================================================================
-#          http://www.gnu.org/software/autoconf-archive/ax_lib_generic.html
+#     http://www.gnu.org/software/autoconf-archive/ax_check_library.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -26,12 +26,13 @@
 #   PREFIX_LDFLAGS and PREFIX_CPPFLAGS are substituted.
 #
 #   Example:
+#
 #     AX_CHECK_LIBRARY([LIBEVENT], [event.h], [event], [],
 #                      [AC_MSG_ERROR([Unable to find libevent])])
 #
 # LICENSE
 #
-#   Copyright (c) 2010 Diego Elio Pettenò <flameeyes@gmail.com>
+#   Copyright (c) 2010 Diego Elio Petteno` <flameeyes@gmail.com>
 #
 #   This program is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -58,6 +59,8 @@
 #   Macro released by the Autoconf Archive. When you make and distribute a
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
+
+#serial 3
 
 AC_DEFUN([AX_CHECK_LIBRARY], [
   AC_ARG_VAR($1[_CPPFLAGS], [C preprocessor flags for ]$1[ headers])
