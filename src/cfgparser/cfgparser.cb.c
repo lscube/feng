@@ -79,7 +79,7 @@ bool cfg_options_callback(cfg_options_t *section)
         section->groupname = "feng";
 
     if ( section->buffered_frames == 0 )
-        section->buffered_frames = section->buffered_frames;
+        section->buffered_frames = 16;
 
     if ( section->log_level == 0 )
         section->log_level = FNC_LOG_WARN;
