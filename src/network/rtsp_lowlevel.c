@@ -145,7 +145,7 @@ void rtp_udp_transport(RTSP_Client *rtsp,
     int firstsd;
     in_port_t firstport, rtp_port, rtcp_port;
 
-    memcpy(sa_p, &rtsp->local_sa, sa_len);
+    memcpy(sa_p, rtsp->local_sa, sa_len);
 
     /* The client will not provide ports for us, obviously, let's
      * just ask the kernel for one, and try it to use for RTP/RTCP
