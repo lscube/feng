@@ -5,10 +5,23 @@ FENG_LOG_FILE = `basename $(feng_log_file)`
 
 avrootdir = $(feng_avroot_dir)
 
-dist_avroot_DATA = \
+dist_noinst_DATA = \
 	avroot/h264.ds \
 	avroot/h264_scramble.ds \
 	avroot/test.mov
+
+install-data-hook:
+	if ! test -d $(DESTDIR)$(feng_avroot_dir); then \
+		$(mkdir_p) $(DESTDIR)$(feng_avroot_dir); \
+		for p in $(dist_noinst_DATA); do \
+			if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+			echo "$$d$$p"; \
+		done | $(am__base_list) | \
+		while read files; do \
+			echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(feng_avroot_dir)'"; \
+			$(INSTALL_DATA) $$files "$(DESTDIR)$(feng_avroot_dir)" || exit $$?; \
+		done \
+	fi
 
 feng_confdir = $(feng_conf_dir)
 dist_feng_conf_DATA = etc/feng.conf
