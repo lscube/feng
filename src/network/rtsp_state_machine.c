@@ -202,7 +202,7 @@ static gboolean RTSP_handle_interleaved(RTSP_Client *rtsp) {
 
 gboolean rtsp_connection_limit(RTSP_Client *rtsp, RFC822_Request *req)
 {
-    if (rtsp->socket->connection_count > rtsp->socket->max_conns) {
+    if (rtsp->vhost->connection_count > rtsp->vhost->max_connections) {
         const char *twin = rtsp->vhost->twin;
         fnc_log(FNC_LOG_INFO, "Max connection reached");
         if (twin) {

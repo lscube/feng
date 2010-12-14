@@ -32,68 +32,27 @@
 #include <ev.h>
 #include <pwd.h>
 #include <stdio.h> /* for FILE* */
+#include <stdbool.h>
 #include <netinet/in.h>
+
+#include "cfgparser/cfgparser.h"
 
 extern const char feng_signature[];
 
-typedef struct feng_socket {
-    char *host;
-    char *port;
-
-    gboolean use_ipv6;
-#if ENABLE_SCTP
-    gboolean is_sctp;
-    unsigned short sctp_max_streams;
-#endif
-
-    unsigned short max_conns;
-
-    /**
-     * @brief Number of active connections
-     *
-     * Once it reaches the maximum the server is supposed to redirect
-     * to a twin if available
-     */
-    int connection_count;
-} feng_socket;
-
 typedef struct feng_socket_listener {
     int fd;
-    feng_socket *config;
     ev_io io;
 } feng_socket_listener;
 
-typedef struct feng_vhost {
-    short buffered_frames;
+extern cfg_options_t feng_srv;
+extern GList *configured_sockets;
+extern GList *configured_vhosts;
 
-    gboolean access_log_syslog;
-    char *access_log_file;
-    FILE *access_log_fp;
+#define feng_default_vhost ((cfg_vhost_t*)(configured_vhosts->data))
 
-    char *document_root;
-
-    char *twin;
-} feng_vhost;
-
-typedef struct feng {
-    array *config_context;
-
-    GSList *sockets;
-
-    feng_vhost vhost;
-
-    short loglevel;
-
-    int errorlog_use_syslog;
-
-    char *errorlog_file;
-
-    char *username;
-    char *groupname;
-} feng;
-
-extern struct feng feng_srv;
 extern struct ev_loop *feng_loop;
+
+void config_file_parse(const char *file, bool lint);
 
 void feng_bind_socket(gpointer socket_p, gpointer user_data);
 

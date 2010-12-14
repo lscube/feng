@@ -33,8 +33,8 @@
 #include "rfc822proto.h"
 
 struct Resource;
-struct feng_socket;
-struct feng_vhost;
+struct cfg_socket_t;
+struct cfg_vhost_t;
 
 /**
  * @addtogroup RTSP
@@ -164,15 +164,15 @@ typedef struct RTSP_Client {
 
     ev_io ev_io_write;
 
-    struct feng_vhost *vhost;
-    struct feng_socket *socket;
+    struct cfg_vhost_t *vhost;
+    struct cfg_socket_t *socket;
 
     /**
      * @brief Local host bound to the socket
      *
-     * This string is *not* the same as the one in the received @ref
-     * feng_socket object, as that's the one that is bound by bind()
-     * while this is what the client actually connected to.
+     * This is not the same host as provided in @ref
+     * cfg_socket_t::listen_on as that is the address bound by bind()
+     * while this is the one used to reach the client itself.
      */
     char *local_host;
 

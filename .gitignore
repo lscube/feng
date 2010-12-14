@@ -32,3 +32,6 @@ Doxyfile
 ChangeLog
 .version
 .tarball-version
+src/cfgparser/cfgparser.h
+src/cfgparser/cfgparser.y
+src/cfgparser/cfgparser.l

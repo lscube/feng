@@ -76,8 +76,12 @@ dnl check if we have the generic struct for net addresses the has max
 dnl possible size
 AC_CHECK_TYPES(struct sockaddr_storage,,, [#include <sys/socket.h>])
 
-dnl Checks used by conf/*
-dnl AC_CHECK_HEADERS([pcre.h fam.h])
+AX_PROG_FLEX([],
+  [AC_MSG_ERROR([unable to find flex, feng needs flex to build])
+])
+AX_PROG_BISON([],
+  [AC_MSG_ERROR([unable to find GNU bison, feng needs GNU bison to build])
+])
 
 CHECK_RAGEL_AM([src/network/ragel_range.c], [6.6])
 

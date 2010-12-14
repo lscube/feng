@@ -34,9 +34,6 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-#include "conf/array.h"
-#include "conf/configfile.h"
-
 #include "feng.h"
 #include "bufferqueue.h"
 #include "fnc_log.h"
@@ -49,22 +46,6 @@
  * @brief Version string to use to report feng's signature
  */
 const char feng_signature[] = PACKAGE "/" VERSION;
-
-/**
- * @brief Global structure for feng configuration
- *
- * This strucutre holds (part of) the global settings for the feng
- * process.
- *
- * @todo Break this up so that each piece of code takes care of
- * handling its own global state.
- *
- * @note Using a structure to aggregate the state might seem smart,
- *       but forces the same memory area for all the information to be
- *       in the same cacheline, as well as disallowing the linker from
- *       reordering the variables for best performance.
- */
-struct feng feng_srv;
 
 /**
  * @brief Feng server eventloop
@@ -93,18 +74,6 @@ static char *progname;
 static void CLEANUP_DESTRUCTOR main_cleanup()
 {
     g_free(progname);
-
-    if ( feng_srv.vhost.access_log_fp )
-        fclose(feng_srv.vhost.access_log_fp);
-
-    g_free(feng_srv.errorlog_file);
-    g_free(feng_srv.username);
-    g_free(feng_srv.groupname);
-    g_free(feng_srv.vhost.twin);
-    g_free(feng_srv.vhost.document_root);
-    g_free(feng_srv.vhost.access_log_file);
-
-    array_free(feng_srv.config_context);
 }
 #endif
 
@@ -191,8 +160,11 @@ static gboolean show_version(ATTR_UNUSED const gchar *option_name,
 
 static void command_environment(int argc, char **argv)
 {
+#ifndef CLEANUP_DESTRUCTOR
+    gchar *progname;
+#endif
     gchar *config_file = NULL;
-    gboolean quiet = FALSE, verbose = FALSE, syslog = FALSE;
+    gboolean quiet = FALSE, verbose = FALSE, lint = FALSE;
 
     GOptionEntry optionsTable[] = {
         { "config", 'f', 0, G_OPTION_ARG_STRING, &config_file,
@@ -203,8 +175,8 @@ static void command_environment(int argc, char **argv)
             "output to standard error (debug)", NULL },
         { "version", 'V', G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK, show_version,
             "print version information and exit", NULL },
-        { "syslog", 's', 0, G_OPTION_ARG_NONE, &syslog,
-            "use syslog facility", NULL },
+        { "lint", 'l', 0, G_OPTION_ARG_NONE, &lint,
+          "check the configuration file for errors, then exit", NULL },
         { NULL, 0, 0, 0, NULL, NULL, NULL }
     };
 
@@ -216,49 +188,32 @@ static void command_environment(int argc, char **argv)
     g_option_context_free(context);
 
     if ( error != NULL ) {
-        g_critical("%s\n", error->message);
+        fnc_log(FNC_LOG_FATAL, "%s", error->message);
         exit(1);
     }
 
-    if (!quiet) fncheader();
+    if (!quiet && !lint) fncheader();
 
-    if ( config_file == NULL )
-        config_file = g_strdup(FENG_CONF_PATH_DEFAULT_STR);
+    config_file_parse(config_file, lint);
 
-    if (config_read(config_file)) {
-        g_critical("unable to read configuration file '%s'\n", config_file);
-        g_free(config_file);
-        exit(1);
-    }
     g_free(config_file);
 
-    {
-#ifndef CLEANUP_DESTRUCTOR
-        gchar *progname;
-#endif
-        int view_log;
-
-        progname = g_path_get_basename(argv[0]);
-
-        if ( verbose )
-            view_log = FNC_LOG_OUT;
-        else if ( syslog )
-            view_log = FNC_LOG_SYS;
-        else
-            view_log = FNC_LOG_FILE;
-
-        fnc_log_init(feng_srv.errorlog_file,
-                     view_log,
-                     feng_srv.loglevel,
-                     progname);
+    /* if we're doing a verbose run, make sure to output
+       everything directly on standard error.
+    */
+    if ( verbose ) {
+        feng_srv.log_level = FNC_LOG_INFO;
+        feng_srv.error_log = "stderr";
     }
+
+    progname = g_path_get_basename(argv[0]);
+
+    fnc_log_init(progname);
 }
 
 int main(int argc, char **argv)
 {
     if (!g_thread_supported ()) g_thread_init (NULL);
-
-    feng_srv.config_context = array_init();
 
     /* parses the command line and initializes the log*/
     command_environment(argc, argv);
@@ -268,8 +223,8 @@ int main(int argc, char **argv)
 
     feng_handle_signals();
 
-    g_slist_foreach(feng_srv.sockets, feng_bind_socket, NULL);
-    accesslog_init(&feng_srv.vhost, NULL);
+    g_list_foreach(configured_sockets, feng_bind_socket, NULL);
+    accesslog_init(feng_default_vhost, NULL);
 
     stats_init();
 

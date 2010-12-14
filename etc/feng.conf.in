@@ -1,34 +1,20 @@
-## lighttpd like configuration
-var.basedir  = "@feng_basedir@"
-var.logdir   = "@feng_logdir@"
-var.statedir = "@feng_statedir@"
+options {
+    username "feng";
+    groupname "feng";
+    error-log "@feng_logdir@/error.log";
+    log-level 5;
+};
 
-# bind to port (defaults to @feng_rtsp_port@)
-# server.port         = 8554
+socket {
+    port "@feng_rtsp_port@";
+    sctp-streams 16;
+@ENABLE_SCTP@    sctp on;
+@ENABLE_IPV6@    ipv6 on;
+};
 
-# bind to name (defaults to all interfaces)
-# server.bind         = "live.host.tld"
-
-@ENABLE_IPV6@server.use-ipv6 = "enable"
-
-# use sctp instead of tcp (you may use the same port)
-@ENABLE_SCTP@$SERVER["socket"] == ":@feng_rtsp_port@" {
-@ENABLE_SCTP@   sctp.protocol       = "enable"
-@ENABLE_SCTP@   sctp.max_streams    = 16
-@ENABLE_SCTP@@ENABLE_IPV6@   server.use-ipv6 = "enable"
-@ENABLE_SCTP@}
-
-server.username      = "feng"
-server.groupname     = "feng"
-# Set log verbosity (defaults to Warnings):
-# 0 Warnings 1 Info 2 Client side 3 Debug 4 Verbose
-server.loglevel      = 1
-server.max-connections = @feng_max_session@
-server.document-root = var.basedir + "/avroot"
-server.errorlog      = var.logdir  + "/error.log"
-
-# Accesslog module
-accesslog.filename   = var.logdir + "/access.log"
-# enable accesslog to syslog
-#accesslog.use-syslog = "enable"
-
+vhost {
+    document-root "@feng_basedir@/avroot";
+    access-log "@feng_logdir@/access.log";
+    # use syslog instead
+    # access-log "syslog";
+};

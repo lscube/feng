@@ -31,6 +31,7 @@
 # include <syslog.h>
 #endif
 
+#include "feng.h"
 #include "fnc_log.h"
 
 #undef fnc_log
@@ -39,15 +40,13 @@
 #define ERR_FORMAT "%a %b %d %H:%M:%S %Y"
 #define MAX_LEN_DATE 30
 
-static FILE *fd = NULL;
-
-static int log_level = FNC_LOG_WARN;
+static FILE *error_log;
 
 /**
  * Log to file descriptor
  * @brief print on standard error or file
  */
-static void fnc_errlog(int level, const char *fmt, va_list args)
+static void fnc_filelog(unsigned int level, const char *fmt, va_list args)
 {
     static const char *const log_prefix[] = {
         [FNC_LOG_FATAL] = "[fatal error] ",
@@ -63,20 +62,25 @@ static void fnc_errlog(int level, const char *fmt, va_list args)
     char date[MAX_LEN_DATE];
     const struct tm *tm;
 
-    if (level > log_level) return;
+    if (level > feng_srv.log_level) return;
 
     time(&now);
     tm = localtime(&now);
     strftime(date, MAX_LEN_DATE, ERR_FORMAT, tm);
 
-    fprintf(fd, "[%s] %s", date, log_prefix[level]);
-    vfprintf(fd, fmt, args);
-    fprintf(fd, "\n");
-    fflush(fd);
+    /* Add this here so that we have a known fallback for logs
+       happening before initialisation is complete */
+    if ( error_log == NULL )
+        error_log = stderr;
+
+    fprintf(error_log, "[%s] %s", date, log_prefix[level]);
+    vfprintf(error_log, fmt, args);
+    fprintf(error_log, "\n");
+    fflush(error_log);
 }
 
 #if HAVE_SYSLOG_H
-static void fnc_syslog(int level, const char *fmt, va_list args)
+static void fnc_syslog(unsigned int level, const char *fmt, va_list args)
 {
     static const int fnc_to_syslog_level[] = {
         [FNC_LOG_FATAL] = LOG_CRIT,
@@ -88,36 +92,38 @@ static void fnc_syslog(int level, const char *fmt, va_list args)
         [FNC_LOG_VERBOSE] = LOG_DEBUG
     };
 
-    if (level > log_level) return;
+    if (level > feng_srv.log_level) return;
 
     vsyslog(fnc_to_syslog_level[level], fmt, args);
 }
 #endif
 
-static void (*fnc_vlog)(int, const char*, va_list) = fnc_errlog;
+static void (*fnc_vlog)(unsigned int, const char*, va_list) = fnc_filelog;
 
 /**
  * Initialize the logger.
- * @param file path to the logfile
- * @param out specifies the logger function
- * @param name specifies the application name
- * */
-void fnc_log_init(char *file, int out, int level, char *name)
+ **/
+void fnc_log_init(const char *progname)
 {
-    fd = stderr;
-    log_level = level;
-    switch (out) {
-        case FNC_LOG_SYS:
+    /* If the error_log is set to the constant "syslog" use syslog as
+       output. */
+    if ( strcmp(feng_srv.error_log, "syslog") == 0 ) {
 #if HAVE_SYSLOG_H
-            openlog(name, LOG_PID /*| LOG_PERROR*/, LOG_DAEMON);
-            fnc_vlog = fnc_syslog;
+        openlog(progname, LOG_PID /*| LOG_PERROR*/, LOG_DAEMON);
+        fnc_vlog = fnc_syslog;
 #endif
-            break;
-        case FNC_LOG_FILE:
-            if ((fd = fopen(file, "a+")) == NULL) fd = stderr;
-            break;
-        case FNC_LOG_OUT:
-            break;
+        /* fallback: if no syslog support is present, but syslog is
+           requested, keep using stderr. */
+    } else if ( strcmp(feng_srv.error_log, "stderr") != 0 ) {
+        /* We're not asking for syslog, nor stderr, so the value is the
+           file name to use instead. */
+        FILE *new_error_log = fopen(feng_srv.error_log, "a+");
+        if ( new_error_log == NULL ) {
+            fnc_perror("unable to open error log");
+            return;
+        }
+
+        error_log = new_error_log;
     }
 }
 
@@ -127,7 +133,7 @@ void fnc_log_init(char *file, int out, int level, char *name)
  * @param fmt as printf format string
  * @param ... as printf variable argument
  */
-void fnc_log(int level, const char *fmt, ...) {
+void fnc_log(unsigned int level, const char *fmt, ...) {
     va_list vl;
     va_start(vl, fmt);
     fnc_vlog(level, fmt, vl);

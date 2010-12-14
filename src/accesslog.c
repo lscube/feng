@@ -54,18 +54,21 @@
  */
 void accesslog_init(gpointer vhost_p, ATTR_UNUSED gpointer user_data)
 {
-    feng_vhost *vhost = vhost_p;
+    cfg_vhost_t *vhost = vhost_p;
+    FILE *access_log = stderr;
 
-    if (vhost->access_log_syslog)
-        return;
-
-    if (vhost->access_log_file == NULL )
-        return;
-
-    if ((vhost->access_log_fp = fopen(vhost->access_log_file, "a")) == NULL) {
-        fnc_perror("fopen");
-        exit(1);
+    if ( strcmp(vhost->access_log, "syslog") == 0 ) {
+        vhost->access_log_file = NULL;
+    } else if ( strcmp(vhost->access_log, "stderr") != 0 ) {
+        FILE *new_access_log = fopen(vhost->access_log, "a+");
+        if ( new_access_log == NULL ) {
+            fnc_perror("unable to open access log");
+        } else {
+            access_log = new_access_log;
+        }
     }
+
+    vhost->access_log_file = access_log;
 }
 
 #define PRINT_STRING \
@@ -85,13 +88,14 @@ void accesslog_log(struct RTSP_Client *client, struct RFC822_Response *response)
     char *response_length = response->body ?
         g_strdup_printf("%zd", response->body->len) : NULL;
 
+    if (client->vhost->access_log_file == NULL) {
 #if HAVE_SYSLOG_H
-    if (client->vhost->access_log_syslog)
         syslog(LOG_INFO, "Access " PRINT_STRING);
-    else
+#else
+        fnc_log(FNC_LOG_ERR, "unable to log access");
 #endif
-    {
-        FILE *fp = client->vhost->access_log_fp;
+    }  else {
+        FILE *fp = client->vhost->access_log_file;
         fprintf(fp, PRINT_STRING);
         fflush(fp);
     }

@@ -277,7 +277,7 @@ static void client_loop(gpointer client_p,
     close(client->sd);
     g_free(client->local_host);
     g_free(client->remote_host);
-    client->socket->connection_count--;
+    client->vhost->connection_count--;
 
     rtsp_session_free(client->session);
 
@@ -342,7 +342,6 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
                              ATTR_UNUSED int revents)
 {
     feng_socket_listener *listen = w->data;
-    feng_socket *s = listen->config;
     int client_sd = -1, sock_proto;
     struct sockaddr_storage peer, bound;
     socklen_t peer_len = sizeof(struct sockaddr_storage),
@@ -372,9 +371,6 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     sock_proto = IPPROTO_TCP;
 #endif
 
-    if (s->connection_count >= s->max_conns*2)
-        goto error;
-
     fnc_log(FNC_LOG_INFO, "Incoming connection accepted on socket: %d",
             client_sd);
 
@@ -399,8 +395,7 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
         fnc_log(FNC_LOG_ERR, "Invalid socket protocol: %d", sock_proto);
     }
 
-    rtsp->socket = s;
-    rtsp->vhost = &feng_srv.vhost;
+    rtsp->vhost = feng_default_vhost;
 
     rtsp->local_host = neb_sa_get_host((struct sockaddr*)&bound);
     rtsp->remote_host = neb_sa_get_host((struct sockaddr*)&peer);
@@ -409,11 +404,10 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     rtsp->peer_sa = g_slice_copy(peer_len, &peer);
     rtsp->local_sa = g_slice_copy(peer_len, &bound);
 
-    rtsp->socket->connection_count++;
+    rtsp->vhost->connection_count++;
 
     g_thread_pool_push(client_threads, rtsp, NULL);
 
-    fnc_log(FNC_LOG_INFO, "Connection reached: %d", rtsp->socket->connection_count);
     return;
 
  error:

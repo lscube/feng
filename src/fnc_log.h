@@ -26,13 +26,14 @@
 
 #include <config.h>
 #include <stdarg.h>
+#include <errno.h>
 
 enum {  FNC_LOG_OUT,
         FNC_LOG_SYS,
         FNC_LOG_FILE };
 
-	//level
 enum {
+    FMC_LOG_NONE,       //!< No logging
     FNC_LOG_FATAL,      //!< Fatal error
     FNC_LOG_ERR,        //!< Recoverable error
     FNC_LOG_WARN,       //!< Warning
@@ -42,7 +43,7 @@ enum {
     FNC_LOG_VERBOSE,    //!< Overly verbose debug
 };
 
-void fnc_log(int level, const char *fmt, ...);
+void fnc_log(unsigned int level, const char *fmt, ...);
 
 #ifdef TRACE
 #define fnc_log(level, fmt, string...)                              \
@@ -53,6 +54,6 @@ void _fnc_perror(int errno_val, const char *function, const char *comment);
 
 #define fnc_perror(comment) _fnc_perror(errno, __func__, comment)
 
-void fnc_log_init(char *file, int out, int level, char *name);
+void fnc_log_init();
 
 #endif // FN_FNC_LOG_H

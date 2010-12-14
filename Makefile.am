@@ -39,7 +39,12 @@ RAGEL_SOURCES = \
 
 BUILT_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rfc822proto.c \
-	src/network/rfc822proto-constants.h
+	src/network/rfc822proto-constants.h \
+	src/cfgparser/cfgparser.h \
+	src/cfgparser/cfgparser.lex.l \
+	src/cfgparser/cfgparser.lex.c \
+	src/cfgparser/cfgparser.parse.y \
+	src/cfgparser/cfgparser.parse.c
 
 $(top_srcdir)/.version:
 	echo $(VERSION) > $@-t && mv $@-t $@
@@ -56,17 +61,11 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/feng.h \
 	src/main.c \
 	src/utilities.c \
-	src/conf/array.c \
-	src/conf/array.h \
-	src/conf/configparser.c \
-	src/conf/configparser.h \
-	src/conf/configfile.c \
-	src/conf/configfile.h \
-	src/conf/data_array.c \
-	src/conf/data_integer.c \
-	src/conf/data_config.c \
-	src/conf/data_string.c \
-	src/conf/settings.h \
+	\
+	src/cfgparser/cfgparser.cb.c \
+	src/cfgparser/cfgparser.h \
+	src/cfgparser/cfgparser.lex.l \
+	src/cfgparser/cfgparser.parse.y \
 	\
 	src/network/netembryo.h \
 	src/network/neb_sockaddr.c \
@@ -128,6 +127,18 @@ if ENABLE_SCTP
 dist_feng_SOURCES += src/network/rtsp_sctp.c
 endif
 
+src/cfgparser/cfgparser.h: src/cfgparser/cfgparser.h.xsl src/cfgparser/cfgparser.xml
+	@$(mkdir_p) $(dir $@)
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+
+src/cfgparser/cfgparser.lex.l: src/cfgparser/cfgparser.l.xsl src/cfgparser/cfgparser.xml
+	@$(mkdir_p) $(dir $@)
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+
+src/cfgparser/cfgparser.parse.y: src/cfgparser/cfgparser.y.xsl src/cfgparser/cfgparser.xml
+	@$(mkdir_p) $(dir $@)
+	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
+
 src/network/rfc822proto.c: src/network/rfc822proto-source.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
 
@@ -149,9 +160,10 @@ tests/rfc822proto/rfc822proto-test.rl: tests/rfc822proto/rfc822proto-test.xsl sr
 
 tests/rfc822proto/rfc822proto-test.c: src/network/rfc822proto-statemachine.rl
 
-INCLUDES = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network
+INCLUDES = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network -Isrc/cfgparser
 
 AM_RAGELFLAGS = -I$(srcdir)/src/network -Isrc/network
+AM_YFLAGS = --defines
 
 if HAVE_RAGEL
 include $(top_srcdir)/ragel.make

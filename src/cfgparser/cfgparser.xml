@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cfgparser>
+  <section name="options" unique="true">
+    <value name="username" type="string" />
+    <value name="groupname" type="string" />
+    <value name="log-level" type="uinteger" />
+    <value name="error-log" type="string" />
+    <value name="buffered-frames" type="uinteger" />
+  </section>
+
+  <section name="socket">
+    <value name="listen-on" type="string" />
+    <value name="port" type="string" />
+    <value name="ipv6" type="boolean" />
+    <value name="sctp" type="boolean" />
+    <value name="sctp-streams" type="uinteger" />
+  </section>
+
+  <section name="vhost">
+    <value name="aliases" type="stringlist" />
+    <value name="access-log" type="string" />
+    <value name="twin" type="string" />
+    <value name="document-root" type="string" />
+    <value name="max-connections" type="uinteger" />
+    <raw>
+      uint32_t connection_count;
+      FILE *access_log_file;
+    </raw>
+  </section>
+</cfgparser>
