@@ -25,13 +25,6 @@
 #include "feng.h"
 #include "network/rtsp.h"
 
-typedef struct HTTP_Tunnel_Pair {
-    RTSP_Client *rtsp_client;
-    RTSP_Client *http_client;
-    gint base64_state;
-    guint base64_save;
-} HTTP_Tunnel_Pair;
-
 static GHashTable *http_tunnel_pairs;
 
 #ifdef CLEANUP_DESTRUCTOR
