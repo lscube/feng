@@ -38,6 +38,8 @@ softwares:
 
 - git >= 1.5 [6]
 - autotools (automake >= 1.9, autoconf >= 2.61) [7]
+- ragel >= 6.6 [8]
+- xsltproc [9]
 
 The sources reside at git://lscube.org/feng.git you can fetch them
 by issuing
@@ -75,3 +77,5 @@ The standard build instruction applies form this step.
 
 [7] http://www.gnu.org/software/automake/       -- GNU automake
     http://www.gnu.org/software/autoconf/       -- GNU autoconf
+[8] http://www.complang.org/ragel/              -- Ragel State Machine Compiler
+[9] http://xmlsoft.org                          -- XSLT processor
