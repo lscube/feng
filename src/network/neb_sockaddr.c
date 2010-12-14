@@ -116,10 +116,12 @@ void neb_sa_set_port(struct sockaddr *sa, in_port_t port)
             struct sockaddr_in *sin = (struct sockaddr_in *) sa;
             sin->sin_port = htons(port);
         }
+    break;
     case AF_INET6:
         {
             struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) sa;
             sin6->sin6_port = htons(port);
         }
+    break;
     }
 }
