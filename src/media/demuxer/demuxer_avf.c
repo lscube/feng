@@ -296,6 +296,8 @@ static int avf_init(Resource * r)
         if ( priv.tracks[j] )
             free_track(priv.tracks[j], NULL);
 
+    g_free(priv.tracks);
+
     av_close_input_file(priv.avfc);
 
     return -1;
@@ -402,6 +404,10 @@ static void avf_uninit(gpointer rgen)
     init_mutex();
 
     av_close_input_file(priv->avfc);
+
+    g_free(priv->tracks);
+
+    g_free(priv);
 }
 
 static const char avf_name[] = "libavformat Demuxer";

@@ -268,6 +268,8 @@ static int h264_init(Track *track)
 
     track->private_data = priv;
 
+    g_free(sprop);
+
     return 0;
 
  err_alloc:

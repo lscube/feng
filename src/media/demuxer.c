@@ -46,6 +46,8 @@ void free_track(gpointer element,
 
     g_mutex_free(track->lock);
 
+    g_free(track->name);
+
     if ( track-> producer )
         bq_producer_unref(track->producer);
 

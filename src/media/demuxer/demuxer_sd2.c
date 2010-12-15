@@ -299,7 +299,8 @@ static int sd2_init(Resource * r)
                 props_hints.clock_rate = info->ClockRate;
         }
 
-        if ( (track = add_track(r, currtrack, &props_hints)) == NULL ) {
+        if ( (track = add_track(r, g_strdup(currtrack),
+                                &props_hints)) == NULL ) {
             fnc_log(FNC_LOG_ERR, "[sd2] error adding track '%s' from '%s'",
                     currtrack, r->mrl);
             goto corrupted_track;
