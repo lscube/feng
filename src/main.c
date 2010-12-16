@@ -250,5 +250,9 @@ int main(int argc, char **argv)
     /* This is explicit to send disconnections! */
     clients_cleanup();
 
+#ifdef CLEANUP_DESTRUCTOR
+    ev_loop_destroy(feng_loop);
+#endif
+
     return 0;
 }
