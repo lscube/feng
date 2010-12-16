@@ -51,7 +51,8 @@ void free_track(gpointer element,
     if ( track-> producer )
         bq_producer_unref(track->producer);
 
-    g_string_free(track->sdp_description, true);
+    if ( track->sdp_description )
+        g_string_free(track->sdp_description, true);
 
     if ( track->parser && track->parser->uninit )
         track->parser->uninit(track);
