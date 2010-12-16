@@ -1,6 +1,4 @@
 options {
-    username "feng";
-    groupname "feng";
     error-log "stderr";
     log-level 5;
 };
