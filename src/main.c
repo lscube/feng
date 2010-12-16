@@ -92,8 +92,8 @@ static void sigint_cb (struct ev_loop *loop,
  */
 static void feng_drop_privs()
 {
-    const char *wanted_group = feng_srv.groupname;
-    const char *wanted_user = feng_srv.username;
+    const char *const wanted_group = feng_srv.groupname;
+    const char *const wanted_user = feng_srv.username;
 
     errno = 0;
     if ( wanted_group != NULL ) {
