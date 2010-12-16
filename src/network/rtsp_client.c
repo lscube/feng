@@ -157,6 +157,7 @@ void clients_cleanup()
 #ifdef CLEANUP_DESTRUCTOR
     g_ptr_array_free(clients_list, true);
     g_thread_pool_free(client_threads, true, false);
+    g_mutex_free(clients_list_lock);
 #endif
 }
 
