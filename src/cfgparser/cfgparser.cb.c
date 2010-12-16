@@ -34,14 +34,6 @@
 #include "fnc_log.h"
 #include "network/rtp.h"
 
-cfg_options_t feng_srv = {
-    /* set default here for pre-initialisation logs */
-    .log_level = FNC_LOG_WARN
-};
-
-GList *configured_sockets;
-GList *configured_vhosts;
-
 static const char *cfg_file_name;
 
 /**

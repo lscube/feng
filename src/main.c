@@ -52,6 +52,14 @@ const char feng_signature[] = PACKAGE "/" VERSION;
  */
 struct ev_loop *feng_loop;
 
+GList *configured_sockets;
+GList *configured_vhosts;
+
+cfg_options_t feng_srv = {
+    /* set default here for pre-initialisation logs */
+    .log_level = FNC_LOG_WARN
+};
+
 #ifdef CLEANUP_DESTRUCTOR
 /**
  * @brief Program name to clean up
