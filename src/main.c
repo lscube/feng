@@ -67,6 +67,57 @@ cfg_options_t feng_srv = {
 static char *progname;
 
 /**
+ * @brief Wrapper for g_free to call from g_list_foreach
+ */
+static void feng_glist_free(gpointer data, ATTR_UNUSED gpointer user_data)
+{
+    g_free(data);
+}
+
+/**
+ * @brief Cleanp and free a configured vhost structure
+ *
+ * @param vhost_p A generic pointer to a @ref cfg_vhost_t structure
+ * @param user_data Unused
+ *
+ * @note Part of the cleanup destructors code, not compiled in
+ *       production use.
+ */
+static void vhost_cleanup(gpointer vhost_p, ATTR_UNUSED gpointer user_data)
+{
+    cfg_vhost_t *vhost = vhost_p;
+
+    fclose(vhost->access_log_file);
+    g_free((char*)vhost->access_log);
+    g_free((char*)vhost->twin);
+    g_free((char*)vhost->document_root);
+
+    g_list_foreach(vhost->aliases, feng_glist_free, NULL);
+    g_list_free(vhost->aliases);
+
+    g_slice_free(cfg_vhost_t, vhost);
+}
+
+/**
+ * @brief Cleanup and free a configured socket structure
+ *
+ * @param socket_p A generic pointer to a @ref cfg_socket_t structure
+ * @param user_data Unused
+ *
+ * @note Part of the cleanup destructors code, not compiled in
+ *       production use.
+ */
+static void socket_cleanup(gpointer socket_p, ATTR_UNUSED gpointer user_data)
+{
+    cfg_socket_t *socket = socket_p;
+
+    g_free((char*)socket->listen_on);
+    g_free((char*)socket->port);
+
+    g_slice_free(cfg_socket_t, socket);
+}
+
+/**
  * @brief Cleanup the data structures used by main()
  *
  * This function frees the resources that are allocated during the
@@ -82,6 +133,11 @@ static char *progname;
 static void CLEANUP_DESTRUCTOR main_cleanup()
 {
     g_free(progname);
+
+    g_list_foreach(configured_vhosts, vhost_cleanup, NULL);
+    g_list_free(configured_vhosts);
+    g_list_foreach(configured_sockets, socket_cleanup, NULL);
+    g_list_free(configured_sockets);
 }
 #endif
 

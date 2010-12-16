@@ -54,6 +54,16 @@ void yyerror(const char *fmt, ...)
             cfg_file_name, yylineno, msg);
 }
 
+/* We don't want to abuse memory by duplicating static strings, but
+ * when doing debug builds we want clean memory tracks, so depending
+ * on what kind of build we're doing, do one or the other.
+ */
+#ifndef NDEBUG
+# define cfg_default_string(x) g_strdup(x)
+#else
+# define cfg_default_string(x) (x)
+#endif
+
 /**
  * @brief Callback function called after the options section has been parsed.
  *
@@ -66,9 +76,9 @@ void yyerror(const char *fmt, ...)
 bool cfg_options_callback(cfg_options_t *section)
 {
     if ( section->username == NULL )
-        section->username = "feng";
+        section->username = cfg_default_string("feng");
     if ( section->groupname == NULL )
-        section->groupname = "feng";
+        section->groupname = cfg_default_string("feng");
 
     if ( section->buffered_frames == 0 )
         section->buffered_frames = 16;
@@ -77,7 +87,7 @@ bool cfg_options_callback(cfg_options_t *section)
         section->log_level = FNC_LOG_WARN;
 
     if ( section->error_log == NULL )
-        section->error_log = "stderr";
+        section->error_log = cfg_default_string("stderr");
 
     memcpy(&feng_srv, section, sizeof(cfg_options_t));
 
@@ -133,7 +143,7 @@ bool cfg_vhost_callback(cfg_vhost_t *section)
     }
 
     if ( section->access_log == NULL )
-        section->access_log = "stderr";
+        section->access_log = cfg_default_string("stderr");
 
     if ( section->max_connections == 0 )
         section->max_connections = FENG_MAX_SESSION_DEFAULT;
