@@ -185,4 +185,6 @@ void config_file_parse(const char *file, bool lint)
 
     /* if we're just checking syntax, exit right away. */
     if ( lint ) exit(0);
+
+    fclose(yyin);
 }
