@@ -88,12 +88,23 @@ static void sigint_cb (struct ev_loop *loop,
 }
 
 /**
- * Drop privs to a specified user
+ * Drop privileges to the configured user
+ *
+ * This function takes care of changing the running group and user to
+ * those defined in @ref feng_srv::groupname and @ref
+ * feng_srv::username, defaulting to feng:feng.
+ *
+ * We do not drop privileges if we're running as non-root, as in that
+ * case we assume we have been given already only the limited set of
+ * privileges we need.
  */
 static void feng_drop_privs()
 {
     const char *const wanted_group = feng_srv.groupname;
     const char *const wanted_user = feng_srv.username;
+
+    if ( getuid() != 0 ) /* only if root */
+        return;
 
     errno = 0;
     if ( wanted_group != NULL ) {
