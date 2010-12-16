@@ -57,7 +57,7 @@ extern int yylineno;
   <xsl:template match="value">
     <xsl:text>  </xsl:text>
     <xsl:choose>
-      <xsl:when test="@type='string'">char *</xsl:when>
+      <xsl:when test="@type='string'">const char *</xsl:when>
       <xsl:when test="@type='boolean'">bool</xsl:when>
       <xsl:when test="@type='integer'">int32_t</xsl:when>
       <xsl:when test="@type='uinteger'">uint32_t</xsl:when>
