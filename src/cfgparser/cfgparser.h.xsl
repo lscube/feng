@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 extern int yyparse();
+extern int yylex_destroy();
 extern void yyerror(const char *fmt, ...);
 extern FILE *yyin;
 extern int yylineno;

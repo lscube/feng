@@ -187,4 +187,5 @@ void config_file_parse(const char *file, bool lint)
     if ( lint ) exit(0);
 
     fclose(yyin);
+    yylex_destroy();
 }
