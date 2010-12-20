@@ -372,9 +372,9 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
     r_fill(resource, session->consumer);
 }
 
-typedef void (*rtp_transport_init_cb)(RTSP_Client *rtsp,
-                                      RTP_session *rtp_s,
-                                      struct ParsedTransport *parsed);
+typedef gboolean (*rtp_transport_init_cb)(RTSP_Client *rtsp,
+                                          RTP_session *rtp_s,
+                                          struct ParsedTransport *parsed);
 /**
  * @brief Create a new RTP session object.
  *
@@ -410,9 +410,10 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp,
                 [RTP_SCTP] = rtp_sctp_transport
 #endif
         };
-        rtp_transport_init[transport->protocol](rtsp, rtp_s, transport);
-    } while ( rtp_s->transport_data == NULL &&
-              (transports = g_slist_next(transports)) != NULL );
+
+        if ( rtp_transport_init[transport->protocol](rtsp, rtp_s, transport) )
+            break;
+    } while ( (transports = g_slist_next(transports)) != NULL );
 
     if ( transports == NULL )
         goto cleanup;

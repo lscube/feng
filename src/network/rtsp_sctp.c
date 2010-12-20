@@ -31,11 +31,6 @@
 #include "fnc_log.h"
 #include "feng.h"
 
-typedef struct {
-    struct sctp_sndrcvinfo rtp;
-    struct sctp_sndrcvinfo rtcp;
-} RTP_SCTP_Transport;
-
 static gboolean rtsp_sctp_send_pkt(RTSP_Client *rtsp, GByteArray *buffer,
                                    const struct sctp_sndrcvinfo *sctp_info)
 {
@@ -56,26 +51,21 @@ static gboolean rtsp_sctp_send_pkt(RTSP_Client *rtsp, GByteArray *buffer,
 
 static gboolean rtp_sctp_send_rtp(RTP_session *rtp, GByteArray *buffer)
 {
-    RTP_SCTP_Transport *transport = (RTP_SCTP_Transport *)rtp->transport_data;
-
-    return rtsp_sctp_send_pkt(rtp->client, buffer, &transport->rtp);
+    return rtsp_sctp_send_pkt(rtp->client, buffer, &rtp->transport.sctp.rtp);
 }
 
 static gboolean rtp_sctp_send_rtcp(RTP_session *rtp, GByteArray *buffer)
 {
-    RTP_SCTP_Transport *transport = (RTP_SCTP_Transport *)rtp->transport_data;
-
-    return rtsp_sctp_send_pkt(rtp->client, buffer, &transport->rtcp);
+    return rtsp_sctp_send_pkt(rtp->client, buffer, &rtp->transport.sctp.rtcp);
 }
 
-static void rtp_sctp_close_transport(RTP_session *rtp)
+static void rtp_sctp_close_transport(ATTR_UNUSED RTP_session *rtp)
 {
-    g_slice_free(RTP_SCTP_Transport, rtp->transport_data);
 }
 
-void rtp_sctp_transport(RTSP_Client *rtsp,
-                        RTP_session *rtp_s,
-                        struct ParsedTransport *parsed)
+gboolean rtp_sctp_transport(RTSP_Client *rtsp,
+                           RTP_session *rtp_s,
+                           struct ParsedTransport *parsed)
 {
     const int max_streams = rtsp->socket->sctp_streams;
 
@@ -90,22 +80,12 @@ void rtp_sctp_transport(RTSP_Client *rtsp,
      */
     if ( parsed->rtp_channel >= max_streams ||
          parsed->rtcp_channel >= max_streams )
-        return;
+        return false;
 
     rtsp_interleaved_register(rtsp, rtp_s, parsed->rtp_channel, parsed->rtcp_channel);
 
-    {
-        RTP_SCTP_Transport transport = {
-            .rtp = {
-                .sinfo_stream = parsed->rtp_channel
-            },
-            .rtcp = {
-                .sinfo_stream = parsed->rtcp_channel
-            }
-        };
-
-        rtp_s->transport_data = g_slice_dup(RTP_SCTP_Transport, &transport);
-    }
+    rtp_s->transport.sctp.rtp.sinfo_stream = parsed->rtp_channel;
+    rtp_s->transport.sctp.rtcp.sinfo_stream = parsed->rtp_channel;
 
     rtp_s->send_rtp = rtp_sctp_send_rtp;
     rtp_s->send_rtcp = rtp_sctp_send_rtcp;
@@ -115,6 +95,7 @@ void rtp_sctp_transport(RTSP_Client *rtsp,
                                               parsed->rtp_channel,
                                               parsed->rtcp_channel,
                                               rtp_s->ssrc);
+    return true;
 }
 
 /**

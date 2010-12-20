@@ -31,6 +31,11 @@
 #include <sys/socket.h>
 #include <ev.h>
 
+#if ENABLE_SCTP
+# include <netinet/in.h>
+# include <netinet/sctp.h>
+#endif
+
 #include "bufferqueue.h"
 
 struct feng;
@@ -87,15 +92,6 @@ typedef struct RTP_session {
     rtp_send_cb send_rtcp;
     rtp_close_cb close_transport;
 
-    /**
-     * @brief Private data for the transport.
-     *
-     * This pointer might point to an RTP_UDP_Transport,
-     * RTP_Interleaved_Transport or RTP_SCTP_Transport instance, and
-     * is only used by the two functions above.
-     */
-    gpointer transport_data;
-
     ev_periodic rtp_writer;
 
     /**
@@ -111,6 +107,36 @@ typedef struct RTP_session {
      * don't rely on it anywhere else.
      */
     char *transport_string;
+
+    /**
+     * @brief Private data for the transport
+     */
+    union {
+        struct {
+            int rtp;
+            int rtcp;
+        } tcp;
+
+        struct {
+            /** RTP socket descriptor */
+            int rtp_sd;
+            /** RTCP socket descriptor */
+            int rtcp_sd;
+            /** RTP remote socket address */
+            struct sockaddr *rtp_sa;
+            /** RTCP remote socket address */
+            struct sockaddr *rtcp_sa;
+            ev_io rtcp_reader;
+        } udp;
+
+#if ENABLE_SCTP
+        struct {
+            struct sctp_sndrcvinfo rtp;
+            struct sctp_sndrcvinfo rtcp;
+        } sctp;
+#endif
+
+    } transport;
 } RTP_session;
 
 /**
@@ -144,15 +170,15 @@ struct ParsedTransport {
 };
 
 
-void rtp_udp_transport(struct RTSP_Client *rtsp,
-                       struct RTP_session *rtp_s,
-                       struct ParsedTransport *parsed);
-void rtp_interleaved_transport(struct RTSP_Client *rtsp,
-                               struct RTP_session *rtp_s,
-                               struct ParsedTransport *parsed);
-void rtp_sctp_transport(struct RTSP_Client *rtsp,
-                        struct RTP_session *rtp_s,
-                        struct ParsedTransport *parsed);
+gboolean rtp_udp_transport(struct RTSP_Client *rtsp,
+                           struct RTP_session *rtp_s,
+                           struct ParsedTransport *parsed);
+gboolean rtp_interleaved_transport(struct RTSP_Client *rtsp,
+                                   struct RTP_session *rtp_s,
+                                   struct ParsedTransport *parsed);
+gboolean rtp_sctp_transport(struct RTSP_Client *rtsp,
+                            struct RTP_session *rtp_s,
+                            struct ParsedTransport *parsed);
 
 void rtsp_interleaved_register(struct RTSP_Client *rtsp,
                                struct RTP_session *rtp_s,

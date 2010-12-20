@@ -20,6 +20,8 @@
  *
  * */
 
+#include <stdbool.h>
+
 #include "rtsp.h"
 #include "rtp.h"
 #include "fnc_log.h"
@@ -54,11 +56,6 @@ void rtsp_interleaved_receive(RTSP_Client *rtsp, int channel, uint8_t *data, siz
         rtcp_handle(rtp, data, len);
 }
 
-typedef struct {
-    int rtp;
-    int rtcp;
-} RTP_Interleaved_Transport;
-
 static gboolean rtp_interleaved_send_pkt(RTSP_Client *rtsp, GByteArray *buffer, int channel)
 {
     const uint16_t ne_n = htons((uint16_t)buffer->len);
@@ -80,26 +77,21 @@ static gboolean rtp_interleaved_send_pkt(RTSP_Client *rtsp, GByteArray *buffer, 
 
 static gboolean rtp_interleaved_send_rtp(RTP_session *rtp, GByteArray *buffer)
 {
-    RTP_Interleaved_Transport *transport = (RTP_Interleaved_Transport *)rtp->transport_data;
-
-    return rtp_interleaved_send_pkt(rtp->client, buffer, transport->rtp);
+    return rtp_interleaved_send_pkt(rtp->client, buffer, rtp->transport.tcp.rtp);
 }
 
 static gboolean rtp_interleaved_send_rtcp(RTP_session *rtp, GByteArray *buffer)
 {
-    RTP_Interleaved_Transport *transport = (RTP_Interleaved_Transport *)rtp->transport_data;
-
-    return rtp_interleaved_send_pkt(rtp->client, buffer, transport->rtcp);
+    return rtp_interleaved_send_pkt(rtp->client, buffer, rtp->transport.tcp.rtcp);
 }
 
-static void rtp_interleaved_close_transport(RTP_session *rtp)
+static void rtp_interleaved_close_transport(ATTR_UNUSED RTP_session *rtp)
 {
-    g_slice_free(RTP_Interleaved_Transport, rtp->transport_data);
 }
 
-void rtp_interleaved_transport(RTSP_Client *rtsp,
-                               RTP_session *rtp_s,
-                               struct ParsedTransport *parsed)
+gboolean rtp_interleaved_transport(RTSP_Client *rtsp,
+                                   RTP_session *rtp_s,
+                                   struct ParsedTransport *parsed)
 {
 
     if ( parsed->rtp_channel == -1 )
@@ -112,18 +104,12 @@ void rtp_interleaved_transport(RTSP_Client *rtsp,
      * packages.
      */
     if ( parsed->rtp_channel >= 256 || parsed->rtcp_channel >= 256 )
-        return;
+        return false;
 
     rtsp_interleaved_register(rtsp, rtp_s, parsed->rtp_channel, parsed->rtcp_channel);
 
-    {
-        RTP_Interleaved_Transport transport = {
-            .rtp = parsed->rtp_channel,
-            .rtcp = parsed->rtcp_channel
-        };
-
-        rtp_s->transport_data = g_slice_dup(RTP_Interleaved_Transport, &transport);
-    }
+    rtp_s->transport.tcp.rtp = parsed->rtp_channel;
+    rtp_s->transport.tcp.rtcp = parsed->rtcp_channel;
 
     rtp_s->send_rtp = rtp_interleaved_send_rtp;
     rtp_s->send_rtcp = rtp_interleaved_send_rtcp;
@@ -133,4 +119,5 @@ void rtp_interleaved_transport(RTSP_Client *rtsp,
                                               parsed->rtp_channel,
                                               parsed->rtcp_channel,
                                               rtp_s->ssrc);
+    return true;
 }

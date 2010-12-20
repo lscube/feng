@@ -35,18 +35,6 @@
 #include "fnc_log.h"
 #include "netembryo.h"
 
-typedef struct {
-    /** RTP socket descriptor */
-    int rtp_sd;
-    /** RTCP socket descriptor */
-    int rtcp_sd;
-    /** RTP remote socket address */
-    struct sockaddr *rtp_sa;
-    /** RTCP remote socket address */
-    struct sockaddr *rtcp_sa;
-    ev_io rtcp_reader;
-} RTP_UDP_Transport;
-
 static gboolean rtp_udp_send_pkt(int sd, struct sockaddr *sa, GByteArray *buffer, RTSP_Client *rtsp)
 {
     int written = -1;
@@ -76,33 +64,29 @@ static gboolean rtp_udp_send_pkt(int sd, struct sockaddr *sa, GByteArray *buffer
 
 static gboolean rtp_udp_send_rtp(RTP_session *rtp, GByteArray *buffer)
 {
-    RTP_UDP_Transport *transport = rtp->transport_data;
-
-    return rtp_udp_send_pkt(transport->rtp_sd, transport->rtp_sa,
+    return rtp_udp_send_pkt(rtp->transport.udp.rtp_sd,
+                            rtp->transport.udp.rtp_sa,
                             buffer, rtp->client);
 }
 
 static gboolean rtp_udp_send_rtcp(RTP_session *rtp, GByteArray *buffer)
 {
-    RTP_UDP_Transport *transport = rtp->transport_data;
-
-    return rtp_udp_send_pkt(transport->rtcp_sd, transport->rtcp_sa,
+    return rtp_udp_send_pkt(rtp->transport.udp.rtcp_sd,
+                            rtp->transport.udp.rtcp_sa,
                             buffer, rtp->client);
 }
 
 static void rtp_udp_close_transport(RTP_session *rtp)
 {
-    RTP_UDP_Transport *transport = rtp->transport_data;
     RTSP_Client *client = rtp->client;
 
-    ev_io_stop(client->loop, &transport->rtcp_reader);
+    ev_io_stop(client->loop, &rtp->transport.udp.rtcp_reader);
 
-    close(transport->rtp_sd);
-    close(transport->rtcp_sd);
+    close(rtp->transport.udp.rtp_sd);
+    close(rtp->transport.udp.rtcp_sd);
 
-    g_slice_free1(client->sa_len, transport->rtp_sa);
-    g_slice_free1(client->sa_len, transport->rtcp_sa);
-    g_slice_free(RTP_UDP_Transport, transport);
+    g_slice_free1(client->sa_len, rtp->transport.udp.rtp_sa);
+    g_slice_free1(client->sa_len, rtp->transport.udp.rtcp_sa);
 }
 
 /**
@@ -114,9 +98,8 @@ static void rtcp_udp_read_cb(ATTR_UNUSED struct ev_loop *loop,
 {
     uint8_t buffer[RTP_DEFAULT_MTU*2] = { 0, }; //FIXME just a quick hack...
     RTP_session *rtp = w->data;
-    RTP_UDP_Transport *transport = rtp->transport_data;
 
-    int n = recv(transport->rtcp_sd,
+    int n = recv(rtp->transport.udp.rtcp_sd,
                  buffer, RTP_DEFAULT_MTU*2,
                  MSG_DONTWAIT);
 
@@ -127,17 +110,11 @@ static void rtcp_udp_read_cb(ATTR_UNUSED struct ev_loop *loop,
 /**
  * @brief Setup unicast UDP transport sockets for an RTP session
  */
-void rtp_udp_transport(RTSP_Client *rtsp,
-                       RTP_session *rtp_s,
-                       struct ParsedTransport *parsed)
+gboolean rtp_udp_transport(RTSP_Client *rtsp,
+                           RTP_session *rtp_s,
+                           struct ParsedTransport *parsed)
 {
-    RTP_UDP_Transport transport = {
-        .rtp_sd = -1,
-        .rtp_sa = NULL,
-        .rtcp_sd = -1,
-        .rtcp_sa = NULL
-    };
-    ev_io *io = &transport.rtcp_reader;
+    ev_io *io = &rtp_s->transport.udp.rtcp_reader;
     char *source = NULL;
     struct sockaddr_storage sa;
     socklen_t sa_len = rtsp->sa_len;
@@ -178,25 +155,25 @@ void rtp_udp_transport(RTSP_Client *rtsp,
 
     switch ( firstport % 2 ) {
     case 0:
-        transport.rtp_sd = firstsd; firstsd = -1;
+        rtp_s->transport.udp.rtp_sd = firstsd; firstsd = -1;
         rtp_port = firstport; rtcp_port = firstport+1;
-        if ( (transport.rtcp_sd = socket(sa_p->sa_family, SOCK_DGRAM, 0)) < 0 ) {
+        if ( (rtp_s->transport.udp.rtcp_sd = socket(sa_p->sa_family, SOCK_DGRAM, 0)) < 0 ) {
             fnc_perror("socket 2");
             goto error;
         }
 
         neb_sa_set_port(sa_p, rtcp_port);
 
-        if ( bind(transport.rtcp_sd, sa_p, sa_len) < 0 ) {
+        if ( bind(rtp_s->transport.udp.rtcp_sd, sa_p, sa_len) < 0 ) {
             fnc_perror("bind 2");
 
             neb_sa_set_port(sa_p, 0);
-            if ( bind(transport.rtcp_sd, sa_p, sa_len) < 0 ) {
+            if ( bind(rtp_s->transport.udp.rtcp_sd, sa_p, sa_len) < 0 ) {
                 fnc_perror("bind 3");
                 goto error;
             }
 
-            if ( getsockname(transport.rtcp_sd, sa_p, &sa_len) < 0 ) {
+            if ( getsockname(rtp_s->transport.udp.rtcp_sd, sa_p, &sa_len) < 0 ) {
                 fnc_perror("getsockname 2");
                 goto error;
             }
@@ -206,24 +183,24 @@ void rtp_udp_transport(RTSP_Client *rtsp,
 
         break;
     case 1:
-        transport.rtcp_sd = firstsd; firstsd = -1;
+        rtp_s->transport.udp.rtcp_sd = firstsd; firstsd = -1;
         rtcp_port = firstport; rtp_port = firstport-1;
-        if ( (transport.rtp_sd = socket(sa_p->sa_family, SOCK_DGRAM, 0)) < 0 ) {
+        if ( (rtp_s->transport.udp.rtp_sd = socket(sa_p->sa_family, SOCK_DGRAM, 0)) < 0 ) {
             fnc_perror("socket 3");
             goto error;
         }
 
         neb_sa_set_port(sa_p, rtp_port);
 
-        if ( bind(transport.rtp_sd, sa_p, sa_len) < 0 ) {
+        if ( bind(rtp_s->transport.udp.rtp_sd, sa_p, sa_len) < 0 ) {
             fnc_perror("bind 4");
             neb_sa_set_port(sa_p, 0);
-            if ( bind(transport.rtp_sd, sa_p, sa_len) < 0 ) {
+            if ( bind(rtp_s->transport.udp.rtp_sd, sa_p, sa_len) < 0 ) {
                 fnc_perror("bind 5");
                 goto error;
             }
 
-            if ( getsockname(transport.rtp_sd, sa_p, &sa_len) < 0 ) {
+            if ( getsockname(rtp_s->transport.udp.rtp_sd, sa_p, &sa_len) < 0 ) {
                 fnc_perror("getsockname 3");
                 goto error;
             }
@@ -234,21 +211,21 @@ void rtp_udp_transport(RTSP_Client *rtsp,
         break;
     }
 
-    transport.rtp_sa = g_slice_copy(sa_len, rtsp->peer_sa);
-    neb_sa_set_port(transport.rtp_sa, parsed->rtp_channel);
+    rtp_s->transport.udp.rtp_sa = g_slice_copy(sa_len, rtsp->peer_sa);
+    neb_sa_set_port(rtp_s->transport.udp.rtp_sa, parsed->rtp_channel);
 
-    if ( connect(transport.rtp_sd,
-                 transport.rtp_sa,
+    if ( connect(rtp_s->transport.udp.rtp_sd,
+                 rtp_s->transport.udp.rtp_sa,
                  sa_len) < 0 ) {
         fnc_perror("connect 1");
         goto error;
     }
 
-    transport.rtcp_sa = g_slice_copy(sa_len, rtsp->peer_sa);
-    neb_sa_set_port(transport.rtcp_sa, parsed->rtcp_channel);
+    rtp_s->transport.udp.rtcp_sa = g_slice_copy(sa_len, rtsp->peer_sa);
+    neb_sa_set_port(rtp_s->transport.udp.rtcp_sa, parsed->rtcp_channel);
 
-    if ( connect(transport.rtcp_sd,
-                 transport.rtcp_sa,
+    if ( connect(rtp_s->transport.udp.rtcp_sd,
+                 rtp_s->transport.udp.rtcp_sa,
                  sa_len) < 0 ) {
         fnc_perror("connect 2");
         goto error;
@@ -256,9 +233,8 @@ void rtp_udp_transport(RTSP_Client *rtsp,
 
     io->data = rtp_s;
     ev_io_init(io, rtcp_udp_read_cb,
-               transport.rtcp_sd, EV_READ);
+               rtp_s->transport.udp.rtcp_sd, EV_READ);
 
-    rtp_s->transport_data = g_slice_dup(RTP_UDP_Transport, &transport);
     rtp_s->send_rtp = rtp_udp_send_rtp;
     rtp_s->send_rtcp = rtp_udp_send_rtcp;
     rtp_s->close_transport = rtp_udp_close_transport;
@@ -275,19 +251,20 @@ void rtp_udp_transport(RTSP_Client *rtsp,
 
     free(source);
 
-    return;
+    return true;
 
  error:
-    if ( transport.rtp_sa != NULL )
-        g_slice_free1(sa_len, transport.rtp_sa);
-    if ( transport.rtcp_sa != NULL )
-        g_slice_free1(sa_len, transport.rtcp_sa);
+    if ( rtp_s->transport.udp.rtp_sa != NULL )
+        g_slice_free1(sa_len, rtp_s->transport.udp.rtp_sa);
+    if ( rtp_s->transport.udp.rtcp_sa != NULL )
+        g_slice_free1(sa_len, rtp_s->transport.udp.rtcp_sa);
     if ( firstsd >= 0 )
         close(firstsd);
-    if ( transport.rtp_sd >= 0 )
-        close(transport.rtp_sd);
-    if ( transport.rtcp_sd >= 0 )
-        close(transport.rtcp_sd);
+    if ( rtp_s->transport.udp.rtp_sd >= 0 )
+        close(rtp_s->transport.udp.rtp_sd);
+    if ( rtp_s->transport.udp.rtcp_sd >= 0 )
+        close(rtp_s->transport.udp.rtcp_sd);
+    return false;
 }
 
 /**
