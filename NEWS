@@ -1,5 +1,8 @@
 + Feng changelog
 
+  20 Dec 2010 Diego Elio 'Flameeyes' Pettenò <flameeyes@gmail.com>:
+  Replace configuration system with a more compact one.
+
   05 Aug 2010 Luca Barbato <lu_zero@gentoo.org>:
   VP8 support, tested with ffmpeg.
 
