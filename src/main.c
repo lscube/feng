@@ -39,6 +39,7 @@
 #include "fnc_log.h"
 #include "network/rtp.h"
 #include "network/rtsp.h"
+#include "media/demuxer.h"
 #include <glib.h>
 #include <time.h>
 
@@ -289,6 +290,10 @@ static void command_environment(int argc, char **argv)
 int main(int argc, char **argv)
 {
     if (!g_thread_supported ()) g_thread_init (NULL);
+
+#ifdef HAVE_AVFORMAT
+    ffmpeg_init();
+#endif
 
     /* parses the command line and initializes the log*/
     command_environment(argc, argv);

@@ -254,8 +254,9 @@ Track *r_find_track(Resource *, const char *);
 Track *add_track(Resource *, char *name, MediaProperties *);
 void free_track(gpointer element, gpointer user_data);
 
-
 void sdp_descr_append_config(Track *track);
+
+void ffmpeg_init(void);
 
 BufferQueue_Producer *track_get_producer(Track *tr);
 

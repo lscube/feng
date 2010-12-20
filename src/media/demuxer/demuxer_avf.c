@@ -31,6 +31,35 @@
 
 #include <libavformat/avformat.h>
 
+
+int fc_lock_manager(void **mutex, enum AVLockOp op)
+{
+    switch (op) {
+        case AV_LOCK_CREATE:  ///< Create a mutex
+            *mutex = g_mutex_new();
+        break;
+        case AV_LOCK_OBTAIN:  ///< Lock the mutex
+            g_mutex_lock(*mutex);
+        break;
+        case AV_LOCK_RELEASE: ///< Unlock the mutex
+            g_mutex_unlock(*mutex);
+        break;
+        case AV_LOCK_DESTROY: ///< Free mutex resources
+            g_mutex_free(*mutex);
+        break;
+        default:
+            break;
+    }
+    return 0;
+}
+
+void ffmpeg_init(void)
+{
+    av_register_all();
+    av_lockmgr_register(fc_lock_manager);
+}
+
+
 /**
  * @brief Simple structure for libavformat demuxer private data
  */
@@ -55,37 +84,6 @@ typedef struct avf_private_data {
  * The avcodec_open() and avcodec_close() functions are not thread
  * safe, and needs lock-protection;
  */
-
-int fc_lock_manager(void **mutex, enum AVLockOp op)
-{
-    switch (op) {
-        case AV_LOCK_CREATE:  ///< Create a mutex
-            *mutex = g_mutex_new();
-        break;
-        case AV_LOCK_OBTAIN:  ///< Lock the mutex
-            g_mutex_lock(*mutex);
-        break;
-        case AV_LOCK_RELEASE: ///< Unlock the mutex
-            g_mutex_unlock(*mutex);
-        break;
-        case AV_LOCK_DESTROY: ///< Free mutex resources
-            g_mutex_free(*mutex);
-        break;
-        default:
-            break;
-    }
-    return 0;
-}
-
-static void init_mutex()
-{
-    static gsize inited;
-    if ( g_once_init_enter(&inited) ) {
-        av_register_all();
-        av_lockmgr_register(fc_lock_manager);
-        g_once_init_leave(&inited, true);
-    }
-}
 
 typedef struct id_tag {
     const int id;
@@ -156,8 +154,6 @@ static gboolean avf_probe(const char *filename)
 
     av_register_all();
 
-    init_mutex();
-
     avif = av_probe_input_format(&avpd, 1);
 
     return !!avif;
@@ -176,8 +172,6 @@ static int avf_init(Resource * r)
     unsigned int j;
 
     avf_private_data priv = { NULL, NULL };
-
-    init_mutex();
 
     memset(&ap, 0, sizeof(AVFormatParameters));
 
@@ -400,8 +394,6 @@ static void avf_uninit(gpointer rgen)
 
     if ( priv == NULL || priv->avfc == NULL )
         return;
-
-    init_mutex();
 
     av_close_input_file(priv->avfc);
 
