@@ -25,6 +25,13 @@
 #include "feng.h"
 #include "network/rtsp.h"
 
+typedef struct HTTP_Tunnel_Pair {
+    RTSP_Client *rtsp_client;
+    RTSP_Client *http_client;
+    gint base64_state;
+    guint base64_save;
+} HTTP_Tunnel_Pair;
+
 static GHashTable *http_tunnel_pairs;
 
 #ifdef CLEANUP_DESTRUCTOR
@@ -77,6 +84,7 @@ static gboolean http_tunnel_create_pair(RTSP_Client *client, RFC822_Request *req
     pair->rtsp_client->socket = client->socket;
     pair->rtsp_client->vhost = client->vhost;
     pair->rtsp_client->remote_host = client->remote_host;
+    pair->rtsp_client->peer_sa = client->peer_sa;
     pair->rtsp_client->write_data = rtsp_write_data_http;
     pair->rtsp_client->pair = pair;
 

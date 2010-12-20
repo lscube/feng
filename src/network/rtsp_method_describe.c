@@ -115,21 +115,13 @@ static GString *sdp_session_descr(RTSP_Client *rtsp, RFC822_Request *req)
     char *path;
 
     const char *inet_family;
-    {
-        struct sockaddr *sa;
 
-        /* if we're a tunnel we have to track down how the client connected to us. */
-        if ( (sa = rtsp->peer_sa) == NULL )
-            sa = rtsp->pair->http_client->peer_sa;
-
-        if ( sa == NULL ) {
-            fnc_log(FNC_LOG_ERR, "unable to identify address family for connection");
-            return NULL;
-        }
-
-        inet_family = sa->sa_family == AF_INET6 ? "IP6" : "IP4";
+    if ( rtsp->peer_sa == NULL ) {
+        fnc_log(FNC_LOG_ERR, "unable to identify address family for connection");
+        return NULL;
     }
 
+    inet_family = rtsp->peer_sa->sa_family == AF_INET6 ? "IP6" : "IP4";
     path = g_uri_unescape_string(uri->path, "/");
 
     fnc_log(FNC_LOG_DEBUG, "[SDP] opening %s", path);

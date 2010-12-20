@@ -188,7 +188,6 @@ typedef struct RTSP_Client {
 #endif
 } RTSP_Client;
 
-
 RTSP_Client *rtsp_client_new();
 
 void rtsp_write_string(RTSP_Client *client, GString *str);
@@ -197,13 +196,6 @@ void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents);
 
 void RTSP_handler(RTSP_Client * rtsp);
 gboolean rtsp_process_complete(RTSP_Client *rtsp);
-
-typedef struct HTTP_Tunnel_Pair {
-    RTSP_Client *rtsp_client;
-    RTSP_Client *http_client;
-    gint base64_state;
-    guint base64_save;
-} HTTP_Tunnel_Pair;
 
 /**
  * RTSP high level functions, mapping to the actual RTSP methods
