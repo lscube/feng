@@ -110,7 +110,7 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
         break;
     }
 
-    if (t->parser->init && t->parser->init(t) != 0) {
+    if (t->parser && t->parser->init && t->parser->init(t) != 0) {
         fnc_log(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
                 t->properties.encoding_name);
         goto error;
