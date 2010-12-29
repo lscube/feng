@@ -187,7 +187,7 @@ static int sd2_init(Resource * r)
     int tracks;
 
     GKeyFile *file = g_key_file_new();
-    gchar **tracknames, *currtrack;
+    gchar **tracknames, **trackgroups, *currtrack;
 
     if ( !g_key_file_load_from_file(file, r->mrl, G_KEY_FILE_NONE, NULL) )
         goto error;
@@ -195,6 +195,7 @@ static int sd2_init(Resource * r)
     if ( (tracknames = g_key_file_get_groups(file, NULL)) == NULL )
         goto error;
 
+    trackgroups = tracknames;
     r->duration = HUGE_VAL;
     r->media_source = LIVE_SOURCE;
 
@@ -375,7 +376,7 @@ static int sd2_init(Resource * r)
     }
 
  error:
-    g_strfreev(tracknames);
+    g_strfreev(trackgroups);
     g_key_file_free(file);
     return (tracks >= 0) ? RESOURCE_OK : -1;
 }
