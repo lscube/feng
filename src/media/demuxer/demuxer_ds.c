@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <errno.h>
 
 #include "feng.h"
 #include "fnc_log.h"
@@ -85,20 +86,26 @@ static double edl_timescaler (Resource * r, double res_time) {
 
 static int ds_init(Resource * r)
 {
-    FILE *fd;
+    FILE *fp;
     double r_offset = 0;
     Resource *resource;
     GList *edl_head = NULL;
     edl_item_elem *item;
 
     fnc_log(FNC_LOG_DEBUG, "[ds] EDL init function");
-    fd = fopen(r->mrl, "r");
+    fp = fopen(r->mrl, "r");
 
-    while(!feof(fd)) {
+    if (!fp) {
+        fnc_log(FNC_LOG_WARN, "unable to open '%s': %s",
+                r->mrl, strerror(errno));
+        return 1;
+    }
+
+    while(!feof(fp)) {
         double begin = 0.0, end = HUGE_VAL;
         char mrl[256];
 
-        int n = fscanf(fd, "%255s %lf %lf\n", mrl, &begin, &end);
+        int n = fscanf(fp, "%255s %lf %lf\n", mrl, &begin, &end);
         if (n < 3 || mrl[0] == '#')
             continue; // skip comments and malformed lines
 
@@ -146,6 +153,7 @@ static int ds_init(Resource * r)
 
     fnc_log(FNC_LOG_DEBUG, "[ds] duration=%f", r_offset);
     ((edl_priv_data *) r->private_data)->head = g_list_reverse(edl_head);
+    fclose(fp);
 
     return 0;
 
@@ -155,6 +163,7 @@ static int ds_init(Resource * r)
         g_list_free(edl_head);
         r->private_data = NULL;
     }
+    fclose(fp);
     return -1;
 }
 
