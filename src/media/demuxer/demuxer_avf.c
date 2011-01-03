@@ -208,6 +208,7 @@ static int avf_init(Resource * r)
         float frame_rate = 0;
 
         if( id == NULL ) {
+            st->discard = AVDISCARD_ALL;
             fnc_log(FNC_LOG_DEBUG, "[avf] Cannot map stream id %d", j);
             continue;
         }
@@ -260,6 +261,7 @@ static int avf_init(Resource * r)
                 break;
 
             default:
+                st->discard = AVDISCARD_ALL;
                 fnc_log(FNC_LOG_DEBUG, "[avf] codec type unsupported");
                 continue;
         }
@@ -307,11 +309,12 @@ static int avf_read_packet(Resource * r)
     Track *tr;
 
 // get a packet
+retry:
     if(av_read_frame(priv->avfc, &pkt) < 0)
         return RESOURCE_EOF; //FIXME
 
     if ( (tr = priv->tracks[pkt.stream_index]) == NULL )
-        return RESOURCE_ERR;
+        goto retry;
 
     // push it to the framer
     stream = priv->avfc->streams[pkt.stream_index];
