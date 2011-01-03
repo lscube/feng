@@ -56,7 +56,7 @@ void sdp_descr_append_config(Track *track)
 
     *out = '\0';
 
-    g_strlcat(descr->str, "config=", descr->len);
+    g_strlcat(descr->str, "config=", descr->allocated_len);
     out += strlen("config=");
 
     for ( i = 0; i < len; i++, data++ ) {
@@ -65,5 +65,5 @@ void sdp_descr_append_config(Track *track)
     }
     *out++ = '\0';
 
-    g_strlcat(descr->str, ";", descr->len);
+    g_strlcat(descr->str, ";", descr->allocated_len);
 }
