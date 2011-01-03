@@ -154,6 +154,16 @@ static gboolean feng_bind_addr(struct addrinfo *ai,
         goto open_error;
     }
 
+#if defined(IPV6_V6ONLY) && defined(IPPROTO_IPV6)
+    if (ai->ai_addr->sa_family == AF_INET6) {
+        if ( setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+                        &on, sizeof(on)) < 0 ) {
+            fnc_perror("setsockopt(IPV6_V6ONLY)");
+            goto open_error;
+        }
+    }
+#endif
+
     if ( bind(sock, ai->ai_addr, ai->ai_addrlen) < 0 ) {
         fnc_perror("bind");
         goto open_error;
@@ -201,7 +211,7 @@ void feng_bind_socket(gpointer socket_p, ATTR_UNUSED gpointer user_data)
         .ai_flags = AI_PASSIVE
     };
     static const struct addrinfo hints_ipv6 = {
-        .ai_family = AF_INET6, /* IPv6 and IPv4 in dual-stack */
+        .ai_family = AF_UNSPEC, /* all address families */
         .ai_socktype = SOCK_STREAM,
         .ai_flags = AI_PASSIVE
     };
