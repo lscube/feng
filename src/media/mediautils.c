@@ -63,6 +63,7 @@ void sdp_descr_append_config(Track *track)
         *out++ = digit_to_char(*data >> 4);
         *out++ = digit_to_char(*data & 0xF);
     }
+    *out++ = '\0';
 
     g_strlcat(descr->str, ";", descr->len);
 }
