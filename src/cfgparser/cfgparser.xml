@@ -22,6 +22,7 @@
     <value name="twin" type="string" />
     <value name="document-root" type="string" />
     <value name="max-connections" type="uinteger" />
+    <value name="dynamic-resource-paths" type="stringlist" />
     <raw>
       uint32_t connection_count;
       FILE *access_log_file;
