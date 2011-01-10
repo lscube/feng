@@ -187,7 +187,7 @@ static int sd2_init(Resource * r)
     int tracks;
 
     GKeyFile *file = g_key_file_new();
-    gchar **tracknames, **trackgroups, *currtrack;
+    gchar **tracknames = NULL, **trackgroups = NULL, *currtrack = NULL;
 
     if ( !g_key_file_load_from_file(file, r->mrl, G_KEY_FILE_NONE, NULL) )
         goto error;
