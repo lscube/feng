@@ -1,0 +1,4 @@
+[track]
+mrl=mq:///video
+encoding_name=MPV
+media_type=video
