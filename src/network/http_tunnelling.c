@@ -25,13 +25,6 @@
 #include "feng.h"
 #include "network/rtsp.h"
 
-typedef struct HTTP_Tunnel_Pair {
-    RTSP_Client *rtsp_client;
-    RTSP_Client *http_client;
-    gint base64_state;
-    guint base64_save;
-} HTTP_Tunnel_Pair;
-
 static GHashTable *http_tunnel_pairs;
 
 #ifdef CLEANUP_DESTRUCTOR
@@ -55,7 +48,8 @@ static void CLEANUP_DESTRUCTOR http_tunnel_cleanup()
  */
 static void rtsp_write_data_http(RTSP_Client *client, GByteArray *data)
 {
-    client->pair->http_client->write_data(client->pair->http_client, data);
+    g_queue_push_head(client->pair->http_client->out_queue, data);
+    ev_io_start(client->loop, &client->pair->http_client->ev_io_write);
 }
 
 static gboolean http_tunnel_create_pair(RTSP_Client *client, RFC822_Request *req)
@@ -76,17 +70,7 @@ static gboolean http_tunnel_create_pair(RTSP_Client *client, RFC822_Request *req
 
     pair = g_slice_new0(HTTP_Tunnel_Pair);
     pair->http_client = client;
-
-    pair->rtsp_client = rtsp_client_new();
-    pair->rtsp_client->loop = client->loop;
-    pair->rtsp_client->sd = -1;
-    pair->rtsp_client->local_host = client->local_host;
-    pair->rtsp_client->socket = client->socket;
-    pair->rtsp_client->vhost = client->vhost;
-    pair->rtsp_client->remote_host = client->remote_host;
-    pair->rtsp_client->peer_sa = client->peer_sa;
-    pair->rtsp_client->write_data = rtsp_write_data_http;
-    pair->rtsp_client->pair = pair;
+    client->pair = pair;
 
     g_hash_table_insert(http_tunnel_pairs, strdup(http_session), pair);
 
@@ -158,6 +142,7 @@ gboolean HTTP_handle_headers(RTSP_Client *rtsp)
 #endif
     if ( rtsp->pending_request->method_id == HTTP_Method_POST ) {
         const char *http_session = rfc822_headers_lookup(rtsp->pending_request->headers, HTTP_Header_x_sessioncookie);
+        gpointer tmpptr;
 
         if ( http_session == NULL ) {
             rfc822_quick_response(rtsp, rtsp->pending_request, RFC822_Protocol_HTTP10, HTTP_BadRequest);
@@ -169,12 +154,47 @@ gboolean HTTP_handle_headers(RTSP_Client *rtsp)
             return false;
         }
 
-        rtsp->status = RFC822_State_HTTP_Content;
+        /* let's be sure that the other connection has reached the
+           idle state, otherwise the client has been too eager to
+           connect. */
+        if ( rtsp->pair->http_client->status != RFC822_State_HTTP_Idle ) {
+            rfc822_quick_response(rtsp, rtsp->pending_request, RFC822_Protocol_HTTP10, HTTP_BadRequest);
+            return false;
+        }
+
+        /* we should also ensure that there is not data waiting to be
+           parsed, as we expect the client to send nothing on that
+           connection from then on */
+        if ( rtsp->pair->http_client->input->len != 0 ) {
+            rfc822_quick_response(rtsp, rtsp->pending_request, RFC822_Protocol_HTTP10, HTTP_BadRequest);
+            return false;
+        }
+
+        /* re-use the current object to be used for the HTTP tunnel;
+           we change the callback and set the tunnel, and switch the
+           input buffers around for convenience */
+        rtsp->pair->rtsp_client = rtsp;
+        rtsp->write_data = rtsp_write_data_http;
+
+        /* this will start from scratch */
+        rtsp->status = RFC822_State_Begin;
+
+        tmpptr = rtsp->input;
+        rtsp->input = rtsp->pair->http_client->input;
+        rtsp->pair->http_client->input = tmpptr;
+
+        /* get the http_client ready to read the data */
+        rtsp->pair->http_client->status = RFC822_State_HTTP_Content;
+
+        /* we run it here so that it starts getting some data at least */
+        RTSP_handler(rtsp->pair->http_client);
+
+        return false;
     } else {
         if ( http_tunnel_create_pair(rtsp, rtsp->pending_request) )
             rtsp->status = RFC822_State_HTTP_Idle;
         // Maybe we should disconnect if this is false
-        return false;
+        return true;
     }
     return true;
 }
@@ -207,6 +227,11 @@ gboolean HTTP_handle_content(RTSP_Client *rtsp)
 
 gboolean HTTP_handle_idle(ATTR_UNUSED RTSP_Client *rtsp)
 {
+    /* make sure to send the one queued answer we have */
+    while ( g_queue_get_length(rtsp->out_queue) > 0 )
+        ev_run(rtsp->loop, EVRUN_ONCE);
+
+    ev_unloop(rtsp->loop, EVUNLOOP_ONE);
     return false;
 }
 

@@ -288,8 +288,14 @@ void rtsp_tcp_read_cb(struct ev_loop *loop, ev_io *w,
     guint8 buffer[RTSP_BUFFERSIZE + 1] = { 0, };    /* +1 to control the final '\0' */
     int read_size;
     RTSP_Client *rtsp = w->data;
+    int sd = rtsp->sd;
 
-    if ( (read_size = recv(rtsp->sd,
+    /* if we're receiving data for an HTTP tunnel, we have to run it
+       through the HTTP client's buffer. */
+    if ( rtsp->pair != NULL )
+        rtsp = rtsp->pair->http_client;
+
+    if ( (read_size = recv(sd,
                            buffer,
                            sizeof(buffer),
                            0) ) <= 0 )

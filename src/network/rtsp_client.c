@@ -105,6 +105,7 @@ static void libev_syserr(const char *msg)
 
 static void client_loop(gpointer client_p,
                         gpointer user_data);
+static void rtsp_client_free(RTSP_Client *client);
 
 /**
  * @brief Initialise the clients-handling code
@@ -226,7 +227,6 @@ static void client_loop(gpointer client_p,
                         ATTR_UNUSED gpointer user_data)
 {
     RTSP_Client *client = (RTSP_Client *)client_p;
-    GString *outbuf = NULL;
 
     struct ev_loop *loop = client->loop;
     ev_io *io_write_p = &client->ev_io_write, io_read = { .data = client };
@@ -276,10 +276,27 @@ static void client_loop(gpointer client_p,
         g_mutex_unlock(clients_list_lock);
     }
 
+    client->vhost->connection_count--;
+
+    client->loop = NULL;
+    ev_loop_destroy(loop);
+
+    /* We have special handling of HTTP connection clients; we kill
+       the two objects on disconnection of the POST request. */
+    if ( client->pair == NULL ) {
+        rtsp_client_free(client);
+    } else if ( client->pair->rtsp_client == client ) {
+        rtsp_client_free(client->pair->http_client);
+        rtsp_client_free(client);
+    }
+}
+
+static void rtsp_client_free(RTSP_Client *client)
+{
+    GString *outbuf = NULL;
     close(client->sd);
     g_free(client->local_host);
     g_free(client->remote_host);
-    client->vhost->connection_count--;
 
     rtsp_session_free(client->session);
 
@@ -300,8 +317,6 @@ static void client_loop(gpointer client_p,
 
     g_slice_free1(client->sa_len, client->peer_sa);
     g_slice_free1(client->sa_len, client->local_sa);
-
-    ev_loop_destroy(loop);
 
     g_slice_free(RTSP_Client, client);
 

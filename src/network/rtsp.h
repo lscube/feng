@@ -112,6 +112,10 @@ typedef void (*rtsp_write_data)(struct RTSP_Client *client, GByteArray *data);
 typedef struct RTSP_Client {
     /**
      * @brief Socket descriptor for the main connection of the client
+     *
+     * In case of HTTP tunnelling, the "HTTP" client object will hold
+     * here the output descriptor, while the "RTSP" client object will
+     * hold the input descriptor.
      */
     int sd;
 
@@ -187,6 +191,13 @@ typedef struct RTSP_Client {
     size_t bytes_sent;
 #endif
 } RTSP_Client;
+
+typedef struct HTTP_Tunnel_Pair {
+    RTSP_Client *rtsp_client;
+    RTSP_Client *http_client;
+    gint base64_state;
+    guint base64_save;
+} HTTP_Tunnel_Pair;
 
 RTSP_Client *rtsp_client_new();
 

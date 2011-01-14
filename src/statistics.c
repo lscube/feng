@@ -48,12 +48,18 @@ void stats_init()
 
 void stats_account_read(RTSP_Client *rtsp, size_t bytes)
 {
+    if ( rtsp->pair && (rtsp = rtsp->pair->rtsp_client) == NULL )
+        return;
+
     rtsp->bytes_read += bytes;
     stats_total_bytes_sent += bytes;
 }
 
 void stats_account_sent(RTSP_Client *rtsp, size_t bytes)
 {
+    if ( rtsp->pair && (rtsp = rtsp->pair->rtsp_client) == NULL )
+        return;
+
     rtsp->bytes_sent += bytes;
     stats_total_bytes_read += bytes;
 }
