@@ -27,6 +27,7 @@
 
     <supportedheader>Allow</supportedheader>
     <supportedheader>Authorization</supportedheader>
+    <supportedheader>Bandwidth</supportedheader>
     <supportedheader>CSeq</supportedheader>
     <supportedheader>Content-Base</supportedheader>
     <supportedheader>Content-Length</supportedheader>
@@ -41,6 +42,7 @@
     <supportedheader>Require</supportedheader>
     <supportedheader>Server</supportedheader>
     <supportedheader>Session</supportedheader>
+    <supportedheader>Speed</supportedheader>
     <supportedheader>Timestamp</supportedheader>
     <supportedheader>Transport</supportedheader>
     <supportedheader>Unsupported</supportedheader>
