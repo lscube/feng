@@ -111,7 +111,7 @@ LIBS="$LIBS $GLIB_LIBS"
 avformat_msg="no"
 avutil_msg="no"
 if test "x$enable_ffmpeg" = "xyes"; then
-    PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 52.7.0 libavcodec >= 51],
+    PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 52.31.0 libavcodec >= 51],
         [AC_DEFINE(HAVE_AVFORMAT,,[Define if libavformat support is available])
          avformat_msg="yes"
          ])

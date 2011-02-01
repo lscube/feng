@@ -204,6 +204,8 @@ static int avf_init(Resource * r)
     for(j=0; j<priv.avfc->nb_streams; j++) {
         AVStream *st= priv.avfc->streams[j];
         AVCodecContext *codec= st->codec;
+        AVMetadataTag *metadata_tag = NULL;
+        static const int metadata_flags = AV_METADATA_DONT_STRDUP_KEY|AV_METADATA_DONT_STRDUP_VAL;
         const char *id = tag_from_id(codec->codec_id);
         float frame_rate = 0;
 
@@ -269,10 +271,13 @@ static int avf_init(Resource * r)
         if ( !(track = priv.tracks[j] = add_track(r, g_strdup_printf("Track_%d", j), &props)) )
             goto err_alloc;
 
-        g_string_append_printf(track->sdp_description,
-                               SDP_F_TITLE SDP_F_AUTHOR,
-                               priv.avfc->title,
-                               priv.avfc->author);
+        if ( (metadata_tag = av_metadata_get(priv.avfc->metadata, "title", NULL, metadata_flags)) )
+            g_string_append_printf(SDP_F_TITLE, metadata_tag->value);
+
+        /* here we check a few possible alternative tags to use */
+        if ( (metadata_tag = av_metadata_get(priv.avfc->metadata, "artist", NULL, metadata_flags)) ||
+             (metadata_tag = av_metadata_get(priv.avfc->metadata, "publisher", NULL, metadata_flags)) )
+            g_string_append_printf(SDP_F_AUTHOR, metadata_tag->value);
 
         if ( frame_rate != 0 )
             g_string_append_printf(track->sdp_description,
