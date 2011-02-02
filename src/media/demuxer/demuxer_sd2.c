@@ -290,8 +290,7 @@ static int sd2_init(Resource * r)
          * MAKE SURE ALL MEMORY ALLOCATIONS HAPPEN BELOW THIS POINT!
          */
         priv.mrl = g_strdup(track_mrl);
-
-        g_strlcpy(props_hints.encoding_name, encoding_name, sizeof(props_hints.encoding_name));
+        props_hints.encoding_name = g_strdup(encoding_name);
 
         if ( (info = probe_stream_info(encoding_name)) != NULL ) {
             if ( !g_key_file_has_key(file, currtrack, SD2_KEY_PAYLOAD_TYPE, NULL) )
@@ -371,6 +370,7 @@ static int sd2_init(Resource * r)
 
     corrupted_track:
         g_free(priv.mrl);
+        g_free(props_hints.encoding_name);
         fnc_log(FNC_LOG_ERR, "[sd2] corrupted track '%s' from '%s'",
                 currtrack, r->mrl);
     }

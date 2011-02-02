@@ -240,7 +240,7 @@ static int avf_init(Resource * r)
         props.clock_rate = 90000; //Default
         props.extradata = codec->extradata;
         props.extradata_len = codec->extradata_size;
-        strncpy(props.encoding_name, id, 11);
+        props.encoding_name = g_strdup(id);
         props.payload_type = pt_from_id(codec->codec_id);
         if (props.payload_type >= 96)
             props.payload_type = pt++;
@@ -269,7 +269,7 @@ static int avf_init(Resource * r)
         }
 
         if ( !(track = priv.tracks[j] = add_track(r, g_strdup_printf("Track_%d", j), &props)) )
-            goto err_alloc;
+            goto track_err_alloc;
 
         if ( (metadata_tag = av_metadata_get(priv.avfc->metadata, "title", NULL, metadata_flags)) )
             g_string_append_printf(SDP_F_TITLE, metadata_tag->value);
@@ -283,6 +283,11 @@ static int avf_init(Resource * r)
             g_string_append_printf(track->sdp_description,
                                    "a=framerate:%f\r\n",
                                    frame_rate);
+        continue;
+
+    track_err_alloc:
+        g_free(props.encoding_name);
+        goto err_alloc;
     }
 
     if (track) {

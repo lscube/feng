@@ -163,7 +163,7 @@ typedef struct Resource {
 typedef struct MediaProperties {
     int payload_type;
     unsigned int clock_rate;
-    char encoding_name[12];
+    char *encoding_name;
     MediaType media_type;
     MediaSource media_source;
     int audio_channels;
