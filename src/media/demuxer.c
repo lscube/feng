@@ -48,7 +48,7 @@ void free_track(gpointer element,
 
     g_free(track->name);
 
-    if ( track-> producer )
+    if ( track->producer )
         bq_producer_unref(track->producer);
 
     if ( track->sdp_description )
