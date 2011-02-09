@@ -94,6 +94,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <command>listen-on "</command><replaceable>host</replaceable> | <replaceable>address</replaceable><command>";</command>
     <command>port "</command><replaceable>port number</replaceable> | <replaceable>port name</replaceable><command>";</command>
     <command>ipv6</command> <replaceable>true</replaceable> | <replaceable>false</replaceable><command>;</command>
+    <command>sctp</command> <replaceable>true</replaceable> | <replaceable>false</replaceable><command>;</command>
+    <command>sctp-streams </command><replaceable>amount</replaceable><command>;</command>
 <command>};</command> ...
 
 <command>vhost {</command>
@@ -119,9 +121,164 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <title>Description</title>
 
         <para>
+          The <filename>feng.conf</filename> file is used to configure the basic parameters used by
+          <command>feng</command> at runtime.
         </para>
+
+        <para>
+          The syntax is for the most part compatible with the ISC syntax used by
+          <package>dhcp</package> and <package>bind</package> and as such it should be already of
+          common knowledge for more experienced Unix administrators.
+        </para>
+
+        <para>
+          Strings have to be enclosed in double-quotation marks (<emphasis>""</emphasis>); integers
+          doesn't need to. String lists are enclosed in curly braces (<emphasis>{}</emphasis>), and
+          contains a series of strings (in quotes) separated by commas.
+        </para>
+      </refsection>
+
+      <refsection>
+        <title>Options</title>
+
+        <para>
+          General options, for the daemon or for all the requests alike.
+        </para>
+
+        <variablelist>
+          <varlistentry>
+            <term><command>username</command> <replaceable>"string"</replaceable></term>
+            <term><command>groupname</command> <replaceable>"string"</replaceable></term>
+
+            <listitem>
+              <para>
+                Name (not number) of Unix user and group <command>feng</command> has to drop
+                privileges to when started as root. These values are ignored if the software is not
+                started as super user.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>log-level</command> <replaceable>integer</replaceable></term>
+
+            <listitem>
+              <para>
+                Highest value of messages to output on the logs. <emphasis>TBD</emphasis>
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>error-log</command> <replaceable>"string</replaceable>"</term>
+
+            <listitem>
+              <para>
+                Destination for the error messages' output; it can be either a file (in a path
+                writable by the user running <command>feng</command>), or the special values
+                <emphasis>"syslog"</emphasis> (the messages are sent to the system log for the
+                <emphasis>feng</emphasis> service) or <emphasis>"stderr"</emphasis> (the message are
+                sent to the standard error of the process).
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>buffered-frames</command> <replaceable>integer</replaceable></term>
+
+            <listitem>
+              <para>
+                <emphasis>TBD</emphasis>
+              </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+      </refsection>
+
+      <refsection>
+        <title>Sockets</title>
+
+        <para>
+          To make <command>feng</command> listen to a given host and port pair, you should add a
+          <command>socket</command> section; you can add as many sections as you need to listen to
+          all the host and port pairs that you want.
+        </para>
+
+        <variablelist>
+          <varlistentry>
+            <term><command>listen-on</command> <replaceable>"string"</replaceable></term>
+
+            <listitem>
+              <para>
+                Defines the address (or the host) <command>feng</command> will listen to; if you
+                provide a hostname, a listening socket will be created for each of the addresses it
+                resolves to (compatibly with the protocol settings below). IPv6 addresses do not
+                need to be enclosed in square braces. If no <command>listen-on</command> option is
+                passed, it defaults to listening on all interfaces.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>port</command> <replaceable>"string</replaceable>"</term>
+
+            <listitem>
+              <para>
+                Defines the port <command>feng</command> will listen to; you can provide either a
+                numeric port, or a mnemonic port name as defined in
+                <filename>/etc/services</filename>.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>ipv6</command> <replaceable>boolean</replaceable></term>
+
+            <listitem>
+              <para>
+                Listen on the host's IPv6 addresses as well as IPv4 ones. For this option to make
+                sense, you should have set a compatible <command>listen-on</command> option (or not
+                have set it at all).
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>sctp</command> <replaceable>boolean</replaceable></term>
+
+            <listitem>
+              <para>
+                Listen for SCTP (Stream Control Transmission Protocol) connections as well as TCP
+                ones. For this option to make sense, the operating system needs to support SCTP, and
+                <command>feng</command> has to be built with support for the protocol.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>sctp-streams</command> <replaceable>integer</replaceable> (1-255)</term>
+
+            <listitem>
+              <para>
+                Number of streams to reserve for each SCTP connection. As an indication, on a
+                complete SCTP permanent connection, one stream is reserved for the control session
+                (RTSP), and two streams are assigned per streamed track (RTP and RTCP).
+              </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
       </refsection>
 
     </refentry>
   </section>
 </article>
+<!--
+    Local Variables:
+    mode: nxml
+    mode: auto-fill
+    mode: flyspell
+    ispell-local-dictionary: "english"
+    fill-column: 100
+    indent-tabs-mode: nil
+    End:
+-->
