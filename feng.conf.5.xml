@@ -78,6 +78,43 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         </refpurpose>
       </refnamediv>
 
+      <refsynopsisdiv>
+        <synopsis><filename>feng.conf</filename></synopsis>
+
+        <synopsis>
+<command>options {</command>
+    <command>username "</command><replaceable>user</replaceable><command>";</command>
+    <command>groupname "</command><replaceable>group</replaceable><command>";</command>
+    <command>log-level</command> <replaceable>level</replaceable><command>;</command>
+    <command>error-log</command> <command>"</command><replaceable>error-log-path</replaceable><command>"</command> | <command>"syslog"</command> | <command>"stderr";</command>
+    <command>buffered-frames</command> <replaceable>amount</replaceable><command>;</command>
+<command>};</command>
+
+<command>socket {</command>
+    <command>listen-on "</command><replaceable>host</replaceable> | <replaceable>address</replaceable><command>";</command>
+    <command>port "</command><replaceable>port number</replaceable> | <replaceable>port name</replaceable><command>";</command>
+    <command>ipv6</command> <replaceable>true</replaceable> | <replaceable>false</replaceable><command>;</command>
+<command>};</command> ...
+
+<command>vhost {</command>
+    <command>aliases {</command>
+        <command>"</command><replaceable>host.name1</replaceable><command>", </command>
+        <command>"</command><replaceable>host.name2</replaceable><command>", </command>
+        ...
+    <command>};</command>
+    <command>access-log "</command><replaceable>access-log-path</replaceable><command>"</command> | <command>"syslog"</command> | <command>"stderr";</command>
+    <command>twin "</command><replaceable>mirror.host</replaceable><command>";</command>
+    <command>document-root "</command><replaceable>document-root-path</replaceable><command>";</command>
+    <command>max-connections </command><replaceable>amount</replaceable><command>;</command>
+    <command>dynamic-resource-paths {</command>
+        <command>"</command><replaceable>dynamic-path-1</replaceable><command>", </command>
+        <command>"</command><replaceable>dynamic-path-2</replaceable><command>", </command>
+        ...
+    <command>};</command>
+<command>};</command> ...
+        </synopsis>
+      </refsynopsisdiv>
+
       <refsection>
         <title>Description</title>
 
