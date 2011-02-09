@@ -1,0 +1,90 @@
+<?xml version='1.0'?>
+<!--
+Copyright © 2008-2011, Diego "Flameeyes" Pettenò <flameeyes@gmail.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this generator; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<article xmlns="http://docbook.org/ns/docbook"
+         xmlns:xl="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         version="5.0" xml:lang="en">
+  <info>
+    <title>feng.conf</title>
+
+    <authorgroup>
+      <author>
+        <personname>
+          <firstname>Luca</firstname>
+          <surname>Barbato</surname>
+        </personname>
+
+        <affiliation>
+          <orgname>LScube Project</orgname>
+        </affiliation>
+
+        <email>lu_zero@lscube.org</email>
+      </author>
+
+      <author>
+        <personname>
+          <firstname>Diego Elio</firstname>
+          <surname>Pettenò</surname>
+        </personname>
+
+        <affiliation>
+          <orgname>LScube Project</orgname>
+        </affiliation>
+
+        <email>flameeyes@lscube.org</email>
+      </author>
+    </authorgroup>
+
+    <copyright>
+      <year>2011</year>
+      <holder>LScube Developers</holder>
+    </copyright>
+  </info>
+
+  <section>
+    <title>Reference</title>
+
+    <refentry>
+      <info>
+        <date>February 2011</date>
+        <productname>LScube</productname>
+      </info>
+
+      <refmeta>
+        <refentrytitle>feng.conf</refentrytitle>
+        <manvolnum>5</manvolnum>
+      </refmeta>
+
+      <refnamediv>
+        <refname>feng.conf</refname>
+        <refpurpose>
+          Configuration file for <citerefentry><refentrytitle>feng</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+        </refpurpose>
+      </refnamediv>
+
+      <refsection>
+        <title>Description</title>
+
+        <para>
+        </para>
+      </refsection>
+
+    </refentry>
+  </section>
+</article>

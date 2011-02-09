@@ -25,6 +25,8 @@ config.h.in
 configure
 etc/*.conf
 feng
+feng.1
+feng.conf.5
 libtool
 m4/libtool.m4
 m4/ltoptions.m4

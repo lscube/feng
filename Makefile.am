@@ -233,3 +233,14 @@ EXTRA_DIST = tests/genmain.awk
 
 DISTCLEANFILES = $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = ChangeLog
+
+man_MANS = feng.1 feng.conf.5
+
+$(man_MANS): %: %.xml
+	$(AM_V_GEN)$(XSLTPROC) \
+		--stringparam man.copyright.section.enable 0 \
+		--stringparam man.authors.section.enabled 0 \
+		http://docbook.sourceforge.net/release/xsl-ns/current/manpages/docbook.xsl $<
+	$(AM_V_GEN)sed -i \
+		-e 's:@feng_conf_default\@:${feng_conf_dir}/${feng_conf_file}:g' \
+		$@

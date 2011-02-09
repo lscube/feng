@@ -1,0 +1,192 @@
+<?xml version='1.0'?>
+<!--
+Copyright © 2008-2011, Diego "Flameeyes" Pettenò <flameeyes@gmail.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this generator; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<article xmlns="http://docbook.org/ns/docbook"
+         xmlns:xl="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         version="5.0" xml:lang="en">
+  <info>
+    <title>feng</title>
+
+    <authorgroup>
+      <author>
+        <personname>
+          <firstname>Luca</firstname>
+          <surname>Barbato</surname>
+        </personname>
+
+        <affiliation>
+          <orgname>LScube Project</orgname>
+        </affiliation>
+
+        <email>lu_zero@lscube.org</email>
+      </author>
+
+      <author>
+        <personname>
+          <firstname>Diego Elio</firstname>
+          <surname>Pettenò</surname>
+        </personname>
+
+        <affiliation>
+          <orgname>LScube Project</orgname>
+        </affiliation>
+
+        <email>flameeyes@lscube.org</email>
+      </author>
+    </authorgroup>
+
+    <copyright>
+      <year>2011</year>
+      <holder>LScube Developers</holder>
+    </copyright>
+  </info>
+
+  <section>
+    <title>Reference</title>
+
+    <refentry>
+      <info>
+        <date>February 2011</date>
+        <productname>LScube</productname>
+      </info>
+
+      <refmeta>
+        <refentrytitle>feng</refentrytitle>
+        <manvolnum>1</manvolnum>
+      </refmeta>
+
+      <refnamediv>
+        <refname>feng</refname>
+        <refpurpose>Libre RTSP Streaming Server</refpurpose>
+      </refnamediv>
+
+      <refsynopsisdiv>
+        <cmdsynopsis>
+          <command>feng</command>
+
+          <arg choice="opt">
+            <option>--version</option>
+          </arg>
+
+          <arg choice="opt">
+            <option>--lint</option>
+          </arg>
+
+          <arg choice="opt">
+            <option>--config</option>
+            <replaceable>conf-file</replaceable>
+          </arg>
+
+          <group choice="opt">
+            <arg choice="plain">
+              <option>--quiet</option>
+            </arg>
+
+            <arg choice="plain">
+              <option>--verbose</option>
+            </arg>
+          </group>
+        </cmdsynopsis>
+      </refsynopsisdiv>
+
+      <refsection>
+        <title>Description</title>
+
+        <para>
+        </para>
+      </refsection>
+
+      <refsection>
+        <title>Options</title>
+
+        <variablelist>
+          <varlistentry>
+            <term><option>-V</option></term>
+            <term><option>--version</option></term>
+
+            <listitem>
+              <para>
+                Prints the program version information.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><option>-l</option></term>
+            <term><option>--lint</option></term>
+
+            <listitem>
+              <para>
+                Checks the
+                <citerefentry><refentrytitle>feng.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+                file syntax and report possible errors. The server is
+                not started.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term>
+              <option>-f</option>
+              <replaceable>config-file</replaceable>
+            </term>
+
+            <term>
+              <option>--config</option>
+              <replaceable>config-file</replaceable>
+            </term>
+
+            <listitem>
+              <para>
+                Provide an alternative configuration file for
+                <command>feng</command> to use; by default the
+                configuration file loaded is
+                <filename>@feng_conf_default@</filename>.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><option>-q</option></term>
+            <term><option>--quiet</option></term>
+
+            <listitem>
+              <para>
+                Lower the output logging, hiding warnings.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><option>-v</option></term>
+            <term><option>--verbose</option></term>
+
+            <listitem>
+              <para>
+                Increase the output logging, showing information
+                output (binding of ports and connections accepted).
+              </para>
+            </listitem>
+          </varlistentry>
+
+        </variablelist>
+      </refsection>
+    </refentry>
+  </section>
+</article>
