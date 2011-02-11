@@ -26,8 +26,6 @@ install-data-hook:
 feng_confdir = $(feng_conf_dir)
 dist_feng_conf_DATA = etc/feng.conf
 
-dist_man_MANS = docs/feng.1
-
 dist_doc_DATA = AUTHORS ChangeLog NEWS README RELEASE TODO
 
 if CHANGELOG_REGEN
