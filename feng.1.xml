@@ -187,6 +187,38 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
         </variablelist>
       </refsection>
+
+      <refsection>
+        <title>See Also</title>
+
+        <para>
+          <citerefentry>
+            <refentrytitle>feng.conf</refentrytitle>
+            <manvolnum>5</manvolnum>
+          </citerefentry>,
+
+          <citerefentry>
+            <refentrytitle>feng.sd2</refentrytitle>
+            <manvolnum>5</manvolnum>
+          </citerefentry>,
+
+          <bibliolist>
+            <biblioentry>
+              <abbrev>RFC2326</abbrev>
+
+              <title><link xl:href="http://tools.ietf.org/html/rfc2326"
+                           >Real Time Streaming Protocol (RTSP)</link></title>
+            </biblioentry>
+
+            <biblioentry>
+              <abbrev>RFC4566</abbrev>
+
+              <title><link xl:href="http://tools.ietf.org/html/rfc4566"
+                           >SDP: Session Description Protocol</link></title>
+            </biblioentry>
+          </bibliolist>
+        </para>
+      </refsection>
     </refentry>
   </section>
 </article>
