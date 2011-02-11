@@ -233,12 +233,16 @@ DISTCLEANFILES = $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = ChangeLog
 
 man_MANS = feng.1 feng.conf.5 feng.sd2.5
+EXTRA_DIST += $(patsubst %.1,%.xml,$(patsubst %.5,%.xml,$(dist_man_MANS)))
 
-$(man_MANS): %: %.xml
+%.in: %.xml
 	$(AM_V_GEN)$(XSLTPROC) \
 		--stringparam man.copyright.section.enable 0 \
 		--stringparam man.authors.section.enabled 0 \
-		http://docbook.sourceforge.net/release/xsl-ns/current/manpages/docbook.xsl $<
-	$(AM_V_GEN)sed -i \
+		http://docbook.sourceforge.net/release/xsl-ns/current/manpages/docbook.xsl $< && \
+	mv $* $@
+
+$(man_MANS): %: %.in
+	$(AM_V_GEN)sed \
 		-e 's:@feng_conf_default\@:${feng_conf_dir}/${feng_conf_file}:g' \
-		$@
+		$< > $@
