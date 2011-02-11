@@ -37,7 +37,7 @@ ChangeLog:
 endif
 
 distcheck-hook:
-	@test -s "${srcdir}"/ChangeLog || { echo "distcheck: empty ChangeLog found; make sure you have GIT installed" >/dev/stderr; false; }
+	@test -s "${srcdir}"/ChangeLog || test -s ChangeLog || { echo "distcheck: empty ChangeLog found; make sure you have GIT installed" >/dev/stderr; false; }
 
 bin_PROGRAMS = feng
 
@@ -55,7 +55,8 @@ BUILT_SOURCES = $(RAGEL_SOURCES) \
 	src/cfgparser/cfgparser.lex.l \
 	src/cfgparser/cfgparser.lex.c \
 	src/cfgparser/cfgparser.parse.y \
-	src/cfgparser/cfgparser.parse.c
+	src/cfgparser/cfgparser.parse.c \
+	src/cfgparser/cfgparser.parse.h
 
 $(top_srcdir)/.version:
 	echo $(VERSION) > $@-t && mv $@-t $@
@@ -84,13 +85,12 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	\
 	src/network/netembryo.h \
 	src/network/neb_sockaddr.c \
-	src/network/ragel_parsers.h \
 	src/network/rfc822proto.c \
 	src/network/rfc822proto-constants.h \
 	src/network/rfc822proto.h \
 	src/network/rfc822_response.c \
 	src/network/rtcp.c \
-	src/network/rtp.c network/rtp.h \
+	src/network/rtp.c src/network/rtp.h \
 	src/network/rtsp.h \
 	src/network/rtsp_client.c \
 	src/network/rtsp_lowlevel.c \
@@ -141,6 +141,27 @@ endif
 if ENABLE_SCTP
 dist_feng_SOURCES += src/network/rtsp_sctp.c
 endif
+
+EXTRA_DIST = \
+	$(patsubst %.c,%.rl,$(RAGEL_SOURCES)) \
+	src/network/common.rl \
+	src/network/rfc822proto-statemachine.rl \
+	src/network/rfc822proto-requestline.rl \
+	\
+	src/cfgparser/cfgparser.xml \
+	src/cfgparser/cfgparser.h.xsl \
+	src/cfgparser/cfgparser.l.xsl \
+	src/cfgparser/cfgparser.y.xsl \
+	src/cfgparser/cfgparser.lex.c \
+	src/cfgparser/cfgparser.parse.c \
+	src/cfgparser/cfgparser.parse.h \
+	\
+	src/network/rfc822proto.xml \
+	src/network/rfc822proto-source.xsl \
+	src/network/rfc822proto-header.xsl \
+	src/network/rfc822proto-statemachine.xsl \
+	src/network/rfc822proto-requestline.xsl \
+	tests/rfc822proto/rfc822proto-test.xsl
 
 src/cfgparser/cfgparser.h: src/cfgparser/cfgparser.h.xsl src/cfgparser/cfgparser.xml
 	@$(mkdir_p) $(dir $@)
@@ -227,13 +248,13 @@ tests_testsuite_SOURCES = \
 
 dist_tests_testsuite_SOURCES = tests/gtestmain.c
 
-EXTRA_DIST = tests/genmain.awk
+EXTRA_DIST += tests/genmain.awk
 
 DISTCLEANFILES = $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = ChangeLog
 
 man_MANS = feng.1 feng.conf.5 feng.sd2.5
-EXTRA_DIST += $(patsubst %.1,%.xml,$(patsubst %.5,%.xml,$(dist_man_MANS)))
+EXTRA_DIST += $(patsubst %.1,%.1.xml,$(patsubst %.5,%.5.xml,$(man_MANS)))
 
 %.in: %.xml
 	$(AM_V_GEN)$(XSLTPROC) \
