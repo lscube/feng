@@ -170,7 +170,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </varlistentry>
 
           <varlistentry>
-            <term><command>error-log</command> <replaceable>"string</replaceable>"</term>
+            <term><command>error-log</command> <replaceable>"string"</replaceable></term>
 
             <listitem>
               <para>
@@ -220,7 +220,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </varlistentry>
 
           <varlistentry>
-            <term><command>port</command> <replaceable>"string</replaceable>"</term>
+            <term><command>port</command> <replaceable>"string"</replaceable></term>
 
             <listitem>
               <para>
@@ -269,6 +269,128 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         </variablelist>
       </refsection>
 
+      <refsection>
+        <title>Virtual Hosts</title>
+
+        <para>
+          A single listening socket might actually be accessible under more than a single hostname;
+          the RTSP protocol allows to handle different requests coming for different hosts to the
+          same listening socket. To implement this, <command>feng</command> allows to define virtual
+          hosts, with different request settings.
+        </para>
+
+        <para>
+          You can provide as many <command>vhost</command> section as you need; in case none of the
+          given aliases matched, the settings in the first section are used as fallback default.
+        </para>
+
+        <important>
+          <para>
+            As of February 2010, <command>feng</command> only implements vhosts as part of the
+            configuration syntax but does not make use of them at runtime. The only settings
+            actually used are those of the first <command>vhost</command> section in the file.
+          </para>
+        </important>
+
+        <variablelist>
+          <varlistentry>
+            <term><command>aliases</command> <replaceable>{ "string", "list" }</replaceable></term>
+
+            <listitem>
+              <para>
+                A list of hostnames to be used to refer to the host; no wildcard-matching is
+                implemented yet, so the hostnames for which <command>feng</command> will have to
+                respond should be listed explicitly.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>access-log</command> <replaceable>"string"</replaceable></term>
+
+            <listitem>
+              <para>
+                Destination of the access messages for the requests coming to the virtual host. The
+                format used for logging is pretty much the CustomLog used by
+                <package>apache</package>, and should be compatible with most statistic analysis
+                tools for web servers.
+              </para>
+
+              <para>
+                It can be either a file (in a path writable by the user running
+                <command>feng</command>), or the special values <emphasis>"syslog"</emphasis> (the
+                messages are sent to the system log for the <emphasis>feng</emphasis> service) or
+                <emphasis>"stderr"</emphasis> (the message are sent to the standard error of the
+                process).
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>twin</command> <replaceable>"string"</replaceable></term>
+
+            <listitem>
+              <para>
+                Alternative host to redirect clients to if no more streaming slots are available. If
+                the server is unable to provide more bandwidth to stream content to the clients
+                connecting, it can be told to redirect users to a mirror host. Mirror hosts can be
+                chained to provide more than one alternative.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>document-root</command> <replaceable>"string"</replaceable></term>
+
+            <listitem>
+              <para>
+                Path to the origin of files to be served for the host, connected to
+                <filename>rtsp://host/</filename>. Similarly to a web server's root, no paths above
+                that directory will be served, unless linked from within that tree.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>max-connections</command> <replaceable>integer</replaceable></term>
+
+            <listitem>
+              <para>
+                Maximum number of clients connected for the host before redirecting them to the
+                configured <command>twin</command> (if any) or otherwise disconnecting them.
+              </para>
+
+              <note>
+                <para>
+                  This is a misnomer, as it should rather be the maximum number of open sessions
+                  before the server is considered full.
+                </para>
+              </note>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>dynamic-resource-paths</command> <replaceable>{ "string", "list" }</replaceable></term>
+
+            <listitem>
+              <para><emphasis>TBD</emphasis></para>
+            </listitem>
+          </varlistentry>
+
+        </variablelist>
+      </refsection>
+
+      <refsection>
+        <title>See Also</title>
+
+        <para>
+          <citerefentry>
+            <refentrytitle>feng</refentrytitle>
+            <manvolnum>1</manvolnum>
+          </citerefentry>
+        </para>
+
+      </refsection>
     </refentry>
   </section>
 </article>
