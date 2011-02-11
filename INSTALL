@@ -40,6 +40,7 @@ softwares:
 - autotools (automake >= 1.9, autoconf >= 2.61) [7]
 - ragel >= 6.6 [8]
 - xsltproc [9]
+- docbook-xsl-ns [10]
 
 The sources reside at git://lscube.org/feng.git you can fetch them
 by issuing
@@ -79,3 +80,4 @@ The standard build instruction applies form this step.
     http://www.gnu.org/software/autoconf/       -- GNU autoconf
 [8] http://www.complang.org/ragel/              -- Ragel State Machine Compiler
 [9] http://xmlsoft.org                          -- XSLT processor
+[10] http://sourceforge.net/projects/docbook/   -- DocBook Schemas and Stylesheets
