@@ -1,0 +1,301 @@
+<?xml version='1.0'?>
+<!--
+Copyright © 2008-2011, Diego "Flameeyes" Pettenò <flameeyes@gmail.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this generator; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<article xmlns="http://docbook.org/ns/docbook"
+         xmlns:xl="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         version="5.0" xml:lang="en">
+  <info>
+    <title>feng sd2 format</title>
+
+    <authorgroup>
+      <author>
+        <personname>
+          <firstname>Luca</firstname>
+          <surname>Barbato</surname>
+        </personname>
+
+        <affiliation>
+          <orgname>LScube Project</orgname>
+        </affiliation>
+
+        <email>lu_zero@lscube.org</email>
+      </author>
+
+      <author>
+        <personname>
+          <firstname>Diego Elio</firstname>
+          <surname>Pettenò</surname>
+        </personname>
+
+        <affiliation>
+          <orgname>LScube Project</orgname>
+        </affiliation>
+
+        <email>flameeyes@lscube.org</email>
+      </author>
+    </authorgroup>
+
+    <copyright>
+      <year>2011</year>
+      <holder>LScube Developers</holder>
+    </copyright>
+  </info>
+
+  <section>
+    <title>Reference</title>
+
+    <refentry>
+      <info>
+        <date>February 2011</date>
+        <productname>LScube</productname>
+      </info>
+
+      <refmeta>
+        <refentrytitle>feng.sd2</refentrytitle>
+        <manvolnum>5</manvolnum>
+      </refmeta>
+
+      <refnamediv>
+        <refname>feng.sd2</refname>
+        <refpurpose>
+          Live streaming configuration for
+          <citerefentry><refentrytitle>feng</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+        </refpurpose>
+      </refnamediv>
+
+      <refsynopsisdiv>
+        <synopsis>
+<command>[</command><replaceable>trackname</replaceable><command>]</command>
+<command>mrl = </command><replaceable>URL</replaceable>
+<command>media_type = </command>[ <command>audio</command> | <command>video</command> ]
+<command>encoding_name = </command><replaceable>STRING</replaceable>
+
+# only if it's not a standard encoding
+<command>payload_type = </command><replaceable>INTEGER</replaceable>
+
+# only if giving a non-standard payload_type
+<command>clock_rate = </command><replaceable>INTEGER</replaceable>
+<command>audio_channels = </command><replaceable>INTEGER</replaceable>
+# optional, only if required by the encoding
+<command>fmtp = </command><replaceable>STRING</replaceable>
+
+# optional metadata for the track
+<command>license = </command><replaceable>URI</replaceable>
+<command>rdf_page = </command><replaceable>URL</replaceable>
+<command>title = </command><replaceable>STRING</replaceable>
+<command>creator = </command><replaceable>STRING</replaceable>
+        </synopsis>
+      </refsynopsisdiv>
+
+      <refsection>
+        <title>Description</title>
+
+        <para>
+          Streaming of live content is supported by <command>feng</command> by providing it with a
+          configuration file, in a compatible format with INI, that provides the basic information
+          about the stream as well as the path where the stream itself is being delivered.
+        </para>
+      </refsection>
+
+      <refsection>
+        <title>Format</title>
+
+        <para>
+          Each track in a live stream is designed by a section, whose name is used as name of the
+          track itself in RTSP and SDP. For each track you need to provide some attributes to
+          describe the track itself.
+        </para>
+
+        <variablelist>
+          <varlistentry>
+            <term><command>mrl = </command><replaceable>URL</replaceable></term>
+
+            <listitem>
+              <para>
+                The location where the stream is being delivered; as of this moment, this has to be
+                a <filename>mq://</filename> path pointing to the Posix Message Queue where the
+                stream is being delivered by <command>flux</command>.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>media_type = </command>[ <command>audio</command> | <command>video</command> ]</term>
+
+            <listitem>
+              <para>
+                Type of track, audio or video, needed for the server to identify how to pass the
+                proper parameters on the SDP description.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>encoding_name = </command><replaceable>STRING</replaceable></term>
+
+            <listitem>
+              <para>
+                Name of the encoding, to provide via SDP to the client when describing the
+                resource. When a standard encoding is used, you may not need to set the following
+                two options (<command>payload_type</command> and <command>clock_rate</command>).
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>payload_type = </command><replaceable>INTEGER</replaceable></term>
+
+            <listitem>
+              <para>
+                The index in the PT (Payload Type) table for the current stream. A payload type
+                vaguely identifies the format of the content being streamed. If the value is lesser
+                than 96, a standard payload is used, and the following options
+                (<command>clock_rate</command> and <command>audio_channels</command>) are ignored.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>clock_rate = </command><replaceable>INTEGER</replaceable></term>
+
+            <listitem>
+              <para>
+                Frame or sample rate of the track, provided to the client when describing the
+                resource.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>audio_channels = </command><replaceable>INTEGER</replaceable></term>
+
+            <listitem>
+              <para>
+                The number of channels in an audio track stream (as declared in
+                <command>media_type</command>.
+              </para>
+            </listitem>
+          </varlistentry>
+
+        </variablelist>
+
+        <para>
+          The following options are optional and provide further description for the track:
+        </para>
+
+        <variablelist>
+          <varlistentry>
+            <term><command>fmtp = </command><replaceable>STRING</replaceable></term>
+
+            <listitem>
+              <para>
+                Raw format for the currently defined payload (see <command>payload_type</command>),
+                copied verbatim to the SDP description of the resource.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>license = </command><replaceable>URI</replaceable></term>
+
+            <listitem>
+              <para>
+                Identifier of the license attached to the live stream.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>rdf_page = </command><replaceable>URL</replaceable></term>
+
+            <listitem>
+              <para>
+                <emphasis>TBD</emphasis>
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>title = </command><replaceable>STRING</replaceable></term>
+
+            <listitem>
+              <para>
+                Title of the track as exposed via SDP description.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>creator = </command><replaceable>STRING</replaceable></term>
+
+            <listitem>
+              <para>
+                Creator (author) of the track as exposed via SDP description.
+              </para>
+            </listitem>
+          </varlistentry>
+
+        </variablelist>
+      </refsection>
+
+      <refsection>
+        <title>See Also</title>
+
+        <para>
+          <citerefentry>
+            <refentrytitle>feng</refentrytitle>
+            <manvolnum>1</manvolnum>
+          </citerefentry>,
+
+          <citerefentry>
+            <refentrytitle>feng.conf</refentrytitle>
+            <manvolnum>5</manvolnum>
+          </citerefentry>,
+
+          <bibliolist>
+            <biblioentry>
+              <abbrev>RFC2326</abbrev>
+
+              <title><link xl:href="http://tools.ietf.org/html/rfc2326"
+                           >Real Time Streaming Protocol (RTSP)</link></title>
+            </biblioentry>
+
+            <biblioentry>
+              <abbrev>RFC4566</abbrev>
+
+              <title><link xl:href="http://tools.ietf.org/html/rfc4566"
+                           >SDP: Session Description Protocol</link></title>
+            </biblioentry>
+          </bibliolist>
+        </para>
+
+      </refsection>
+    </refentry>
+  </section>
+</article>
+<!--
+    Local Variables:
+    mode: nxml
+    mode: auto-fill
+    mode: flyspell
+    ispell-local-dictionary: "english"
+    fill-column: 100
+    indent-tabs-mode: nil
+    End:
+-->

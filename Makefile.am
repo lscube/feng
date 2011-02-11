@@ -234,7 +234,7 @@ EXTRA_DIST = tests/genmain.awk
 DISTCLEANFILES = $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = ChangeLog
 
-man_MANS = feng.1 feng.conf.5
+man_MANS = feng.1 feng.conf.5 feng.sd2.5
 
 $(man_MANS): %: %.xml
 	$(AM_V_GEN)$(XSLTPROC) \
