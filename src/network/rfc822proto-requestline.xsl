@@ -50,7 +50,7 @@
 
     <xsl:text><![CDATA[
     RFC822_Request_Line := (
-        RFC822_Generic_Method > set_s % end_method % { method_code = 0; } . SP .
+        RFC822_Generic_Method > set_s % end_method % { method_code = 1; } . SP .
             (print*) > set_s % end_object . SP .
             ( RFC822_Generic_Protocol > set_s % end_protocol > { protocol_code = RFC822_Protocol_Unsupported; } ]]></xsl:text>
 
