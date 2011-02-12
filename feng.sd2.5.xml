@@ -108,13 +108,42 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
         <para>
           Streaming of live content is supported by <command>feng</command> by providing it with a
-          configuration file, in a compatible format with INI, that provides the basic information
-          about the stream as well as the path where the stream itself is being delivered.
+          configuration file, that provides the basic information about the stream as well as the
+          path where the stream itself is being delivered.
+        </para>
+
+        <para>
+          The file is a simple key-value pair file; this file format is mostly compatible with the
+          <filename>.ini</filename> file format used by Windows, and with the
+          <filename>.desktop</filename> file format used by FreeDesktop, and follows the basic
+          syntax of the Desktop Entry Specification format.
+        </para>
+
+        <para>
+          Section names are defined between square brackets (<literal>[]</literal>) within the file
+          are case-sensitive, so that <literal>[section]</literal> and <literal>[Section]</literal>
+          are not the name.
+        </para>
+
+        <para>
+          Within sections, keys and values are separated by the equal sign
+          (<literal>=</literal>). Whitespace preceding and following the sign is ignored (but the
+          <literal>\s</literal> escape can be used to add leading whitespace to the value. The value
+          string does not require quoting, and any character is allowed as a literal, with the
+          exception of newline, tab, carriage return and backslash characters, that need to be
+          escaped (respectively <literal>\n</literal>, <literal>\t</literal>, <literal>r</literal>
+          and <literal>\\</literal>).
+        </para>
+
+        <para>
+          Please note that these files need to be always encoded using UTF-8, and that comments use
+          the hash symbol (<literal>#</literal>), contrarily to Windows <filename>.ini</filename>
+          files.
         </para>
       </refsection>
 
       <refsection>
-        <title>Format</title>
+        <title>Attributes</title>
 
         <para>
           Each track in a live stream is designed by a section, whose name is used as name of the
@@ -281,6 +310,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
               <title><link xl:href="http://tools.ietf.org/html/rfc4566"
                            >SDP: Session Description Protocol</link></title>
+            </biblioentry>
+
+            <biblioentry>
+              <title><link xl:href="http://standards.freedesktop.org/desktop-entry-spec/latest/"
+              >Desktop Entry Specification</link></title>
             </biblioentry>
           </bibliolist>
         </para>
