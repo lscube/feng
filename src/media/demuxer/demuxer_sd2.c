@@ -461,7 +461,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
 #endif
 
         if (delta > 0.5f)
-            fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f, discarding..", priv->mrl, delta);
+            fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f/%f, discarding..", priv->mrl, package_insertion_time, delta);
 
     } while(delta > 0.5f);
 
