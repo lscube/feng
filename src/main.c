@@ -88,7 +88,8 @@ static void vhost_cleanup(gpointer vhost_p, ATTR_UNUSED gpointer user_data)
 {
     cfg_vhost_t *vhost = vhost_p;
 
-    fclose(vhost->access_log_file);
+    if ( vhost->access_log_file )
+        fclose(vhost->access_log_file);
     g_free((char*)vhost->access_log);
     g_free((char*)vhost->twin);
     g_free((char*)vhost->document_root);
