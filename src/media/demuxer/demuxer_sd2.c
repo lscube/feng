@@ -278,7 +278,7 @@ static int sd2_init(Resource * r)
                                                                 SD2_KEY_AUDIO_CHANNELS,
                                                                 NULL);
 
-            if ( props_hints.audio_channels < 0 ) {
+            if ( props_hints.audio_channels <= 0 ) {
                 fnc_log(FNC_LOG_ERR, "[sd2] invalid audio_channels '%d' for '%s'",
                         props_hints.audio_channels, r->mrl);
                 goto corrupted_track;
