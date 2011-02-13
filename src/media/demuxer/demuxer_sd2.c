@@ -267,7 +267,7 @@ static int sd2_init(Resource * r)
         props_hints.clock_rate = g_key_file_get_integer(file, currtrack,
                                                         SD2_KEY_CLOCK_RATE,
                                                         NULL);
-        if ( props_hints.clock_rate >= INT32_MAX ) {
+        if ( props_hints.clock_rate >= INT32_MAX || props_hints.clock_rate <= 0 ) {
             fnc_log(FNC_LOG_ERR, "[sd2] invalid clock_rate '%d' for '%s'",
                     props_hints.clock_rate, r->mrl);
             goto corrupted_track;
