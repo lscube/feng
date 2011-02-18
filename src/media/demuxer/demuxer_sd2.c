@@ -188,6 +188,7 @@ static int sd2_init(Resource * r)
 
     GKeyFile *file = g_key_file_new();
     gchar **tracknames = NULL, **trackgroups = NULL, *currtrack = NULL;
+    int next_dynamic_payload = 97;
 
     if ( !g_key_file_load_from_file(file, r->mrl, G_KEY_FILE_NONE, NULL) )
         goto error;
@@ -254,6 +255,12 @@ static int sd2_init(Resource * r)
                                                           SD2_KEY_PAYLOAD_TYPE,
                                                           NULL);
 
+        /* The next_dynamic_payload variable is initialised to be the
+           first dynamic payload; if the resource define some dynamic
+           payload, make sure that the next used is higher. */
+        if ( props_hints.payload_type >= next_dynamic_payload )
+            next_dynamic_payload = props_hints.payload_type +1;
+
         if ( props_hints.payload_type < 0 ) {
             fnc_log(FNC_LOG_ERR, "[sd2] invalid payload_type '%d' for '%s'",
                     props_hints.payload_type, r->mrl);
@@ -297,6 +304,13 @@ static int sd2_init(Resource * r)
                 set_payload_type(&props_hints, info->PldType);
             if ( !g_key_file_has_key(file, currtrack, SD2_KEY_CLOCK_RATE, NULL) )
                 props_hints.clock_rate = info->ClockRate;
+        } else if ( props_hints.payload_type == 0 ) {
+            /* if the user didn't explicit a payload type, and we
+             * haven't found a static one for the named encoding,
+             * assume a dynamic payload is desired and use the first
+             * one available.
+             */
+            props_hints.payload_type = next_dynamic_payload++;
         }
 
         if ( (track = add_track(r, g_strdup(currtrack),
