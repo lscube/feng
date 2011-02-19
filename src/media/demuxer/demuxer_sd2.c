@@ -188,7 +188,7 @@ static int sd2_init(Resource * r)
 
     GKeyFile *file = g_key_file_new();
     gchar **tracknames = NULL, **trackgroups = NULL, *currtrack = NULL;
-    int next_dynamic_payload = 97;
+    int next_dynamic_payload = 96;
 
     if ( !g_key_file_load_from_file(file, r->mrl, G_KEY_FILE_NONE, NULL) )
         goto error;

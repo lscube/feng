@@ -197,6 +197,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                 than 96, a standard payload is used, and the following options
                 (<command>clock_rate</command> and <command>audio_channels</command>) are ignored.
               </para>
+
+              <para>
+                You may omit to provide a parameter here; in such a case, the first free dynamic
+                payload type will be used. When doing so, you should not use explicit dynamic
+                payload types for the following tracks. As a rule of thumb, either always use
+                automatic payload types, or make all of them explicit.
+              </para>
             </listitem>
           </varlistentry>
 
