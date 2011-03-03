@@ -216,8 +216,9 @@ gboolean rtsp_check_invalid_state(RTSP_Client *client,
         /* We ignore RECORDING state since we don't support it */
     };
     RFC822_Response *response;
+    const int currstate = client->session ? client->session->cur_state : RTSP_SERVER_INIT;
 
-    if ( client->session->cur_state != invalid_state )
+    if ( currstate != invalid_state )
         return true;
 
     response = rfc822_response_new(req, RTSP_InvalidMethodInState);
