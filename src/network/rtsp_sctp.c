@@ -69,17 +69,20 @@ gboolean rtp_sctp_transport(RTSP_Client *rtsp,
 {
     int max_streams;
     struct sctp_initmsg params;
+    socklen_t params_size = sizeof(params);
 
     if ( parsed->rtp_channel == -1 )
         parsed->rtp_channel = ++rtsp->first_free_channel;
     if ( parsed->rtcp_channel == -1 )
         parsed->rtcp_channel = ++rtsp->first_free_channel;
 
-    if (getsockopt(rtsp->sd, SOL_SCTP, SCTP_INITMSG, &params,
-                   sizeof(params)) < 0) {
-        fnc_perror("getsockopt(SCTP_INITMSG)");
+    if (sctp_opt_info(rtsp->sd, 0, SCTP_INITMSG,
+                      &params, &params_size) < 0) {
+        fnc_perror("sctp_opt_info(SCTP_INITMSG)");
         return false;
     }
+
+    feng_assert_or_retval(params_size == sizeof(params), false);
 
     max_streams = MIN(params.sinit_max_instreams, params.sinit_num_ostreams);
 
