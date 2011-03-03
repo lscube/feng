@@ -419,10 +419,10 @@ gboolean rtsp_process_complete(RTSP_Client *rtsp)
     /* We start from no request or we're in a bad state already */
     return ( rtsp->status == RFC822_State_Begin &&
              RTSP_handle_new(rtsp) &&
-             rtsp->status != RFC822_State_RTSP_Headers &&
+             rtsp->status == RFC822_State_RTSP_Headers &&
              RTSP_handle_headers(rtsp) &&
-             rtsp->status != RFC822_State_RTSP_Content &&
+             rtsp->status == RFC822_State_RTSP_Content &&
              RTSP_handle_content(rtsp) &&
-             rtsp->status != RFC822_State_Begin
+             rtsp->status == RFC822_State_Begin
              );
 }
