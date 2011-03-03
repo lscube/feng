@@ -67,17 +67,22 @@ gboolean rtp_sctp_transport(RTSP_Client *rtsp,
                            RTP_session *rtp_s,
                            struct ParsedTransport *parsed)
 {
-    const int max_streams = rtsp->socket->sctp_streams;
+    int max_streams;
+    struct sctp_initmsg params;
 
     if ( parsed->rtp_channel == -1 )
         parsed->rtp_channel = ++rtsp->first_free_channel;
     if ( parsed->rtcp_channel == -1 )
         parsed->rtcp_channel = ++rtsp->first_free_channel;
 
-    /* There's a limit of 256 channels in the RFC2326 specification,
-     * since a single byte is used for the $-prefixed interleaved
-     * packages.
-     */
+    if (getsockopt(rtsp->sd, SOL_SCTP, SCTP_INITMSG, &params,
+                   sizeof(params)) < 0) {
+        fnc_perror("getsockopt(SCTP_INITMSG)");
+        return false;
+    }
+
+    max_streams = MIN(params.sinit_max_instreams, params.sinit_num_ostreams);
+
     if ( parsed->rtp_channel >= max_streams ||
          parsed->rtcp_channel >= max_streams )
         return false;

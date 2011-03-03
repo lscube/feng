@@ -169,7 +169,6 @@ typedef struct RTSP_Client {
     ev_io ev_io_write;
 
     struct cfg_vhost_t *vhost;
-    struct cfg_socket_t *socket;
 
     /**
      * @brief Local host bound to the socket
