@@ -311,7 +311,8 @@ static void rtsp_client_free(RTSP_Client *client)
         g_queue_free(client->out_queue);
     }
 
-    g_byte_array_free(client->input, true);
+    if ( client->input ) /* not present on SCTP or HTTP transports */
+        g_byte_array_free(client->input, true);
 
     g_slice_free(RFC822_Request, client->pending_request);
 
