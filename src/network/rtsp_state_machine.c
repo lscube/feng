@@ -133,6 +133,9 @@ static gboolean rtsp_check_session(RTSP_Client *client, RFC822_Request *req)
  */
 static void rtsp_handle_request(RTSP_Client *client, RFC822_Request *req)
 {
+    const char *cseq_hdr, *cseq_hdr_end;
+    guint64 cseq_val;
+
     static const rtsp_method_function methods[] = {
         [RTSP_Method_DESCRIBE] = RTSP_describe,
         [RTSP_Method_SETUP]    = RTSP_setup,
@@ -143,11 +146,33 @@ static void rtsp_handle_request(RTSP_Client *client, RFC822_Request *req)
     };
 
     /* No CSeq found */
-    if ( rfc822_headers_lookup(req->headers, RTSP_Header_CSeq) == NULL ) {
+    if ( (cseq_hdr = rfc822_headers_lookup(req->headers, RTSP_Header_CSeq)) == NULL ) {
         /** @todo This should be corrected for RFC! */
         rtsp_quick_response(client, req, RTSP_BadRequest);
         goto error;
     }
+
+    if ( (cseq_val = g_ascii_strtoull(cseq_hdr, &cseq_hdr_end, 10)) == G_MAXUINT64 ) {
+        /** @todo This should be corrected for RFC! */
+        rtsp_quick_response(client, req, RTSP_BadRequest);
+        goto error;
+    }
+
+    if ( (cseq_hdr_end-cseq_hdr) < strlen(cseq_hdr) ) {
+        /** @todo This should be corrected for RFC! */
+        rtsp_quick_response(client, req, RTSP_BadRequest);
+        goto error;
+    }
+
+    if ( cseq_val <= client->last_cseq ) {
+        fnc_log(FNC_LOG_INFO, "Duplicated CSeq: %"PRIu64". Dropping.",
+                cseq_val);
+        /* do not send a response, simply ignore this request
+           altogether */
+        goto error;
+    }
+
+    client->last_cseq = cseq_val;
 
     if ( !rtsp_check_session(client, req) )
         goto error;

@@ -156,6 +156,7 @@ typedef struct RTSP_Client {
 
     // Run-Time
     RTSP_session *session;
+    guint64 last_cseq;
 
     rtsp_write_data write_data;
 
