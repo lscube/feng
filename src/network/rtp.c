@@ -51,7 +51,8 @@ static void rtp_session_free(gpointer session_gen,
      * to ensure that we're paused before doing this but doesn't
      * matter now.
      */
-    ev_periodic_stop(client->loop, &session->rtp_writer);
+    if (client->loop)
+        ev_periodic_stop(client->loop, &session->rtp_writer);
 
     session->close_transport(session);
 
