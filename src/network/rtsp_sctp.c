@@ -175,6 +175,21 @@ void rtsp_sctp_read_cb(struct ev_loop *loop, ev_io *w,
                                    NULL, 0, &sctp_info, &flags);
 
         if ( partial == 0 ) {
+#ifdef POLLRDHUP
+            struct pollfd fds = {
+                .fd = rtsp->sd,
+                .events = POLLRDHUP
+            };
+
+            if ( poll(&fds, 1, 100) < 0 ) {
+                fnc_perror("poll(POLLRDHUP)");
+                disconnect = 1;
+                goto end;
+            }
+
+            if ( (fds.revents & POLLRDHUP) == 0 )
+                break;
+#endif
             fnc_log(FNC_LOG_INFO, "SCTP RTSP connection closed by the client.");
             disconnect = 1;
             goto end;
