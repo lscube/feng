@@ -95,6 +95,10 @@ AS_IF([test "x$have_sctp" = "xyes"],
   [AC_SUBST([ENABLE_SCTP], [""])],
   [AC_SUBST([ENABLE_SCTP], ["#"])])
 
+AS_IF([test "x$have_sctp" = "xyes"], [
+  AC_CHECK_HEADERS([linux/sockios.h])
+])
+
 dnl Check for prerequisites to enable live streaming with flux.
 AS_IF([test "x$live_streaming" = "xyes"],
     [AC_SEARCH_LIBS([mq_open], [rt],

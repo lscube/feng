@@ -23,6 +23,11 @@
 #include <config.h>
 
 #include <errno.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#if HAVE_LINUX_SOCKIOS_H
+# include <linux/sockios.h>
+#endif
 #include <netinet/in.h>
 #include <netinet/sctp.h>
 
@@ -137,9 +142,30 @@ void rtsp_sctp_read_cb(struct ev_loop *loop, ev_io *w,
        in 1KiB increments if it's needed; alternatively we can decide
        to go with PAGE_SIZE chunks. */
     static const size_t buffer_chunk_size = 1024;
-    GByteArray *buffer = g_byte_array_sized_new(buffer_chunk_size);
+    size_t initial_size = buffer_chunk_size;
+    GByteArray *buffer;
 
-    g_byte_array_set_size(buffer, buffer_chunk_size);
+#ifdef SIOCINQ
+    /* if ioctl(SIOCINQ) fails, do _not_ try to use it again, it would
+       likely not be implemented in the OS. In such a case, just set
+       this to false.
+    */
+    static gboolean try_siocinq = true;
+
+    if ( try_siocinq ) {
+        int pktsize;
+        if ( ioctl(rtsp->sd, SIOCINQ, &pktsize) < 0 ) {
+            fnc_perror("ioctl(SIOCINQ)");
+            try_siocinq = false;
+        } else if ( pktsize > 0 ) {
+            initial_size = pktsize + 1;
+        }
+    }
+#endif
+
+    buffer = g_byte_array_sized_new(initial_size);
+
+    g_byte_array_set_size(buffer, initial_size);
 
     do {
         int flags;
