@@ -32,7 +32,7 @@ void test_3()
     guint64 *ret;
     guint64 *buffer = g_malloc0(sizeof(guint64));
     BufferQueue_Consumer *cons[size];
-    BufferQueue_Producer *prod = bq_producer_new(g_free);
+    BufferQueue_Producer *prod = bq_producer_new();
 
 //init
     for (i = 0; i < size/2; i++) {

@@ -136,7 +136,7 @@ BufferQueue_Producer *track_get_producer(Track *tr)
     g_mutex_lock(tr->lock);
 
     if ( tr->producer == NULL )
-        tr->producer = bq_producer_new(g_free);
+        tr->producer = bq_producer_new();
 
     g_mutex_unlock(tr->lock);
 

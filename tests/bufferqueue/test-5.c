@@ -61,7 +61,7 @@ void test_5()
 
 //init
     for (i = 0; i< size; i++) {
-        prod[i] = bq_producer_new(g_free);
+        prod[i] = bq_producer_new();
         cons[i] = bq_consumer_new(prod[i]);
         pool[i] = g_thread_pool_new(fill_cb, prod[i], 6, FALSE, NULL);
     }

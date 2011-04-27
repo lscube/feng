@@ -31,7 +31,7 @@ void test_4()
     int count = 24;
     guint64 *ret;
     guint64 *buffer = g_malloc0(sizeof(guint64));
-    BufferQueue_Producer *prod = bq_producer_new(g_free);
+    BufferQueue_Producer *prod = bq_producer_new();
     BufferQueue_Consumer *cons = bq_consumer_new(prod);
 
     for (i = 0; i < count; i++)

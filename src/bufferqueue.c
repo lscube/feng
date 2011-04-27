@@ -72,8 +72,8 @@ typedef struct {
      * Pointer to the actual data represented by the element. This is
      * what the reading function returns to the caller.
      *
-     * When the element is deleted, this is passed as parameter to the
-     * @ref BufferQueue_Producer::free_function function.
+     * When the element is deleted, this is passed as parameter to
+     * g_free()
      */
     gpointer payload;
 
@@ -133,19 +133,6 @@ struct BufferQueue_Producer {
      * that the BufferQueue framework deals with.
      */
     GQueue *queue;
-
-    /**
-     * @brief Function to free elements
-     *
-     * Since each element in the queue is freed once all the consumers
-     * have seen it, its payload needs to be freed at that time as
-     * well.
-     *
-     * To make the framework independent from the actual function to
-     * use to free the buffers, this has to be set by the consumer
-     * itself.
-     */
-    GDestroyNotify free_function;
 
     /**
      * @brief Next serial to use for the added elements
@@ -309,15 +296,14 @@ static inline BufferQueue_Element *BQ_OBJECT(BufferQueue_Consumer *consumer)
  *                          elements' payload.
  */
 static void bq_element_free_internal(gpointer elem_generic,
-                                     gpointer free_func_generic) {
+                                     ATTR_UNUSED gpointer unused) {
     BufferQueue_Element *const element = (BufferQueue_Element*)elem_generic;
-    const GDestroyNotify free_function = (GDestroyNotify)free_func_generic;
 
     bq_debug("Free object %p payload %p %lu",
             element,
             element->payload,
             element->seen);
-    free_function(element->payload);
+    g_free(element->payload);
     g_slice_free(BufferQueue_Element, element);
 }
 
@@ -344,7 +330,7 @@ static void bq_producer_reset_queue_internal(BufferQueue_Producer *producer) {
     if ( producer->queue ) {
         g_queue_foreach(producer->queue,
                         bq_element_free_internal,
-                        producer->free_function);
+                        NULL);
         g_queue_clear(producer->queue);
         g_queue_free(producer->queue);
     }
@@ -384,13 +370,10 @@ void bq_producer_reset_queue(BufferQueue_Producer *producer) {
 /**
  * @brief Create a new producer for the bufferqueue
  *
- * @param free_function Function to call when removing buffers from
- *                      the queue.
- *
  * @return A new BufferQueue_Producer object that needs to be freed
  *         with @ref bq_producer_unref.
  */
-BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function)
+BufferQueue_Producer *bq_producer_new()
 {
 
     BufferQueue_Producer *ret = NULL;
@@ -398,7 +381,6 @@ BufferQueue_Producer *bq_producer_new(GDestroyNotify free_function)
         ret = g_slice_new0(BufferQueue_Producer);
 
         ret->lock = g_mutex_new();
-        ret->free_function = free_function;
         ret->last_consumer = g_cond_new();
 
         bq_producer_reset_queue_internal(ret);
@@ -430,7 +412,7 @@ static void bq_producer_free_internal(BufferQueue_Producer *producer) {
         /* Destroy elements and the queue */
         g_queue_foreach(producer->queue,
                         bq_element_free_internal,
-                        producer->free_function);
+                        NULL);
         g_queue_free(producer->queue);
     }
 
@@ -473,8 +455,7 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
  * @note This function will require exclusive access to the producer,
  *       and will thus lock its mutex.
  *
- * @note The @p payload pointer will be freed with @ref
- *       BufferQueue_Producer::free_function.
+ * @note The @p payload pointer will be freed with g_free()
  *
  * @note The memory area provided as @p payload parameter should be
  *       considered used and should not be freed manually.
@@ -580,7 +561,7 @@ static void bq_producer_destroy_head(BufferQueue_Producer *producer, GList *poin
         producer->next_serial = 1;
     }
 
-    bq_element_free_internal(elem, producer->free_function);
+    bq_element_free_internal(elem, NULL);
 }
 
 /**
