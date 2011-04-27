@@ -175,6 +175,8 @@ src/cfgparser/cfgparser.parse.y: src/cfgparser/cfgparser.y.xsl src/cfgparser/cfg
 	@$(mkdir_p) $(dir $@)
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
 
+src/cfgparser/cfgparser.parse.h: src/cfgparser/cfgparser.parse.c
+
 src/network/rfc822proto.c: src/network/rfc822proto-source.xsl src/network/rfc822proto.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $^
 
