@@ -627,8 +627,6 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     if ( consumer->current_element_pointer ) {
         consumer->last_element_serial =
             GLIST_TO_BQELEM(consumer->current_element_pointer)->serial;
-        if ( consumer->queue_serial != producer->queue_serial )
-            consumer->last_element_serial = 0;
         consumer->queue_serial = producer->queue_serial;
     }
 
