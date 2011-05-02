@@ -181,7 +181,7 @@ void rtp_session_gslist_pause(GSList *sessions_list) {
  * @return RTP Timestamp (in local endianess)
  */
 static inline
-uint32_t rtptime(RTP_session *session, int clock_rate, MParserBuffer *buffer)
+uint32_t rtptime(RTP_session *session, int clock_rate, struct MParserBuffer *buffer)
 {
     uint32_t calc_rtptime =
         (buffer->timestamp - session->range->begin_time) * clock_rate;
@@ -230,7 +230,7 @@ typedef struct {
  * @return The number of frames sent to the client.
  * @retval -1 Error during writing.
  */
-static void rtp_packet_send(RTP_session *session, MParserBuffer *buffer)
+static void rtp_packet_send(RTP_session *session, struct MParserBuffer *buffer)
 {
     const size_t packet_size = sizeof(RTP_packet) + buffer->data_size;
     GByteArray *outbuf = g_byte_array_sized_new(packet_size);
@@ -280,7 +280,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
 {
     RTP_session *session = w->data;
     Resource *resource = session->track->parent;
-    MParserBuffer *buffer = NULL;
+    struct MParserBuffer *buffer = NULL;
     ev_tstamp next_time = w->offset;
 
     /* If there is no buffer, it means that either the producer
@@ -327,7 +327,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
         fnc_log(FNC_LOG_INFO, "[%s] nothing to read, waiting %f...",
                 session->track->properties.encoding_name, sleep_for);
     } else {
-        MParserBuffer *next;
+        struct MParserBuffer *next;
         double delivery  = buffer->delivery;
         double timestamp = buffer->timestamp;
         double duration  = buffer->duration;

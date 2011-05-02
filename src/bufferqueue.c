@@ -25,9 +25,11 @@
 #include <config.h>
 
 #include "bufferqueue.h"
+#include "media/mediaparser.h"
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 /* We don't enable this with !NDEBUG because it's _massive_! */
 #ifdef FENG_BQ_DEBUG
@@ -58,52 +60,6 @@
  *
  * @{
  */
-
-/**
- * @brief Element structure
- *
- * This is the structure that is put in the list for each buffer
- * produced by the producer.
- */
-typedef struct {
-    /**
-     * @brief Element data
-     *
-     * Pointer to the actual data represented by the element. This is
-     * what the reading function returns to the caller.
-     *
-     * When the element is deleted, this is passed as parameter to
-     * g_free()
-     */
-    gpointer payload;
-
-    /**
-     * @brief Seen count
-     *
-     * Reverse reference counter, that tells how many consumers have
-     * seen the buffer already. Once the buffer has been seen by all
-     * the consumers of its producer, the buffer is deleted and the
-     * queue is shifted further on.
-     *
-     * @note Since once the counter reaches the number of consumers
-     *       the element is deleted and freed, before increasing the
-     *       counter it is necessary to hold the @ref
-     *       BufferQueue_Producer lock.
-     */
-    gulong seen;
-
-    /**
-     * @brief Serial number of the buffer
-     *
-     * This value is the “serial number” of the buffer, which, simply
-     * put, is the sequence number of the current buffer in its queue.
-     *
-     * This is taken from @ref BufferQueue_Producer::next_serial, and
-     * is used by @ref bq_consumer_unseen() to provide the number of
-     * not yet seen buffers.
-     */
-    gulong serial;
-} BufferQueue_Element;
 
 /**
  * @brief Producer structure
@@ -137,7 +93,7 @@ struct BufferQueue_Producer {
     /**
      * @brief Next serial to use for the added elements
      *
-     * This is the next value for @ref BufferQueue_Element::serial; it
+     * This is the next value for @ref struct MParserBuffer::serial; it
      * starts from zero and it's reset to zero each time the queue is
      * reset; each element added to the queue gets this value before
      * getting incremented; it is used by @ref bq_consumer_unseen().
@@ -234,9 +190,9 @@ struct BufferQueue_Consumer {
     gulong last_element_serial;
 };
 
-static inline BufferQueue_Element *GLIST_TO_BQELEM(GList *pointer)
+static inline struct MParserBuffer *GLIST_TO_BQELEM(GList *pointer)
 {
-    return (BufferQueue_Element*)pointer->data;
+    return (struct MParserBuffer*)pointer->data;
 }
 
 /**
@@ -277,14 +233,14 @@ static void bq_consumer_confirm_pointer(BufferQueue_Consumer *consumer)
     }
 }
 
-static inline BufferQueue_Element *BQ_OBJECT(BufferQueue_Consumer *consumer)
+static inline struct MParserBuffer *BQ_OBJECT(BufferQueue_Consumer *consumer)
 {
     bq_consumer_confirm_pointer(consumer);
 
     if ( consumer->current_element_pointer == NULL )
         return NULL;
 
-    return (BufferQueue_Element *)consumer->current_element_pointer->data;
+    return (struct MParserBuffer*)consumer->current_element_pointer->data;
 }
 
 /**
@@ -297,14 +253,12 @@ static inline BufferQueue_Element *BQ_OBJECT(BufferQueue_Consumer *consumer)
  */
 static void bq_element_free_internal(gpointer elem_generic,
                                      ATTR_UNUSED gpointer unused) {
-    BufferQueue_Element *const element = (BufferQueue_Element*)elem_generic;
+    struct MParserBuffer *const element = (struct MParserBuffer*)elem_generic;
 
-    bq_debug("Free object %p payload %p %lu",
+    bq_debug("Free object %p %lu",
             element,
-            element->payload,
             element->seen);
-    g_free(element->payload);
-    g_slice_free(BufferQueue_Element, element);
+    g_free(element);
 }
 
 /**
@@ -450,34 +404,27 @@ void bq_producer_unref(BufferQueue_Producer *producer) {
  * @brief Adds a new buffer to the producer
  *
  * @param producer The producer to add the element to
- * @param payload The buffer to link in the element
+ * @param elem The buffer to link in the element
  *
  * @note This function will require exclusive access to the producer,
  *       and will thus lock its mutex.
  *
- * @note The @p payload pointer will be freed with g_free()
+ * @note The @p elem pointer will be freed with g_free()
  *
- * @note The memory area provided as @p payload parameter should be
+ * @note The memory area provided as @p elem parameter should be
  *       considered used and should not be freed manually.
  */
-void bq_producer_put(BufferQueue_Producer *producer, gpointer payload) {
-    BufferQueue_Element *elem;
-
-    g_assert(payload != NULL && payload != GINT_TO_POINTER(-1));
-
+void bq_producer_put(BufferQueue_Producer *producer, struct MParserBuffer *elem) {
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
     /* Make sure the producer is not stopped */
     g_assert(g_atomic_int_get(&producer->stopped) == 0);
 
-    elem = g_slice_new(BufferQueue_Element);
-    elem->payload = payload;
     elem->seen = 0;
     elem->serial = producer->next_serial++;
 
-    bq_debug("Payload %p element %p",
-             payload, elem);
+    bq_debug("Element %p", elem);
 
     g_assert_cmpint(producer->next_serial, !=, 0);
 
@@ -537,7 +484,7 @@ BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer) {
  * @param element element to destroy; this is a safety check
  */
 static void bq_producer_destroy_head(BufferQueue_Producer *producer, GList *pointer) {
-    BufferQueue_Element *elem = pointer->data;
+    struct MParserBuffer *elem = pointer->data;
 
     bq_debug("P:%p PQH:%p pointer %p",
              producer,
@@ -575,7 +522,7 @@ static void bq_producer_destroy_head(BufferQueue_Producer *producer, GList *poin
  */
 static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
-    BufferQueue_Element *elem;
+    struct MParserBuffer *elem;
     GList *pointer;
 
     bq_consumer_confirm_pointer(consumer);
@@ -596,11 +543,10 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
     g_assert_cmpint(elem->seen, !=, producer->consumers);
     /* If we're the last one to see the element, we need to take care
      * of removing and freeing it. */
-    bq_debug("C:%p pointer %p object %p payload %p seen %lu consumers %lu PQH:%p",
+    bq_debug("C:%p pointer %p object %p seen %lu consumers %lu PQH:%p",
             consumer,
             consumer->current_element_pointer,
             elem,
-            elem->payload,
             elem->seen+1,
             producer->consumers,
             producer->queue->head);
@@ -692,7 +638,7 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
 static void bq_decrement_seen_on_free(gpointer elem,
                                       ATTR_UNUSED gpointer unused)
 {
-    BufferQueue_Element *const element = elem;
+    struct MParserBuffer *const element = elem;
     element->seen--;
 }
 
@@ -821,7 +767,7 @@ gboolean bq_consumer_move(BufferQueue_Consumer *consumer) {
  *
  * @param consumer The consumer object to get the data from
  *
- * @return A pointer to the payload of the newly selected element
+ * @return A pointer to the newly selected element
  *
  * @retval NULL No element can be read; this might be due to no data
  *              present in the producer, or if the producer was
@@ -835,9 +781,9 @@ gboolean bq_consumer_move(BufferQueue_Consumer *consumer) {
  * any; the new selection is not freed until the cursor is moved or
  * the consumer is deleted.
  */
-gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
+struct MParserBuffer *bq_consumer_get(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
-    BufferQueue_Element *element = NULL;
+    struct MParserBuffer *element = NULL;
 
     if ( g_atomic_int_get(&producer->stopped) )
         return NULL;
@@ -861,19 +807,18 @@ gpointer bq_consumer_get(BufferQueue_Consumer *consumer) {
          !bq_consumer_move_internal(consumer) )
             goto end;
 
-    element = (BufferQueue_Element*)(consumer->current_element_pointer->data);
+    element = (struct MParserBuffer*)(consumer->current_element_pointer->data);
 
-    bq_debug("C:%p pointer %p object %p payload %p seen %lu/%lu",
+    bq_debug("C:%p pointer %p object %p seen %lu/%lu",
             consumer,
             consumer->current_element_pointer,
             element,
-            element->payload,
             element->seen,
             producer->consumers);
  end:
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
-    return element ? element->payload : NULL;
+    return element;
 }
 
 /**
@@ -896,3 +841,62 @@ gboolean bq_consumer_stopped(BufferQueue_Consumer *consumer) {
 }
 
 /**@}*/
+
+/**
+ *  Insert a rtp packet inside the track buffer queue
+ *  @param tr track the packetized frames/samples belongs to
+ *  @param presentation the actual packet presentation timestamp
+ *         in fractional seconds, will be embedded in the rtp packet
+ *  @param delivery the actual packet delivery timestamp
+ *         in fractional seconds, will be used to calculate sending time
+ *  @param duration the actual packet duration, a multiple of the frame/samples
+ *  duration
+ *  @param marker tell if we are handling a frame/sample fragment
+ *  @param data actual packet data
+ *  @param data_size actual packet data size
+ */
+void mparser_buffer_write(Track *tr,
+                          double presentation,
+                          double delivery,
+                          double duration,
+                          gboolean marker,
+                          uint8_t *data, size_t data_size)
+{
+    struct MParserBuffer *buffer = g_malloc(sizeof(struct MParserBuffer) + data_size);
+
+    buffer->timestamp = presentation;
+    buffer->rtp_timestamp = 0;
+    buffer->delivery = delivery;
+    buffer->duration = duration;
+    buffer->marker = marker;
+    buffer->data_size = data_size;
+    buffer->seq_no = 0;
+
+    memcpy(buffer->data, data, data_size);
+
+    bq_producer_put(track_get_producer(tr), buffer);
+}
+
+void mparser_live_buffer_write(Track *tr,
+                               double presentation,
+                               uint32_t rtp_timestamp,
+                               double delivery,
+                               double duration,
+                               uint16_t seq_no,
+                               gboolean marker,
+                               uint8_t *data, size_t data_size)
+{
+    struct MParserBuffer *buffer = g_malloc(sizeof(struct MParserBuffer) + data_size);
+
+    buffer->timestamp = presentation;
+    buffer->rtp_timestamp = rtp_timestamp;
+    buffer->delivery = delivery;
+    buffer->duration = duration;
+    buffer->marker = marker;
+    buffer->data_size = data_size;
+    buffer->seq_no = seq_no;
+
+    memcpy(buffer->data, data, data_size);
+
+    bq_producer_put(track_get_producer(tr), buffer);
+}
