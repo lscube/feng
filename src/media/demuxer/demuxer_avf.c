@@ -248,7 +248,7 @@ static int avf_init(Resource * r)
                 props.encoding_name);
 
         switch(codec->codec_type){
-            case CODEC_TYPE_AUDIO:
+            case AVMEDIA_TYPE_AUDIO:
                 props.media_type     = MP_audio;
                 // Some properties, add more?
                 props.audio_channels = codec->channels;
@@ -256,7 +256,7 @@ static int avf_init(Resource * r)
                 props.frame_duration       = (double)1 / codec->sample_rate;
                 break;
 
-            case CODEC_TYPE_VIDEO:
+            case AVMEDIA_TYPE_VIDEO:
                 props.media_type   = MP_video;
                 frame_rate         = av_q2d(st->r_frame_rate);
                 props.frame_duration     = (double)1 / frame_rate;
