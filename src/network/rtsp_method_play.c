@@ -77,9 +77,8 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
   RTP_session *p = (RTP_session *)element;
   Track *t = p->track;
 
-  g_string_append_printf(str, "url=%s;seq=%u",
-                         p->uri,
-                         p->start_seq);
+  g_string_append_printf(str, "url=%s;seq=1",
+                         p->uri);
 
   if (t->properties.media_source != LIVE_SOURCE)
     g_string_append_printf(str,

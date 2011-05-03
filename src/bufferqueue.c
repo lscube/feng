@@ -98,7 +98,7 @@ struct BufferQueue_Producer {
      * reset; each element added to the queue gets this value before
      * getting incremented; it is used by @ref bq_consumer_unseen().
      */
-    gulong next_serial;
+    uint16_t next_serial;
 
     /**
      * @brief Serial number for the queue
@@ -187,7 +187,7 @@ struct BufferQueue_Consumer {
      * distinguish between the situations of "all seen" and "none
      * seen".
      */
-    gulong last_element_serial;
+    uint16_t last_element_serial;
 };
 
 static inline struct MParserBuffer *GLIST_TO_BQELEM(GList *pointer)
@@ -221,13 +221,13 @@ static void bq_consumer_confirm_pointer(BufferQueue_Consumer *consumer)
     }
 
     if ( producer->queue->head &&
-         consumer->last_element_serial < GLIST_TO_BQELEM(producer->queue->head)->serial ) {
-        bq_debug("C:%p pointer %p reset LES:%lu:%lu < PQHS:%lu:%lu",
+         consumer->last_element_serial < GLIST_TO_BQELEM(producer->queue->head)->seq_no ) {
+        bq_debug("C:%p pointer %p reset LES:%lu:%u < PQHS:%lu:%u",
                 consumer,
                 consumer->current_element_pointer,
                 consumer->queue_serial, consumer->last_element_serial,
                 producer->queue_serial,
-                GLIST_TO_BQELEM(producer->queue->head)->serial);
+                GLIST_TO_BQELEM(producer->queue->head)->seq_no);
         consumer->current_element_pointer = NULL;
         return;
     }
@@ -422,7 +422,8 @@ void bq_producer_put(BufferQueue_Producer *producer, struct MParserBuffer *elem)
     g_assert(g_atomic_int_get(&producer->stopped) == 0);
 
     elem->seen = 0;
-    elem->serial = producer->next_serial++;
+    if ( elem->seq_no == 0 )
+        elem->seq_no = producer->next_serial++;
 
     bq_debug("Element %p", elem);
 
@@ -580,11 +581,11 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
 static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     BufferQueue_Producer *producer = consumer->producer;
 
-    bq_debug("C:%p LES:%lu:%lu PQHS:%lu:%lu PQH:%p pointer %p",
+    bq_debug("C:%p LES:%lu:%u PQHS:%lu:%u PQH:%p pointer %p",
             consumer,
             consumer->queue_serial, consumer->last_element_serial,
             producer->queue_serial,
-            producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->serial : 0,
+            producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->seq_no : 0,
             producer->queue->head,
             consumer->current_element_pointer);
 
@@ -617,7 +618,7 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
                 producer->queue->head);
 
         while ( elem != NULL &&
-                GLIST_TO_BQELEM(elem)->serial <= consumer->last_element_serial )
+                GLIST_TO_BQELEM(elem)->seq_no <= consumer->last_element_serial )
             elem = elem->next;
 
         consumer->current_element_pointer = elem;
@@ -626,7 +627,7 @@ static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
     /* Now we have a new "next" element and we can set it properly */
     if ( consumer->current_element_pointer ) {
         consumer->last_element_serial =
-            GLIST_TO_BQELEM(consumer->current_element_pointer)->serial;
+            GLIST_TO_BQELEM(consumer->current_element_pointer)->seq_no;
         consumer->queue_serial = producer->queue_serial;
     }
 
@@ -788,11 +789,11 @@ struct MParserBuffer *bq_consumer_get(BufferQueue_Consumer *consumer) {
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
-    bq_debug("C:%p LES:%lu:%lu PQHS:%lu:%lu PQH:%p pointer %p",
+    bq_debug("C:%p LES:%lu:%u PQHS:%lu:%u PQH:%p pointer %p",
              consumer,
              consumer->queue_serial, consumer->last_element_serial,
              producer->queue_serial,
-             producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->serial : 0,
+             producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->seq_no : 0,
              producer->queue->head,
              consumer->current_element_pointer);
 

@@ -56,9 +56,6 @@ typedef struct RTP_session {
     /** Multicast session (treated in a special way) */
     gboolean multicast;
 
-    uint16_t start_seq;
-    uint16_t seq_no;
-
     uint32_t start_rtptime;
 
     uint32_t ssrc;

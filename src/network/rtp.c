@@ -30,6 +30,7 @@
 #include "fnc_log.h"
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
+#include "libavutil/crc.h"
 
 /**
  * Deallocates an RTP session, closing its tracks and transports
@@ -107,7 +108,6 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     fnc_log(FNC_LOG_VERBOSE, "Resuming session %p", session);
 
     session->range = range;
-    session->start_seq = 1 + session->seq_no;
     session->send_time = 0.0;
     session->start_rtptime += (cur_time - session->last_packet_send_time) *
                               session->track->properties.clock_rate;
@@ -238,9 +238,6 @@ static void rtp_packet_send(RTP_session *session, struct MParserBuffer *buffer)
     Track *tr = session->track;
     uint32_t timestamp = rtptime(session, tr->properties.clock_rate, buffer);
 
-    session->seq_no = (session->track->properties.media_source == LIVE_SOURCE) ?
-        buffer->seq_no : (session->seq_no + 1);
-
     outbuf->len = packet_size;
 
     packet->version = 2;
@@ -249,7 +246,7 @@ static void rtp_packet_send(RTP_session *session, struct MParserBuffer *buffer)
     packet->csrc_len = 0;
     packet->marker = buffer->marker & 0x1;
     packet->payload = tr->properties.payload_type & 0x7f;
-    packet->seq_no = htons(session->seq_no);
+    packet->seq_no = htons(buffer->seq_no);
     packet->timestamp = htonl(timestamp);
     packet->ssrc = htonl(session->ssrc);
 
@@ -425,8 +422,6 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp,
     rtp_s->uri = g_strdup(uri);
 
     rtp_s->start_rtptime = g_random_int();
-    rtp_s->start_seq = g_random_int_range(0, G_MAXUINT16);
-    rtp_s->seq_no = rtp_s->start_seq - 1;
 
     /* Set up the track selector and get a consumer for the track */
 

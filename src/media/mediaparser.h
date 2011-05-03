@@ -98,18 +98,6 @@ struct MParserBuffer {
      */
     gulong seen;
 
-    /**
-     * @brief Serial number of the buffer
-     *
-     * This value is the “serial number” of the buffer, which, simply
-     * put, is the sequence number of the current buffer in its queue.
-     *
-     * This is taken from @ref BufferQueue_Producer::next_serial, and
-     * is used by @ref bq_consumer_unseen() to provide the number of
-     * not yet seen buffers.
-     */
-    gulong serial;
-
     double timestamp;   /*!< presentation time of packet */
     uint32_t rtp_timestamp; /*!< RTP version of the presenation time, used only by live */
     double delivery;    /*!< decoding time of packet */
