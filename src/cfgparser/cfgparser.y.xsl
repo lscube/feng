@@ -25,7 +25,7 @@ extern int yylex (void);
 
 ]]></xsl:text>
 
-    <xsl:text>union {</xsl:text>
+    <xsl:text>static union {</xsl:text>
     <xsl:value-of select="$newline" />
     <xsl:for-each select="/cfgparser/section">
       <xsl:text>cfg_</xsl:text>
@@ -41,7 +41,7 @@ extern int yylex (void);
 
     <xsl:text><![CDATA[
 
-GList *list;
+static GList *list;
 
 %}
 

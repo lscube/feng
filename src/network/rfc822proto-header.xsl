@@ -124,10 +124,6 @@ typedef enum RFC822_Header {
 
       <xsl:value-of select="$newline" />
 
-      <xsl:text>const char *</xsl:text>
-      <xsl:value-of select="translate(@name, $uppercase, $lowercase)" />
-      <xsl:text>_response_reason(int code);</xsl:text>
-
       <xsl:value-of select="$newline" />
       <xsl:value-of select="$newline" />
 

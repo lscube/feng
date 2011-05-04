@@ -54,7 +54,7 @@ const char *rfc822_header_to_string(RFC822_Header hdr)
     <xsl:for-each select="//supportedproto">
       <xsl:variable name="loname" select="translate(@name, $uppercase, $lowercase)" />
 
-      <xsl:text>const char *</xsl:text>
+      <xsl:text>static const char *</xsl:text>
       <xsl:value-of select="$loname" />
       <xsl:text><![CDATA[_response_reason(int code) {
     static const char *const responses[1000] = {
@@ -161,7 +161,7 @@ const char *rfc822_header_to_string(RFC822_Header hdr)
     <xsl:for-each select="//supportedproto">
       <xsl:variable name="loname" select="translate(@name, $uppercase, $lowercase)" />
 
-      <xsl:text>const char *</xsl:text>
+      <xsl:text>static const char *</xsl:text>
       <xsl:value-of select="$loname" />
       <xsl:text><![CDATA[_response_reason(int code) {
     switch(code) {

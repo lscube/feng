@@ -324,15 +324,6 @@ static void rtsp_client_free(RTSP_Client *client)
     fnc_log(FNC_LOG_INFO, "[client] Client removed");
 }
 
-RTSP_Client *rtsp_client_new()
-{
-    RTSP_Client *rtsp = g_slice_new0(RTSP_Client);
-
-    rtsp->input = g_byte_array_new();
-
-    return rtsp;
-}
-
 /**
  * @brief Handle an incoming RTSP connection
  *
@@ -392,7 +383,8 @@ void rtsp_client_incoming_cb(ATTR_UNUSED struct ev_loop *loop, ev_io *w,
     fnc_log(FNC_LOG_INFO, "Incoming connection accepted on socket: %d",
             client_sd);
 
-    rtsp = rtsp_client_new();
+    rtsp = g_slice_new0(RTSP_Client);
+    rtsp->input = g_byte_array_new();
     rtsp->sd = client_sd;
 
     rtsp->loop = ev_loop_new(EVFLAG_AUTO);

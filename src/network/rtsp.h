@@ -199,8 +199,6 @@ typedef struct HTTP_Tunnel_Pair {
     guint base64_save;
 } HTTP_Tunnel_Pair;
 
-RTSP_Client *rtsp_client_new();
-
 void rtsp_write_string(RTSP_Client *client, GString *str);
 
 void rtsp_client_incoming_cb(struct ev_loop *loop, ev_io *w, int revents);

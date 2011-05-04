@@ -184,7 +184,7 @@ static const uint8_t *find_startcode_internal(const uint8_t *p,
     return end + 3;
 }
 
-const uint8_t *find_startcode(const uint8_t *p, const uint8_t *end){
+static const uint8_t *find_startcode(const uint8_t *p, const uint8_t *end){
     const uint8_t *out = find_startcode_internal(p, end);
     if(p<out && out<end && !out[-1]) out--;
     return out;

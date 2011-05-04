@@ -32,7 +32,7 @@
 #include <libavformat/avformat.h>
 
 
-int fc_lock_manager(void **mutex, enum AVLockOp op)
+static int fc_lock_manager(void **mutex, enum AVLockOp op)
 {
     switch (op) {
         case AV_LOCK_CREATE:  ///< Create a mutex
