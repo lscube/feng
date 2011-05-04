@@ -48,15 +48,18 @@ RAGEL_SOURCES = \
 	src/network/ragel_headers.c \
 	src/network/ragel_uri.c
 
+CFGPARSER_SRCS = \
+	src/cfgparser/cfgparser.lex.c \
+	src/cfgparser/cfgparser.parse.c \
+	src/cfgparser/cfgparser.parse.h
+
 BUILT_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rfc822proto.c \
 	src/network/rfc822proto-constants.h \
+	$(CFGPARSER_SRCS) \
 	src/cfgparser/cfgparser.h \
 	src/cfgparser/cfgparser.lex.l \
-	src/cfgparser/cfgparser.lex.c \
-	src/cfgparser/cfgparser.parse.y \
-	src/cfgparser/cfgparser.parse.c \
-	src/cfgparser/cfgparser.parse.h
+	src/cfgparser/cfgparser.parse.y
 
 $(top_srcdir)/.version:
 	echo $(VERSION) > $@-t && mv $@-t $@
@@ -152,9 +155,6 @@ EXTRA_DIST = \
 	src/cfgparser/cfgparser.h.xsl \
 	src/cfgparser/cfgparser.l.xsl \
 	src/cfgparser/cfgparser.y.xsl \
-	src/cfgparser/cfgparser.lex.c \
-	src/cfgparser/cfgparser.parse.c \
-	src/cfgparser/cfgparser.parse.h \
 	\
 	src/network/rfc822proto.xml \
 	src/network/rfc822proto-source.xsl \
@@ -203,10 +203,12 @@ INCLUDES = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network -Isrc
 AM_RAGELFLAGS = -I$(srcdir)/src/network -Isrc/network
 AM_YFLAGS = --defines
 
+CLEANFILES = $(CFGPARSER_SRCS)
+
 if HAVE_RAGEL
 include $(top_srcdir)/ragel.make
 
-CLEANFILES = $(RAGEL_SOURCES)
+CLEANFILES += $(RAGEL_SOURCES)
 endif
 
 if BUILD_TESTS
