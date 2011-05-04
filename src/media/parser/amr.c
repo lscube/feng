@@ -23,6 +23,7 @@
 #include <config.h>
 
 #include <string.h>
+#include <stdbool.h>
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
@@ -142,7 +143,7 @@ static int amr_parse(Track *tr, uint8_t *data, size_t len)
                              tr->properties.pts,
                              tr->properties.dts,
                              tr->properties.frame_duration,
-                             0,
+                             false, 0, 0,
                              packet, off);
     }
 

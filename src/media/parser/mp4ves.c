@@ -20,6 +20,8 @@
  *
  * */
 
+#include <stdbool.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "fnc_log.h"
@@ -57,7 +59,7 @@ static int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
                              tr->properties.pts,
                              tr->properties.dts,
                              tr->properties.frame_duration,
-                             1,
+                             true, 0, 0,
                              data, len);
         fnc_log(FNC_LOG_VERBOSE, "[mp4v] no frags");
     } else {
@@ -67,7 +69,7 @@ static int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
                                  tr->properties.pts,
                                  tr->properties.dts,
                                  tr->properties.frame_duration,
-                                 (rem <= DEFAULT_MTU),
+                                 (rem <= DEFAULT_MTU), 0, 0,
                                  data + offset, MIN(rem, DEFAULT_MTU));
             rem -= DEFAULT_MTU;
             fnc_log(FNC_LOG_VERBOSE, "[mp4v] frags");

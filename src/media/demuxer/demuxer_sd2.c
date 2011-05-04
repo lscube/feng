@@ -504,13 +504,13 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
             ev_time() - (package_start_time + delivery));
 #endif
 
-    mparser_live_buffer_write(tr,
+    mparser_buffer_write(tr,
                          timestamp,
-                         package_timestamp,
                          package_start_time + delivery,
                          tr->properties.frame_duration * 3,
-                         seq_no,
                          marker,
+                         package_timestamp,
+                         seq_no,
                          packet+12, msg_len-12);
 
     g_free(msg_buffer);

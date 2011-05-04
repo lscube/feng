@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
@@ -105,7 +106,8 @@ static int mp2t_parse(Track *tr, uint8_t *data, size_t len)
                                  tr->properties.pts,
                                  tr->properties.dts,
                                  tr->properties.frame_duration,
-                                 1, dst, dst_len);
+                                 true, 0, 0,
+                                 dst, dst_len);
             dst_len = len;
         }
     } while (ret);

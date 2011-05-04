@@ -113,15 +113,8 @@ void mparser_buffer_write(struct Track *tr,
                           double delivery,
                           double duration,
                           gboolean marker,
-                          uint8_t *data, size_t data_size);
-
-void mparser_live_buffer_write(struct Track *tr,
-                          double presentation,
                           uint32_t rtp_timestamp,
-                          double delivery,
-                          double duration,
                           uint16_t seq_no,
-                          gboolean marker,
                           uint8_t *data, size_t data_size);
 
 

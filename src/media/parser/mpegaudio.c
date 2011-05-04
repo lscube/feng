@@ -22,7 +22,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <netinet/in.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "fnc_log.h"
@@ -40,7 +42,7 @@ static int mpa_parse(Track *tr, uint8_t *data, size_t len)
                              tr->properties.pts,
                              tr->properties.dts,
                              tr->properties.frame_duration,
-                             1,
+                             true, 0, 0,
                              dst, len + 4);
         fnc_log(FNC_LOG_VERBOSE, "[mp3] no frags");
     } else {
@@ -55,7 +57,7 @@ static int mpa_parse(Track *tr, uint8_t *data, size_t len)
                                  tr->properties.pts,
                                  tr->properties.dts,
                                  tr->properties.frame_duration,
-                                 0,
+                                 false, 0, 0,
                                  dst, MIN(DEFAULT_MTU, rem + 4));
             rem -= DEFAULT_MTU - 4;
             fnc_log(FNC_LOG_VERBOSE, "[mp3] frags");

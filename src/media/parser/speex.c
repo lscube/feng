@@ -22,6 +22,8 @@
 
 #include <config.h>
 
+#include <stdbool.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 
@@ -34,7 +36,7 @@ static int speex_parse(Track *tr, uint8_t *data, size_t len)
                          tr->properties.pts,
                          tr->properties.dts,
                          tr->properties.frame_duration,
-                         1,
+                         true, 0, 0,
                          data, len);
 
     return 0;

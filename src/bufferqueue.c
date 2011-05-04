@@ -847,10 +847,14 @@ gboolean bq_consumer_stopped(BufferQueue_Consumer *consumer) {
  *  @param presentation the actual packet presentation timestamp
  *         in fractional seconds, will be embedded in the rtp packet
  *  @param delivery the actual packet delivery timestamp
- *         in fractional seconds, will be used to calculate sending time
- *  @param duration the actual packet duration, a multiple of the frame/samples
- *  duration
+ *                  in fractional seconds, will be used to calculate
+ *                  sending time
+ *  @param duration the actual packet duration, a multiple of the
+ *                  frame/samples duration
  *  @param marker tell if we are handling a frame/sample fragment
+ *  @param rtp_timestamp Timestamp of the packet in RTP (0 is automatic
+ *                       timestamping)
+ *  @param seq_no Sequence number of the buffer (0 is automatic sequencing)
  *  @param data actual packet data
  *  @param data_size actual packet data size
  */
@@ -859,31 +863,9 @@ void mparser_buffer_write(Track *tr,
                           double delivery,
                           double duration,
                           gboolean marker,
+                          uint32_t rtp_timestamp,
+                          uint16_t seq_no,
                           uint8_t *data, size_t data_size)
-{
-    struct MParserBuffer *buffer = g_malloc(sizeof(struct MParserBuffer) + data_size);
-
-    buffer->timestamp = presentation;
-    buffer->rtp_timestamp = 0;
-    buffer->delivery = delivery;
-    buffer->duration = duration;
-    buffer->marker = marker;
-    buffer->data_size = data_size;
-    buffer->seq_no = 0;
-
-    memcpy(buffer->data, data, data_size);
-
-    bq_producer_put(track_get_producer(tr), buffer);
-}
-
-void mparser_live_buffer_write(Track *tr,
-                               double presentation,
-                               uint32_t rtp_timestamp,
-                               double delivery,
-                               double duration,
-                               uint16_t seq_no,
-                               gboolean marker,
-                               uint8_t *data, size_t data_size)
 {
     struct MParserBuffer *buffer = g_malloc(sizeof(struct MParserBuffer) + data_size);
 

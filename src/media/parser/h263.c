@@ -97,7 +97,7 @@ static int h263_parse(Track *tr, uint8_t *data, size_t len)
                              tr->properties.pts,
                              tr->properties.dts,
                              tr->properties.frame_duration,
-                             cur + payload >= len,
+                             (cur + payload >= len), 0, 0,
                              dst, payload + header_len);
         cur += payload;
     }

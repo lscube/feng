@@ -23,6 +23,7 @@
 #include <config.h>
 
 #include <string.h>
+#include <stdbool.h>
 
 #include "fnc_log.h"
 #include "media/demuxer.h"
@@ -76,7 +77,7 @@ static void frag_fu_a(uint8_t *nal, int fragsize, Track *tr)
                              tr->properties.pts,
                              tr->properties.dts,
                              tr->properties.frame_duration,
-                             (fragsize<=fraglen),
+                             (fragsize <= fraglen), 0, 0,
                              buf, fraglen + 2);
         fragsize -= fraglen;
         nal      += fraglen;
@@ -311,7 +312,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
                                      tr->properties.pts,
                                      tr->properties.dts,
                                      tr->properties.frame_duration,
-                                     1,
+                                     true, 0, 0,
                                      data + index, nalsize);
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
@@ -345,7 +346,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
                                      tr->properties.pts,
                                      tr->properties.dts,
                                      tr->properties.frame_duration,
-                                     1,
+                                     true, 0, 0,
                                      p, q - p);
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
@@ -365,7 +366,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
                                  tr->properties.pts,
                                  tr->properties.dts,
                                  tr->properties.frame_duration,
-                                 1,
+                                 true, 0, 0,
                                  p, len - (p - data));
         } else {
             //FU-A

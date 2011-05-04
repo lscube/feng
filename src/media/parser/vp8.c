@@ -21,7 +21,9 @@
  * */
 
 #include <config.h>
+
 #include <string.h>
+#include <stdbool.h>
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
@@ -74,7 +76,7 @@ static int vp8_parse(Track *tr, uint8_t *data, size_t len)
                              tr->properties.pts,
                              tr->properties.dts,
                              tr->properties.frame_duration,
-                             0,
+                             false, 0, 0,
                              packet, DEFAULT_MTU);
 
         len -= payload;
@@ -87,7 +89,7 @@ static int vp8_parse(Track *tr, uint8_t *data, size_t len)
                          tr->properties.pts,
                          tr->properties.dts,
                          tr->properties.frame_duration,
-                         1,
+                         true, 0, 0,
                          packet, len + VP8_HEADER_SIZE);
 
     g_slice_free1(DEFAULT_MTU, packet);
