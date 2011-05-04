@@ -87,7 +87,7 @@
 "off" |
 "f"		yylval.boolean=false; return BOOLEAN;
 
-\"[a-zA-Z0-9/.,+=:;-_ ]+\"	yylval.string=g_strndup(yytext+1, strlen(yytext)-2); return STRING;
+\"[^\"]+\"	yylval.string=g_strndup(yytext+1, strlen(yytext)-2); return STRING;
 -?[0-9]+		yylval.integer=atoi(yytext); return INTEGER;
 
 [ \t\n]+                  /* ignore whitespace */;
