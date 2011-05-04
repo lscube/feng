@@ -49,8 +49,17 @@ void free_track(gpointer element,
     g_free(track->name);
     g_free(track->properties.encoding_name);
 
-    if ( track->producer )
-        bq_producer_unref(track->producer);
+    g_assert_cmpuint(track->consumers, ==, 0);
+
+    g_cond_free(track->last_consumer);
+
+    if ( track->queue ) {
+        /* Destroy elements and the queue */
+        g_queue_foreach(track->queue,
+                        bq_element_free_internal,
+                        NULL);
+        g_queue_free(track->queue);
+    }
 
     if ( track->sdp_description )
         g_string_free(track->sdp_description, true);
@@ -83,6 +92,7 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
     t = g_slice_new0(Track);
 
     t->lock            = g_mutex_new();
+    t->last_consumer   = g_cond_new();
     t->parent          = r;
     t->name            = name;
     t->sdp_description = g_string_new("");
@@ -119,26 +129,11 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
 
     r->tracks = g_list_append(r->tracks, t);
 
+    bq_producer_reset_queue_internal(t);
+
     return t;
 
  error:
     free_track(t, NULL);
     return NULL;
-}
-
-/**
- * @brief Get the producer for the track
- *
- * @param track The track to get the producer for
- */
-BufferQueue_Producer *track_get_producer(Track *tr)
-{
-    g_mutex_lock(tr->lock);
-
-    if ( tr->producer == NULL )
-        tr->producer = bq_producer_new();
-
-    g_mutex_unlock(tr->lock);
-
-    return tr->producer;
 }

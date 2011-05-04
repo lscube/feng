@@ -25,15 +25,16 @@
 
 #include <glib.h>
 
-typedef struct BufferQueue_Producer BufferQueue_Producer;
 typedef struct BufferQueue_Consumer BufferQueue_Consumer;
 
-BufferQueue_Producer *bq_producer_new();
-void bq_producer_reset_queue(BufferQueue_Producer *producer);
-void bq_producer_unref(BufferQueue_Producer *producer);
+ struct Track;
+
+void bq_producer_reset_queue(struct Track *);
+void bq_producer_reset_queue_internal(struct Track *);
+void bq_element_free_internal(gpointer elem_generic, gpointer unused);
 
 void bq_init();
-BufferQueue_Consumer *bq_consumer_new(BufferQueue_Producer *producer);
+BufferQueue_Consumer *bq_consumer_new(struct Track *producer);
 struct MParserBuffer *bq_consumer_get(BufferQueue_Consumer *consumer);
 gulong bq_consumer_unseen(BufferQueue_Consumer *consumer);
 gboolean bq_consumer_move(BufferQueue_Consumer *consumer);

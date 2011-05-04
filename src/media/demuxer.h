@@ -178,8 +178,68 @@ typedef struct Track {
     GMutex *lock;
     double start_time;
     const struct MediaParser *parser;
-    /*feng*/
-    BufferQueue_Producer *producer;
+
+
+    /**
+     * @brief The actual buffer queue
+     *
+     * This double-ended queue contains the actual buffer elements
+     * that the BufferQueue framework deals with.
+     */
+    GQueue *queue;
+
+    /**
+     * @brief Next serial to use for the added elements
+     *
+     * This is the next value for @ref struct MParserBuffer::serial; it
+     * starts from zero and it's reset to zero each time the queue is
+     * reset; each element added to the queue gets this value before
+     * getting incremented; it is used by @ref bq_consumer_unseen().
+     */
+    uint16_t next_serial;
+
+    /**
+     * @brief Serial number for the queue
+     *
+     * This is the serial number of the queue inside the producer,
+     * starts from zero and is increased each time the queue is reset.
+     */
+    gulong queue_serial;
+
+    /**
+     * @brief Count of registered consumers
+     *
+     * This attribute keeps the updated number of registered
+     * consumers; each buffer needs to reach the same count before it
+     * gets removed from the queue.
+     */
+    gulong consumers;
+
+    /**
+     * @brief Last consumer exited condition
+     *
+     * This condition is signalled once the last consumer of a stopped
+     * producer (see @ref stopped) exits.
+     *
+     * @see bq_consumer_unref
+     */
+    GCond *last_consumer;
+
+    /**
+     * @brief Stopped flag
+     *
+     * When this value is set to true, the consumer is stopped and no
+     * further elements can be added. To set this flag call the
+     * @ref bq_producer_unref function.
+     *
+     * A stopped producer cannot accept any new consumer, and will
+     * wait for all the currently-connected consumers to return before
+     * it is deleted.
+     *
+     * @note gint is used to be able to use g_atomic_int_get function.
+     */
+    gint stopped;
+
     Resource *parent;
 
     void *private_data; /* private data of media parser */
@@ -257,7 +317,5 @@ void free_track(gpointer element, gpointer user_data);
 void sdp_descr_append_config(Track *track);
 
 void ffmpeg_init(void);
-
-BufferQueue_Producer *track_get_producer(Track *tr);
 
 #endif // FN_DEMUXER_H

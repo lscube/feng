@@ -426,7 +426,7 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp,
     /* Set up the track selector and get a consumer for the track */
 
     rtp_s->track = tr;
-    rtp_s->consumer = bq_consumer_new(track_get_producer(tr));
+    rtp_s->consumer = bq_consumer_new(tr);
 
     rtp_s->client = rtsp;
 
