@@ -73,12 +73,34 @@ typedef struct RTP_session {
     struct Track *track;
 
     /**
-     * @brief Consumer for the track buffer queue
+     * @brief Serial number of the queue
      *
-     * This provides the interface between the RTP session and the
-     * source of the data to send over the network.
+     * This value is the “serial number” of the producer's queue,
+     * which increases each time the producer generates a new queue.
+     *
+     * This is taken, at each move, from @ref
+     * Track::queue_serial, and is used by the
+     * consumer's function to ensure no old data is used.
      */
-    BufferQueue_Consumer *consumer;
+    gulong queue_serial;
+
+    /**
+     * @brief Pointer to the current element in the list
+     *
+     * This pointer is used to access the "next to serve" buffer; and
+     * is originally set to the head of @ref Track
+     * queue.
+     */
+    GList *current_element_pointer;
+
+    /**
+     * @brief Last element serial returned.
+     *
+     * @brief This is updated at _get and makes sure that we can
+     * distinguish between the situations of "all seen" and "none
+     * seen".
+     */
+    uint16_t last_element_serial;
 
     struct RTSP_Client *client;
 

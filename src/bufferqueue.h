@@ -27,18 +27,18 @@
 
 typedef struct BufferQueue_Consumer BufferQueue_Consumer;
 
- struct Track;
+struct Track;
+struct RTP_session;
 
 void bq_producer_reset_queue(struct Track *);
 void bq_producer_reset_queue_internal(struct Track *);
 void bq_element_free_internal(gpointer elem_generic, gpointer unused);
 
 void bq_init();
-BufferQueue_Consumer *bq_consumer_new(struct Track *producer);
-struct MParserBuffer *bq_consumer_get(BufferQueue_Consumer *consumer);
-gulong bq_consumer_unseen(BufferQueue_Consumer *consumer);
-gboolean bq_consumer_move(BufferQueue_Consumer *consumer);
-gboolean bq_consumer_stopped(BufferQueue_Consumer *consumer);
-void bq_consumer_free(BufferQueue_Consumer *consumer);
+struct MParserBuffer *bq_consumer_get(struct RTP_session *consumer);
+gulong bq_consumer_unseen(struct RTP_session *consumer);
+gboolean bq_consumer_move(struct RTP_session *consumer);
+gboolean bq_consumer_stopped(struct RTP_session *consumer);
+void bq_consumer_free(struct RTP_session *consumer);
 
 #endif

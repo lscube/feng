@@ -60,7 +60,7 @@ static void rtp_session_free(gpointer session_gen,
     r_pause(session->track->parent);
 
     /* Remove the consumer */
-    bq_consumer_free(session->consumer);
+    bq_consumer_free(session);
 
     /* Deallocate memory */
     g_free(session->uri);
@@ -114,7 +114,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     session->last_packet_send_time = cur_time;
 
     r_resume(resource);
-    r_fill(resource, session->consumer);
+    r_fill(resource, session);
 
     ev_periodic_set(&session->rtp_writer,
                     range->playback_time - 0.05,
@@ -285,7 +285,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
      * there is no data for the consumer to read. If that's the
      * case we just give control back to the main loop for now.
      */
-    if ( bq_consumer_stopped(session->consumer) ) {
+    if ( bq_consumer_stopped(session) ) {
         /* If the producer has been stopped, we send the
          * finishing packets and go away.
          */
@@ -302,10 +302,10 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
         fnc_log(FNC_LOG_INFO,
             "[%s] end of resource %d packets to be fetched",
             session->track->properties.encoding_name,
-            bq_consumer_unseen(session->consumer));
+            bq_consumer_unseen(session));
 
     /* Get the current buffer, if there is enough data */
-    if ( !(buffer = bq_consumer_get(session->consumer)) ) {
+    if ( !(buffer = bq_consumer_get(session)) ) {
         /* We wait a bit of time to get the data but before it is
          * expired.
          */
@@ -335,8 +335,8 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
         if (session->pkt_count % 29 == 1)
             rtcp_send_sr(session, SDES);
 
-        if (bq_consumer_move(session->consumer)) {
-            next = bq_consumer_get(session->consumer);
+        if (bq_consumer_move(session)) {
+            next = bq_consumer_get(session);
             if(delivery != next->delivery) {
                 if (session->track->properties.media_source == LIVE_SOURCE)
                     next_time += next->delivery - delivery;
@@ -367,7 +367,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
     ev_periodic_set(w, next_time, 0, NULL);
     ev_periodic_again(loop, w);
 
-    r_fill(resource, session->consumer);
+    r_fill(resource, session);
 }
 
 typedef gboolean (*rtp_transport_init_cb)(RTSP_Client *rtsp,
@@ -392,6 +392,9 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp,
                              GSList *transports) {
     RTP_session *rtp_s;
     ev_periodic *periodic;
+
+    if ( g_atomic_int_get(&tr->stopped) == 1 )
+        return NULL;
 
     rtp_s = g_slice_new0(RTP_session);
     periodic = &rtp_s->rtp_writer;
@@ -419,16 +422,18 @@ RTP_session *rtp_session_new(RTSP_Client *rtsp,
     /* Make sure we start paused since we have to wait for parameters
      * given by @ref rtp_session_resume.
      */
+
     rtp_s->uri = g_strdup(uri);
-
     rtp_s->start_rtptime = g_random_int();
-
-    /* Set up the track selector and get a consumer for the track */
-
     rtp_s->track = tr;
-    rtp_s->consumer = bq_consumer_new(tr);
-
     rtp_s->client = rtsp;
+
+    /* Make sure we don't overflow the consumers count; while this
+     * case is most likely just hypothetical, it doesn't hurt to be
+     * safe.
+     */
+    g_assert_cmpuint(tr->consumers, <, G_MAXULONG);
+    g_atomic_int_add(&tr->consumers, 1);
 
     periodic->data = rtp_s;
     ev_periodic_init(periodic, rtp_write_cb, 0, 0, NULL);

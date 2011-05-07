@@ -26,6 +26,7 @@
 
 #include "bufferqueue.h"
 #include "media/mediaparser.h"
+#include "network/rtp.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -61,53 +62,6 @@
  * @{
  */
 
-/**
- * @brief Consumer structure
- *
- * This is the structure that each consumer gets and that is used as
- * context for all the buffer queue interfaces.
- */
-struct BufferQueue_Consumer {
-    /**
-     * @brief Link to the producer
-     *
-     * Each consumer has a direct link to the producer, to be able to
-     * access its data without duplication.
-     */
-    Track *producer;
-
-
-    /**
-     * @brief Serial number of the queue
-     *
-     * This value is the “serial number” of the producer's queue,
-     * which increases each time the producer generates a new queue.
-     *
-     * This is taken, at each move, from @ref
-     * Track::queue_serial, and is used by the
-     * consumer's function to ensure no old data is used.
-     */
-    gulong queue_serial;
-
-    /**
-     * @brief Pointer to the current element in the list
-     *
-     * This pointer is used to access the "next to serve" buffer; and
-     * is originally set to the head of @ref Track
-     * queue.
-     */
-    GList *current_element_pointer;
-
-    /**
-     * @brief Last element serial returned.
-     *
-     * @brief This is updated at _get and makes sure that we can
-     * distinguish between the situations of "all seen" and "none
-     * seen".
-     */
-    uint16_t last_element_serial;
-};
-
 static inline struct MParserBuffer *GLIST_TO_BQELEM(GList *pointer)
 {
     return (struct MParserBuffer*)pointer->data;
@@ -122,9 +76,9 @@ static inline struct MParserBuffer *GLIST_TO_BQELEM(GList *pointer)
  * used; if any condition happened that would make it unreliable, set
  * it to NULL.
  */
-static void bq_consumer_confirm_pointer(BufferQueue_Consumer *consumer)
+static void bq_consumer_confirm_pointer(RTP_session *consumer)
 {
-    Track *producer = consumer->producer;
+    Track *producer = consumer->track;
     if ( consumer->current_element_pointer == NULL )
         return;
 
@@ -151,7 +105,7 @@ static void bq_consumer_confirm_pointer(BufferQueue_Consumer *consumer)
     }
 }
 
-static inline struct MParserBuffer *BQ_OBJECT(BufferQueue_Consumer *consumer)
+static inline struct MParserBuffer *BQ_OBJECT(RTP_session *consumer)
 {
     bq_consumer_confirm_pointer(consumer);
 
@@ -240,49 +194,6 @@ void bq_producer_reset_queue(Track *producer) {
 }
 
 /**
- * @brief Create a new consumer
- *
- * @param producer The producer to link the consumer to.
- * @return A new BufferQueue_Consumer object that needs to be freed
- *         with @ref bq_consumer_free
- *
- * @retval NULL The producer is stopped and new consumers cannot be
- *              attached.
- *
- * @note This function will require exclusive access to the producer,
- *       and will thus lock its mutex.
- */
-BufferQueue_Consumer *bq_consumer_new(Track *producer) {
-    BufferQueue_Consumer *ret;
-
-    bq_debug("Producer %p",
-            producer);
-
-    if ( g_atomic_int_get(&producer->stopped) == 1 )
-        return NULL;
-
-    /* Ensure we have the exclusive access */
-    g_mutex_lock(producer->lock);
-
-    ret = g_slice_new0(BufferQueue_Consumer);
-
-    /* Make sure we don't overflow the consumers count; while this
-     * case is most likely just hypothetical, it doesn't hurt to be
-     * safe.
-     */
-    g_assert_cmpuint(producer->consumers, <, G_MAXULONG);
-
-    producer->consumers++;
-
-    ret->producer = producer;
-
-    /* Leave the exclusive access */
-    g_mutex_unlock(producer->lock);
-
-    return ret;
-}
-
-/**
  * @brief Destroy the head of the producer queue
  *
  * @param producer Producer to destroy the head queue of
@@ -325,8 +236,8 @@ static void bq_producer_destroy_head(Track *producer, GList *pointer) {
  * @note This function will require exclusive access to the producer,
  *       and will thus lock its mutex.
  */
-static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
-    Track *producer = consumer->producer;
+static void bq_consumer_elem_unref(RTP_session *consumer) {
+    Track *producer = consumer->track;
     struct MParserBuffer *elem;
     GList *pointer;
 
@@ -382,8 +293,8 @@ static void bq_consumer_elem_unref(BufferQueue_Consumer *consumer) {
  *
  * @param consumer The consumer object to move
  */
-static gboolean bq_consumer_move_internal(BufferQueue_Consumer *consumer) {
-    Track *producer = consumer->producer;
+static gboolean bq_consumer_move_internal(RTP_session *consumer) {
+    Track *producer = consumer->track;
 
     bq_debug("C:%p LES:%lu:%u PQHS:%lu:%u PQH:%p pointer %p",
             consumer,
@@ -453,14 +364,14 @@ static void bq_decrement_seen_on_free(gpointer elem,
  * @note This function will require exclusive access to the producer,
  *       and will thus lock its mutex.
  */
-void bq_consumer_free(BufferQueue_Consumer *consumer) {
+void bq_consumer_free(RTP_session *consumer) {
     Track *producer;
 
     /* Compatibility with free(3) */
     if ( consumer == NULL )
         return;
 
-    producer = consumer->producer;
+    producer = consumer->track;
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
@@ -485,8 +396,6 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
 
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
-
-    g_slice_free(BufferQueue_Consumer, consumer);
 }
 
 /**
@@ -500,8 +409,8 @@ void bq_consumer_free(BufferQueue_Consumer *consumer) {
  * @note This function will require exclusive access to the producer,
  *       and will thus lock its mutex.
  */
-gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
-    Track *producer = consumer->producer;
+gulong bq_consumer_unseen(RTP_session *consumer) {
+    Track *producer = consumer->track;
     gulong unseen;
 
     if (!producer || g_atomic_int_get(&producer->stopped) )
@@ -540,8 +449,8 @@ gulong bq_consumer_unseen(BufferQueue_Consumer *consumer) {
  * This is actually just a locking-wrapper around @ref
  * bq_consumer_move_internal.
  */
-gboolean bq_consumer_move(BufferQueue_Consumer *consumer) {
-    Track *producer = consumer->producer;
+gboolean bq_consumer_move(RTP_session *consumer) {
+    Track *producer = consumer->track;
     gboolean ret;
 
     bq_debug("(before) C:%p pointer %p",
@@ -584,8 +493,8 @@ gboolean bq_consumer_move(BufferQueue_Consumer *consumer) {
  * any; the new selection is not freed until the cursor is moved or
  * the consumer is deleted.
  */
-struct MParserBuffer *bq_consumer_get(BufferQueue_Consumer *consumer) {
-    Track *producer = consumer->producer;
+struct MParserBuffer *bq_consumer_get(RTP_session *consumer) {
+    Track *producer = consumer->track;
     struct MParserBuffer *element = NULL;
 
     if ( g_atomic_int_get(&producer->stopped) )
@@ -639,8 +548,8 @@ struct MParserBuffer *bq_consumer_get(BufferQueue_Consumer *consumer) {
  *       instead it uses atomic operations to get the @ref
  *       Track::stopped value.
  */
-gboolean bq_consumer_stopped(BufferQueue_Consumer *consumer) {
-    return !!g_atomic_int_get(&consumer->producer->stopped);
+gboolean bq_consumer_stopped(RTP_session *consumer) {
+    return !!g_atomic_int_get(&consumer->track->stopped);
 }
 
 /**@}*/
