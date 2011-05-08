@@ -127,8 +127,6 @@ typedef struct Resource {
 
     /* Timescale fixer callback function for meta-demuxers */
     double (*timescaler)(struct Resource *, double);
-    /* EDL specific data */
-    struct Resource *edl;
     /* Multiformat related things */
     TrackList tracks;
     void *private_data; /* Demuxer private data */
