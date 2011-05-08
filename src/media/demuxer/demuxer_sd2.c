@@ -163,11 +163,6 @@ static const RTP_static_payload * probe_stream_info(char const *codec_name)
     return NULL;
 }
 
-static int sd2_probe(const char *filename)
-{
-    return g_str_has_suffix(filename, ".sd2");
-}
-
 //Sets payload type and probes media type from payload type
 static void set_payload_type(MediaProperties *mprops, int payload_type)
 {

@@ -131,34 +131,6 @@ static int pt_from_id(int id)
     return 0;
 }
 
-#define PROBE_BUF_SIZE 2048
-
-static gboolean avf_probe(const char *filename)
-{
-    AVProbeData avpd = {
-        .filename = filename
-    };
-    AVInputFormat *avif;
-    uint8_t buffer[PROBE_BUF_SIZE];
-    size_t rsize;
-
-    FILE *fp = fopen(filename, "r");
-    if ( !fp )
-        return RESOURCE_ERR;
-
-    rsize = fread(&buffer, 1, sizeof(buffer), fp);
-    fclose(fp);
-
-    avpd.buf = &buffer[0];
-    avpd.buf_size = rsize;
-
-    av_register_all();
-
-    avif = av_probe_input_format(&avpd, 1);
-
-    return !!avif;
-}
-
 static double avf_timescaler (ATTR_UNUSED Resource *r, double res_time) {
     return res_time;
 }

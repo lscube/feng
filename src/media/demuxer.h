@@ -272,7 +272,6 @@ typedef struct Track {
     const Demuxer fnc_demuxer_##shortname = {                             \
         shortname##_name,                                                 \
         source,                                                           \
-        shortname##_probe,                                                \
         shortname##_init,                                                 \
         shortname##_read_packet,                                          \
         shortname##_seek,                                                 \
@@ -286,7 +285,6 @@ typedef struct Demuxer {
     /** demuxer source type */
     MediaSource source;
 
-    gboolean (*probe)(const char *filename);
     int (*init)(Resource *);
     int (*read_packet)(Resource *);
     int (*seek)(Resource *, double time_sec);
