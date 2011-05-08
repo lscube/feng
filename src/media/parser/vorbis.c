@@ -24,11 +24,11 @@
 
 #include <string.h>
 #include <stdbool.h>
-#include <arpa/inet.h>
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 #include "fnc_log.h"
+#include "xiph.h"
 
 #include <libavutil/md5.h>
 
@@ -38,18 +38,8 @@ typedef struct {
     unsigned char* framestack;
 } framestack;
 
-/// Private struct for Vorbis
-typedef struct {
-    uint8_t         *conf;      ///< current configuration
-    unsigned int    conf_len;
-    uint8_t         *packet;    ///< holds the incomplete packet
-    unsigned int    len;        ///< incomplete packet length
-    unsigned int    ident;    ///< identification string
-//    framestack      stack; XXX use it later
-} vorbis_priv;
-
 //! Parse extradata and reformat it, most of the code is shamelessly ripped from ffvorbis.
-static int encode_header(uint8_t *data, int len, vorbis_priv *priv)
+static int encode_header(uint8_t *data, int len, xiph_priv *priv)
 {
     uint8_t *headers = data;
     int headers_len = len, i , j;
@@ -131,27 +121,15 @@ static int encode_header(uint8_t *data, int len, vorbis_priv *priv)
     return 0;
 }
 
-
-static void vorbis_uninit(Track *track)
-{
-    vorbis_priv *priv = track->private_data;
-    if (!priv)
-        return;
-
-    g_free(priv->conf);
-    g_free(priv->packet);
-    g_slice_free(vorbis_priv, priv);
-}
-
 static int vorbis_init(Track *track)
 {
-    vorbis_priv *priv;
+    xiph_priv *priv;
     char *buf;
 
     if(track->properties.extradata_len == 0)
         return -1;
 
-    priv = g_slice_new(vorbis_priv);
+    priv = g_slice_new(xiph_priv);
 
     if ( encode_header(track->properties.extradata,
                        track->properties.extradata_len, priv) ||
@@ -179,59 +157,11 @@ static int vorbis_init(Track *track)
  err_alloc:
     g_free(priv->conf);
     g_free(priv->packet);
-    g_slice_free(vorbis_priv, priv);
+    g_slice_free(xiph_priv, priv);
     return -1;
 }
 
-#define HEADER_SIZE 6
-#define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
-
-static int vorbis_parse(Track *tr, uint8_t *data, size_t len)
-{
-    vorbis_priv *priv = tr->private_data;
-
-    uint8_t prefix[HEADER_SIZE] = {
-        (priv->ident>>16)& 0xff,
-        (priv->ident>>8) & 0xff,
-        priv->ident     & 0xff
-    };
-
-    do {
-        uint16_t payload_size;
-
-        struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
-
-        if ( prefix[3] == 0 && len <= MAX_PAYLOAD_SIZE )
-            prefix[3] = 1;
-        else if ( prefix[3] == 0 )
-            prefix[3] = 1 << 6; /* first frag */
-        else if ( len > MAX_PAYLOAD_SIZE )
-            prefix[3] = 2 << 6; /* middle frag */
-        else
-            prefix[3] = 3 << 6; /* max frag */
-
-        buffer->timestamp = tr->properties.pts;
-        buffer->delivery = tr->properties.dts;
-        buffer->duration = tr->properties.frame_duration;
-        buffer->marker = (len <= MAX_PAYLOAD_SIZE);
-
-        buffer->data_size = MIN(MAX_PAYLOAD_SIZE, len) + HEADER_SIZE;
-        buffer->data = g_malloc(buffer->data_size);
-
-        payload_size = htons(buffer->data_size);
-
-        memcpy(buffer->data, &prefix[0], HEADER_SIZE);
-        memcpy(buffer->data + 4, &payload_size, sizeof(payload_size));
-        memcpy(buffer->data + HEADER_SIZE, data,
-               buffer->data_size - HEADER_SIZE);
-
-        mparser_buffer_write(tr, buffer);
-
-        len -= MAX_PAYLOAD_SIZE;
-        data += MAX_PAYLOAD_SIZE;
-    } while(len > 0);
-
-    return 0;
-}
+#define vorbis_parse xiph_parse
+#define vorbis_uninit xiph_uninit
 
 FENG_MEDIAPARSER(vorbis, "vorbis", MP_audio);

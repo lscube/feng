@@ -124,6 +124,7 @@ if FENG_FFMPEG
 dist_feng_SOURCES += src/media/parser/h264.c \
 		     src/media/parser/vorbis.c \
 		     src/media/parser/theora.c \
+		     src/media/parser/xiph.c src/media/parser/xiph.h \
 		     src/media/parser/aac.c \
 		     src/media/parser/mp4ves.c \
 		     src/media/parser/speex.c \
