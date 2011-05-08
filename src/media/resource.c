@@ -41,7 +41,9 @@
 #ifdef LIVE_STREAMING
 extern Demuxer fnc_demuxer_sd2;
 #endif
+#ifdef HAVE_AVFORMAT
 extern Demuxer fnc_demuxer_avf;
+#endif
 
 /**
  * @defgroup resources Media backend resources handling
@@ -121,38 +123,6 @@ static void r_free(Resource *resource)
         g_list_free(resource->tracks);
     }
     g_slice_free(Resource, resource);
-}
-
-/**
- * @brief Find the correct demuxer for the given resource.
- *
- * @param filename Name of the file (to find the extension)
- *
- * @return A constant pointer to the working demuxer.
- *
- * This function first tries to match the resource extension with one
- * of those served by the demuxers, that will be probed; if this fails
- * it tries every demuxer available with direct probe.
- *
- * */
-
-static const Demuxer *r_find_demuxer(const char *filename)
-{
-    static const Demuxer *const demuxers[] = {
-#ifdef LIVE_STREAMING
-        &fnc_demuxer_sd2,
-#endif
-        &fnc_demuxer_avf,
-        NULL
-    };
-
-    int i;
-
-    for (i=0; demuxers[i]; i++)
-        if (demuxers[i]->probe(filename))
-            break;
-
-    return demuxers[i];
 }
 
 /**
@@ -283,7 +253,6 @@ static Resource *r_open_hashed(gchar *mrl, const Demuxer *dmx)
 Resource *r_open(const char *inner_path)
 {
     Resource *r = NULL;
-    const Demuxer *dmx;
     gchar *mrl = g_strjoin ("/",
                             feng_default_vhost->document_root,
                             inner_path,
@@ -298,33 +267,30 @@ Resource *r_open(const char *inner_path)
         goto error;
     }
 
-    if ( (dmx = r_find_demuxer(mrl)) == NULL ) {
+    if ( g_str_has_suffix(mrl, ".sd2") ) {
+#ifdef LIVE_STREAMING
         fnc_log(FNC_LOG_DEBUG,
-                "[MT] Could not find a valid demuxer for resource %s\n",
+                "using live streaming demuxer for resource '%s'",
+                mrl);
+        return r_open_hashed(mrl, &fnc_demuxer_sd2);
+#else
+        fnc_log(FNC_LOG_ERR,
+                "unable to stream resource '%s', live streaming support not built in",
                 mrl);
         goto error;
-    }
-
-    /* From here on, we don't care any more of the doom of the mrl
-     * variable, the called functions will save it for use later, or
-     * will free it as needed.
-     */
-
-    fnc_log(FNC_LOG_DEBUG, "[MT] registrered demuxer \"%s\" for resource"
-                               "\"%s\"\n", dmx->name, mrl);
-
-    switch(dmx->source) {
-#ifdef LIVE_STREAMING
-        case LIVE_SOURCE:
-            r = r_open_hashed(mrl, dmx);
-            break;
 #endif
-        case STORED_SOURCE:
-            r = r_open_direct(mrl, dmx);
-            break;
-        default:
-            g_assert_not_reached();
-            break;
+    } else {
+#ifdef HAVE_AVFORMAT
+        fnc_log(FNC_LOG_DEBUG,
+                "using libavformat demuxer for resource '%s'",
+                mrl);
+        return r_open_direct(mrl, &fnc_demuxer_avf);
+#else
+        fnc_log(FNC_LOG_ERR,
+                "unable to stream resource '%s', libavformat support not built in",
+                mrl);
+        goto error;
+#endif
     }
 
     return r;
