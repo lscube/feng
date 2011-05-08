@@ -441,7 +441,7 @@ int r_seek(Resource *resource, double time) {
 static void r_read_cb(gpointer consumer_p, gpointer resource_p)
 {
     Resource *resource = (Resource*)resource_p;
-    BufferQueue_Consumer *consumer = (BufferQueue_Consumer*)consumer_p;
+    struct RTP_session *consumer = (struct RTP_session*)consumer_p;
     const gboolean live = resource->demuxer->source == LIVE_SOURCE;
     const gulong buffered_frames = feng_srv.buffered_frames;
 
@@ -588,7 +588,7 @@ void r_resume(Resource *resource)
  *
  * @note This function will lock the @ref Resource::lock mutex.
  */
-void r_fill(Resource *resource, BufferQueue_Consumer *consumer)
+void r_fill(Resource *resource, struct RTP_session *consumer)
 {
     /* Don't even try to fill a live source! */
     if ( resource->demuxer->source == LIVE_SOURCE )

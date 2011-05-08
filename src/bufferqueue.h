@@ -25,8 +25,6 @@
 
 #include <glib.h>
 
-typedef struct BufferQueue_Consumer BufferQueue_Consumer;
-
 struct Track;
 struct RTP_session;
 

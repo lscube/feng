@@ -108,8 +108,8 @@ typedef struct Resource {
      * @brief Pool of one thread for filling up data for the session
      *
      * This is a pool consisting of exactly one thread that is used to
-     * fill up the resource's tracks' @ref BufferQueue_Producer with
-     * data when it's running low.
+     * fill up the resource's tracks' @ref Track with data when it's
+     * running low.
      *
      * Since we do want to do this asynchronously but we don't really
      * want race conditions (and they would anyway just end up waiting
@@ -306,7 +306,7 @@ int r_seek(Resource *resource, double time);
 void r_close(Resource *resource);
 void r_pause(Resource *resource);
 void r_resume(Resource *resource);
-void r_fill(Resource *resource, BufferQueue_Consumer *consumer);
+void r_fill(Resource *resource, struct RTP_session *consumer);
 
 Track *r_find_track(Resource *, const char *);
 
