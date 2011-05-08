@@ -20,7 +20,10 @@
  *
  * */
 
+#include <config.h>
+
 #include <stdbool.h>
+#include <string.h>
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
@@ -52,29 +55,23 @@ static int mp4ves_init(Track *track)
 
 static int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
 {
-    int32_t offset, rem = len;
+    do {
+        struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
 
-    if (DEFAULT_MTU >= len) {
-        mparser_buffer_write(tr,
-                             tr->properties.pts,
-                             tr->properties.dts,
-                             tr->properties.frame_duration,
-                             true, 0, 0,
-                             data, len);
-        fnc_log(FNC_LOG_VERBOSE, "[mp4v] no frags");
-    } else {
-        do {
-            offset = len - rem;
-            mparser_buffer_write(tr,
-                                 tr->properties.pts,
-                                 tr->properties.dts,
-                                 tr->properties.frame_duration,
-                                 (rem <= DEFAULT_MTU), 0, 0,
-                                 data + offset, MIN(rem, DEFAULT_MTU));
-            rem -= DEFAULT_MTU;
-            fnc_log(FNC_LOG_VERBOSE, "[mp4v] frags");
-        } while (rem >= 0);
-    }
+        buffer->timestamp = tr->properties.pts;
+        buffer->delivery = tr->properties.dts;
+        buffer->duration = tr->properties.frame_duration;
+        buffer->marker = (len <= DEFAULT_MTU);
+
+        buffer->data_size = MIN(DEFAULT_MTU, len);
+        buffer->data = g_malloc(buffer->data_size);
+
+        memcpy(buffer->data, data, buffer->data_size);
+
+        len -= DEFAULT_MTU;
+        data += DEFAULT_MTU;
+    } while(len > 0);
+
     fnc_log(FNC_LOG_VERBOSE, "[mp4v]Frame completed");
     return 0;
 }

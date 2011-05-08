@@ -56,43 +56,38 @@ static int vp8_init(Track *track)
  *  S Start packet
  */
 
-#define VP8_HEADER_SIZE 1
 #define VP8_START_PACKET 1
+
+#define HEADER_SIZE 1
+#define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
 
 static int vp8_parse(Track *tr, uint8_t *data, size_t len)
 {
-    int off = 0;
-    uint32_t payload = DEFAULT_MTU - VP8_HEADER_SIZE;
-    uint8_t *packet = g_slice_alloc0(DEFAULT_MTU);
-    int keyframe = data[0] & 1 ? 0 : 2;
+    uint8_t prefix[HEADER_SIZE] = { (data[0] & 1 ? 0 : 2) | VP8_START_PACKET };
 
-    if(!packet) return -1;
+    do {
+        struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
 
-    packet[0] = keyframe | VP8_START_PACKET;
+        buffer->timestamp = tr->properties.pts;
+        buffer->delivery = tr->properties.dts;
+        buffer->duration = tr->properties.frame_duration;
+        buffer->marker = (len <= MAX_PAYLOAD_SIZE);
 
-    while (len > payload) {
-        memcpy(packet + VP8_HEADER_SIZE, data + off, payload);
-        mparser_buffer_write(tr,
-                             tr->properties.pts,
-                             tr->properties.dts,
-                             tr->properties.frame_duration,
-                             false, 0, 0,
-                             packet, DEFAULT_MTU);
+        buffer->data_size = MIN(MAX_PAYLOAD_SIZE, len) + HEADER_SIZE;
+        buffer->data = g_malloc(buffer->data_size);
 
-        len -= payload;
-        off += payload;
-        packet[0] = keyframe;
-    }
+        memcpy(buffer->data, &prefix[0], HEADER_SIZE);
+        memcpy(buffer->data + HEADER_SIZE, data,
+               buffer->data_size - HEADER_SIZE);
 
-    memcpy(packet + VP8_HEADER_SIZE, data + off, len);
-    mparser_buffer_write(tr,
-                         tr->properties.pts,
-                         tr->properties.dts,
-                         tr->properties.frame_duration,
-                         true, 0, 0,
-                         packet, len + VP8_HEADER_SIZE);
+        mparser_buffer_write(tr, buffer);
 
-    g_slice_free1(DEFAULT_MTU, packet);
+        len -= MAX_PAYLOAD_SIZE;
+        data += MAX_PAYLOAD_SIZE;
+
+        prefix[0] &= ~VP8_START_PACKET;
+    } while (len > 0);
+
     return 0;
 }
 

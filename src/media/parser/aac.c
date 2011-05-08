@@ -56,72 +56,34 @@ static int aac_init(Track *track)
     return 0;
 }
 
-#define AU_HEADER_SIZE 4
+#define HEADER_SIZE 4
+#define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
 
-/* au header
-      +---------------------------------------+
-      |     AU-size                           |
-      +---------------------------------------+
-      |     AU-Index / AU-Index-delta         |
-      +---------------------------------------+
-      |     CTS-flag                          |
-      +---------------------------------------+
-      |     CTS-delta                         |
-      +---------------------------------------+
-      |     DTS-flag                          |
-      +---------------------------------------+
-      |     DTS-delta                         |
-      +---------------------------------------+
-      |     RAP-flag                          |
-      +---------------------------------------+
-      |     Stream-state                      |
-      +---------------------------------------+
-*/
-
-//XXX implement aggregation
-//#define AAC_EXTRA 7
 static int aac_parse(Track *tr, uint8_t *data, size_t len)
 {
-    //XXX handle the last packet on EOF
-    int off = 0;
-    uint32_t payload = DEFAULT_MTU - AU_HEADER_SIZE;
-    uint8_t *packet = g_slice_alloc0(DEFAULT_MTU);
+    const uint8_t prefix[HEADER_SIZE] = { 0x00, 0x10, (len & 0x1fe0) >> 5, (len & 0x1f) << 3 };
 
-    if(!packet) return -1;
+    do {
+        struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
 
-// trim away extradata
-//    data += AAC_EXTRA;
-//    len -= AAC_EXTRA;
+        buffer->timestamp = tr->properties.pts;
+        buffer->delivery = tr->properties.dts;
+        buffer->duration = tr->properties.frame_duration;
+        buffer->marker = (len <= MAX_PAYLOAD_SIZE);
 
-    packet[0] = 0x00;
-    packet[1] = 0x10;
-    packet[2] = (len & 0x1fe0) >> 5;
-    packet[3] = (len & 0x1f) << 3;
+        buffer->data_size = MIN(MAX_PAYLOAD_SIZE, len) + HEADER_SIZE;
+        buffer->data = g_malloc(buffer->data_size);
 
-    if (len > payload) {
-        while (len > payload) {
-            memcpy(packet + AU_HEADER_SIZE, data + off, payload);
-            mparser_buffer_write(tr,
-                                 tr->properties.pts,
-                                 tr->properties.dts,
-                                 tr->properties.frame_duration,
-                                 false, 0, 0,
-                                 packet, DEFAULT_MTU);
+        memcpy(buffer->data, &prefix[0], HEADER_SIZE);
+        memcpy(buffer->data + HEADER_SIZE, data,
+               buffer->data_size - HEADER_SIZE);
 
-            len -= payload;
-            off += payload;
-        }
-    }
+        mparser_buffer_write(tr, buffer);
 
-    memcpy(packet + AU_HEADER_SIZE, data + off, len);
-    mparser_buffer_write(tr,
-                         tr->properties.pts,
-                         tr->properties.dts,
-                         tr->properties.frame_duration,
-                         true, 0, 0,
-                         packet, len + AU_HEADER_SIZE);
+        len -= MAX_PAYLOAD_SIZE;
+        data += MAX_PAYLOAD_SIZE;
+    } while(len > 0);
 
-    g_slice_free1(DEFAULT_MTU, packet);
     return 0;
 }
 

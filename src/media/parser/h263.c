@@ -27,37 +27,6 @@
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 
-/* H263-1998 FRAGMENT Header (RFC4629)
-    0                   1
-    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |   RR    |P|V|   PLEN    |PEBIT|
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-*/
-
-typedef struct
-{
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-    uint16_t plen1:1;       /* Length in bytes of the extra picture header */
-    uint16_t v:1;           /* Video Redundancy Coding */
-    uint16_t p:1;           /* picture/GOB/slice/EOS/EOSBS start code */
-    uint16_t rr:5;          /* Reserved. Shall be zero. */
-
-    uint16_t pebit:3;       /* Bits to ignore in the last byte of the header */
-    uint16_t plen2:5;       /* Length in bytes of the extra picture header */
-#elif G_BYTE_ORDER == G_BIG_ENDIAN
-    uint16_t rr:5;          /* Reserved. Shall be zero. */
-    uint16_t p:1;           /* picture/GOB/slice/EOS/EOSBS start code */
-    uint16_t v:1;           /* Video Redundancy Coding */
-    uint16_t plen1:1;       /* Length in bytes of the extra picture header */
-
-    uint16_t plen2:5;       /* Length in bytes of the extra picture header */
-    uint16_t pebit:3;       /* Bits to ignore in the last byte of the header */
-#else
-#error Neither big nor little
-#endif
-} h263_header;
-
 static int h263_init(Track *track)
 {
     g_string_append_printf(track->sdp_description,
@@ -68,12 +37,12 @@ static int h263_init(Track *track)
     return 0;
 }
 
+static const uint8_t gob_start_code[] = { 0x04, 0x00 };
+
 static int h263_parse(Track *tr, uint8_t *data, size_t len)
 {
-    size_t cur = 0, payload, header_len;
+    size_t cur = 0;
     int found_gob = 0;
-    uint8_t *dst = g_slice_alloc0(DEFAULT_MTU);
-    h263_header *header = (h263_header *) dst;
 
     if (len >= 3 && *data == '\0' && *(data + 1) == '\0'
         && *(data + 2) >= 0x80) {
@@ -81,28 +50,34 @@ static int h263_parse(Track *tr, uint8_t *data, size_t len)
     }
 
     while (len - cur > 0) {
+        struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
+        size_t payload, header_len;
+
+        buffer->timestamp = tr->properties.pts;
+        buffer->delivery = tr->properties.dts;
+        buffer->duration = tr->properties.frame_duration;
+
+        buffer->data = g_malloc(buffer->data_size);
+
         if (cur == 0 && found_gob) {
             payload = MIN(DEFAULT_MTU, len);
-            memcpy(dst, data, payload);
-            memset(header, 0, 2);
-            header->p = 1;
+            memcpy(buffer->data, data, payload);
+            memcpy(buffer->data, gob_start_code, sizeof(gob_start_code));
             header_len = 0;
         } else {
             payload = MIN(DEFAULT_MTU - 2, len - cur);
-            memcpy(dst + 2, data + cur, payload);
-            memset(header, 0, 2);
+            memset(buffer->data, 0, 2);
+            memcpy(buffer->data + 2, data + cur, payload);
             header_len = 2;
         }
-        mparser_buffer_write(tr,
-                             tr->properties.pts,
-                             tr->properties.dts,
-                             tr->properties.frame_duration,
-                             (cur + payload >= len), 0, 0,
-                             dst, payload + header_len);
+
+        buffer->marker = (cur + payload >= len);
+        buffer->data_size = payload + header_len;
+
+        mparser_buffer_write(tr, buffer);
         cur += payload;
     }
 
-    g_slice_free1(DEFAULT_MTU, dst);
     return 0;
 }
 

@@ -99,24 +99,18 @@ struct MParserBuffer {
     gulong seen;
 
     double timestamp;   /*!< presentation time of packet */
-    uint32_t rtp_timestamp; /*!< RTP version of the presenation time, used only by live */
     double delivery;    /*!< decoding time of packet */
     double duration;    /*!< packet duration */
+
     gboolean marker;    /*!< marker bit, set if we are sending the last frag */
     uint16_t seq_no;    /*!< Packet sequence number, used only by live */
+    uint32_t rtp_timestamp; /*!< RTP version of the presenation time, used only by live */
+
     size_t data_size;   /*!< packet size */
-    uint8_t data[];     /*!< actual packet data */
+    uint8_t *data;      /*!< actual packet data */
 };
 
-void mparser_buffer_write(struct Track *tr,
-                          double presentation,
-                          double delivery,
-                          double duration,
-                          gboolean marker,
-                          uint32_t rtp_timestamp,
-                          uint16_t seq_no,
-                          uint8_t *data, size_t data_size);
-
+void mparser_buffer_write(struct Track *tr, struct MParserBuffer *buffer);
 
 #define DEFAULT_MTU 1440
 

@@ -412,6 +412,8 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
     int marker;
     uint16_t seq_no;
 
+    struct MParserBuffer *buffer;
+
     if ( priv->queue == (mqd_t)-1 &&
          (priv->queue = mq_open(priv->mrl, O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) == (mqd_t)-1) {
         fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
@@ -494,6 +496,18 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
         }
     }
 
+    buffer = g_slice_new0(struct MParserBuffer);
+
+    buffer->timestamp = timestamp;
+    buffer->delivery = package_start_time + delivery;
+    buffer->duration = tr->properties.frame_duration * 3;
+
+    buffer->marker = marker;
+    buffer->seq_no = seq_no;
+    buffer->rtp_timestamp = package_timestamp;
+
+    buffer->data_size = msg_len - 12;
+    buffer->data = g_memdup(packet + 12, buffer->data_size);
 
 #if 0
     fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
@@ -504,14 +518,7 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
             ev_time() - (package_start_time + delivery));
 #endif
 
-    mparser_buffer_write(tr,
-                         timestamp,
-                         package_start_time + delivery,
-                         tr->properties.frame_duration * 3,
-                         marker,
-                         package_timestamp,
-                         seq_no,
-                         packet+12, msg_len-12);
+    mparser_buffer_write(tr, buffer);
 
     g_free(msg_buffer);
     return RESOURCE_OK;

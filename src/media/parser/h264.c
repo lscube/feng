@@ -53,32 +53,44 @@ typedef struct {
 
 static void frag_fu_a(uint8_t *nal, int fragsize, Track *tr)
 {
-    int start = 1, fraglen;
-    uint8_t fu_header, buf[DEFAULT_MTU];
+    int start = 1;
+    const uint8_t fu_indicator = (nal[0] & 0xe0) | 28;
+    const uint8_t fu_header = nal[0] & 0x1f;
+
     fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
-//                p = data + index;
-    buf[0] = (nal[0] & 0xe0) | 28; // fu_indicator
-    fu_header = nal[0] & 0x1f;
+
     nal++;
     fragsize--;
+
     while(fragsize>0) {
-        buf[1] = fu_header;
-        if (start) {
+        const size_t fraglen = MIN(DEFAULT_MTU-2, fragsize);
+        struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
+
+        buffer->timestamp = tr->properties.pts;
+        buffer->delivery = tr->properties.dts;
+        buffer->duration = tr->properties.frame_duration;
+
+        buffer->data_size = fraglen + 2;
+        buffer->data = g_malloc(buffer->data_size);
+
+        buffer->data[0] = fu_indicator;
+        buffer->data[1] = fu_header;
+
+        if ( start ) {
+            buffer->data[1] |= (1<<7);
             start = 0;
-            buf[1] = fu_header | (1<<7);
         }
-        fraglen = MIN(DEFAULT_MTU-2, fragsize);
+
         if (fraglen == fragsize) {
-            buf[1] = fu_header | (1<<6);
+            buffer->marker = true;
+            buffer->data[1] |= (1<<6);
         }
-        memcpy(buf + 2, nal, fraglen);
-        fnc_log(FNC_LOG_VERBOSE, "[h264] Frag %d %d",buf[0], buf[1]);
-        mparser_buffer_write(tr,
-                             tr->properties.pts,
-                             tr->properties.dts,
-                             tr->properties.frame_duration,
-                             (fragsize <= fraglen), 0, 0,
-                             buf, fraglen + 2);
+
+        memcpy(buffer->data + 2, nal, fraglen);
+        fnc_log(FNC_LOG_VERBOSE, "[h264] Frag %02x%02x", buffer->data[0], buffer->data[1]);
+
+        mparser_buffer_write(tr, buffer);
+
         fragsize -= fraglen;
         nal      += fraglen;
     }
@@ -308,12 +320,18 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
                 }
             }
             if (DEFAULT_MTU >= nalsize) {
-                mparser_buffer_write(tr,
-                                     tr->properties.pts,
-                                     tr->properties.dts,
-                                     tr->properties.frame_duration,
-                                     true, 0, 0,
-                                     data + index, nalsize);
+                struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
+
+                buffer->timestamp = tr->properties.pts;
+                buffer->delivery = tr->properties.dts;
+                buffer->duration = tr->properties.frame_duration;
+                buffer->marker = true;
+
+                buffer->data_size = nalsize;
+                buffer->data = g_memdup(data + index, buffer->data_size);
+
+                mparser_buffer_write(tr, buffer);
+
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
             // single NAL, to be fragmented, FU-A;
@@ -341,14 +359,19 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
             if (q >= data + len) break;
 
             if (DEFAULT_MTU >= q - p) {
-                fnc_log(FNC_LOG_VERBOSE, "[h264] Sending NAL %d",p[0]&0x1f);
-                mparser_buffer_write(tr,
-                                     tr->properties.pts,
-                                     tr->properties.dts,
-                                     tr->properties.frame_duration,
-                                     true, 0, 0,
-                                     p, q - p);
-                fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
+                struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
+
+                buffer->timestamp = tr->properties.pts;
+                buffer->delivery = tr->properties.dts;
+                buffer->duration = tr->properties.frame_duration;
+                buffer->marker = true;
+
+                buffer->data_size = q - p;
+                buffer->data = g_memdup(p, buffer->data_size);
+
+                mparser_buffer_write(tr, buffer);
+
+                fnc_log(FNC_LOG_VERBOSE, "[h264] Sending single NAL %d",p[0]&0x1f);
             } else {
                 //FU-A
                 fnc_log(FNC_LOG_VERBOSE, "[h264] frags");
@@ -361,13 +384,19 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
         // last NAL
         fnc_log(FNC_LOG_VERBOSE, "[h264] last NAL %d",p[0]&0x1f);
         if (DEFAULT_MTU >= len - (p - data)) {
+            struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
+
+            buffer->timestamp = tr->properties.pts;
+            buffer->delivery = tr->properties.dts;
+            buffer->duration = tr->properties.frame_duration;
+            buffer->marker = true;
+
+            buffer->data_size = len - (p - data);
+            buffer->data = g_memdup(p, buffer->data_size);
+
+            mparser_buffer_write(tr, buffer);
+
             fnc_log(FNC_LOG_VERBOSE, "[h264] no frags");
-            mparser_buffer_write(tr,
-                                 tr->properties.pts,
-                                 tr->properties.dts,
-                                 tr->properties.frame_duration,
-                                 true, 0, 0,
-                                 p, len - (p - data));
         } else {
             //FU-A
             fnc_log(FNC_LOG_VERBOSE, "[h264] frags");

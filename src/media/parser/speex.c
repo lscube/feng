@@ -29,15 +29,22 @@
 
 static int speex_parse(Track *tr, uint8_t *data, size_t len)
 {
+    struct MParserBuffer *buffer;
+
     if (len > DEFAULT_MTU)
         return -1;
 
-    mparser_buffer_write(tr,
-                         tr->properties.pts,
-                         tr->properties.dts,
-                         tr->properties.frame_duration,
-                         true, 0, 0,
-                         data, len);
+    buffer = g_slice_new0(struct MParserBuffer);
+
+    buffer->timestamp = tr->properties.pts;
+    buffer->delivery = tr->properties.dts;
+    buffer->duration = tr->properties.frame_duration;
+    buffer->marker = true;
+
+    buffer->data_size = len;
+    buffer->data = g_memdup(data, buffer->data_size);
+
+    mparser_buffer_write(tr, buffer);
 
     return 0;
 }

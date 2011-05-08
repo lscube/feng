@@ -23,6 +23,8 @@
 #include <config.h>
 
 #include <string.h>
+#include <arpa/inet.h>
+
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
 
@@ -64,11 +66,9 @@ static uint8_t *find_start_code(uint8_t *p, uint8_t *end, uint32_t *state)
  */
 static int mpv_parse(Track *tr, uint8_t *data, size_t len)
 {
-    int h, b = 1, e = 0 , ffc = 0, ffv = 0, fbv = 0, bfc = 0;
+    int b = 1, e = 0 , ffc = 0, ffv = 0, fbv = 0, bfc = 0;
     int frame_type = 0, temporal_reference = 0, begin_of_sequence = 0;
     long rem = len, payload;
-    uint8_t *dst = g_slice_alloc0(DEFAULT_MTU);
-    uint8_t *q = dst;
     uint8_t *r, *r1 = data;
     uint8_t *end = data + len;
     uint32_t start_code;
@@ -135,32 +135,33 @@ static int mpv_parse(Track *tr, uint8_t *data, size_t len)
         }
 
         if (payload>0) {
-            h = 0;
-            h |= temporal_reference << 16;
-            h |= begin_of_sequence << 13;
-            h |= b << 12;
-            h |= e << 11;
-            h |= frame_type << 8;
-            h |= fbv << 7;
-            h |= bfc << 4;
-            h |= ffv << 3;
-            h |= ffc;
+            uint32_t header_h =
+                (temporal_reference << 16) |
+                (begin_of_sequence << 13) |
+                (b << 12) |
+                (e << 11) |
+                (frame_type << 8) |
+                (fbv << 7) |
+                (bfc << 4) |
+                (ffv << 3) |
+                ffc;
+            uint32_t header_n = htonl(header_h);
 
-            q = dst;
-            *q++ = h >> 24;
-            *q++ = h >> 16;
-            *q++ = h >> 8;
-            *q++ = h;
+            struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
 
-            memcpy(q, data, payload);
-            q += payload;
+            buffer->timestamp = tr->properties.pts;
+            buffer->delivery = tr->properties.dts;
+            buffer->duration = tr->properties.frame_duration;
+            buffer->marker = (payload == rem);
 
-            mparser_buffer_write(tr,
-                                 tr->properties.pts,
-                                 tr->properties.dts,
-                                 tr->properties.frame_duration,
-                                 (payload == rem), 0, 0,
-                                 dst, q - dst);
+            buffer->data_size = payload + 4;
+            buffer->data = g_malloc(buffer->data_size);
+
+            memcpy(buffer->data, &header_n, sizeof(header_n));
+            memcpy(buffer->data + 4, data, payload);
+
+            mparser_buffer_write(tr, buffer);
+
             b = e;
             e = 0;
             data += payload;
@@ -169,7 +170,6 @@ static int mpv_parse(Track *tr, uint8_t *data, size_t len)
         } else rem = 0;
     }
 
-    g_slice_free1(DEFAULT_MTU, dst);
     return 0;
 }
 

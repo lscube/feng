@@ -86,31 +86,16 @@ typedef struct
 #endif
 } toc;
 
-typedef struct
-{
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-    uint8_t reserved:4;        /* reserved bits that MUST be set to zero.*/
-    uint8_t cmr:4;                  /* Indicates a codec mode request sent to the speech
-                                                   encoder at the site of the receiver of this payload. */
-#elif G_BYTE_ORDER == G_BIG_ENDIAN
-    uint8_t cmr:4;                  /* Indicates a codec mode request sent to the speech
-                                                   encoder at the site of the receiver of this payload. */
-    uint8_t reserved:4;        /* reserved bits that MUST be set to zero.*/
-#else
-#error Neither big nor little
-#endif
-} amr_header;
+#define AMR_CMR 0xf0
 
 static int amr_parse(Track *tr, uint8_t *data, size_t len)
 {
     uint8_t *packet = g_slice_alloc0(DEFAULT_MTU);
-    amr_header *header = (amr_header *) packet;
     static const uint32_t packet_size[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0};
-    /*1(toc size) +  unit size of frame body{12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0}*/
-
-    header->cmr = 0xf;
 
     while (len > 0) {
+        struct MParserBuffer *buffer;
+
         uint32_t read_offset = 0, frames = 0;
         uint32_t body_len, i, off;
         toc tocv;
@@ -128,23 +113,30 @@ static int amr_parse(Track *tr, uint8_t *data, size_t len)
         }
         if (frames <= 0) /* No frames - bad trailing data? */
             break;
+
+        buffer = g_slice_new0(struct MParserBuffer);
+
+        buffer->timestamp = tr->properties.pts;
+        buffer->delivery = tr->properties.dts;
+        buffer->duration = tr->properties.frame_duration;
+
+        buffer->data = g_malloc(DEFAULT_MTU);
+        buffer->data[0] = AMR_CMR;
+
         off = 1 + frames; /* Write the body data at this offset */
         for (i = 0; i < frames; i++) {
             memcpy(&tocv, data, 1);
             body_len = packet_size[tocv.ft];
             tocv.f = i < frames - 1;
-            memcpy(packet + 1 + i, &tocv, 1);
-            memcpy(packet + off, &data[1], body_len);
+            memcpy(buffer->data + 1 + i, &tocv, 1);
+            memcpy(buffer->data + off, &data[1], body_len);
             off  +=     body_len;
             data += 1 + body_len;
             len  -= 1 + body_len;
         }
-        mparser_buffer_write(tr,
-                             tr->properties.pts,
-                             tr->properties.dts,
-                             tr->properties.frame_duration,
-                             false, 0, 0,
-                             packet, off);
+
+        buffer->data_size = off;
+        mparser_buffer_write(tr, buffer);
     }
 
     g_slice_free1(DEFAULT_MTU, packet);

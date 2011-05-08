@@ -102,12 +102,18 @@ static int mp2t_parse(Track *tr, uint8_t *data, size_t len)
         // the return value is either EOF or the size
         ret = mp2t_packetize(dst, &dst_len, data, len, tr);
         if (ret >= 0) {
-            mparser_buffer_write(tr,
-                                 tr->properties.pts,
-                                 tr->properties.dts,
-                                 tr->properties.frame_duration,
-                                 true, 0, 0,
-                                 dst, dst_len);
+            struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
+
+            buffer->timestamp = tr->properties.pts;
+            buffer->delivery = tr->properties.dts;
+            buffer->duration = tr->properties.frame_duration;
+            buffer->marker = true;
+
+            buffer->data_size = dst_len;
+            buffer->data = g_memdup(dst, buffer->data_size);
+
+            mparser_buffer_write(tr, buffer);
+
             dst_len = len;
         }
     } while (ret);

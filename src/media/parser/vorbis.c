@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdbool.h>
+#include <arpa/inet.h>
 
 #include "media/demuxer.h"
 #include "media/mediaparser.h"
@@ -182,60 +183,54 @@ static int vorbis_init(Track *track)
     return -1;
 }
 
-#define XIPH_HEADER_SIZE 6
+#define HEADER_SIZE 6
+#define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
+
 static int vorbis_parse(Track *tr, uint8_t *data, size_t len)
 {
-    //XXX handle the last packet on EOF
     vorbis_priv *priv = tr->private_data;
-    int frag, off = 0;
-    uint32_t payload = DEFAULT_MTU - XIPH_HEADER_SIZE;
-    uint8_t *packet = g_slice_alloc0(DEFAULT_MTU);
 
-    if(!packet) return -1;
+    uint8_t prefix[HEADER_SIZE] = {
+        (priv->ident>>16)& 0xff,
+        (priv->ident>>8) & 0xff,
+        priv->ident     & 0xff
+    };
 
-    // the ident is always the same
-    packet[0] = (priv->ident>>16)& 0xff;
-    packet[1] = (priv->ident>>8) & 0xff;
-    packet[2] =  priv->ident     & 0xff;
+    do {
+        uint16_t payload_size;
 
-    if (len > payload) {
-        frag = 1; // first frag
-        // this is always the same
-//        packet[3] |= 0; //frames in packet
-        packet[4] = (payload>>8)&0xff;
-        packet[5] = payload&0xff;
-        while (len > payload) {
-            packet[3] = frag << 6;  //frag type
-//            packet[3] |= 0 << 4; //data type
-            memcpy(packet + XIPH_HEADER_SIZE, data + off, payload);
-            mparser_buffer_write(tr,
-                                 tr->properties.pts,
-                                 tr->properties.dts,
-                                 tr->properties.frame_duration,
-                                 false, 0, 0,
-                                 packet, DEFAULT_MTU);
+        struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
 
-            len -= payload;
-            off += payload;
-            frag = 2; // middle frag
-        }
-        packet[3] = 3 << 6; // last frag
-    } else {
-//        frag = 0; // no frag
-        packet[3] |= 1; //frames in packet
-    }
+        if ( prefix[3] == 0 && len <= MAX_PAYLOAD_SIZE )
+            prefix[3] = 1;
+        else if ( prefix[3] == 0 )
+            prefix[3] = 1 << 6; /* first frag */
+        else if ( len > MAX_PAYLOAD_SIZE )
+            prefix[3] = 2 << 6; /* middle frag */
+        else
+            prefix[3] = 3 << 6; /* max frag */
 
-    packet[4] = (len>>8)&0xff;
-    packet[5] = len&0xff;
-    memcpy(packet + XIPH_HEADER_SIZE, data + off, len);
-    mparser_buffer_write(tr,
-                         tr->properties.pts,
-                         tr->properties.dts,
-                         tr->properties.frame_duration,
-                         true, 0, 0,
-                         packet, len + XIPH_HEADER_SIZE);
+        buffer->timestamp = tr->properties.pts;
+        buffer->delivery = tr->properties.dts;
+        buffer->duration = tr->properties.frame_duration;
+        buffer->marker = (len <= MAX_PAYLOAD_SIZE);
 
-    g_slice_free1(DEFAULT_MTU, packet);
+        buffer->data_size = MIN(MAX_PAYLOAD_SIZE, len) + HEADER_SIZE;
+        buffer->data = g_malloc(buffer->data_size);
+
+        payload_size = htons(buffer->data_size);
+
+        memcpy(buffer->data, &prefix[0], HEADER_SIZE);
+        memcpy(buffer->data + 4, &payload_size, sizeof(payload_size));
+        memcpy(buffer->data + HEADER_SIZE, data,
+               buffer->data_size - HEADER_SIZE);
+
+        mparser_buffer_write(tr, buffer);
+
+        len -= MAX_PAYLOAD_SIZE;
+        data += MAX_PAYLOAD_SIZE;
+    } while(len > 0);
+
     return 0;
 }
 

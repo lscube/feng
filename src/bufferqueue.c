@@ -115,6 +115,13 @@ static inline struct MParserBuffer *BQ_OBJECT(RTP_session *consumer)
     return (struct MParserBuffer*)consumer->current_element_pointer->data;
 }
 
+
+void mparser_buffer_free(struct MParserBuffer *buffer)
+{
+    g_free(buffer->data);
+    g_slice_free(struct MParserBuffer, buffer);
+}
+
 /**
  * @brief Destroy one by one the elements in
  *        Track::queue.
@@ -130,7 +137,8 @@ void bq_element_free_internal(gpointer elem_generic,
     bq_debug("Free object %p %lu",
             element,
             element->seen);
-    g_free(element);
+
+    mparser_buffer_free(element);
 }
 
 /**
@@ -571,35 +579,19 @@ gboolean bq_consumer_stopped(RTP_session *consumer) {
  *  @param data actual packet data
  *  @param data_size actual packet data size
  */
-void mparser_buffer_write(Track *tr,
-                          double presentation,
-                          double delivery,
-                          double duration,
-                          gboolean marker,
-                          uint32_t rtp_timestamp,
-                          uint16_t seq_no,
-                          uint8_t *data, size_t data_size)
+void mparser_buffer_write(Track *tr, struct MParserBuffer *buffer)
 {
-    struct MParserBuffer *buffer = g_malloc(sizeof(struct MParserBuffer) + data_size);
-
     /* Make sure the producer is not stopped */
     g_assert(g_atomic_int_get(&tr->stopped) == 0);
-
-    buffer->timestamp = presentation;
-    buffer->rtp_timestamp = rtp_timestamp;
-    buffer->delivery = delivery;
-    buffer->duration = duration;
-    buffer->marker = marker;
-    buffer->data_size = data_size;
-    buffer->seen = 0;
-
-    memcpy(buffer->data, data, data_size);
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(tr->lock);
 
     /* do this inside the lock so that next_serial does not change */
-    tr->next_serial = (buffer->seq_no = (seq_no ? seq_no : tr->next_serial)) +1;
+    if ( ! buffer->seq_no )
+        buffer->seq_no = tr->next_serial;
+
+    tr->next_serial = buffer->seq_no + 1;
 
     g_queue_push_tail(tr->queue, buffer);
 

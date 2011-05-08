@@ -31,41 +31,59 @@
 
 static int mpa_parse(Track *tr, uint8_t *data, size_t len)
 {
-    int32_t offset;
-    uint8_t *dst = g_slice_alloc0(DEFAULT_MTU);
     ssize_t rem = len;
 
     if (DEFAULT_MTU >= len + 4) {
-        memset (dst, 0, 4);
-        memcpy (dst + 4, data, len);
-        mparser_buffer_write(tr,
-                             tr->properties.pts,
-                             tr->properties.dts,
-                             tr->properties.frame_duration,
-                             true, 0, 0,
-                             dst, len + 4);
+        struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
+
+        buffer->timestamp = tr->properties.pts;
+        buffer->delivery = tr->properties.dts;
+        buffer->duration = tr->properties.frame_duration;
+        buffer->marker = true;
+
+        buffer->data_size = len + 4;
+        buffer->data = g_malloc(buffer->data_size);
+
+        memset(buffer->data, 0, 4);
+        memcpy(buffer->data + 4, data, len);
+
+        mparser_buffer_write(tr, buffer);
+
         fnc_log(FNC_LOG_VERBOSE, "[mp3] no frags");
-    } else {
-        do {
-            offset = len - rem;
-            if (offset & 0xffff0000) return -1;
-            memcpy (dst + 4, data + offset, MIN(DEFAULT_MTU - 4, rem));
-            offset = htonl(offset & 0xffff);
-            memcpy (dst, &offset, 4);
 
-            mparser_buffer_write(tr,
-                                 tr->properties.pts,
-                                 tr->properties.dts,
-                                 tr->properties.frame_duration,
-                                 false, 0, 0,
-                                 dst, MIN(DEFAULT_MTU, rem + 4));
-            rem -= DEFAULT_MTU - 4;
-            fnc_log(FNC_LOG_VERBOSE, "[mp3] frags");
-        } while (rem >= 0);
+        return 0;
     }
-    fnc_log(FNC_LOG_VERBOSE, "[mp3]Frame completed");
 
-    g_slice_free1(DEFAULT_MTU, dst);
+    do {
+        int32_t offset = len - rem;
+        struct MParserBuffer *buffer;
+
+        if (offset & 0xffff0000)
+            return -1;
+
+        offset = htonl(offset & 0xffff);
+
+        buffer = g_slice_new0(struct MParserBuffer);
+
+        buffer->timestamp = tr->properties.pts;
+        buffer->delivery = tr->properties.dts;
+        buffer->duration = tr->properties.frame_duration;
+        buffer->marker = false;
+
+        buffer->data_size = MIN(DEFAULT_MTU, rem + 4);
+        buffer->data = g_malloc(buffer->data_size);
+
+        memcpy(buffer->data, &offset, 4);
+        memcpy(buffer->data + 4, data + offset, buffer->data_size - 4);
+
+        mparser_buffer_write(tr, buffer);
+
+        rem -= DEFAULT_MTU - 4;
+        fnc_log(FNC_LOG_VERBOSE, "[mp3] frags");
+    } while (rem >= 0);
+
+    fnc_log(FNC_LOG_VERBOSE, "[mp3]Frames completed");
+
     return 0;
 }
 
