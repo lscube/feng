@@ -39,6 +39,8 @@
 
 #define REQUIRED_FLUX_PROTOCOL_VERSION 4
 
+static int sd2_read_packet(Resource * r);
+
 typedef struct sd_private_data {
     char *mrl;
     mqd_t queue;
@@ -177,13 +179,17 @@ static void set_payload_type(MediaProperties *mprops, int payload_type)
         mprops->media_type = MP_video;
 }
 
-static int sd2_init(Resource * r)
+gboolean sd2_init(Resource * r)
 {
     int tracks;
 
     GKeyFile *file = g_key_file_new();
     gchar **tracknames = NULL, **trackgroups = NULL, *currtrack = NULL;
     int next_dynamic_payload = 96;
+
+    fnc_log(FNC_LOG_DEBUG,
+            "using live streaming demuxer for resource '%s'",
+            r->mrl);
 
     if ( !g_key_file_load_from_file(file, r->mrl, G_KEY_FILE_NONE, NULL) )
         goto error;
@@ -193,7 +199,8 @@ static int sd2_init(Resource * r)
 
     trackgroups = tracknames;
     r->duration = HUGE_VAL;
-    r->media_source = LIVE_SOURCE;
+    r->source = LIVE_SOURCE;
+    r->read_packet = sd2_read_packet;
 
     while ( (currtrack = *tracknames++) != NULL ) {
         Track *track;
@@ -387,7 +394,7 @@ static int sd2_init(Resource * r)
  error:
     g_strfreev(trackgroups);
     g_key_file_free(file);
-    return (tracks >= 0) ? RESOURCE_OK : -1;
+    return (tracks >= 0);
 }
 
 static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
@@ -523,7 +530,7 @@ static int sd2_read_packet(Resource * r)
 {
     TrackList tr_it;
 
-    if (r->media_source != LIVE_SOURCE)
+    if (r->source != LIVE_SOURCE)
         return RESOURCE_ERR;
 
     for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {
@@ -535,18 +542,3 @@ static int sd2_read_packet(Resource * r)
 
     return RESOURCE_OK;
 }
-
-/* Define the "sd_seek" macro to NULL so that FNC_LIB_DEMUXER will
- * pick it up and set it to NULL. This actually saves us from having
- * to devise a way to define non-seekable demuxers.
- */
-#define sd2_seek NULL
-
-static void sd2_uninit(ATTR_UNUSED gpointer ptr)
-{
-    return;
-}
-
-static const char sd2_name[] = "Live Source Description (v2)";
-
-FENG_DEMUXER(sd2, LIVE_SOURCE);

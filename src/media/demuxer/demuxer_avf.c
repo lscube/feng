@@ -31,6 +31,9 @@
 
 #include <libavformat/avformat.h>
 
+static int avf_seek(Resource * r, double time_sec);
+static void avf_uninit(gpointer rgen);
+static int avf_read_packet(Resource * r);
 
 static int fc_lock_manager(void **mutex, enum AVLockOp op)
 {
@@ -135,7 +138,7 @@ static double avf_timescaler (ATTR_UNUSED Resource *r, double res_time) {
     return res_time;
 }
 
-static int avf_init(Resource * r)
+gboolean avf_init(Resource * r)
 {
     AVFormatParameters ap;
     MediaProperties props;
@@ -144,6 +147,10 @@ static int avf_init(Resource * r)
     unsigned int j;
 
     avf_private_data priv = { NULL, NULL };
+
+    fnc_log(FNC_LOG_DEBUG,
+            "using libavformat demuxer for resource '%s'",
+            r->mrl);
 
     memset(&ap, 0, sizeof(AVFormatParameters));
 
@@ -168,8 +175,13 @@ static int avf_init(Resource * r)
     }
 
     r->duration = (double)priv.avfc->duration /AV_TIME_BASE;
+
     // make sure we can seek.
-    r->seekable = !av_seek_frame(priv.avfc, -1, 0, 0);
+    if ( !av_seek_frame(priv.avfc, -1, 0, 0) )
+        r->seek = avf_seek;
+
+    r->read_packet = avf_read_packet;
+    r->uninit = avf_uninit;
 
     priv.tracks = g_new0(Track*, priv.avfc->nb_streams);
 
@@ -266,7 +278,7 @@ static int avf_init(Resource * r)
         fnc_log(FNC_LOG_DEBUG, "[avf] duration %f", r->duration);
         r->private_data = g_memdup(&priv, sizeof(priv));
         r->timescaler = avf_timescaler;
-        return 0;
+        return true;
     }
 
  err_alloc:
@@ -278,7 +290,7 @@ static int avf_init(Resource * r)
 
     av_close_input_file(priv.avfc);
 
-    return -1;
+    return false;
 }
 
 static int avf_read_packet(Resource * r)
@@ -386,8 +398,3 @@ static void avf_uninit(gpointer rgen)
 
     g_free(priv);
 }
-
-static const char avf_name[] = "libavformat Demuxer";
-
-FENG_DEMUXER(avf, STORED_SOURCE);
-

@@ -51,7 +51,7 @@ static RTSP_ResponseCode do_play(RTSP_session * rtsp_sess)
      * valid for the resource, and in particular ensured that if the
      * resource is not seekable we only have the “0-” range selected.
      */
-    if ( rtsp_sess->resource->seekable &&
+    if ( rtsp_sess->resource->seek != NULL &&
          r_seek(rtsp_sess->resource, range->begin_time) )
         return RTSP_InvalidRange;
 
@@ -234,7 +234,7 @@ static RTSP_ResponseCode parse_range_header(RTSP_Client *client,
          * mere presence of the Range header in this condition would
          * trigger that response.
          */
-        if ( !session->resource->seekable &&
+        if ( !session->resource->seek != NULL &&
              range->begin_time != 0 &&
              range->end_time != -0.1 ) {
             g_slice_free(RTSP_Range, range);

@@ -37,21 +37,12 @@
 #include "feng.h"
 #include "fnc_log.h"
 
-// global demuxer modules:
-#ifdef LIVE_STREAMING
-extern Demuxer fnc_demuxer_sd2;
-#endif
-#ifdef HAVE_AVFORMAT
-extern Demuxer fnc_demuxer_avf;
-#endif
-
 /**
  * @defgroup resources Media backend resources handling
  *
  * @{
  */
 
-#ifdef LIVE_STREAMING
 /**
  * @brief Global lock
  *
@@ -67,7 +58,6 @@ static GMutex *shared_resources_lock;
  *
  */
 static GHashTable *shared_resources;
-#endif
 
 
 /**
@@ -116,7 +106,8 @@ static void r_free(Resource *resource)
 
     g_free(resource->mrl);
 
-    resource->demuxer->uninit(resource);
+    if ( resource->uninit != NULL )
+        resource->uninit(resource);
 
     if (resource->tracks) {
         g_list_foreach(resource->tracks, free_track, NULL);
@@ -126,71 +117,22 @@ static void r_free(Resource *resource)
 }
 
 /**
- * @brief Open a new resource descriptor function
+ * @brief Open a shared resource from the shared and virtual resources' hash table.
  *
  * @param mrl The filesystem path of the resource.
- * @param dmx The demuxer to use to open the resource.
- */
-static Resource *r_open_direct(gchar *mrl, const Demuxer *dmx)
-{
-    Resource *r;
-    struct stat filestat;
-
-    if (stat(mrl, &filestat) < 0 ) {
-        fnc_perror("stat");
-        return NULL;
-    }
-
-    if ( S_ISFIFO(filestat.st_mode) ) {
-        fnc_log(FNC_LOG_ERR, "%s: not a file", mrl);
-        return NULL;
-    }
-
-    r = g_slice_new0(Resource);
-
-    r->mrl = mrl;
-    r->mtime = filestat.st_mtime;
-    r->seekable = (dmx->seek != NULL);
-
-    r->demuxer = dmx;
-
-    if (r->demuxer->init(r)) {
-        r_free(r);
-        return NULL;
-    }
-    /* Now that we have opened the actual resource we can proceed with
-     * the extras */
-
-    r->lock = g_mutex_new();
-
-    return r;
-}
-
-#ifdef LIVE_STREAMING
-/**
- * @brief Open a shared resource from the shared resources hash
- *
- * @param mrl The filesystem path of the resource.
- * @param dmx The demuxer to use to open the resource.
  *
  * This function uses a shared hash table to access a resource
  * descriptor shared among multiple clients, and is used for live
- * streaming.
+ * streaming as well as for virtual resources.
  *
  * During live streaming all the clients will receive the same
  * content, fed by the same thread. Using a shared resource reduces
  * the amount of memory (and threads) required for the clients.
  *
- * If no resource for the given mrl is found, a new one will be opened
- * (via @ref r_open_direct).
- *
- * If the resoruce doesn't have a running "fill thread", it'll be
- * created and started.
- *
  * @note This function will lock the @ref shared_resources_lock mutex.
  * @note This function may lock the @ref Resource::lock mutex.
  */
-static Resource *r_open_hashed(gchar *mrl, const Demuxer *dmx)
+static Resource *r_open_hashed(gchar *mrl)
 {
     Resource *r;
     static gsize created_mutex = false;
@@ -201,43 +143,37 @@ static Resource *r_open_hashed(gchar *mrl, const Demuxer *dmx)
     }
 
     g_mutex_lock(shared_resources_lock);
-    r = g_hash_table_lookup(shared_resources, mrl);
-
-    /* only free mrl if it was found already in the hash table,
-     * otherwise we stored it for later usage!
-     */
-    if (!r) {
-        if ( (r = r_open_direct(mrl, dmx)) != NULL )
-            g_hash_table_insert(shared_resources, mrl, r);
-        else
-            g_free(mrl);
-    } else
-        g_free(mrl);
-
-    if ( r ) {
+    if ( (r = g_hash_table_lookup(shared_resources, mrl)) != NULL )
         g_atomic_int_inc(&r->count);
-
-        /* the resource doesn't have a fill pool, we'll create one by
-           resuming, then we alsopush a single thread to read */
-        if ( r->fill_pool == NULL ) {
-            g_mutex_lock(r->lock);
-
-            /* check again to make sure that nobody created this while
-               we were waiting for the lock (we should only ever lock
-               between two r_open_hashed calls). */
-            if ( r->fill_pool == NULL ) {
-                r_resume(r);
-                g_thread_pool_push(r->fill_pool,
-                                   GINT_TO_POINTER(-1), NULL);
-            }
-
-            g_mutex_unlock(r->lock);
-        }
-    }
 
     g_mutex_unlock(shared_resources_lock);
 
     return r;
+}
+
+#ifdef LIVE_STREAMING
+extern gboolean sd2_init(Resource *);
+#else
+static gboolean sd2_init(Resource *r)
+{
+    fnc_log(FNC_LOG_ERR,
+            "unable to stream resource '%s', live streaming support not built in",
+            r->mrl);
+
+    return false;
+}
+#endif
+
+#ifdef HAVE_AVFORMAT
+extern gboolean avf_init(Resource *);
+#else
+static gboolean avf_init(Resource *r)
+{
+    fnc_log(FNC_LOG_ERR,
+            "unable to stream resource '%s', libavformat support not built in",
+            r->mrl);
+
+    return false;
 }
 #endif
 
@@ -257,6 +193,10 @@ Resource *r_open(const char *inner_path)
                             feng_default_vhost->document_root,
                             inner_path,
                             NULL);
+    struct stat filestat;
+
+    if ( (r = r_open_hashed(mrl)) != NULL )
+        return r;
 
     /* Since right now we don't support any non-file-backed file, we
      * can check here if the file exists and if not simply return,
@@ -267,33 +207,36 @@ Resource *r_open(const char *inner_path)
         goto error;
     }
 
+    if (stat(mrl, &filestat) < 0 ) {
+        fnc_perror("stat");
+        return NULL;
+    }
+
+    if ( ! S_ISREG(filestat.st_mode) ) {
+        fnc_log(FNC_LOG_ERR, "%s: not a file", mrl);
+        return NULL;
+    }
+
+    r = g_slice_new0(Resource);
+
+    r->mrl = mrl;
+    r->mtime = filestat.st_mtime;
+    r->lock = g_mutex_new();
+
     if ( g_str_has_suffix(mrl, ".sd2") ) {
-#ifdef LIVE_STREAMING
-        fnc_log(FNC_LOG_DEBUG,
-                "using live streaming demuxer for resource '%s'",
-                mrl);
-        return r_open_hashed(mrl, &fnc_demuxer_sd2);
-#else
-        fnc_log(FNC_LOG_ERR,
-                "unable to stream resource '%s', live streaming support not built in",
-                mrl);
-        goto error;
-#endif
+        if ( !sd2_init(r) )
+            goto error_2;
     } else {
-#ifdef HAVE_AVFORMAT
-        fnc_log(FNC_LOG_DEBUG,
-                "using libavformat demuxer for resource '%s'",
-                mrl);
-        return r_open_direct(mrl, &fnc_demuxer_avf);
-#else
-        fnc_log(FNC_LOG_ERR,
-                "unable to stream resource '%s', libavformat support not built in",
-                mrl);
-        goto error;
-#endif
+        if ( !avf_init(r) )
+            goto error_2;
     }
 
     return r;
+
+ error_2:
+    g_mutex_free(r->lock);
+    g_slice_free(Resource, r);
+
  error:
     g_free(mrl);
     return NULL;
@@ -365,7 +308,7 @@ static void r_track_producer_reset_queue(gpointer element,
  * @param resource The Resource to seek
  * @param time The time in seconds within the stream to seek to
  *
- * @return The value returned by @ref Demuxer::seek
+ * @return The value returned by @ref Resource::seek
  *
  * @note This function will lock the @ref Resource::lock mutex.
  */
@@ -374,7 +317,7 @@ int r_seek(Resource *resource, double time) {
 
     g_mutex_lock(resource->lock);
 
-    res = resource->demuxer->seek(resource, time);
+    res = resource->seek(resource, time);
 
     g_list_foreach(resource->tracks, r_track_producer_reset_queue, NULL);
 
@@ -390,7 +333,7 @@ int r_seek(Resource *resource, double time) {
  * @param resource_p A generic pointer to the resource to fill the queue of
  *
  * This function takes care of reading the data from the demuxer (via
- * @ref Demuxer::read_packet); it will executed repeatedly until
+ * @ref Resource::read_packet); it will executed repeatedly until
  * either the resources ends (@ref Resource::eor becomes non-zero),
  * the thread is requested to stop (@ref Resource::fill_pool becomes
  * NULL), or, for non-live resources only, when the @ref consumer_p
@@ -406,7 +349,7 @@ static void r_read_cb(gpointer consumer_p, gpointer resource_p)
 {
     Resource *resource = (Resource*)resource_p;
     struct RTP_session *consumer = (struct RTP_session*)consumer_p;
-    const gboolean live = resource->demuxer->source == LIVE_SOURCE;
+    const gboolean live = resource->source == LIVE_SOURCE;
     const gulong buffered_frames = feng_srv.buffered_frames;
 
     g_assert( (live && consumer == GINT_TO_POINTER(-1)) || (!live && consumer != GINT_TO_POINTER(-1)) );
@@ -426,7 +369,7 @@ static void r_read_cb(gpointer consumer_p, gpointer resource_p)
         //        fprintf(stderr, "r_read_cb(%p)\n", resource);
 
         g_mutex_lock(resource->lock);
-        switch( resource->demuxer->read_packet(resource) ) {
+        switch( resource->read_packet(resource) ) {
         case RESOURCE_OK:
             break;
         case RESOURCE_EOF:
@@ -463,7 +406,7 @@ void r_close(Resource *resource)
         return;
 
 #ifdef LIVE_STREAMING
-    if (resource->demuxer->source == LIVE_SOURCE) {
+    if (resource->source == LIVE_SOURCE) {
         g_mutex_lock(shared_resources_lock);
 
         if ( g_atomic_int_dec_and_test(&resource->count) ) {
@@ -498,7 +441,7 @@ void r_pause(Resource *resource)
     GThreadPool *pool;
 
     /* Don't even try to pause a live source! */
-    if ( resource->demuxer->source == LIVE_SOURCE )
+    if ( resource->source == LIVE_SOURCE )
         return;
 
     /* we paused already */
@@ -555,7 +498,7 @@ void r_resume(Resource *resource)
 void r_fill(Resource *resource, struct RTP_session *consumer)
 {
     /* Don't even try to fill a live source! */
-    if ( resource->demuxer->source == LIVE_SOURCE )
+    if ( resource->source == LIVE_SOURCE )
         return;
 
     g_mutex_lock(resource->lock);

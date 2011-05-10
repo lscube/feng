@@ -52,6 +52,7 @@ typedef enum {
 typedef GList *TrackList;
 
 struct MediaParser;
+typedef struct Resource Resource;
 
 /**
  * @brief Descriptor structure of a resource
@@ -62,7 +63,7 @@ struct MediaParser;
  * to the tracks found on the resource, and can be either private to a
  * client or shared among many (live streaming).
  */
-typedef struct Resource {
+struct Resource {
     GMutex *lock;
 
     /**
@@ -83,26 +84,11 @@ typedef struct Resource {
      */
     int eor;
 
-    /**
-     * @brief Seekable resource flag
-     *
-     * Right now this is only false when the resource is a live
-     * resource (@ref ResourceInfo::media_source set to @ref LIVE_SOURCE)
-     * or when the demuxer provides no @ref Demuxer::seek function.
-     *
-     * In the future this can be extended to be set to false if the
-     * user disable seeking in a particular stored (and otherwise
-     * seekable) resource.
-     */
-    gboolean seekable;
-
-    MediaSource media_source;
+    MediaSource source;
 
     char *mrl;
     time_t mtime;
     double duration;
-
-    const struct Demuxer *demuxer;
 
    /**
      * @brief Pool of one thread for filling up data for the session
@@ -125,12 +111,17 @@ typedef struct Resource {
      */
     GThreadPool *fill_pool;
 
+    int (*read_packet)(Resource *);
+    int (*seek)(Resource *, double time_sec);
+    GDestroyNotify uninit;
+
     /* Timescale fixer callback function for meta-demuxers */
     double (*timescaler)(struct Resource *, double);
+
     /* Multiformat related things */
     TrackList tracks;
     void *private_data; /* Demuxer private data */
-} Resource;
+};
 
 /**
  * @defgroup SDP_FORMAT_MACROS SDP attributes format macros
@@ -267,30 +258,6 @@ typedef struct Track {
 
     MediaProperties properties;
 } Track;
-
-#define FENG_DEMUXER(shortname, source)                                   \
-    const Demuxer fnc_demuxer_##shortname = {                             \
-        shortname##_name,                                                 \
-        source,                                                           \
-        shortname##_init,                                                 \
-        shortname##_read_packet,                                          \
-        shortname##_seek,                                                 \
-        shortname##_uninit                                                \
-    }
-
-typedef struct Demuxer {
-   /** name of demuxer module*/
-    const char *name;
-
-    /** demuxer source type */
-    MediaSource source;
-
-    int (*init)(Resource *);
-    int (*read_packet)(Resource *);
-    int (*seek)(Resource *, double time_sec);
-    GDestroyNotify uninit;
-} Demuxer;
-
 
 // --- functions --- //
 
