@@ -39,7 +39,7 @@
 
 #define REQUIRED_FLUX_PROTOCOL_VERSION 4
 
-static int sd2_read_packet(Resource * r);
+static gpointer flux_read_messages(gpointer ptr);
 
 typedef struct sd_private_data {
     char *mrl;
@@ -181,7 +181,7 @@ static void set_payload_type(MediaProperties *mprops, int payload_type)
 
 gboolean sd2_init(Resource * r)
 {
-    int tracks;
+    int tracks = 0;
 
     GKeyFile *file = g_key_file_new();
     gchar **tracknames = NULL, **trackgroups = NULL, *currtrack = NULL;
@@ -200,7 +200,6 @@ gboolean sd2_init(Resource * r)
     trackgroups = tracknames;
     r->duration = HUGE_VAL;
     r->source = LIVE_SOURCE;
-    r->read_packet = sd2_read_packet;
 
     while ( (currtrack = *tracknames++) != NULL ) {
         Track *track;
@@ -391,73 +390,82 @@ gboolean sd2_init(Resource * r)
                 currtrack, r->mrl);
     }
 
+    if ( tracks >= 0 ) {
+        TrackList tr_it;
+        for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it))
+            g_thread_create(flux_read_messages, tr_it->data, false, NULL);
+    }
+
  error:
     g_strfreev(trackgroups);
     g_key_file_free(file);
     return (tracks >= 0);
 }
 
-static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
-    double package_start_time;
-    uint32_t package_timestamp;
-    double package_duration;
-    double timestamp;
-    double delivery;
-    double delta;
+static gpointer flux_read_messages(gpointer ptr) {
+    Track *tr = ptr;
 
-    struct mq_attr attr;
-    sd_private_data *priv = tr->private_data;
+    sd_private_data *priv = tr->private_data;;
 
-    uint8_t *msg_buffer;
-    uint8_t *packet;
-    ssize_t msg_len;
-    int marker;
-    uint16_t seq_no;
-
-    struct MParserBuffer *buffer;
-
-    if ( priv->queue == (mqd_t)-1 &&
-         (priv->queue = mq_open(priv->mrl, O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) == (mqd_t)-1) {
-        fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
-                priv->mrl, strerror(errno));
-        return RESOURCE_OK;
-    }
-
-    mq_getattr(priv->queue, &attr);
-
-    /* Check if there are available packets, if it is empty flux might have recreated it */
-    if (!attr.mq_curmsgs) {
-        mq_close(priv->queue);
-        priv->queue = (mqd_t)-1;
-        usleep(30);
-        return RESOURCE_OK;
-    }
-
-    msg_buffer = g_malloc(attr.mq_msgsize);
-
-    do {
+    while ( tr ) {
+        double package_start_time;
+        uint32_t package_timestamp;
+        double package_duration;
+        double timestamp;
+        double delivery;
+        double delta;
         unsigned int package_version;
         unsigned int package_start_dts;
         unsigned int package_dts;
         double package_insertion_time;
 
+        uint8_t *msg_buffer = NULL;
+        uint8_t *packet;
+        ssize_t msg_len;
+        int marker;
+        uint16_t seq_no;
+
+        struct mq_attr attr;
+        struct MParserBuffer *buffer;
+
+        if ( priv->queue == (mqd_t)-1 &&
+             (priv->queue = mq_open(priv->mrl, O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) == (mqd_t)-1) {
+
+            fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
+                    priv->mrl, strerror(errno));
+            goto reiterate;
+        }
+
+        mq_getattr(priv->queue, &attr);
+
+        /* Check if there are available packets, if it is empty flux might have recreated it */
+        if (!attr.mq_curmsgs) {
+            mq_close(priv->queue);
+            priv->queue = (mqd_t)-1;
+            usleep(30);
+
+            goto reiterate;
+        }
+
+        msg_buffer = g_malloc(attr.mq_msgsize);
+
         if ( (msg_len = mq_receive(priv->queue, (char*)msg_buffer,
                                    attr.mq_msgsize, NULL)) < 0 ) {
             fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
                     priv->mrl, strerror(errno));
-            g_free(msg_buffer);
 
             mq_close(priv->queue);
             priv->queue = (mqd_t)-1;
 
-            return RESOURCE_OK;
+            goto reiterate;
         }
 
         package_version = *((unsigned int*)msg_buffer);
         if (package_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
             fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d",
-                                   priv->mrl, REQUIRED_FLUX_PROTOCOL_VERSION, package_version);
-            return RESOURCE_ERR;
+                    priv->mrl, REQUIRED_FLUX_PROTOCOL_VERSION, package_version);
+
+            goto reiterate;
         }
 
         package_start_time = *((double*)(msg_buffer+sizeof(unsigned int)));
@@ -478,67 +486,53 @@ static int sd_read_packet_track(ATTR_UNUSED Resource *res, Track *tr) {
                 priv->mrl, delta, package_start_time, package_start_dts, package_dts);
 #endif
 
-        if (delta > 0.5f)
+        if (delta > 0.5f) {
             fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f/%f, discarding..", priv->mrl, package_insertion_time, delta);
-
-    } while(delta > 0.5f);
-
-    tr->properties.frame_duration = package_duration/((double)tr->properties.clock_rate);
-    timestamp = package_timestamp/((double)tr->properties.clock_rate);
-    marker = (packet[1]>>7);
-    seq_no = ((unsigned)packet[2] << 8) | ((unsigned)packet[3]);
-
-    // calculate the duration while consuming stale packets.
-    // This is an HACK that must be moved to Flux, here just to quick fix live problems
-    if (!tr->properties.frame_duration) {
-        if (tr->properties.dts) {
-            tr->properties.frame_duration = (timestamp - tr->properties.dts);
-        } else {
-            tr->properties.dts = timestamp;
+            goto reiterate;
         }
-    }
 
-    buffer = g_slice_new0(struct MParserBuffer);
+        tr->properties.frame_duration = package_duration/((double)tr->properties.clock_rate);
+        timestamp = package_timestamp/((double)tr->properties.clock_rate);
+        marker = (packet[1]>>7);
+        seq_no = ((unsigned)packet[2] << 8) | ((unsigned)packet[3]);
 
-    buffer->timestamp = timestamp;
-    buffer->delivery = package_start_time + delivery;
-    buffer->duration = tr->properties.frame_duration * 3;
+        // calculate the duration while consuming stale packets.
+        // This is an HACK that must be moved to Flux, here just to quick fix live problems
+        if (!tr->properties.frame_duration) {
+            if (tr->properties.dts) {
+                tr->properties.frame_duration = (timestamp - tr->properties.dts);
+            } else {
+                tr->properties.dts = timestamp;
+            }
+        }
 
-    buffer->marker = marker;
-    buffer->seq_no = seq_no;
-    buffer->rtp_timestamp = package_timestamp;
+        buffer = g_slice_new0(struct MParserBuffer);
 
-    buffer->data_size = msg_len - 12;
-    buffer->data = g_memdup(packet + 12, buffer->data_size);
+        buffer->timestamp = timestamp;
+        buffer->delivery = package_start_time + delivery;
+        buffer->duration = tr->properties.frame_duration * 3;
+
+        buffer->marker = marker;
+        buffer->seq_no = seq_no;
+        buffer->rtp_timestamp = package_timestamp;
+
+        buffer->data_size = msg_len - 12;
+        buffer->data = g_memdup(packet + 12, buffer->data_size);
 
 #if 0
-    fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
-            priv->mrl,
-            timestamp,
-            delivery,
-            package_start_time + delivery,
-            ev_time() - (package_start_time + delivery));
+        fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
+                priv->mrl,
+                timestamp,
+                delivery,
+                package_start_time + delivery,
+                ev_time() - (package_start_time + delivery));
 #endif
 
-    mparser_buffer_write(tr, buffer);
+        mparser_buffer_write(tr, buffer);
 
-    g_free(msg_buffer);
-    return RESOURCE_OK;
-}
-
-static int sd2_read_packet(Resource * r)
-{
-    TrackList tr_it;
-
-    if (r->source != LIVE_SOURCE)
-        return RESOURCE_ERR;
-
-    for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it)) {
-        int ret;
-
-        if ( (ret = sd_read_packet_track(r, tr_it->data)) != RESOURCE_OK )
-            return ret;
+    reiterate:
+        g_free(msg_buffer);
     }
 
-    return RESOURCE_OK;
+    return NULL;
 }

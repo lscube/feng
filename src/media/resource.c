@@ -470,8 +470,9 @@ void r_resume(Resource *resource)
 {
     GThreadPool *pool;
 
-    /* running already */
-    if ( g_atomic_pointer_get(&resource->fill_pool) != NULL )
+    /* running already, or auto-filled */
+    if ( g_atomic_pointer_get(&resource->fill_pool) != NULL ||
+         g_atomic_pointer_get(&resource->read_packet) == NULL )
         return;
 
     pool = g_thread_pool_new(r_read_cb, resource,
