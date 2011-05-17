@@ -162,6 +162,22 @@ struct Track {
      */
     GQueue *queue;
 
+
+    /**
+     * @brief Stopped flag
+     *
+     * When this value is set to true, the consumer is stopped and no
+     * further elements can be added. To set this flag call the
+     * @ref bq_producer_unref function.
+     *
+     * A stopped producer cannot accept any new consumer, and will
+     * wait for all the currently-connected consumers to return before
+     * it is deleted.
+     *
+     * @note gint is used to be able to use g_atomic_int_get function.
+     */
+    gint stopped;
+
     /**
      * @brief Next serial to use for the added elements
      *
@@ -198,21 +214,6 @@ struct Track {
      * @see bq_consumer_unref
      */
     GCond *last_consumer;
-
-    /**
-     * @brief Stopped flag
-     *
-     * When this value is set to true, the consumer is stopped and no
-     * further elements can be added. To set this flag call the
-     * @ref bq_producer_unref function.
-     *
-     * A stopped producer cannot accept any new consumer, and will
-     * wait for all the currently-connected consumers to return before
-     * it is deleted.
-     *
-     * @note gint is used to be able to use g_atomic_int_get function.
-     */
-    gint stopped;
 
     Resource *parent;
 
@@ -323,8 +324,8 @@ struct MParserBuffer {
     double duration;    /*!< packet duration */
 
     gboolean marker;    /*!< marker bit, set if we are sending the last frag */
-    uint16_t seq_no;    /*!< Packet sequence number, used only by live */
     uint32_t rtp_timestamp; /*!< RTP version of the presenation time, used only by live */
+    uint16_t seq_no;    /*!< Packet sequence number, used only by live */
 
     size_t data_size;   /*!< packet size */
     uint8_t *data;      /*!< actual packet data */
