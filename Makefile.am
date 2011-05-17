@@ -115,8 +115,7 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/media/mediautils.c \
 	src/media/resource.c \
 	src/media/parser/mpeg12.c \
-	src/media/parser/mpegaudio.c \
-	src/media/parser/mpeg2t.c
+	src/media/parser/mpegaudio.c
 
 if FENG_FFMPEG
 dist_feng_SOURCES += src/media/parser/h264.c \
