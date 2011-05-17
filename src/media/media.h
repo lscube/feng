@@ -116,9 +116,6 @@ struct Resource {
     int (*seek)(Resource *, double time_sec);
     GDestroyNotify uninit;
 
-    /* Timescale fixer callback function for meta-demuxers */
-    double (*timescaler)(struct Resource *, double);
-
     /* Multiformat related things */
     TrackList tracks;
     void *private_data; /* Demuxer private data */

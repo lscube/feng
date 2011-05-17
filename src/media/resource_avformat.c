@@ -90,10 +90,6 @@ typedef struct avf_private_data {
  * safe, and needs lock-protection;
  */
 
-static double avf_timescaler (ATTR_UNUSED Resource *r, double res_time) {
-    return res_time;
-}
-
 Resource *avf_open(const char *url)
 {
     AVFormatParameters ap;
@@ -356,7 +352,6 @@ Resource *avf_open(const char *url)
 
     r->read_packet = avf_read_packet;
     r->uninit = avf_uninit;
-    r->timescaler = avf_timescaler;
 
     /* Try seeking to make sure that we can seek, as libavformat might
        not implement seeking for the format we're using here; if it
@@ -411,8 +406,7 @@ retry:
     fnc_log(FNC_LOG_VERBOSE, "[avf] Parsing track %s",
             tr->name);
     if(pkt.dts != AV_NOPTS_VALUE) {
-        tr->dts = r->timescaler (r,
-                                            pkt.dts * av_q2d(stream->time_base));
+        tr->dts = pkt.dts * av_q2d(stream->time_base);
         fnc_log(FNC_LOG_VERBOSE,
                 "[avf] delivery timestamp %f",
                 tr->dts);
@@ -422,8 +416,7 @@ retry:
     }
 
     if(pkt.pts != AV_NOPTS_VALUE) {
-        tr->pts = r->timescaler (r,
-                                            pkt.pts * av_q2d(stream->time_base));
+        tr->pts = pkt.pts * av_q2d(stream->time_base);
         fnc_log(FNC_LOG_VERBOSE,
                 "[avf] presentation timestamp %f",
                 tr->pts);
