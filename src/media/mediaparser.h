@@ -27,12 +27,6 @@
 
 #include "demuxer.h"
 
-struct Track;
-
-// return errors
-#define MP_PKT_TOO_SMALL -101
-#define MP_NOT_FULL_FRAME -102
-
 #define FENG_MEDIAPARSER(shortname, encoding, type)         \
     const MediaParser fnc_mediaparser_##shortname = {       \
         shortname##_init,                                   \
@@ -79,8 +73,6 @@ extern const MediaParser fnc_mediaparser_h263;
 extern const MediaParser fnc_mediaparser_amr;
 extern const MediaParser fnc_mediaparser_vp8;
 
-char *extradata2config(MediaProperties *properties);
-
 /**
  * @brief Buffer passed between parsers and RTP sessions
  *
@@ -114,7 +106,7 @@ struct MParserBuffer {
     uint8_t *data;      /*!< actual packet data */
 };
 
-void mparser_buffer_write(struct Track *tr, struct MParserBuffer *buffer);
+void mparser_buffer_write(Track *tr, struct MParserBuffer *buffer);
 
 #define DEFAULT_MTU 1440
 
