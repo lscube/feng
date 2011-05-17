@@ -197,7 +197,6 @@ Resource *avf_open(const char *url)
             parser_init = vorbis_init;
 
             track->parse = xiph_parse;
-            track->uninit = xiph_uninit;
             break;
 
         case CODEC_ID_THEORA:
@@ -208,7 +207,6 @@ Resource *avf_open(const char *url)
             parser_init = theora_init;
 
             track->parse = xiph_parse;
-            track->uninit = xiph_uninit;
             break;
 
         case CODEC_ID_SPEEX:

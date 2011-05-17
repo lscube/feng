@@ -31,18 +31,11 @@
 #include "media/media.h"
 #include "fnc_log.h"
 
-typedef struct {
-    uint8_t        *packet;    ///< holds the incomplete packet
-    size_t          len;       ///< incomplete packet length
-    uint8_t         ident[3];  ///< identification string
-} xiph_priv;
-
 #define HEADER_SIZE 6
 #define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
 
 int xiph_parse(Track *tr, uint8_t *data, size_t len)
 {
-    xiph_priv *priv = tr->private_data;
     uint8_t fragment = 0;
 
     do {
@@ -70,7 +63,7 @@ int xiph_parse(Track *tr, uint8_t *data, size_t len)
         payload_size = htons(buffer->data_size);
 
         /* 0..2 */
-        memcpy(buffer->data, priv->ident, sizeof(priv->ident));
+        memcpy(buffer->data, tr->private_data, 3);
         /* 3 */
         buffer->data[3] = fragment;
         /* 4..5 */
@@ -86,18 +79,6 @@ int xiph_parse(Track *tr, uint8_t *data, size_t len)
     } while(len > 0);
 
     return 0;
-}
-
-void xiph_uninit(Track *track)
-{
-    xiph_priv *priv = track->private_data;
-    if (!priv)
-        return;
-
-    g_free(priv->packet);
-    g_slice_free(xiph_priv, priv);
-
-    track->private_data = NULL;
 }
 
 #define AV_RB16(x)  ((((uint8_t*)(x))[0] << 8) | ((uint8_t*)(x))[1])
@@ -136,7 +117,7 @@ static int ff_split_xiph_headers(const uint8_t *extradata, int extradata_size,
     return 0;
 }
 
-static char *xiph_header_to_conf(xiph_priv *priv,
+static char *xiph_header_to_conf(uint8_t *ident_bytes,
                                  const uint8_t *headers,
                                  const size_t len,
                                  const int first_header_size,
@@ -162,9 +143,9 @@ static char *xiph_header_to_conf(xiph_priv *priv,
     av_md5_sum((uint8_t *)hash, headers, len);
     ident = hash[0]^hash[1]^hash[2]^hash[3];
 
-    priv->ident[0] = (ident >> 16) & 0xff;
-    priv->ident[1] = (ident >> 8)  & 0xff;
-    priv->ident[2] =  ident        & 0xff;
+    ident_bytes[0] = (ident >> 16) & 0xff;
+    ident_bytes[1] = (ident >> 8)  & 0xff;
+    ident_bytes[2] =  ident        & 0xff;
 
     // Envelope size
     headers_len = header_len[0] + comment_len + header_len[2];
@@ -181,9 +162,9 @@ static char *xiph_header_to_conf(xiph_priv *priv,
     conf[1] = 0;
     conf[2] = 0;
     conf[3] = 1; //just one packet for now
-    conf[4] = priv->ident[0];
-    conf[5] = priv->ident[1];
-    conf[6] = priv->ident[2];
+    conf[4] = ident_bytes[0];
+    conf[5] = ident_bytes[1];
+    conf[6] = ident_bytes[2];
     conf[7] = (headers_len)>>8;
     conf[8] = (headers_len) & 0xff;
     conf[9] = 2;
@@ -200,15 +181,19 @@ static char *xiph_header_to_conf(xiph_priv *priv,
     return conf_base64;
 }
 
-static gboolean xiph_sdp_descr_append(Track *track,
+static gboolean xiph_init(Track *track,
                                       int first_header_len,
                                       const uint8_t *comment,
                                       size_t comment_len)
 {
-    char *conf = xiph_header_to_conf(track->private_data,
-                                     track->extradata, track->extradata_len,
-                                     first_header_len,
-                                     comment, comment_len);
+    char *conf;
+
+    track->private_data = g_malloc0(4); /* 3 bytes of ident and one for termination */
+
+    conf = xiph_header_to_conf(track->private_data,
+                               track->extradata, track->extradata_len,
+                               first_header_len,
+                               comment, comment_len);
 
     if ( conf == NULL )
         return false;
@@ -234,14 +219,12 @@ int theora_init(Track *track)
         0, 0, 0, 0
     };
 
-    track->private_data = g_slice_new(xiph_priv);
-
-    return xiph_sdp_descr_append(track, 42, comment, sizeof(comment)) ? 0 : -1;
+    return xiph_init(track, 42, comment, sizeof(comment)) ? 0 : -1;
 }
 
 int vorbis_init(Track *track)
 {
-    static const uint8_t comment[] ={
+    static const uint8_t comment[26] ={
         3, 'v', 'o', 'r', 'b', 'i', 's',
         10, 0, 0, 0,
         'v', 'o', 'r', 'b', 'i', 's', '-', 'r', 't', 'p',
@@ -249,7 +232,5 @@ int vorbis_init(Track *track)
         1
     };
 
-    track->private_data = g_slice_new(xiph_priv);
-
-    return xiph_sdp_descr_append(track, 42, comment, sizeof(comment)) ? 0 : -1;
+    return xiph_init(track, 42, comment, sizeof(comment)) ? 0 : -1;
 }
