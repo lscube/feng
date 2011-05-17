@@ -98,7 +98,6 @@ static double avf_timescaler (ATTR_UNUSED Resource *r, double res_time) {
 Resource *avf_open(const char *url)
 {
     AVFormatParameters ap;
-    MediaProperties props;
     Resource *r = NULL;
     Track *track = NULL;
     int pt = 96, i;
@@ -305,7 +304,7 @@ Resource *avf_open(const char *url)
         continue;
 
     track_err_alloc:
-        g_free(props.encoding_name);
+        track_free(track);
         goto err_alloc;
 
     discard:
