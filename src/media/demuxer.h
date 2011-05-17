@@ -33,6 +33,7 @@ struct feng;
 #define RESOURCE_OK 0
 #define RESOURCE_ERR -1
 #define RESOURCE_EOF -2
+#define DEFAULT_MTU 1440
 
 typedef enum {
     MP_undef = -1,
@@ -51,8 +52,8 @@ typedef enum {
 //! typedefs that give convenient names to GLists used
 typedef GList *TrackList;
 
-struct MediaParser;
 typedef struct Resource Resource;
+typedef struct Track Track;
 
 /**
  * @brief Descriptor structure of a resource
@@ -149,11 +150,9 @@ struct Resource {
  * @}
  */
 
-typedef struct Track {
+struct Track {
     GMutex *lock;
     double start_time;
-    const struct MediaParser *parser;
-
 
     /**
      * @brief The actual buffer queue
@@ -217,8 +216,6 @@ typedef struct Track {
 
     Resource *parent;
 
-    void *private_data; /* private data of media parser */
-
     /**
      * @brief Track name
      *
@@ -243,6 +240,45 @@ typedef struct Track {
     GString *sdp_description;
 
     /**
+     * @defgroup track_methods
+     *
+     * @{ */
+
+    /**
+     * @brief Actual parser callback
+     *
+     * Take a single elementary unit of the codec stream and prepare
+     * the rtp payload out of it.
+     *
+     * @param track Track object on which to work
+     * @param data Packet coming from the demuxer layer,
+     * @param len Length of @p data byte array
+     *
+     * @return: 0 on success, non zero otherwise.
+     */
+    int (*parse)(Track *track, uint8_t *data, size_t len);
+
+    /**
+     * @brief Uninit function to free the private data
+     */
+    void (*uninit)(Track *track);
+
+    /**
+     * @brief Private data of the track
+     *
+     * Contains special data relative for the track; its use depends
+     * on the type of resource the track belongs to.
+     *
+     * The content of this field will be g_free'd in @ref track_free
+     * if not NULL. If you wish to provide custom code to release the
+     * object, you should do so in @ref Track::uninit and make sure to
+     * set it back to NULL then.
+     */
+    void *private_data;
+
+    /** @} */
+
+    /**
      * @defgroup MediaProperties
      *
      * @brief Track's media properties
@@ -259,7 +295,40 @@ typedef struct Track {
     uint8_t *extradata;
     size_t extradata_len;
     /** @} */
-} Track;
+};
+
+/**
+ * @brief Buffer passed between parsers and RTP sessions
+ *
+ * This is what is being encapsulated by @ref BufferQueue_Element.
+ */
+struct MParserBuffer {
+    /**
+     * @brief Seen count
+     *
+     * Reverse reference counter, that tells how many consumers have
+     * seen the buffer already. Once the buffer has been seen by all
+     * the consumers of its producer, the buffer is deleted and the
+     * queue is shifted further on.
+     *
+     * @note Since once the counter reaches the number of consumers
+     *       the element is deleted and freed, before increasing the
+     *       counter it is necessary to hold the @ref
+     *       BufferQueue_Producer lock.
+     */
+    gulong seen;
+
+    double timestamp;   /*!< presentation time of packet */
+    double delivery;    /*!< decoding time of packet */
+    double duration;    /*!< packet duration */
+
+    gboolean marker;    /*!< marker bit, set if we are sending the last frag */
+    uint16_t seq_no;    /*!< Packet sequence number, used only by live */
+    uint32_t rtp_timestamp; /*!< RTP version of the presenation time, used only by live */
+
+    size_t data_size;   /*!< packet size */
+    uint8_t *data;      /*!< actual packet data */
+};
 
 // --- functions --- //
 
@@ -278,8 +347,70 @@ Track *r_find_track(Resource *, const char *);
 Track *track_new(char *name);
 void track_free(Track *track);
 
+void mparser_buffer_write(Track *tr, struct MParserBuffer *buffer);
+
 void sdp_descr_append_config(Track *track);
 
 void ffmpeg_init(void);
+
+/**
+ * @defgroup parsers
+ *
+ * @brief Parser init methods
+ *
+ * Declaration of the functions used by the libavformat demuxer to
+ * initialize the parsers and to set @ref Track::parse and @ref
+ * Track::uninit.
+ *
+ * @{ */
+
+int aac_init(Track *track);
+int aac_parse(Track *track, uint8_t *data, size_t len);
+
+int amr_init(Track *track);
+int amr_parse(Track *track, uint8_t *data, size_t len);
+
+int h263_init(Track *track);
+int h263_parse(Track *track, uint8_t *data, size_t len);
+
+int h264_init(Track *track);
+int h264_parse(Track *track, uint8_t *data, size_t len);
+
+int mp4ves_init(Track *track);
+int mp4ves_parse(Track *track, uint8_t *data, size_t len);
+
+int mpa_parse(Track *track, uint8_t *data, size_t len);
+
+int mpv_parse(Track *track, uint8_t *data, size_t len);
+
+int speex_parse(Track *track, uint8_t *data, size_t len);
+
+int vp8_init(Track *track);
+int vp8_parse(Track *track, uint8_t *data, size_t len);
+
+/**
+ * @defgroup parsers_xiph
+ *
+ * @brief Xiph parsers
+ *
+ * Theora and Vorbis share the same parser and uninit function, and a
+ * shared private data structure that is filled by the initialization.
+ * @{ */
+int theora_init(Track *track);
+int vorbis_init(Track *track);
+
+int xiph_parse(Track *tr, uint8_t *data, size_t len);
+void xiph_uninit(Track *tr);
+
+typedef struct {
+    uint8_t        *conf;      ///< current configuration
+    size_t          conf_len;
+    uint8_t        *packet;    ///< holds the incomplete packet
+    size_t          len;       ///< incomplete packet length
+    unsigned int    ident;     ///< identification string
+} xiph_priv;
+/** @} */
+
+/** @} */
 
 #endif // FN_DEMUXER_H

@@ -111,23 +111,22 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	\
 	src/media/demuxer.c \
 	src/media/demuxer.h \
-	src/media/mediaparser.h \
 	src/media/mediautils.c \
-	src/media/resource.c \
-	src/media/parser/mpeg12.c \
-	src/media/parser/mpegaudio.c
+	src/media/resource.c
 
 if FENG_FFMPEG
 dist_feng_SOURCES += src/media/parser/h264.c \
 		     src/media/parser/vorbis.c \
 		     src/media/parser/theora.c \
-		     src/media/parser/xiph.c src/media/parser/xiph.h \
+		     src/media/parser/xiph.c \
 		     src/media/parser/aac.c \
 		     src/media/parser/mp4ves.c \
 		     src/media/parser/speex.c \
 		     src/media/parser/h263.c \
 		     src/media/parser/amr.c \
 		     src/media/parser/vp8.c \
+		     src/media/parser/mpeg12.c \
+		     src/media/parser/mpegaudio.c \
 		     src/media/demuxer/demuxer_avf.c
 endif
 

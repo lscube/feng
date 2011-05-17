@@ -26,8 +26,7 @@
 #include <stdbool.h>
 #include <arpa/inet.h>
 
-#include "media/mediaparser.h"
-#include "xiph.h"
+#include "media/demuxer.h"
 
 #define HEADER_SIZE 6
 #define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
@@ -89,4 +88,6 @@ void xiph_uninit(Track *track)
     g_free(priv->conf);
     g_free(priv->packet);
     g_slice_free(xiph_priv, priv);
+
+    track->private_data = NULL;
 }

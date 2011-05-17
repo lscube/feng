@@ -27,7 +27,6 @@
 
 #include "fnc_log.h"
 #include "media/demuxer.h"
-#include "media/mediaparser.h"
 
 typedef struct {
     int is_avc;
@@ -242,17 +241,12 @@ static char *encode_header(uint8_t *p, unsigned int len, int packet_mode)
 
 #define FU_A 1
 
-static int h264_init(Track *track)
+int h264_init(Track *track)
 {
     h264_priv *priv;
     char *sprop = NULL;
 
-    if (track->extradata_len == 0) {
-        fnc_log(FNC_LOG_WARN, "[h264] No Extradata, unsupported");
-        return -1;
-    }
-
-    priv = g_slice_new(h264_priv);
+    priv = g_new0(h264_priv, 1);
 
     if(track->extradata[0] == 1) {
         if (track->extradata_len < 7) goto err_alloc;
@@ -295,7 +289,7 @@ static int h264_init(Track *track)
 //  - fragmenting
 //  - feed a single NAL as is.
 
-static int h264_parse(Track *tr, uint8_t *data, size_t len)
+int h264_parse(Track *tr, uint8_t *data, size_t len)
 {
     h264_priv *priv = tr->private_data;
 //    double nal_time; // see page 9 and 7.4.1.2
@@ -407,10 +401,3 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
     fnc_log(FNC_LOG_VERBOSE, "[h264] Frame completed");
     return 0;
 }
-
-static void h264_uninit(Track *tr)
-{
-    g_slice_free(h264_priv, tr->private_data);
-}
-
-FENG_MEDIAPARSER(h264, "H264", MP_video);

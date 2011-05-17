@@ -26,10 +26,9 @@
 #include <netinet/in.h>
 
 #include "media/demuxer.h"
-#include "media/mediaparser.h"
 #include "fnc_log.h"
 
-static int mpa_parse(Track *tr, uint8_t *data, size_t len)
+int mpa_parse(Track *tr, uint8_t *data, size_t len)
 {
     ssize_t rem = len;
 
@@ -86,8 +85,3 @@ static int mpa_parse(Track *tr, uint8_t *data, size_t len)
 
     return 0;
 }
-
-#define mpa_init   NULL
-#define mpa_uninit NULL
-
-FENG_MEDIAPARSER(mpa, "MPA", MP_audio);

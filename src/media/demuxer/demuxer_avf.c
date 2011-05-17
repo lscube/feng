@@ -30,7 +30,6 @@
 #include "fnc_log.h"
 
 #include "media/demuxer.h"
-#include "media/mediaparser.h"
 
 #include <libavformat/avformat.h>
 
@@ -163,47 +162,65 @@ Resource *avf_open(const char *url)
         const char *encoding_name;
         float frame_rate = 0;
 
+        int (*parser_init)(Track *track) = NULL;
+
         track = track_new(g_strdup_printf("Track_%d", j));
+
+        track->clock_rate = 90000; //Default
 
         switch(codec->codec_id) {
         case CODEC_ID_MPEG1VIDEO:
         case CODEC_ID_MPEG2VIDEO:
             track->payload_type = 32;
             encoding_name = "MPV";
-            track->parser = &fnc_mediaparser_mpv;
+            track->parse = mpv_parse;
             break;
 
         case CODEC_ID_H264:
+            if (!codec->extradata_size)
+                goto err_alloc;
+
             encoding_name = "H264";
-            track->parser = &fnc_mediaparser_h264;
+            parser_init = h264_init;
+
+            track->parse = h264_parse;
             break;
 
         case CODEC_ID_MP2:
         case CODEC_ID_MP3:
             track->payload_type = 14;
             encoding_name = "MPA";
-            track->parser = &fnc_mediaparser_mpa;
+            track->parse = mpa_parse;
             break;
 
         case CODEC_ID_VORBIS:
+            if (!codec->extradata_size)
+                goto err_alloc;
+
             encoding_name = "VORBIS";
-            track->parser = &fnc_mediaparser_vorbis;
+            parser_init = vorbis_init;
+
+            track->parse = xiph_parse;
+            track->uninit = xiph_uninit;
             break;
 
         case CODEC_ID_THEORA:
+            if (!codec->extradata_size)
+                goto err_alloc;
+
             encoding_name = "THEORA";
-            track->parser = &fnc_mediaparser_theora;
+            parser_init = theora_init;
+
+            track->parse = xiph_parse;
+            track->uninit = xiph_uninit;
             break;
 
         case CODEC_ID_SPEEX:
             encoding_name = "SPEEX";
-            track->parser = &fnc_mediaparser_speex;
+            track->parse = speex_parse;
             break;
 
         case CODEC_ID_AAC:
-            encoding_name = "AAC";
-            track->parser = &fnc_mediaparser_aac;
-
             if ( codec->extradata_size == 0 ) {
                 AVPacket pkt;
 
@@ -227,26 +244,43 @@ Resource *avf_open(const char *url)
 
                 av_seek_frame(priv.avfc, -1, 0, 0);
             }
+
+            encoding_name = "AAC";
+            parser_init = aac_init;
+
+            track->parse = aac_parse;
             break;
 
         case CODEC_ID_MPEG4:
+            if (!codec->extradata_size)
+                goto err_alloc;
+
             encoding_name = "MP4V-ES";
-            track->parser = &fnc_mediaparser_mp4ves;
+            parser_init = mp4ves_init;
+
+            track->parse = mp4ves_parse;
             break;
 
         case CODEC_ID_H263:
             encoding_name = "H263P";
-            track->parser = &fnc_mediaparser_h263;
+            parser_init = h263_init;
+
+            track->parse = h263_parse;
             break;
 
         case CODEC_ID_AMR_NB:
             encoding_name = "AMR";
-            track->parser = &fnc_mediaparser_amr;
+            parser_init = amr_init;
+
+            track->clock_rate = 8000;
+            track->parse = amr_parse;
             break;
 
         case CODEC_ID_VP8:
             encoding_name = "VP8";
-            track->parser = &fnc_mediaparser_vp8;
+            parser_init = vp8_init;
+
+            track->parse = vp8_parse;
             break;
 
         default:
@@ -276,18 +310,14 @@ Resource *avf_open(const char *url)
 
         priv.tracks[j] = track;
 
-        track->clock_rate = 90000; //Default
         track->extradata = codec->extradata;
         track->extradata_len = codec->extradata_size;
 
         fnc_log(FNC_LOG_DEBUG, "[avf] Parsing AVStream %s",
                 track->encoding_name);
 
-        if (track->parser && track->parser->init && track->parser->init(track) != 0) {
-            fnc_log(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
-                    track->encoding_name);
+        if ( parser_init && parser_init(track) != 0 )
             goto track_err_alloc;
-        }
 
         if ( (metadata_tag = av_metadata_get(priv.avfc->metadata, "title", NULL, metadata_flags)) )
             g_string_append_printf(track->sdp_description, SDP_F_TITLE, metadata_tag->value);
@@ -426,9 +456,9 @@ retry:
                                    &data, &size,
                                    pkt.data, pkt.size,
                                    pkt.flags & AV_PKT_FLAG_KEY);
-        ret = tr->parser->parse(tr, pkt.data, pkt.size);
+        ret = tr->parse(tr, pkt.data, pkt.size);
     } else {
-        ret = tr->parser->parse(tr, pkt.data, pkt.size);
+        ret = tr->parse(tr, pkt.data, pkt.size);
     }
 
     av_free_packet(&pkt);

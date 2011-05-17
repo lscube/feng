@@ -27,7 +27,6 @@
 
 #include "feng.h"
 #include "demuxer.h"
-#include "mediaparser.h"
 #include "fnc_log.h"
 
 /**
@@ -60,8 +59,11 @@ void track_free(Track *track)
     if ( track->sdp_description )
         g_string_free(track->sdp_description, true);
 
-    if ( track->parser && track->parser->uninit )
-        track->parser->uninit(track);
+    if ( track->uninit )
+        track->uninit(track);
+
+    /* this needs to be present _after_ the track's uninit! */
+    g_free(track->private_data);
 
     g_slice_free(Track, track);
 }

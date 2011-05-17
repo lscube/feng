@@ -25,7 +25,7 @@
 #include <config.h>
 
 #include "bufferqueue.h"
-#include "media/mediaparser.h"
+#include "media/demuxer.h"
 #include "network/rtp.h"
 
 #include <stdbool.h>

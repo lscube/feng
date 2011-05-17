@@ -35,7 +35,6 @@
 #include "fnc_log.h"
 
 #include "media/demuxer.h"
-#include "media/mediaparser.h"
 
 #define REQUIRED_FLUX_PROTOCOL_VERSION 4
 
@@ -52,23 +51,13 @@ typedef struct sd_private_data {
  * This function simply frees the slice in Track::private_data as a
  * mqd_t object.
  */
-static void demuxer_sd_fake_mediaparser_uninit(Track *tr) {
+static void live_track_uninit(Track *tr) {
     sd_private_data *priv = tr->private_data;
     g_free(priv->mrl);
     g_free(priv);
-}
 
-/**
- * @brief Fake parser description for demuxer_sd tracks
- *
- * This object is used to free the slice in Track::private_data as a
- * mqd_t object.
- */
-static const MediaParser demuxer_sd_fake_mediaparser = {
-    .init = NULL,
-    .parse = NULL,
-    .uninit = demuxer_sd_fake_mediaparser_uninit
-};
+    tr->private_data = NULL;
+}
 
 /*
  * Struct for automatic probing of live media sources
@@ -305,7 +294,7 @@ Resource *sd2_open(const char *url)
             track->payload_type = next_dynamic_payload++;
         }
 
-        track->parser = &demuxer_sd_fake_mediaparser;
+        track->uninit = live_track_uninit;
 
         if ( (tmpstr = g_key_file_get_string(file, currtrack,
                                              SD2_KEY_LICENSE,

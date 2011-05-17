@@ -26,16 +26,10 @@
 #include <stdbool.h>
 
 #include "media/demuxer.h"
-#include "media/mediaparser.h"
 #include "fnc_log.h"
 
-#define aac_uninit NULL
-
-static int aac_init(Track *track)
+int aac_init(Track *track)
 {
-    if ( track->extradata_len == 0 )
-        return -1;
-
     g_string_append_printf(track->sdp_description,
                            "a=rtpmap:%u mpeg4-generic/%d\r\n"
 
@@ -59,7 +53,7 @@ static int aac_init(Track *track)
 #define HEADER_SIZE 4
 #define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
 
-static int aac_parse(Track *tr, uint8_t *data, size_t len)
+int aac_parse(Track *tr, uint8_t *data, size_t len)
 {
     const uint8_t prefix[HEADER_SIZE] = { 0x00, 0x10, (len & 0x1fe0) >> 5, (len & 0x1f) << 3 };
 
@@ -86,5 +80,3 @@ static int aac_parse(Track *tr, uint8_t *data, size_t len)
 
     return 0;
 }
-
-FENG_MEDIAPARSER(aac, "aac", MP_audio);

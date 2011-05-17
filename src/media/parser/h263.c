@@ -25,9 +25,8 @@
 #include <string.h>
 
 #include "media/demuxer.h"
-#include "media/mediaparser.h"
 
-static int h263_init(Track *track)
+int h263_init(Track *track)
 {
     g_string_append_printf(track->sdp_description,
                            "a=rtpmap:%u H263-1998/%d\r\n",
@@ -39,7 +38,7 @@ static int h263_init(Track *track)
 
 static const uint8_t gob_start_code[] = { 0x04, 0x00 };
 
-static int h263_parse(Track *tr, uint8_t *data, size_t len)
+int h263_parse(Track *tr, uint8_t *data, size_t len)
 {
     size_t cur = 0;
     int found_gob = 0;
@@ -80,7 +79,3 @@ static int h263_parse(Track *tr, uint8_t *data, size_t len)
 
     return 0;
 }
-
-#define h263_uninit NULL
-
-FENG_MEDIAPARSER(h263, "H263P", MP_video);

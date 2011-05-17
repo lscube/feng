@@ -25,7 +25,7 @@
 #include <glib.h>
 #include <stdio.h>
 
-#include "mediaparser.h"
+#include "demuxer.h"
 
 // Ripped from ffmpeg, see sdp.c
 

@@ -25,9 +25,8 @@
 #include <stdbool.h>
 
 #include "media/demuxer.h"
-#include "media/mediaparser.h"
 
-static int speex_parse(Track *tr, uint8_t *data, size_t len)
+int speex_parse(Track *tr, uint8_t *data, size_t len)
 {
     struct MParserBuffer *buffer;
 
@@ -48,8 +47,3 @@ static int speex_parse(Track *tr, uint8_t *data, size_t len)
 
     return 0;
 }
-
-#define speex_init   NULL
-#define speex_uninit NULL
-
-FENG_MEDIAPARSER(speex, "speex", MP_audio);

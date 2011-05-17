@@ -26,16 +26,10 @@
 #include <string.h>
 
 #include "media/demuxer.h"
-#include "media/mediaparser.h"
 #include "fnc_log.h"
 
-#define mp4ves_uninit NULL
-
-static int mp4ves_init(Track *track)
+int mp4ves_init(Track *track)
 {
-    if ( track->extradata_len == 0 )
-        return -1;
-
     g_string_append_printf(track->sdp_description,
                            "a=rtpmap:%u MP4V-ES/%d\r\n"
                            "a=fmtp:%u profile-level-id=1;",
@@ -53,7 +47,7 @@ static int mp4ves_init(Track *track)
     return 0;
 }
 
-static int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
+int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
 {
     do {
         struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
@@ -75,5 +69,3 @@ static int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
     fnc_log(FNC_LOG_VERBOSE, "[mp4v]Frame completed");
     return 0;
 }
-
-FENG_MEDIAPARSER(mp4ves, "mp4v-es", MP_video);

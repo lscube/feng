@@ -26,9 +26,7 @@
 #include <stdbool.h>
 
 #include "media/demuxer.h"
-#include "media/mediaparser.h"
 #include "fnc_log.h"
-#include "xiph.h"
 
 #include <libavutil/md5.h>
 
@@ -121,13 +119,10 @@ static int encode_header(uint8_t *data, int len, xiph_priv *priv)
     return 0;
 }
 
-static int vorbis_init(Track *track)
+int vorbis_init(Track *track)
 {
     xiph_priv *priv;
     char *buf;
-
-    if(track->extradata_len == 0)
-        return -1;
 
     priv = g_slice_new(xiph_priv);
 
@@ -160,8 +155,3 @@ static int vorbis_init(Track *track)
     g_slice_free(xiph_priv, priv);
     return -1;
 }
-
-#define vorbis_parse xiph_parse
-#define vorbis_uninit xiph_uninit
-
-FENG_MEDIAPARSER(vorbis, "vorbis", MP_audio);

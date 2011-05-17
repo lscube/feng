@@ -26,13 +26,10 @@
 #include <stdbool.h>
 
 #include "media/demuxer.h"
-#include "media/mediaparser.h"
 #include "fnc_log.h"
-#include "xiph.h"
 
 #include <libavutil/md5.h>
 
-#if 1
 #define AV_RB16(x)  ((((uint8_t*)(x))[0] << 8) | ((uint8_t*)(x))[1])
 static int ff_split_xiph_headers(uint8_t *extradata, int extradata_size,
                           int first_header_size, uint8_t *header_start[3],
@@ -68,7 +65,6 @@ static int ff_split_xiph_headers(uint8_t *extradata, int extradata_size,
     }
     return 0;
 }
-#endif
 
 //! Parse extradata and reformat it, most of the code is shamelessly ripped from fftheora.
 static int encode_header(uint8_t *data, int len, xiph_priv *priv)
@@ -124,13 +120,10 @@ static int encode_header(uint8_t *data, int len, xiph_priv *priv)
     return 0;
 }
 
-static int theora_init(Track *track)
+int theora_init(Track *track)
 {
     xiph_priv *priv;
     char *buf;
-
-    if(track->extradata_len == 0)
-        return -1;
 
     priv = g_slice_new(xiph_priv);
 
@@ -162,8 +155,3 @@ static int theora_init(Track *track)
     g_slice_free(xiph_priv, priv);
     return -1;
 }
-
-#define theora_parse xiph_parse
-#define theora_uninit xiph_uninit
-
-FENG_MEDIAPARSER(theora, "theora", MP_video);

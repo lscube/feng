@@ -26,12 +26,9 @@
 #include <stdbool.h>
 
 #include "media/demuxer.h"
-#include "media/mediaparser.h"
 #include "fnc_log.h"
 
-#define vp8_uninit NULL
-
-static int vp8_init(Track *track)
+int vp8_init(Track *track)
 {
     g_string_append_printf(track->sdp_description,
                            "a=rtpmap:%u VP8/%d\r\n",
@@ -61,7 +58,7 @@ static int vp8_init(Track *track)
 #define HEADER_SIZE 1
 #define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
 
-static int vp8_parse(Track *tr, uint8_t *data, size_t len)
+int vp8_parse(Track *tr, uint8_t *data, size_t len)
 {
     uint8_t prefix[HEADER_SIZE] = { (data[0] & 1 ? 0 : 2) | VP8_START_PACKET };
 
@@ -90,5 +87,3 @@ static int vp8_parse(Track *tr, uint8_t *data, size_t len)
 
     return 0;
 }
-
-FENG_MEDIAPARSER(vp8, "vp8", MP_video);

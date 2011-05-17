@@ -26,15 +26,10 @@
 #include <stdbool.h>
 
 #include "media/demuxer.h"
-#include "media/mediaparser.h"
 #include "fnc_log.h"
 
-#define amr_uninit NULL
-
-static int amr_init(Track *track)
+int amr_init(Track *track)
 {
-    track->clock_rate = 8000;
-
     g_string_append_printf(track->sdp_description,
                            "a=rtpmap:%u AMR/%d/%d\r\n"
                            "a=fmtp:%u octet-align=1;",
@@ -88,7 +83,7 @@ typedef struct
 
 #define AMR_CMR 0xf0
 
-static int amr_parse(Track *tr, uint8_t *data, size_t len)
+int amr_parse(Track *tr, uint8_t *data, size_t len)
 {
     uint8_t *packet = g_slice_alloc0(DEFAULT_MTU);
     static const uint32_t packet_size[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0};
@@ -142,5 +137,3 @@ static int amr_parse(Track *tr, uint8_t *data, size_t len)
     g_slice_free1(DEFAULT_MTU, packet);
     return 0;
 }
-
-FENG_MEDIAPARSER(amr, "amr", MP_audio);
