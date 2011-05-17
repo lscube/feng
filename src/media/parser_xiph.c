@@ -29,6 +29,13 @@
 #include <libavutil/md5.h>
 
 #include "media/media.h"
+#include "fnc_log.h"
+
+typedef struct {
+    uint8_t        *packet;    ///< holds the incomplete packet
+    size_t          len;       ///< incomplete packet length
+    unsigned int    ident;     ///< identification string
+} xiph_priv;
 
 #define HEADER_SIZE 6
 #define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
@@ -93,18 +100,60 @@ void xiph_uninit(Track *track)
     track->private_data = NULL;
 }
 
-char *xiph_header_to_conf(xiph_priv *priv,
-                          const uint8_t *headers,
-                          const size_t len,
-                          uint8_t *header_start[3],
-                          const int header_len[3],
-                          const uint8_t *comment,
-                          const size_t comment_len)
+#define AV_RB16(x)  ((((uint8_t*)(x))[0] << 8) | ((uint8_t*)(x))[1])
+static int ff_split_xiph_headers(const uint8_t *extradata, int extradata_size,
+                                 int first_header_size, const uint8_t *header_start[3],
+                                 int header_len[3])
+{
+    int i, j;
+
+    if (AV_RB16(extradata) == first_header_size) {
+        for (i=0; i<3; i++) {
+            header_len[i] = AV_RB16(extradata);
+            extradata += 2;
+            header_start[i] = extradata;
+            extradata += header_len[i];
+        }
+    } else if (extradata[0] == 2) {
+        for (i=0,j=1; i<2; i++,j++) {
+            header_len[i] = 0;
+            for (; j<extradata_size && extradata[j]==0xff; j++) {
+                header_len[i] += 0xff;
+            }
+            if (j >= extradata_size)
+                return -1;
+
+            header_len[i] += extradata[j];
+        }
+        header_len[2] = extradata_size - header_len[0] - header_len[1] - j;
+        extradata += j;
+        header_start[0] = extradata;
+        header_start[1] = header_start[0] + header_len[0];
+        header_start[2] = header_start[1] + header_len[1];
+    } else {
+        return -1;
+    }
+    return 0;
+}
+
+static char *xiph_header_to_conf(xiph_priv *priv,
+                                 const uint8_t *headers,
+                                 const size_t len,
+                                 const int first_header_size,
+                                 const uint8_t *comment,
+                                 const size_t comment_len)
 {
     int hash[4];
     uint8_t *conf;
     char *conf_base64;
     size_t headers_len, conf_len;
+    const uint8_t *header_start[3];
+    int header_len[3];
+
+    if (ff_split_xiph_headers(headers, len, first_header_size, header_start, header_len) < 0) {
+        fnc_log(FNC_LOG_ERR, "[xiph] extradata corrupt. unknown layout");
+        return NULL;
+    }
 
     if (header_len[2] + header_len[0] > UINT16_MAX)
         return NULL;
@@ -145,8 +194,19 @@ char *xiph_header_to_conf(xiph_priv *priv,
     return conf_base64;
 }
 
-void xiph_sdp_descr_append(Track *track, char *conf)
+static gboolean xiph_sdp_descr_append(Track *track,
+                                      int first_header_len,
+                                      const uint8_t *comment,
+                                      size_t comment_len)
 {
+    char *conf = xiph_header_to_conf(track->private_data,
+                                     track->extradata, track->extradata_len,
+                                     first_header_len,
+                                     comment, comment_len);
+
+    if ( conf == NULL )
+        return false;
+
     sdp_descr_append_rtpmap(track);
     g_string_append_printf(track->sdp_description,
                            "a=fmtp:%u delivery-method=in_band; configuration=%s;\r\n",
@@ -155,4 +215,35 @@ void xiph_sdp_descr_append(Track *track, char *conf)
                            track->payload_type,
                            conf);
     g_free(conf);
+
+    return true;
+}
+
+int theora_init(Track *track)
+{
+    static const uint8_t comment[25] = {
+        0x81, 't', 'h', 'e', 'o', 'r', 'a',
+        10, 0, 0, 0,
+        't', 'h', 'e', 'o', 'r', 'a', '-', 'r', 't', 'p',
+        0, 0, 0, 0
+    };
+
+    track->private_data = g_slice_new(xiph_priv);
+
+    return xiph_sdp_descr_append(track, 42, comment, sizeof(comment)) ? 0 : -1;
+}
+
+int vorbis_init(Track *track)
+{
+    static const uint8_t comment[] ={
+        3, 'v', 'o', 'r', 'b', 'i', 's',
+        10, 0, 0, 0,
+        'v', 'o', 'r', 'b', 'i', 's', '-', 'r', 't', 'p',
+        0, 0, 0, 0,
+        1
+    };
+
+    track->private_data = g_slice_new(xiph_priv);
+
+    return xiph_sdp_descr_append(track, 42, comment, sizeof(comment)) ? 0 : -1;
 }

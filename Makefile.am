@@ -115,8 +115,6 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 
 if FENG_FFMPEG
 dist_feng_SOURCES += src/media/parser_h264.c \
-		     src/media/parser_vorbis.c \
-		     src/media/parser_theora.c \
 		     src/media/parser_xiph.c \
 		     src/media/parser_aac.c \
 		     src/media/parser_mp4ves.c \
