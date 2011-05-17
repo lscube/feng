@@ -70,7 +70,7 @@ int xiph_parse(Track *tr, uint8_t *data, size_t len)
         memcpy(buffer->data + HEADER_SIZE, data,
                buffer->data_size - HEADER_SIZE);
 
-        mparser_buffer_write(tr, buffer);
+        track_write(tr, buffer);
 
         len -= MAX_PAYLOAD_SIZE;
         data += MAX_PAYLOAD_SIZE;

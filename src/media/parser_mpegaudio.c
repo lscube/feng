@@ -46,7 +46,7 @@ int mpa_parse(Track *tr, uint8_t *data, size_t len)
         memset(buffer->data, 0, 4);
         memcpy(buffer->data + 4, data, len);
 
-        mparser_buffer_write(tr, buffer);
+        track_write(tr, buffer);
 
         fnc_log(FNC_LOG_VERBOSE, "[mp3] no frags");
 
@@ -75,7 +75,7 @@ int mpa_parse(Track *tr, uint8_t *data, size_t len)
         memcpy(buffer->data, &offset, 4);
         memcpy(buffer->data + 4, data + offset, buffer->data_size - 4);
 
-        mparser_buffer_write(tr, buffer);
+        track_write(tr, buffer);
 
         rem -= DEFAULT_MTU - 4;
         fnc_log(FNC_LOG_VERBOSE, "[mp3] frags");

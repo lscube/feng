@@ -518,7 +518,7 @@ static gpointer flux_read_messages(gpointer ptr) {
                 ev_time() - (package_start_time + delivery));
 #endif
 
-        mparser_buffer_write(tr, buffer);
+        track_write(tr, buffer);
 
     reiterate:
         g_free(msg_buffer);

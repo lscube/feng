@@ -131,7 +131,7 @@ int amr_parse(Track *tr, uint8_t *data, size_t len)
         }
 
         buffer->data_size = off;
-        mparser_buffer_write(tr, buffer);
+        track_write(tr, buffer);
     }
 
     g_slice_free1(DEFAULT_MTU, packet);

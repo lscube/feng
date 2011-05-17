@@ -212,7 +212,7 @@ static void r_track_producer_reset_queue(gpointer element,
                                          ATTR_UNUSED gpointer user_data) {
     Track *t = (Track*)element;
 
-    bq_producer_reset_queue(t);
+    track_reset_queue(t);
 }
 
 /**

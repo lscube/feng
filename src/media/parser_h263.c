@@ -73,7 +73,7 @@ int h263_parse(Track *tr, uint8_t *data, size_t len)
         buffer->marker = (cur + payload >= len);
         buffer->data_size = payload + header_len;
 
-        mparser_buffer_write(tr, buffer);
+        track_write(tr, buffer);
         cur += payload;
     }
 

@@ -185,7 +185,7 @@ static void bq_producer_reset_queue_internal(Track *producer) {
  * producer, so that a discontinuity will allow the consumers not to
  * worry about getting old buffers.
  */
-void bq_producer_reset_queue(Track *producer) {
+void track_reset_queue(Track *producer) {
     bq_debug("Producer %p",
             producer);
 
@@ -630,23 +630,12 @@ void track_free(Track *track)
 }
 
 /**
- *  Insert a rtp packet inside the track buffer queue
- *  @param tr track the packetized frames/samples belongs to
- *  @param presentation the actual packet presentation timestamp
- *         in fractional seconds, will be embedded in the rtp packet
- *  @param delivery the actual packet delivery timestamp
- *                  in fractional seconds, will be used to calculate
- *                  sending time
- *  @param duration the actual packet duration, a multiple of the
- *                  frame/samples duration
- *  @param marker tell if we are handling a frame/sample fragment
- *  @param rtp_timestamp Timestamp of the packet in RTP (0 is automatic
- *                       timestamping)
- *  @param seq_no Sequence number of the buffer (0 is automatic sequencing)
- *  @param data actual packet data
- *  @param data_size actual packet data size
+ * @brief Queue a new RTP buffer into the track's queue
+ *
+ * @param tr The track to queue the buffer onto
+ * @param buffer The RTP buffer to queue
  */
-void mparser_buffer_write(Track *tr, struct MParserBuffer *buffer)
+void track_write(Track *tr, struct MParserBuffer *buffer)
 {
     /* Make sure the producer is not stopped */
     g_assert(g_atomic_int_get(&tr->stopped) == 0);

@@ -157,7 +157,7 @@ int mpv_parse(Track *tr, uint8_t *data, size_t len)
             memcpy(buffer->data, &header_n, sizeof(header_n));
             memcpy(buffer->data + 4, data, payload);
 
-            mparser_buffer_write(tr, buffer);
+            track_write(tr, buffer);
 
             b = e;
             e = 0;

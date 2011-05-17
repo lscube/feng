@@ -88,7 +88,7 @@ static void frag_fu_a(uint8_t *nal, int fragsize, Track *tr)
         memcpy(buffer->data + 2, nal, fraglen);
         fnc_log(FNC_LOG_VERBOSE, "[h264] Frag %02x%02x", buffer->data[0], buffer->data[1]);
 
-        mparser_buffer_write(tr, buffer);
+        track_write(tr, buffer);
 
         fragsize -= fraglen;
         nal      += fraglen;
@@ -324,7 +324,7 @@ int h264_parse(Track *tr, uint8_t *data, size_t len)
                 buffer->data_size = nalsize;
                 buffer->data = g_memdup(data + index, buffer->data_size);
 
-                mparser_buffer_write(tr, buffer);
+                track_write(tr, buffer);
 
                 fnc_log(FNC_LOG_VERBOSE, "[h264] single NAL");
             } else {
@@ -363,7 +363,7 @@ int h264_parse(Track *tr, uint8_t *data, size_t len)
                 buffer->data_size = q - p;
                 buffer->data = g_memdup(p, buffer->data_size);
 
-                mparser_buffer_write(tr, buffer);
+                track_write(tr, buffer);
 
                 fnc_log(FNC_LOG_VERBOSE, "[h264] Sending single NAL %d",p[0]&0x1f);
             } else {
@@ -388,7 +388,7 @@ int h264_parse(Track *tr, uint8_t *data, size_t len)
             buffer->data_size = len - (p - data);
             buffer->data = g_memdup(p, buffer->data_size);
 
-            mparser_buffer_write(tr, buffer);
+            track_write(tr, buffer);
 
             fnc_log(FNC_LOG_VERBOSE, "[h264] no frags");
         } else {

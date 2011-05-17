@@ -43,7 +43,7 @@ int speex_parse(Track *tr, uint8_t *data, size_t len)
     buffer->data_size = len;
     buffer->data = g_memdup(data, buffer->data_size);
 
-    mparser_buffer_write(tr, buffer);
+    track_write(tr, buffer);
 
     return 0;
 }
