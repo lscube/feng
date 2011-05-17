@@ -408,13 +408,21 @@ int vorbis_init(Track *track);
 int xiph_parse(Track *tr, uint8_t *data, size_t len);
 void xiph_uninit(Track *tr);
 
-void xiph_sdp_descr_append(Track *track, GByteArray *conf);
-
 typedef struct {
     uint8_t        *packet;    ///< holds the incomplete packet
     size_t          len;       ///< incomplete packet length
     unsigned int    ident;     ///< identification string
 } xiph_priv;
+
+char *xiph_header_to_conf(xiph_priv *priv,
+                          const uint8_t *headers,
+                          const size_t len,
+                          uint8_t *header_start[3],
+                          const int headers_len[3],
+                          const uint8_t *comment,
+                          const size_t comment_len);
+
+void xiph_sdp_descr_append(Track *track, char *conf);
 /** @} */
 
 /** @} */
