@@ -37,7 +37,7 @@ typedef struct {
 } framestack;
 
 //! Parse extradata and reformat it, most of the code is shamelessly ripped from ffvorbis.
-static int encode_header(uint8_t *data, int len, xiph_priv *priv)
+static GByteArray *encode_header(uint8_t *data, int len, xiph_priv *priv)
 {
     uint8_t *headers = data;
     int headers_len = len, i , j;
@@ -52,6 +52,8 @@ static int encode_header(uint8_t *data, int len, xiph_priv *priv)
         0, 0, 0, 0,
         1
     };
+
+    GByteArray *res = NULL;
 
 // old way.
     if(headers[0] == 0 && headers[1] == 30) {
@@ -71,7 +73,7 @@ static int encode_header(uint8_t *data, int len, xiph_priv *priv)
             }
             if (j>=headers_len) {
                 fnc_log(FNC_LOG_ERR, "[vorbis] Extradata corrupt.");
-                return -1;
+                return res;
             }
             header_len[i]+=headers[j];
         }
@@ -82,10 +84,10 @@ static int encode_header(uint8_t *data, int len, xiph_priv *priv)
         header_start[2] = header_start[1] + header_len[1];
     } else {
         fnc_log(FNC_LOG_ERR, "[vorbis] Extradata corrupt.");
-        return -1;
+        return res;
     }
     if (header_len[2] + header_len[0]>UINT16_MAX) {
-        return -1;
+        return res;
     }
 
     av_md5_sum((uint8_t *)hash, data, len);
@@ -93,50 +95,46 @@ static int encode_header(uint8_t *data, int len, xiph_priv *priv)
 
     // Envelope size
     headers_len = header_len[0] + sizeof(comment) + header_len[2];
-    priv->conf_len = 4 +                // count field
-                     3 +                // Ident field
-                     2 +                // pack size
-                     1 +                // headers count (2)
-                     2 +                // headers sizes
-                     headers_len;       // the rest
+    res = g_byte_array_sized_new(4 +                // count field
+                                 3 +                // Ident field
+                                 2 +                // pack size
+                                 1 +                // headers count (2)
+                                 2 +                // headers sizes
+                                 headers_len);      // the rest
 
-    priv->conf = g_malloc(priv->conf_len);
-    priv->conf[0] = priv->conf[1] = priv->conf[2] = 0;
-    priv->conf[3] = 1; //just one packet for now
+    res->data[0] = res->data[1] = res->data[2] = 0;
+    res->data[3] = 1; //just one packet for now
     // new config
-    priv->conf[4] = (priv->ident >> 16) & 0xff;
-    priv->conf[5] = (priv->ident >> 8) & 0xff;
-    priv->conf[6] = priv->ident & 0xff;
-    priv->conf[7] = (headers_len)>>8;
-    priv->conf[8] = (headers_len) & 0xff;
-    priv->conf[9] = 2;
-    priv->conf[10] = header_len[0];     // 30, always
-    priv->conf[11] = sizeof(comment);   // 26
-    memcpy(priv->conf + 12, header_start[0], header_len[0]);
-    memcpy(priv->conf + 12 + header_len[0], comment, sizeof(comment));
-    memcpy(priv->conf + 12 + header_len[0] + sizeof(comment), header_start[2],
+    res->data[4] = (priv->ident >> 16) & 0xff;
+    res->data[5] = (priv->ident >> 8) & 0xff;
+    res->data[6] = priv->ident & 0xff;
+    res->data[7] = (headers_len)>>8;
+    res->data[8] = (headers_len) & 0xff;
+    res->data[9] = 2;
+    res->data[10] = header_len[0];     // 30, always
+    res->data[11] = sizeof(comment);   // 26
+    memcpy(res->data + 12, header_start[0], header_len[0]);
+    memcpy(res->data + 12 + header_len[0], comment, sizeof(comment));
+    memcpy(res->data + 12 + header_len[0] + sizeof(comment), header_start[2],
            header_len[2]);
-    return 0;
+    return res;
 }
 
 int vorbis_init(Track *track)
 {
-    xiph_priv *priv;
+    xiph_priv *priv = track->private_data = g_slice_new(xiph_priv);
+    GByteArray *conf = encode_header(track->extradata, track->extradata_len,
+                                     priv);
 
-    priv = g_slice_new(xiph_priv);
-
-    if ( encode_header(track->extradata,
-                       track->extradata_len, priv) != 0 )
+    if ( conf == NULL )
         goto err_alloc;
 
-    track->private_data = priv;
-    xiph_sdp_descr_append(track);
+    xiph_sdp_descr_append(track, conf);
 
     return 0;
 
  err_alloc:
-    g_free(priv->conf);
-    g_free(priv->packet);
     g_slice_free(xiph_priv, priv);
+    track->private_data = NULL;
     return -1;
 }

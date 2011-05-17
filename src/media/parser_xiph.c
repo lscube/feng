@@ -85,18 +85,17 @@ void xiph_uninit(Track *track)
     if (!priv)
         return;
 
-    g_free(priv->conf);
     g_free(priv->packet);
     g_slice_free(xiph_priv, priv);
 
     track->private_data = NULL;
 }
 
-void xiph_sdp_descr_append(Track *track)
+void xiph_sdp_descr_append(Track *track, GByteArray *conf)
 {
     xiph_priv *priv = track->private_data;
 
-    char *buf = g_base64_encode(priv->conf, priv->conf_len);
+    char *buf = g_base64_encode(conf->data, conf->len);
 
     sdp_descr_append_rtpmap(track);
     g_string_append_printf(track->sdp_description,
@@ -106,4 +105,5 @@ void xiph_sdp_descr_append(Track *track)
                            track->payload_type,
                            buf);
     g_free(buf);
+    g_byte_array_free(conf, true);
 }

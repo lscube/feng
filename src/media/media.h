@@ -408,11 +408,9 @@ int vorbis_init(Track *track);
 int xiph_parse(Track *tr, uint8_t *data, size_t len);
 void xiph_uninit(Track *tr);
 
-void xiph_sdp_descr_append(Track *track);
+void xiph_sdp_descr_append(Track *track, GByteArray *conf);
 
 typedef struct {
-    uint8_t        *conf;      ///< current configuration
-    size_t          conf_len;
     uint8_t        *packet;    ///< holds the incomplete packet
     size_t          len;       ///< incomplete packet length
     unsigned int    ident;     ///< identification string

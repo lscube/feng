@@ -67,7 +67,7 @@ static int ff_split_xiph_headers(uint8_t *extradata, int extradata_size,
 }
 
 //! Parse extradata and reformat it, most of the code is shamelessly ripped from fftheora.
-static int encode_header(uint8_t *data, int len, xiph_priv *priv)
+static GByteArray *encode_header(uint8_t *data, int len, xiph_priv *priv)
 {
     int headers_len;
     uint8_t *header_start[3];
@@ -80,13 +80,15 @@ static int encode_header(uint8_t *data, int len, xiph_priv *priv)
       't','h','e','o','r','a','-','r','t','p',
       0,0,0,0};
 
+    GByteArray *res = NULL;
+
 
     if (ff_split_xiph_headers(data, len, 42, header_start, header_len) < 0) {
         fnc_log(FNC_LOG_ERR, "[theora] Extradata corrupt. unknown layout");
-        return -1;
+        return res;
     }
     if (header_len[2] + header_len[0]>UINT16_MAX) {
-        return -1;
+        return res;
     }
 
     av_md5_sum((uint8_t *)hash, data, len);
@@ -94,50 +96,46 @@ static int encode_header(uint8_t *data, int len, xiph_priv *priv)
 
     // Envelope size
     headers_len = header_len[0] + sizeof(comment) + header_len[2];
-    priv->conf_len = 4 +                // count field
-                     3 +                // Ident field
-                     2 +                // pack size
-                     1 +                // headers count (2)
-                     2 +                // headers sizes
-                     headers_len;       // the rest
+    res = g_byte_array_sized_new(4 +                // count field
+                                 3 +                // Ident field
+                                 2 +                // pack size
+                                 1 +                // headers count (2)
+                                 2 +                // headers sizes
+                                 headers_len);      // the rest
 
-    priv->conf = g_malloc(priv->conf_len);
-    priv->conf[0] = priv->conf[1] = priv->conf[2] = 0;
-    priv->conf[3] = 1; //just one packet for now
+    res->data[0] = res->data[1] = res->data[2] = 0;
+    res->data[3] = 1; //just one packet for now
     // new config
-    priv->conf[4] = (priv->ident >> 16) & 0xff;
-    priv->conf[5] = (priv->ident >> 8) & 0xff;
-    priv->conf[6] = priv->ident & 0xff;
-    priv->conf[7] = (headers_len)>>8;
-    priv->conf[8] = (headers_len) & 0xff;
-    priv->conf[9] = 2;
-    priv->conf[10] = header_len[0];
-    priv->conf[11] = sizeof(comment);
-    memcpy(priv->conf + 12, header_start[0], header_len[0]);
-    memcpy(priv->conf + 12 + header_len[0], comment, sizeof(comment));
-    memcpy(priv->conf + 12 + header_len[0] + sizeof(comment), header_start[2],
+    res->data[4] = (priv->ident >> 16) & 0xff;
+    res->data[5] = (priv->ident >> 8) & 0xff;
+    res->data[6] = priv->ident & 0xff;
+    res->data[7] = (headers_len)>>8;
+    res->data[8] = (headers_len) & 0xff;
+    res->data[9] = 2;
+    res->data[10] = header_len[0];
+    res->data[11] = sizeof(comment);
+    memcpy(res->data + 12, header_start[0], header_len[0]);
+    memcpy(res->data + 12 + header_len[0], comment, sizeof(comment));
+    memcpy(res->data + 12 + header_len[0] + sizeof(comment), header_start[2],
            header_len[2]);
-    return 0;
+    return res;
 }
 
 int theora_init(Track *track)
 {
-    xiph_priv *priv;
+    xiph_priv *priv = track->private_data = g_slice_new(xiph_priv);
+    GByteArray *conf = encode_header(track->extradata, track->extradata_len,
+                                     priv);
 
-    priv = g_slice_new(xiph_priv);
-
-    if ( encode_header(track->extradata,
-                       track->extradata_len, priv) != 0 )
+    if ( conf == NULL )
         goto err_alloc;
 
-    track->private_data = priv;
-    xiph_sdp_descr_append(track);
+    xiph_sdp_descr_append(track, conf);
 
     return 0;
 
  err_alloc:
-    g_free(priv->conf);
-    g_free(priv->packet);
     g_slice_free(xiph_priv, priv);
+    track->private_data = NULL;
     return -1;
 }
