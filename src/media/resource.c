@@ -20,18 +20,9 @@
  *
  * */
 
-/**
- * Maximum number of threads to use for resource close/cleanup
- *
- * @todo This should be configurable at runtime via the config file.
- */
-#define MAX_RESOURCE_CLOSE_THREADS 8
-
 #include <glib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <unistd.h>
-#include <errno.h>
 
 #include "demuxer.h"
 #include "feng.h"
@@ -43,203 +34,125 @@
  * @{
  */
 
-/**
- * @brief Global lock
- *
- * It should be held while updating shared tracks hash table
- */
-static GMutex *shared_resources_lock;
-
-/**
- * @brief Shared Tracks HashTable
- *
- * It holds the reference to tracks that will be shared among different
- * resources
- *
- */
-static GHashTable *shared_resources;
-
-
-/**
- * @brief Stop the fill thread of a resource
- *
- * @param resource The resource to stop the fill thread of
- *
- * This function takes care of stopping the fill thread for a
- * resource, either for pausing it or before freeing it. It's
- * accomplished by first setting @ref Resource::fill_pool attribute to
- * NULL, then it stops the pool, dropping further threads and waiting
- * for the last one to complete.
- */
-static void r_stop_fill(Resource *resource)
-{
-    GThreadPool *pool;
-
-    if ( (pool = resource->fill_pool) ) {
-        g_atomic_pointer_set(&resource->fill_pool, NULL);
-        g_thread_pool_free(pool, true, true);
-    }
-}
-
-/**
- * @brief Free a resource object
- *
- * @param resource The resource to free
- *
- * @internal Please note that this function will execute the freeing
- *           in the currently running thread, synchronously. It should
- *           thus only be called by the functions that wouldn't block
- *           the mainloop.
- *
- * @note Nobody may hold the @ref Resource::lock mutex when calling
- *       this function.
- */
-static void r_free(Resource *resource)
-{
-    if (!resource)
-        return;
-
-    r_stop_fill(resource);
-
-    if (resource->lock)
-        g_mutex_free(resource->lock);
-
-    g_free(resource->mrl);
-
-    if ( resource->uninit != NULL )
-        resource->uninit(resource);
-
-    if (resource->tracks) {
-        g_list_foreach(resource->tracks, free_track, NULL);
-        g_list_free(resource->tracks);
-    }
-    g_slice_free(Resource, resource);
-}
-
-/**
- * @brief Open a shared resource from the shared and virtual resources' hash table.
- *
- * @param mrl The filesystem path of the resource.
- *
- * This function uses a shared hash table to access a resource
- * descriptor shared among multiple clients, and is used for live
- * streaming as well as for virtual resources.
- *
- * During live streaming all the clients will receive the same
- * content, fed by the same thread. Using a shared resource reduces
- * the amount of memory (and threads) required for the clients.
- *
- * @note This function will lock the @ref shared_resources_lock mutex.
- * @note This function may lock the @ref Resource::lock mutex.
- */
-static Resource *r_open_hashed(gchar *mrl)
-{
-    Resource *r;
-    static gsize created_mutex = false;
-    if ( g_once_init_enter(&created_mutex) ) {
-        shared_resources_lock = g_mutex_new();
-        shared_resources = g_hash_table_new(g_str_hash, g_str_equal);
-        g_once_init_leave(&created_mutex, true);
-    }
-
-    g_mutex_lock(shared_resources_lock);
-    if ( (r = g_hash_table_lookup(shared_resources, mrl)) != NULL )
-        g_atomic_int_inc(&r->count);
-
-    g_mutex_unlock(shared_resources_lock);
-
-    return r;
-}
-
 #ifdef LIVE_STREAMING
-extern gboolean sd2_init(Resource *);
+extern Resource *sd2_open(const char *url);
 #else
-static gboolean sd2_init(Resource *r)
+static Resource *sd2_open(const char *url);
 {
     fnc_log(FNC_LOG_ERR,
             "unable to stream resource '%s', live streaming support not built in",
-            r->mrl);
+            url);
 
     return false;
 }
 #endif
 
 #ifdef HAVE_AVFORMAT
-extern gboolean avf_init(Resource *);
+extern Resource *avf_open(const char *url);
 #else
-static gboolean avf_init(Resource *r)
+static Resource *avf_open(const char *url);
 {
     fnc_log(FNC_LOG_ERR,
             "unable to stream resource '%s', libavformat support not built in",
-            r->mrl);
+            url);
 
     return false;
 }
 #endif
 
 /**
- * @brief Open a new resource and create a new instance
+ * @brief Mutex regulating access to virtual resources
  *
- * @param inner_path The path, relative to the avroot, for the
- *                   resource
+ * This mutex should be held when looking up, adding to or removing
+ * from @ref virtual_resources, to avoid race conditions when multiple
+ * clients request virtual resources.
  *
- * @return A new Resource object
- * @retval NULL Error while opening resource
+ * @see r_virtual_lock, r_virtual_unlock
  */
-Resource *r_open(const char *inner_path)
+static GStaticMutex virtual_resources_lock = G_STATIC_MUTEX_INIT;
+
+/**
+ * @brief Virtual resources table
+ *
+ * Connect a virtual resource URL with an already open Resource
+ * instance.
+ *
+ * @note To access this table, you need to hold @ref
+ *       virtual_resources_lock.
+ *
+ */
+static GHashTable *virtual_resources;
+
+/**
+ * @brief Lock the mutex used for virtual resources
+ */
+static inline void r_virtual_lock()
 {
-    Resource *r = NULL;
-    gchar *mrl = g_strjoin ("/",
-                            feng_default_vhost->document_root,
-                            inner_path,
-                            NULL);
-    struct stat filestat;
+    g_static_mutex_lock(&virtual_resources_lock);
+}
 
-    if ( (r = r_open_hashed(mrl)) != NULL )
-        return r;
+static inline void r_virtual_unlock()
+{
+    g_static_mutex_unlock(&virtual_resources_lock);
+}
 
-    /* Since right now we don't support any non-file-backed file, we
-     * can check here if the file exists and if not simply return,
-     * rather than passing through all the other code.
-     */
-    if ( access(mrl, R_OK) != 0 ) {
-        fnc_perror("access");
-        goto error;
-    }
+/**
+ * @brief Retrieve or create the resource for a given virtual URL
+ *
+ * @param url The resolved URL of the resource within the virtual/ path.
+ *
+ * @return Pointer to the Resource designed by @p url or NULL in case
+ *         of error.
+ *
+ * @TODO The interface should probably be changed to return a proper
+ *       error code when the resource is not found, not accessible or
+ *       not readable.
+ *
+ * @see r_open
+ */
+static Resource *r_open_virtual(const char *url)
+{
+    Resource *r;
 
-    if (stat(mrl, &filestat) < 0 ) {
-        fnc_perror("stat");
-        return NULL;
-    }
+    r_virtual_lock();
 
-    if ( ! S_ISREG(filestat.st_mode) ) {
-        fnc_log(FNC_LOG_ERR, "%s: not a file", mrl);
-        return NULL;
-    }
+    if ( ! virtual_resources )
+        virtual_resources = g_hash_table_new(g_str_hash, g_str_equal);
 
-    r = g_slice_new0(Resource);
+    if ( (r = g_hash_table_lookup(virtual_resources, url)) != NULL )
+        g_atomic_int_inc(&r->count);
+    else
+        r = sd2_open(url);
 
-    r->mrl = mrl;
-    r->mtime = filestat.st_mtime;
-    r->lock = g_mutex_new();
-
-    if ( g_str_has_suffix(mrl, ".sd2") ) {
-        if ( !sd2_init(r) )
-            goto error_2;
-    } else {
-        if ( !avf_init(r) )
-            goto error_2;
-    }
-
+    r_virtual_unlock();
     return r;
+}
 
- error_2:
-    g_mutex_free(r->lock);
-    g_slice_free(Resource, r);
-
- error:
-    g_free(mrl);
-    return NULL;
+/**
+ * @brief Retrieve or create the resource for a given URL
+ *
+ * @param url The resolved URL of the resource within the vhost.
+ *
+ * @return Pointer to the Resource designed by @p url, or NULL in case
+ *         of error.
+ *
+ * @note The @p url parameter has to be the resolved URL, which means
+ *       that no parent-directory references (../) are present in
+ *       it. This is important, as no further boundary checking is
+ *       applied from here on.
+ *
+ * @TODO The interface should probably be changed to return a proper
+ *       error code when the resource is not found, not accessible or
+ *       not readable.
+ *
+ * @see r_open_virtual
+ */
+Resource *r_open(const char *url)
+{
+    if ( g_str_has_prefix(url, "/virtual/") )
+        return r_open_virtual(url + strlen("/virtual/"));
+    else
+        return avf_open(url);
 }
 
 /**
@@ -389,38 +302,57 @@ static void r_read_cb(gpointer consumer_p, gpointer resource_p)
     } while ( g_atomic_int_get(&resource->eor) == 0 );
 }
 
+static void free_track(gpointer element,
+                       ATTR_UNUSED gpointer user_data)
+{
+    Track *track = (Track*)element;
+    track_free(track);
+}
+
 /**
  * @brief Request closing of a resource
  *
  * @param resource The resource to close
  *
- * For live streaming, closing the resource will not actually free
- * resources; instead the fill thread will be stopped and the producer
- * queue reset (with its buffers freed) waiting for the next client.
+ * For virtual resources, closing the resource will not actually free
+ * anything; only the count value will be decremented.
  *
- * @see r_free
+ * This function stops the fill thread for a resource, before freeing
+ * it. It's accomplished by first setting @ref Resource::fill_pool
+ * attribute to NULL, then it stops the pool, dropping further threads
+ * and waiting for the last one to complete.
  */
 void r_close(Resource *resource)
 {
+    GThreadPool *pool;
+
     if ( resource == NULL )
         return;
 
-#ifdef LIVE_STREAMING
     if (resource->source == LIVE_SOURCE) {
-        g_mutex_lock(shared_resources_lock);
+        (void)g_atomic_int_dec_and_test(&resource->count);
+        return;
+    }
 
-        if ( g_atomic_int_dec_and_test(&resource->count) ) {
-            r_stop_fill(resource);
-            g_list_foreach(resource->tracks, r_track_producer_reset_queue, NULL);
-        }
+    if ( (pool = resource->fill_pool) ) {
+        g_atomic_pointer_set(&resource->fill_pool, NULL);
+        g_thread_pool_free(pool, true, true);
+    }
 
-        g_mutex_unlock(shared_resources_lock);
+    if (resource->lock)
+        g_mutex_free(resource->lock);
 
-        // if ( g_atomic_int_get(&resource->count) > 0 )
-            return;
-    } else
-#endif
-        r_free(resource);
+    g_free(resource->mrl);
+
+    if ( resource->uninit != NULL )
+        resource->uninit(resource);
+
+    if (resource->tracks) {
+        g_list_foreach(resource->tracks, free_track, NULL);
+        g_list_free(resource->tracks);
+    }
+
+    g_slice_free(Resource, resource);
 }
 
 /**

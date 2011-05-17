@@ -154,7 +154,6 @@ typedef struct MediaProperties {
     unsigned int clock_rate;
     char *encoding_name;
     MediaType media_type;
-    MediaSource media_source;
     int audio_channels;
     double pts;             //time is in seconds
     double dts;             //time is in seconds
@@ -273,9 +272,8 @@ void r_fill(Resource *resource, struct RTP_session *consumer);
 
 Track *r_find_track(Resource *, const char *);
 
-// Tracks
-Track *add_track(Resource *, char *name, MediaProperties *);
-void free_track(gpointer element, gpointer user_data);
+Track *track_new(char *name);
+void track_free(Track *track);
 
 void sdp_descr_append_config(Track *track);
 

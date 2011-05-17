@@ -33,14 +33,10 @@
 /**
  * @brief Frees the resources of a Track object
  *
- * @param element Track to free
- * @param user_data Unused, for compatibility with g_list_foreach().
+ * @param track Track to free
  */
-void free_track(gpointer element,
-                ATTR_UNUSED gpointer user_data)
+void track_free(Track *track)
 {
-    Track *track = (Track*)element;
-
     if (!track)
         return;
 
@@ -71,21 +67,15 @@ void free_track(gpointer element,
 }
 
 /**
- * @brief Add track to resource tree.
+ * @brief Create a new Track object
  *
- * This function adds a new track data struct to resource tree. It
- * used by specific demuxer function in order to obtain the struct to
- * fill.
- *
- * @param r Resource to add the Track to
  * @param name Name of the track to use (will be g_free'd); make sure
  *             to use @ref feng_str_is_unreseved before passing an
  *             user-provided string to this function.
  *
  * @return pointer to newly allocated track struct.
- **/
-
-Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
+ */
+Track *track_new(char *name)
 {
     Track *t;
 
@@ -93,7 +83,6 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
 
     t->lock            = g_mutex_new();
     t->last_consumer   = g_cond_new();
-    t->parent          = r;
     t->name            = name;
     t->sdp_description = g_string_new("");
 
@@ -101,39 +90,7 @@ Track *add_track(Resource *r, char *name, MediaProperties *prop_hints)
                            "a=control:%s\r\n",
                            name);
 
-    memcpy(&t->properties, prop_hints, sizeof(MediaProperties));
-
-    switch (t->properties.media_source) {
-    case STORED_SOURCE:
-        if ( !(t->parser = mparser_find(t->properties.encoding_name)) ) {
-            fnc_log(FNC_LOG_FATAL, "Could not find a valid parser\n");
-            goto error;
-        }
-
-        t->properties.media_type = t->parser->media_type;
-        break;
-
-    case LIVE_SOURCE:
-        break;
-
-    default:
-        g_assert_not_reached();
-        break;
-    }
-
-    if (t->parser && t->parser->init && t->parser->init(t) != 0) {
-        fnc_log(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
-                t->properties.encoding_name);
-        goto error;
-    }
-
-    r->tracks = g_list_append(r->tracks, t);
-
     bq_producer_reset_queue_internal(t);
 
     return t;
-
- error:
-    free_track(t, NULL);
-    return NULL;
 }

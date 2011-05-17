@@ -107,6 +107,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <command>access-log "</command><replaceable>access-log-path</replaceable><command>"</command> | <command>"syslog"</command> | <command>"stderr";</command>
     <command>twin "</command><replaceable>mirror.host</replaceable><command>";</command>
     <command>document-root "</command><replaceable>document-root-path</replaceable><command>";</command>
+    <command>virtuals-root "</command><replaceable>virtuals-root-path</replaceable><command>";</command>
     <command>max-connections </command><replaceable>amount</replaceable><command>;</command>
     <command>dynamic-resource-paths {</command>
         <command>"</command><replaceable>dynamic-path-1</replaceable><command>", </command>
@@ -347,6 +348,28 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                 Path to the origin of files to be served for the host, connected to
                 <filename>rtsp://host/</filename>. Similarly to a web server's root, no paths above
                 that directory will be served, unless linked from within that tree.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><command>virtuals-root</command> <replaceable>"string"</replaceable></term>
+
+            <listitem>
+              <para>
+                Path to the origin of description files for virtual resources (as described in
+                <citerefentry><refentrytitle>feng.sd2</refentrytitle><manvolnum>5</manvolnum></citerefentry>),
+                for content within <filename>rtsp://host/virtual/</filename>.
+              </para>
+
+              <para>
+                Similarly to a web server's root, no paths above that directory will be served,
+                unless linked from within that tree.
+              </para>
+
+              <para>
+                This is a separate value, that can coincide with the document root, to allow sharing
+                document root between RTSP and HTTP servers alike.
               </para>
             </listitem>
           </varlistentry>

@@ -65,8 +65,6 @@ static void demuxer_sd_fake_mediaparser_uninit(Track *tr) {
  * mqd_t object.
  */
 static const MediaParser demuxer_sd_fake_mediaparser = {
-    .encoding_name = NULL,
-    .media_type = MP_undef,
     .init = NULL,
     .parse = NULL,
     .uninit = demuxer_sd_fake_mediaparser_uninit
@@ -166,61 +164,61 @@ static const RTP_static_payload * probe_stream_info(char const *codec_name)
 }
 
 //Sets payload type and probes media type from payload type
-static void set_payload_type(MediaProperties *mprops, int payload_type)
+static void set_payload_type(Track *track, int payload_type)
 {
-    mprops->payload_type = payload_type;
+    track->properties.payload_type = payload_type;
 
     // Automatic media_type detection
-    if (mprops->payload_type >= 0 &&
-        mprops->payload_type < 24)
-        mprops->media_type = MP_audio;
-    if (mprops->payload_type > 23 &&
-        mprops->payload_type < 96)
-        mprops->media_type = MP_video;
+    if (track->properties.payload_type >= 0 &&
+        track->properties.payload_type < 24)
+        track->properties.media_type = MP_audio;
+    if (track->properties.payload_type > 23 &&
+        track->properties.payload_type < 96)
+        track->properties.media_type = MP_video;
 }
 
-gboolean sd2_init(Resource * r)
+Resource *sd2_open(const char *url)
 {
-    int tracks = 0;
-
+    Resource *r = NULL;
+    char *mrl;
     GKeyFile *file = g_key_file_new();
     gchar **tracknames = NULL, **trackgroups = NULL, *currtrack = NULL;
     int next_dynamic_payload = 96;
+    TrackList tracks = NULL;
 
     fnc_log(FNC_LOG_DEBUG,
             "using live streaming demuxer for resource '%s'",
-            r->mrl);
+            url);
 
-    if ( !g_key_file_load_from_file(file, r->mrl, G_KEY_FILE_NONE, NULL) )
+    mrl = g_strdup_printf("%s/%s.sd2",
+                          feng_default_vhost->virtuals_root,
+                          url);
+
+    if ( !g_key_file_load_from_file(file, mrl, G_KEY_FILE_NONE, NULL) )
         goto error;
 
     if ( (tracknames = g_key_file_get_groups(file, NULL)) == NULL )
         goto error;
 
     trackgroups = tracknames;
-    r->duration = HUGE_VAL;
-    r->source = LIVE_SOURCE;
 
     while ( (currtrack = *tracknames++) != NULL ) {
-        Track *track;
+        Track *track = NULL;
         const RTP_static_payload *info;
+        sd_private_data *priv;
 
-        MediaProperties props_hints = {
-            .media_source = LIVE_SOURCE
-        };
-
-        sd_private_data priv = {
-            .mrl = NULL,
-            .queue = (mqd_t)-1
-        };
-
-        gchar *track_mrl, *media_type, *encoding_name, *tmpstr;
+        gchar *track_mrl, *media_type, *tmpstr;
 
         if ( !feng_str_is_unreserved(currtrack) ) {
             fnc_log(FNC_LOG_ERR, "[sd2] invalid track name '%s' for '%s'",
-                    currtrack, r->mrl);
+                    currtrack, mrl);
             goto corrupted_track;
         }
+
+        track = track_new(currtrack);
+
+        track->private_data = priv = g_slice_new(sd_private_data);
+        priv->queue = (mqd_t)-1;
 
         track_mrl = g_key_file_get_string(file, currtrack,
                                           SD2_KEY_MRL,
@@ -230,11 +228,11 @@ gboolean sd2_init(Resource * r)
            supporting multiple source protocoles. */
         if ( track_mrl == NULL || !g_str_has_prefix(track_mrl, "mq://") ) {
             fnc_log(FNC_LOG_ERR, "[sd2] invalid mrl '%s' for '%s'",
-                    track_mrl, r->mrl);
+                    track_mrl, mrl);
             goto corrupted_track;
         }
 
-        track_mrl += strlen("mq://");
+        priv->mrl = strdup(track_mrl + strlen("mq://"));
 
         media_type = g_key_file_get_string(file, currtrack,
                                            SD2_KEY_MEDIA_TYPE,
@@ -243,86 +241,71 @@ gboolean sd2_init(Resource * r)
         /* There is no need to check for media_type being NULL, as
            g_strcmp0 takes care of that */
         if ( g_strcmp0(media_type, "audio") == 0 )
-            props_hints.media_type = MP_audio;
+            track->properties.media_type = MP_audio;
         else if ( g_strcmp0(media_type, "video") == 0 )
-            props_hints.media_type = MP_video;
+            track->properties.media_type = MP_video;
         else {
             fnc_log(FNC_LOG_ERR, "[sd2] invalid media type '%s' for '%s'",
-                    media_type, r->mrl);
+                    media_type, mrl);
             goto corrupted_track;
         }
 
-        props_hints.payload_type = g_key_file_get_integer(file, currtrack,
+        track->properties.payload_type = g_key_file_get_integer(file, currtrack,
                                                           SD2_KEY_PAYLOAD_TYPE,
                                                           NULL);
 
         /* The next_dynamic_payload variable is initialised to be the
            first dynamic payload; if the resource define some dynamic
            payload, make sure that the next used is higher. */
-        if ( props_hints.payload_type >= next_dynamic_payload )
-            next_dynamic_payload = props_hints.payload_type +1;
+        if ( track->properties.payload_type >= next_dynamic_payload )
+            next_dynamic_payload = track->properties.payload_type +1;
 
-        if ( props_hints.payload_type < 0 ) {
+        if ( track->properties.payload_type < 0 ) {
             fnc_log(FNC_LOG_ERR, "[sd2] invalid payload_type '%d' for '%s'",
-                    props_hints.payload_type, r->mrl);
+                    track->properties.payload_type, mrl);
             goto corrupted_track;
         }
 
-        encoding_name = g_key_file_get_string(file, currtrack,
-                                              SD2_KEY_ENCODING_NAME,
-                                              NULL);
+        track->properties.encoding_name = g_strdup(g_key_file_get_string(file, currtrack,
+                                                                         SD2_KEY_ENCODING_NAME,
+                                                                         NULL));
 
-        props_hints.clock_rate = g_key_file_get_integer(file, currtrack,
+        track->properties.clock_rate = g_key_file_get_integer(file, currtrack,
                                                         SD2_KEY_CLOCK_RATE,
                                                         NULL);
-        if ( props_hints.clock_rate >= INT32_MAX || props_hints.clock_rate <= 0 ) {
+        if ( track->properties.clock_rate >= INT32_MAX || track->properties.clock_rate <= 0 ) {
             fnc_log(FNC_LOG_ERR, "[sd2] invalid clock_rate '%d' for '%s'",
-                    props_hints.clock_rate, r->mrl);
+                    track->properties.clock_rate, mrl);
             goto corrupted_track;
         }
 
-        if ( props_hints.media_type == MP_audio ) {
-            props_hints.audio_channels = g_key_file_get_integer(file, currtrack,
+        if ( track->properties.media_type == MP_audio ) {
+            track->properties.audio_channels = g_key_file_get_integer(file, currtrack,
                                                                 SD2_KEY_AUDIO_CHANNELS,
                                                                 NULL);
 
-            if ( props_hints.audio_channels <= 0 ) {
+            if ( track->properties.audio_channels <= 0 ) {
                 fnc_log(FNC_LOG_ERR, "[sd2] invalid audio_channels '%d' for '%s'",
-                        props_hints.audio_channels, r->mrl);
+                        track->properties.audio_channels, mrl);
                 goto corrupted_track;
             }
         }
 
-        /* Track has been validated
-         *
-         * MAKE SURE ALL MEMORY ALLOCATIONS HAPPEN BELOW THIS POINT!
-         */
-        priv.mrl = g_strdup(track_mrl);
-        props_hints.encoding_name = g_strdup(encoding_name);
-
-        if ( (info = probe_stream_info(encoding_name)) != NULL ) {
+        if ( (info = probe_stream_info(track->properties.encoding_name)) != NULL ) {
             if ( !g_key_file_has_key(file, currtrack, SD2_KEY_PAYLOAD_TYPE, NULL) )
-                set_payload_type(&props_hints, info->PldType);
+                set_payload_type(track, info->PldType);
             if ( !g_key_file_has_key(file, currtrack, SD2_KEY_CLOCK_RATE, NULL) )
-                props_hints.clock_rate = info->ClockRate;
-        } else if ( props_hints.payload_type == 0 ) {
+                track->properties.clock_rate = info->ClockRate;
+        } else if ( track->properties.payload_type == 0 ) {
             /* if the user didn't explicit a payload type, and we
              * haven't found a static one for the named encoding,
              * assume a dynamic payload is desired and use the first
              * one available.
              */
-            props_hints.payload_type = next_dynamic_payload++;
-        }
-
-        if ( (track = add_track(r, g_strdup(currtrack),
-                                &props_hints)) == NULL ) {
-            fnc_log(FNC_LOG_ERR, "[sd2] error adding track '%s' from '%s'",
-                    currtrack, r->mrl);
-            goto corrupted_track;
+            track->properties.payload_type = next_dynamic_payload++;
         }
 
         track->parser = &demuxer_sd_fake_mediaparser;
-        track->private_data = g_memdup(&priv, sizeof(priv));
 
         if ( (tmpstr = g_key_file_get_string(file, currtrack,
                                              SD2_KEY_LICENSE,
@@ -352,22 +335,22 @@ gboolean sd2_init(Resource * r)
                                     SDP_F_AUTHOR,
                                     tmpstr);
 
-        if (props_hints.payload_type >= 96)
+        if (track->properties.payload_type >= 96)
         {
-            if ( props_hints.media_type == MP_audio &&
-                 props_hints.audio_channels > 1 )
+            if ( track->properties.media_type == MP_audio &&
+                 track->properties.audio_channels > 1 )
                 g_string_append_printf(track->sdp_description,
                                        "a=rtpmap:%u %s/%d/%d\r\n",
-                                       props_hints.payload_type,
-                                       props_hints.encoding_name,
-                                       props_hints.clock_rate,
-                                       props_hints.audio_channels);
+                                       track->properties.payload_type,
+                                       track->properties.encoding_name,
+                                       track->properties.clock_rate,
+                                       track->properties.audio_channels);
             else
                 g_string_append_printf(track->sdp_description,
                                        "a=rtpmap:%u %s/%d\r\n",
-                                       props_hints.payload_type,
-                                       props_hints.encoding_name,
-                                       props_hints.clock_rate);
+                                       track->properties.payload_type,
+                                       track->properties.encoding_name,
+                                       track->properties.clock_rate);
         }
 
         /* This goes _after_ rtpmap for compatibility with older
@@ -377,29 +360,47 @@ gboolean sd2_init(Resource * r)
                                              NULL)) )
             g_string_append_printf(track->sdp_description,
                                    "a=fmtp:%u %s",
-                                   props_hints.payload_type,
+                                   track->properties.payload_type,
                                    tmpstr);
 
-        tracks++;
+        tracks = g_list_append(tracks, track);
         continue;
 
     corrupted_track:
-        g_free(priv.mrl);
-        g_free(props_hints.encoding_name);
         fnc_log(FNC_LOG_ERR, "[sd2] corrupted track '%s' from '%s'",
-                currtrack, r->mrl);
+                currtrack, mrl);
+        if ( track ) {
+            g_free(priv->mrl);
+            track_free(track);
+        }
     }
 
-    if ( tracks >= 0 ) {
-        TrackList tr_it;
-        for (tr_it = g_list_first(r->tracks); tr_it !=NULL; tr_it = g_list_next(tr_it))
-            g_thread_create(flux_read_messages, tr_it->data, false, NULL);
+    if ( tracks == NULL )
+        goto error;
+
+    r = g_slice_new0(Resource);
+    r->mrl = mrl;
+    r->lock = g_mutex_new();
+
+    r->source = LIVE_SOURCE;
+    r->duration = HUGE_VAL;
+    r->tracks = tracks;
+
+    for (tracks = g_list_first(r->tracks); tracks != NULL; tracks = g_list_next(tracks)) {
+        Track *track = tracks->data;
+
+        track->parent = r;
+        g_thread_create(flux_read_messages, track, false, NULL);
     }
+
+    return r;
 
  error:
+    g_slice_free(Resource, r);
     g_strfreev(trackgroups);
     g_key_file_free(file);
-    return (tracks >= 0);
+    g_free(mrl);
+    return NULL;
 }
 
 static gpointer flux_read_messages(gpointer ptr) {

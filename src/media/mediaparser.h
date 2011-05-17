@@ -35,19 +35,12 @@ struct Track;
 
 #define FENG_MEDIAPARSER(shortname, encoding, type)         \
     const MediaParser fnc_mediaparser_##shortname = {       \
-        encoding,                                           \
-        type,                                               \
         shortname##_init,                                   \
         shortname##_parse,                                  \
         shortname##_uninit                                  \
     }
 
 typedef struct MediaParser {
-    /** Encoding name */
-    const char *encoding_name;
-
-    const MediaType media_type;
-
     /**
      * @brief Initialisation callback for the parser
      */
@@ -73,7 +66,18 @@ typedef struct MediaParser {
     void (*uninit)(Track *track);
 } MediaParser;
 
-const MediaParser *mparser_find(const char *);
+extern const MediaParser fnc_mediaparser_mpv;
+extern const MediaParser fnc_mediaparser_mpa;
+extern const MediaParser fnc_mediaparser_h264;
+extern const MediaParser fnc_mediaparser_aac;
+extern const MediaParser fnc_mediaparser_mp4ves;
+extern const MediaParser fnc_mediaparser_vorbis;
+extern const MediaParser fnc_mediaparser_theora;
+extern const MediaParser fnc_mediaparser_speex;
+extern const MediaParser fnc_mediaparser_mp2t;
+extern const MediaParser fnc_mediaparser_h263;
+extern const MediaParser fnc_mediaparser_amr;
+extern const MediaParser fnc_mediaparser_vp8;
 
 char *extradata2config(MediaProperties *properties);
 

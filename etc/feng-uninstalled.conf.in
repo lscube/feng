@@ -12,5 +12,6 @@ socket {
 
 vhost {
     document-root "@abs_top_srcdir@/avroot";
+    virtuals-root "@abs_top_srcdir@/avroot";
     access-log "@abs_top_builddir@/access.log";
 };

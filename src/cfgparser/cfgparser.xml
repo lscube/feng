@@ -21,6 +21,7 @@
     <value name="access-log" type="string" />
     <value name="twin" type="string" />
     <value name="document-root" type="string" />
+    <value name="virtuals-root" type="string" />
     <value name="max-connections" type="uinteger" />
     <value name="dynamic-resource-paths" type="stringlist" />
     <raw>

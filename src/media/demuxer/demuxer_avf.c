@@ -23,7 +23,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <errno.h>
 
+#include "feng.h"
 #include "fnc_log.h"
 
 #include "media/demuxer.h"
@@ -88,69 +91,46 @@ typedef struct avf_private_data {
  * safe, and needs lock-protection;
  */
 
-typedef struct id_tag {
-    const int id;
-    const int pt;
-    const char tag[11];
-} id_tag;
-
-//FIXME this should be simplified!
-static const id_tag id_tags[] = {
-   { CODEC_ID_MPEG1VIDEO, 32, "MPV" },
-   { CODEC_ID_MPEG2VIDEO, 32, "MPV" },
-   { CODEC_ID_H264, 96, "H264" },
-   { CODEC_ID_MP2, 14, "MPA" },
-   { CODEC_ID_MP3, 14, "MPA" },
-   { CODEC_ID_VORBIS, 96, "VORBIS" },
-   { CODEC_ID_THEORA, 96, "THEORA" },
-   { CODEC_ID_SPEEX, 96, "SPEEX" },
-   { CODEC_ID_AAC, 96, "AAC" },
-   { CODEC_ID_MPEG4, 96, "MP4V-ES" },
-   { CODEC_ID_H263, 96, "H263P" },
-   { CODEC_ID_AMR_NB, 96, "AMR" },
-   { CODEC_ID_VP8, 96, "VP8" },
-   { CODEC_ID_NONE, 0, "NONE"} //XXX ...
-};
-
-static const char *tag_from_id(int id)
-{
-    const id_tag *tags = id_tags;
-    while (tags->id != CODEC_ID_NONE) {
-        if (tags->id == id)
-            return tags->tag;
-        tags++;
-    }
-    return NULL;
-}
-
-static int pt_from_id(int id)
-{
-    const id_tag *tags = id_tags;
-    while (tags->id != CODEC_ID_NONE) {
-        if (tags->id == id)
-            return tags->pt;
-        tags++;
-    }
-    return 0;
-}
-
 static double avf_timescaler (ATTR_UNUSED Resource *r, double res_time) {
     return res_time;
 }
 
-gboolean avf_init(Resource * r)
+Resource *avf_open(const char *url)
 {
     AVFormatParameters ap;
     MediaProperties props;
+    Resource *r = NULL;
     Track *track = NULL;
     int pt = 96, i;
     unsigned int j;
+    gchar *mrl;
 
+    struct stat filestat;
     avf_private_data priv = { NULL, NULL };
 
     fnc_log(FNC_LOG_DEBUG,
-            "using libavformat demuxer for resource '%s'",
-            r->mrl);
+            "opening resource '%s' through libavformat",
+            url);
+
+    mrl = g_strjoin ("/",
+                     feng_default_vhost->document_root,
+                     url,
+                     NULL);
+
+    if ( access(mrl, R_OK) != 0 ) {
+        fnc_perror("access");
+        goto err_alloc;
+    }
+
+    if (stat(mrl, &filestat) < 0 ) {
+        fnc_perror("stat");
+        goto err_alloc;
+    }
+
+    if ( ! S_ISREG(filestat.st_mode) ) {
+        fnc_log(FNC_LOG_ERR, "%s: not a file", mrl);
+        goto err_alloc;
+    }
 
     memset(&ap, 0, sizeof(AVFormatParameters));
 
@@ -159,10 +139,10 @@ gboolean avf_init(Resource * r)
 
     priv.avfc->flags |= AVFMT_FLAG_GENPTS;
 
-    i = av_open_input_file(&priv.avfc, r->mrl, NULL, 0, &ap);
+    i = av_open_input_file(&priv.avfc, mrl, NULL, 0, &ap);
 
     if ( i != 0 ) {
-        fnc_log(FNC_LOG_DEBUG, "[avf] Cannot open %s", r->mrl);
+        fnc_log(FNC_LOG_DEBUG, "[avf] Cannot open %s", mrl);
         goto err_alloc;
     }
 
@@ -170,18 +150,9 @@ gboolean avf_init(Resource * r)
 
     if(i < 0){
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot find streams in file %s",
-                r->mrl);
+                mrl);
         goto err_alloc;
     }
-
-    r->duration = (double)priv.avfc->duration /AV_TIME_BASE;
-
-    // make sure we can seek.
-    if ( !av_seek_frame(priv.avfc, -1, 0, 0) )
-        r->seek = avf_seek;
-
-    r->read_packet = avf_read_packet;
-    r->uninit = avf_uninit;
 
     priv.tracks = g_new0(Track*, priv.avfc->nb_streams);
 
@@ -190,70 +161,134 @@ gboolean avf_init(Resource * r)
         AVCodecContext *codec= st->codec;
         AVMetadataTag *metadata_tag = NULL;
         static const int metadata_flags = AV_METADATA_DONT_STRDUP_KEY|AV_METADATA_DONT_STRDUP_VAL;
-        const char *id = tag_from_id(codec->codec_id);
+        const char *encoding_name;
         float frame_rate = 0;
 
-        if( id == NULL ) {
-            st->discard = AVDISCARD_ALL;
-            fnc_log(FNC_LOG_DEBUG, "[avf] Cannot map stream id %d", j);
-            continue;
+        track = track_new(g_strdup_printf("Track_%d", j));
+
+        switch(codec->codec_id) {
+        case CODEC_ID_MPEG1VIDEO:
+        case CODEC_ID_MPEG2VIDEO:
+            track->properties.payload_type = 32;
+            encoding_name = "MPV";
+            track->parser = &fnc_mediaparser_mpv;
+            break;
+
+        case CODEC_ID_H264:
+            encoding_name = "H264";
+            track->parser = &fnc_mediaparser_h264;
+            break;
+
+        case CODEC_ID_MP2:
+        case CODEC_ID_MP3:
+            track->properties.payload_type = 14;
+            encoding_name = "MPA";
+            track->parser = &fnc_mediaparser_mpa;
+            break;
+
+        case CODEC_ID_VORBIS:
+            encoding_name = "VORBIS";
+            track->parser = &fnc_mediaparser_vorbis;
+            break;
+
+        case CODEC_ID_THEORA:
+            encoding_name = "THEORA";
+            track->parser = &fnc_mediaparser_theora;
+            break;
+
+        case CODEC_ID_SPEEX:
+            encoding_name = "SPEEX";
+            track->parser = &fnc_mediaparser_speex;
+            break;
+
+        case CODEC_ID_AAC:
+            encoding_name = "AAC";
+            track->parser = &fnc_mediaparser_aac;
+
+            if ( codec->extradata_size == 0 ) {
+                AVPacket pkt;
+
+                if ( (st->codec->opaque = av_bitstream_filter_init("aac_adtstoasc")) == NULL )
+                    goto err_alloc;
+
+                while((av_read_frame(priv.avfc, &pkt) >= 0) && !codec->extradata_size) {
+                    uint8_t *data;
+                    int size;
+                    if(pkt.stream_index != j)
+                        continue;
+                    av_bitstream_filter_filter(st->codec->opaque, codec, NULL,
+                                               &data, &size,
+                                               pkt.data, pkt.size,
+                                               pkt.flags & AV_PKT_FLAG_KEY);
+                    break;
+                }
+
+                if (!codec->extradata_size)
+                    goto err_alloc;
+
+                av_seek_frame(priv.avfc, -1, 0, 0);
+            }
+            break;
+
+        case CODEC_ID_MPEG4:
+            encoding_name = "MP4V-ES";
+            track->parser = &fnc_mediaparser_mp4ves;
+            break;
+
+        case CODEC_ID_H263:
+            encoding_name = "H263P";
+            track->parser = &fnc_mediaparser_h263;
+            break;
+
+        case CODEC_ID_AMR_NB:
+            encoding_name = "AMR";
+            track->parser = &fnc_mediaparser_amr;
+            break;
+
+        case CODEC_ID_VP8:
+            encoding_name = "VP8";
+            track->parser = &fnc_mediaparser_vp8;
+            break;
+
+        default:
+            goto discard;
         }
 
-        if (codec->codec_id == CODEC_ID_AAC &&
-            !codec->extradata_size) {
-            AVPacket pkt;
-            st->codec->opaque = av_bitstream_filter_init("aac_adtstoasc");
-            if (!st->codec->opaque)
-                goto err_alloc;
-            while((av_read_frame(priv.avfc, &pkt) >= 0) && !codec->extradata_size) {
-                uint8_t *data;
-                int size;
-                if(pkt.stream_index != j)
-                    continue;
-                av_bitstream_filter_filter(st->codec->opaque, codec, NULL,
-                                           &data, &size,
-                                           pkt.data, pkt.size,
-                                           pkt.flags & AV_PKT_FLAG_KEY);
-                break;
-            }
-            av_seek_frame(priv.avfc, -1, 0, 0);
-            if (!codec->extradata_size)
-                goto err_alloc;
-        }
-        memset(&props, 0, sizeof(MediaProperties));
-        props.clock_rate = 90000; //Default
-        props.extradata = codec->extradata;
-        props.extradata_len = codec->extradata_size;
-        props.encoding_name = g_strdup(id);
-        props.payload_type = pt_from_id(codec->codec_id);
-        if (props.payload_type >= 96)
-            props.payload_type = pt++;
-        fnc_log(FNC_LOG_DEBUG, "[avf] Parsing AVStream %s",
-                props.encoding_name);
+        track->properties.encoding_name = g_strdup(encoding_name);
+        if ( track->properties.payload_type == 0 )
+            track->properties.payload_type = pt++;
 
         switch(codec->codec_type){
-            case AVMEDIA_TYPE_AUDIO:
-                props.media_type     = MP_audio;
-                // Some properties, add more?
-                props.audio_channels = codec->channels;
-                // Make props an int...
-                props.frame_duration       = (double)1 / codec->sample_rate;
-                break;
+        case AVMEDIA_TYPE_AUDIO:
+            track->properties.media_type     = MP_audio;
+            track->properties.audio_channels = codec->channels;
+            track->properties.frame_duration = (double)1 / codec->sample_rate;
+            break;
 
-            case AVMEDIA_TYPE_VIDEO:
-                props.media_type   = MP_video;
-                frame_rate         = av_q2d(st->r_frame_rate);
-                props.frame_duration     = (double)1 / frame_rate;
-                break;
+        case AVMEDIA_TYPE_VIDEO:
+            frame_rate = av_q2d(st->r_frame_rate);
+            track->properties.media_type     = MP_video;
+            track->properties.frame_duration = (double)1 / frame_rate;
+            break;
 
-            default:
-                st->discard = AVDISCARD_ALL;
-                fnc_log(FNC_LOG_DEBUG, "[avf] codec type unsupported");
-                continue;
+        default:
+            goto discard;
         }
 
-        if ( !(track = priv.tracks[j] = add_track(r, g_strdup_printf("Track_%d", j), &props)) )
+        priv.tracks[j] = track;
+
+        track->properties.clock_rate = 90000; //Default
+        track->properties.extradata = codec->extradata;
+        track->properties.extradata_len = codec->extradata_size;
+
+        fnc_log(FNC_LOG_DEBUG, "[avf] Parsing AVStream %s",
+                track->properties.encoding_name);
+
+        if (track->parser && track->parser->init && track->parser->init(track) != 0) {
+            fnc_log(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
+                    track->properties.encoding_name);
             goto track_err_alloc;
+        }
 
         if ( (metadata_tag = av_metadata_get(priv.avfc->metadata, "title", NULL, metadata_flags)) )
             g_string_append_printf(track->sdp_description, SDP_F_TITLE, metadata_tag->value);
@@ -272,23 +307,54 @@ gboolean avf_init(Resource * r)
     track_err_alloc:
         g_free(props.encoding_name);
         goto err_alloc;
+
+    discard:
+        st->discard = AVDISCARD_ALL;
+        track_free(track);
+        continue;
     }
 
-    if (track) {
-        fnc_log(FNC_LOG_DEBUG, "[avf] duration %f", r->duration);
-        r->private_data = g_memdup(&priv, sizeof(priv));
-        r->timescaler = avf_timescaler;
-        return true;
-    }
+    /* Now that we know the resource is valid and we can read it,
+       allocate the structure that will be returned. */
+
+    r = g_slice_new0(Resource);
+
+    r->mrl = mrl;
+    r->lock = g_mutex_new();
+    r->mtime = filestat.st_mtime;
+
+    r->private_data = g_memdup(&priv, sizeof(priv));
+
+    r->read_packet = avf_read_packet;
+    r->uninit = avf_uninit;
+    r->timescaler = avf_timescaler;
+
+    /* Try seeking to make sure that we can seek, as libavformat might
+       not implement seeking for the format we're using here; if it
+       doesn't, do not set a seek method */
+    if ( !av_seek_frame(priv.avfc, -1, 0, 0) )
+        r->seek = avf_seek;
+
+    r->duration = (double)priv.avfc->duration /AV_TIME_BASE;
+    fnc_log(FNC_LOG_DEBUG, "[avf] duration %f", r->duration);
+
+    for(j = 0; j < priv.avfc->nb_streams; j++)
+        if ( priv.tracks[j] ) {
+            priv.tracks[j]->parent = r;
+            r->tracks = g_list_append(r->tracks, priv.tracks[j]);
+        }
+
+    return r;
 
  err_alloc:
     for(j = 0; j < priv.avfc->nb_streams; j++)
-        if ( priv.tracks[j] )
-            free_track(priv.tracks[j], NULL);
+        track_free(priv.tracks[j]);
 
     g_free(priv.tracks);
 
     av_close_input_file(priv.avfc);
+
+    g_free(mrl);
 
     return false;
 }

@@ -80,7 +80,7 @@ static void rtp_session_send_play_reply(gpointer element, gpointer user_data)
   g_string_append_printf(str, "url=%s;seq=1",
                          p->uri);
 
-  if (t->properties.media_source != LIVE_SOURCE)
+  if (t->parent->source != LIVE_SOURCE)
     g_string_append_printf(str,
 			   ";rtptime=%u", p->start_rtptime);
 
