@@ -28,12 +28,6 @@
 #include "media/media.h"
 #include "fnc_log.h"
 
-typedef struct {
-    int stacksize;
-    int stackcount;
-    unsigned char* framestack;
-} framestack;
-
 //! Parse extradata and reformat it, most of the code is shamelessly ripped from ffvorbis.
 static char *encode_header(uint8_t *headers, int len, xiph_priv *priv)
 {
