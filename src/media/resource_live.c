@@ -47,7 +47,7 @@ static gpointer flux_read_messages(gpointer ptr);
  * mqd_t object.
  */
 static void live_track_uninit(Track *tr) {
-    g_free(tr->private_data.live.mrl);
+    g_free(tr->private_data.live.mq_path);
 }
 
 /*
@@ -197,7 +197,6 @@ Resource *sd2_open(const char *url)
         track = track_new(currtrack);
 
         track->uninit = live_track_uninit;
-        track->private_data.live.queue = (mqd_t)-1;
 
         track_mrl = g_key_file_get_string(file, currtrack,
                                           SD2_KEY_MRL,
@@ -211,7 +210,7 @@ Resource *sd2_open(const char *url)
             goto corrupted_track;
         }
 
-        track->private_data.live.mrl = strdup(track_mrl + strlen("mq://"));
+        track->private_data.live.mq_path = strdup(track_mrl + strlen("mq://"));
 
         media_type = g_key_file_get_string(file, currtrack,
                                            SD2_KEY_MEDIA_TYPE,
@@ -381,6 +380,7 @@ Resource *sd2_open(const char *url)
 
 static gpointer flux_read_messages(gpointer ptr) {
     Track *tr = ptr;
+    mqd_t queue = (mqd_t)-1;
 
     while ( tr ) {
         double package_start_time;
@@ -403,20 +403,20 @@ static gpointer flux_read_messages(gpointer ptr) {
         struct mq_attr attr;
         struct MParserBuffer *buffer;
 
-        if ( tr->private_data.live.queue == (mqd_t)-1 &&
-             (tr->private_data.live.queue = mq_open(tr->private_data.live.mrl, O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) == (mqd_t)-1) {
+        if ( queue == (mqd_t)-1 &&
+             (queue = mq_open(tr->private_data.live.mq_path, O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) == (mqd_t)-1) {
 
             fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
-                    tr->private_data.live.mrl, strerror(errno));
+                    tr->private_data.live.mq_path, strerror(errno));
             goto reiterate;
         }
 
-        mq_getattr(tr->private_data.live.queue, &attr);
+        mq_getattr(queue, &attr);
 
         /* Check if there are available packets, if it is empty flux might have recreated it */
         if (!attr.mq_curmsgs) {
-            mq_close(tr->private_data.live.queue);
-            tr->private_data.live.queue = (mqd_t)-1;
+            mq_close(queue);
+            queue = (mqd_t)-1;
             usleep(30);
 
             goto reiterate;
@@ -424,13 +424,13 @@ static gpointer flux_read_messages(gpointer ptr) {
 
         msg_buffer = g_malloc(attr.mq_msgsize);
 
-        if ( (msg_len = mq_receive(tr->private_data.live.queue, (char*)msg_buffer,
+        if ( (msg_len = mq_receive(queue, (char*)msg_buffer,
                                    attr.mq_msgsize, NULL)) < 0 ) {
             fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
-                    tr->private_data.live.mrl, strerror(errno));
+                    tr->private_data.live.mq_path, strerror(errno));
 
-            mq_close(tr->private_data.live.queue);
-            tr->private_data.live.queue = (mqd_t)-1;
+            mq_close(queue);
+            queue = (mqd_t)-1;
 
             goto reiterate;
         }
@@ -438,7 +438,7 @@ static gpointer flux_read_messages(gpointer ptr) {
         package_version = *((unsigned int*)msg_buffer);
         if (package_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
             fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d",
-                    tr->private_data.live.mrl, REQUIRED_FLUX_PROTOCOL_VERSION, package_version);
+                    tr->private_data.live.mq_path, REQUIRED_FLUX_PROTOCOL_VERSION, package_version);
 
             goto reiterate;
         }
@@ -458,11 +458,11 @@ static gpointer flux_read_messages(gpointer ptr) {
 
 #if 0
         fprintf(stderr, "[%s] read (%5.4f) BEGIN:%5.4f START_DTS:%u DTS:%u\n",
-                tr->private_data.live.mrl, delta, package_start_time, package_start_dts, package_dts);
+                tr->private_data.live.mq_path, delta, package_start_time, package_start_dts, package_dts);
 #endif
 
         if (delta > 0.5f) {
-            fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f/%f, discarding..", tr->private_data.live.mrl, package_insertion_time, delta);
+            fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f/%f, discarding..", tr->private_data.live.mq_path, package_insertion_time, delta);
             goto reiterate;
         }
 
@@ -496,7 +496,7 @@ static gpointer flux_read_messages(gpointer ptr) {
 
 #if 0
         fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
-                tr->private_data.live.mrl,
+                tr->private_data.live.mq_path,
                 timestamp,
                 delivery,
                 package_start_time + delivery,

@@ -26,12 +26,9 @@
 #include <config.h>
 
 #include <glib.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-
-#ifdef LIVE_STREAMING
-# include <mqueue.h> /* for mqd_t */
-#endif
 
 struct feng;
 struct RTP_session;
@@ -297,12 +294,9 @@ struct Track {
             uint8_t nal_length_size; // used in avc
         } h264;
 
-#ifdef LIVE_STREAMING
         struct {
-            char *mrl;
-            mqd_t queue;
+            char *mq_path;
         } live;
-#endif
     } private_data;
 };
 
