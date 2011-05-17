@@ -123,25 +123,15 @@ static int encode_header(uint8_t *data, int len, xiph_priv *priv)
 int theora_init(Track *track)
 {
     xiph_priv *priv;
-    char *buf;
 
     priv = g_slice_new(xiph_priv);
 
     if ( encode_header(track->extradata,
-                       track->extradata_len, priv) ||
-         (buf = g_base64_encode(priv->conf, priv->conf_len)) == NULL )
+                       track->extradata_len, priv) != 0 )
         goto err_alloc;
 
-    sdp_descr_append_rtpmap(track);
-    g_string_append_printf(track->sdp_description,
-                           "a=fmtp:%u delivery-method=in_band; configuration=%s;\r\n",
-
-                           /* fmtp */
-                           track->payload_type,
-                           buf);
-    g_free(buf);
-
     track->private_data = priv;
+    xiph_sdp_descr_append(track);
 
     return 0;
 

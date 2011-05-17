@@ -91,3 +91,19 @@ void xiph_uninit(Track *track)
 
     track->private_data = NULL;
 }
+
+void xiph_sdp_descr_append(Track *track)
+{
+    xiph_priv *priv = track->private_data;
+
+    char *buf = g_base64_encode(priv->conf, priv->conf_len);
+
+    sdp_descr_append_rtpmap(track);
+    g_string_append_printf(track->sdp_description,
+                           "a=fmtp:%u delivery-method=in_band; configuration=%s;\r\n",
+
+                           /* fmtp */
+                           track->payload_type,
+                           buf);
+    g_free(buf);
+}

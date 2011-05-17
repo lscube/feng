@@ -408,6 +408,8 @@ int vorbis_init(Track *track);
 int xiph_parse(Track *tr, uint8_t *data, size_t len);
 void xiph_uninit(Track *tr);
 
+void xiph_sdp_descr_append(Track *track);
+
 typedef struct {
     uint8_t        *conf;      ///< current configuration
     size_t          conf_len;
