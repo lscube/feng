@@ -60,7 +60,7 @@ int xiph_parse(Track *tr, uint8_t *data, ssize_t len)
         buffer->data_size = MIN(MAX_PAYLOAD_SIZE, len) + HEADER_SIZE;
         buffer->data = g_malloc(buffer->data_size);
 
-        payload_size = htons(buffer->data_size);
+        payload_size = htons(buffer->data_size - HEADER_SIZE);
 
         /* 0..2 */
         memcpy(buffer->data, tr->private_data, 3);
