@@ -66,9 +66,9 @@ static void frag_fu_a(uint8_t *nal, int fragsize, Track *tr)
         const size_t fraglen = MIN(DEFAULT_MTU-2, fragsize);
         struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
 
-        buffer->timestamp = tr->properties.pts;
-        buffer->delivery = tr->properties.dts;
-        buffer->duration = tr->properties.frame_duration;
+        buffer->timestamp = tr->pts;
+        buffer->delivery = tr->dts;
+        buffer->duration = tr->frame_duration;
 
         buffer->data_size = fraglen + 2;
         buffer->data = g_malloc(buffer->data_size);
@@ -247,23 +247,23 @@ static int h264_init(Track *track)
     h264_priv *priv;
     char *sprop = NULL;
 
-    if (track->properties.extradata_len == 0) {
+    if (track->extradata_len == 0) {
         fnc_log(FNC_LOG_WARN, "[h264] No Extradata, unsupported");
         return -1;
     }
 
     priv = g_slice_new(h264_priv);
 
-    if(track->properties.extradata[0] == 1) {
-        if (track->properties.extradata_len < 7) goto err_alloc;
-        priv->nal_length_size = (track->properties.extradata[4]&0x03)+1;
+    if(track->extradata[0] == 1) {
+        if (track->extradata_len < 7) goto err_alloc;
+        priv->nal_length_size = (track->extradata[4]&0x03)+1;
         priv->is_avc = 1;
-        sprop = encode_avc1_header(track->properties.extradata,
-                                   track->properties.extradata_len, FU_A);
+        sprop = encode_avc1_header(track->extradata,
+                                   track->extradata_len, FU_A);
         if (sprop == NULL) goto err_alloc;
     } else {
-        sprop = encode_header(track->properties.extradata,
-                              track->properties.extradata_len, FU_A);
+        sprop = encode_header(track->extradata,
+                              track->extradata_len, FU_A);
         if (sprop == NULL) goto err_alloc;
     }
 
@@ -272,11 +272,11 @@ static int h264_init(Track *track)
                            "a=fmtp:%u %s\r\n",
 
                            /* rtpmap */
-                           track->properties.payload_type,
-                           track->properties.clock_rate,
+                           track->payload_type,
+                           track->clock_rate,
 
                            /* fmtp */
-                           track->properties.payload_type,
+                           track->payload_type,
                            sprop);
 
     track->private_data = priv;
@@ -322,9 +322,9 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
             if (DEFAULT_MTU >= nalsize) {
                 struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
 
-                buffer->timestamp = tr->properties.pts;
-                buffer->delivery = tr->properties.dts;
-                buffer->duration = tr->properties.frame_duration;
+                buffer->timestamp = tr->pts;
+                buffer->delivery = tr->dts;
+                buffer->duration = tr->frame_duration;
                 buffer->marker = true;
 
                 buffer->data_size = nalsize;
@@ -361,9 +361,9 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
             if (DEFAULT_MTU >= q - p) {
                 struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
 
-                buffer->timestamp = tr->properties.pts;
-                buffer->delivery = tr->properties.dts;
-                buffer->duration = tr->properties.frame_duration;
+                buffer->timestamp = tr->pts;
+                buffer->delivery = tr->dts;
+                buffer->duration = tr->frame_duration;
                 buffer->marker = true;
 
                 buffer->data_size = q - p;
@@ -386,9 +386,9 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
         if (DEFAULT_MTU >= len - (p - data)) {
             struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
 
-            buffer->timestamp = tr->properties.pts;
-            buffer->delivery = tr->properties.dts;
-            buffer->duration = tr->properties.frame_duration;
+            buffer->timestamp = tr->pts;
+            buffer->delivery = tr->dts;
+            buffer->duration = tr->frame_duration;
             buffer->marker = true;
 
             buffer->data_size = len - (p - data);

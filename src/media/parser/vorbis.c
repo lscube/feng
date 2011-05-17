@@ -126,13 +126,13 @@ static int vorbis_init(Track *track)
     xiph_priv *priv;
     char *buf;
 
-    if(track->properties.extradata_len == 0)
+    if(track->extradata_len == 0)
         return -1;
 
     priv = g_slice_new(xiph_priv);
 
-    if ( encode_header(track->properties.extradata,
-                       track->properties.extradata_len, priv) ||
+    if ( encode_header(track->extradata,
+                       track->extradata_len, priv) ||
          (buf = g_base64_encode(priv->conf, priv->conf_len)) == NULL )
         goto err_alloc;
 
@@ -141,12 +141,12 @@ static int vorbis_init(Track *track)
                            "a=fmtp:%u delivery-method=in_band; configuration=%s;\r\n",
 
                            /* rtpmap */
-                           track->properties.payload_type,
-                           track->properties.clock_rate,
-                           track->properties.audio_channels,
+                           track->payload_type,
+                           track->clock_rate,
+                           track->audio_channels,
 
                            /* fmtp */
-                           track->properties.payload_type,
+                           track->payload_type,
                            buf);
     g_free(buf);
 

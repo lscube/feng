@@ -110,7 +110,7 @@ static void rtp_session_resume(gpointer session_gen, gpointer range_gen) {
     session->range = range;
     session->send_time = 0.0;
     session->start_rtptime += (cur_time - session->last_packet_send_time) *
-                              session->track->properties.clock_rate;
+                              session->track->clock_rate;
     session->last_packet_send_time = cur_time;
 
     r_resume(resource);
@@ -236,7 +236,7 @@ static void rtp_packet_send(RTP_session *session, struct MParserBuffer *buffer)
     GByteArray *outbuf = g_byte_array_sized_new(packet_size);
     RTP_packet *packet = (RTP_packet*)(outbuf->data);
     Track *tr = session->track;
-    uint32_t timestamp = rtptime(session, tr->properties.clock_rate, buffer);
+    uint32_t timestamp = rtptime(session, tr->clock_rate, buffer);
 
     outbuf->len = packet_size;
 
@@ -245,7 +245,7 @@ static void rtp_packet_send(RTP_session *session, struct MParserBuffer *buffer)
     packet->extension = 0;
     packet->csrc_len = 0;
     packet->marker = buffer->marker & 0x1;
-    packet->payload = tr->properties.payload_type & 0x7f;
+    packet->payload = tr->payload_type & 0x7f;
     packet->seq_no = htons(buffer->seq_no);
     packet->timestamp = htonl(timestamp);
     packet->ssrc = htonl(session->ssrc);
@@ -301,7 +301,7 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
     if (g_atomic_int_get(&resource->eor))
         fnc_log(FNC_LOG_INFO,
             "[%s] end of resource %d packets to be fetched",
-            session->track->properties.encoding_name,
+            session->track->encoding_name,
             bq_consumer_unseen(session));
 
     /* Get the current buffer, if there is enough data */
@@ -317,12 +317,12 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
             return;
         }
 
-        if (session->track->properties.frame_duration > 0)
-            sleep_for = session->track->properties.frame_duration; // assumed to be enough
+        if (session->track->frame_duration > 0)
+            sleep_for = session->track->frame_duration; // assumed to be enough
 
         next_time += sleep_for;
         fnc_log(FNC_LOG_INFO, "[%s] nothing to read, waiting %f...",
-                session->track->properties.encoding_name, sleep_for);
+                session->track->encoding_name, sleep_for);
     } else {
         struct MParserBuffer *next;
         double delivery  = buffer->delivery;
@@ -351,12 +351,12 @@ static void rtp_write_cb(struct ev_loop *loop, ev_periodic *w,
 
             next_time += sleep_for;
             fnc_log(FNC_LOG_INFO, "[%s] next packet not available, waiting %f...",
-                    session->track->properties.encoding_name, sleep_for);
+                    session->track->encoding_name, sleep_for);
         }
 
         fnc_log(FNC_LOG_VERBOSE,
             "[%s] Now: %5.4f, cur %5.4f[%5.4f][%5.4f], next %5.4f %s\n",
-            session->track->properties.encoding_name,
+            session->track->encoding_name,
             ev_now(loop) - session->range->playback_time,
             delivery,
             timestamp,

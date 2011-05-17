@@ -33,21 +33,21 @@
 
 static int amr_init(Track *track)
 {
-    track->properties.clock_rate = 8000;
+    track->clock_rate = 8000;
 
     g_string_append_printf(track->sdp_description,
                            "a=rtpmap:%u AMR/%d/%d\r\n"
                            "a=fmtp:%u octet-align=1;",
 
                            /* rtpmap */
-                           track->properties.payload_type,
-                           track->properties.clock_rate,
-                           track->properties.audio_channels,
+                           track->payload_type,
+                           track->clock_rate,
+                           track->audio_channels,
 
                            /* fmtp */
-                           track->properties.payload_type);
+                           track->payload_type);
 
-    if ( track->properties.extradata_len > 0 )
+    if ( track->extradata_len > 0 )
         sdp_descr_append_config(track);
 
     g_string_append(track->sdp_description, "\r\n");
@@ -116,9 +116,9 @@ static int amr_parse(Track *tr, uint8_t *data, size_t len)
 
         buffer = g_slice_new0(struct MParserBuffer);
 
-        buffer->timestamp = tr->properties.pts;
-        buffer->delivery = tr->properties.dts;
-        buffer->duration = tr->properties.frame_duration;
+        buffer->timestamp = tr->pts;
+        buffer->delivery = tr->dts;
+        buffer->duration = tr->frame_duration;
 
         buffer->data = g_malloc(DEFAULT_MTU);
         buffer->data[0] = AMR_CMR;

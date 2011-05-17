@@ -33,7 +33,7 @@
 
 static int aac_init(Track *track)
 {
-    if ( track->properties.extradata_len == 0 )
+    if ( track->extradata_len == 0 )
         return -1;
 
     g_string_append_printf(track->sdp_description,
@@ -44,11 +44,11 @@ static int aac_init(Track *track)
                            "indexDeltaLength=3; ",
 
                            /* rtpmap */
-                           track->properties.payload_type,
-                           track->properties.clock_rate,
+                           track->payload_type,
+                           track->clock_rate,
 
                            /* fmtp */
-                           track->properties.payload_type);
+                           track->payload_type);
 
     sdp_descr_append_config(track);
     g_string_append(track->sdp_description, "\r\n");
@@ -66,9 +66,9 @@ static int aac_parse(Track *tr, uint8_t *data, size_t len)
     do {
         struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
 
-        buffer->timestamp = tr->properties.pts;
-        buffer->delivery = tr->properties.dts;
-        buffer->duration = tr->properties.frame_duration;
+        buffer->timestamp = tr->pts;
+        buffer->delivery = tr->dts;
+        buffer->duration = tr->frame_duration;
         buffer->marker = (len <= MAX_PAYLOAD_SIZE);
 
         buffer->data_size = MIN(MAX_PAYLOAD_SIZE, len) + HEADER_SIZE;

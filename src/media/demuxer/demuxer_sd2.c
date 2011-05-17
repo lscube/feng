@@ -166,15 +166,15 @@ static const RTP_static_payload * probe_stream_info(char const *codec_name)
 //Sets payload type and probes media type from payload type
 static void set_payload_type(Track *track, int payload_type)
 {
-    track->properties.payload_type = payload_type;
+    track->payload_type = payload_type;
 
     // Automatic media_type detection
-    if (track->properties.payload_type >= 0 &&
-        track->properties.payload_type < 24)
-        track->properties.media_type = MP_audio;
-    if (track->properties.payload_type > 23 &&
-        track->properties.payload_type < 96)
-        track->properties.media_type = MP_video;
+    if (track->payload_type >= 0 &&
+        track->payload_type < 24)
+        track->media_type = MP_audio;
+    if (track->payload_type > 23 &&
+        track->payload_type < 96)
+        track->media_type = MP_video;
 }
 
 Resource *sd2_open(const char *url)
@@ -241,68 +241,68 @@ Resource *sd2_open(const char *url)
         /* There is no need to check for media_type being NULL, as
            g_strcmp0 takes care of that */
         if ( g_strcmp0(media_type, "audio") == 0 )
-            track->properties.media_type = MP_audio;
+            track->media_type = MP_audio;
         else if ( g_strcmp0(media_type, "video") == 0 )
-            track->properties.media_type = MP_video;
+            track->media_type = MP_video;
         else {
             fnc_log(FNC_LOG_ERR, "[sd2] invalid media type '%s' for '%s'",
                     media_type, mrl);
             goto corrupted_track;
         }
 
-        track->properties.payload_type = g_key_file_get_integer(file, currtrack,
+        track->payload_type = g_key_file_get_integer(file, currtrack,
                                                           SD2_KEY_PAYLOAD_TYPE,
                                                           NULL);
 
         /* The next_dynamic_payload variable is initialised to be the
            first dynamic payload; if the resource define some dynamic
            payload, make sure that the next used is higher. */
-        if ( track->properties.payload_type >= next_dynamic_payload )
-            next_dynamic_payload = track->properties.payload_type +1;
+        if ( track->payload_type >= next_dynamic_payload )
+            next_dynamic_payload = track->payload_type +1;
 
-        if ( track->properties.payload_type < 0 ) {
+        if ( track->payload_type < 0 ) {
             fnc_log(FNC_LOG_ERR, "[sd2] invalid payload_type '%d' for '%s'",
-                    track->properties.payload_type, mrl);
+                    track->payload_type, mrl);
             goto corrupted_track;
         }
 
-        track->properties.encoding_name = g_strdup(g_key_file_get_string(file, currtrack,
+        track->encoding_name = g_strdup(g_key_file_get_string(file, currtrack,
                                                                          SD2_KEY_ENCODING_NAME,
                                                                          NULL));
 
-        track->properties.clock_rate = g_key_file_get_integer(file, currtrack,
+        track->clock_rate = g_key_file_get_integer(file, currtrack,
                                                         SD2_KEY_CLOCK_RATE,
                                                         NULL);
-        if ( track->properties.clock_rate >= INT32_MAX || track->properties.clock_rate <= 0 ) {
+        if ( track->clock_rate >= INT32_MAX || track->clock_rate <= 0 ) {
             fnc_log(FNC_LOG_ERR, "[sd2] invalid clock_rate '%d' for '%s'",
-                    track->properties.clock_rate, mrl);
+                    track->clock_rate, mrl);
             goto corrupted_track;
         }
 
-        if ( track->properties.media_type == MP_audio ) {
-            track->properties.audio_channels = g_key_file_get_integer(file, currtrack,
+        if ( track->media_type == MP_audio ) {
+            track->audio_channels = g_key_file_get_integer(file, currtrack,
                                                                 SD2_KEY_AUDIO_CHANNELS,
                                                                 NULL);
 
-            if ( track->properties.audio_channels <= 0 ) {
+            if ( track->audio_channels <= 0 ) {
                 fnc_log(FNC_LOG_ERR, "[sd2] invalid audio_channels '%d' for '%s'",
-                        track->properties.audio_channels, mrl);
+                        track->audio_channels, mrl);
                 goto corrupted_track;
             }
         }
 
-        if ( (info = probe_stream_info(track->properties.encoding_name)) != NULL ) {
+        if ( (info = probe_stream_info(track->encoding_name)) != NULL ) {
             if ( !g_key_file_has_key(file, currtrack, SD2_KEY_PAYLOAD_TYPE, NULL) )
                 set_payload_type(track, info->PldType);
             if ( !g_key_file_has_key(file, currtrack, SD2_KEY_CLOCK_RATE, NULL) )
-                track->properties.clock_rate = info->ClockRate;
-        } else if ( track->properties.payload_type == 0 ) {
+                track->clock_rate = info->ClockRate;
+        } else if ( track->payload_type == 0 ) {
             /* if the user didn't explicit a payload type, and we
              * haven't found a static one for the named encoding,
              * assume a dynamic payload is desired and use the first
              * one available.
              */
-            track->properties.payload_type = next_dynamic_payload++;
+            track->payload_type = next_dynamic_payload++;
         }
 
         track->parser = &demuxer_sd_fake_mediaparser;
@@ -335,22 +335,22 @@ Resource *sd2_open(const char *url)
                                     SDP_F_AUTHOR,
                                     tmpstr);
 
-        if (track->properties.payload_type >= 96)
+        if (track->payload_type >= 96)
         {
-            if ( track->properties.media_type == MP_audio &&
-                 track->properties.audio_channels > 1 )
+            if ( track->media_type == MP_audio &&
+                 track->audio_channels > 1 )
                 g_string_append_printf(track->sdp_description,
                                        "a=rtpmap:%u %s/%d/%d\r\n",
-                                       track->properties.payload_type,
-                                       track->properties.encoding_name,
-                                       track->properties.clock_rate,
-                                       track->properties.audio_channels);
+                                       track->payload_type,
+                                       track->encoding_name,
+                                       track->clock_rate,
+                                       track->audio_channels);
             else
                 g_string_append_printf(track->sdp_description,
                                        "a=rtpmap:%u %s/%d\r\n",
-                                       track->properties.payload_type,
-                                       track->properties.encoding_name,
-                                       track->properties.clock_rate);
+                                       track->payload_type,
+                                       track->encoding_name,
+                                       track->clock_rate);
         }
 
         /* This goes _after_ rtpmap for compatibility with older
@@ -360,7 +360,7 @@ Resource *sd2_open(const char *url)
                                              NULL)) )
             g_string_append_printf(track->sdp_description,
                                    "a=fmtp:%u %s",
-                                   track->properties.payload_type,
+                                   track->payload_type,
                                    tmpstr);
 
         tracks = g_list_append(tracks, track);
@@ -479,7 +479,7 @@ static gpointer flux_read_messages(gpointer ptr) {
         msg_len -= (sizeof(double)*3+sizeof(unsigned int)*3);
 
         package_timestamp = ntohl(*(uint32_t*)(packet+4));
-        delivery = (package_dts - package_start_dts)/((double)tr->properties.clock_rate);
+        delivery = (package_dts - package_start_dts)/((double)tr->clock_rate);
         delta = ev_time() - package_insertion_time;
 
 #if 0
@@ -492,18 +492,18 @@ static gpointer flux_read_messages(gpointer ptr) {
             goto reiterate;
         }
 
-        tr->properties.frame_duration = package_duration/((double)tr->properties.clock_rate);
-        timestamp = package_timestamp/((double)tr->properties.clock_rate);
+        tr->frame_duration = package_duration/((double)tr->clock_rate);
+        timestamp = package_timestamp/((double)tr->clock_rate);
         marker = (packet[1]>>7);
         seq_no = ((unsigned)packet[2] << 8) | ((unsigned)packet[3]);
 
         // calculate the duration while consuming stale packets.
         // This is an HACK that must be moved to Flux, here just to quick fix live problems
-        if (!tr->properties.frame_duration) {
-            if (tr->properties.dts) {
-                tr->properties.frame_duration = (timestamp - tr->properties.dts);
+        if (!tr->frame_duration) {
+            if (tr->dts) {
+                tr->frame_duration = (timestamp - tr->dts);
             } else {
-                tr->properties.dts = timestamp;
+                tr->dts = timestamp;
             }
         }
 
@@ -511,7 +511,7 @@ static gpointer flux_read_messages(gpointer ptr) {
 
         buffer->timestamp = timestamp;
         buffer->delivery = package_start_time + delivery;
-        buffer->duration = tr->properties.frame_duration * 3;
+        buffer->duration = tr->frame_duration * 3;
 
         buffer->marker = marker;
         buffer->seq_no = seq_no;

@@ -56,9 +56,9 @@ int xiph_parse(Track *tr, uint8_t *data, size_t len)
         else
             prefix[3] = 3 << 6; /* max frag */
 
-        buffer->timestamp = tr->properties.pts;
-        buffer->delivery = tr->properties.dts;
-        buffer->duration = tr->properties.frame_duration;
+        buffer->timestamp = tr->pts;
+        buffer->delivery = tr->dts;
+        buffer->duration = tr->frame_duration;
         buffer->marker = (len <= MAX_PAYLOAD_SIZE);
 
         buffer->data_size = MIN(MAX_PAYLOAD_SIZE, len) + HEADER_SIZE;

@@ -168,7 +168,7 @@ Resource *avf_open(const char *url)
         switch(codec->codec_id) {
         case CODEC_ID_MPEG1VIDEO:
         case CODEC_ID_MPEG2VIDEO:
-            track->properties.payload_type = 32;
+            track->payload_type = 32;
             encoding_name = "MPV";
             track->parser = &fnc_mediaparser_mpv;
             break;
@@ -180,7 +180,7 @@ Resource *avf_open(const char *url)
 
         case CODEC_ID_MP2:
         case CODEC_ID_MP3:
-            track->properties.payload_type = 14;
+            track->payload_type = 14;
             encoding_name = "MPA";
             track->parser = &fnc_mediaparser_mpa;
             break;
@@ -253,21 +253,21 @@ Resource *avf_open(const char *url)
             goto discard;
         }
 
-        track->properties.encoding_name = g_strdup(encoding_name);
-        if ( track->properties.payload_type == 0 )
-            track->properties.payload_type = pt++;
+        track->encoding_name = g_strdup(encoding_name);
+        if ( track->payload_type == 0 )
+            track->payload_type = pt++;
 
         switch(codec->codec_type){
         case AVMEDIA_TYPE_AUDIO:
-            track->properties.media_type     = MP_audio;
-            track->properties.audio_channels = codec->channels;
-            track->properties.frame_duration = (double)1 / codec->sample_rate;
+            track->media_type     = MP_audio;
+            track->audio_channels = codec->channels;
+            track->frame_duration = (double)1 / codec->sample_rate;
             break;
 
         case AVMEDIA_TYPE_VIDEO:
             frame_rate = av_q2d(st->r_frame_rate);
-            track->properties.media_type     = MP_video;
-            track->properties.frame_duration = (double)1 / frame_rate;
+            track->media_type     = MP_video;
+            track->frame_duration = (double)1 / frame_rate;
             break;
 
         default:
@@ -276,16 +276,16 @@ Resource *avf_open(const char *url)
 
         priv.tracks[j] = track;
 
-        track->properties.clock_rate = 90000; //Default
-        track->properties.extradata = codec->extradata;
-        track->properties.extradata_len = codec->extradata_size;
+        track->clock_rate = 90000; //Default
+        track->extradata = codec->extradata;
+        track->extradata_len = codec->extradata_size;
 
         fnc_log(FNC_LOG_DEBUG, "[avf] Parsing AVStream %s",
-                track->properties.encoding_name);
+                track->encoding_name);
 
         if (track->parser && track->parser->init && track->parser->init(track) != 0) {
             fnc_log(FNC_LOG_FATAL, "Could not initialize parser for %s\n",
-                    track->properties.encoding_name);
+                    track->encoding_name);
             goto track_err_alloc;
         }
 
@@ -381,34 +381,34 @@ retry:
     fnc_log(FNC_LOG_VERBOSE, "[avf] Parsing track %s",
             tr->name);
     if(pkt.dts != AV_NOPTS_VALUE) {
-        tr->properties.dts = r->timescaler (r,
+        tr->dts = r->timescaler (r,
                                             pkt.dts * av_q2d(stream->time_base));
         fnc_log(FNC_LOG_VERBOSE,
                 "[avf] delivery timestamp %f",
-                tr->properties.dts);
+                tr->dts);
     } else {
         fnc_log(FNC_LOG_VERBOSE,
                 "[avf] missing delivery timestamp");
     }
 
     if(pkt.pts != AV_NOPTS_VALUE) {
-        tr->properties.pts = r->timescaler (r,
+        tr->pts = r->timescaler (r,
                                             pkt.pts * av_q2d(stream->time_base));
         fnc_log(FNC_LOG_VERBOSE,
                 "[avf] presentation timestamp %f",
-                tr->properties.pts);
+                tr->pts);
     } else {
         fnc_log(FNC_LOG_VERBOSE, "[avf] missing presentation timestamp");
     }
 
     if (pkt.duration) {
-        tr->properties.frame_duration = pkt.duration *
+        tr->frame_duration = pkt.duration *
             av_q2d(stream->time_base);
     } else { // welcome to the wonderland ehm, hackland...
         switch (stream->codec->codec_id) {
         case CODEC_ID_MP2:
         case CODEC_ID_MP3:
-            tr->properties.frame_duration = 1152.0/
+            tr->frame_duration = 1152.0/
                 stream->codec->sample_rate;
             break;
         default: break;
@@ -416,7 +416,7 @@ retry:
     }
 
     fnc_log(FNC_LOG_VERBOSE, "[avf] packet duration %f",
-            tr->properties.frame_duration);
+            tr->frame_duration);
 
     bsfc = stream->codec->opaque;
     if (bsfc) {

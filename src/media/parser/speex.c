@@ -36,9 +36,9 @@ static int speex_parse(Track *tr, uint8_t *data, size_t len)
 
     buffer = g_slice_new0(struct MParserBuffer);
 
-    buffer->timestamp = tr->properties.pts;
-    buffer->delivery = tr->properties.dts;
-    buffer->duration = tr->properties.frame_duration;
+    buffer->timestamp = tr->pts;
+    buffer->delivery = tr->dts;
+    buffer->duration = tr->frame_duration;
     buffer->marker = true;
 
     buffer->data_size = len;

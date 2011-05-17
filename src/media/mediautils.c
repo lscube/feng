@@ -40,8 +40,8 @@ static inline char digit_to_char(uint8_t src)
 void sdp_descr_append_config(Track *track)
 {
     GString *descr = track->sdp_description;
-    size_t len = track->properties.extradata_len, i, oldlen = descr->len;
-    uint8_t *data = (uint8_t*)(track->properties.extradata);
+    size_t len = track->extradata_len, i, oldlen = descr->len;
+    uint8_t *data = (uint8_t*)(track->extradata);
     char *out;
 
     if ( len == 0 )

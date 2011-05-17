@@ -37,8 +37,8 @@ static int vp8_init(Track *track)
                            "a=rtpmap:%u VP8/%d\r\n",
 
                            /* rtpmap */
-                           track->properties.payload_type,
-                           track->properties.clock_rate);
+                           track->payload_type,
+                           track->clock_rate);
 
     return 0;
 }
@@ -68,9 +68,9 @@ static int vp8_parse(Track *tr, uint8_t *data, size_t len)
     do {
         struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
 
-        buffer->timestamp = tr->properties.pts;
-        buffer->delivery = tr->properties.dts;
-        buffer->duration = tr->properties.frame_duration;
+        buffer->timestamp = tr->pts;
+        buffer->delivery = tr->dts;
+        buffer->duration = tr->frame_duration;
         buffer->marker = (len <= MAX_PAYLOAD_SIZE);
 
         buffer->data_size = MIN(MAX_PAYLOAD_SIZE, len) + HEADER_SIZE;

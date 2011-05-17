@@ -43,7 +43,7 @@ void track_free(Track *track)
     g_mutex_free(track->lock);
 
     g_free(track->name);
-    g_free(track->properties.encoding_name);
+    g_free(track->encoding_name);
 
     g_assert_cmpuint(track->consumers, ==, 0);
 

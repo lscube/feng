@@ -149,19 +149,6 @@ struct Resource {
  * @}
  */
 
-typedef struct MediaProperties {
-    int payload_type;
-    unsigned int clock_rate;
-    char *encoding_name;
-    MediaType media_type;
-    int audio_channels;
-    double pts;             //time is in seconds
-    double dts;             //time is in seconds
-    double frame_duration;  //time is in seconds
-    uint8_t *extradata;
-    size_t extradata_len;
-} MediaProperties;
-
 typedef struct Track {
     GMutex *lock;
     double start_time;
@@ -255,7 +242,23 @@ typedef struct Track {
      */
     GString *sdp_description;
 
-    MediaProperties properties;
+    /**
+     * @defgroup MediaProperties
+     *
+     * @brief Track's media properties
+     *
+     * @{ */
+    int payload_type;
+    unsigned int clock_rate;
+    char *encoding_name;
+    MediaType media_type;
+    int audio_channels;
+    double pts;             //time is in seconds
+    double dts;             //time is in seconds
+    double frame_duration;  //time is in seconds
+    uint8_t *extradata;
+    size_t extradata_len;
+    /** @} */
 } Track;
 
 // --- functions --- //
