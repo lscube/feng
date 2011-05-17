@@ -262,11 +262,12 @@ int h264_init(Track *track)
     }
 
     g_string_append_printf(track->sdp_description,
-                           "a=rtpmap:%u H264/%d\r\n"
+                           "a=rtpmap:%u %s/%d\r\n"
                            "a=fmtp:%u %s\r\n",
 
                            /* rtpmap */
                            track->payload_type,
+                           track->encoding_name,
                            track->clock_rate,
 
                            /* fmtp */

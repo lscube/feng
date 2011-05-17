@@ -29,8 +29,9 @@
 int h263_init(Track *track)
 {
     g_string_append_printf(track->sdp_description,
-                           "a=rtpmap:%u H263-1998/%d\r\n",
+                           "a=rtpmap:%u %s/%d\r\n",
                            track->payload_type,
+                           track->encoding_name,
                            track->clock_rate);
 
     return 0;

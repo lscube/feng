@@ -31,10 +31,11 @@
 int vp8_init(Track *track)
 {
     g_string_append_printf(track->sdp_description,
-                           "a=rtpmap:%u VP8/%d\r\n",
+                           "a=rtpmap:%u %s/%d\r\n",
 
                            /* rtpmap */
                            track->payload_type,
+                           track->encoding_name,
                            track->clock_rate);
 
     return 0;

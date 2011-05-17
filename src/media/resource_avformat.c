@@ -193,7 +193,7 @@ Resource *avf_open(const char *url)
             if (!codec->extradata_size)
                 goto err_alloc;
 
-            encoding_name = "VORBIS";
+            encoding_name = "vorbis";
             parser_init = vorbis_init;
 
             track->parse = xiph_parse;
@@ -204,7 +204,7 @@ Resource *avf_open(const char *url)
             if (!codec->extradata_size)
                 goto err_alloc;
 
-            encoding_name = "THEORA";
+            encoding_name = "theora";
             parser_init = theora_init;
 
             track->parse = xiph_parse;
@@ -241,7 +241,7 @@ Resource *avf_open(const char *url)
                 av_seek_frame(priv.avfc, -1, 0, 0);
             }
 
-            encoding_name = "AAC";
+            encoding_name = "mpeg4-generic";
             parser_init = aac_init;
 
             track->parse = aac_parse;
@@ -258,7 +258,7 @@ Resource *avf_open(const char *url)
             break;
 
         case CODEC_ID_H263:
-            encoding_name = "H263P";
+            encoding_name = "H263-1998";
             parser_init = h263_init;
 
             track->parse = h263_parse;

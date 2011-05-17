@@ -31,7 +31,7 @@
 int aac_init(Track *track)
 {
     g_string_append_printf(track->sdp_description,
-                           "a=rtpmap:%u mpeg4-generic/%d\r\n"
+                           "a=rtpmap:%u %s/%d\r\n"
 
                            "a=fmtp:%u streamtype=5;profile-level-id=1;"
                            "mode=AAC-hbr;sizeLength=13;indexLength=3;"
@@ -39,6 +39,7 @@ int aac_init(Track *track)
 
                            /* rtpmap */
                            track->payload_type,
+                           track->encoding_name,
                            track->clock_rate,
 
                            /* fmtp */

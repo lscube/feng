@@ -132,11 +132,12 @@ int vorbis_init(Track *track)
         goto err_alloc;
 
     g_string_append_printf(track->sdp_description,
-                           "a=rtpmap:%u vorbis/%d/%d\r\n"
+                           "a=rtpmap:%u %s/%d/%d\r\n"
                            "a=fmtp:%u delivery-method=in_band; configuration=%s;\r\n",
 
                            /* rtpmap */
                            track->payload_type,
+                           track->encoding_name,
                            track->clock_rate,
                            track->audio_channels,
 
