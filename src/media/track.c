@@ -115,7 +115,7 @@ static inline struct MParserBuffer *BQ_OBJECT(RTP_session *consumer)
 }
 
 
-void mparser_buffer_free(struct MParserBuffer *buffer)
+static void mparser_buffer_free(struct MParserBuffer *buffer)
 {
     g_free(buffer->data);
     g_slice_free(struct MParserBuffer, buffer);
@@ -129,8 +129,8 @@ void mparser_buffer_free(struct MParserBuffer *buffer)
  * @param free_func_generic Function to use for destroying the
  *                          elements' payload.
  */
-void bq_element_free_internal(gpointer elem_generic,
-                              ATTR_UNUSED gpointer unused) {
+static void bq_element_free_internal(gpointer elem_generic,
+                                     ATTR_UNUSED gpointer unused) {
     struct MParserBuffer *const element = (struct MParserBuffer*)elem_generic;
 
     bq_debug("Free object %p %lu",
@@ -154,7 +154,7 @@ void bq_element_free_internal(gpointer elem_generic,
  * producer, so that a discontinuity will allow the consumers not to
  * worry about getting old buffers.
  */
-void bq_producer_reset_queue_internal(Track *producer) {
+static void bq_producer_reset_queue_internal(Track *producer) {
     bq_debug("Producer %p queue %p queue_serial %lu",
             producer,
             producer->queue,

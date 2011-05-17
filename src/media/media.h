@@ -348,8 +348,6 @@ Track *track_new(char *name);
 void track_free(Track *track);
 
 void bq_producer_reset_queue(struct Track *);
-void bq_producer_reset_queue_internal(struct Track *);
-void bq_element_free_internal(gpointer elem_generic, gpointer unused);
 
 struct MParserBuffer *bq_consumer_get(struct RTP_session *consumer);
 gulong bq_consumer_unseen(struct RTP_session *consumer);
