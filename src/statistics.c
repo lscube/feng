@@ -29,7 +29,7 @@
 
 #include "feng.h"
 #include "network/rtsp.h"
-#include "media/demuxer.h"
+#include "media/media.h"
 
 static size_t stats_total_bytes_sent;
 static size_t stats_total_bytes_read;

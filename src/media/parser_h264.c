@@ -26,7 +26,7 @@
 #include <stdbool.h>
 
 #include "fnc_log.h"
-#include "media/demuxer.h"
+#include "media/media.h"
 
 typedef struct {
     int is_avc;

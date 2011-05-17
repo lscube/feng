@@ -32,7 +32,7 @@
 #include "fnc_log.h"
 #include "rtsp.h"
 #include "feng.h"
-#include "media/demuxer.h"
+#include "media/media.h"
 #include "uri.h"
 
 #define SDP_EL "\r\n"

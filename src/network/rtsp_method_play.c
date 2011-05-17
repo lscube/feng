@@ -32,7 +32,7 @@
 #include "rtsp.h"
 #include "rtp.h"
 #include "fnc_log.h"
-#include "media/demuxer.h"
+#include "media/media.h"
 
 /**
  * Actually starts playing the media using mediathread

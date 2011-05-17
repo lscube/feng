@@ -25,7 +25,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "media/demuxer.h"
+#include "media/media.h"
 #include "fnc_log.h"
 
 int mp4ves_init(Track *track)

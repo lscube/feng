@@ -1,7 +1,7 @@
 /* *
  * This file is part of Feng
  *
- * Copyright (C) 2009 by LScube team <team@lscube.org>
+ * Copyright (C) 2010 by LScube team <team@lscube.org>
  * See AUTHORS for more details
  *
  * feng is free software; you can redistribute it and/or
@@ -25,37 +25,42 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "media/demuxer.h"
+#include "media/media.h"
 #include "fnc_log.h"
 
-int aac_init(Track *track)
+int vp8_init(Track *track)
 {
     g_string_append_printf(track->sdp_description,
-                           "a=rtpmap:%u mpeg4-generic/%d\r\n"
-
-                           "a=fmtp:%u streamtype=5;profile-level-id=1;"
-                           "mode=AAC-hbr;sizeLength=13;indexLength=3;"
-                           "indexDeltaLength=3; ",
+                           "a=rtpmap:%u VP8/%d\r\n",
 
                            /* rtpmap */
                            track->payload_type,
-                           track->clock_rate,
-
-                           /* fmtp */
-                           track->payload_type);
-
-    sdp_descr_append_config(track);
-    g_string_append(track->sdp_description, "\r\n");
+                           track->clock_rate);
 
     return 0;
 }
 
-#define HEADER_SIZE 4
+/**
+ *
+ *  VP8 Extension header layout
+ *
+ *  0 1 2 3 4 5 6 7 8
+ *  +-+-+-+-+-+-+-+-+
+ *  |           |K|S|
+ *  +-+-+-+-+-+-+-+-+
+ *
+ *  K Keyframe
+ *  S Start packet
+ */
+
+#define VP8_START_PACKET 1
+
+#define HEADER_SIZE 1
 #define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
 
-int aac_parse(Track *tr, uint8_t *data, size_t len)
+int vp8_parse(Track *tr, uint8_t *data, size_t len)
 {
-    const uint8_t prefix[HEADER_SIZE] = { 0x00, 0x10, (len & 0x1fe0) >> 5, (len & 0x1f) << 3 };
+    uint8_t prefix[HEADER_SIZE] = { (data[0] & 1 ? 0 : 2) | VP8_START_PACKET };
 
     do {
         struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
@@ -76,7 +81,9 @@ int aac_parse(Track *tr, uint8_t *data, size_t len)
 
         len -= MAX_PAYLOAD_SIZE;
         data += MAX_PAYLOAD_SIZE;
-    } while(len > 0);
+
+        prefix[0] &= ~VP8_START_PACKET;
+    } while (len > 0);
 
     return 0;
 }

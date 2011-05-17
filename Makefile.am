@@ -74,7 +74,6 @@ feng_LDADD = -lev
 dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	\
 	src/accesslog.c \
-	src/bufferqueue.c src/bufferqueue.h \
 	src/fnc_log.c src/fnc_log.h \
 	src/incoming.c \
 	src/feng.h \
@@ -109,29 +108,29 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/network/rtsp_interleaved.c \
 	src/network/uri.c src/network/uri.h \
 	\
-	src/media/demuxer.c \
-	src/media/demuxer.h \
-	src/media/mediautils.c \
-	src/media/resource.c
+	src/media/media.h \
+	src/media/media.c \
+	src/media/resource.c \
+	src/media/track.c
 
 if FENG_FFMPEG
-dist_feng_SOURCES += src/media/parser/h264.c \
-		     src/media/parser/vorbis.c \
-		     src/media/parser/theora.c \
-		     src/media/parser/xiph.c \
-		     src/media/parser/aac.c \
-		     src/media/parser/mp4ves.c \
-		     src/media/parser/speex.c \
-		     src/media/parser/h263.c \
-		     src/media/parser/amr.c \
-		     src/media/parser/vp8.c \
-		     src/media/parser/mpeg12.c \
-		     src/media/parser/mpegaudio.c \
-		     src/media/demuxer/demuxer_avf.c
+dist_feng_SOURCES += src/media/parser_h264.c \
+		     src/media/parser_vorbis.c \
+		     src/media/parser_theora.c \
+		     src/media/parser_xiph.c \
+		     src/media/parser_aac.c \
+		     src/media/parser_mp4ves.c \
+		     src/media/parser_speex.c \
+		     src/media/parser_h263.c \
+		     src/media/parser_amr.c \
+		     src/media/parser_vp8.c \
+		     src/media/parser_mpeg12.c \
+		     src/media/parser_mpegaudio.c \
+		     src/media/resource_avformat.c
 endif
 
 if LIVE_STREAMING
-dist_feng_SOURCES += src/media/demuxer/demuxer_sd2.c
+dist_feng_SOURCES += src/media/resource_live.c
 endif
 
 if HAVE_JSON
@@ -225,18 +224,12 @@ tests/gtestmain.c: $(tests_testsuite_SOURCES) $(srcdir)/tests/genmain.awk Makefi
 endif
 
 tests_testsuite_SOURCES = \
-	src/bufferqueue.c \
 	src/network/ragel_request_line.c \
 	src/network/ragel_headers.c \
 	src/network/ragel_transport.c \
 	src/network/ragel_uri.c \
 	src/network/uri.c \
 	src/utilities.c \
-	tests/bufferqueue/test-1.c \
-	tests/bufferqueue/test-2.c \
-	tests/bufferqueue/test-3.c \
-	tests/bufferqueue/test-4.c \
-	tests/bufferqueue/test-5.c \
 	tests/rfc822proto/rfc822proto-test.c \
 	tests/rfc822proto/request_line.c \
 	tests/rfc822proto/headers.c \

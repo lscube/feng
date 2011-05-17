@@ -26,9 +26,9 @@
 #include <glib.h>
 #include <stdint.h>
 
-#include "bufferqueue.h"
 
 struct feng;
+struct RTP_session;
 
 #define RESOURCE_OK 0
 #define RESOURCE_ERR -1
@@ -347,10 +347,21 @@ Track *r_find_track(Resource *, const char *);
 Track *track_new(char *name);
 void track_free(Track *track);
 
+void bq_producer_reset_queue(struct Track *);
+void bq_producer_reset_queue_internal(struct Track *);
+void bq_element_free_internal(gpointer elem_generic, gpointer unused);
+
+struct MParserBuffer *bq_consumer_get(struct RTP_session *consumer);
+gulong bq_consumer_unseen(struct RTP_session *consumer);
+gboolean bq_consumer_move(struct RTP_session *consumer);
+gboolean bq_consumer_stopped(struct RTP_session *consumer);
+void bq_consumer_free(struct RTP_session *consumer);
+
 void mparser_buffer_write(Track *tr, struct MParserBuffer *buffer);
 
 void sdp_descr_append_config(Track *track);
 
+void bq_init();
 void ffmpeg_init(void);
 
 /**

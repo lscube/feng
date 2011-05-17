@@ -25,7 +25,7 @@
 #include <stdbool.h>
 #include <netinet/in.h>
 
-#include "media/demuxer.h"
+#include "media/media.h"
 #include "fnc_log.h"
 
 int mpa_parse(Track *tr, uint8_t *data, size_t len)

@@ -24,8 +24,7 @@
 
 #include <config.h>
 
-#include "bufferqueue.h"
-#include "media/demuxer.h"
+#include "media/media.h"
 #include "network/rtp.h"
 
 #include <stdbool.h>
@@ -561,6 +560,74 @@ gboolean bq_consumer_stopped(RTP_session *consumer) {
 }
 
 /**@}*/
+
+/**
+ * @brief Create a new Track object
+ *
+ * @param name Name of the track to use (will be g_free'd); make sure
+ *             to use @ref feng_str_is_unreseved before passing an
+ *             user-provided string to this function.
+ *
+ * @return pointer to newly allocated track struct.
+ */
+Track *track_new(char *name)
+{
+    Track *t;
+
+    t = g_slice_new0(Track);
+
+    t->lock            = g_mutex_new();
+    t->last_consumer   = g_cond_new();
+    t->name            = name;
+    t->sdp_description = g_string_new("");
+
+    g_string_append_printf(t->sdp_description,
+                           "a=control:%s\r\n",
+                           name);
+
+    bq_producer_reset_queue_internal(t);
+
+    return t;
+}
+
+/**
+ * @brief Frees the resources of a Track object
+ *
+ * @param track Track to free
+ */
+void track_free(Track *track)
+{
+    if (!track)
+        return;
+
+    g_mutex_free(track->lock);
+
+    g_free(track->name);
+    g_free(track->encoding_name);
+
+    g_assert_cmpuint(track->consumers, ==, 0);
+
+    g_cond_free(track->last_consumer);
+
+    if ( track->queue ) {
+        /* Destroy elements and the queue */
+        g_queue_foreach(track->queue,
+                        bq_element_free_internal,
+                        NULL);
+        g_queue_free(track->queue);
+    }
+
+    if ( track->sdp_description )
+        g_string_free(track->sdp_description, true);
+
+    if ( track->uninit )
+        track->uninit(track);
+
+    /* this needs to be present _after_ the track's uninit! */
+    g_free(track->private_data);
+
+    g_slice_free(Track, track);
+}
 
 /**
  *  Insert a rtp packet inside the track buffer queue

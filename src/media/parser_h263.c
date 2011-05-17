@@ -1,7 +1,7 @@
 /* *
  * This file is part of Feng
  *
- * Copyright (C) 2010 by LScube team <team@lscube.org>
+ * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
  *
  * feng is free software; you can redistribute it and/or
@@ -23,67 +23,59 @@
 #include <config.h>
 
 #include <string.h>
-#include <stdbool.h>
 
-#include "media/demuxer.h"
-#include "fnc_log.h"
+#include "media/media.h"
 
-int vp8_init(Track *track)
+int h263_init(Track *track)
 {
     g_string_append_printf(track->sdp_description,
-                           "a=rtpmap:%u VP8/%d\r\n",
-
-                           /* rtpmap */
+                           "a=rtpmap:%u H263-1998/%d\r\n",
                            track->payload_type,
                            track->clock_rate);
 
     return 0;
 }
 
-/**
- *
- *  VP8 Extension header layout
- *
- *  0 1 2 3 4 5 6 7 8
- *  +-+-+-+-+-+-+-+-+
- *  |           |K|S|
- *  +-+-+-+-+-+-+-+-+
- *
- *  K Keyframe
- *  S Start packet
- */
+static const uint8_t gob_start_code[] = { 0x04, 0x00 };
 
-#define VP8_START_PACKET 1
-
-#define HEADER_SIZE 1
-#define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
-
-int vp8_parse(Track *tr, uint8_t *data, size_t len)
+int h263_parse(Track *tr, uint8_t *data, size_t len)
 {
-    uint8_t prefix[HEADER_SIZE] = { (data[0] & 1 ? 0 : 2) | VP8_START_PACKET };
+    size_t cur = 0;
+    int found_gob = 0;
 
-    do {
+    if (len >= 3 && *data == '\0' && *(data + 1) == '\0'
+        && *(data + 2) >= 0x80) {
+        found_gob = 1;
+    }
+
+    while (len - cur > 0) {
         struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
+        size_t payload, header_len;
 
         buffer->timestamp = tr->pts;
         buffer->delivery = tr->dts;
         buffer->duration = tr->frame_duration;
-        buffer->marker = (len <= MAX_PAYLOAD_SIZE);
 
-        buffer->data_size = MIN(MAX_PAYLOAD_SIZE, len) + HEADER_SIZE;
         buffer->data = g_malloc(buffer->data_size);
 
-        memcpy(buffer->data, &prefix[0], HEADER_SIZE);
-        memcpy(buffer->data + HEADER_SIZE, data,
-               buffer->data_size - HEADER_SIZE);
+        if (cur == 0 && found_gob) {
+            payload = MIN(DEFAULT_MTU, len);
+            memcpy(buffer->data, data, payload);
+            memcpy(buffer->data, gob_start_code, sizeof(gob_start_code));
+            header_len = 0;
+        } else {
+            payload = MIN(DEFAULT_MTU - 2, len - cur);
+            memset(buffer->data, 0, 2);
+            memcpy(buffer->data + 2, data + cur, payload);
+            header_len = 2;
+        }
+
+        buffer->marker = (cur + payload >= len);
+        buffer->data_size = payload + header_len;
 
         mparser_buffer_write(tr, buffer);
-
-        len -= MAX_PAYLOAD_SIZE;
-        data += MAX_PAYLOAD_SIZE;
-
-        prefix[0] &= ~VP8_START_PACKET;
-    } while (len > 0);
+        cur += payload;
+    }
 
     return 0;
 }

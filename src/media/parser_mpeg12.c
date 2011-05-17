@@ -25,7 +25,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "media/demuxer.h"
+#include "media/media.h"
 
 // Stolen from ffmpeg (mpegvideo.c)
 static uint8_t *find_start_code(uint8_t *p, uint8_t *end, uint32_t *state)

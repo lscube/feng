@@ -28,7 +28,7 @@
 #include "rtp.h"
 #include "rtsp.h"
 #include "fnc_log.h"
-#include "media/demuxer.h"
+#include "media/media.h"
 #include "libavutil/crc.h"
 
 /**

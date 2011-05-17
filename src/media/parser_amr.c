@@ -25,7 +25,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "media/demuxer.h"
+#include "media/media.h"
 #include "fnc_log.h"
 
 int amr_init(Track *track)

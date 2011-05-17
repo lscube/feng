@@ -34,7 +34,7 @@
 #include "feng.h"
 #include "fnc_log.h"
 
-#include "media/demuxer.h"
+#include "media/media.h"
 
 #define REQUIRED_FLUX_PROTOCOL_VERSION 4
 

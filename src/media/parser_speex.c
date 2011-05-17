@@ -20,23 +20,30 @@
  *
  * */
 
-#ifndef FENG_BUFFERQUEUE_H
-#define FENG_BUFFERQUEUE_H
+#include <config.h>
 
-#include <glib.h>
+#include <stdbool.h>
 
-struct Track;
-struct RTP_session;
+#include "media/media.h"
 
-void bq_producer_reset_queue(struct Track *);
-void bq_producer_reset_queue_internal(struct Track *);
-void bq_element_free_internal(gpointer elem_generic, gpointer unused);
+int speex_parse(Track *tr, uint8_t *data, size_t len)
+{
+    struct MParserBuffer *buffer;
 
-void bq_init();
-struct MParserBuffer *bq_consumer_get(struct RTP_session *consumer);
-gulong bq_consumer_unseen(struct RTP_session *consumer);
-gboolean bq_consumer_move(struct RTP_session *consumer);
-gboolean bq_consumer_stopped(struct RTP_session *consumer);
-void bq_consumer_free(struct RTP_session *consumer);
+    if (len > DEFAULT_MTU)
+        return -1;
 
-#endif
+    buffer = g_slice_new0(struct MParserBuffer);
+
+    buffer->timestamp = tr->pts;
+    buffer->delivery = tr->dts;
+    buffer->duration = tr->frame_duration;
+    buffer->marker = true;
+
+    buffer->data_size = len;
+    buffer->data = g_memdup(data, buffer->data_size);
+
+    mparser_buffer_write(tr, buffer);
+
+    return 0;
+}

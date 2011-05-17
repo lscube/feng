@@ -36,7 +36,6 @@
 # include <netinet/sctp.h>
 #endif
 
-#include "bufferqueue.h"
 
 struct feng;
 struct Track;

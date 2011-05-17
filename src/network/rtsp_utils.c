@@ -36,7 +36,7 @@
 #include "rtsp.h"
 #include "rtp.h"
 #include "uri.h"
-#include "media/demuxer.h"
+#include "media/media.h"
 
 /**
  * @defgroup rtsp_utils Utility functions

@@ -29,7 +29,7 @@
 #include "feng.h"
 #include "fnc_log.h"
 
-#include "media/demuxer.h"
+#include "media/media.h"
 
 #include <libavformat/avformat.h>
 

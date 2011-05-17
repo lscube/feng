@@ -1,7 +1,7 @@
-/*
+/* *
  * This file is part of Feng
  *
- * Copyright (C) 2011 by LScube team <team@lscube.org>
+ * Copyright (C) 2009 by LScube team <team@lscube.org>
  * See AUTHORS for more details
  *
  * feng is free software; you can redistribute it and/or
@@ -18,42 +18,47 @@
  * License along with feng; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- */
+ * */
 
 #include <config.h>
 
 #include <string.h>
 #include <stdbool.h>
-#include <arpa/inet.h>
 
-#include "media/demuxer.h"
+#include "media/media.h"
+#include "fnc_log.h"
 
-#define HEADER_SIZE 6
+int aac_init(Track *track)
+{
+    g_string_append_printf(track->sdp_description,
+                           "a=rtpmap:%u mpeg4-generic/%d\r\n"
+
+                           "a=fmtp:%u streamtype=5;profile-level-id=1;"
+                           "mode=AAC-hbr;sizeLength=13;indexLength=3;"
+                           "indexDeltaLength=3; ",
+
+                           /* rtpmap */
+                           track->payload_type,
+                           track->clock_rate,
+
+                           /* fmtp */
+                           track->payload_type);
+
+    sdp_descr_append_config(track);
+    g_string_append(track->sdp_description, "\r\n");
+
+    return 0;
+}
+
+#define HEADER_SIZE 4
 #define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
 
-int xiph_parse(Track *tr, uint8_t *data, size_t len)
+int aac_parse(Track *tr, uint8_t *data, size_t len)
 {
-    xiph_priv *priv = tr->private_data;
-
-    uint8_t prefix[HEADER_SIZE] = {
-        (priv->ident>>16)& 0xff,
-        (priv->ident>>8) & 0xff,
-        priv->ident     & 0xff
-    };
+    const uint8_t prefix[HEADER_SIZE] = { 0x00, 0x10, (len & 0x1fe0) >> 5, (len & 0x1f) << 3 };
 
     do {
-        uint16_t payload_size;
-
         struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
-
-        if ( prefix[3] == 0 && len <= MAX_PAYLOAD_SIZE )
-            prefix[3] = 1;
-        else if ( prefix[3] == 0 )
-            prefix[3] = 1 << 6; /* first frag */
-        else if ( len > MAX_PAYLOAD_SIZE )
-            prefix[3] = 2 << 6; /* middle frag */
-        else
-            prefix[3] = 3 << 6; /* max frag */
 
         buffer->timestamp = tr->pts;
         buffer->delivery = tr->dts;
@@ -63,10 +68,7 @@ int xiph_parse(Track *tr, uint8_t *data, size_t len)
         buffer->data_size = MIN(MAX_PAYLOAD_SIZE, len) + HEADER_SIZE;
         buffer->data = g_malloc(buffer->data_size);
 
-        payload_size = htons(buffer->data_size);
-
         memcpy(buffer->data, &prefix[0], HEADER_SIZE);
-        memcpy(buffer->data + 4, &payload_size, sizeof(payload_size));
         memcpy(buffer->data + HEADER_SIZE, data,
                buffer->data_size - HEADER_SIZE);
 
@@ -77,17 +79,4 @@ int xiph_parse(Track *tr, uint8_t *data, size_t len)
     } while(len > 0);
 
     return 0;
-}
-
-void xiph_uninit(Track *track)
-{
-    xiph_priv *priv = track->private_data;
-    if (!priv)
-        return;
-
-    g_free(priv->conf);
-    g_free(priv->packet);
-    g_slice_free(xiph_priv, priv);
-
-    track->private_data = NULL;
 }

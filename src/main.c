@@ -35,11 +35,10 @@
 #include <unistd.h>
 
 #include "feng.h"
-#include "bufferqueue.h"
 #include "fnc_log.h"
 #include "network/rtp.h"
 #include "network/rtsp.h"
-#include "media/demuxer.h"
+#include "media/media.h"
 #include <glib.h>
 #include <time.h>
 
