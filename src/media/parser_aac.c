@@ -48,7 +48,7 @@ int aac_init(Track *track)
 #define HEADER_SIZE 4
 #define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
 
-int aac_parse(Track *tr, uint8_t *data, size_t len)
+int aac_parse(Track *tr, uint8_t *data, ssize_t len)
 {
     const uint8_t prefix[HEADER_SIZE] = { 0x00, 0x10, (len & 0x1fe0) >> 5, (len & 0x1f) << 3 };
 

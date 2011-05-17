@@ -34,7 +34,7 @@
 #define HEADER_SIZE 6
 #define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
 
-int xiph_parse(Track *tr, uint8_t *data, size_t len)
+int xiph_parse(Track *tr, uint8_t *data, ssize_t len)
 {
     uint8_t fragment = 0;
 

@@ -35,7 +35,7 @@ int h263_init(Track *track)
 
 static const uint8_t gob_start_code[] = { 0x04, 0x00 };
 
-int h263_parse(Track *tr, uint8_t *data, size_t len)
+int h263_parse(Track *tr, uint8_t *data, ssize_t len)
 {
     size_t cur = 0;
     int found_gob = 0;

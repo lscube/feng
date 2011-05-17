@@ -285,7 +285,7 @@ int h264_init(Track *track)
 //  - fragmenting
 //  - feed a single NAL as is.
 
-int h264_parse(Track *tr, uint8_t *data, size_t len)
+int h264_parse(Track *tr, uint8_t *data, ssize_t len)
 {
     h264_priv *priv = tr->private_data;
 //    double nal_time; // see page 9 and 7.4.1.2

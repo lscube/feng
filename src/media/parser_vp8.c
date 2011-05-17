@@ -53,7 +53,7 @@ int vp8_init(Track *track)
 #define HEADER_SIZE 1
 #define MAX_PAYLOAD_SIZE (DEFAULT_MTU - HEADER_SIZE)
 
-int vp8_parse(Track *tr, uint8_t *data, size_t len)
+int vp8_parse(Track *tr, uint8_t *data, ssize_t len)
 {
     uint8_t prefix[HEADER_SIZE] = { (data[0] & 1 ? 0 : 2) | VP8_START_PACKET };
 

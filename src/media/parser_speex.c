@@ -26,7 +26,7 @@
 
 #include "media/media.h"
 
-int speex_parse(Track *tr, uint8_t *data, size_t len)
+int speex_parse(Track *tr, uint8_t *data, ssize_t len)
 {
     struct MParserBuffer *buffer;
 

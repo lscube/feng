@@ -254,7 +254,7 @@ struct Track {
      *
      * @return: 0 on success, non zero otherwise.
      */
-    int (*parse)(Track *track, uint8_t *data, size_t len);
+    int (*parse)(Track *track, uint8_t *data, ssize_t len);
 
     /**
      * @brief Uninit function to free the private data
@@ -371,28 +371,28 @@ void ffmpeg_init(void);
  * @{ */
 
 int aac_init(Track *track);
-int aac_parse(Track *track, uint8_t *data, size_t len);
+int aac_parse(Track *track, uint8_t *data, ssize_t len);
 
 int amr_init(Track *track);
-int amr_parse(Track *track, uint8_t *data, size_t len);
+int amr_parse(Track *track, uint8_t *data, ssize_t len);
 
 int h263_init(Track *track);
-int h263_parse(Track *track, uint8_t *data, size_t len);
+int h263_parse(Track *track, uint8_t *data, ssize_t len);
 
 int h264_init(Track *track);
-int h264_parse(Track *track, uint8_t *data, size_t len);
+int h264_parse(Track *track, uint8_t *data, ssize_t len);
 
 int mp4ves_init(Track *track);
-int mp4ves_parse(Track *track, uint8_t *data, size_t len);
+int mp4ves_parse(Track *track, uint8_t *data, ssize_t len);
 
-int mpa_parse(Track *track, uint8_t *data, size_t len);
+int mpa_parse(Track *track, uint8_t *data, ssize_t len);
 
-int mpv_parse(Track *track, uint8_t *data, size_t len);
+int mpv_parse(Track *track, uint8_t *data, ssize_t len);
 
-int speex_parse(Track *track, uint8_t *data, size_t len);
+int speex_parse(Track *track, uint8_t *data, ssize_t len);
 
 int vp8_init(Track *track);
-int vp8_parse(Track *track, uint8_t *data, size_t len);
+int vp8_parse(Track *track, uint8_t *data, ssize_t len);
 
 /**
  * @defgroup parsers_xiph
@@ -405,7 +405,7 @@ int vp8_parse(Track *track, uint8_t *data, size_t len);
 int theora_init(Track *track);
 int vorbis_init(Track *track);
 
-int xiph_parse(Track *tr, uint8_t *data, size_t len);
+int xiph_parse(Track *tr, uint8_t *data, ssize_t len);
 void xiph_uninit(Track *tr);
 /** @} */
 

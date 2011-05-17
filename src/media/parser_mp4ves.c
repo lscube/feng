@@ -43,7 +43,7 @@ int mp4ves_init(Track *track)
     return 0;
 }
 
-int mp4ves_parse(Track *tr, uint8_t *data, size_t len)
+int mp4ves_parse(Track *tr, uint8_t *data, ssize_t len)
 {
     do {
         struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);

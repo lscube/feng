@@ -78,7 +78,7 @@ typedef struct
 
 #define AMR_CMR 0xf0
 
-int amr_parse(Track *tr, uint8_t *data, size_t len)
+int amr_parse(Track *tr, uint8_t *data, ssize_t len)
 {
     uint8_t *packet = g_slice_alloc0(DEFAULT_MTU);
     static const uint32_t packet_size[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0};
