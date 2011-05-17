@@ -30,14 +30,9 @@
 
 int mp4ves_init(Track *track)
 {
+    sdp_descr_append_rtpmap(track);
     g_string_append_printf(track->sdp_description,
-                           "a=rtpmap:%u %s/%d\r\n"
                            "a=fmtp:%u profile-level-id=1;",
-
-                           /* rtpmap */
-                           track->payload_type,
-                           track->encoding_name,
-                           track->clock_rate,
 
                            /* fmtp */
                            track->payload_type);

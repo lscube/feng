@@ -67,3 +67,18 @@ void sdp_descr_append_config(Track *track)
 
     g_strlcat(descr->str, ";", descr->allocated_len);
 }
+
+/**
+ * @brief Append the rtpmap value to a track's SDP description
+ */
+void sdp_descr_append_rtpmap(Track *track)
+{
+    g_string_append_printf(track->sdp_description,
+                           (track->media_type == MP_audio ?
+                            "a=rtpmap:%u %s/%d/%d\r\n" :
+                            "a=rtpmap:%u %s/%d"),
+                           track->payload_type,
+                           track->encoding_name,
+                           track->clock_rate,
+                           track->audio_channels);
+}

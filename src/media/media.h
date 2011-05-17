@@ -354,6 +354,7 @@ gboolean bq_consumer_stopped(struct RTP_session *consumer);
 void bq_consumer_free(struct RTP_session *consumer);
 
 void sdp_descr_append_config(Track *track);
+void sdp_descr_append_rtpmap(Track *track);
 
 void bq_init();
 void ffmpeg_init(void);
