@@ -34,7 +34,7 @@
 typedef struct {
     uint8_t        *packet;    ///< holds the incomplete packet
     size_t          len;       ///< incomplete packet length
-    unsigned int    ident;     ///< identification string
+    uint8_t         ident[3];  ///< identification string
 } xiph_priv;
 
 #define HEADER_SIZE 6
@@ -43,26 +43,21 @@ typedef struct {
 int xiph_parse(Track *tr, uint8_t *data, size_t len)
 {
     xiph_priv *priv = tr->private_data;
-
-    uint8_t prefix[HEADER_SIZE] = {
-        (priv->ident>>16)& 0xff,
-        (priv->ident>>8) & 0xff,
-        priv->ident     & 0xff
-    };
+    uint8_t fragment = 0;
 
     do {
         uint16_t payload_size;
 
         struct MParserBuffer *buffer = g_slice_new0(struct MParserBuffer);
 
-        if ( prefix[3] == 0 && len <= MAX_PAYLOAD_SIZE )
-            prefix[3] = 1;
-        else if ( prefix[3] == 0 )
-            prefix[3] = 1 << 6; /* first frag */
+        if ( fragment == 0 && len <= MAX_PAYLOAD_SIZE )
+            fragment = 1;
+        else if ( fragment == 0 )
+            fragment = 1 << 6; /* first frag */
         else if ( len > MAX_PAYLOAD_SIZE )
-            prefix[3] = 2 << 6; /* middle frag */
+            fragment = 2 << 6; /* middle frag */
         else
-            prefix[3] = 3 << 6; /* max frag */
+            fragment = 3 << 6; /* max frag */
 
         buffer->timestamp = tr->pts;
         buffer->delivery = tr->dts;
@@ -74,8 +69,13 @@ int xiph_parse(Track *tr, uint8_t *data, size_t len)
 
         payload_size = htons(buffer->data_size);
 
-        memcpy(buffer->data, &prefix[0], HEADER_SIZE);
+        /* 0..2 */
+        memcpy(buffer->data, priv->ident, sizeof(priv->ident));
+        /* 3 */
+        buffer->data[3] = fragment;
+        /* 4..5 */
         memcpy(buffer->data + 4, &payload_size, sizeof(payload_size));
+        /* 6.. */
         memcpy(buffer->data + HEADER_SIZE, data,
                buffer->data_size - HEADER_SIZE);
 
@@ -149,6 +149,7 @@ static char *xiph_header_to_conf(xiph_priv *priv,
     size_t headers_len, conf_len;
     const uint8_t *header_start[3];
     int header_len[3];
+    uint32_t ident;
 
     if (ff_split_xiph_headers(headers, len, first_header_size, header_start, header_len) < 0) {
         fnc_log(FNC_LOG_ERR, "[xiph] extradata corrupt. unknown layout");
@@ -159,7 +160,11 @@ static char *xiph_header_to_conf(xiph_priv *priv,
         return NULL;
 
     av_md5_sum((uint8_t *)hash, headers, len);
-    priv->ident = hash[0]^hash[1]^hash[2]^hash[3];
+    ident = hash[0]^hash[1]^hash[2]^hash[3];
+
+    priv->ident[0] = (ident >> 16) & 0xff;
+    priv->ident[1] = (ident >> 8)  & 0xff;
+    priv->ident[2] =  ident        & 0xff;
 
     // Envelope size
     headers_len = header_len[0] + comment_len + header_len[2];
@@ -172,12 +177,13 @@ static char *xiph_header_to_conf(xiph_priv *priv,
         headers_len;      // the rest
 
     conf = g_malloc(conf_len);
-    conf[0] = conf[1] = conf[2] = 0;
+    conf[0] = 0;
+    conf[1] = 0;
+    conf[2] = 0;
     conf[3] = 1; //just one packet for now
-    // new config
-    conf[4] = (priv->ident >> 16) & 0xff;
-    conf[5] = (priv->ident >> 8) & 0xff;
-    conf[6] = priv->ident & 0xff;
+    conf[4] = priv->ident[0];
+    conf[5] = priv->ident[1];
+    conf[6] = priv->ident[2];
     conf[7] = (headers_len)>>8;
     conf[8] = (headers_len) & 0xff;
     conf[9] = 2;
