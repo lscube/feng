@@ -623,9 +623,6 @@ void track_free(Track *track)
     if ( track->uninit )
         track->uninit(track);
 
-    /* this needs to be present _after_ the track's uninit! */
-    g_free(track->private_data);
-
     g_slice_free(Track, track);
 }
 

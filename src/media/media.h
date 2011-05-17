@@ -23,9 +23,15 @@
 #ifndef FN_DEMUXER_H
 #define FN_DEMUXER_H
 
+#include <config.h>
+
 #include <glib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
+#ifdef LIVE_STREAMING
+# include <mqueue.h> /* for mqd_t */
+#endif
 
 struct feng;
 struct RTP_session;
@@ -261,19 +267,6 @@ struct Track {
      */
     void (*uninit)(Track *track);
 
-    /**
-     * @brief Private data of the track
-     *
-     * Contains special data relative for the track; its use depends
-     * on the type of resource the track belongs to.
-     *
-     * The content of this field will be g_free'd in @ref track_free
-     * if not NULL. If you wish to provide custom code to release the
-     * object, you should do so in @ref Track::uninit and make sure to
-     * set it back to NULL then.
-     */
-    void *private_data;
-
     /** @} */
 
     /**
@@ -293,6 +286,24 @@ struct Track {
     uint8_t *extradata;
     size_t extradata_len;
     /** @} */
+
+    union {
+        struct {
+            uint8_t ident[3];
+        } xiph;
+
+        struct {
+            bool is_avc;
+            uint8_t nal_length_size; // used in avc
+        } h264;
+
+#ifdef LIVE_STREAMING
+        struct {
+            char *mrl;
+            mqd_t queue;
+        } live;
+#endif
+    } private_data;
 };
 
 /**

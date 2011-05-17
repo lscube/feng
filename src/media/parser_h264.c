@@ -28,11 +28,6 @@
 #include "fnc_log.h"
 #include "media/media.h"
 
-typedef struct {
-    int is_avc;
-    unsigned int nal_length_size; // used in avc
-} h264_priv;
-
 /* Generic Nal header
  *
  *  +---------------+
@@ -243,15 +238,12 @@ static char *encode_header(uint8_t *p, unsigned int len, int packet_mode)
 
 int h264_init(Track *track)
 {
-    h264_priv *priv;
     char *sprop = NULL;
-
-    priv = g_new0(h264_priv, 1);
 
     if(track->extradata[0] == 1) {
         if (track->extradata_len < 7) goto err_alloc;
-        priv->nal_length_size = (track->extradata[4]&0x03)+1;
-        priv->is_avc = 1;
+        track->private_data.h264.nal_length_size = (track->extradata[4]&0x03)+1;
+        track->private_data.h264.is_avc = 1;
         sprop = encode_avc1_header(track->extradata,
                                    track->extradata_len, FU_A);
         if (sprop == NULL) goto err_alloc;
@@ -269,14 +261,11 @@ int h264_init(Track *track)
                            track->payload_type,
                            sprop);
 
-    track->private_data = priv;
-
     g_free(sprop);
 
     return 0;
 
  err_alloc:
-    g_slice_free(h264_priv, priv);
     return -1;
 }
 
@@ -287,18 +276,19 @@ int h264_init(Track *track)
 
 int h264_parse(Track *tr, uint8_t *data, ssize_t len)
 {
-    h264_priv *priv = tr->private_data;
 //    double nal_time; // see page 9 and 7.4.1.2
     size_t nalsize = 0, index = 0;
     uint8_t *p, *q;
 
-    if (priv->is_avc) {
+    if (tr->private_data.h264.is_avc) {
+        const size_t nal_length_size = tr->private_data.h264.nal_length_size;
+
         while (1) {
             unsigned int i;
             if(index >= len) break;
             //get the nal size
             nalsize = 0;
-            for(i = 0; i < priv->nal_length_size; i++)
+            for(i = 0; i < nal_length_size; i++)
                 nalsize = (nalsize << 8) | data[index++];
             if(nalsize <= 1 || nalsize > len) {
                 if(nalsize == 1) {

@@ -40,11 +40,6 @@
 
 static gpointer flux_read_messages(gpointer ptr);
 
-typedef struct sd_private_data {
-    char *mrl;
-    mqd_t queue;
-} sd_private_data;
-
 /**
  * @brief Uninitialisation function for the demuxer_sd fake parser
  *
@@ -52,11 +47,7 @@ typedef struct sd_private_data {
  * mqd_t object.
  */
 static void live_track_uninit(Track *tr) {
-    sd_private_data *priv = tr->private_data;
-    g_free(priv->mrl);
-    g_free(priv);
-
-    tr->private_data = NULL;
+    g_free(tr->private_data.live.mrl);
 }
 
 /*
@@ -194,7 +185,6 @@ Resource *sd2_open(const char *url)
     while ( (currtrack = *tracknames++) != NULL ) {
         Track *track = NULL;
         const RTP_static_payload *info;
-        sd_private_data *priv;
 
         gchar *track_mrl, *media_type, *tmpstr;
 
@@ -206,8 +196,8 @@ Resource *sd2_open(const char *url)
 
         track = track_new(currtrack);
 
-        track->private_data = priv = g_slice_new(sd_private_data);
-        priv->queue = (mqd_t)-1;
+        track->uninit = live_track_uninit;
+        track->private_data.live.queue = (mqd_t)-1;
 
         track_mrl = g_key_file_get_string(file, currtrack,
                                           SD2_KEY_MRL,
@@ -221,7 +211,7 @@ Resource *sd2_open(const char *url)
             goto corrupted_track;
         }
 
-        priv->mrl = strdup(track_mrl + strlen("mq://"));
+        track->private_data.live.mrl = strdup(track_mrl + strlen("mq://"));
 
         media_type = g_key_file_get_string(file, currtrack,
                                            SD2_KEY_MEDIA_TYPE,
@@ -294,8 +284,6 @@ Resource *sd2_open(const char *url)
             track->payload_type = next_dynamic_payload++;
         }
 
-        track->uninit = live_track_uninit;
-
         if ( (tmpstr = g_key_file_get_string(file, currtrack,
                                              SD2_KEY_LICENSE,
                                              NULL)) )
@@ -359,7 +347,6 @@ Resource *sd2_open(const char *url)
         fnc_log(FNC_LOG_ERR, "[sd2] corrupted track '%s' from '%s'",
                 currtrack, mrl);
         if ( track ) {
-            g_free(priv->mrl);
             track_free(track);
         }
     }
@@ -395,8 +382,6 @@ Resource *sd2_open(const char *url)
 static gpointer flux_read_messages(gpointer ptr) {
     Track *tr = ptr;
 
-    sd_private_data *priv = tr->private_data;;
-
     while ( tr ) {
         double package_start_time;
         uint32_t package_timestamp;
@@ -418,20 +403,20 @@ static gpointer flux_read_messages(gpointer ptr) {
         struct mq_attr attr;
         struct MParserBuffer *buffer;
 
-        if ( priv->queue == (mqd_t)-1 &&
-             (priv->queue = mq_open(priv->mrl, O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) == (mqd_t)-1) {
+        if ( tr->private_data.live.queue == (mqd_t)-1 &&
+             (tr->private_data.live.queue = mq_open(tr->private_data.live.mrl, O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) == (mqd_t)-1) {
 
             fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
-                    priv->mrl, strerror(errno));
+                    tr->private_data.live.mrl, strerror(errno));
             goto reiterate;
         }
 
-        mq_getattr(priv->queue, &attr);
+        mq_getattr(tr->private_data.live.queue, &attr);
 
         /* Check if there are available packets, if it is empty flux might have recreated it */
         if (!attr.mq_curmsgs) {
-            mq_close(priv->queue);
-            priv->queue = (mqd_t)-1;
+            mq_close(tr->private_data.live.queue);
+            tr->private_data.live.queue = (mqd_t)-1;
             usleep(30);
 
             goto reiterate;
@@ -439,13 +424,13 @@ static gpointer flux_read_messages(gpointer ptr) {
 
         msg_buffer = g_malloc(attr.mq_msgsize);
 
-        if ( (msg_len = mq_receive(priv->queue, (char*)msg_buffer,
+        if ( (msg_len = mq_receive(tr->private_data.live.queue, (char*)msg_buffer,
                                    attr.mq_msgsize, NULL)) < 0 ) {
             fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
-                    priv->mrl, strerror(errno));
+                    tr->private_data.live.mrl, strerror(errno));
 
-            mq_close(priv->queue);
-            priv->queue = (mqd_t)-1;
+            mq_close(tr->private_data.live.queue);
+            tr->private_data.live.queue = (mqd_t)-1;
 
             goto reiterate;
         }
@@ -453,7 +438,7 @@ static gpointer flux_read_messages(gpointer ptr) {
         package_version = *((unsigned int*)msg_buffer);
         if (package_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
             fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d",
-                    priv->mrl, REQUIRED_FLUX_PROTOCOL_VERSION, package_version);
+                    tr->private_data.live.mrl, REQUIRED_FLUX_PROTOCOL_VERSION, package_version);
 
             goto reiterate;
         }
@@ -473,11 +458,11 @@ static gpointer flux_read_messages(gpointer ptr) {
 
 #if 0
         fprintf(stderr, "[%s] read (%5.4f) BEGIN:%5.4f START_DTS:%u DTS:%u\n",
-                priv->mrl, delta, package_start_time, package_start_dts, package_dts);
+                tr->private_data.live.mrl, delta, package_start_time, package_start_dts, package_dts);
 #endif
 
         if (delta > 0.5f) {
-            fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f/%f, discarding..", priv->mrl, package_insertion_time, delta);
+            fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f/%f, discarding..", tr->private_data.live.mrl, package_insertion_time, delta);
             goto reiterate;
         }
 
@@ -511,7 +496,7 @@ static gpointer flux_read_messages(gpointer ptr) {
 
 #if 0
         fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
-                priv->mrl,
+                tr->private_data.live.mrl,
                 timestamp,
                 delivery,
                 package_start_time + delivery,
