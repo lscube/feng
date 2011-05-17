@@ -76,7 +76,7 @@ void sdp_descr_append_rtpmap(Track *track)
     g_string_append_printf(track->sdp_description,
                            (track->media_type == MP_audio ?
                             "a=rtpmap:%u %s/%d/%d\r\n" :
-                            "a=rtpmap:%u %s/%d"),
+                            "a=rtpmap:%u %s/%d\r\n"),
                            track->payload_type,
                            track->encoding_name,
                            track->clock_rate,
