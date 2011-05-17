@@ -57,10 +57,6 @@ static RTSP_ResponseCode do_play(RTSP_session * rtsp_sess)
 
     rtsp_sess->cur_state = RTSP_SERVER_PLAYING;
 
-    if ( rtsp_sess->rtp_sessions &&
-         ((RTP_session*)(rtsp_sess->rtp_sessions->data))->multicast )
-        return RTSP_Ok;
-
     rtsp_sess->started = 1;
 
     fnc_log(FNC_LOG_VERBOSE, "resuming with parameters %f %f %f",

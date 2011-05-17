@@ -52,9 +52,6 @@ typedef gboolean (*rtp_send_cb)(struct RTP_session *client, GByteArray *data);
 typedef void (*rtp_close_cb)(struct RTP_session *rtp);
 
 typedef struct RTP_session {
-    /** Multicast session (treated in a special way) */
-    gboolean multicast;
-
     uint32_t start_rtptime;
 
     uint32_t ssrc;
