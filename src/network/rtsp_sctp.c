@@ -56,12 +56,12 @@ static gboolean rtsp_sctp_send_pkt(RTSP_Client *rtsp, GByteArray *buffer,
 
 static gboolean rtp_sctp_send_rtp(RTP_session *rtp, GByteArray *buffer)
 {
-    return rtsp_sctp_send_pkt(rtp->client, buffer, &rtp->transport.sctp.rtp);
+    return rtsp_sctp_send_pkt(rtp->client, buffer, &rtp->sctp.rtp);
 }
 
 static gboolean rtp_sctp_send_rtcp(RTP_session *rtp, GByteArray *buffer)
 {
-    return rtsp_sctp_send_pkt(rtp->client, buffer, &rtp->transport.sctp.rtcp);
+    return rtsp_sctp_send_pkt(rtp->client, buffer, &rtp->sctp.rtcp);
 }
 
 static void rtp_sctp_close_transport(ATTR_UNUSED RTP_session *rtp)
@@ -97,8 +97,8 @@ gboolean rtp_sctp_transport(RTSP_Client *rtsp,
 
     rtsp_interleaved_register(rtsp, rtp_s, parsed->rtp_channel, parsed->rtcp_channel);
 
-    rtp_s->transport.sctp.rtp.sinfo_stream = parsed->rtp_channel;
-    rtp_s->transport.sctp.rtcp.sinfo_stream = parsed->rtp_channel;
+    rtp_s->sctp.rtp.sinfo_stream = parsed->rtp_channel;
+    rtp_s->sctp.rtcp.sinfo_stream = parsed->rtp_channel;
 
     rtp_s->send_rtp = rtp_sctp_send_rtp;
     rtp_s->send_rtcp = rtp_sctp_send_rtcp;

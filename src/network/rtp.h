@@ -151,7 +151,7 @@ typedef struct RTP_session {
         } sctp;
 #endif
 
-    } transport;
+    };
 } RTP_session;
 
 /**

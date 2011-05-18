@@ -77,12 +77,12 @@ static gboolean rtp_interleaved_send_pkt(RTSP_Client *rtsp, GByteArray *buffer, 
 
 static gboolean rtp_interleaved_send_rtp(RTP_session *rtp, GByteArray *buffer)
 {
-    return rtp_interleaved_send_pkt(rtp->client, buffer, rtp->transport.tcp.rtp);
+    return rtp_interleaved_send_pkt(rtp->client, buffer, rtp->tcp.rtp);
 }
 
 static gboolean rtp_interleaved_send_rtcp(RTP_session *rtp, GByteArray *buffer)
 {
-    return rtp_interleaved_send_pkt(rtp->client, buffer, rtp->transport.tcp.rtcp);
+    return rtp_interleaved_send_pkt(rtp->client, buffer, rtp->tcp.rtcp);
 }
 
 static void rtp_interleaved_close_transport(ATTR_UNUSED RTP_session *rtp)
@@ -108,8 +108,8 @@ gboolean rtp_interleaved_transport(RTSP_Client *rtsp,
 
     rtsp_interleaved_register(rtsp, rtp_s, parsed->rtp_channel, parsed->rtcp_channel);
 
-    rtp_s->transport.tcp.rtp = parsed->rtp_channel;
-    rtp_s->transport.tcp.rtcp = parsed->rtcp_channel;
+    rtp_s->tcp.rtp = parsed->rtp_channel;
+    rtp_s->tcp.rtcp = parsed->rtcp_channel;
 
     rtp_s->send_rtp = rtp_interleaved_send_rtp;
     rtp_s->send_rtcp = rtp_interleaved_send_rtcp;
