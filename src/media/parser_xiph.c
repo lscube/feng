@@ -63,9 +63,9 @@ int xiph_parse(Track *tr, uint8_t *data, ssize_t len)
         payload_size = htons(buffer->data_size - HEADER_SIZE);
 
         /* 0..2 */
-        buffer->data[0] = tr->private_data.xiph.ident[0];
-        buffer->data[1] = tr->private_data.xiph.ident[1];
-        buffer->data[2] = tr->private_data.xiph.ident[2];
+        buffer->data[0] = tr->xiph.ident[0];
+        buffer->data[1] = tr->xiph.ident[1];
+        buffer->data[2] = tr->xiph.ident[2];
         /* 3 */
         buffer->data[3] = fragment;
         /* 4..5 */
@@ -190,7 +190,7 @@ static gboolean xiph_init(Track *track,
 {
     char *conf;
 
-    conf = xiph_header_to_conf(&track->private_data.xiph.ident[0],
+    conf = xiph_header_to_conf(&track->xiph.ident[0],
                                track->extradata, track->extradata_len,
                                first_header_len,
                                comment, comment_len);

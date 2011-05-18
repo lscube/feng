@@ -297,7 +297,7 @@ struct Track {
         struct {
             char *mq_path;
         } live;
-    } private_data;
+    };
 };
 
 /**

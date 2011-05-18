@@ -242,8 +242,8 @@ int h264_init(Track *track)
 
     if(track->extradata[0] == 1) {
         if (track->extradata_len < 7) goto err_alloc;
-        track->private_data.h264.nal_length_size = (track->extradata[4]&0x03)+1;
-        track->private_data.h264.is_avc = 1;
+        track->h264.nal_length_size = (track->extradata[4]&0x03)+1;
+        track->h264.is_avc = 1;
         sprop = encode_avc1_header(track->extradata,
                                    track->extradata_len, FU_A);
         if (sprop == NULL) goto err_alloc;
@@ -280,8 +280,8 @@ int h264_parse(Track *tr, uint8_t *data, ssize_t len)
     size_t nalsize = 0, index = 0;
     uint8_t *p, *q;
 
-    if (tr->private_data.h264.is_avc) {
-        const size_t nal_length_size = tr->private_data.h264.nal_length_size;
+    if (tr->h264.is_avc) {
+        const size_t nal_length_size = tr->h264.nal_length_size;
 
         while (1) {
             unsigned int i;
