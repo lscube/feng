@@ -32,6 +32,7 @@
 
 struct feng;
 struct RTP_session;
+struct AVFormatContext;
 
 #define RESOURCE_OK 0
 #define RESOURCE_ERR -1
@@ -69,16 +70,6 @@ typedef struct Track Track;
  */
 struct Resource {
     GMutex *lock;
-
-    /**
-     * @brief Reference counter for the clients using the resource
-     *
-     * This variable keeps count of the number of clients that are
-     * connected to a given resource, it is supposed to keep at 1 for
-     * non-live resources, and to vary between 0 and the number of
-     * clients when it is a live resource.
-     */
-    gint count;
 
     /**
      * @brief End-of-resource indication
@@ -121,7 +112,25 @@ struct Resource {
 
     /* Multiformat related things */
     TrackList tracks;
-    void *private_data; /* Demuxer private data */
+
+    union {
+        struct {
+            /**
+             * @brief Reference counter for the clients using the resource
+             *
+             * This variable keeps count of the number of clients that
+             * are connected to a given resource.
+             *
+             * It is not defined for non-virtual resources.
+             */
+            gint count;
+        } live;
+
+        struct {
+            struct AVFormatContext *avfc;
+            Track **tracks;
+        } stored;
+    };
 };
 
 /**

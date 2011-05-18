@@ -64,25 +64,6 @@ void ffmpeg_init(void)
     av_lockmgr_register(fc_lock_manager);
 }
 
-
-/**
- * @brief Simple structure for libavformat demuxer private data
- */
-typedef struct avf_private_data {
-    AVFormatContext *avfc;
-
-    /**
-     * @brief Array of tracks
-     *
-     * The size of this array is the same as avfc->nb_streams as
-     * that's what it is indexed on. This causes a little
-     * overallocation if there are tracks that are ignored, but should
-     * be acceptable rather than running over all of them when reading
-     * packets.
-     */
-    Track **tracks;
-} avf_private_data;
-
 /**
  * @brief Mutex management for ffmpeg
  *
@@ -100,7 +81,6 @@ Resource *avf_open(const char *url)
     gchar *mrl;
 
     struct stat filestat;
-    avf_private_data priv = { NULL, NULL };
 
     fnc_log(FNC_LOG_DEBUG,
             "opening resource '%s' through libavformat",
@@ -128,19 +108,21 @@ Resource *avf_open(const char *url)
 
     memset(&ap, 0, sizeof(AVFormatParameters));
 
-    priv.avfc = avformat_alloc_context();
+    r = g_slice_new0(Resource);
+
+    r->stored.avfc = avformat_alloc_context();
     ap.prealloced_context = 1;
 
-    priv.avfc->flags |= AVFMT_FLAG_GENPTS;
+    r->stored.avfc->flags |= AVFMT_FLAG_GENPTS;
 
-    i = av_open_input_file(&priv.avfc, mrl, NULL, 0, &ap);
+    i = av_open_input_file(&r->stored.avfc, mrl, NULL, 0, &ap);
 
     if ( i != 0 ) {
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot open %s", mrl);
         goto err_alloc;
     }
 
-    i = av_find_stream_info(priv.avfc);
+    i = av_find_stream_info(r->stored.avfc);
 
     if(i < 0){
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot find streams in file %s",
@@ -148,10 +130,10 @@ Resource *avf_open(const char *url)
         goto err_alloc;
     }
 
-    priv.tracks = g_new0(Track*, priv.avfc->nb_streams);
+    r->stored.tracks = g_new0(Track*, r->stored.avfc->nb_streams);
 
-    for(j=0; j<priv.avfc->nb_streams; j++) {
-        AVStream *st= priv.avfc->streams[j];
+    for(j=0; j<r->stored.avfc->nb_streams; j++) {
+        AVStream *st= r->stored.avfc->streams[j];
         AVCodecContext *codec= st->codec;
         AVMetadataTag *metadata_tag = NULL;
         static const int metadata_flags = AV_METADATA_DONT_STRDUP_KEY|AV_METADATA_DONT_STRDUP_VAL;
@@ -221,7 +203,7 @@ Resource *avf_open(const char *url)
                 if ( (st->codec->opaque = av_bitstream_filter_init("aac_adtstoasc")) == NULL )
                     goto err_alloc;
 
-                while((av_read_frame(priv.avfc, &pkt) >= 0) && !codec->extradata_size) {
+                while((av_read_frame(r->stored.avfc, &pkt) >= 0) && !codec->extradata_size) {
                     uint8_t *data;
                     int size;
                     if(pkt.stream_index != j)
@@ -236,7 +218,7 @@ Resource *avf_open(const char *url)
                 if (!codec->extradata_size)
                     goto err_alloc;
 
-                av_seek_frame(priv.avfc, -1, 0, 0);
+                av_seek_frame(r->stored.avfc, -1, 0, 0);
             }
 
             encoding_name = "mpeg4-generic";
@@ -302,7 +284,7 @@ Resource *avf_open(const char *url)
             goto discard;
         }
 
-        priv.tracks[j] = track;
+        r->stored.tracks[j] = track;
 
         track->extradata = codec->extradata;
         track->extradata_len = codec->extradata_size;
@@ -313,12 +295,12 @@ Resource *avf_open(const char *url)
         if ( parser_init && parser_init(track) != 0 )
             goto track_err_alloc;
 
-        if ( (metadata_tag = av_metadata_get(priv.avfc->metadata, "title", NULL, metadata_flags)) )
+        if ( (metadata_tag = av_metadata_get(r->stored.avfc->metadata, "title", NULL, metadata_flags)) )
             g_string_append_printf(track->sdp_description, SDP_F_TITLE, metadata_tag->value);
 
         /* here we check a few possible alternative tags to use */
-        if ( (metadata_tag = av_metadata_get(priv.avfc->metadata, "artist", NULL, metadata_flags)) ||
-             (metadata_tag = av_metadata_get(priv.avfc->metadata, "publisher", NULL, metadata_flags)) )
+        if ( (metadata_tag = av_metadata_get(r->stored.avfc->metadata, "artist", NULL, metadata_flags)) ||
+             (metadata_tag = av_metadata_get(r->stored.avfc->metadata, "publisher", NULL, metadata_flags)) )
             g_string_append_printf(track->sdp_description, SDP_F_AUTHOR, metadata_tag->value);
 
         if ( frame_rate != 0 )
@@ -340,13 +322,9 @@ Resource *avf_open(const char *url)
     /* Now that we know the resource is valid and we can read it,
        allocate the structure that will be returned. */
 
-    r = g_slice_new0(Resource);
-
     r->mrl = mrl;
     r->lock = g_mutex_new();
     r->mtime = filestat.st_mtime;
-
-    r->private_data = g_memdup(&priv, sizeof(priv));
 
     r->read_packet = avf_read_packet;
     r->uninit = avf_uninit;
@@ -354,27 +332,29 @@ Resource *avf_open(const char *url)
     /* Try seeking to make sure that we can seek, as libavformat might
        not implement seeking for the format we're using here; if it
        doesn't, do not set a seek method */
-    if ( !av_seek_frame(priv.avfc, -1, 0, 0) )
+    if ( !av_seek_frame(r->stored.avfc, -1, 0, 0) )
         r->seek = avf_seek;
 
-    r->duration = (double)priv.avfc->duration /AV_TIME_BASE;
+    r->duration = (double)r->stored.avfc->duration /AV_TIME_BASE;
     fnc_log(FNC_LOG_DEBUG, "[avf] duration %f", r->duration);
 
-    for(j = 0; j < priv.avfc->nb_streams; j++)
-        if ( priv.tracks[j] ) {
-            priv.tracks[j]->parent = r;
-            r->tracks = g_list_append(r->tracks, priv.tracks[j]);
+    for(j = 0; j < r->stored.avfc->nb_streams; j++)
+        if ( r->stored.tracks[j] ) {
+            r->stored.tracks[j]->parent = r;
+            r->tracks = g_list_append(r->tracks, r->stored.tracks[j]);
         }
 
     return r;
 
  err_alloc:
-    for(j = 0; j < priv.avfc->nb_streams; j++)
-        track_free(priv.tracks[j]);
+    g_slice_free(Resource, r);
 
-    g_free(priv.tracks);
+    for(j = 0; j < r->stored.avfc->nb_streams; j++)
+        track_free(r->stored.tracks[j]);
 
-    av_close_input_file(priv.avfc);
+    g_free(r->stored.tracks);
+
+    av_close_input_file(r->stored.avfc);
 
     g_free(mrl);
 
@@ -387,19 +367,18 @@ static int avf_read_packet(Resource * r)
     AVPacket pkt;
     AVStream *stream;
     AVBitStreamFilterContext *bsfc;
-    avf_private_data *priv = r->private_data;
     Track *tr;
 
 // get a packet
 retry:
-    if(av_read_frame(priv->avfc, &pkt) < 0)
+    if(av_read_frame(r->stored.avfc, &pkt) < 0)
         return RESOURCE_EOF; //FIXME
 
-    if ( (tr = priv->tracks[pkt.stream_index]) == NULL )
+    if ( (tr = r->stored.tracks[pkt.stream_index]) == NULL )
         goto retry;
 
     // push it to the framer
-    stream = priv->avfc->streams[pkt.stream_index];
+    stream = r->stored.avfc->streams[pkt.stream_index];
 
     fnc_log(FNC_LOG_VERBOSE, "[avf] Parsing track %s",
             tr->name);
@@ -461,26 +440,20 @@ static int avf_seek(Resource * r, double time_sec)
 {
     int flags = 0;
     int64_t time_msec = time_sec * AV_TIME_BASE;
-    avf_private_data *priv = r->private_data;
 
     fnc_log(FNC_LOG_DEBUG, "Seeking to %f", time_sec);
-    if (priv->avfc->start_time != AV_NOPTS_VALUE)
-        time_msec += priv->avfc->start_time;
+    if (r->stored.avfc->start_time != AV_NOPTS_VALUE)
+        time_msec += r->stored.avfc->start_time;
     if (time_msec < 0) flags = AVSEEK_FLAG_BACKWARD;
-    return av_seek_frame(priv->avfc, -1, time_msec, flags);
+    return av_seek_frame(r->stored.avfc, -1, time_msec, flags);
 }
 
 static void avf_uninit(gpointer rgen)
 {
     Resource *r = rgen;
-    avf_private_data *priv = r->private_data;
 
-    if ( priv == NULL || priv->avfc == NULL )
-        return;
+    if ( r->stored.avfc != NULL )
+        av_close_input_file(r->stored.avfc);
 
-    av_close_input_file(priv->avfc);
-
-    g_free(priv->tracks);
-
-    g_free(priv);
+    g_free(r->stored.tracks);
 }

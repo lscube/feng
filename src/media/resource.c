@@ -120,7 +120,7 @@ static Resource *r_open_virtual(const char *url)
         virtual_resources = g_hash_table_new(g_str_hash, g_str_equal);
 
     if ( (r = g_hash_table_lookup(virtual_resources, url)) != NULL )
-        g_atomic_int_inc(&r->count);
+        g_atomic_int_inc(&r->live.count);
     else
         r = sd2_open(url);
 
@@ -330,7 +330,7 @@ void r_close(Resource *resource)
         return;
 
     if (resource->source == LIVE_SOURCE) {
-        (void)g_atomic_int_dec_and_test(&resource->count);
+        (void)g_atomic_int_dec_and_test(&resource->live.count);
         return;
     }
 
