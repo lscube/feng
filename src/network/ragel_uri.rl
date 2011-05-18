@@ -47,7 +47,7 @@
 	pchar = unreserved | pct_encoded | sub_delims | ":" | "@";
 	segment = ( pchar+ ) >mark
                         %{mark = g_strndup(mark, fpc-mark);
-                          g_queue_push_tail(stack, mark);}|
+                          g_queue_push_tail(stack, (gpointer)mark);}|
                     zlen;
 	path_abempty = ( "/" segment )*;
 	segment_nz = ( pchar+ - ".." ) | "..";
@@ -107,7 +107,7 @@ URI *uri_parse(const char *uri_string)
     URI *uri = g_slice_new0(URI);
     int cs;
 
-    %% write data;
+    %% write data noerror;
     %% write init;
     %% write exec;
 
