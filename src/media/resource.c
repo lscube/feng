@@ -262,21 +262,21 @@ static void r_read_cb(gpointer consumer_p, gpointer resource_p)
 {
     Resource *resource = (Resource*)resource_p;
     struct RTP_session *consumer = (struct RTP_session*)consumer_p;
-    const gboolean live = resource->source == LIVE_SOURCE;
     const gulong buffered_frames = feng_srv.buffered_frames;
 
-    g_assert( (live && consumer == GINT_TO_POINTER(-1)) || (!live && consumer != GINT_TO_POINTER(-1)) );
+    g_assert(resource->source != LIVE_SOURCE);
+    g_assert(consumer != GINT_TO_POINTER(-1));
 
     do {
         /* setting this to NULL with an atomic, non-locking operation
            is our "stop" signal. */
-        if ( g_atomic_pointer_get(&resource->fill_pool) == NULL )
+        if ( g_atomic_pointer_get(&resource->stored.fill_pool) == NULL )
             return;
 
         /* Only check for enough buffered frames if we're not doing
            live; otherwise keep on filling; we also assume that
            consumer will be NULL in that case. */
-        if ( !live && bq_consumer_unseen(consumer) >= buffered_frames )
+        if ( bq_consumer_unseen(consumer) >= buffered_frames )
             return;
 
         //        fprintf(stderr, "r_read_cb(%p)\n", resource);
@@ -334,8 +334,8 @@ void r_close(Resource *resource)
         return;
     }
 
-    if ( (pool = resource->fill_pool) ) {
-        g_atomic_pointer_set(&resource->fill_pool, NULL);
+    if ( (pool = resource->stored.fill_pool) ) {
+        g_atomic_pointer_set(&resource->stored.fill_pool, NULL);
         g_thread_pool_free(pool, true, true);
     }
 
@@ -377,13 +377,13 @@ void r_pause(Resource *resource)
         return;
 
     /* we paused already */
-    if ( resource->fill_pool == NULL )
+    if ( resource->stored.fill_pool == NULL )
         return;
 
     g_mutex_lock(resource->lock);
 
-    pool = resource->fill_pool;
-    g_atomic_pointer_set(&resource->fill_pool, NULL);
+    pool = resource->stored.fill_pool;
+    g_atomic_pointer_set(&resource->stored.fill_pool, NULL);
     g_thread_pool_free(pool, true, true);
 
     g_mutex_unlock(resource->lock);
@@ -402,15 +402,19 @@ void r_resume(Resource *resource)
 {
     GThreadPool *pool;
 
+    /* Don't even try to resume a live source! */
+    if ( resource->source == LIVE_SOURCE )
+        return;
+
     /* running already, or auto-filled */
-    if ( g_atomic_pointer_get(&resource->fill_pool) != NULL ||
+    if ( g_atomic_pointer_get(&resource->stored.fill_pool) != NULL ||
          g_atomic_pointer_get(&resource->read_packet) == NULL )
         return;
 
     pool = g_thread_pool_new(r_read_cb, resource,
                              1, true, NULL);
 
-    g_atomic_pointer_set(&resource->fill_pool, pool);
+    g_atomic_pointer_set(&resource->stored.fill_pool, pool);
 }
 
 /**
@@ -436,10 +440,10 @@ void r_fill(Resource *resource, struct RTP_session *consumer)
 
     g_mutex_lock(resource->lock);
 
-    if ( resource->fill_pool == NULL )
+    if ( resource->stored.fill_pool == NULL )
         goto end;
 
-    g_thread_pool_push(resource->fill_pool,
+    g_thread_pool_push(resource->stored.fill_pool,
                        consumer, NULL);
 
  end:

@@ -85,27 +85,6 @@ struct Resource {
     time_t mtime;
     double duration;
 
-   /**
-     * @brief Pool of one thread for filling up data for the session
-     *
-     * This is a pool consisting of exactly one thread that is used to
-     * fill up the resource's tracks' @ref Track with data when it's
-     * running low.
-     *
-     * Since we do want to do this asynchronously but we don't really
-     * want race conditions (and they would anyway just end up waiting
-     * on the same lock), there is no need to allow multiple threads
-     * to do the same thing here.
-     *
-     * Please note that this is created, for non-live resources,
-     * during the resume phase (@ref r_resume), and stopped during
-     * either the pause phase (@ref r_pause) or during the final free
-     * (@ref r_free_cb). For live resources, this will be created by
-     * @ref r_open_hashed when the first client connects, and
-     * destroyed by @ref r_close when the last client disconnects.
-     */
-    GThreadPool *fill_pool;
-
     int (*read_packet)(Resource *);
     int (*seek)(Resource *, double time_sec);
     GDestroyNotify uninit;
@@ -129,6 +108,25 @@ struct Resource {
         struct {
             struct AVFormatContext *avfc;
             Track **tracks;
+
+            /**
+             * @brief Pool of one thread for filling up data for the session
+             *
+             * This is a pool consisting of exactly one thread that is used to
+             * fill up the resource's tracks' @ref Track with data when it's
+             * running low.
+             *
+             * Since we do want to do this asynchronously but we don't really
+             * want race conditions (and they would anyway just end up waiting
+             * on the same lock), there is no need to allow multiple threads
+             * to do the same thing here.
+             *
+             * Please note that this is created, for stored resources only,
+             * during the resume phase (@ref r_resume), and stopped during
+             * either the pause phase (@ref r_pause) or during the final free
+             * (@ref r_free_cb).
+             */
+            GThreadPool *fill_pool;
         } stored;
     };
 };
