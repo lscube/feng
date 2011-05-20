@@ -101,13 +101,13 @@ typedef struct RTCP_header_SDES {
     uint8_t attr_name;
     uint8_t len;
     char name[];
-} __attribute__((__packed__)) RTCP_header_SDES;
+} ATTR_PACKED RTCP_header_SDES;
 
 typedef struct RTCP_header_BYE {
     uint32_t ssrc;
     uint8_t length;
     char reason[];
-} __attribute__((__packed__)) RTCP_header_BYE;
+} ATTR_PACKED RTCP_header_BYE;
 
 /**
  * @brief Basic polymorphic structure of a Server Report RTCP compound
