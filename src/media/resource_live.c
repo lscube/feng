@@ -299,22 +299,7 @@ Resource *sd2_open(const char *url)
                                     tmpstr);
 
         if (track->payload_type >= 96)
-        {
-            if ( track->media_type == MP_audio &&
-                 track->audio_channels > 1 )
-                g_string_append_printf(track->sdp_description,
-                                       "a=rtpmap:%u %s/%d/%d\r\n",
-                                       track->payload_type,
-                                       track->encoding_name,
-                                       track->clock_rate,
-                                       track->audio_channels);
-            else
-                g_string_append_printf(track->sdp_description,
-                                       "a=rtpmap:%u %s/%d\r\n",
-                                       track->payload_type,
-                                       track->encoding_name,
-                                       track->clock_rate);
-        }
+            sdp_descr_append_rtpmap(track);
 
         /* This goes _after_ rtpmap for compatibility with older
            FFmpeg */
