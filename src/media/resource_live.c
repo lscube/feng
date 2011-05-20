@@ -398,6 +398,7 @@ Resource *sd2_open(const char *url)
 static gpointer flux_read_messages(gpointer ptr) {
     Track *tr = ptr;
     mqd_t queue = (mqd_t)-1;
+    struct flux_msg *message = NULL;
 
     while ( tr ) {
         uint32_t package_timestamp;
@@ -405,7 +406,6 @@ static gpointer flux_read_messages(gpointer ptr) {
         double delivery;
         double delta;
 
-        struct flux_msg *message;
         ssize_t msg_len;
         int marker;
         uint16_t seq_no;
@@ -432,7 +432,7 @@ static gpointer flux_read_messages(gpointer ptr) {
             goto reiterate;
         }
 
-        message = g_malloc(attr.mq_msgsize);
+        message = g_realloc(message, attr.mq_msgsize);
 
         if ( (msg_len = mq_receive(queue, (char*)message,
                                    attr.mq_msgsize, NULL)) < 0 ) {
@@ -505,8 +505,7 @@ static gpointer flux_read_messages(gpointer ptr) {
 
         track_write(tr, buffer);
 
-    reiterate:
-        g_free(message);
+    reiterate: ;
     }
 
     return NULL;
