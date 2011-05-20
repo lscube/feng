@@ -380,50 +380,48 @@ Resource *sd2_open(const char *url)
 
 static gpointer flux_read_messages(gpointer ptr) {
     Track *tr = ptr;
-    mqd_t queue = (mqd_t)-1;
     struct flux_msg *message = NULL;
 
     while ( tr ) {
-        uint32_t package_timestamp;
-        double timestamp;
-        double delivery;
-        double delta;
-
-        ssize_t msg_len;
-        int marker;
-        uint16_t seq_no;
+        mqd_t queue = (mqd_t)-1;
+        struct mq_attr attr;
 
         struct MParserBuffer *buffer;
 
-        if ( queue == (mqd_t)-1 &&
-             (queue = mq_open(tr->live.mq_path, O_RDONLY, S_IRWXU, NULL)) == (mqd_t)-1) {
-            fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
-                    tr->live.mq_path, strerror(errno));
+        if ( (queue = mq_open(tr->live.mq_path, O_RDONLY, S_IRWXU, NULL)) == (mqd_t)-1) {
+            fnc_perror("mq_open");
             goto error;
         }
 
-        do {
-            struct mq_attr attr;
+        if ( mq_getattr(queue, &attr) < 0 ) {
+            fnc_perror("mq_getattr");
+            goto error;
+        }
 
-            /* Check if there are available packets, if it is empty flux might have recreated it */
-            if ( mq_getattr(queue, &attr) < 0 ||
-                 attr.mq_curmsgs == 0 )
-                goto error;
+        message = g_realloc(message, attr.mq_msgsize);
 
-            message = g_realloc(message, attr.mq_msgsize);
+        while ( 1 ) {
+            uint32_t package_timestamp;
+            double timestamp;
+            double delivery;
+            double delta;
+
+            ssize_t msg_len;
+            int marker;
+            uint16_t seq_no;
 
             if ( (msg_len = mq_receive(queue, (char*)message,
                                        attr.mq_msgsize, NULL)) < 0 ) {
                 fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
                         tr->live.mq_path, strerror(errno));
 
-                goto error;
+                break;
             }
 
             if (message->proto_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
                 fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d",
                         tr->live.mq_path, REQUIRED_FLUX_PROTOCOL_VERSION, message->proto_version);
-                goto error;
+                break;
             }
 
             delta = ev_time() - message->insertion_time;
@@ -433,57 +431,57 @@ static gpointer flux_read_messages(gpointer ptr) {
                     tr->live.mq_path, delta, message->start_time, message->start_dts, message->dts);
 #endif
 
-            if (delta > 0.5f)
+            if (delta > 0.5f) {
                 fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f/%f, discarding..",
                         tr->live.mq_path, message->insertion_time, delta);
-        } while ( delta > 0.5f );
-
-        package_timestamp = ntohl(message->timestamp);
-        delivery = (message->dts - message->start_dts)/((double)tr->clock_rate);
-
-        tr->frame_duration = message->duration/((double)tr->clock_rate);
-        timestamp = package_timestamp/((double)tr->clock_rate);
-        marker = message->marker >> 7;
-        seq_no = ntohs(message->seq_no);
-
-        // calculate the duration while consuming stale packets.
-        // This is an HACK that must be moved to Flux, here just to quick fix live problems
-        if (!tr->frame_duration) {
-            if (tr->dts) {
-                tr->frame_duration = (timestamp - tr->dts);
-            } else {
-                tr->dts = timestamp;
+                continue;
             }
-        }
 
-        buffer = g_slice_new0(struct MParserBuffer);
+            package_timestamp = ntohl(message->timestamp);
+            delivery = (message->dts - message->start_dts)/((double)tr->clock_rate);
 
-        buffer->timestamp = timestamp;
-        buffer->delivery = message->start_time + delivery;
-        buffer->duration = tr->frame_duration * 3;
+            tr->frame_duration = message->duration/((double)tr->clock_rate);
+            timestamp = package_timestamp/((double)tr->clock_rate);
+            marker = message->marker >> 7;
+            seq_no = ntohs(message->seq_no);
 
-        buffer->marker = marker;
-        buffer->seq_no = seq_no;
-        buffer->rtp_timestamp = package_timestamp;
+            // calculate the duration while consuming stale packets.
+            // This is an HACK that must be moved to Flux, here just to quick fix live problems
+            if (!tr->frame_duration) {
+                if (tr->dts) {
+                    tr->frame_duration = (timestamp - tr->dts);
+                } else {
+                    tr->dts = timestamp;
+                }
+            }
 
-        buffer->data_size = msg_len - sizeof(struct flux_msg);;
-        buffer->data = g_memdup(message->data, buffer->data_size);
+            buffer = g_slice_new0(struct MParserBuffer);
+
+            buffer->timestamp = timestamp;
+            buffer->delivery = message->start_time + delivery;
+            buffer->duration = tr->frame_duration * 3;
+
+            buffer->marker = marker;
+            buffer->seq_no = seq_no;
+            buffer->rtp_timestamp = package_timestamp;
+
+            buffer->data_size = msg_len - sizeof(struct flux_msg);;
+            buffer->data = g_memdup(message->data, buffer->data_size);
 
 #if 0
-        fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
-                tr->live.mq_path,
-                timestamp,
-                delivery,
-                buffer->delivery,
-                ev_time() - buffer->delivery);
+            fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
+                    tr->live.mq_path,
+                    timestamp,
+                    delivery,
+                    buffer->delivery,
+                    ev_time() - buffer->delivery);
 #endif
 
-        track_write(tr, buffer);
+            track_write(tr, buffer);
+        }
 
-        continue;
     error:
-        if ( queue != (mqd_t)-1 )
-            mq_close(queue);
+        mq_close(queue);
         queue = (mqd_t)-1;
 
         usleep(30);
