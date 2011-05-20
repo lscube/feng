@@ -415,22 +415,15 @@ static gpointer flux_read_messages(gpointer ptr) {
 
         if ( queue == (mqd_t)-1 &&
              (queue = mq_open(tr->live.mq_path, O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) == (mqd_t)-1) {
-
             fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
                     tr->live.mq_path, strerror(errno));
-            goto reiterate;
+            goto error;
         }
-
-        mq_getattr(queue, &attr);
 
         /* Check if there are available packets, if it is empty flux might have recreated it */
-        if (!attr.mq_curmsgs) {
-            mq_close(queue);
-            queue = (mqd_t)-1;
-            usleep(30);
-
-            goto reiterate;
-        }
+        if ( mq_getattr(queue, &attr) < 0 ||
+             attr.mq_curmsgs == 0 )
+            goto error;
 
         message = g_realloc(message, attr.mq_msgsize);
 
@@ -439,17 +432,13 @@ static gpointer flux_read_messages(gpointer ptr) {
             fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
                     tr->live.mq_path, strerror(errno));
 
-            mq_close(queue);
-            queue = (mqd_t)-1;
-
-            goto reiterate;
+            goto error;
         }
 
         if (message->proto_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
             fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d",
                     tr->live.mq_path, REQUIRED_FLUX_PROTOCOL_VERSION, message->proto_version);
-
-            goto reiterate;
+            goto error;
         }
 
         package_timestamp = ntohl(message->timestamp);
@@ -463,7 +452,7 @@ static gpointer flux_read_messages(gpointer ptr) {
 
         if (delta > 0.5f) {
             fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f/%f, discarding..", tr->live.mq_path, message->insertion_time, delta);
-            goto reiterate;
+            continue;
         }
 
         tr->frame_duration = message->duration/((double)tr->clock_rate);
@@ -505,7 +494,13 @@ static gpointer flux_read_messages(gpointer ptr) {
 
         track_write(tr, buffer);
 
-    reiterate: ;
+        continue;
+    error:
+        if ( queue != (mqd_t)-1 )
+            mq_close(queue);
+        queue = (mqd_t)-1;
+
+        usleep(30);
     }
 
     return NULL;
