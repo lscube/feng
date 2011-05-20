@@ -581,6 +581,12 @@ Track *track_new(char *name)
     t->name            = name;
     t->sdp_description = g_string_new("");
 
+    /* set these by default, sinze 0 might actually be a valid
+       value */
+    t->payload_type = -1;
+    t->clock_rate = -1;
+    t->media_type = MP_undef;
+
     g_string_append_printf(t->sdp_description,
                            "a=control:%s\r\n",
                            name);

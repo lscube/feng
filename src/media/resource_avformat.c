@@ -264,7 +264,7 @@ Resource *avf_open(const char *url)
         }
 
         track->encoding_name = g_strdup(encoding_name);
-        if ( track->payload_type == 0 )
+        if ( track->payload_type == -1 )
             track->payload_type = pt++;
 
         switch(codec->codec_type){
