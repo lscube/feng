@@ -76,10 +76,9 @@ typedef struct RTP_static_payload {
         int ClockRate;      // In Hz
 } RTP_static_payload;
 
-static const RTP_static_payload RTP_payload[96] ={
+static const RTP_static_payload RTP_payload[] ={
         // Audio
         {"PCMU"   , 0, 8000  },
-        {""       ,-1, -1    },
         {"G726_32", 2, 8000  },
         {"GSM"    , 3, 8000  },
         {"G723"   , 4, 8000  },
@@ -91,31 +90,18 @@ static const RTP_static_payload RTP_payload[96] ={
         {"L16"    ,10, 44100 },
         {"L16"    ,11, 44100 },
         {"QCELP"  ,12, 8000  },
-        {""       ,-1,   -1  },
         {"MPA"    ,14, 90000 },
         {"G728"   ,15, 8000  },
         {"DVI4"   ,16, 11025 },
         {"DVI4"   ,17, 22050 },
         {"G729"   ,18, 8000  },
-        {""       ,-1, -1    },
-        {""       ,-1, -1    },
-        {""       ,-1, -1    },
-        {""       ,-1, -1    },
-        {""       ,-1, -1    },
-        // Video: 24-95 - Pkt_len in milliseconds is not specified and will be calculated in such a way
-        // that each RTP packet contains a video frame (but no more than 536 byte, for UDP limitations)
-        {""       ,-1, -1    },
         {"CelB"   ,25, 90000 },
         {"JPEG"   ,26, 90000 },
-        {""       ,-1, -1    },
         {"nv"     ,28, 90000 },
-        {""       ,-1, -1    },
-        {""       ,-1, -1    },
         {"H261"   ,31, 90000 },
         {"MPV"    ,32, 90000 },
         {"MP2T"   ,33, 90000 },
-        {"H263"   ,34, 90000 },
-        {""       ,-1, -1    }
+        {"H263"   ,34, 90000 }
 };
 
 /**
@@ -148,11 +134,11 @@ static const char SD2_KEY_CREATOR        [] = "creator";
 //Probe informations from RTPPTDEFS table form codec_name
 static const RTP_static_payload * probe_stream_info(char const *codec_name)
 {
-    int i;
-    for (i=0; i<96; ++i) {
+    size_t i;
+
+    for (i = 0; i < sizeof(RTP_payload)/sizeof(RTP_payload[0]); i++)
         if (strcmp(RTP_payload[i].EncName, codec_name) == 0)
             return &(RTP_payload[i]);
-    }
 
     return NULL;
 }
