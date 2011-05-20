@@ -220,7 +220,8 @@ AC_DEFUN([CC_ATTRIBUTE_MALLOC], [
 AC_DEFUN([CC_ATTRIBUTE_PACKED], [
   CC_CHECK_ATTRIBUTE(
     [packed], ,
-    [struct astructure { char a; int b; long c; void *d; } __attribute__((packed));],
+    [struct astructure { char a; int b; long c; void *d; } __attribute__((packed));
+     char assert@<:@(sizeof(struct astructure) == (sizeof(char)+sizeof(int)+sizeof(long)+sizeof(void*)))-1@:>@;],
     [$1], [$2])
 ])
 

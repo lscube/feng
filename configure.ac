@@ -57,6 +57,9 @@ AC_SEARCH_LIBS([clock_gettime], [rt],
   [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define this if you have clock_gettime])],
   [AC_MSG_WARN([POSIX realtime features not available])])
 
+CC_ATTRIBUTE_PACKED([AC_DEFINE([ATTR_PACKED], [__attribute__((__packed__))], [Declares a structure packed])],
+  [AC_MSG_ERROR([unable to find how the compiler declares packed structures])])
+
 CC_ATTRIBUTE_DESTRUCTOR
 
 AX_TLS([], [
