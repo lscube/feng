@@ -317,9 +317,7 @@ Resource *sd2_open(const char *url)
     corrupted_track:
         fnc_log(FNC_LOG_ERR, "[sd2] corrupted track '%s' from '%s'",
                 currtrack, mrl);
-        if ( track ) {
-            track_free(track);
-        }
+        track_free(track);
     }
 
     if ( tracks == NULL )
