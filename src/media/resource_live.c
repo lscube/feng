@@ -67,15 +67,6 @@ static void live_track_uninit(Track *tr) {
     g_free(tr->live.mq_path);
 }
 
-/*
- * Struct for automatic probing of live media sources
- */
-typedef struct RTP_static_payload {
-        char EncName[8];
-        int PldType;
-        int ClockRate;      // In Hz
-} RTP_static_payload;
-
 /**
  * @defgroup sd2keys SD2 format keys
  *
@@ -103,11 +94,26 @@ static const char SD2_KEY_CREATOR        [] = "creator";
  * @}
  */
 
-//Probe informations from RTPPTDEFS table form codec_name
-static const RTP_static_payload * probe_stream_info(char const *codec_name)
+/**
+ * @brief Sets the default track values for common encodings.
+ *
+ * @param track The track to set the defaults to
+ *
+ * @TODO It would be possible to optimize this by making sure that the
+ *       strings are in strcmp order, so that if the table has an
+ *       entry bigger than the track's encoding, it bails out right
+ *       away.
+
+ * @TODO Dynamic payload types' defaults could have some parameters
+ *       set by using -1 as payload.
+ */
+static void set_encoding_defaults(Track *track)
 {
-    static const RTP_static_payload RTP_payload[] = {
-        // Audio
+    static const struct {
+        char encoding_name[8];
+        int32_t payload;
+        int32_t clock_rate;
+    } encoding_defaults[] = {
         {"PCMU"   , 0, 8000  },
         {"G726_32", 2, 8000  },
         {"GSM"    , 3, 8000  },
@@ -136,25 +142,12 @@ static const RTP_static_payload * probe_stream_info(char const *codec_name)
 
     size_t i;
 
-    for (i = 0; i < sizeof(RTP_payload)/sizeof(RTP_payload[0]); i++)
-        if (strcmp(RTP_payload[i].EncName, codec_name) == 0)
-            return &(RTP_payload[i]);
-
-    return NULL;
-}
-
-//Sets payload type and probes media type from payload type
-static void set_payload_type(Track *track, int payload_type)
-{
-    track->payload_type = payload_type;
-
-    // Automatic media_type detection
-    if (track->payload_type >= 0 &&
-        track->payload_type < 24)
-        track->media_type = MP_audio;
-    if (track->payload_type > 23 &&
-        track->payload_type < 96)
-        track->media_type = MP_video;
+    for (i = 0; i < sizeof(encoding_defaults)/sizeof(encoding_defaults[0]); i++) {
+        if ( strcmp(encoding_defaults[i].encoding_name, track->encoding_name) == 0) {
+            track->payload_type = encoding_defaults[i].payload;
+            track->clock_rate = encoding_defaults[i].clock_rate;
+        }
+    }
 }
 
 Resource *sd2_open(const char *url)
@@ -184,7 +177,6 @@ Resource *sd2_open(const char *url)
 
     while ( (currtrack = *tracknames++) != NULL ) {
         Track *track = NULL;
-        const RTP_static_payload *info;
 
         gchar *track_mrl, *media_type, *tmpstr;
 
@@ -212,48 +204,46 @@ Resource *sd2_open(const char *url)
 
         track->live.mq_path = strdup(track_mrl + strlen("mq://"));
 
+        if ( (track->encoding_name = g_strdup(g_key_file_get_string(file, currtrack,
+                                                                    SD2_KEY_ENCODING_NAME,
+                                                                    NULL))) == NULL ) {
+            fnc_log(FNC_LOG_ERR, "[live] %s: missing encoding name",
+                    mrl);
+            goto corrupted_track;
+        }
+
+        set_encoding_defaults(track);
+
+        if ( g_key_file_has_key(file, currtrack, SD2_KEY_PAYLOAD_TYPE, NULL) )
+            track->payload_type = g_key_file_get_integer(file, currtrack,
+                                                         SD2_KEY_PAYLOAD_TYPE,
+                                                         NULL);
+
+        if ( track->payload_type == -1 )
+            track->payload_type = next_dynamic_payload++;
+        else if ( track->payload_type >= next_dynamic_payload )
+            next_dynamic_payload = track->payload_type + 1;
+
+        if (track->payload_type >= 0 && track->payload_type < 24)
+            track->media_type = MP_audio;
+
+        if (track->payload_type > 23 && track->payload_type < 96)
+            track->media_type = MP_video;
+
         media_type = g_key_file_get_string(file, currtrack,
                                            SD2_KEY_MEDIA_TYPE,
                                            NULL);
 
-        /* There is no need to check for media_type being NULL, as
-           g_strcmp0 takes care of that */
-        if ( g_strcmp0(media_type, "audio") == 0 )
+        if ( media_type == NULL && track->media_type == MP_undef ) {
+            fnc_log(FNC_LOG_ERR, "[live] %s: media type undefined for dynamic payload %d",
+                    mrl, track->payload_type);
+        } else if ( g_strcmp0(media_type, "audio") == 0 )
             track->media_type = MP_audio;
         else if ( g_strcmp0(media_type, "video") == 0 )
             track->media_type = MP_video;
         else {
-            fnc_log(FNC_LOG_ERR, "[sd2] invalid media type '%s' for '%s'",
-                    media_type, mrl);
-            goto corrupted_track;
-        }
-
-        track->payload_type = g_key_file_get_integer(file, currtrack,
-                                                          SD2_KEY_PAYLOAD_TYPE,
-                                                          NULL);
-
-        /* The next_dynamic_payload variable is initialised to be the
-           first dynamic payload; if the resource define some dynamic
-           payload, make sure that the next used is higher. */
-        if ( track->payload_type >= next_dynamic_payload )
-            next_dynamic_payload = track->payload_type +1;
-
-        if ( track->payload_type < 0 ) {
-            fnc_log(FNC_LOG_ERR, "[sd2] invalid payload_type '%d' for '%s'",
-                    track->payload_type, mrl);
-            goto corrupted_track;
-        }
-
-        track->encoding_name = g_strdup(g_key_file_get_string(file, currtrack,
-                                                                         SD2_KEY_ENCODING_NAME,
-                                                                         NULL));
-
-        track->clock_rate = g_key_file_get_integer(file, currtrack,
-                                                        SD2_KEY_CLOCK_RATE,
-                                                        NULL);
-        if ( track->clock_rate >= INT32_MAX || track->clock_rate <= 0 ) {
-            fnc_log(FNC_LOG_ERR, "[sd2] invalid clock_rate '%d' for '%s'",
-                    track->clock_rate, mrl);
+            fnc_log(FNC_LOG_ERR, "[live] %s: invalid media type string '%s'",
+                    mrl, media_type);
             goto corrupted_track;
         }
 
@@ -262,25 +252,22 @@ Resource *sd2_open(const char *url)
                                                                 SD2_KEY_AUDIO_CHANNELS,
                                                                 NULL);
 
-            if ( track->audio_channels <= 0 ) {
+            if ( track->audio_channels >= INT32_MAX || track->audio_channels <= 0 ) {
                 fnc_log(FNC_LOG_ERR, "[sd2] invalid audio_channels '%d' for '%s'",
                         track->audio_channels, mrl);
                 goto corrupted_track;
             }
         }
 
-        if ( (info = probe_stream_info(track->encoding_name)) != NULL ) {
-            if ( !g_key_file_has_key(file, currtrack, SD2_KEY_PAYLOAD_TYPE, NULL) )
-                set_payload_type(track, info->PldType);
-            if ( !g_key_file_has_key(file, currtrack, SD2_KEY_CLOCK_RATE, NULL) )
-                track->clock_rate = info->ClockRate;
-        } else if ( track->payload_type == 0 ) {
-            /* if the user didn't explicit a payload type, and we
-             * haven't found a static one for the named encoding,
-             * assume a dynamic payload is desired and use the first
-             * one available.
-             */
-            track->payload_type = next_dynamic_payload++;
+        if ( g_key_file_has_key(file, currtrack, SD2_KEY_CLOCK_RATE, NULL) ) {
+            track->clock_rate = g_key_file_get_integer(file, currtrack,
+                                                       SD2_KEY_CLOCK_RATE,
+                                                       NULL);
+            if ( track->clock_rate >= INT32_MAX || track->clock_rate <= 0 ) {
+                fnc_log(FNC_LOG_ERR, "[sd2] invalid clock_rate '%d' for '%s'",
+                        track->clock_rate, mrl);
+                goto corrupted_track;
+            }
         }
 
         if ( (tmpstr = g_key_file_get_string(file, currtrack,
