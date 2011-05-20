@@ -76,34 +76,6 @@ typedef struct RTP_static_payload {
         int ClockRate;      // In Hz
 } RTP_static_payload;
 
-static const RTP_static_payload RTP_payload[] ={
-        // Audio
-        {"PCMU"   , 0, 8000  },
-        {"G726_32", 2, 8000  },
-        {"GSM"    , 3, 8000  },
-        {"G723"   , 4, 8000  },
-        {"DVI4"   , 5, 8000  },
-        {"DVI4"   , 6, 16000 },
-        {"LPC"    , 7, 8000  },
-        {"PCMA"   , 8, 8000  },
-        {"G722"   , 9, 8000  },
-        {"L16"    ,10, 44100 },
-        {"L16"    ,11, 44100 },
-        {"QCELP"  ,12, 8000  },
-        {"MPA"    ,14, 90000 },
-        {"G728"   ,15, 8000  },
-        {"DVI4"   ,16, 11025 },
-        {"DVI4"   ,17, 22050 },
-        {"G729"   ,18, 8000  },
-        {"CelB"   ,25, 90000 },
-        {"JPEG"   ,26, 90000 },
-        {"nv"     ,28, 90000 },
-        {"H261"   ,31, 90000 },
-        {"MPV"    ,32, 90000 },
-        {"MP2T"   ,33, 90000 },
-        {"H263"   ,34, 90000 }
-};
-
 /**
  * @defgroup sd2keys SD2 format keys
  *
@@ -134,6 +106,34 @@ static const char SD2_KEY_CREATOR        [] = "creator";
 //Probe informations from RTPPTDEFS table form codec_name
 static const RTP_static_payload * probe_stream_info(char const *codec_name)
 {
+    static const RTP_static_payload RTP_payload[] = {
+        // Audio
+        {"PCMU"   , 0, 8000  },
+        {"G726_32", 2, 8000  },
+        {"GSM"    , 3, 8000  },
+        {"G723"   , 4, 8000  },
+        {"DVI4"   , 5, 8000  },
+        {"DVI4"   , 6, 16000 },
+        {"LPC"    , 7, 8000  },
+        {"PCMA"   , 8, 8000  },
+        {"G722"   , 9, 8000  },
+        {"L16"    ,10, 44100 },
+        {"L16"    ,11, 44100 },
+        {"QCELP"  ,12, 8000  },
+        {"MPA"    ,14, 90000 },
+        {"G728"   ,15, 8000  },
+        {"DVI4"   ,16, 11025 },
+        {"DVI4"   ,17, 22050 },
+        {"G729"   ,18, 8000  },
+        {"CelB"   ,25, 90000 },
+        {"JPEG"   ,26, 90000 },
+        {"nv"     ,28, 90000 },
+        {"H261"   ,31, 90000 },
+        {"MPV"    ,32, 90000 },
+        {"MP2T"   ,33, 90000 },
+        {"H263"   ,34, 90000 }
+    };
+
     size_t i;
 
     for (i = 0; i < sizeof(RTP_payload)/sizeof(RTP_payload[0]); i++)
