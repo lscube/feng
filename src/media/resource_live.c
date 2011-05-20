@@ -410,7 +410,6 @@ static gpointer flux_read_messages(gpointer ptr) {
         int marker;
         uint16_t seq_no;
 
-        struct mq_attr attr;
         struct MParserBuffer *buffer;
 
         if ( queue == (mqd_t)-1 &&
@@ -421,6 +420,8 @@ static gpointer flux_read_messages(gpointer ptr) {
         }
 
         do {
+            struct mq_attr attr;
+
             /* Check if there are available packets, if it is empty flux might have recreated it */
             if ( mq_getattr(queue, &attr) < 0 ||
                  attr.mq_curmsgs == 0 )
