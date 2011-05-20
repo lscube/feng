@@ -38,6 +38,23 @@
 
 #define REQUIRED_FLUX_PROTOCOL_VERSION 4
 
+struct flux_msg {
+    uint32_t proto_version;
+    double start_time;
+    uint32_t dts;
+    uint32_t start_dts;
+    double duration;
+    double insertion_time;
+
+    uint8_t discard1;
+    uint8_t marker;
+    uint16_t seq_no;
+    uint32_t timestamp;
+    uint32_t discard2;
+
+    uint8_t data[];
+} ATTR_PACKED;
+
 static gpointer flux_read_messages(gpointer ptr);
 
 /**
@@ -383,19 +400,12 @@ static gpointer flux_read_messages(gpointer ptr) {
     mqd_t queue = (mqd_t)-1;
 
     while ( tr ) {
-        double package_start_time;
         uint32_t package_timestamp;
-        double package_duration;
         double timestamp;
         double delivery;
         double delta;
-        unsigned int package_version;
-        unsigned int package_start_dts;
-        unsigned int package_dts;
-        double package_insertion_time;
 
-        uint8_t *msg_buffer = NULL;
-        uint8_t *packet;
+        struct flux_msg *message;
         ssize_t msg_len;
         int marker;
         uint16_t seq_no;
@@ -422,9 +432,9 @@ static gpointer flux_read_messages(gpointer ptr) {
             goto reiterate;
         }
 
-        msg_buffer = g_malloc(attr.mq_msgsize);
+        message = g_malloc(attr.mq_msgsize);
 
-        if ( (msg_len = mq_receive(queue, (char*)msg_buffer,
+        if ( (msg_len = mq_receive(queue, (char*)message,
                                    attr.mq_msgsize, NULL)) < 0 ) {
             fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
                     tr->live.mq_path, strerror(errno));
@@ -435,41 +445,31 @@ static gpointer flux_read_messages(gpointer ptr) {
             goto reiterate;
         }
 
-        package_version = *((unsigned int*)msg_buffer);
-        if (package_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
+        if (message->proto_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
             fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d",
-                    tr->live.mq_path, REQUIRED_FLUX_PROTOCOL_VERSION, package_version);
+                    tr->live.mq_path, REQUIRED_FLUX_PROTOCOL_VERSION, message->proto_version);
 
             goto reiterate;
         }
 
-        package_start_time = *((double*)(msg_buffer+sizeof(unsigned int)));
-        package_dts = *((unsigned int*)(msg_buffer+sizeof(double)+sizeof(unsigned int)));
-        package_start_dts = *((unsigned int*)(msg_buffer+sizeof(double)+sizeof(unsigned int)*2));
-        package_duration = *((double*)(msg_buffer+sizeof(double)+sizeof(unsigned int)*3));
-        package_insertion_time = *((double*)(msg_buffer+sizeof(double)*2+sizeof(unsigned int)*3));
-
-        packet = msg_buffer+sizeof(double)*3+sizeof(unsigned int)*3;
-        msg_len -= (sizeof(double)*3+sizeof(unsigned int)*3);
-
-        package_timestamp = ntohl(*(uint32_t*)(packet+4));
-        delivery = (package_dts - package_start_dts)/((double)tr->clock_rate);
-        delta = ev_time() - package_insertion_time;
+        package_timestamp = ntohl(message->timestamp);
+        delivery = (message->dts - message->start_dts)/((double)tr->clock_rate);
+        delta = ev_time() - message->insertion_time;
 
 #if 0
         fprintf(stderr, "[%s] read (%5.4f) BEGIN:%5.4f START_DTS:%u DTS:%u\n",
-                tr->live.mq_path, delta, package_start_time, package_start_dts, package_dts);
+                tr->live.mq_path, delta, message->start_time, message->start_dts, message->dts);
 #endif
 
         if (delta > 0.5f) {
-            fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f/%f, discarding..", tr->live.mq_path, package_insertion_time, delta);
+            fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f/%f, discarding..", tr->live.mq_path, message->insertion_time, delta);
             goto reiterate;
         }
 
-        tr->frame_duration = package_duration/((double)tr->clock_rate);
+        tr->frame_duration = message->duration/((double)tr->clock_rate);
         timestamp = package_timestamp/((double)tr->clock_rate);
-        marker = (packet[1]>>7);
-        seq_no = ((unsigned)packet[2] << 8) | ((unsigned)packet[3]);
+        marker = message->marker >> 7;
+        seq_no = ntohs(message->seq_no);
 
         // calculate the duration while consuming stale packets.
         // This is an HACK that must be moved to Flux, here just to quick fix live problems
@@ -484,29 +484,29 @@ static gpointer flux_read_messages(gpointer ptr) {
         buffer = g_slice_new0(struct MParserBuffer);
 
         buffer->timestamp = timestamp;
-        buffer->delivery = package_start_time + delivery;
+        buffer->delivery = message->start_time + delivery;
         buffer->duration = tr->frame_duration * 3;
 
         buffer->marker = marker;
         buffer->seq_no = seq_no;
         buffer->rtp_timestamp = package_timestamp;
 
-        buffer->data_size = msg_len - 12;
-        buffer->data = g_memdup(packet + 12, buffer->data_size);
+        buffer->data_size = msg_len - sizeof(struct flux_msg);;
+        buffer->data = g_memdup(message->data, buffer->data_size);
 
 #if 0
         fprintf(stderr, "[%s] packet TS:%5.4f DELIVERY:%5.4f -> %5.4f (%5.4f)\n",
                 tr->live.mq_path,
                 timestamp,
                 delivery,
-                package_start_time + delivery,
-                ev_time() - (package_start_time + delivery));
+                buffer->delivery,
+                ev_time() - buffer->delivery);
 #endif
 
         track_write(tr, buffer);
 
     reiterate:
-        g_free(msg_buffer);
+        g_free(message);
     }
 
     return NULL;
