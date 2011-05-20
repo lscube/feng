@@ -396,7 +396,7 @@ static gpointer flux_read_messages(gpointer ptr) {
         struct MParserBuffer *buffer;
 
         if ( queue == (mqd_t)-1 &&
-             (queue = mq_open(tr->live.mq_path, O_RDONLY|O_NONBLOCK, S_IRWXU, NULL)) == (mqd_t)-1) {
+             (queue = mq_open(tr->live.mq_path, O_RDONLY, S_IRWXU, NULL)) == (mqd_t)-1) {
             fnc_log(FNC_LOG_ERR, "Unable to open '%s', %s",
                     tr->live.mq_path, strerror(errno));
             goto error;
