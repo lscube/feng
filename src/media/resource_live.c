@@ -420,40 +420,42 @@ static gpointer flux_read_messages(gpointer ptr) {
             goto error;
         }
 
-        /* Check if there are available packets, if it is empty flux might have recreated it */
-        if ( mq_getattr(queue, &attr) < 0 ||
-             attr.mq_curmsgs == 0 )
-            goto error;
+        do {
+            /* Check if there are available packets, if it is empty flux might have recreated it */
+            if ( mq_getattr(queue, &attr) < 0 ||
+                 attr.mq_curmsgs == 0 )
+                goto error;
 
-        message = g_realloc(message, attr.mq_msgsize);
+            message = g_realloc(message, attr.mq_msgsize);
 
-        if ( (msg_len = mq_receive(queue, (char*)message,
-                                   attr.mq_msgsize, NULL)) < 0 ) {
-            fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
-                    tr->live.mq_path, strerror(errno));
+            if ( (msg_len = mq_receive(queue, (char*)message,
+                                       attr.mq_msgsize, NULL)) < 0 ) {
+                fnc_log(FNC_LOG_ERR, "Unable to read from '%s', %s",
+                        tr->live.mq_path, strerror(errno));
 
-            goto error;
-        }
+                goto error;
+            }
 
-        if (message->proto_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
-            fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d",
-                    tr->live.mq_path, REQUIRED_FLUX_PROTOCOL_VERSION, message->proto_version);
-            goto error;
-        }
+            if (message->proto_version != REQUIRED_FLUX_PROTOCOL_VERSION) {
+                fnc_log(FNC_LOG_FATAL, "[%s] Invalid Flux Protocol Version, expecting %d got %d",
+                        tr->live.mq_path, REQUIRED_FLUX_PROTOCOL_VERSION, message->proto_version);
+                goto error;
+            }
+
+            delta = ev_time() - message->insertion_time;
+
+#if 0
+            fprintf(stderr, "[%s] read (%5.4f) BEGIN:%5.4f START_DTS:%u DTS:%u\n",
+                    tr->live.mq_path, delta, message->start_time, message->start_dts, message->dts);
+#endif
+
+            if (delta > 0.5f)
+                fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f/%f, discarding..",
+                        tr->live.mq_path, message->insertion_time, delta);
+        } while ( delta > 0.5f );
 
         package_timestamp = ntohl(message->timestamp);
         delivery = (message->dts - message->start_dts)/((double)tr->clock_rate);
-        delta = ev_time() - message->insertion_time;
-
-#if 0
-        fprintf(stderr, "[%s] read (%5.4f) BEGIN:%5.4f START_DTS:%u DTS:%u\n",
-                tr->live.mq_path, delta, message->start_time, message->start_dts, message->dts);
-#endif
-
-        if (delta > 0.5f) {
-            fnc_log(FNC_LOG_INFO, "[%s] late mq packet %f/%f, discarding..", tr->live.mq_path, message->insertion_time, delta);
-            continue;
-        }
 
         tr->frame_duration = message->duration/((double)tr->clock_rate);
         timestamp = package_timestamp/((double)tr->clock_rate);
