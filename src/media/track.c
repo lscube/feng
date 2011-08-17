@@ -117,6 +117,10 @@ static inline struct MParserBuffer *BQ_OBJECT(RTP_session *consumer)
 
 static void mparser_buffer_free(struct MParserBuffer *buffer)
 {
+    bq_debug("Free object %p %lu",
+             buffer,
+             buffer->seen);
+
     g_free(buffer->data);
     g_slice_free(struct MParserBuffer, buffer);
 }
@@ -131,13 +135,7 @@ static void mparser_buffer_free(struct MParserBuffer *buffer)
  */
 static void bq_element_free_internal(gpointer elem_generic,
                                      ATTR_UNUSED gpointer unused) {
-    struct MParserBuffer *const element = (struct MParserBuffer*)elem_generic;
-
-    bq_debug("Free object %p %lu",
-            element,
-            element->seen);
-
-    mparser_buffer_free(element);
+    mparser_buffer_free((struct MParserBuffer*)elem_generic);
 }
 
 /**
@@ -231,7 +229,7 @@ static void bq_producer_destroy_head(Track *producer, GList *pointer) {
         producer->next_serial = 1;
     }
 
-    bq_element_free_internal(elem, NULL);
+    mparser_buffer_free(elem);
 }
 
 /**
