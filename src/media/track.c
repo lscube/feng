@@ -416,7 +416,7 @@ gulong bq_consumer_unseen(RTP_session *consumer) {
     Track *producer = consumer->track;
     gulong unseen;
 
-    if (!producer || g_atomic_int_get(&producer->stopped) )
+    if (bq_consumer_stopped(consumer))
         return 0;
 
     /* Ensure we have the exclusive access */
@@ -460,7 +460,7 @@ gboolean bq_consumer_move(RTP_session *consumer) {
             consumer,
             consumer->current_element_pointer);
 
-    if ( g_atomic_int_get(&producer->stopped) )
+    if ( bq_consumer_stopped(consumer) )
         return false;
 
     /* Ensure we have the exclusive access */
@@ -500,7 +500,7 @@ struct MParserBuffer *bq_consumer_get(RTP_session *consumer) {
     Track *producer = consumer->track;
     struct MParserBuffer *element = NULL;
 
-    if ( g_atomic_int_get(&producer->stopped) )
+    if ( bq_consumer_stopped(consumer) )
         return NULL;
 
     /* Ensure we have the exclusive access */
@@ -551,6 +551,9 @@ struct MParserBuffer *bq_consumer_get(RTP_session *consumer) {
  *       Track::stopped value.
  */
 gboolean bq_consumer_stopped(RTP_session *consumer) {
+    if ( consumer->track == NULL )
+        return false;
+
     return !!g_atomic_int_get(&consumer->track->stopped);
 }
 
