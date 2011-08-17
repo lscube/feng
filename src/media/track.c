@@ -108,7 +108,7 @@ static inline struct MParserBuffer *BQ_OBJECT(RTP_session *consumer)
 {
     GList *c_cep = bq_consumer_confirm_pointer(consumer);
 
-    return c_cep ? (struct MParserBuffer*)c_cep->data : NULL;
+    return c_cep ? GLIST_TO_BQELEM(c_cep) : NULL;
 }
 
 
@@ -202,7 +202,7 @@ void track_reset_queue(Track *producer) {
  * @param element element to destroy; this is a safety check
  */
 static void bq_producer_destroy_head(Track *producer) {
-    struct MParserBuffer *elem = producer->queue->head->data;
+    struct MParserBuffer *elem = GLIST_TO_BQELEM(producer->queue->head);
 
     bq_debug("P:%p PQH:%p",
              producer,
