@@ -264,7 +264,7 @@ static void bq_consumer_elem_unref(RTP_session *consumer) {
     g_assert_cmpint(elem->seen, !=, producer->consumers);
     /* If we're the last one to see the element, we need to take care
      * of removing and freeing it. */
-    bq_debug("C:%p pointer %p object %p seen %lu consumers %lu PQH:%p",
+    bq_debug("C:%p pointer %p object %p seen %lu consumers %u PQH:%p",
             consumer,
             consumer->current_element_pointer,
             elem,
@@ -526,7 +526,7 @@ struct MParserBuffer *bq_consumer_get(RTP_session *consumer) {
 
     element = (struct MParserBuffer*)(consumer->current_element_pointer->data);
 
-    bq_debug("C:%p pointer %p object %p seen %lu/%lu",
+    bq_debug("C:%p pointer %p object %p seen %lu/%d",
             consumer,
             consumer->current_element_pointer,
             element,
