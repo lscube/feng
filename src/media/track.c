@@ -204,19 +204,17 @@ void track_reset_queue(Track *producer) {
  * @param producer Producer to destroy the head queue of
  * @param element element to destroy; this is a safety check
  */
-static void bq_producer_destroy_head(Track *producer, GList *pointer) {
-    struct MParserBuffer *elem = pointer->data;
+static void bq_producer_destroy_head(Track *producer) {
+    struct MParserBuffer *elem = producer->queue->head->data;
 
-    bq_debug("P:%p PQH:%p pointer %p",
+    bq_debug("P:%p PQH:%p",
              producer,
-             producer->queue->head,
-             pointer);
+             producer->queue->head);
 
     /* We can only remove the head of the queue, if we're doing
      * anything else, something is funky. Ibid if it hasn't been seen
      * yet.
      */
-    g_assert(pointer == producer->queue->head);
     g_assert(elem->seen == producer->consumers);
 
     /* Remove the element from the queue */
@@ -285,7 +283,7 @@ static void bq_consumer_elem_unref(RTP_session *consumer) {
             pointer->next,
             pointer->prev);
 
-    bq_producer_destroy_head(producer, pointer);
+    bq_producer_destroy_head(producer);
 }
 
 /**
