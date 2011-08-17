@@ -121,8 +121,10 @@ static Resource *r_open_virtual(const char *url)
 
     if ( (r = g_hash_table_lookup(virtual_resources, url)) != NULL )
         g_atomic_int_inc(&r->live.count);
-    else
+    else {
         r = sd2_open(url);
+        g_hash_table_insert(virtual_resources, g_strdup(url), r);
+    }
 
     r_virtual_unlock();
     return r;
