@@ -35,7 +35,7 @@
 #ifdef FENG_BQ_DEBUG
 # define bq_debug(fmt, ...) g_debug("[%s] " fmt, __PRETTY_FUNCTION__, __VA_ARGS__)
 #else
-# define bq_debug(...)
+# define bq_debug(...) {}
 #endif
 
 /**
@@ -165,7 +165,6 @@ static void bq_producer_reset_queue_internal(Track *producer) {
 
     producer->queue = g_queue_new();
     producer->queue_serial++;
-    producer->next_serial = 1;
 }
 
 /**
@@ -202,11 +201,12 @@ void track_reset_queue(Track *producer) {
  * @param element element to destroy; this is a safety check
  */
 static void bq_producer_destroy_head(Track *producer) {
-    struct MParserBuffer *elem = GLIST_TO_BQELEM(producer->queue->head);
+    struct MParserBuffer *elem = g_queue_pop_head(producer->queue);
 
-    bq_debug("P:%p PQH:%p",
+    bq_debug("P:%p PQH:%p elem %p (%hu)",
              producer,
-             producer->queue->head);
+             producer->queue->head,
+             elem, elem ? elem->seq_no : 0);
 
     /* We can only remove the head of the queue, if we're doing
      * anything else, something is funky. Ibid if it hasn't been seen
@@ -214,15 +214,10 @@ static void bq_producer_destroy_head(Track *producer) {
      */
     g_assert(elem->seen == producer->consumers);
 
-    /* Remove the element from the queue */
-    g_queue_pop_head(producer->queue);
-
     /* If we reached the end of the queue, consider like it was a new
      * one */
-    if ( g_queue_get_length(producer->queue) == 0 ) {
+    if ( g_queue_get_length(producer->queue) == 0 )
         producer->queue_serial++;
-        producer->next_serial = 1;
-    }
 
     mparser_buffer_free(elem);
 }
@@ -231,56 +226,36 @@ static void bq_producer_destroy_head(Track *producer) {
  * @brief Remove reference from the current element
  *
  * @param consumer The consumer that has seen the element
- *
- *
- * @note This function will require exclusive access to the producer,
- *       and will thus lock its mutex.
+ * @return If applicable, the next element after the one unref'd
  */
-static void bq_consumer_elem_unref(RTP_session *consumer) {
-    Track *producer = consumer->track;
-    struct MParserBuffer *elem;
-    GList *pointer;
+static GList *bq_consumer_elem_unref(Track *producer, GList *pointer) {
+    struct MParserBuffer *elem = GLIST_TO_BQELEM(pointer);
+    GList *next = pointer ? pointer->next : NULL;
 
-    elem = BQ_OBJECT(consumer);
-    pointer = consumer->current_element_pointer;
-
-    bq_debug("C:%p PQS:%lu CQS:%lu pointer %p object %p",
-            consumer,
-            producer->queue_serial,
-            consumer->queue_serial,
-            pointer, elem);
+    bq_debug("PQS:%lu %p->%p object %p (%hu)",
+             producer->queue_serial,
+             pointer, next,
+             elem, elem ? elem->seq_no : 0);
 
     /* If we had no element selected, just get out of here */
     if ( elem == NULL )
-        return;
+        return next;
 
     g_assert_cmpint(elem->seen, !=, producer->consumers);
+    elem->seen++;
+
     /* If we're the last one to see the element, we need to take care
      * of removing and freeing it. */
-    bq_debug("C:%p pointer %p object %p seen %lu consumers %u PQH:%p",
-            consumer,
-            consumer->current_element_pointer,
-            elem,
-            elem->seen+1,
-            producer->consumers,
-            producer->queue->head);
+    bq_debug("\tpointer %p seen %lu/%u PQH:%p",
+             pointer,
+             elem->seen,
+             producer->consumers,
+             producer->queue->head);
 
-    /* After unref we have to assume that we cannot access the pointer
-     * _at all_, no matter if we actually removed it or not, otherwise
-     * it wouldn't be an unref, would it? */
-    consumer->current_element_pointer = NULL;
+    if ( elem->seen >= producer->consumers )
+        bq_producer_destroy_head(producer);
 
-    if ( ++elem->seen < producer->consumers )
-        return;
-
-    bq_debug("C:%p object %p pointer %p next %p prev %p",
-            consumer,
-            pointer->data,
-            pointer,
-            pointer->next,
-            pointer->prev);
-
-    bq_producer_destroy_head(producer);
+    return next;
 }
 
 /**
@@ -293,7 +268,7 @@ static void bq_consumer_elem_unref(RTP_session *consumer) {
  */
 static gboolean bq_consumer_move_internal(RTP_session *consumer) {
     Track *producer = consumer->track;
-    GList *c_cep = bq_consumer_confirm_pointer(consumer);
+    GList *c_cep = bq_consumer_confirm_pointer(consumer), *next;
 
     bq_debug("C:%p LES:%lu:%u PQHS:%lu:%u PQH:%p pointer %p",
             consumer,
@@ -303,41 +278,22 @@ static gboolean bq_consumer_move_internal(RTP_session *consumer) {
             producer->queue->head,
             c_cep);
 
-    if (c_cep) {
-        GList *next = c_cep->next;
+    if (c_cep)
+        next = bq_consumer_elem_unref(producer, c_cep);
+    else
+        next = producer->queue->head;
 
-        bq_debug("C:%p pointer %p object %p next %p prev %p",
-                consumer,
-                c_cep,
-                c_cep->data,
-                c_cep->next,
-                c_cep->prev);
+    if ( next != NULL )
+        bq_debug("\tpointer %p object %p (%hu)",
+                 next,
+                 next->data,
+                 GLIST_TO_BQELEM(next)->seq_no);
 
-        /* If there is any element at all saved, we take care of marking
-         * it as seen. We don't have to check if it's non-NULL since the
-         * function takes care of that. We _have_ to do this after we
-         * found the new "next" pointer.
-         */
-        bq_consumer_elem_unref(consumer);
+    while ( next != NULL &&
+            GLIST_TO_BQELEM(next)->seq_no <= consumer->last_element_serial )
+        next = bq_consumer_elem_unref(producer, next);
 
-        consumer->current_element_pointer = next;
-    } else if ( consumer->queue_serial != producer->queue_serial ) {
-        consumer->current_element_pointer = producer->queue->head;
-    } else {
-        GList *elem = producer->queue->head;
-        bq_debug("C:%p PQH:%p",
-                consumer,
-                producer->queue->head);
-
-        while ( elem != NULL &&
-                GLIST_TO_BQELEM(elem)->seq_no <= consumer->last_element_serial )
-            elem = elem->next;
-
-        consumer->current_element_pointer = elem;
-    }
-
-    /* Now we have a new "next" element and we can set it properly */
-    if ( consumer->current_element_pointer == NULL )
+    if ( (consumer->current_element_pointer = next) == NULL )
         return false;
 
     consumer->last_element_serial =
@@ -418,7 +374,7 @@ gulong bq_consumer_unseen(RTP_session *consumer) {
     g_mutex_lock(producer->lock);
 
     if ( consumer->queue_serial != producer->queue_serial )
-        unseen = producer->next_serial;
+        unseen = g_queue_get_length(producer->queue);
     else if ( producer->queue->head != NULL )
         unseen = producer->next_serial - consumer->last_element_serial;
 
@@ -640,6 +596,9 @@ void track_write(Track *tr, struct MParserBuffer *buffer)
         buffer->seq_no = tr->next_serial;
 
     tr->next_serial = buffer->seq_no + 1;
+
+    bq_debug("P:%p PQH:%p elem: %p (%hu)",
+             tr, tr->queue->head, buffer, buffer->seq_no);
 
     g_queue_push_tail(tr->queue, buffer);
 
