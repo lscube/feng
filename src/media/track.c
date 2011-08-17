@@ -246,8 +246,6 @@ static void bq_consumer_elem_unref(RTP_session *consumer) {
     struct MParserBuffer *elem;
     GList *pointer;
 
-    bq_consumer_confirm_pointer(consumer);
-
     elem = BQ_OBJECT(consumer);
     pointer = consumer->current_element_pointer;
 
