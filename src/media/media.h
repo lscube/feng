@@ -210,7 +210,7 @@ struct Track {
      * consumers; each buffer needs to reach the same count before it
      * gets removed from the queue.
      */
-    gulong consumers;
+    gint consumers;
 
     /**
      * @brief Last consumer exited condition
