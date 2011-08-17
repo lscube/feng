@@ -70,16 +70,17 @@ static inline struct MParserBuffer *GLIST_TO_BQELEM(GList *pointer)
  * @brief Ensures the validity of the current element pointer for the consume
  *
  * @param consumer The consumer to verify the pointer of
+ * @return The (validated) current element pointer.
  *
  * Call this function whenever current_element_pointer is going to be
  * used; if any condition happened that would make it unreliable, set
  * it to NULL.
  */
-static void bq_consumer_confirm_pointer(RTP_session *consumer)
+static GList *bq_consumer_confirm_pointer(RTP_session *consumer)
 {
     Track *producer = consumer->track;
     if ( consumer->current_element_pointer == NULL )
-        return;
+        return NULL;
 
     if ( producer->queue_serial != consumer->queue_serial ) {
         bq_debug("C:%p pointer %p reset PQS:%lu < CQS:%lu",
@@ -88,11 +89,8 @@ static void bq_consumer_confirm_pointer(RTP_session *consumer)
                 producer->queue_serial,
                 consumer->queue_serial);
         consumer->current_element_pointer = NULL;
-        return;
-    }
-
-    if ( producer->queue->head &&
-         consumer->last_element_serial < GLIST_TO_BQELEM(producer->queue->head)->seq_no ) {
+    } else if ( producer->queue->head &&
+                consumer->last_element_serial < GLIST_TO_BQELEM(producer->queue->head)->seq_no ) {
         bq_debug("C:%p pointer %p reset LES:%lu:%u < PQHS:%lu:%u",
                 consumer,
                 consumer->current_element_pointer,
@@ -100,18 +98,17 @@ static void bq_consumer_confirm_pointer(RTP_session *consumer)
                 producer->queue_serial,
                 GLIST_TO_BQELEM(producer->queue->head)->seq_no);
         consumer->current_element_pointer = NULL;
-        return;
+        return NULL;
     }
+
+    return consumer->current_element_pointer;
 }
 
 static inline struct MParserBuffer *BQ_OBJECT(RTP_session *consumer)
 {
-    bq_consumer_confirm_pointer(consumer);
+    GList *c_cep = bq_consumer_confirm_pointer(consumer);
 
-    if ( consumer->current_element_pointer == NULL )
-        return NULL;
-
-    return (struct MParserBuffer*)consumer->current_element_pointer->data;
+    return c_cep ? (struct MParserBuffer*)c_cep->data : NULL;
 }
 
 
@@ -296,6 +293,7 @@ static void bq_consumer_elem_unref(RTP_session *consumer) {
  */
 static gboolean bq_consumer_move_internal(RTP_session *consumer) {
     Track *producer = consumer->track;
+    GList *c_cep = bq_consumer_confirm_pointer(consumer);
 
     bq_debug("C:%p LES:%lu:%u PQHS:%lu:%u PQH:%p pointer %p",
             consumer,
@@ -303,19 +301,17 @@ static gboolean bq_consumer_move_internal(RTP_session *consumer) {
             producer->queue_serial,
             producer->queue->head ? GLIST_TO_BQELEM(producer->queue->head)->seq_no : 0,
             producer->queue->head,
-            consumer->current_element_pointer);
+            c_cep);
 
-    bq_consumer_confirm_pointer(consumer);
-
-    if (consumer->current_element_pointer) {
-        GList *next = consumer->current_element_pointer->next;
+    if (c_cep) {
+        GList *next = c_cep->next;
 
         bq_debug("C:%p pointer %p object %p next %p prev %p",
                 consumer,
-                consumer->current_element_pointer,
-                consumer->current_element_pointer->data,
-                consumer->current_element_pointer->next,
-                consumer->current_element_pointer->prev);
+                c_cep,
+                c_cep->data,
+                c_cep->next,
+                c_cep->prev);
 
         /* If there is any element at all saved, we take care of marking
          * it as seen. We don't have to check if it's non-NULL since the
@@ -341,13 +337,14 @@ static gboolean bq_consumer_move_internal(RTP_session *consumer) {
     }
 
     /* Now we have a new "next" element and we can set it properly */
-    if ( consumer->current_element_pointer ) {
-        consumer->last_element_serial =
-            GLIST_TO_BQELEM(consumer->current_element_pointer)->seq_no;
-        consumer->queue_serial = producer->queue_serial;
-    }
+    if ( consumer->current_element_pointer == NULL )
+        return false;
 
-    return ( consumer->current_element_pointer != NULL );
+    consumer->last_element_serial =
+        GLIST_TO_BQELEM(consumer->current_element_pointer)->seq_no;
+    consumer->queue_serial = producer->queue_serial;
+
+    return true;
 }
 
 static void bq_decrement_seen_on_free(gpointer elem,
@@ -497,6 +494,7 @@ gboolean bq_consumer_move(RTP_session *consumer) {
 struct MParserBuffer *bq_consumer_get(RTP_session *consumer) {
     Track *producer = consumer->track;
     struct MParserBuffer *element = NULL;
+    GList *c_cep;
 
     if ( bq_consumer_stopped(consumer) )
         return NULL;
@@ -511,12 +509,12 @@ struct MParserBuffer *bq_consumer_get(RTP_session *consumer) {
              producer->queue->head,
              consumer->current_element_pointer);
 
-    bq_consumer_confirm_pointer(consumer);
+    c_cep = bq_consumer_confirm_pointer(consumer);
 
     /* If we don't have a queue yet, like for the first read, “move
      * next” (or rather first).
      */
-    if ( consumer->current_element_pointer == NULL )
+    if ( c_cep == NULL )
         bq_consumer_move_internal(consumer);
 
     element = BQ_OBJECT(consumer);
