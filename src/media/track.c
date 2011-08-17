@@ -518,19 +518,18 @@ struct MParserBuffer *bq_consumer_get(RTP_session *consumer) {
     /* If we don't have a queue yet, like for the first read, “move
      * next” (or rather first).
      */
-    if ( consumer->current_element_pointer == NULL &&
-         !bq_consumer_move_internal(consumer) )
-            goto end;
+    if ( consumer->current_element_pointer == NULL )
+        bq_consumer_move_internal(consumer);
 
-    element = (struct MParserBuffer*)(consumer->current_element_pointer->data);
+    element = BQ_OBJECT(consumer);
 
     bq_debug("C:%p pointer %p object %p seen %lu/%d",
-            consumer,
-            consumer->current_element_pointer,
-            element,
-            element->seen,
-            producer->consumers);
- end:
+             consumer,
+             consumer->current_element_pointer,
+             element,
+             element ? element->seen : 0,
+             producer->consumers);
+
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
     return element;
