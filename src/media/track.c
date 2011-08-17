@@ -409,23 +409,18 @@ void bq_consumer_free(RTP_session *consumer) {
  */
 gulong bq_consumer_unseen(RTP_session *consumer) {
     Track *producer = consumer->track;
-    gulong unseen;
+    gulong unseen = 0;
 
     if (bq_consumer_stopped(consumer))
-        return 0;
+        return unseen;
 
     /* Ensure we have the exclusive access */
     g_mutex_lock(producer->lock);
 
-    if ( consumer->queue_serial != producer->queue_serial ) {
+    if ( consumer->queue_serial != producer->queue_serial )
         unseen = producer->next_serial;
-    } else {
-        if (!producer->queue->head) {
-            unseen = 0;
-        } else {
-            unseen = producer->next_serial - consumer->last_element_serial;
-        }
-    }
+    else if ( producer->queue->head != NULL )
+        unseen = producer->next_serial - consumer->last_element_serial;
 
     /* Leave the exclusive access */
     g_mutex_unlock(producer->lock);
