@@ -111,18 +111,17 @@ Resource *avf_open(const char *url)
     r = g_slice_new0(Resource);
 
     r->stored.avfc = avformat_alloc_context();
-    ap.prealloced_context = 1;
 
     r->stored.avfc->flags |= AVFMT_FLAG_GENPTS;
 
-    i = av_open_input_file(&r->stored.avfc, mrl, NULL, 0, &ap);
+    i =  avformat_open_input(&r->stored.avfc, mrl, NULL, NULL);
 
     if ( i != 0 ) {
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot open %s", mrl);
         goto err_alloc;
     }
 
-    i = av_find_stream_info(r->stored.avfc);
+    i = avformat_find_stream_info(r->stored.avfc, NULL);
 
     if(i < 0){
         fnc_log(FNC_LOG_DEBUG, "[avf] Cannot find streams in file %s",
@@ -135,7 +134,7 @@ Resource *avf_open(const char *url)
     for(j=0; j<r->stored.avfc->nb_streams; j++) {
         AVStream *st= r->stored.avfc->streams[j];
         AVCodecContext *codec= st->codec;
-        AVMetadataTag *metadata_tag = NULL;
+        AVDictionaryEntry *metadata_tag = NULL;
         static const int metadata_flags = AV_METADATA_DONT_STRDUP_KEY|AV_METADATA_DONT_STRDUP_VAL;
         const char *encoding_name;
         float frame_rate = 0;
@@ -295,12 +294,12 @@ Resource *avf_open(const char *url)
         if ( parser_init && parser_init(track) != 0 )
             goto track_err_alloc;
 
-        if ( (metadata_tag = av_metadata_get(r->stored.avfc->metadata, "title", NULL, metadata_flags)) )
+        if ( (metadata_tag = av_dict_get(r->stored.avfc->metadata, "title", NULL, metadata_flags)) )
             g_string_append_printf(track->sdp_description, SDP_F_TITLE, metadata_tag->value);
 
         /* here we check a few possible alternative tags to use */
-        if ( (metadata_tag = av_metadata_get(r->stored.avfc->metadata, "artist", NULL, metadata_flags)) ||
-             (metadata_tag = av_metadata_get(r->stored.avfc->metadata, "publisher", NULL, metadata_flags)) )
+        if ( (metadata_tag = av_dict_get(r->stored.avfc->metadata, "artist", NULL, metadata_flags)) ||
+             (metadata_tag = av_dict_get(r->stored.avfc->metadata, "publisher", NULL, metadata_flags)) )
             g_string_append_printf(track->sdp_description, SDP_F_AUTHOR, metadata_tag->value);
 
         if ( frame_rate != 0 )

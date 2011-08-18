@@ -25,9 +25,9 @@ AC_ARG_WITH(max-session,
     AS_HELP_STRING([--with-max-session], [max number of incoming sessions (default=100)]),,
     with_max_session=100)
 
-AC_ARG_ENABLE(libavformat,
-    AS_HELP_STRING([--enable-libavformat], [enable ffmpeg's libavformat support (default=yes)]),,
-        enable_ffmpeg="yes")
+AC_ARG_ENABLE(libav,
+    AS_HELP_STRING([--enable-libav], [enable libav support (default=yes)]),,
+        enable_libav="yes")
 
 AC_ARG_ENABLE(live-streaming,
     AS_HELP_STRING([--enable-live-streaming], [enable support for live streaming (default=yes)]),,
@@ -117,8 +117,8 @@ LIBS="$LIBS $GLIB_LIBS"
 
 avformat_msg="no"
 avutil_msg="no"
-if test "x$enable_ffmpeg" = "xyes"; then
-    PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 52.31.0 libavcodec >= 51],
+if test "x$enable_libav" = "xyes"; then
+    PKG_CHECK_MODULES(LIBAVFORMAT,[libavformat >= 53.3.0],
         [AC_DEFINE(HAVE_AVFORMAT,,[Define if libavformat support is available])
          avformat_msg="yes"
          ])
@@ -132,7 +132,7 @@ if test "x$enable_ffmpeg" = "xyes"; then
          LIBS="$LIBS $LIBAVUTIL_LIBS"
 fi
 
-AM_CONDITIONAL(FENG_FFMPEG, [test "$enable_ffmpeg" = "yes"])
+AM_CONDITIONAL(FENG_LIBAV, [test "$enable_libav" = "yes"])
 
 CC_ATTRIBUTE_UNUSED(
   [AC_DEFINE([ATTR_UNUSED], [__attribute__((__unused__))], [Define this if ATTR_UNUSED is supported])],

@@ -113,7 +113,7 @@ dist_feng_SOURCES = $(RAGEL_SOURCES) \
 	src/media/resource.c \
 	src/media/track.c
 
-if FENG_FFMPEG
+if FENG_LIBAV
 dist_feng_SOURCES += src/media/parser_h264.c \
 		     src/media/parser_xiph.c \
 		     src/media/parser_aac.c \
