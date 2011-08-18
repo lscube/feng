@@ -394,6 +394,17 @@ static gpointer flux_read_messages(gpointer ptr) {
                 break;
             }
 
+            /* Don't bother queuing buffers if there are no clients
+             * connected, keep reading the messages from the queue
+             * though.
+             *
+             * Note that we don't need to use atomic operations
+             * because, even if there are no consumers but we did keep
+             * the loop running, we'd just be creating extra objects.
+             */
+            if ( tr->consumers == 0 )
+                continue;
+
             delta = ev_time() - message->insertion_time;
 
 #if 0
