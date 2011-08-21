@@ -346,15 +346,16 @@ Resource *avf_open(const char *url)
     return r;
 
  err_alloc:
-    g_slice_free(Resource, r);
+    if ( r != NULL ) {
+        if ( r->stored.avfc ) {
+            for(j = 0; j < r->stored.avfc->nb_streams; j++)
+                track_free(r->stored.tracks[j]);
+            av_close_input_file(r->stored.avfc);
+        }
 
-    if ( r->stored.avfc ) {
-        for(j = 0; j < r->stored.avfc->nb_streams; j++)
-            track_free(r->stored.tracks[j]);
-        av_close_input_file(r->stored.avfc);
+        g_free(r->stored.tracks);
+        g_slice_free(Resource, r);
     }
-
-    g_free(r->stored.tracks);
 
     g_free(mrl);
 
