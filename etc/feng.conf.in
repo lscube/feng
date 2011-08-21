@@ -14,7 +14,7 @@ socket {
 
 vhost {
     document-root "@feng_basedir@/avroot";
-    document-root "@feng_basedir@/virtuals";
+    virtuals-root "@feng_basedir@/virtuals";
     access-log "@feng_logdir@/access.log";
     # use syslog instead
     # access-log "syslog";
