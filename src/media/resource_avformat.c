@@ -73,7 +73,6 @@ void ffmpeg_init(void)
 
 Resource *avf_open(const char *url)
 {
-    AVFormatParameters ap;
     Resource *r = NULL;
     Track *track = NULL;
     int pt = 96, i;
@@ -106,8 +105,6 @@ Resource *avf_open(const char *url)
         goto err_alloc;
     }
 
-    memset(&ap, 0, sizeof(AVFormatParameters));
-
     r = g_slice_new0(Resource);
 
     r->stored.avfc = avformat_alloc_context();
@@ -135,7 +132,7 @@ Resource *avf_open(const char *url)
         AVStream *st= r->stored.avfc->streams[j];
         AVCodecContext *codec= st->codec;
         AVDictionaryEntry *metadata_tag = NULL;
-        static const int metadata_flags = AV_METADATA_DONT_STRDUP_KEY|AV_METADATA_DONT_STRDUP_VAL;
+        static const int metadata_flags = AV_DICT_DONT_STRDUP_KEY|AV_DICT_DONT_STRDUP_VAL;
         const char *encoding_name;
         float frame_rate = 0;
 
@@ -350,7 +347,7 @@ Resource *avf_open(const char *url)
         if ( r->stored.avfc ) {
             for(j = 0; j < r->stored.avfc->nb_streams; j++)
                 track_free(r->stored.tracks[j]);
-            av_close_input_file(r->stored.avfc);
+            avformat_close_input(&r->stored.avfc);
         }
 
         g_free(r->stored.tracks);
@@ -454,7 +451,7 @@ static void avf_uninit(gpointer rgen)
     Resource *r = rgen;
 
     if ( r->stored.avfc != NULL )
-        av_close_input_file(r->stored.avfc);
+        avformat_close_input(&r->stored.avfc);
 
     g_free(r->stored.tracks);
 }
