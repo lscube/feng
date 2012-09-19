@@ -37,7 +37,7 @@
 #ifdef LIVE_STREAMING
 extern Resource *sd2_open(const char *url);
 #else
-static Resource *sd2_open(const char *url);
+static Resource *sd2_open(const char *url)
 {
     fnc_log(FNC_LOG_ERR,
             "unable to stream resource '%s', live streaming support not built in",
