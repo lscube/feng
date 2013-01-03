@@ -192,7 +192,7 @@ tests/rfc822proto/rfc822proto-test.rl: tests/rfc822proto/rfc822proto-test.xsl sr
 
 tests/rfc822proto/rfc822proto-test.c: src/network/rfc822proto-statemachine.rl
 
-INCLUDES = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network -Isrc/cfgparser
+AM_CPPFLAGS = -I. -I$(srcdir)/src -Isrc -I$(srcdir)/src/network -Isrc/network -Isrc/cfgparser
 
 AM_RAGELFLAGS = -I$(srcdir)/src/network -Isrc/network
 AM_YFLAGS = --defines
