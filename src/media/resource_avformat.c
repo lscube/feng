@@ -143,14 +143,14 @@ Resource *avf_open(const char *url)
         track->clock_rate = 90000; //Default
 
         switch(codec->codec_id) {
-        case CODEC_ID_MPEG1VIDEO:
-        case CODEC_ID_MPEG2VIDEO:
+        case AV_CODEC_ID_MPEG1VIDEO:
+        case AV_CODEC_ID_MPEG2VIDEO:
             track->payload_type = 32;
             encoding_name = "MPV";
             track->parse = mpv_parse;
             break;
 
-        case CODEC_ID_H264:
+        case AV_CODEC_ID_H264:
             if (!codec->extradata_size)
                 goto err_alloc;
 
@@ -160,14 +160,14 @@ Resource *avf_open(const char *url)
             track->parse = h264_parse;
             break;
 
-        case CODEC_ID_MP2:
-        case CODEC_ID_MP3:
+        case AV_CODEC_ID_MP2:
+        case AV_CODEC_ID_MP3:
             track->payload_type = 14;
             encoding_name = "MPA";
             track->parse = mpa_parse;
             break;
 
-        case CODEC_ID_VORBIS:
+        case AV_CODEC_ID_VORBIS:
             if (!codec->extradata_size)
                 goto err_alloc;
 
@@ -177,7 +177,7 @@ Resource *avf_open(const char *url)
             track->parse = xiph_parse;
             break;
 
-        case CODEC_ID_THEORA:
+        case AV_CODEC_ID_THEORA:
             if (!codec->extradata_size)
                 goto err_alloc;
 
@@ -187,12 +187,12 @@ Resource *avf_open(const char *url)
             track->parse = xiph_parse;
             break;
 
-        case CODEC_ID_SPEEX:
+        case AV_CODEC_ID_SPEEX:
             encoding_name = "SPEEX";
             track->parse = speex_parse;
             break;
 
-        case CODEC_ID_AAC:
+        case AV_CODEC_ID_AAC:
             if ( codec->extradata_size == 0 ) {
                 AVPacket pkt;
 
@@ -223,7 +223,7 @@ Resource *avf_open(const char *url)
             track->parse = aac_parse;
             break;
 
-        case CODEC_ID_MPEG4:
+        case AV_CODEC_ID_MPEG4:
             if (!codec->extradata_size)
                 goto err_alloc;
 
@@ -233,14 +233,14 @@ Resource *avf_open(const char *url)
             track->parse = mp4ves_parse;
             break;
 
-        case CODEC_ID_H263:
+        case AV_CODEC_ID_H263:
             encoding_name = "H263-1998";
             parser_init = h263_init;
 
             track->parse = h263_parse;
             break;
 
-        case CODEC_ID_AMR_NB:
+        case AV_CODEC_ID_AMR_NB:
             encoding_name = "AMR";
             parser_init = amr_init;
 
@@ -248,7 +248,7 @@ Resource *avf_open(const char *url)
             track->parse = amr_parse;
             break;
 
-        case CODEC_ID_VP8:
+        case AV_CODEC_ID_VP8:
             encoding_name = "VP8";
             parser_init = vp8_init;
 
@@ -271,7 +271,7 @@ Resource *avf_open(const char *url)
             break;
 
         case AVMEDIA_TYPE_VIDEO:
-            frame_rate = av_q2d(st->r_frame_rate);
+            frame_rate = av_q2d(st->avg_frame_rate);
             track->media_type     = MP_video;
             track->frame_duration = (double)1 / frame_rate;
             break;
@@ -404,8 +404,8 @@ retry:
             av_q2d(stream->time_base);
     } else { // welcome to the wonderland ehm, hackland...
         switch (stream->codec->codec_id) {
-        case CODEC_ID_MP2:
-        case CODEC_ID_MP3:
+        case AV_CODEC_ID_MP2:
+        case AV_CODEC_ID_MP3:
             tr->frame_duration = 1152.0/
                 stream->codec->sample_rate;
             break;
