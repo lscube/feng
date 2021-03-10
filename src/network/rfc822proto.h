@@ -144,7 +144,7 @@ static inline GHashTable *rfc822_headers_new()
  * @note The value given will be freed with g_free() when removing it
  *       from the hash table (or with @ref rfc822_headers_destroy.
  */
-static inline void rfc822_headers_set(GHashTable *headers, RFC822_Header hdr, char *value)
+static inline GHashTable *rfc822_headers_set(GHashTable *headers, RFC822_Header hdr, char *value)
 {
     return g_hash_table_insert(headers,
                                GINT_TO_POINTER(hdr),
